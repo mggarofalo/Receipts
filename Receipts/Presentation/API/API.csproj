@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\Common\Common.csproj" />
     <ProjectReference Include="..\..\Domain\Domain.csproj" />
     <ProjectReference Include="..\..\Application\Application.csproj" />
+	<ProjectReference Include="..\..\Infrastructure\Infrastructure.csproj" />
 	<ProjectReference Include="..\Shared\Shared.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />

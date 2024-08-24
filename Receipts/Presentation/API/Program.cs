@@ -1,17 +1,29 @@
 using Application;
+using Application.Interfaces;
+using Infrastructure;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Register IInfrastructureService
+builder.Services.AddScoped<IInfrastructureService, InfrastructureService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(API.Mapping.MappingProfile));
+
+// Register application services
 builder.Services.AddApplicationServices(builder.Configuration);
+
+// Resolve IInfrastructureService and call AddInfrastructureServices
+builder.Services.AddScoped<IInfrastructureService>(provider =>
+{
+	InfrastructureService infrastructureService = new();
+	infrastructureService.AddInfrastructureServices(builder.Services, builder.Configuration);
+	return infrastructureService;
+});
 
 WebApplication app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
@@ -19,7 +31,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.MapControllers();
-
 await app.RunAsync();

@@ -1,6 +1,8 @@
 using AutoMapper;
 using Domain;
 using Domain.Core;
+using Application.Commands.Receipt;
+using Shared.ViewModels;
 
 namespace API.Mapping;
 
@@ -16,17 +18,16 @@ public class MappingProfile : Profile
 
 	private void MapAccount()
 	{
-		CreateMap<Account, Shared.ViewModels.AccountVM>().ReverseMap();
+		CreateMap<Account, AccountVM>().ReverseMap();
 	}
-
 
 	private void MapReceipt()
 	{
-		CreateMap<Receipt, Shared.ViewModels.ReceiptVM>()
-					.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount))
-					.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
+		CreateMap<Receipt, ReceiptVM>()
+			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount))
+			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
 
-		CreateMap<Shared.ViewModels.ReceiptVM, Receipt>()
+		CreateMap<ReceiptVM, Receipt>()
 			.ConstructUsing(src => Receipt.Create(
 				src.Location,
 				src.Date,
@@ -34,15 +35,33 @@ public class MappingProfile : Profile
 				new Money(src.TotalAmount, "USD"),
 				src.Description
 			));
-	}
 
+		CreateMap<ReceiptVM, CreateReceiptCommand>()
+			.ConstructUsing(src => new CreateReceiptCommand(
+				src.Location,
+				src.Date,
+				src.TaxAmount,
+				src.TotalAmount,
+				src.Description
+			));
+
+		CreateMap<ReceiptVM, UpdateReceiptCommand>()
+			.ConstructUsing(src => new UpdateReceiptCommand(
+				src.Id,
+				src.Location,
+				src.Date,
+				src.TaxAmount,
+				src.TotalAmount,
+				src.Description
+			));
+	}
 
 	private void MapTransaction()
 	{
-		CreateMap<Transaction, Shared.ViewModels.TransactionVM>()
-					.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount.Amount));
+		CreateMap<Transaction, TransactionVM>()
+			.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount.Amount));
 
-		CreateMap<Shared.ViewModels.TransactionVM, Transaction>()
+		CreateMap<TransactionVM, Transaction>()
 			.ConstructUsing(src => Transaction.Create(
 				src.ReceiptId,
 				src.AccountId,
@@ -51,14 +70,13 @@ public class MappingProfile : Profile
 			));
 	}
 
-
 	private void MapReceiptItem()
 	{
-		CreateMap<ReceiptItem, Shared.ViewModels.ReceiptItemVM>()
-					.ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice.Amount))
-					.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
+		CreateMap<ReceiptItem, ReceiptItemVM>()
+			.ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice.Amount))
+			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
 
-		CreateMap<Shared.ViewModels.ReceiptItemVM, ReceiptItem>()
+		CreateMap<ReceiptItemVM, ReceiptItem>()
 			.ConstructUsing(src => ReceiptItem.Create(
 				src.ReceiptItemCode,
 				src.Description,

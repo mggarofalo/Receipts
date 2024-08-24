@@ -49,9 +49,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
 			entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
 			entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
-			entity.HasOne(e => e.Transaction)
+			entity.HasOne(e => e.Receipt)
 				.WithMany()
-				.HasForeignKey(e => e.TransactionId)
+				.HasForeignKey(e => e.ReceiptId)
 				.OnDelete(DeleteBehavior.Cascade);
 		});
 	}

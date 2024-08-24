@@ -7,10 +7,22 @@ public class ReceiptValidator : AbstractValidator<ReceiptVM>
 {
 	public ReceiptValidator()
 	{
-		RuleFor(x => x.Location).NotEmpty().MaximumLength(200);
-		RuleFor(x => x.Date).NotEmpty().LessThanOrEqualTo(DateTime.UtcNow);
-		RuleFor(x => x.TaxAmount).GreaterThanOrEqualTo(0);
-		RuleFor(x => x.TotalAmount).GreaterThan(0);
-		RuleFor(x => x.Description).MaximumLength(256);
+		RuleFor(x => x.Description)
+			.MaximumLength(256)
+			.WithMessage("Description must not exceed 256 characters.");
+		RuleFor(x => x.Location)
+			.NotEmpty()
+			.MaximumLength(200)
+			.WithMessage("Location must not exceed 200 characters.");
+		RuleFor(x => x.Date)
+			.NotEmpty()
+			.LessThanOrEqualTo(DateTime.UtcNow)
+			.WithMessage("Date must be prior to the current date");
+		RuleFor(x => x.Transactions)
+			.NotEmpty()
+			.WithMessage("Receipts must have at least one transaction.");
+		RuleFor(x => x.Items)
+			.NotEmpty()
+			.WithMessage("Receipts must have at least one item.");
 	}
 }
