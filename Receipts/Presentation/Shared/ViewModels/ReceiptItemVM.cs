@@ -1,6 +1,6 @@
-namespace Domain;
+namespace Shared.ViewModels;
 
-public class TransactionItem
+public class ReceiptItemVM
 {
 	public required Guid Id { get; set; } = Guid.NewGuid();
 	public required Guid TransactionId { get; set; }

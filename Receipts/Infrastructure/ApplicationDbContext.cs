@@ -1,7 +1,5 @@
 ﻿using Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
 
@@ -10,7 +8,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<AccountEntity> Accounts { get; set; } = null!;
 	public DbSet<ReceiptEntity> Receipts { get; set; } = null!;
 	public DbSet<TransactionEntity> Transactions { get; set; } = null!;
-	public DbSet<TransactionItemEntity> TransactionItems { get; set; } = null!;
+	public DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -45,7 +43,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 				.OnDelete(DeleteBehavior.Cascade);
 		});
 
-		modelBuilder.Entity<TransactionItemEntity>(entity =>
+		modelBuilder.Entity<ReceiptItemEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
 			entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");

@@ -1,6 +1,6 @@
-namespace Infrastructure.Entities;
+namespace Shared.ViewModels;
 
-public class ReceiptEntity
+public class ReceiptVM
 {
 	public Guid Id { get; set; }
 	public string? Description { get; set; }
