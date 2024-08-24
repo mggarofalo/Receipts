@@ -1,17 +1,21 @@
+using Application.Interfaces;
+using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
 
-public static class ServiceRegistration
+public class InfrastructureService : IInfrastructureService
 {
-	public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+	public IServiceCollection AddInfrastructureServices(IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddDbContext<ApplicationDbContext>(options =>
 			options.UseNpgsql(
 				configuration.GetConnectionString("DefaultConnection"),
 				b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+
+		services.AddScoped<IReceiptRepository, ReceiptRepository>();
 
 		// Add other infrastructure services here
 
