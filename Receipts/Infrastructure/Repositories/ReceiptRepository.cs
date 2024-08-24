@@ -2,7 +2,7 @@ using Application.Interfaces;
 using AutoMapper;
 using Domain;
 using Domain.Core;
-using Infrastructure.Entities;
+using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;

@@ -1,7 +1,7 @@
 using AutoMapper;
 using Domain;
 using Domain.Core;
-using Infrastructure.Entities;
+using Infrastructure.Entities.Core;
 
 namespace Infrastructure.Mapping;
 
