@@ -11,18 +11,7 @@ public class ReceiptItem
 	public string Category { get; }
 	public string Subcategory { get; }
 
-	private ReceiptItem(Guid? id, string receiptItemCode, string description, decimal quantity, Money unitPrice, string category, string subcategory)
-	{
-		Id = id;
-		ReceiptItemCode = receiptItemCode;
-		Description = description;
-		Quantity = quantity;
-		UnitPrice = unitPrice;
-		Category = category;
-		Subcategory = subcategory;
-	}
-
-	public static ReceiptItem Create(string receiptItemCode, string description, decimal quantity, Money unitPrice, string category, string subcategory)
+	public ReceiptItem(Guid? id, string receiptItemCode, string description, decimal quantity, Money unitPrice, string category, string subcategory)
 	{
 		if (string.IsNullOrWhiteSpace(receiptItemCode))
 		{
@@ -49,6 +38,12 @@ public class ReceiptItem
 			throw new ArgumentException("Subcategory cannot be empty", nameof(subcategory));
 		}
 
-		return new ReceiptItem(null, receiptItemCode, description, quantity, unitPrice, category, subcategory);
+		Id = id;
+		ReceiptItemCode = receiptItemCode;
+		Description = description;
+		Quantity = quantity;
+		UnitPrice = unitPrice;
+		Category = category;
+		Subcategory = subcategory;
 	}
 }

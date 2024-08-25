@@ -3,7 +3,6 @@ using Domain;
 using Domain.Core;
 using Application.Commands.Receipt;
 using Shared.ViewModels;
-using Microsoft.AspNetCore.Mvc.TagHelpers;
 
 namespace API.Mapping;
 
@@ -28,7 +27,8 @@ public class MappingProfile : Profile
 			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount));
 
 		CreateMap<ReceiptVM, Receipt>()
-			.ConstructUsing(src => Receipt.Create(
+			.ConstructUsing(src => new(
+				null,
 				src.Location,
 				src.Date,
 				new Money(src.TaxAmount, "USD"),
@@ -59,7 +59,8 @@ public class MappingProfile : Profile
 			.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount.Amount));
 
 		CreateMap<TransactionVM, Transaction>()
-			.ConstructUsing(src => Transaction.Create(
+			.ConstructUsing(src => new(
+				null,
 				src.ReceiptId,
 				src.Account.Id!.Value,
 				new Money(src.Amount, "USD"),
@@ -74,7 +75,8 @@ public class MappingProfile : Profile
 			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
 
 		CreateMap<ReceiptItemVM, ReceiptItem>()
-			.ConstructUsing(src => ReceiptItem.Create(
+			.ConstructUsing(src => new(
+				null,
 				src.ReceiptItemCode,
 				src.Description,
 				src.Quantity,

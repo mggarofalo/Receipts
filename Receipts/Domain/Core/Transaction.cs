@@ -8,16 +8,7 @@ public class Transaction
 	public Money Amount { get; }
 	public DateOnly Date { get; }
 
-	private Transaction(Guid? id, Guid receiptId, Guid accountId, Money amount, DateOnly date)
-	{
-		Id = id;
-		ReceiptId = receiptId;
-		AccountId = accountId;
-		Amount = amount;
-		Date = date;
-	}
-
-	public static Transaction Create(Guid receiptId, Guid accountId, Money amount, DateOnly date)
+	public Transaction(Guid? id, Guid receiptId, Guid accountId, Money amount, DateOnly date)
 	{
 		if (receiptId == Guid.Empty)
 		{
@@ -39,6 +30,10 @@ public class Transaction
 			throw new ArgumentException("Date cannot be in the future", nameof(date));
 		}
 
-		return new Transaction(null, receiptId, accountId, amount, date);
+		Id = id;
+		ReceiptId = receiptId;
+		AccountId = accountId;
+		Amount = amount;
+		Date = date;
 	}
 }

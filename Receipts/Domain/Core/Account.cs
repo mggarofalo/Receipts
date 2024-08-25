@@ -7,15 +7,7 @@ public class Account
 	public string Name { get; }
 	public bool IsActive { get; private set; }
 
-	private Account(Guid? id, string accountCode, string name, bool isActive)
-	{
-		Id = id;
-		AccountCode = accountCode;
-		Name = name;
-		IsActive = isActive;
-	}
-
-	public static Account Create(string accountCode, string name, bool isActive = true)
+	public Account(Guid? id, string accountCode, string name, bool isActive = true)
 	{
 		if (string.IsNullOrWhiteSpace(accountCode))
 		{
@@ -27,6 +19,9 @@ public class Account
 			throw new ArgumentException("Name cannot be empty", nameof(name));
 		}
 
-		return new Account(null, accountCode, name, isActive);
+		Id = id;
+		AccountCode = accountCode;
+		Name = name;
+		IsActive = isActive;
 	}
 }

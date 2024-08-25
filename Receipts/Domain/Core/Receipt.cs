@@ -12,16 +12,7 @@ public class Receipt
 	private readonly List<Transaction> _transactions = [];
 	public IReadOnlyList<Transaction> Transactions => _transactions.AsReadOnly();
 
-	private Receipt(Guid? id, string location, DateOnly date, Money taxAmount, string? description = null)
-	{
-		Id = id;
-		Location = location;
-		Date = date;
-		TaxAmount = taxAmount;
-		Description = description;
-	}
-
-	public static Receipt Create(string location, DateOnly date, Money taxAmount, string? description = null)
+	public Receipt(Guid? id, string location, DateOnly date, Money taxAmount, string? description = null)
 	{
 		if (string.IsNullOrWhiteSpace(location))
 		{
@@ -33,12 +24,11 @@ public class Receipt
 			throw new ArgumentException("Date cannot be in the future", nameof(date));
 		}
 
-		if (taxAmount.Amount == 0)
-		{
-			throw new ArgumentException("Tax amount must be non-zero", nameof(taxAmount));
-		}
-
-		return new Receipt(null, location, date, taxAmount, description);
+		Id = id;
+		Location = location;
+		Date = date;
+		TaxAmount = taxAmount;
+		Description = description;
 	}
 
 	public void AddTransaction(Transaction transaction)

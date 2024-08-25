@@ -16,14 +16,20 @@ public class MappingProfile : Profile
 			.ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
 
 		CreateMap<AccountEntity, Account>()
-			.ConstructUsing(src => Account.Create(src.AccountCode, src.Name, src.IsActive))
+			.ConstructUsing(src => new(
+				null,
+				src.AccountCode,
+				src.Name,
+				src.IsActive
+			))
 			.ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
 
 		CreateMap<Receipt, ReceiptEntity>()
 			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount));
 
 		CreateMap<ReceiptEntity, Receipt>()
-			.ConstructUsing(src => Receipt.Create(
+			.ConstructUsing(src => new(
+				null,
 				src.Location,
 				src.Date,
 				new Money(src.TaxAmount, "USD"),
@@ -35,7 +41,8 @@ public class MappingProfile : Profile
 			.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount.Amount));
 
 		CreateMap<TransactionEntity, Transaction>()
-			.ConstructUsing(src => Transaction.Create(
+			.ConstructUsing(src => new(
+				null,
 				src.ReceiptId,
 				src.AccountId,
 				new Money(src.Amount, "USD"),
@@ -48,7 +55,8 @@ public class MappingProfile : Profile
 			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
 
 		CreateMap<ReceiptItemEntity, ReceiptItem>()
-			.ConstructUsing(src => ReceiptItem.Create(
+			.ConstructUsing(src => new(
+				null,
 				src.ReceiptItemCode,
 				src.Description,
 				src.Quantity,
