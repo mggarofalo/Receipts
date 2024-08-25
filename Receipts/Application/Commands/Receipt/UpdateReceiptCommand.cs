@@ -21,11 +21,16 @@ public class UpdateReceiptCommandHandler(IReceiptRepository receiptRepository, I
 			return false;
 		}
 
-		Domain.Core.Receipt updatedReceipt = _mapper.Map<Domain.Core.Receipt>(request);
+		_mapper.Map(request, existingReceipt);
 
-		_ = await _receiptRepository.UpdateAsync(updatedReceipt, cancellationToken);
-		await _receiptRepository.SaveChangesAsync(cancellationToken);
+		bool success = await _receiptRepository.UpdateAsync(existingReceipt, cancellationToken);
 
-		return true;
+		if (success)
+		{
+			await _receiptRepository.SaveChangesAsync(cancellationToken);
+			return true;
+		}
+
+		return false;
 	}
 }

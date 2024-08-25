@@ -15,10 +15,8 @@ public class CreateReceiptCommandHandler(IReceiptRepository receiptRepository, I
 	public async Task<Guid> Handle(CreateReceiptCommand request, CancellationToken cancellationToken)
 	{
 		Domain.Core.Receipt receipt = _mapper.Map<Domain.Core.Receipt>(request);
-
-		Domain.Core.Receipt entity = await _receiptRepository.CreateAsync(receipt, cancellationToken);
+		Domain.Core.Receipt createdEntity = await _receiptRepository.CreateAsync(receipt, cancellationToken);
 		await _receiptRepository.SaveChangesAsync(cancellationToken);
-
-		return entity.Id!.Value;
+		return createdEntity.Id!.Value;
 	}
 }

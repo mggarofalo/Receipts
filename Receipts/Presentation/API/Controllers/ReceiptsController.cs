@@ -20,9 +20,9 @@ public class ReceiptsController(IMediator mediator, IMapper mapper) : Controller
 	public async Task<ActionResult<ReceiptVM>> CreateReceipt(ReceiptVM model)
 	{
 		CreateReceiptCommand command = _mapper.Map<ReceiptVM, CreateReceiptCommand>(model);
-		Guid result = await _mediator.Send(command);
+		Guid receiptId = await _mediator.Send(command);
 
-		model.Id = result;
+		model.Id = receiptId;
 		return Ok(model);
 	}
 

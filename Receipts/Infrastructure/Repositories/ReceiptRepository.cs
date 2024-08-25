@@ -70,11 +70,11 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 	{
 		ReceiptEntity newEntity = _mapper.Map<ReceiptEntity>(receipt);
 
-		await _context.Receipts.Where(x => x.Id == receipt.Id).ExecuteUpdateAsync(x =>
-			x.SetProperty(e => e.Location, newEntity.Location)
+		await _context.Receipts.Where(x => x.Id == receipt.Id).ExecuteUpdateAsync(x => x
+			.SetProperty(e => e.Description, newEntity.Description)
+			.SetProperty(e => e.Location, newEntity.Location)
 			.SetProperty(e => e.Date, newEntity.Date)
-			.SetProperty(e => e.TaxAmount, newEntity.TaxAmount)
-			.SetProperty(e => e.Description, newEntity.Description), cancellationToken
+			.SetProperty(e => e.TaxAmount, newEntity.TaxAmount), cancellationToken
 		);
 
 		await SaveChangesAsync(cancellationToken);
@@ -91,10 +91,16 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 			return false;
 		}
 
-		_context.Receipts.Remove(entity);
-		await _context.Receipts.ExecuteDeleteAsync(cancellationToken);
+		_ = _context.Receipts.Remove(entity);
 
-		return true;
+		int count = await _context.Receipts.ExecuteDeleteAsync(cancellationToken);
+
+		return count switch
+		{
+			1 => true,
+			0 => false,
+			_ => throw new ApplicationException($"{count} Receipt entities deleted with id {id}")
+		};
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)

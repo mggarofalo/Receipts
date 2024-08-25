@@ -1,15 +1,15 @@
 using Application;
 using Application.Interfaces;
 using Infrastructure;
+using System.Reflection;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Register IInfrastructureService
-builder.Services.AddScoped<IInfrastructureService, InfrastructureService>();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddAutoMapper(typeof(API.Mapping.MappingProfile));
+
+// Register all AutoMapper profiles in the assembly
+builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
 // Register application services
 builder.Services.AddApplicationServices(builder.Configuration);
