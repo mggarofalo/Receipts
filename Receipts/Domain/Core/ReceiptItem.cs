@@ -2,15 +2,16 @@ namespace Domain.Core;
 
 public class ReceiptItem
 {
-	public Guid Id { get; }
+	public Guid? Id { get; }
 	public string ReceiptItemCode { get; }
 	public string Description { get; }
 	public decimal Quantity { get; }
 	public Money UnitPrice { get; }
+	public Money TotalAmount => new(Quantity * UnitPrice.Amount, UnitPrice.Currency);
 	public string Category { get; }
 	public string Subcategory { get; }
 
-	private ReceiptItem(Guid id, string receiptItemCode, string description, decimal quantity, Money unitPrice, string category, string subcategory)
+	private ReceiptItem(Guid? id, string receiptItemCode, string description, decimal quantity, Money unitPrice, string category, string subcategory)
 	{
 		Id = id;
 		ReceiptItemCode = receiptItemCode;
@@ -48,8 +49,6 @@ public class ReceiptItem
 			throw new ArgumentException("Subcategory cannot be empty", nameof(subcategory));
 		}
 
-		return new ReceiptItem(Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, category, subcategory);
+		return new ReceiptItem(null, receiptItemCode, description, quantity, unitPrice, category, subcategory);
 	}
-
-	public Money TotalAmount => new(Quantity * UnitPrice.Amount, UnitPrice.Currency);
 }

@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Commands.Receipt;
 
-public record CreateReceiptCommand(string Location, DateTime Date, decimal TaxAmount, decimal TotalAmount, string? Description) : ICommand<Guid>;
+public record CreateReceiptCommand(string Location, DateOnly Date, decimal TaxAmount, string? Description) : ICommand<Guid>;
 
 public class CreateReceiptCommandHandler(IReceiptRepository receiptRepository, IMapper mapper) : IRequestHandler<CreateReceiptCommand, Guid>
 {
@@ -16,9 +16,9 @@ public class CreateReceiptCommandHandler(IReceiptRepository receiptRepository, I
 	{
 		Domain.Core.Receipt receipt = _mapper.Map<Domain.Core.Receipt>(request);
 
-		await _receiptRepository.CreateAsync(receipt, cancellationToken);
+		Domain.Core.Receipt entity = await _receiptRepository.CreateAsync(receipt, cancellationToken);
 		await _receiptRepository.SaveChangesAsync(cancellationToken);
 
-		return receipt.Id;
+		return entity.Id!.Value;
 	}
 }

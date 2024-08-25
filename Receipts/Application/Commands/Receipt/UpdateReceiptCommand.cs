@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Commands.Receipt;
 
-public record UpdateReceiptCommand(Guid Id, string Location, DateTime Date, decimal TaxAmount, decimal TotalAmount, string? Description) : ICommand<bool>;
+public record UpdateReceiptCommand(Guid Id, string Location, DateOnly Date, decimal TaxAmount, string? Description) : ICommand<bool>;
 
 public class UpdateReceiptCommandHandler(IReceiptRepository receiptRepository, IMapper mapper) : IRequestHandler<UpdateReceiptCommand, bool>
 {

@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using AutoMapper;
+using Common;
 using Domain;
 using Domain.Core;
 using Infrastructure.Entities.Core;
@@ -17,7 +18,7 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 		ReceiptEntity? entity = await _context.Receipts
 			.FindAsync([id], cancellationToken);
 
-		return _mapper.Map<Receipt?>(entity);
+		return _mapper.Map<Receipt>(entity);
 	}
 
 	public async Task<List<Receipt>> GetAllAsync(CancellationToken cancellationToken)
@@ -40,16 +41,16 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 	public async Task<List<Receipt>> GetByMoneyRangeAsync(Money minAmount, Money maxAmount, CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> entities = await _context.Receipts
-			.Where(e => e.TotalAmount >= minAmount.Amount && e.TotalAmount <= maxAmount.Amount)
+			.Where(e => (e.TaxAmount + e.Transactions.Sum(t => t.Amount)).Between(minAmount.Amount, maxAmount.Amount))
 			.ToListAsync(cancellationToken);
 
 		return entities.Select(_mapper.Map<Receipt>).ToList();
 	}
 
-	public async Task<List<Receipt>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
+	public async Task<List<Receipt>> GetByDateRangeAsync(DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> entities = await _context.Receipts
-			.Where(e => e.Date >= startDate && e.Date <= endDate)
+			.Where(e => e.Date.Between(startDate, endDate))
 			.ToListAsync(cancellationToken);
 
 		return entities.Select(_mapper.Map<Receipt>).ToList();
@@ -62,24 +63,19 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 		await _context.Receipts
 			.AddAsync(entity, cancellationToken);
 
-		return receipt;
+		return _mapper.Map<Receipt>(entity);
 	}
 
 	public async Task<bool> UpdateAsync(Receipt receipt, CancellationToken cancellationToken)
 	{
 		ReceiptEntity newEntity = _mapper.Map<ReceiptEntity>(receipt);
-		ReceiptEntity? oldEntity = await _context.Receipts.FindAsync([receipt.Id], cancellationToken);
 
-		if (oldEntity == null)
-		{
-			return false;
-		}
-
-		oldEntity.Location = newEntity.Location;
-		oldEntity.Date = newEntity.Date;
-		oldEntity.TaxAmount = newEntity.TaxAmount;
-		oldEntity.TotalAmount = newEntity.TotalAmount;
-		oldEntity.Description = newEntity.Description;
+		await _context.Receipts.Where(x => x.Id == receipt.Id).ExecuteUpdateAsync(x =>
+			x.SetProperty(e => e.Location, newEntity.Location)
+			.SetProperty(e => e.Date, newEntity.Date)
+			.SetProperty(e => e.TaxAmount, newEntity.TaxAmount)
+			.SetProperty(e => e.Description, newEntity.Description), cancellationToken
+		);
 
 		await SaveChangesAsync(cancellationToken);
 

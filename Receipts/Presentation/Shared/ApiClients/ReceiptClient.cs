@@ -35,7 +35,7 @@ public static class ReceiptClient
 		return await response.Content.ReadFromJsonAsync<List<ReceiptVM>>();
 	}
 
-	public static async Task<List<ReceiptVM>?> GetReceiptsByDateRange(DateTime startDate, DateTime endDate)
+	public static async Task<List<ReceiptVM>?> GetReceiptsByDateRange(DateOnly startDate, DateOnly endDate)
 	{
 		HttpResponseMessage response = await _httpClient.GetAsync($"receipts/by-date?startDate={startDate:d}&endDate={endDate:d}");
 		response.EnsureSuccessStatusCode();

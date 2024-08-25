@@ -58,7 +58,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper) : Controller
 	}
 
 	[HttpGet("by-date")]
-	public async Task<ActionResult<List<ReceiptVM>>> GetReceiptsByDateRange(DateTime startDate, DateTime endDate)
+	public async Task<ActionResult<List<ReceiptVM>>> GetReceiptsByDateRange(DateOnly startDate, DateOnly endDate)
 	{
 		GetReceiptsByDateRangeQuery query = new(startDate, endDate);
 		List<Receipt> result = await _mediator.Send(query);

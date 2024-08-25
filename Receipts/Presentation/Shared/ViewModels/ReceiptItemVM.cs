@@ -11,4 +11,5 @@ public class ReceiptItemVM
 	public required string Subcategory { get; set; }
 
 	public decimal TotalAmount => Math.Floor(Quantity * UnitPrice * 100) / 100;
+	public Guid ReceiptId { get; set; }
 }

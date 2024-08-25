@@ -3,6 +3,7 @@ using Domain;
 using Domain.Core;
 using Application.Commands.Receipt;
 using Shared.ViewModels;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
 
 namespace API.Mapping;
 
@@ -24,15 +25,13 @@ public class MappingProfile : Profile
 	private void MapReceipt()
 	{
 		CreateMap<Receipt, ReceiptVM>()
-			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount))
-			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
+			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount));
 
 		CreateMap<ReceiptVM, Receipt>()
 			.ConstructUsing(src => Receipt.Create(
 				src.Location,
 				src.Date,
 				new Money(src.TaxAmount, "USD"),
-				new Money(src.TotalAmount, "USD"),
 				src.Description
 			));
 
@@ -41,17 +40,15 @@ public class MappingProfile : Profile
 				src.Location,
 				src.Date,
 				src.TaxAmount,
-				src.TotalAmount,
 				src.Description
 			));
 
 		CreateMap<ReceiptVM, UpdateReceiptCommand>()
 			.ConstructUsing(src => new UpdateReceiptCommand(
-				src.Id,
+				src.Id!.Value,
 				src.Location,
 				src.Date,
 				src.TaxAmount,
-				src.TotalAmount,
 				src.Description
 			));
 	}
@@ -64,7 +61,7 @@ public class MappingProfile : Profile
 		CreateMap<TransactionVM, Transaction>()
 			.ConstructUsing(src => Transaction.Create(
 				src.ReceiptId,
-				src.AccountId,
+				src.Account.Id!.Value,
 				new Money(src.Amount, "USD"),
 				src.Date
 			));

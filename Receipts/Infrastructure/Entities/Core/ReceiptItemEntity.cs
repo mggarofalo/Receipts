@@ -12,5 +12,6 @@ public class ReceiptItemEntity
 	public string Subcategory { get; set; } = string.Empty;
 	public decimal TotalAmount { get; set; }
 
-	public ReceiptEntity? Receipt { get; set; }
+	// Navigation property
+	public virtual ReceiptEntity? Receipt { get; set; }
 }

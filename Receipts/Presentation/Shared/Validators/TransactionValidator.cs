@@ -11,9 +11,9 @@ public class TransactionValidator : AbstractValidator<TransactionVM>
 			.NotEmpty()
 			.NotEqual(0)
 			.WithMessage("Amount must be non-zero.");
-		RuleFor(x => x.Date)
+		RuleFor(x => x.Date.ToDateTime(new TimeOnly()))
 			.NotEmpty()
-			.LessThanOrEqualTo(DateTime.UtcNow)
+			.LessThanOrEqualTo(DateTime.Today)
 			.WithMessage("Date must be prior to the current date.");
 		RuleFor(x => x.Account)
 			.NotNull()

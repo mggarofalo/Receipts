@@ -20,15 +20,13 @@ public class MappingProfile : Profile
 			.ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
 
 		CreateMap<Receipt, ReceiptEntity>()
-			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount))
-			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
+			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount));
 
 		CreateMap<ReceiptEntity, Receipt>()
 			.ConstructUsing(src => Receipt.Create(
 				src.Location,
 				src.Date,
 				new Money(src.TaxAmount, "USD"),
-				new Money(src.TotalAmount, "USD"),
 				src.Description
 			))
 			.ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
