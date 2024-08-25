@@ -86,6 +86,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<AccountEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
+			entity.Property(e => e.Id).ValueGeneratedOnAdd();
 			entity.Property(e => e.AccountCode).IsRequired();
 			entity.Property(e => e.Name).IsRequired();
 		});
@@ -93,6 +94,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<ReceiptEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
+			entity.Property(e => e.Id).ValueGeneratedOnAdd();
 			entity.Property(e => e.Location).IsRequired();
 			entity.Property(e => e.TaxAmount).IsRequired();
 		});
@@ -100,6 +102,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<TransactionEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
+			entity.Property(e => e.Id).ValueGeneratedOnAdd();
 			entity.HasOne(e => e.Receipt)
 				.WithMany()
 				.HasForeignKey(e => e.ReceiptId)
@@ -113,6 +116,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<ReceiptItemEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
+			entity.Property(e => e.Id).ValueGeneratedOnAdd();
 			entity.HasOne(e => e.Receipt)
 				.WithMany()
 				.HasForeignKey(e => e.ReceiptId)

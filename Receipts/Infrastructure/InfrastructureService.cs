@@ -15,7 +15,10 @@ public class InfrastructureService : IInfrastructureService
 				configuration.GetConnectionString("DefaultConnection"),
 				b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
 
-		services.AddScoped<IReceiptRepository, ReceiptRepository>();
+		services
+			.AddScoped<IReceiptRepository, ReceiptRepository>()
+			.AddScoped<IAccountRepository, AccountRepository>()
+			.AddScoped<ITransactionRepository, TransactionRepository>();
 
 		// Add other infrastructure services here
 

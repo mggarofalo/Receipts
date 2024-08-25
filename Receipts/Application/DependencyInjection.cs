@@ -1,4 +1,5 @@
 using Application.Common;
+using Application.Queries;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +9,11 @@ public static class DependencyInjection
 {
 	public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
 	{
-		services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ICommand<>).Assembly));
+		services.AddMediatR(cfg =>
+		{
+			cfg.RegisterServicesFromAssembly(typeof(ICommand<>).Assembly);
+			cfg.RegisterServicesFromAssembly(typeof(IQuery<>).Assembly);
+		});
 
 		return services;
 	}
