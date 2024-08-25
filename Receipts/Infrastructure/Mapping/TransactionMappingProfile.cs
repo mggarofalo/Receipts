@@ -13,13 +13,6 @@ public class TransactionMappingProfile : Profile
 			.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount.Amount));
 
 		CreateMap<TransactionEntity, Transaction>()
-			.ConstructUsing(src => new(
-				null,
-				src.ReceiptId,
-				src.AccountId,
-				new Money(src.Amount, "USD"),
-				src.Date
-			))
-			.ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
+			.ConstructUsing(src => new(null, src.ReceiptId, src.AccountId, new Money(src.Amount, "USD"), src.Date));
 	}
 }

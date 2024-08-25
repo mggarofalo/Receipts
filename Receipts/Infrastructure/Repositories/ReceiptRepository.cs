@@ -5,6 +5,7 @@ using Domain;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
@@ -56,51 +57,41 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 		return entities.Select(_mapper.Map<Receipt>).ToList();
 	}
 
-	public async Task<Receipt> CreateAsync(Receipt receipt, CancellationToken cancellationToken)
+	public async Task<List<Receipt>> CreateAsync(List<Receipt> receipts, CancellationToken cancellationToken)
 	{
-		ReceiptEntity entity = _mapper.Map<ReceiptEntity>(receipt);
+		List<ReceiptEntity> createdEntities = [];
 
-		await _context.Receipts
-			.AddAsync(entity, cancellationToken);
+		foreach (ReceiptEntity entity in receipts.Select(_mapper.Map<ReceiptEntity>).ToList())
+		{
+			EntityEntry<ReceiptEntity> entityEntry = await _context.Receipts.AddAsync(entity, cancellationToken);
+			createdEntities.Add(entityEntry.Entity);
+		}
 
-		return _mapper.Map<Receipt>(entity);
+		return createdEntities.Select(_mapper.Map<Receipt>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(Receipt receipt, CancellationToken cancellationToken)
+	public async Task<bool> UpdateAsync(List<Receipt> receipts, CancellationToken cancellationToken)
 	{
-		ReceiptEntity newEntity = _mapper.Map<ReceiptEntity>(receipt);
+		List<ReceiptEntity> newEntities = receipts.Select(_mapper.Map<ReceiptEntity>).ToList();
 
-		await _context.Receipts.Where(x => x.Id == receipt.Id).ExecuteUpdateAsync(x => x
-			.SetProperty(e => e.Description, newEntity.Description)
-			.SetProperty(e => e.Location, newEntity.Location)
-			.SetProperty(e => e.Date, newEntity.Date)
-			.SetProperty(e => e.TaxAmount, newEntity.TaxAmount), cancellationToken
-		);
-
-		await SaveChangesAsync(cancellationToken);
+		foreach (ReceiptEntity newEntity in newEntities)
+		{
+			ReceiptEntity existingEntity = await _context.Receipts.SingleAsync(e => e.Id == newEntity.Id, cancellationToken);
+			existingEntity.Description = newEntity.Description;
+			existingEntity.Location = newEntity.Location;
+			existingEntity.Date = newEntity.Date;
+			existingEntity.TaxAmount = newEntity.TaxAmount;
+		}
 
 		return true;
 	}
 
-	public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+	public async Task<bool> DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
-		ReceiptEntity? entity = await _context.Receipts.FindAsync([id], cancellationToken);
+		List<ReceiptEntity> entities = await _context.Receipts.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
+		_context.Receipts.RemoveRange(entities);
 
-		if (entity == null)
-		{
-			return false;
-		}
-
-		_ = _context.Receipts.Remove(entity);
-
-		int count = await _context.Receipts.ExecuteDeleteAsync(cancellationToken);
-
-		return count switch
-		{
-			1 => true,
-			0 => false,
-			_ => throw new ApplicationException($"{count} Receipt entities deleted with id {id}")
-		};
+		return true;
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)

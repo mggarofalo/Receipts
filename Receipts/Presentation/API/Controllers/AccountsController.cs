@@ -16,13 +16,11 @@ public class AccountsController(IMediator mediator, IMapper mapper) : Controller
 	private readonly IMapper _mapper = mapper;
 
 	[HttpPost]
-	public async Task<ActionResult<AccountVM>> CreateAccount(AccountVM model)
+	public async Task<ActionResult<AccountVM>> CreateAccount(List<AccountVM> models)
 	{
-		CreateAccountCommand command = _mapper.Map<AccountVM, CreateAccountCommand>(model);
-		Guid accountId = await _mediator.Send(command);
-
-		model.Id = accountId;
-		return Ok(model);
+		CreateAccountCommand command = new(models.Select(_mapper.Map<AccountVM, Account>).ToList());
+		List<Account> accounts = await _mediator.Send(command);
+		return Ok(accounts.Select(_mapper.Map<Account, AccountVM>).ToList());
 	}
 
 	[HttpGet("{id}")]
@@ -65,9 +63,9 @@ public class AccountsController(IMediator mediator, IMapper mapper) : Controller
 	}
 
 	[HttpPut]
-	public async Task<ActionResult<bool>> UpdateAccount(AccountVM model)
+	public async Task<ActionResult<bool>> UpdateAccounts(List<AccountVM> models)
 	{
-		UpdateAccountCommand command = _mapper.Map<AccountVM, UpdateAccountCommand>(model);
+		UpdateAccountCommand command = new(models.Select(_mapper.Map<AccountVM, Account>).ToList());
 		bool result = await _mediator.Send(command);
 
 		if (!result)
@@ -78,10 +76,10 @@ public class AccountsController(IMediator mediator, IMapper mapper) : Controller
 		return NoContent();
 	}
 
-	[HttpDelete("{id}")]
-	public async Task<ActionResult<bool>> DeleteAccount(Guid id)
+	[HttpDelete]
+	public async Task<ActionResult<bool>> DeleteAccounts([FromBody] List<Guid> ids)
 	{
-		DeleteAccountCommand command = new(id);
+		DeleteAccountCommand command = new(ids);
 		bool result = await _mediator.Send(command);
 
 		if (!result)

@@ -58,9 +58,9 @@ public static class ReceiptClient
 		return response.IsSuccessStatusCode;
 	}
 
-	public static async Task<bool> DeleteReceipt(Guid id)
+	public static async Task<bool> DeleteReceipts(List<Guid> ids)
 	{
-		HttpResponseMessage response = await _httpClient.DeleteAsync($"receipts/{id}");
+		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("receipts/delete", ids);
 		return response.IsSuccessStatusCode;
 	}
 }

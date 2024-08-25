@@ -14,14 +14,6 @@ public class ReceiptItemMappingProfile : Profile
 			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
 
 		CreateMap<ReceiptItemVM, ReceiptItem>()
-			.ConstructUsing(src => new(
-				null,
-				src.ReceiptItemCode,
-				src.Description,
-				src.Quantity,
-				new Money(src.UnitPrice, "USD"),
-				src.Category,
-				src.Subcategory
-			));
+			.ConstructUsing(src => new(null, src.ReceiptItemCode, src.Description, src.Quantity, new Money(src.UnitPrice, "USD"), src.Category, src.Subcategory));
 	}
 }

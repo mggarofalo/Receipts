@@ -1,22 +1,19 @@
 using Application.Common;
 using Application.Interfaces;
-using AutoMapper;
 using MediatR;
 
 namespace Application.Commands.Receipt;
 
-public record CreateReceiptCommand(string Location, DateOnly Date, decimal TaxAmount, string? Description) : ICommand<Guid>;
+public record CreateReceiptCommand(List<Domain.Core.Receipt> Receipts) : ICommand<List<Domain.Core.Receipt>>;
 
-public class CreateReceiptCommandHandler(IReceiptRepository receiptRepository, IMapper mapper) : IRequestHandler<CreateReceiptCommand, Guid>
+public class CreateReceiptCommandHandler(IReceiptRepository receiptRepository) : IRequestHandler<CreateReceiptCommand, List<Domain.Core.Receipt>>
 {
 	private readonly IReceiptRepository _receiptRepository = receiptRepository;
-	private readonly IMapper _mapper = mapper;
 
-	public async Task<Guid> Handle(CreateReceiptCommand request, CancellationToken cancellationToken)
+	public async Task<List<Domain.Core.Receipt>> Handle(CreateReceiptCommand request, CancellationToken cancellationToken)
 	{
-		Domain.Core.Receipt receipt = _mapper.Map<Domain.Core.Receipt>(request);
-		Domain.Core.Receipt createdEntity = await _receiptRepository.CreateAsync(receipt, cancellationToken);
+		List<Domain.Core.Receipt> createdEntities = await _receiptRepository.CreateAsync(request.Receipts, cancellationToken);
 		await _receiptRepository.SaveChangesAsync(cancellationToken);
-		return createdEntity.Id!.Value;
+		return createdEntities;
 	}
 }

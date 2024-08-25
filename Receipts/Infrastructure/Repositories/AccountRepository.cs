@@ -3,6 +3,7 @@ using AutoMapper;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
@@ -14,7 +15,7 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 	public async Task<Account?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		AccountEntity? entity = await _context.Accounts
-			.FindAsync([id], cancellationToken);
+			.FindAsync(new object[] { id }, cancellationToken);
 
 		return _mapper.Map<Account>(entity);
 	}
@@ -45,50 +46,40 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 		return entities.Select(_mapper.Map<Account>).ToList();
 	}
 
-	public async Task<Account> CreateAsync(Account account, CancellationToken cancellationToken)
+	public async Task<List<Account>> CreateAsync(List<Account> accounts, CancellationToken cancellationToken)
 	{
-		AccountEntity entity = _mapper.Map<AccountEntity>(account);
+		List<AccountEntity> createdEntities = [];
 
-		await _context.Accounts
-			.AddAsync(entity, cancellationToken);
+		foreach (AccountEntity entity in accounts.Select(_mapper.Map<AccountEntity>).ToList())
+		{
+			EntityEntry<AccountEntity> entityEntry = await _context.Accounts.AddAsync(entity, cancellationToken);
+			createdEntities.Add(entityEntry.Entity);
+		}
 
-		return _mapper.Map<Account>(entity);
+		return createdEntities.Select(_mapper.Map<Account>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(Account account, CancellationToken cancellationToken)
+	public async Task<bool> UpdateAsync(List<Account> accounts, CancellationToken cancellationToken)
 	{
-		AccountEntity newEntity = _mapper.Map<AccountEntity>(account);
+		List<AccountEntity> newEntities = accounts.Select(_mapper.Map<AccountEntity>).ToList();
 
-		await _context.Accounts.Where(x => x.Id == account.Id).ExecuteUpdateAsync(x => x
-			.SetProperty(e => e.AccountCode, newEntity.AccountCode)
-			.SetProperty(e => e.Name, newEntity.Name)
-			.SetProperty(e => e.IsActive, newEntity.IsActive), cancellationToken
-		);
-
-		await SaveChangesAsync(cancellationToken);
+		foreach (AccountEntity newEntity in newEntities)
+		{
+			AccountEntity existingEntity = await _context.Accounts.SingleAsync(e => e.Id == newEntity.Id, cancellationToken);
+			existingEntity.AccountCode = newEntity.AccountCode;
+			existingEntity.Name = newEntity.Name;
+			existingEntity.IsActive = newEntity.IsActive;
+		}
 
 		return true;
 	}
 
-	public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+	public async Task<bool> DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
-		AccountEntity? entity = await _context.Accounts.FindAsync([id], cancellationToken);
+		List<AccountEntity> entities = await _context.Accounts.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
+		_context.Accounts.RemoveRange(entities);
 
-		if (entity == null)
-		{
-			return false;
-		}
-
-		_ = _context.Accounts.Remove(entity);
-
-		int count = await _context.Accounts.ExecuteDeleteAsync(cancellationToken);
-
-		return count switch
-		{
-			1 => true,
-			0 => false,
-			_ => throw new ApplicationException($"{count} Account entities deleted with id {id}")
-		};
+		return true;
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)

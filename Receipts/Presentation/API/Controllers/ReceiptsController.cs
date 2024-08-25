@@ -17,13 +17,11 @@ public class ReceiptsController(IMediator mediator, IMapper mapper) : Controller
 	private readonly IMapper _mapper = mapper;
 
 	[HttpPost]
-	public async Task<ActionResult<ReceiptVM>> CreateReceipt(ReceiptVM model)
+	public async Task<ActionResult<ReceiptVM>> CreateReceipt(List<ReceiptVM> models)
 	{
-		CreateReceiptCommand command = _mapper.Map<ReceiptVM, CreateReceiptCommand>(model);
-		Guid receiptId = await _mediator.Send(command);
-
-		model.Id = receiptId;
-		return Ok(model);
+		CreateReceiptCommand command = new(models.Select(_mapper.Map<ReceiptVM, Receipt>).ToList());
+		List<Receipt> receipts = await _mediator.Send(command);
+		return Ok(receipts.Select(_mapper.Map<Receipt, ReceiptVM>).ToList());
 	}
 
 	[HttpGet("{id}")]
@@ -74,11 +72,11 @@ public class ReceiptsController(IMediator mediator, IMapper mapper) : Controller
 	}
 
 	[HttpPut]
-	public async Task<ActionResult<bool>> UpdateReceipt(ReceiptVM model)
+	public async Task<ActionResult<bool>> UpdateReceipts(List<ReceiptVM> models)
 	{
-		UpdateReceiptCommand command = _mapper.Map<ReceiptVM, UpdateReceiptCommand>(model);
-
+		UpdateReceiptCommand command = new(models.Select(_mapper.Map<ReceiptVM, Receipt>).ToList());
 		bool result = await _mediator.Send(command);
+
 		if (!result)
 		{
 			return NotFound();
@@ -87,11 +85,12 @@ public class ReceiptsController(IMediator mediator, IMapper mapper) : Controller
 		return NoContent();
 	}
 
-	[HttpDelete("{id}")]
-	public async Task<ActionResult<bool>> DeleteReceipt(Guid id)
+	[HttpDelete]
+	public async Task<ActionResult<bool>> DeleteReceipts([FromBody] List<Guid> ids)
 	{
-		DeleteReceiptCommand command = new(id);
+		DeleteReceiptCommand command = new(ids);
 		bool result = await _mediator.Send(command);
+
 		if (!result)
 		{
 			return NotFound();
