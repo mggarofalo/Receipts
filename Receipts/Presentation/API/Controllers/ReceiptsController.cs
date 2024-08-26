@@ -1,7 +1,6 @@
 using Application.Commands.Receipt;
 using Application.Queries.Receipt;
 using AutoMapper;
-using Domain;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -15,14 +14,6 @@ public class ReceiptsController(IMediator mediator, IMapper mapper) : Controller
 {
 	private readonly IMediator _mediator = mediator;
 	private readonly IMapper _mapper = mapper;
-
-	[HttpPost]
-	public async Task<ActionResult<ReceiptVM>> CreateReceipt(List<ReceiptVM> models)
-	{
-		CreateReceiptCommand command = new(models.Select(_mapper.Map<ReceiptVM, Receipt>).ToList());
-		List<Receipt> receipts = await _mediator.Send(command);
-		return Ok(receipts.Select(_mapper.Map<Receipt, ReceiptVM>).ToList());
-	}
 
 	[HttpGet("{id}")]
 	public async Task<ActionResult<ReceiptVM>> GetReceiptById(Guid id)
@@ -47,28 +38,12 @@ public class ReceiptsController(IMediator mediator, IMapper mapper) : Controller
 		return Ok(result);
 	}
 
-	[HttpGet("by-location/{location}")]
-	public async Task<ActionResult<List<ReceiptVM>>> GetReceiptsByLocation(string location)
+	[HttpPost]
+	public async Task<ActionResult<ReceiptVM>> CreateReceipt(List<ReceiptVM> models)
 	{
-		GetReceiptsByLocationQuery query = new(location);
-		List<Receipt> result = await _mediator.Send(query);
-		return Ok(result);
-	}
-
-	[HttpGet("by-date")]
-	public async Task<ActionResult<List<ReceiptVM>>> GetReceiptsByDateRange(DateOnly startDate, DateOnly endDate)
-	{
-		GetReceiptsByDateRangeQuery query = new(startDate, endDate);
-		List<Receipt> result = await _mediator.Send(query);
-		return Ok(result);
-	}
-
-	[HttpGet("by-money")]
-	public async Task<ActionResult<List<ReceiptVM>>> GetReceiptsByMoneyRange(decimal minAmount, decimal maxAmount)
-	{
-		GetReceiptsByMoneyRangeQuery query = new(new Money(minAmount), new Money(maxAmount));
-		List<Receipt> result = await _mediator.Send(query);
-		return Ok(result);
+		CreateReceiptCommand command = new(models.Select(_mapper.Map<ReceiptVM, Receipt>).ToList());
+		List<Receipt> receipts = await _mediator.Send(command);
+		return Ok(receipts.Select(_mapper.Map<Receipt, ReceiptVM>).ToList());
 	}
 
 	[HttpPut]

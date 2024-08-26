@@ -15,7 +15,7 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 	public async Task<Account?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		AccountEntity? entity = await _context.Accounts
-			.FindAsync(new object[] { id }, cancellationToken);
+			.FindAsync([id], cancellationToken);
 
 		return _mapper.Map<Account>(entity);
 	}
@@ -23,24 +23,6 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 	public async Task<List<Account>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<AccountEntity> entities = await _context.Accounts
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(_mapper.Map<Account>).ToList();
-	}
-
-	public async Task<List<Account>> GetByAccountCodeAsync(string accountCode, CancellationToken cancellationToken)
-	{
-		List<AccountEntity> entities = await _context.Accounts
-			.Where(e => e.AccountCode == accountCode)
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(_mapper.Map<Account>).ToList();
-	}
-
-	public async Task<List<Account>> GetByNameAsync(string name, CancellationToken cancellationToken)
-	{
-		List<AccountEntity> entities = await _context.Accounts
-			.Where(e => e.Name == name)
 			.ToListAsync(cancellationToken);
 
 		return entities.Select(_mapper.Map<Account>).ToList();

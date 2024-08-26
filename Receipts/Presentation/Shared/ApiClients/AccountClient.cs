@@ -28,20 +28,6 @@ public static class AccountClient
 		return await response.Content.ReadFromJsonAsync<List<AccountVM>>();
 	}
 
-	public static async Task<List<AccountVM>?> GetAccountsByAccountCode(string accountCode)
-	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"accounts/by-account-code/{accountCode}");
-		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<AccountVM>>();
-	}
-
-	public static async Task<List<AccountVM>?> GetAccountsByName(string name)
-	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"accounts/by-name/{name}");
-		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<AccountVM>>();
-	}
-
 	public static async Task<bool> UpdateAccounts(List<AccountVM> models)
 	{
 		HttpResponseMessage response = await _httpClient.PutAsJsonAsync("accounts", models);

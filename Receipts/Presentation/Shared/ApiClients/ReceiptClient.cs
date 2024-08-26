@@ -28,30 +28,6 @@ public static class ReceiptClient
 		return await response.Content.ReadFromJsonAsync<List<ReceiptVM>>();
 	}
 
-	public static async Task<List<ReceiptVM>?> GetReceiptsByLocation(string location)
-	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"receipts/by-location/{location}");
-		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<ReceiptVM>>();
-	}
-
-	public static async Task<List<ReceiptVM>?> GetReceiptsByDateRange(DateOnly startDate, DateOnly endDate)
-	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"receipts/by-date?startDate={startDate:d}&endDate={endDate:d}");
-		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<ReceiptVM>>();
-	}
-
-	public static async Task<List<ReceiptVM>?> GetReceiptsByMoneyRange(decimal minAmount, decimal maxAmount)
-	{
-		minAmount = Math.Floor(minAmount * 100) / 100;
-		maxAmount = Math.Ceiling(maxAmount * 100) / 100;
-
-		HttpResponseMessage response = await _httpClient.GetAsync($"receipts/by-money?minAmount={minAmount}&maxAmount={maxAmount}");
-		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<ReceiptVM>>();
-	}
-
 	public static async Task<bool> UpdateReceipt(ReceiptVM model)
 	{
 		HttpResponseMessage response = await _httpClient.PutAsJsonAsync("receipts", model);

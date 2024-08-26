@@ -18,9 +18,8 @@ public class InfrastructureService : IInfrastructureService
 		services
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
 			.AddScoped<IAccountRepository, AccountRepository>()
-			.AddScoped<ITransactionRepository, TransactionRepository>();
-
-		// Add other infrastructure services here
+			.AddScoped<ITransactionRepository, TransactionRepository>()
+			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>();
 
 		return services;
 	}

@@ -28,19 +28,9 @@ public static class TransactionClient
 		return await response.Content.ReadFromJsonAsync<List<TransactionVM>>();
 	}
 
-	public static async Task<List<TransactionVM>?> GetTransactionsByDateRange(DateOnly startDate, DateOnly endDate)
+	public static async Task<List<TransactionVM>?> GetTransactionsByReceiptId(Guid receiptId)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"transactions/by-date?startDate={startDate:d}&endDate={endDate:d}");
-		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<TransactionVM>>();
-	}
-
-	public static async Task<List<TransactionVM>?> GetTransactionsByMoneyRange(decimal minAmount, decimal maxAmount)
-	{
-		minAmount = Math.Floor(minAmount * 100) / 100;
-		maxAmount = Math.Ceiling(maxAmount * 100) / 100;
-
-		HttpResponseMessage response = await _httpClient.GetAsync($"transactions/by-money?minAmount={minAmount}&maxAmount={maxAmount}");
+		HttpResponseMessage response = await _httpClient.GetAsync($"transactions/by-receipt-id/{receiptId}");
 		response.EnsureSuccessStatusCode();
 		return await response.Content.ReadFromJsonAsync<List<TransactionVM>>();
 	}

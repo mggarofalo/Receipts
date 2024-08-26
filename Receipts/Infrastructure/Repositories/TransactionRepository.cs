@@ -1,7 +1,5 @@
 using Application.Interfaces;
 using AutoMapper;
-using Common;
-using Domain;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
@@ -30,19 +28,10 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 		return entities.Select(_mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task<List<Transaction>> GetByMoneyRangeAsync(Money minAmount, Money maxAmount, CancellationToken cancellationToken)
+	public async Task<List<Transaction>> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> entities = await _context.Transactions
-			.Where(e => e.Amount.Between(minAmount.Amount, maxAmount.Amount))
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(_mapper.Map<Transaction>).ToList();
-	}
-
-	public async Task<List<Transaction>> GetByDateRangeAsync(DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken)
-	{
-		List<TransactionEntity> entities = await _context.Transactions
-			.Where(e => e.Date.Between(startDate, endDate))
+			.Where(x => x.ReceiptId == receiptId)
 			.ToListAsync(cancellationToken);
 
 		return entities.Select(_mapper.Map<Transaction>).ToList();

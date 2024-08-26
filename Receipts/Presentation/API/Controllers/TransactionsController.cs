@@ -1,7 +1,6 @@
 using Application.Commands.Transaction;
 using Application.Queries.Transaction;
 using AutoMapper;
-using Domain;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -15,14 +14,6 @@ public class TransactionsController(IMediator mediator, IMapper mapper) : Contro
 {
 	private readonly IMediator _mediator = mediator;
 	private readonly IMapper _mapper = mapper;
-
-	[HttpPost]
-	public async Task<ActionResult<TransactionVM>> CreateTransaction(List<TransactionVM> models)
-	{
-		CreateTransactionCommand command = new(models.Select(_mapper.Map<TransactionVM, Transaction>).ToList());
-		List<Transaction> transactions = await _mediator.Send(command);
-		return Ok(transactions.Select(_mapper.Map<Transaction, TransactionVM>).ToList());
-	}
 
 	[HttpGet("{id}")]
 	public async Task<ActionResult<TransactionVM>> GetTransactionById(Guid id)
@@ -47,20 +38,20 @@ public class TransactionsController(IMediator mediator, IMapper mapper) : Contro
 		return Ok(result);
 	}
 
-	[HttpGet("by-date")]
-	public async Task<ActionResult<List<TransactionVM>>> GetTransactionsByDateRange(DateOnly startDate, DateOnly endDate)
+	[HttpGet("by-receipt-id/{receiptId}")]
+	public async Task<ActionResult<List<TransactionVM>>> GetTransactionsByReceiptId(Guid receiptId)
 	{
-		GetTransactionsByDateRangeQuery query = new(startDate, endDate);
+		GetTransactionsByReceiptIdQuery query = new(receiptId);
 		List<Transaction> result = await _mediator.Send(query);
 		return Ok(result);
 	}
 
-	[HttpGet("by-money")]
-	public async Task<ActionResult<List<TransactionVM>>> GetTransactionsByMoneyRange(decimal minAmount, decimal maxAmount)
+	[HttpPost]
+	public async Task<ActionResult<TransactionVM>> CreateTransaction(List<TransactionVM> models)
 	{
-		GetTransactionsByMoneyRangeQuery query = new(new Money(minAmount), new Money(maxAmount));
-		List<Transaction> result = await _mediator.Send(query);
-		return Ok(result);
+		CreateTransactionCommand command = new(models.Select(_mapper.Map<TransactionVM, Transaction>).ToList());
+		List<Transaction> transactions = await _mediator.Send(command);
+		return Ok(transactions.Select(_mapper.Map<Transaction, TransactionVM>).ToList());
 	}
 
 	[HttpPut]

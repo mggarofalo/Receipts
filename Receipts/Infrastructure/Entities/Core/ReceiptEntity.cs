@@ -9,6 +9,6 @@ public class ReceiptEntity
 	public decimal TaxAmount { get; set; }
 
 	// Navigation properties
-	public virtual ICollection<ReceiptItemEntity> ReceiptItems { get; set; } = new List<ReceiptItemEntity>();
-	public virtual ICollection<TransactionEntity> Transactions { get; set; } = new List<TransactionEntity>();
+	public virtual ICollection<ReceiptItemEntity> ReceiptItems { get; set; } = [];
+	public virtual ICollection<TransactionEntity> Transactions { get; set; } = [];
 }

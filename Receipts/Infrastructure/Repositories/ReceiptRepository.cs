@@ -1,7 +1,5 @@
 using Application.Interfaces;
 using AutoMapper;
-using Common;
-using Domain;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
@@ -25,33 +23,6 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 	public async Task<List<Receipt>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> entities = await _context.Receipts
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(_mapper.Map<Receipt>).ToList();
-	}
-
-	public async Task<List<Receipt>> GetByLocationAsync(string location, CancellationToken cancellationToken)
-	{
-		List<ReceiptEntity> entities = await _context.Receipts
-			.Where(e => e.Location == location)
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(_mapper.Map<Receipt>).ToList();
-	}
-
-	public async Task<List<Receipt>> GetByMoneyRangeAsync(Money minAmount, Money maxAmount, CancellationToken cancellationToken)
-	{
-		List<ReceiptEntity> entities = await _context.Receipts
-			.Where(e => (e.TaxAmount + e.Transactions.Sum(t => t.Amount)).Between(minAmount.Amount, maxAmount.Amount))
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(_mapper.Map<Receipt>).ToList();
-	}
-
-	public async Task<List<Receipt>> GetByDateRangeAsync(DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken)
-	{
-		List<ReceiptEntity> entities = await _context.Receipts
-			.Where(e => e.Date.Between(startDate, endDate))
 			.ToListAsync(cancellationToken);
 
 		return entities.Select(_mapper.Map<Receipt>).ToList();

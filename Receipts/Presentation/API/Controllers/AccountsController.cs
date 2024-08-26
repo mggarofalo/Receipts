@@ -15,14 +15,6 @@ public class AccountsController(IMediator mediator, IMapper mapper) : Controller
 	private readonly IMediator _mediator = mediator;
 	private readonly IMapper _mapper = mapper;
 
-	[HttpPost]
-	public async Task<ActionResult<AccountVM>> CreateAccount(List<AccountVM> models)
-	{
-		CreateAccountCommand command = new(models.Select(_mapper.Map<AccountVM, Account>).ToList());
-		List<Account> accounts = await _mediator.Send(command);
-		return Ok(accounts.Select(_mapper.Map<Account, AccountVM>).ToList());
-	}
-
 	[HttpGet("{id}")]
 	public async Task<ActionResult<AccountVM>> GetAccountById(Guid id)
 	{
@@ -46,20 +38,12 @@ public class AccountsController(IMediator mediator, IMapper mapper) : Controller
 		return Ok(result);
 	}
 
-	[HttpGet("by-account-code/{accountCode}")]
-	public async Task<ActionResult<List<AccountVM>>> GetAccountsByAccountCode(string accountCode)
+	[HttpPost]
+	public async Task<ActionResult<AccountVM>> CreateAccount(List<AccountVM> models)
 	{
-		GetAccountsByAccountCodeQuery query = new(accountCode);
-		List<Account> result = await _mediator.Send(query);
-		return Ok(result);
-	}
-
-	[HttpGet("by-name/{name}")]
-	public async Task<ActionResult<List<AccountVM>>> GetAccountsByName(string name)
-	{
-		GetAccountsByNameQuery query = new(name);
-		List<Account> result = await _mediator.Send(query);
-		return Ok(result);
+		CreateAccountCommand command = new(models.Select(_mapper.Map<AccountVM, Account>).ToList());
+		List<Account> accounts = await _mediator.Send(command);
+		return Ok(accounts.Select(_mapper.Map<Account, AccountVM>).ToList());
 	}
 
 	[HttpPut]
