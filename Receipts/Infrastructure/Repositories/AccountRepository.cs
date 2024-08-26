@@ -28,11 +28,11 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 		return entities.Select(_mapper.Map<Account>).ToList();
 	}
 
-	public async Task<List<Account>> CreateAsync(List<Account> accounts, CancellationToken cancellationToken)
+	public async Task<List<Account>> CreateAsync(List<Account> models, CancellationToken cancellationToken)
 	{
 		List<AccountEntity> createdEntities = [];
 
-		foreach (AccountEntity entity in accounts.Select(_mapper.Map<AccountEntity>).ToList())
+		foreach (AccountEntity entity in models.Select(_mapper.Map<AccountEntity>).ToList())
 		{
 			EntityEntry<AccountEntity> entityEntry = await _context.Accounts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
@@ -41,9 +41,9 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 		return createdEntities.Select(_mapper.Map<Account>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(List<Account> accounts, CancellationToken cancellationToken)
+	public async Task<bool> UpdateAsync(List<Account> models, CancellationToken cancellationToken)
 	{
-		List<AccountEntity> newEntities = accounts.Select(_mapper.Map<AccountEntity>).ToList();
+		List<AccountEntity> newEntities = models.Select(_mapper.Map<AccountEntity>).ToList();
 
 		foreach (AccountEntity newEntity in newEntities)
 		{

@@ -37,11 +37,11 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 		return entities.Select(_mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task<List<Transaction>> CreateAsync(List<Transaction> transactions, CancellationToken cancellationToken)
+	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> createdEntities = [];
 
-		foreach (TransactionEntity entity in transactions.Select(_mapper.Map<TransactionEntity>).ToList())
+		foreach (TransactionEntity entity in models.Select(_mapper.Map<TransactionEntity>).ToList())
 		{
 			EntityEntry<TransactionEntity> entityEntry = await _context.Transactions.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
@@ -50,9 +50,9 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 		return createdEntities.Select(_mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(List<Transaction> transactions, CancellationToken cancellationToken)
+	public async Task<bool> UpdateAsync(List<Transaction> models, CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> newEntities = transactions.Select(_mapper.Map<TransactionEntity>).ToList();
+		List<TransactionEntity> newEntities = models.Select(_mapper.Map<TransactionEntity>).ToList();
 
 		foreach (TransactionEntity newEntity in newEntities)
 		{

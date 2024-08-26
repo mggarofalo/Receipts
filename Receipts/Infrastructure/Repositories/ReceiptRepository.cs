@@ -28,11 +28,11 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 		return entities.Select(_mapper.Map<Receipt>).ToList();
 	}
 
-	public async Task<List<Receipt>> CreateAsync(List<Receipt> receipts, CancellationToken cancellationToken)
+	public async Task<List<Receipt>> CreateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> createdEntities = [];
 
-		foreach (ReceiptEntity entity in receipts.Select(_mapper.Map<ReceiptEntity>).ToList())
+		foreach (ReceiptEntity entity in models.Select(_mapper.Map<ReceiptEntity>).ToList())
 		{
 			EntityEntry<ReceiptEntity> entityEntry = await _context.Receipts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
@@ -41,9 +41,9 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 		return createdEntities.Select(_mapper.Map<Receipt>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(List<Receipt> receipts, CancellationToken cancellationToken)
+	public async Task<bool> UpdateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> newEntities = receipts.Select(_mapper.Map<ReceiptEntity>).ToList();
+		List<ReceiptEntity> newEntities = models.Select(_mapper.Map<ReceiptEntity>).ToList();
 
 		foreach (ReceiptEntity newEntity in newEntities)
 		{
