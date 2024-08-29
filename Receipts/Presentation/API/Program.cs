@@ -1,15 +1,14 @@
 using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Services;
+using API.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.AddLoggingService();
+builder.Services.RegisterProgramServices(builder.Configuration);
 builder.Services.RegisterApplicationServices(builder.Configuration);
-builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.RegisterInfrastructureServices(builder.Configuration);
 
 WebApplication app = builder.Build();
 
@@ -23,8 +22,10 @@ if (app.Environment.IsDevelopment())
 	});
 }
 
-using IServiceScope scope = app.Services.CreateScope();
-await scope.ServiceProvider.GetRequiredService<IDatabaseMigrator>().MigrateAsync();
+using (IServiceScope scope = app.Services.CreateScope())
+{
+	await scope.ServiceProvider.GetRequiredService<IDatabaseMigrator>().MigrateAsync();
+}
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

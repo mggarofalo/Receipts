@@ -8,12 +8,17 @@ namespace Infrastructure.Services;
 
 public static class InfrastructureService
 {
-	public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+	public static IServiceCollection RegisterInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddDbContext<ApplicationDbContext>(options =>
-			options.UseNpgsql(
-				Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING"),
-				b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+		{
+			string? connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
+			options.UseNpgsql(connectionString, b =>
+			{
+				string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
+				b.MigrationsAssembly(assemblyName);
+			});
+		});
 
 		services
 			.AddScoped<IReceiptRepository, ReceiptRepository>()

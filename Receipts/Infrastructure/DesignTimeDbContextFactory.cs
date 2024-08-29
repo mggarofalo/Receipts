@@ -8,10 +8,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 	public ApplicationDbContext CreateDbContext(string[] args)
 	{
 		DbContextOptionsBuilder<ApplicationDbContext> builder = new();
-		string? connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
-
-		builder.UseNpgsql(connectionString);
-
+		builder.UseNpgsql(Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING"));
 		return new ApplicationDbContext(builder.Options);
 	}
 }
