@@ -15,6 +15,8 @@ public static class DependencyInjection
 			cfg.RegisterServicesFromAssembly(typeof(IQuery<>).Assembly);
 		});
 
+		services.AddAutoMapper(typeof(DependencyInjection).Assembly);
+
 		return services;
 	}
 }

@@ -15,14 +15,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<TransactionEntity> Transactions { get; set; } = null!;
 	public DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
 
-	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-	{
-		if (!optionsBuilder.IsConfigured)
-		{
-			optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=receipts;Username=postgres;Password=admin;");
-		}
-	}
-
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		base.OnModelCreating(modelBuilder);

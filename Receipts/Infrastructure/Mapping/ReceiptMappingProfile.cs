@@ -13,6 +13,6 @@ public class ReceiptMappingProfile : Profile
 			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount));
 
 		CreateMap<ReceiptEntity, Receipt>()
-			.ConstructUsing(src => new(null, src.Location, src.Date, new Money(src.TaxAmount, "USD"), src.Description));
+			.ConstructUsing(src => new(src.Id, src.Location, src.Date, new Money(src.TaxAmount, "USD"), src.Description));
 	}
 }

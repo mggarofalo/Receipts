@@ -22,6 +22,8 @@ public static class InfrastructureService
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
 			.AddScoped<IDatabaseMigrator, DatabaseMigrator>();
 
+		services.AddAutoMapper(typeof(InfrastructureService).Assembly);
+
 		return services;
 	}
 }
