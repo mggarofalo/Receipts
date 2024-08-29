@@ -6,6 +6,10 @@ namespace Infrastructure;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
+	private const string MSSQL = "Microsoft.EntityFrameworkCore.SqlServer";
+	private const string PostgreSQL = "Npgsql";
+	private const string MySQL = "Pomelo.EntityFrameworkCore.MySql";
+
 	public DbSet<AccountEntity> Accounts { get; set; } = null!;
 	public DbSet<ReceiptEntity> Receipts { get; set; } = null!;
 	public DbSet<TransactionEntity> Transactions { get; set; } = null!;
@@ -15,45 +19,44 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		base.OnModelCreating(modelBuilder);
 
-		// Global type-to-column mapping based on the database provider
-		string decimalType = Database.ProviderName switch
+		string moneyType = Database.ProviderName switch
 		{
-			"Microsoft.EntityFrameworkCore.SqlServer" => "decimal(18,2)", // SQL Server
-			"Npgsql" => "decimal(18,2)", // PostgreSQL
-			"Pomelo.EntityFrameworkCore.MySql" => "decimal(18,2)", // MySQL
-			_ => "decimal(18,2)" // Default case
+			MSSQL => "decimal(18,2)",
+			PostgreSQL => "decimal(18,2)",
+			MySQL => "decimal(18,2)",
+			_ => "decimal(18,2)"
 		};
 
 		string datetimeType = Database.ProviderName switch
 		{
-			"Microsoft.EntityFrameworkCore.SqlServer" => "datetime2", // SQL Server
-			"Npgsql" => "timestamptz", // PostgreSQL
-			"Pomelo.EntityFrameworkCore.MySql" => "datetime", // MySQL
-			_ => "datetime" // Default case
+			MSSQL => "datetime2",
+			PostgreSQL => "timestamptz",
+			MySQL => "datetime",
+			_ => "datetime"
 		};
 
 		string dateOnlyType = Database.ProviderName switch
 		{
-			"Microsoft.EntityFrameworkCore.SqlServer" => "date", // SQL Server
-			"Npgsql" => "date", // PostgreSQL
-			"Pomelo.EntityFrameworkCore.MySql" => "date", // MySQL
-			_ => "date" // Default case
+			MSSQL => "date",
+			PostgreSQL => "date",
+			MySQL => "date",
+			_ => "date"
 		};
 
 		string boolType = Database.ProviderName switch
 		{
-			"Microsoft.EntityFrameworkCore.SqlServer" => "bit", // SQL Server
-			"Npgsql" => "boolean", // PostgreSQL
-			"Pomelo.EntityFrameworkCore.MySql" => "tinyint(1)", // MySQL
-			_ => "bit" // Default case
+			MSSQL => "bit",
+			PostgreSQL => "boolean",
+			MySQL => "tinyint(1)",
+			_ => "bit"
 		};
 
 		string stringType = Database.ProviderName switch
 		{
-			"Microsoft.EntityFrameworkCore.SqlServer" => "nvarchar(max)", // SQL Server
-			"Npgsql" => "text", // PostgreSQL
-			"Pomelo.EntityFrameworkCore.MySql" => "varchar(255)", // MySQL
-			_ => "nvarchar(max)" // Default case
+			MSSQL => "nvarchar(max)",
+			PostgreSQL => "text",
+			MySQL => "varchar(255)",
+			_ => "nvarchar(max)"
 		};
 
 		foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
@@ -62,7 +65,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			{
 				if (property.ClrType == typeof(decimal))
 				{
-					property.SetColumnType(decimalType);
+					property.SetColumnType(moneyType);
 				}
 				else if (property.ClrType == typeof(DateTime))
 				{
