@@ -6,9 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
 
-public class InfrastructureService : IInfrastructureService
+public static class InfrastructureService
 {
-	public IServiceCollection AddInfrastructureServices(IServiceCollection services, IConfiguration configuration)
+	public static IServiceCollection AddInfrastructureServices(IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddDbContext<ApplicationDbContext>(options =>
 			options.UseNpgsql(
