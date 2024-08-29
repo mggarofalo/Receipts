@@ -1,4 +1,4 @@
-﻿using Infrastructure.Entities.Core;
+using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -7,7 +7,7 @@ namespace Infrastructure;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
 	private const string MSSQL = "Microsoft.EntityFrameworkCore.SqlServer";
-	private const string PostgreSQL = "Npgsql";
+	private const string PostgreSQL = "Npgsql.EntityFrameworkCore.PostgreSQL";
 	private const string MySQL = "Pomelo.EntityFrameworkCore.MySql";
 
 	public DbSet<AccountEntity> Accounts { get; set; } = null!;
@@ -24,7 +24,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "decimal(18,2)",
 			PostgreSQL => "decimal(18,2)",
 			MySQL => "decimal(18,2)",
-			_ => "decimal(18,2)"
+			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
 		};
 
 		string datetimeType = Database.ProviderName switch
@@ -32,7 +32,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "datetime2",
 			PostgreSQL => "timestamptz",
 			MySQL => "datetime",
-			_ => "datetime"
+			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
 		};
 
 		string dateOnlyType = Database.ProviderName switch
@@ -40,7 +40,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "date",
 			PostgreSQL => "date",
 			MySQL => "date",
-			_ => "date"
+			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
 		};
 
 		string boolType = Database.ProviderName switch
@@ -48,7 +48,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "bit",
 			PostgreSQL => "boolean",
 			MySQL => "tinyint(1)",
-			_ => "bit"
+			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
 		};
 
 		string stringType = Database.ProviderName switch
@@ -56,7 +56,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "nvarchar(max)",
 			PostgreSQL => "text",
 			MySQL => "varchar(255)",
-			_ => "nvarchar(max)"
+			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
 		};
 
 		foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
@@ -86,6 +86,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			}
 		}
 
+		CreateAccountEntity(modelBuilder);
+		CreateReceiptEntity(modelBuilder);
+		CreateTransactionEntity(modelBuilder);
+		CreateReceiptItemEntity(modelBuilder);
+	}
+
+	private static void CreateAccountEntity(ModelBuilder modelBuilder)
+	{
 		modelBuilder.Entity<AccountEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
@@ -93,7 +101,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			entity.Property(e => e.AccountCode).IsRequired();
 			entity.Property(e => e.Name).IsRequired();
 		});
+	}
 
+	private static void CreateReceiptEntity(ModelBuilder modelBuilder)
+	{
 		modelBuilder.Entity<ReceiptEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
@@ -101,7 +112,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			entity.Property(e => e.Location).IsRequired();
 			entity.Property(e => e.TaxAmount).IsRequired();
 		});
+	}
 
+	private static void CreateTransactionEntity(ModelBuilder modelBuilder)
+	{
 		modelBuilder.Entity<TransactionEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
@@ -115,7 +129,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 				.HasForeignKey(e => e.AccountId)
 				.OnDelete(DeleteBehavior.Cascade);
 		});
+	}
 
+	private static void CreateReceiptItemEntity(ModelBuilder modelBuilder)
+	{
 		modelBuilder.Entity<ReceiptItemEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
