@@ -1,4 +1,4 @@
-using Infrastructure.Entities.Core;
+﻿using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -14,6 +14,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<ReceiptEntity> Receipts { get; set; } = null!;
 	public DbSet<TransactionEntity> Transactions { get; set; } = null!;
 	public DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
+
+	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+	{
+		if (!optionsBuilder.IsConfigured)
+		{
+			optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=receipts;Username=postgres;Password=admin;");
+		}
+	}
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{

@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Infrastructure;
+namespace Infrastructure.Services;
 
 public static class InfrastructureService
 {
-	public static IServiceCollection AddInfrastructureServices(IServiceCollection services, IConfiguration configuration)
+	public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddDbContext<ApplicationDbContext>(options =>
 			options.UseNpgsql(
@@ -19,7 +19,8 @@ public static class InfrastructureService
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
 			.AddScoped<IAccountRepository, AccountRepository>()
 			.AddScoped<ITransactionRepository, TransactionRepository>()
-			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>();
+			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
+			.AddScoped<IDatabaseMigrator, DatabaseMigrator>();
 
 		return services;
 	}

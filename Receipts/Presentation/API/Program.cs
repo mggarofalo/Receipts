@@ -1,26 +1,15 @@
 using Application;
 using Application.Interfaces;
-using Infrastructure;
-using System.Reflection;
+using Infrastructure.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// Register all AutoMapper profiles in the assembly
-builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
-
-// Register application services
-builder.Services.AddApplicationServices(builder.Configuration);
-
-// Resolve IInfrastructureService and call AddInfrastructureServices
-builder.Services.AddScoped<IInfrastructureService>(provider =>
-{
-	InfrastructureService infrastructureService = new();
-	infrastructureService.AddInfrastructureServices(builder.Services, builder.Configuration);
-	return infrastructureService;
-});
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.RegisterApplicationServices(builder.Configuration);
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 WebApplication app = builder.Build();
 
@@ -30,6 +19,11 @@ if (app.Environment.IsDevelopment())
 	app.UseSwaggerUI();
 }
 
+using IServiceScope scope = app.Services.CreateScope();
+await scope.ServiceProvider.GetRequiredService<IDatabaseMigrator>().MigrateAsync();
+
 app.UseHttpsRedirection();
+app.UseAuthorization();
 app.MapControllers();
+
 await app.RunAsync();
