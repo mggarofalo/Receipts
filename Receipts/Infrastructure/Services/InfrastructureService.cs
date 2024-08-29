@@ -12,7 +12,7 @@ public static class InfrastructureService
 	{
 		services.AddDbContext<ApplicationDbContext>(options =>
 			options.UseNpgsql(
-				configuration.GetConnectionString("DefaultConnection"),
+				Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING"),
 				b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
 
 		services

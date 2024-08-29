@@ -8,7 +8,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 	public ApplicationDbContext CreateDbContext(string[] args)
 	{
 		DbContextOptionsBuilder<ApplicationDbContext> builder = new();
-		string? connectionString = "Host=localhost;Port=5432;Database=receipts;Username=postgres;Password=admin;";
+		string? connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
 
 		builder.UseNpgsql(connectionString);
 
