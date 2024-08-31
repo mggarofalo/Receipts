@@ -1,5 +1,4 @@
-using Application.Common;
-using Application.Queries;
+using Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
