@@ -1,5 +1,5 @@
 using Application.Common;
-using Application.Interfaces;
+using Application.Interfaces.Repositories;
 using MediatR;
 
 namespace Application.Commands.ReceiptItem;
