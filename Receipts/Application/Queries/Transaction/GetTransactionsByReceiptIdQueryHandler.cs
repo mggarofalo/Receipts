@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Application.Queries.Transaction;
 
-public class GetTransactionByReceiptIdQueryHandler(ITransactionRepository transactionRepository) : IRequestHandler<GetTransactionsByReceiptIdQuery, List<Domain.Core.Transaction>>
+public class GetTransactionsByReceiptIdQueryHandler(ITransactionRepository transactionRepository) : IRequestHandler<GetTransactionsByReceiptIdQuery, List<Domain.Core.Transaction>>
 {
 	private readonly ITransactionRepository _transactionRepository = transactionRepository;
 
