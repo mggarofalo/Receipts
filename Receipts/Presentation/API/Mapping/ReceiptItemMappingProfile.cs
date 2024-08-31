@@ -1,4 +1,5 @@
 using AutoMapper;
+using Common;
 using Domain;
 using Domain.Core;
 using Shared.ViewModels;
@@ -19,8 +20,8 @@ public class ReceiptItemMappingProfile : Profile
 				src.ReceiptItemCode,
 				src.Description,
 				src.Quantity,
-				new Money(src.UnitPrice, "USD"),
-				new Money(src.TotalAmount, "USD"),
+				new Money(src.UnitPrice, Currency.USD),
+				new Money(src.TotalAmount, Currency.USD),
 				src.Category,
 				src.Subcategory
 			));

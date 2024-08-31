@@ -1,4 +1,5 @@
 using AutoMapper;
+using Common;
 using Domain;
 using Domain.Core;
 using Shared.ViewModels;
@@ -17,7 +18,7 @@ public class ReceiptMappingProfile : Profile
 				null,
 				src.Location,
 				src.Date,
-				new Money(src.TaxAmount, "USD"),
+				new Money(src.TaxAmount, Currency.USD),
 				src.Description
 			));
 	}

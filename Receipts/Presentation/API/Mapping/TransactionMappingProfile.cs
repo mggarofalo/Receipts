@@ -1,4 +1,5 @@
 using AutoMapper;
+using Common;
 using Domain;
 using Domain.Core;
 using Shared.ViewModels;
@@ -17,7 +18,7 @@ public class TransactionMappingProfile : Profile
 				null,
 				src.ReceiptId,
 				src.Account.Id!.Value,
-				new Money(src.Amount, "USD"),
+				new Money(src.Amount, Currency.USD),
 				src.Date
 			));
 	}

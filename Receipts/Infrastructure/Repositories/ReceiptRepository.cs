@@ -9,45 +9,42 @@ namespace Infrastructure.Repositories;
 
 public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : IReceiptRepository
 {
-	private readonly ApplicationDbContext _context = context;
-	private readonly IMapper _mapper = mapper;
-
 	public async Task<Receipt?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
-		ReceiptEntity? entity = await _context.Receipts
+		ReceiptEntity? entity = await context.Receipts
 			.FindAsync([id], cancellationToken);
 
-		return _mapper.Map<Receipt>(entity);
+		return mapper.Map<Receipt>(entity);
 	}
 
 	public async Task<List<Receipt>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> entities = await _context.Receipts
+		List<ReceiptEntity> entities = await context.Receipts
 			.ToListAsync(cancellationToken);
 
-		return entities.Select(_mapper.Map<Receipt>).ToList();
+		return entities.Select(mapper.Map<Receipt>).ToList();
 	}
 
 	public async Task<List<Receipt>> CreateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> createdEntities = [];
 
-		foreach (ReceiptEntity entity in models.Select(_mapper.Map<ReceiptEntity>).ToList())
+		foreach (ReceiptEntity entity in models.Select(mapper.Map<ReceiptEntity>).ToList())
 		{
-			EntityEntry<ReceiptEntity> entityEntry = await _context.Receipts.AddAsync(entity, cancellationToken);
+			EntityEntry<ReceiptEntity> entityEntry = await context.Receipts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
 		}
 
-		return createdEntities.Select(_mapper.Map<Receipt>).ToList();
+		return createdEntities.Select(mapper.Map<Receipt>).ToList();
 	}
 
 	public async Task<bool> UpdateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> newEntities = models.Select(_mapper.Map<ReceiptEntity>).ToList();
+		List<ReceiptEntity> newEntities = models.Select(mapper.Map<ReceiptEntity>).ToList();
 
 		foreach (ReceiptEntity newEntity in newEntities)
 		{
-			ReceiptEntity existingEntity = await _context.Receipts.SingleAsync(e => e.Id == newEntity.Id, cancellationToken);
+			ReceiptEntity existingEntity = await context.Receipts.SingleAsync(e => e.Id == newEntity.Id, cancellationToken);
 			existingEntity.Description = newEntity.Description;
 			existingEntity.Location = newEntity.Location;
 			existingEntity.Date = newEntity.Date;
@@ -59,24 +56,24 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 
 	public async Task<bool> DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> entities = await _context.Receipts.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
-		_context.Receipts.RemoveRange(entities);
+		List<ReceiptEntity> entities = await context.Receipts.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
+		context.Receipts.RemoveRange(entities);
 
 		return true;
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
 	{
-		return await _context.Receipts.AnyAsync(e => e.Id == id, cancellationToken);
+		return await context.Receipts.AnyAsync(e => e.Id == id, cancellationToken);
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
-		return await _context.Receipts.CountAsync(cancellationToken);
+		return await context.Receipts.CountAsync(cancellationToken);
 	}
 
 	public async Task SaveChangesAsync(CancellationToken cancellationToken)
 	{
-		await _context.SaveChangesAsync(cancellationToken);
+		await context.SaveChangesAsync(cancellationToken);
 	}
 }

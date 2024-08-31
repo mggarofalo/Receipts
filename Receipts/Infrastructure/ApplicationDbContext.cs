@@ -1,6 +1,7 @@
 ﻿using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure;
 
@@ -82,6 +83,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 				else if (property.ClrType == typeof(string))
 				{
 					property.SetColumnType(stringType);
+				}
+				else if (property.ClrType.IsEnum)
+				{
+					property.SetColumnType(stringType);
+
+					var converterType = typeof(EnumToStringConverter<>).MakeGenericType(property.ClrType);
+					var converter = (ValueConverter)Activator.CreateInstance(converterType)!;
+					property.SetValueConverter(converter);
 				}
 			}
 		}

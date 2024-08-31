@@ -1,3 +1,5 @@
+using Common;
+
 namespace Infrastructure.Entities.Core;
 
 public class ReceiptItemEntity
@@ -8,9 +10,9 @@ public class ReceiptItemEntity
 	public string Description { get; set; } = string.Empty;
 	public decimal Quantity { get; set; }
 	public decimal UnitPrice { get; set; }
-	public required string UnitPriceCurrency { get; set; }
+	public required Currency UnitPriceCurrency { get; set; }
 	public decimal TotalAmount { get; set; }
-	public required string TotalAmountCurrency { get; set; }
+	public required Currency TotalAmountCurrency { get; set; }
 	public string Category { get; set; } = string.Empty;
 	public string Subcategory { get; set; } = string.Empty;
 
