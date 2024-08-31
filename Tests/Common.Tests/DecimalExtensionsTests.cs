@@ -9,9 +9,15 @@ public class DecimalExtensionsTests
 	}
 
 	[Fact]
-	public void Decimal_Between_ReturnsFalse_WhenValueIsOutsideRange()
+	public void Decimal_Between_ReturnsFalse_WhenValueIsAboveRange()
 	{
 		Assert.False(15m.Between(1m, 10m));
+	}
+
+	[Fact]
+	public void Decimal_Between_ReturnsFalse_WhenValueIsBelowRange()
+	{
+		Assert.False((-5m).Between(1m, 10m));
 	}
 
 	[Fact]
