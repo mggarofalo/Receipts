@@ -11,7 +11,7 @@ public class ReceiptTests
 		Guid id = Guid.NewGuid();
 		string location = "Test Store";
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
-		Money taxAmount = new(5.00m, "USD");
+		Money taxAmount = new(5.00m);
 		string description = "Test Receipt";
 
 		// Act
@@ -33,7 +33,7 @@ public class ReceiptTests
 		// Arrange
 		string location = "Test Store";
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
-		Money taxAmount = new(5.00m, "USD");
+		Money taxAmount = new(5.00m);
 
 		// Act
 		Receipt receipt = new(null, location, date, taxAmount);
@@ -51,7 +51,7 @@ public class ReceiptTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
-		Money taxAmount = new(5.00m, "USD");
+		Money taxAmount = new(5.00m);
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, invalidLocation, date, taxAmount));
@@ -65,7 +65,7 @@ public class ReceiptTests
 		Guid id = Guid.NewGuid();
 		string location = "Test Store";
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
-		Money taxAmount = new(5.00m, "USD");
+		Money taxAmount = new(5.00m);
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, location, date, taxAmount));
@@ -76,8 +76,8 @@ public class ReceiptTests
 	public void AddTransaction_ValidTransaction_AddsToTransactions()
 	{
 		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m, "USD"));
-		Transaction transaction = new(Guid.NewGuid(), receipt.Id!.Value, Guid.NewGuid(), new Money(100.00m, "USD"), DateOnly.FromDateTime(DateTime.Today));
+		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
+		Transaction transaction = new(Guid.NewGuid(), receipt.Id!.Value, Guid.NewGuid(), new Money(100.00m), DateOnly.FromDateTime(DateTime.Today));
 
 		// Act
 		receipt.AddTransaction(transaction);
@@ -91,7 +91,7 @@ public class ReceiptTests
 	public void AddTransaction_NullTransaction_ThrowsArgumentNullException()
 	{
 		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m, "USD"));
+		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(() => receipt.AddTransaction(null!));
@@ -101,8 +101,8 @@ public class ReceiptTests
 	public void AddItem_ValidItem_AddsToItems()
 	{
 		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m, "USD"));
-		ReceiptItem item = new(Guid.NewGuid(), "ITEM001", "Test Item", 1, new Money(10.00m, "USD"), new Money(10.00m, "USD"), "Test Category", "Test Subcategory");
+		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
+		ReceiptItem item = new(Guid.NewGuid(), "ITEM001", "Test Item", 1, new Money(10.00m), new Money(10.00m), "Test Category", "Test Subcategory");
 
 		// Act
 		receipt.AddItem(item);
@@ -116,7 +116,7 @@ public class ReceiptTests
 	public void AddItem_NullItem_ThrowsArgumentNullException()
 	{
 		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m, "USD"));
+		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(() => receipt.AddItem(null!));

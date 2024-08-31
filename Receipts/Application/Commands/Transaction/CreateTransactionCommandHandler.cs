@@ -9,7 +9,7 @@ public class CreateTransactionCommandHandler(ITransactionRepository transactionR
 
 	public async Task<List<Domain.Core.Transaction>> Handle(CreateTransactionCommand request, CancellationToken cancellationToken)
 	{
-		List<Domain.Core.Transaction> createdEntities = await _transactionRepository.CreateAsync(request.Transactions, cancellationToken);
+		List<Domain.Core.Transaction> createdEntities = await _transactionRepository.CreateAsync([.. request.Transactions], cancellationToken);
 		await _transactionRepository.SaveChangesAsync(cancellationToken);
 		return createdEntities;
 	}

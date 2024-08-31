@@ -9,7 +9,7 @@ public class CreateAccountCommandHandler(IAccountRepository accountRepository) :
 
 	public async Task<List<Domain.Core.Account>> Handle(CreateAccountCommand request, CancellationToken cancellationToken)
 	{
-		List<Domain.Core.Account> createdEntities = await _accountRepository.CreateAsync(request.Accounts, cancellationToken);
+		List<Domain.Core.Account> createdEntities = await _accountRepository.CreateAsync([.. request.Accounts], cancellationToken);
 		await _accountRepository.SaveChangesAsync(cancellationToken);
 		return createdEntities;
 	}

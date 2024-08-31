@@ -12,8 +12,8 @@ public class ReceiptItemTests
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2;
-		Money unitPrice = new(10.00m, "USD");
-		Money totalAmount = new(20.00m, "USD");
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
 		string category = "Test Category";
 		string subcategory = "Test Subcategory";
 
@@ -38,8 +38,8 @@ public class ReceiptItemTests
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2;
-		Money unitPrice = new(10.00m, "USD");
-		Money totalAmount = new(20.00m, "USD");
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
 		string category = "Test Category";
 		string subcategory = "Test Subcategory";
 
@@ -60,8 +60,8 @@ public class ReceiptItemTests
 		Guid id = Guid.NewGuid();
 		string description = "Test Item";
 		decimal quantity = 2;
-		Money unitPrice = new(10.00m, "USD");
-		Money totalAmount = new(20.00m, "USD");
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
 		string category = "Test Category";
 		string subcategory = "Test Subcategory";
 
@@ -80,8 +80,8 @@ public class ReceiptItemTests
 		Guid id = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		decimal quantity = 2;
-		Money unitPrice = new(10.00m, "USD");
-		Money totalAmount = new(20.00m, "USD");
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
 		string category = "Test Category";
 		string subcategory = "Test Subcategory";
 
@@ -99,8 +99,8 @@ public class ReceiptItemTests
 		Guid id = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
-		Money unitPrice = new(10.00m, "USD");
-		Money totalAmount = new(20.00m, "USD");
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
 		string category = "Test Category";
 		string subcategory = "Test Subcategory";
 
@@ -120,8 +120,8 @@ public class ReceiptItemTests
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2;
-		Money unitPrice = new(10.00m, "USD");
-		Money totalAmount = new(20.00m, "USD");
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
@@ -140,8 +140,8 @@ public class ReceiptItemTests
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2;
-		Money unitPrice = new(10.00m, "USD");
-		Money totalAmount = new(20.00m, "USD");
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
 		string category = "Test Category";
 
 		// Act & Assert

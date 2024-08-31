@@ -9,7 +9,7 @@ public class UpdateReceiptCommandHandler(IReceiptRepository receiptRepository) :
 
 	public async Task<bool> Handle(UpdateReceiptCommand request, CancellationToken cancellationToken)
 	{
-		bool success = await _receiptRepository.UpdateAsync(request.Receipts, cancellationToken);
+		bool success = await _receiptRepository.UpdateAsync([.. request.Receipts], cancellationToken);
 
 		if (success)
 		{

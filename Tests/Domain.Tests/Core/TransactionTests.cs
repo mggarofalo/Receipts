@@ -11,7 +11,7 @@ public class TransactionTests
 		Guid id = Guid.NewGuid();
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
-		Money amount = new(100.50m, "USD");
+		Money amount = new(100.50m);
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 
 		// Act
@@ -31,7 +31,7 @@ public class TransactionTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
-		Money amount = new(100.50m, "USD");
+		Money amount = new(100.50m);
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 
 		// Act
@@ -47,7 +47,7 @@ public class TransactionTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
-		Money amount = new(100.50m, "USD");
+		Money amount = new(100.50m);
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 
 		// Act & Assert
@@ -61,7 +61,7 @@ public class TransactionTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		Guid receiptId = Guid.NewGuid();
-		Money amount = new(100.50m, "USD");
+		Money amount = new(100.50m);
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 
 		// Act & Assert
@@ -76,7 +76,7 @@ public class TransactionTests
 		Guid id = Guid.NewGuid();
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
-		Money amount = new(0m, "USD");
+		Money amount = new(0m);
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 
 		// Act & Assert
@@ -91,7 +91,7 @@ public class TransactionTests
 		Guid id = Guid.NewGuid();
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
-		Money amount = new(100.50m, "USD");
+		Money amount = new(100.50m);
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
 
 		// Act & Assert

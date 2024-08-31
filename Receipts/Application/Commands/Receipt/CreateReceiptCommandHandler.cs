@@ -9,7 +9,7 @@ public class CreateReceiptCommandHandler(IReceiptRepository receiptRepository) :
 
 	public async Task<List<Domain.Core.Receipt>> Handle(CreateReceiptCommand request, CancellationToken cancellationToken)
 	{
-		List<Domain.Core.Receipt> createdEntities = await _receiptRepository.CreateAsync(request.Receipts, cancellationToken);
+		List<Domain.Core.Receipt> createdEntities = await _receiptRepository.CreateAsync([.. request.Receipts], cancellationToken);
 		await _receiptRepository.SaveChangesAsync(cancellationToken);
 		return createdEntities;
 	}
