@@ -1,7 +1,7 @@
+using API.Services;
 using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Services;
-using API.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
