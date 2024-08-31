@@ -11,6 +11,11 @@ public class AccountMappingProfile : Profile
 		CreateMap<Account, AccountEntity>();
 
 		CreateMap<AccountEntity, Account>()
-			.ConstructUsing(src => new(src.Id, src.AccountCode, src.Name, src.IsActive));
+			.ConstructUsing(src => new(
+				src.Id,
+				src.AccountCode,
+				src.Name,
+				src.IsActive
+			));
 	}
 }

@@ -7,6 +7,7 @@ public class ReceiptEntity
 	public string Location { get; set; } = string.Empty;
 	public DateOnly Date { get; set; }
 	public decimal TaxAmount { get; set; }
+	public required string TaxAmountCurrency { get; set; }
 
 	// Navigation properties
 	public virtual ICollection<ReceiptItemEntity> ReceiptItems { get; set; } = [];

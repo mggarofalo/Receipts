@@ -7,11 +7,11 @@ public class ReceiptItem
 	public string Description { get; }
 	public decimal Quantity { get; }
 	public Money UnitPrice { get; }
-	public Money TotalAmount => new(Quantity * UnitPrice.Amount, UnitPrice.Currency);
+	public Money TotalAmount { get; }
 	public string Category { get; }
 	public string Subcategory { get; }
 
-	public ReceiptItem(Guid? id, string receiptItemCode, string description, decimal quantity, Money unitPrice, string category, string subcategory)
+	public ReceiptItem(Guid? id, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory)
 	{
 		if (string.IsNullOrWhiteSpace(receiptItemCode))
 		{
@@ -43,6 +43,7 @@ public class ReceiptItem
 		Description = description;
 		Quantity = quantity;
 		UnitPrice = unitPrice;
+		TotalAmount = totalAmount;
 		Category = category;
 		Subcategory = subcategory;
 	}
