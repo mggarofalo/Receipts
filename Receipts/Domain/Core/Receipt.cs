@@ -33,25 +33,11 @@ public class Receipt
 
 	public void AddTransaction(Transaction transaction)
 	{
-		if (transaction != null)
-		{
-			_transactions.Add(transaction);
-		}
-		else
-		{
-			throw new ArgumentNullException(nameof(transaction));
-		}
+		_transactions.Add(transaction ?? throw new ArgumentNullException(nameof(transaction)));
 	}
 
 	public void AddItem(ReceiptItem item)
 	{
-		if (item != null)
-		{
-			_items.Add(item);
-		}
-		else
-		{
-			throw new ArgumentNullException(nameof(item));
-		}
+		_items.Add(item ?? throw new ArgumentNullException(nameof(item)));
 	}
 }
