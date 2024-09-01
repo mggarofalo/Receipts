@@ -10,6 +10,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	private const string MSSQL = "Microsoft.EntityFrameworkCore.SqlServer";
 	private const string PostgreSQL = "Npgsql.EntityFrameworkCore.PostgreSQL";
 	private const string MySQL = "Pomelo.EntityFrameworkCore.MySql";
+	private const string DatabaseProviderNotSupported = "Database provider {0} not supported";
 
 	public DbSet<AccountEntity> Accounts { get; set; } = null!;
 	public DbSet<ReceiptEntity> Receipts { get; set; } = null!;
@@ -19,82 +20,118 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		base.OnModelCreating(modelBuilder);
+		PrepareEntityTypesInModelBuilder(modelBuilder, Database.ProviderName);
+		CreateEntities(modelBuilder);
+	}
 
-		string moneyType = Database.ProviderName switch
+	private static void PrepareEntityTypesInModelBuilder(ModelBuilder modelBuilder, string? providerName)
+	{
+		Dictionary<Type, string> columnTypes = new()
 		{
-			MSSQL => "decimal(18,2)",
-			PostgreSQL => "decimal(18,2)",
-			MySQL => "decimal(18,2)",
-			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
-		};
-
-		string datetimeType = Database.ProviderName switch
-		{
-			MSSQL => "datetime2",
-			PostgreSQL => "timestamptz",
-			MySQL => "datetime",
-			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
-		};
-
-		string dateOnlyType = Database.ProviderName switch
-		{
-			MSSQL => "date",
-			PostgreSQL => "date",
-			MySQL => "date",
-			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
-		};
-
-		string boolType = Database.ProviderName switch
-		{
-			MSSQL => "bit",
-			PostgreSQL => "boolean",
-			MySQL => "tinyint(1)",
-			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
-		};
-
-		string stringType = Database.ProviderName switch
-		{
-			MSSQL => "nvarchar(max)",
-			PostgreSQL => "text",
-			MySQL => "varchar(255)",
-			_ => throw new NotImplementedException($"Database provider {Database.ProviderName} not supported")
+			{ typeof(decimal), GetMoneyType(providerName) },
+			{ typeof(DateTime), GetDateTimeType(providerName) },
+			{ typeof(DateOnly), GetDateOnlyType(providerName) },
+			{ typeof(bool), GetBoolType(providerName) },
+			{ typeof(string), GetStringType(providerName) }
 		};
 
 		foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
 		{
-			foreach (IMutableProperty property in entityType.GetProperties())
-			{
-				if (property.ClrType == typeof(decimal))
-				{
-					property.SetColumnType(moneyType);
-				}
-				else if (property.ClrType == typeof(DateTime))
-				{
-					property.SetColumnType(datetimeType);
-				}
-				else if (property.ClrType == typeof(DateOnly))
-				{
-					property.SetColumnType(dateOnlyType);
-				}
-				else if (property.ClrType == typeof(bool))
-				{
-					property.SetColumnType(boolType);
-				}
-				else if (property.ClrType == typeof(string))
-				{
-					property.SetColumnType(stringType);
-				}
-				else if (property.ClrType.IsEnum)
-				{
-					property.SetColumnType(stringType);
+			LoopPropertiesAndSetColumnTypes(columnTypes, entityType);
+		}
+	}
 
-					var converterType = typeof(EnumToStringConverter<>).MakeGenericType(property.ClrType);
-					var converter = (ValueConverter)Activator.CreateInstance(converterType)!;
-					property.SetValueConverter(converter);
-				}
-			}
+	private static void LoopPropertiesAndSetColumnTypes(Dictionary<Type, string> columnTypes, IMutableEntityType entityType)
+	{
+		foreach (IMutableProperty property in entityType.GetProperties())
+		{
+			property.SetColumnType(GetColumnType(property, columnTypes));
+		}
+	}
+
+	private static string GetColumnType(IMutableProperty property, Dictionary<Type, string> columnTypes)
+	{
+		Type clrType = property.ClrType;
+
+		if (columnTypes.TryGetValue(clrType, out string? columnType))
+		{
+			return columnType;
 		}
 
+		if (clrType.IsEnum)
+		{
+			return SetEnumPropertyColumnType(property, columnTypes[typeof(string)]);
+		}
+
+		return columnTypes[typeof(string)];
+	}
+
+	private static string SetEnumPropertyColumnType(IMutableProperty property, string stringType)
+	{
+		property.SetColumnType(stringType);
+		Type converterType = typeof(EnumToStringConverter<>).MakeGenericType(property.ClrType);
+		ValueConverter converter = (ValueConverter)Activator.CreateInstance(converterType)!;
+		property.SetValueConverter(converter);
+		return stringType;
+	}
+
+	private static string GetMoneyType(string? providerName)
+	{
+		return providerName switch
+		{
+			MSSQL => "decimal(18,2)",
+			PostgreSQL => "decimal(18,2)",
+			MySQL => "decimal(18,2)",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
+	private static string GetDateTimeType(string? providerName)
+	{
+		return providerName switch
+		{
+			MSSQL => "datetime2",
+			PostgreSQL => "timestamptz",
+			MySQL => "datetime",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
+	private static string GetDateOnlyType(string? providerName)
+	{
+		return providerName switch
+		{
+			MSSQL => "date",
+			PostgreSQL => "date",
+			MySQL => "date",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
+	private static string GetBoolType(string? providerName)
+	{
+		return providerName switch
+		{
+			MSSQL => "bit",
+			PostgreSQL => "boolean",
+			MySQL => "tinyint(1)",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
+	private static string GetStringType(string? providerName)
+	{
+		return providerName switch
+		{
+			MSSQL => "nvarchar(max)",
+			PostgreSQL => "text",
+			MySQL => "varchar(255)",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
+	private static void CreateEntities(ModelBuilder modelBuilder)
+	{
 		CreateAccountEntity(modelBuilder);
 		CreateReceiptEntity(modelBuilder);
 		CreateTransactionEntity(modelBuilder);
