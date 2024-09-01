@@ -67,7 +67,7 @@ public class ReceiptItemTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, invalidReceiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory));
-		Assert.Equal("Receipt item code cannot be empty (Parameter 'receiptItemCode')", exception.Message);
+		Assert.StartsWith(ReceiptItem.ReceiptItemCodeCannotBeEmpty, exception.Message);
 	}
 
 	[Theory]
@@ -87,7 +87,7 @@ public class ReceiptItemTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, invalidDescription, quantity, unitPrice, totalAmount, category, subcategory));
-		Assert.Equal("Description cannot be empty (Parameter 'description')", exception.Message);
+		Assert.StartsWith(ReceiptItem.DescriptionCannotBeEmpty, exception.Message);
 	}
 
 	[Theory]
@@ -106,7 +106,7 @@ public class ReceiptItemTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, invalidQuantity, unitPrice, totalAmount, category, subcategory));
-		Assert.Equal("Quantity must be positive (Parameter 'quantity')", exception.Message);
+		Assert.StartsWith(ReceiptItem.QuantityMustBePositive, exception.Message);
 	}
 
 	[Theory]
@@ -126,7 +126,7 @@ public class ReceiptItemTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, invalidCategory, subcategory));
-		Assert.Equal("Category cannot be empty (Parameter 'category')", exception.Message);
+		Assert.StartsWith(ReceiptItem.CategoryCannotBeEmpty, exception.Message);
 	}
 
 	[Theory]
@@ -146,6 +146,6 @@ public class ReceiptItemTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, invalidSubcategory));
-		Assert.Equal("Subcategory cannot be empty (Parameter 'subcategory')", exception.Message);
+		Assert.StartsWith(ReceiptItem.SubcategoryCannotBeEmpty, exception.Message);
 	}
 }

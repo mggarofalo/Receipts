@@ -50,7 +50,7 @@ public class AccountTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Account(id, invalidAccountCode, name));
-		Assert.Equal("Account code cannot be empty (Parameter 'accountCode')", exception.Message);
+		Assert.StartsWith(Account.AccountCodeCannotBeEmpty, exception.Message);
 	}
 
 	[Theory]
@@ -65,7 +65,7 @@ public class AccountTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Account(id, accountCode, invalidName));
-		Assert.Equal("Name cannot be empty (Parameter 'name')", exception.Message);
+		Assert.StartsWith(Account.NameCannotBeEmpty, exception.Message);
 	}
 
 	[Fact]

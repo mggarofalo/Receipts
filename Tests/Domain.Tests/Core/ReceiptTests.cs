@@ -55,7 +55,7 @@ public class ReceiptTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, invalidLocation, date, taxAmount));
-		Assert.Equal("Location cannot be empty (Parameter 'location')", exception.Message);
+		Assert.StartsWith(Receipt.LocationCannotBeEmpty, exception.Message);
 	}
 
 	[Fact]
@@ -69,7 +69,7 @@ public class ReceiptTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, location, date, taxAmount));
-		Assert.Equal("Date cannot be in the future (Parameter 'date')", exception.Message);
+		Assert.StartsWith(Receipt.DateCannotBeInTheFuture, exception.Message);
 	}
 
 	[Fact]

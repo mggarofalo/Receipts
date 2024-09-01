@@ -52,7 +52,7 @@ public class TransactionTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Transaction(id, Guid.Empty, accountId, amount, date));
-		Assert.Equal("Receipt ID cannot be empty (Parameter 'receiptId')", exception.Message);
+		Assert.StartsWith(Transaction.ReceiptIdCannotBeEmpty, exception.Message);
 	}
 
 	[Fact]
@@ -66,7 +66,7 @@ public class TransactionTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Transaction(id, receiptId, Guid.Empty, amount, date));
-		Assert.Equal("Account ID cannot be empty (Parameter 'accountId')", exception.Message);
+		Assert.StartsWith(Transaction.AccountIdCannotBeEmpty, exception.Message);
 	}
 
 	[Fact]
@@ -81,7 +81,7 @@ public class TransactionTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Transaction(id, receiptId, accountId, amount, date));
-		Assert.Equal("Amount must be non-zero (Parameter 'amount')", exception.Message);
+		Assert.StartsWith(Transaction.AmountMustBeNonZero, exception.Message);
 	}
 
 	[Fact]
@@ -96,6 +96,6 @@ public class TransactionTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Transaction(id, receiptId, accountId, amount, date));
-		Assert.Equal("Date cannot be in the future (Parameter 'date')", exception.Message);
+		Assert.StartsWith(Transaction.DateCannotBeInTheFuture, exception.Message);
 	}
 }
