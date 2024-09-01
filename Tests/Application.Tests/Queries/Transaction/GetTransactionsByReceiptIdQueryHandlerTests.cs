@@ -24,9 +24,17 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockRepository.Object);
 		GetTransactionsByReceiptIdQuery query = new(receiptId);
 
-		List<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
+		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
+		Assert.Equal(transactions.Count, result.Count);
+		Assert.True(transactions.All(t => result.Any(rt =>
+			rt.Id == t.Id &&
+			rt.ReceiptId == t.ReceiptId &&
+			rt.AccountId == t.AccountId &&
+			rt.Amount == t.Amount &&
+			rt.Date == t.Date)));
+
 		mockRepository.Verify(r => r.GetByReceiptIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -39,22 +47,23 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockRepository.Object);
 		GetTransactionsByReceiptIdQuery query = new(Guid.NewGuid());
 
-		List<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
+		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
 
+		Assert.NotNull(result);
 		Assert.Empty(result);
 		mockRepository.Verify(r => r.GetByReceiptIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
-	[Fact(Skip = "Skipping this test because it's not implemented yet")]
+	[Fact]
 	public async Task Handle_ShouldReturnNull_WhenReceiptDoesNotExist()
 	{
 		Mock<ITransactionRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetByReceiptIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>)null);
+		mockRepository.Setup(r => r.GetByReceiptIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>?)null);
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockRepository.Object);
 		GetTransactionsByReceiptIdQuery query = new(Guid.NewGuid());
 
-		List<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
+		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);
 		mockRepository.Verify(r => r.GetByReceiptIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);

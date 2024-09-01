@@ -25,8 +25,15 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 		return entities.Select(mapper.Map<ReceiptItem>).ToList();
 	}
 
-	public async Task<List<ReceiptItem>> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
+	public async Task<List<ReceiptItem>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
+		bool receiptExists = await context.Receipts.AnyAsync(e => e.Id == receiptId, cancellationToken);
+
+		if (!receiptExists)
+		{
+			return null;
+		}
+
 		List<ReceiptItemEntity> entities = await context.ReceiptItems
 			.Where(x => x.ReceiptId == receiptId)
 			.ToListAsync(cancellationToken);

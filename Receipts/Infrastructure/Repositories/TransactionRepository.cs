@@ -25,8 +25,15 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 		return entities.Select(mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task<List<Transaction>> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
+	public async Task<List<Transaction>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
+		bool receiptExists = await context.Receipts.AnyAsync(e => e.Id == receiptId, cancellationToken);
+
+		if (!receiptExists)
+		{
+			return null;
+		}
+
 		List<TransactionEntity> entities = await context.Transactions
 			.Where(x => x.ReceiptId == receiptId)
 			.ToListAsync(cancellationToken);
