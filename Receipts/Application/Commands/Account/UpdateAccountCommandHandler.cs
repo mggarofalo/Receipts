@@ -9,13 +9,8 @@ public class UpdateAccountCommandHandler(IAccountRepository accountRepository) :
 
 	public async Task<bool> Handle(UpdateAccountCommand request, CancellationToken cancellationToken)
 	{
-		bool success = await _accountRepository.UpdateAsync([.. request.Accounts], cancellationToken);
-
-		if (success)
-		{
-			await _accountRepository.SaveChangesAsync(cancellationToken);
-		}
-
-		return success;
+		await _accountRepository.UpdateAsync([.. request.Accounts], cancellationToken);
+		await _accountRepository.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 }

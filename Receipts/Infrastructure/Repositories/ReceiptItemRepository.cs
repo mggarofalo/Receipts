@@ -47,7 +47,7 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 		return createdEntities.Select(mapper.Map<ReceiptItem>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(List<ReceiptItem> models, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<ReceiptItem> models, CancellationToken cancellationToken)
 	{
 		List<ReceiptItemEntity> newEntities = models.Select(mapper.Map<ReceiptItemEntity>).ToList();
 
@@ -63,16 +63,12 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 			existingEntity.Subcategory = newEntity.Subcategory;
 			existingEntity.TotalAmount = newEntity.TotalAmount;
 		}
-
-		return true;
 	}
 
-	public async Task<bool> DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
+	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
 		List<ReceiptItemEntity> entities = await context.ReceiptItems.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
 		context.ReceiptItems.RemoveRange(entities);
-
-		return true;
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)

@@ -47,7 +47,7 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 		return createdEntities.Select(mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(List<Transaction> models, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<Transaction> models, CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> newEntities = models.Select(mapper.Map<TransactionEntity>).ToList();
 
@@ -59,16 +59,12 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 			existingEntity.Amount = newEntity.Amount;
 			existingEntity.Date = newEntity.Date;
 		}
-
-		return true;
 	}
 
-	public async Task<bool> DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
+	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> entities = await context.Transactions.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
 		context.Transactions.RemoveRange(entities);
-
-		return true;
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)

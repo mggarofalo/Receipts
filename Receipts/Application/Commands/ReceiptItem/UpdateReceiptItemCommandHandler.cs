@@ -9,13 +9,8 @@ public class UpdateReceiptItemCommandHandler(IReceiptItemRepository receiptitemR
 
 	public async Task<bool> Handle(UpdateReceiptItemCommand request, CancellationToken cancellationToken)
 	{
-		bool success = await _receiptitemRepository.UpdateAsync([.. request.ReceiptItems], cancellationToken);
-
-		if (success)
-		{
-			await _receiptitemRepository.SaveChangesAsync(cancellationToken);
-		}
-
-		return success;
+		await _receiptitemRepository.UpdateAsync([.. request.ReceiptItems], cancellationToken);
+		await _receiptitemRepository.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 }

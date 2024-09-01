@@ -9,13 +9,8 @@ public class DeleteTransactionCommandHandler(ITransactionRepository transactionR
 
 	public async Task<bool> Handle(DeleteTransactionCommand request, CancellationToken cancellationToken)
 	{
-		bool success = await _transactionRepository.DeleteAsync([.. request.Ids], cancellationToken);
-
-		if (success)
-		{
-			await _transactionRepository.SaveChangesAsync(cancellationToken);
-		}
-
-		return success;
+		await _transactionRepository.DeleteAsync([.. request.Ids], cancellationToken);
+		await _transactionRepository.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 }

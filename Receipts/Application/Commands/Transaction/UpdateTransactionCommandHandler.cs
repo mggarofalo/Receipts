@@ -9,13 +9,8 @@ public class UpdateTransactionCommandHandler(ITransactionRepository transactionR
 
 	public async Task<bool> Handle(UpdateTransactionCommand request, CancellationToken cancellationToken)
 	{
-		bool success = await _transactionRepository.UpdateAsync([.. request.Transactions], cancellationToken);
-
-		if (success)
-		{
-			await _transactionRepository.SaveChangesAsync(cancellationToken);
-		}
-
-		return success;
+		await _transactionRepository.UpdateAsync([.. request.Transactions], cancellationToken);
+		await _transactionRepository.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 }

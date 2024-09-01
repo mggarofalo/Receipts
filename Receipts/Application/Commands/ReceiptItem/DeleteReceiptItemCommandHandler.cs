@@ -9,13 +9,8 @@ public class DeleteReceiptItemCommandHandler(IReceiptItemRepository receiptitemR
 
 	public async Task<bool> Handle(DeleteReceiptItemCommand request, CancellationToken cancellationToken)
 	{
-		bool success = await _receiptitemRepository.DeleteAsync([.. request.Ids], cancellationToken);
-
-		if (success)
-		{
-			await _receiptitemRepository.SaveChangesAsync(cancellationToken);
-		}
-
-		return success;
+		await _receiptitemRepository.DeleteAsync([.. request.Ids], cancellationToken);
+		await _receiptitemRepository.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 }

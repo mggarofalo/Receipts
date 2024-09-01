@@ -38,7 +38,7 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 		return createdEntities.Select(mapper.Map<Receipt>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(List<Receipt> models, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> newEntities = models.Select(mapper.Map<ReceiptEntity>).ToList();
 
@@ -50,16 +50,12 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 			existingEntity.Date = newEntity.Date;
 			existingEntity.TaxAmount = newEntity.TaxAmount;
 		}
-
-		return true;
 	}
 
-	public async Task<bool> DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
+	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> entities = await context.Receipts.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
 		context.Receipts.RemoveRange(entities);
-
-		return true;
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)

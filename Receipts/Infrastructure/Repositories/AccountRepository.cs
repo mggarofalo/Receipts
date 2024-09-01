@@ -38,7 +38,7 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 		return createdEntities.Select(mapper.Map<Account>).ToList();
 	}
 
-	public async Task<bool> UpdateAsync(List<Account> models, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<Account> models, CancellationToken cancellationToken)
 	{
 		List<AccountEntity> newEntities = models.Select(mapper.Map<AccountEntity>).ToList();
 
@@ -49,16 +49,12 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 			existingEntity.Name = newEntity.Name;
 			existingEntity.IsActive = newEntity.IsActive;
 		}
-
-		return true;
 	}
 
-	public async Task<bool> DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
+	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
 		List<AccountEntity> entities = await context.Accounts.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
 		context.Accounts.RemoveRange(entities);
-
-		return true;
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
