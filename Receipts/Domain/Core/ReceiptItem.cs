@@ -3,6 +3,7 @@ namespace Domain.Core;
 public class ReceiptItem
 {
 	public Guid? Id { get; }
+	public Guid ReceiptId { get; }
 	public string ReceiptItemCode { get; }
 	public string Description { get; }
 	public decimal Quantity { get; }
@@ -11,14 +12,20 @@ public class ReceiptItem
 	public string Category { get; }
 	public string Subcategory { get; }
 
+	public const string ReceiptIdCannotBeEmpty = "Receipt ID cannot be empty";
 	public const string ReceiptItemCodeCannotBeEmpty = "Receipt item code cannot be empty";
 	public const string DescriptionCannotBeEmpty = "Description cannot be empty";
 	public const string QuantityMustBePositive = "Quantity must be positive";
 	public const string CategoryCannotBeEmpty = "Category cannot be empty";
 	public const string SubcategoryCannotBeEmpty = "Subcategory cannot be empty";
 
-	public ReceiptItem(Guid? id, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory)
+	public ReceiptItem(Guid? id, Guid receiptId, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory)
 	{
+		if (receiptId == Guid.Empty)
+		{
+			throw new ArgumentException(ReceiptIdCannotBeEmpty, nameof(receiptId));
+		}
+
 		if (string.IsNullOrWhiteSpace(receiptItemCode))
 		{
 			throw new ArgumentException(ReceiptItemCodeCannotBeEmpty, nameof(receiptItemCode));
@@ -45,6 +52,7 @@ public class ReceiptItem
 		}
 
 		Id = id;
+		ReceiptId = receiptId;
 		ReceiptItemCode = receiptItemCode;
 		Description = description;
 		Quantity = quantity;

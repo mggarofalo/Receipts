@@ -8,8 +8,8 @@ public class CreateAccountCommandTests : ICommandTests<Domain.Core.Account>
 	{
 		return
 		[
-			new(Guid.NewGuid(), "Test Account 1", "Test Account 1", true),
-			new(Guid.NewGuid(), "Test Account 2", "Test Account 2", true)
+			new(null, "Test Account 1", "Test Account 1", true),
+			new(null, "Test Account 2", "Test Account 2", true)
 		];
 	}
 

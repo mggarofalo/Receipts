@@ -9,8 +9,8 @@ public class CreateReceiptItemCommandTests : ICommandTests<Domain.Core.ReceiptIt
 	{
 		return
 		[
-			new(Guid.NewGuid(), "Item 1", "Description 1", 1, new Money(10), new Money(10), "Category 1", "Subcategory 1"),
-			new(Guid.NewGuid(), "Item 2", "Description 2", 2, new Money(2), new Money(4), "Category 2", "Subcategory 2")
+			new(null, Guid.NewGuid(), "Item 1", "Description 1", 1, new Money(10), new Money(10), "Category 1", "Subcategory 1"),
+			new(null, Guid.NewGuid(), "Item 2", "Description 2", 2, new Money(2), new Money(4), "Category 2", "Subcategory 2")
 		];
 	}
 

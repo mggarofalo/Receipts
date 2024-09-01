@@ -9,8 +9,8 @@ public class CreateReceiptCommandTests : ICommandTests<Domain.Core.Receipt>
 	{
 		return
 		[
-			new(Guid.NewGuid(), "Location 1", DateOnly.FromDateTime(DateTime.Today), new Money(100)),
-			new(Guid.NewGuid(), "Location 2", DateOnly.FromDateTime(DateTime.Today), new Money(200))
+			new(null, "Location 1", DateOnly.FromDateTime(DateTime.Today), new Money(100)),
+			new(null, "Location 2", DateOnly.FromDateTime(DateTime.Today), new Money(200))
 		];
 	}
 

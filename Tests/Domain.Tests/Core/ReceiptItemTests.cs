@@ -18,7 +18,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act
-		ReceiptItem receiptItem = new(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem = new(id, Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
 
 		// Assert
 		Assert.Equal(id, receiptItem.Id);
@@ -44,10 +44,28 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act
-		ReceiptItem receiptItem = new(null, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem = new(null, Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
 
 		// Assert
 		Assert.Null(receiptItem.Id);
+	}
+
+	[Fact]
+	public void Constructor_InvalidReceiptId_ThrowsArgumentException()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string receiptItemCode = "ITEM001";
+		string description = "Test Item";
+		decimal quantity = 2;
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
+		string category = "Test Category";
+		string subcategory = "Test Subcategory";
+
+		// Act & Assert
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.Empty, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory));
+		Assert.StartsWith(ReceiptItem.ReceiptIdCannotBeEmpty, exception.Message);
 	}
 
 	[Theory]
@@ -66,7 +84,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, invalidReceiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), invalidReceiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory));
 		Assert.StartsWith(ReceiptItem.ReceiptItemCodeCannotBeEmpty, exception.Message);
 	}
 
@@ -86,7 +104,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, invalidDescription, quantity, unitPrice, totalAmount, category, subcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), receiptItemCode, invalidDescription, quantity, unitPrice, totalAmount, category, subcategory));
 		Assert.StartsWith(ReceiptItem.DescriptionCannotBeEmpty, exception.Message);
 	}
 
@@ -105,7 +123,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, invalidQuantity, unitPrice, totalAmount, category, subcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), receiptItemCode, description, invalidQuantity, unitPrice, totalAmount, category, subcategory));
 		Assert.StartsWith(ReceiptItem.QuantityMustBePositive, exception.Message);
 	}
 
@@ -125,7 +143,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, invalidCategory, subcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, totalAmount, invalidCategory, subcategory));
 		Assert.StartsWith(ReceiptItem.CategoryCannotBeEmpty, exception.Message);
 	}
 
@@ -145,7 +163,7 @@ public class ReceiptItemTests
 		string category = "Test Category";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, invalidSubcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, totalAmount, category, invalidSubcategory));
 		Assert.StartsWith(ReceiptItem.SubcategoryCannotBeEmpty, exception.Message);
 	}
 }

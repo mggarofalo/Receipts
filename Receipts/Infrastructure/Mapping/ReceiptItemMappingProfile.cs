@@ -18,6 +18,7 @@ public class ReceiptItemMappingProfile : Profile
 		CreateMap<ReceiptItemEntity, ReceiptItem>()
 			.ConstructUsing(src => new(
 				src.Id,
+				src.ReceiptId,
 				src.ReceiptItemCode,
 				src.Description,
 				src.Quantity,

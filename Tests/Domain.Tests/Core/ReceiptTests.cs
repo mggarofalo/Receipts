@@ -102,7 +102,7 @@ public class ReceiptTests
 	{
 		// Arrange
 		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
-		ReceiptItem item = new(Guid.NewGuid(), "ITEM001", "Test Item", 1, new Money(10.00m), new Money(10.00m), "Test Category", "Test Subcategory");
+		ReceiptItem item = new(Guid.NewGuid(), Guid.NewGuid(), "ITEM001", "Test Item", 1, new Money(10.00m), new Money(10.00m), "Test Category", "Test Subcategory");
 
 		// Act
 		receipt.AddItem(item);

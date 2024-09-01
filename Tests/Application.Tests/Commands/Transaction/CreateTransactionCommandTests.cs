@@ -9,8 +9,8 @@ public class CreateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	{
 		return
 		[
-			new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now)),
-			new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new Money(200), DateOnly.FromDateTime(DateTime.Now))
+			new(null, Guid.NewGuid(), Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now)),
+			new(null, Guid.NewGuid(), Guid.NewGuid(), new Money(200), DateOnly.FromDateTime(DateTime.Now))
 		];
 	}
 
