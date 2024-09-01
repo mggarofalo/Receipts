@@ -32,7 +32,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			{ typeof(DateTime), GetDateTimeType(providerName) },
 			{ typeof(DateOnly), GetDateOnlyType(providerName) },
 			{ typeof(bool), GetBoolType(providerName) },
-			{ typeof(string), GetStringType(providerName) }
+			{ typeof(string), GetStringType(providerName) },
+			{ typeof(Guid), GetGuidType(providerName) }
 		};
 
 		foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
@@ -126,6 +127,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "nvarchar(max)",
 			PostgreSQL => "text",
 			MySQL => "varchar(255)",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
+	private static string GetGuidType(string? providerName)
+	{
+		return providerName switch
+		{
+			MSSQL => "uniqueidentifier",
+			PostgreSQL => "uuid",
+			MySQL => "char(36)",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
