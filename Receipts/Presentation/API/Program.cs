@@ -2,13 +2,15 @@ using API.Services;
 using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Services;
+using System.Reflection;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddLoggingService();
-builder.Services.RegisterProgramServices(builder.Configuration);
-builder.Services.RegisterApplicationServices(builder.Configuration);
-builder.Services.RegisterInfrastructureServices(builder.Configuration);
+
+builder.Services.RegisterProgramServices(Assembly.GetExecutingAssembly())
+	.RegisterApplicationServices(builder.Configuration)
+	.RegisterInfrastructureServices(builder.Configuration);
 
 WebApplication app = builder.Build();
 

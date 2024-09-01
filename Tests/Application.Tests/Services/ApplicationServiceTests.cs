@@ -15,6 +15,7 @@ public class ApplicationServiceTests
 		ServiceCollection serviceCollection = new();
 		serviceCollection.RegisterApplicationServices(new Mock<IConfiguration>().Object);
 		ServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
+
 		AssertThatIMediatorServiceIsNotNull(serviceProvider);
 		AssertThatIMapperServiceIsNotNull(serviceProvider);
 	}
