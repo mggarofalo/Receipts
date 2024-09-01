@@ -9,6 +9,7 @@ public class GetTransactionsByReceiptIdQueryHandler(ITransactionRepository trans
 
 	public async Task<List<Domain.Core.Transaction>> Handle(GetTransactionsByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
+		// TODO: Update repo to return null if receiptId doesn't exist and empty if receiptId exists but has no transactions
 		return await _transactionRepository.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
 	}
 }
