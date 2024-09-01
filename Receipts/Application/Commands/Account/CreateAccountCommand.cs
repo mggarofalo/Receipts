@@ -5,7 +5,8 @@ namespace Application.Commands.Account;
 public record CreateAccountCommand : ICommand<List<Domain.Core.Account>>
 {
 	public IReadOnlyList<Domain.Core.Account> Accounts { get; }
-	public const string AccountsCannotBeEmptyExceptionMessage = "Accounts list cannot be empty.";
+
+	public const string AccountsListCannotBeEmpty = "Accounts list cannot be empty.";
 
 	public CreateAccountCommand(List<Domain.Core.Account> accounts)
 	{
@@ -13,7 +14,7 @@ public record CreateAccountCommand : ICommand<List<Domain.Core.Account>>
 
 		if (accounts.Count == 0)
 		{
-			throw new ArgumentException(AccountsCannotBeEmptyExceptionMessage, nameof(accounts));
+			throw new ArgumentException(AccountsListCannotBeEmpty, nameof(accounts));
 		}
 
 		Accounts = accounts.AsReadOnly();

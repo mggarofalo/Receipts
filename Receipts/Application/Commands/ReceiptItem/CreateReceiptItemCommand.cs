@@ -5,7 +5,8 @@ namespace Application.Commands.ReceiptItem;
 public record CreateReceiptItemCommand : ICommand<List<Domain.Core.ReceiptItem>>
 {
 	public IReadOnlyList<Domain.Core.ReceiptItem> ReceiptItems { get; }
-	public const string ReceiptItemsCannotBeEmptyExceptionMessage = "Receipt items list cannot be empty.";
+
+	public const string ReceiptItemsListCannotBeEmpty = "Receipt items list cannot be empty.";
 
 	public CreateReceiptItemCommand(List<Domain.Core.ReceiptItem> receiptItems)
 	{
@@ -13,7 +14,7 @@ public record CreateReceiptItemCommand : ICommand<List<Domain.Core.ReceiptItem>>
 
 		if (receiptItems.Count == 0)
 		{
-			throw new ArgumentException(ReceiptItemsCannotBeEmptyExceptionMessage, nameof(receiptItems));
+			throw new ArgumentException(ReceiptItemsListCannotBeEmpty, nameof(receiptItems));
 		}
 
 		ReceiptItems = receiptItems.AsReadOnly();

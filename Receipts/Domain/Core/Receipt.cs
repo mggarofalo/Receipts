@@ -7,6 +7,10 @@ public class Receipt
 	public string Location { get; }
 	public DateOnly Date { get; }
 	public Money TaxAmount { get; }
+
+	public const string LocationCannotBeEmpty = "Location cannot be empty";
+	public const string DateCannotBeInTheFuture = "Date cannot be in the future";
+
 	private readonly List<ReceiptItem> _items = [];
 	public IReadOnlyList<ReceiptItem> Items => _items.AsReadOnly();
 	private readonly List<Transaction> _transactions = [];
@@ -16,12 +20,12 @@ public class Receipt
 	{
 		if (string.IsNullOrWhiteSpace(location))
 		{
-			throw new ArgumentException("Location cannot be empty", nameof(location));
+			throw new ArgumentException(LocationCannotBeEmpty, nameof(location));
 		}
 
 		if (date.ToDateTime(new TimeOnly()) > DateTime.Today)
 		{
-			throw new ArgumentException("Date cannot be in the future", nameof(date));
+			throw new ArgumentException(DateCannotBeInTheFuture, nameof(date));
 		}
 
 		Id = id;

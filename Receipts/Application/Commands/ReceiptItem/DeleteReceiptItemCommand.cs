@@ -5,7 +5,8 @@ namespace Application.Commands.ReceiptItem;
 public record DeleteReceiptItemCommand : ICommand<bool>
 {
 	public IReadOnlyList<Guid> Ids { get; }
-	public const string IdsCannotBeEmptyExceptionMessage = "Ids list cannot be empty.";
+
+	public const string IdsListCannotBeEmpty = "Ids list cannot be empty.";
 
 	public DeleteReceiptItemCommand(List<Guid> ids)
 	{
@@ -13,7 +14,7 @@ public record DeleteReceiptItemCommand : ICommand<bool>
 
 		if (ids.Count == 0)
 		{
-			throw new ArgumentException(IdsCannotBeEmptyExceptionMessage, nameof(ids));
+			throw new ArgumentException(IdsListCannotBeEmpty, nameof(ids));
 		}
 
 		Ids = ids.AsReadOnly();
