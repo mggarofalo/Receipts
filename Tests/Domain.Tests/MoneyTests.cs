@@ -40,4 +40,47 @@ public class MoneyTests
 		var money = new Money(123.45m);
 		Assert.Equal("Money { Amount = 123.45, Currency = USD }", money.ToString());
 	}
+
+	[Fact]
+	public void Money_Zero_ShouldReturnCorrectResult()
+	{
+		var money = Money.Zero;
+		Assert.Equal(0m, money.Amount);
+	}
+
+	[Fact]
+	public void Money_Addition_ShouldReturnCorrectResult()
+	{
+		var money1 = new Money(100.50m);
+		var money2 = new Money(200.75m);
+		var result = money1 + money2;
+		Assert.Equal(new Money(301.25m), result);
+	}
+
+	[Fact]
+	public void Money_Subtraction_ShouldReturnCorrectResult()
+	{
+		var money1 = new Money(200.75m);
+		var money2 = new Money(100.50m);
+		var result = money1 - money2;
+		Assert.Equal(new Money(100.25m), result);
+	}
+
+	[Fact]
+	public void Money_Multiplication_ShouldReturnCorrectResult()
+	{
+		var money1 = new Money(100.50m);
+		var money2 = new Money(2);
+		var result = money1 * money2;
+		Assert.Equal(new Money(201.00m), result);
+	}
+
+	[Fact]
+	public void Money_Division_ShouldReturnCorrectResult()
+	{
+		var money1 = new Money(201.00m);
+		var money2 = new Money(2);
+		var result = money1 / money2;
+		Assert.Equal(new Money(100.50m), result);
+	}
 }
