@@ -1,6 +1,7 @@
 using Application.Interfaces.Repositories;
 using Application.Queries.Account;
 using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Queries.Account;
 
@@ -9,15 +10,13 @@ public class GetAccountByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnAccount_WhenAccountExists()
 	{
-		Guid accountId = Guid.NewGuid();
-		Domain.Core.Account account = new(accountId, "ACCT_1", "Test Account 1", true);
+		Domain.Core.Account account = AccountGenerator.Generate();
 
 		Mock<IAccountRepository> mockRepository = new();
 		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(account);
 
 		GetAccountByIdQueryHandler handler = new(mockRepository.Object);
-		GetAccountByIdQuery query = new(accountId);
-
+		GetAccountByIdQuery query = new(account.Id!.Value);
 		Domain.Core.Account? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
@@ -32,7 +31,6 @@ public class GetAccountByIdQueryHandlerTests
 
 		GetAccountByIdQueryHandler handler = new(mockRepository.Object);
 		GetAccountByIdQuery query = new(Guid.NewGuid());
-
 		Domain.Core.Account? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);

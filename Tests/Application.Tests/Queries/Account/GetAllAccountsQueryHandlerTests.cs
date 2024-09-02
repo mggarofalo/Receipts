@@ -1,6 +1,6 @@
 using Application.Interfaces.Repositories;
 using Application.Queries.Account;
-using Domain;
+using SampleData.Domain.Core;
 using Moq;
 
 namespace Application.Tests.Queries.Account;
@@ -10,26 +10,22 @@ public class GetAllAccountsQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnAllAccounts()
 	{
-		List<Domain.Core.Account> allAccounts =
-		[
-			new(Guid.NewGuid(), "ACCT_1", "Test Account 1", true),
-			new(Guid.NewGuid(), "ACCT_2", "Test Account 2", true)
-		];
+		List<Domain.Core.Account> accounts = AccountGenerator.GenerateList(2);
 
 		Mock<IAccountRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(allAccounts);
+		mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(accounts);
 
 		GetAllAccountsQueryHandler handler = new(mockRepository.Object);
 		GetAllAccountsQuery query = new();
 
 		List<Domain.Core.Account> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.Equal(allAccounts.Count, result.Count);
-		Assert.True(allAccounts.All(a => result.Any(ra =>
-		ra.Id == a.Id &&
-			ra.AccountCode == a.AccountCode &&
-			ra.Name == a.Name &&
-			ra.IsActive == a.IsActive)));
+		Assert.Equal(accounts.Count, result.Count);
+		Assert.True(accounts.All(input => result.Any(output =>
+			output.Id == input.Id &&
+			output.AccountCode == input.AccountCode &&
+			output.Name == input.Name &&
+			output.IsActive == input.IsActive)));
 
 		mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}

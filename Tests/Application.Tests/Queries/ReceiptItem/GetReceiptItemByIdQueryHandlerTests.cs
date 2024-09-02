@@ -1,6 +1,6 @@
 using Application.Interfaces.Repositories;
 using Application.Queries.ReceiptItem;
-using Domain;
+using SampleData.Domain.Core;
 using Moq;
 
 namespace Application.Tests.Queries.ReceiptItem;
@@ -10,15 +10,13 @@ public class GetReceiptItemByReceiptIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnReceiptItem_WhenReceiptItemExists()
 	{
-		Guid receiptItemId = Guid.NewGuid();
-		Domain.Core.ReceiptItem receiptItem = new(receiptItemId, Guid.NewGuid(), "Test Receipt Item 1", "Test Receipt Item 1", 1, new Money(10), new Money(10), "Test Category 1", "Test Subcategory 1");
+		Domain.Core.ReceiptItem receiptItem = ReceiptItemGenerator.Generate();
 
 		Mock<IReceiptItemRepository> mockRepository = new();
 		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(receiptItem);
 
 		GetReceiptItemByIdQueryHandler handler = new(mockRepository.Object);
-		GetReceiptItemByIdQuery query = new(receiptItemId);
-
+		GetReceiptItemByIdQuery query = new(receiptItem.Id!.Value);
 		Domain.Core.ReceiptItem? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
@@ -33,7 +31,6 @@ public class GetReceiptItemByReceiptIdQueryHandlerTests
 
 		GetReceiptItemByIdQueryHandler handler = new(mockRepository.Object);
 		GetReceiptItemByIdQuery query = new(Guid.NewGuid());
-
 		Domain.Core.ReceiptItem? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);
