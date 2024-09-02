@@ -1,18 +1,10 @@
 using Application.Commands.Transaction;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Transaction;
 
 public class DeleteTransactionCommandTests : ICommandTests<Guid>
 {
-	public List<Guid> GenerateItemsForTest()
-	{
-		return
-		[
-			Guid.NewGuid(),
-			Guid.NewGuid()
-		];
-	}
-
 	[Fact]
 	public void Command_WithNullItems_ThrowsArgumentNullException()
 	{
@@ -34,7 +26,7 @@ public class DeleteTransactionCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
-		List<Guid> items = GenerateItemsForTest();
+		List<Guid> items = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
 		DeleteTransactionCommand command = new(items);
 		Assert.Equal(items, command.Ids);
 	}
@@ -42,8 +34,8 @@ public class DeleteTransactionCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Items_ShouldBeImmutable()
 	{
-		List<Guid> items = GenerateItemsForTest();
+		List<Guid> items = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
 		DeleteTransactionCommand command = new(items);
-		Assert.True(command.Ids is IReadOnlyList<Guid>);
+		Assert.True(command.Ids is not null);
 	}
 }

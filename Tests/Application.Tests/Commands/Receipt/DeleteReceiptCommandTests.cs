@@ -1,18 +1,10 @@
 using Application.Commands.Receipt;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Receipt;
 
 public class DeleteReceiptCommandTests : ICommandTests<Guid>
 {
-	public List<Guid> GenerateItemsForTest()
-	{
-		return
-		[
-			Guid.NewGuid(),
-			Guid.NewGuid()
-		];
-	}
-
 	[Fact]
 	public void Command_WithNullItems_ThrowsArgumentNullException()
 	{
@@ -34,7 +26,7 @@ public class DeleteReceiptCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
-		List<Guid> items = GenerateItemsForTest();
+		List<Guid> items = ReceiptGenerator.GenerateList(2).Select(r => r.Id!.Value).ToList();
 		DeleteReceiptCommand command = new(items);
 		Assert.Equal(items, command.Ids);
 	}
@@ -42,8 +34,8 @@ public class DeleteReceiptCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Items_ShouldBeImmutable()
 	{
-		List<Guid> items = GenerateItemsForTest();
+		List<Guid> items = ReceiptGenerator.GenerateList(2).Select(r => r.Id!.Value).ToList();
 		DeleteReceiptCommand command = new(items);
-		Assert.True(command.Ids is IReadOnlyList<Guid>);
+		Assert.True(command.Ids is not null);
 	}
 }

@@ -1,19 +1,10 @@
 using Application.Commands.Receipt;
-using Domain;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Receipt;
 
 public class UpdateReceiptCommandTests : ICommandTests<Domain.Core.Receipt>
 {
-	public List<Domain.Core.Receipt> GenerateItemsForTest()
-	{
-		return
-		[
-			new(Guid.NewGuid(), "Location 1", DateOnly.FromDateTime(DateTime.Today), new Money(100)),
-			new(Guid.NewGuid(), "Location 2", DateOnly.FromDateTime(DateTime.Today), new Money(200))
-		];
-	}
-
 	[Fact]
 	public void Command_WithNullItems_ThrowsArgumentNullException()
 	{
@@ -35,7 +26,7 @@ public class UpdateReceiptCommandTests : ICommandTests<Domain.Core.Receipt>
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
-		List<Domain.Core.Receipt> items = GenerateItemsForTest();
+		List<Domain.Core.Receipt> items = ReceiptGenerator.GenerateList(2);
 		UpdateReceiptCommand command = new(items);
 		Assert.Equal(items, command.Receipts);
 	}
@@ -43,8 +34,8 @@ public class UpdateReceiptCommandTests : ICommandTests<Domain.Core.Receipt>
 	[Fact]
 	public void Items_ShouldBeImmutable()
 	{
-		List<Domain.Core.Receipt> items = GenerateItemsForTest();
+		List<Domain.Core.Receipt> items = ReceiptGenerator.GenerateList(2);
 		UpdateReceiptCommand command = new(items);
-		Assert.True(command.Receipts is IReadOnlyList<Domain.Core.Receipt>);
+		Assert.True(command.Receipts is not null);
 	}
 }

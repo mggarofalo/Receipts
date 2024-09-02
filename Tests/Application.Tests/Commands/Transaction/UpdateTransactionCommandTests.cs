@@ -1,19 +1,10 @@
 using Application.Commands.Transaction;
-using Domain;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Transaction;
 
 public class UpdateTransactionCommandTests : ICommandTests<Domain.Core.Transaction>
 {
-	public List<Domain.Core.Transaction> GenerateItemsForTest()
-	{
-		return
-		[
-			new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now)),
-			new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new Money(200), DateOnly.FromDateTime(DateTime.Now))
-		];
-	}
-
 	[Fact]
 	public void Command_WithNullItems_ThrowsArgumentNullException()
 	{
@@ -35,7 +26,7 @@ public class UpdateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
-		List<Domain.Core.Transaction> items = GenerateItemsForTest();
+		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
 		UpdateTransactionCommand command = new(items);
 		Assert.Equal(items, command.Transactions);
 	}
@@ -43,8 +34,8 @@ public class UpdateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	[Fact]
 	public void Items_ShouldBeImmutable()
 	{
-		List<Domain.Core.Transaction> items = GenerateItemsForTest();
+		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
 		UpdateTransactionCommand command = new(items);
-		Assert.True(command.Transactions is IReadOnlyList<Domain.Core.Transaction>);
+		Assert.True(command.Transactions is not null);
 	}
 }

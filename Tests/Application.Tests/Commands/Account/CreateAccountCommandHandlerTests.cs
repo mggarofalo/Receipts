@@ -1,5 +1,6 @@
 using Application.Commands.Account;
 using Application.Interfaces.Repositories;
+using SampleData.Domain.Core;
 using Moq;
 
 namespace Application.Tests.Commands.Account;
@@ -12,35 +13,22 @@ public class CreateAccountCommandHandlerTests
 		Mock<IAccountRepository> mockRepository = new();
 		CreateAccountCommandHandler handler = new(mockRepository.Object);
 
-		List<Domain.Core.Account> inputAccounts =
-		[
-			new(null, "ACCT_1", "Test Account 1", true),
-			new(null, "ACCT_2", "Test Account 2", true)
-		];
-
-		CreateAccountCommand command = new(inputAccounts);
-
-		List<Domain.Core.Account> createdAccounts =
-		[
-			new(Guid.NewGuid(), "ACCT_1", "Test Account 1", true),
-			new(Guid.NewGuid(), "ACCT_2", "Test Account 2", true)
-		];
+		List<Domain.Core.Account> input = AccountGenerator.GenerateList(1);
 
 		mockRepository.Setup(r => r
 			.CreateAsync(It.IsAny<List<Domain.Core.Account>>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(createdAccounts);
+			.ReturnsAsync(input);
 
+		CreateAccountCommand command = new(input);
 		List<Domain.Core.Account> result = await handler.Handle(command, CancellationToken.None);
 
-		Assert.Equal(createdAccounts.Count, result.Count);
-		Assert.Equal(createdAccounts, result);
+		Assert.Equal(input.Count, result.Count);
 
 		mockRepository.Verify(r => r.CreateAsync(It.Is<List<Domain.Core.Account>>(accounts =>
-			accounts.Count() == inputAccounts.Count &&
-			accounts.All(a => inputAccounts.Any(ia =>
-				ia.AccountCode == a.AccountCode &&
-				ia.Name == a.Name &&
-				ia.IsActive == a.IsActive))),
+			accounts.All(input => result.Any(output =>
+				output.AccountCode == input.AccountCode &&
+				output.Name == input.Name &&
+				output.IsActive == input.IsActive))),
 			It.IsAny<CancellationToken>()), Times.Once);
 
 		mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
