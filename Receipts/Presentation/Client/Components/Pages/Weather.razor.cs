@@ -8,8 +8,8 @@ public partial class Weather
 		// Simulate asynchronous loading to demonstrate streaming rendering
 		await Task.Delay(500);
 
-		var startDate = DateOnly.FromDateTime(DateTime.Now);
-		var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
+		DateOnly startDate = DateOnly.FromDateTime(DateTime.Now);
+		string[] summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
 		forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
 		{
 			Date = startDate.AddDays(index),

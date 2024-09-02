@@ -1,7 +1,7 @@
-using Moq;
-using Application.Queries.Transaction;
 using Application.Interfaces.Repositories;
+using Application.Queries.Transaction;
 using Domain;
+using Moq;
 
 namespace Application.Tests.Queries.Transaction;
 

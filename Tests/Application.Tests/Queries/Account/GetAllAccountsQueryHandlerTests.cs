@@ -1,5 +1,5 @@
-using Application.Queries.Account;
 using Application.Interfaces.Repositories;
+using Application.Queries.Account;
 using Domain;
 using Moq;
 

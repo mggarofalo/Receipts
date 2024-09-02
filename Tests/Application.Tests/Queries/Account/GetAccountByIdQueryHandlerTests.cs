@@ -1,6 +1,6 @@
-using Moq;
-using Application.Queries.Account;
 using Application.Interfaces.Repositories;
+using Application.Queries.Account;
+using Moq;
 
 namespace Application.Tests.Queries.Account;
 

@@ -1,9 +1,9 @@
 using Application.Services;
+using AutoMapper;
+using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using MediatR;
-using AutoMapper;
 
 namespace Application.Tests.Services;
 
