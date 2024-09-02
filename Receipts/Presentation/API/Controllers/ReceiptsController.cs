@@ -1,5 +1,5 @@
 using Application.Commands.Receipt;
-using Application.Queries.Receipt;
+using Application.Queries.Core.Receipt;
 using AutoMapper;
 using Domain.Core;
 using MediatR;

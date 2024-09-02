@@ -1,5 +1,5 @@
 using Application.Commands.Account;
-using Application.Queries.Account;
+using Application.Queries.Core.Account;
 using AutoMapper;
 using Domain.Core;
 using MediatR;

@@ -1,13 +1,13 @@
 using Application.Interfaces;
 
-namespace Application.Queries.Aggregates.TransactionAccounts;
+namespace Application.Queries.Core.ReceiptItem;
 
-public record GetTransactionAccountsByReceiptIdQuery : IQuery<List<Domain.Aggregates.TransactionAccount>?>
+public record GetReceiptItemsByReceiptIdQuery : IQuery<List<Domain.Core.ReceiptItem>>
 {
 	public Guid ReceiptId { get; }
 	public const string ReceiptIdCannotBeEmptyExceptionMessage = "Receipt Id cannot be empty.";
 
-	public GetTransactionAccountsByReceiptIdQuery(Guid receiptId)
+	public GetReceiptItemsByReceiptIdQuery(Guid receiptId)
 	{
 		if (receiptId == Guid.Empty)
 		{

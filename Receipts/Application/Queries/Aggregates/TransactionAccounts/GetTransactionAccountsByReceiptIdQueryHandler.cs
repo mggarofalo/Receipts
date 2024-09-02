@@ -23,10 +23,15 @@ public class GetTransactionAccountsByReceiptIdQueryHandler(
 		{
 			Domain.Core.Account? account = await accountRepository.GetByIdAsync(transaction.AccountId, cancellationToken);
 
+			if (account == null)
+			{
+				return null;
+			}
+
 			transactionAccounts.Add(new Domain.Aggregates.TransactionAccount()
 			{
 				Transaction = transaction,
-				Account = account!
+				Account = account
 			});
 		}
 
