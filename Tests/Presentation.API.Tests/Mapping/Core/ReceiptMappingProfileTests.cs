@@ -4,7 +4,7 @@ using Domain;
 using Domain.Core;
 using Shared.ViewModels.Core;
 
-namespace Presentation.API.Tests.Mapping;
+namespace Presentation.API.Tests.Mapping.Core;
 
 public class ReceiptMappingProfileTests
 {
