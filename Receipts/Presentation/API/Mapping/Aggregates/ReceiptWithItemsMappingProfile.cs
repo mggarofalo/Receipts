@@ -8,8 +8,6 @@ public class ReceiptWithItemsMappingProfile : Profile
 {
 	public ReceiptWithItemsMappingProfile()
 	{
-		CreateMap<ReceiptWithItems, ReceiptWithItemsVM>()
-			.ForMember(dest => dest.Receipt, opt => opt.MapFrom(src => src.Receipt))
-			.ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
+		CreateMap<ReceiptWithItems, ReceiptWithItemsVM>().ReverseMap();
 	}
 }

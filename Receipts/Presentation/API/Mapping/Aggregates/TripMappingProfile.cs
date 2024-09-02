@@ -8,6 +8,6 @@ public class TripMappingProfile : Profile
 {
 	public TripMappingProfile()
 	{
-		CreateMap<Trip, TripVM>();
+		CreateMap<Trip, TripVM>().ReverseMap();
 	}
 }

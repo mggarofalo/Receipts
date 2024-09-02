@@ -1,4 +1,5 @@
 using AutoMapper;
+using Common;
 using Domain;
 using Domain.Core;
 using Shared.ViewModels.Core;
@@ -14,16 +15,7 @@ public class ReceiptItemMappingProfile : Profile
 			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
 
 		CreateMap<ReceiptItemVM, ReceiptItem>()
-			.ConstructUsing(src => new(
-				src.Id,
-				src.ReceiptId,
-				src.ReceiptItemCode,
-				src.Description,
-				src.Quantity,
-				new Money(src.UnitPrice),
-				new Money(src.TotalAmount),
-				src.Category,
-				src.Subcategory
-			));
+			.ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => new Money(src.UnitPrice, Currency.USD)))
+			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => new Money(src.TotalAmount, Currency.USD)));
 	}
 }

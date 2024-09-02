@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Receipts\Presentation\API\API.csproj" />
+    <ProjectReference Include="..\SampleData\SampleData.csproj" />
   </ItemGroup>
 
 </Project>

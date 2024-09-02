@@ -16,16 +16,7 @@ public class ReceiptItemMappingProfile : Profile
 			.ForMember(dest => dest.TotalAmountCurrency, opt => opt.MapFrom(src => src.TotalAmount.Currency));
 
 		CreateMap<ReceiptItemEntity, ReceiptItem>()
-			.ConstructUsing(src => new(
-				src.Id,
-				src.ReceiptId,
-				src.ReceiptItemCode,
-				src.Description,
-				src.Quantity,
-				new Money(src.UnitPrice, src.UnitPriceCurrency),
-				new Money(src.TotalAmount, src.TotalAmountCurrency),
-				src.Category,
-				src.Subcategory
-			));
+			.ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => new Money(src.UnitPrice, src.UnitPriceCurrency)))
+			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => new Money(src.TotalAmount, src.TotalAmountCurrency)));
 	}
 }
