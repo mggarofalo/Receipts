@@ -5,12 +5,10 @@ namespace Application.Commands.ReceiptItem;
 
 public class CreateReceiptItemCommandHandler(IReceiptItemRepository receiptitemRepository) : IRequestHandler<CreateReceiptItemCommand, List<Domain.Core.ReceiptItem>>
 {
-	private readonly IReceiptItemRepository _receiptitemRepository = receiptitemRepository;
-
 	public async Task<List<Domain.Core.ReceiptItem>> Handle(CreateReceiptItemCommand request, CancellationToken cancellationToken)
 	{
-		List<Domain.Core.ReceiptItem> createdEntities = await _receiptitemRepository.CreateAsync([.. request.ReceiptItems], cancellationToken);
-		await _receiptitemRepository.SaveChangesAsync(cancellationToken);
+		List<Domain.Core.ReceiptItem> createdEntities = await receiptitemRepository.CreateAsync([.. request.ReceiptItems], cancellationToken);
+		await receiptitemRepository.SaveChangesAsync(cancellationToken);
 		return createdEntities;
 	}
 }
