@@ -11,11 +11,6 @@ public class Receipt
 	public const string LocationCannotBeEmpty = "Location cannot be empty";
 	public const string DateCannotBeInTheFuture = "Date cannot be in the future";
 
-	private readonly List<ReceiptItem> _items = [];
-	public IReadOnlyList<ReceiptItem> Items => _items.AsReadOnly();
-	private readonly List<Transaction> _transactions = [];
-	public IReadOnlyList<Transaction> Transactions => _transactions.AsReadOnly();
-
 	public Receipt(Guid? id, string location, DateOnly date, Money taxAmount, string? description = null)
 	{
 		if (string.IsNullOrWhiteSpace(location))
@@ -33,15 +28,5 @@ public class Receipt
 		Date = date;
 		TaxAmount = taxAmount;
 		Description = description;
-	}
-
-	public void AddTransaction(Transaction transaction)
-	{
-		_transactions.Add(transaction ?? throw new ArgumentNullException(nameof(transaction)));
-	}
-
-	public void AddItem(ReceiptItem item)
-	{
-		_items.Add(item ?? throw new ArgumentNullException(nameof(item)));
 	}
 }

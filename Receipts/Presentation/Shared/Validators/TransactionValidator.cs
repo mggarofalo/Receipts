@@ -1,5 +1,5 @@
 using FluentValidation;
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 
 namespace Shared.Validators;
 
@@ -11,12 +11,14 @@ public class TransactionValidator : AbstractValidator<TransactionVM>
 			.NotEmpty()
 			.NotEqual(0)
 			.WithMessage("Amount must be non-zero.");
+
 		RuleFor(x => x.Date.ToDateTime(new TimeOnly()))
 			.NotEmpty()
 			.LessThanOrEqualTo(DateTime.Today)
 			.WithMessage("Date must be prior to the current date.");
-		RuleFor(x => x.Account)
-			.NotNull()
+
+		RuleFor(x => x.AccountId)
+			.NotEmpty()
 			.WithMessage("Account is required.");
 	}
 }

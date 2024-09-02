@@ -15,7 +15,4 @@ public class ReceiptItemEntity
 	public required Currency TotalAmountCurrency { get; set; }
 	public string Category { get; set; } = string.Empty;
 	public string Subcategory { get; set; } = string.Empty;
-
-	// Navigation property
-	public virtual ReceiptEntity? Receipt { get; set; }
 }

@@ -1,4 +1,4 @@
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 using System.Net.Http.Json;
 
 namespace Shared.ApiClients;

@@ -9,9 +9,9 @@ public class Transaction
 	public DateOnly Date { get; }
 
 	public const string ReceiptIdCannotBeEmpty = "Receipt ID cannot be empty";
-	public const string AccountIdCannotBeEmpty = "Account ID cannot be empty";
 	public const string AmountMustBeNonZero = "Amount must be non-zero";
 	public const string DateCannotBeInTheFuture = "Date cannot be in the future";
+	public const string AccountIdCannotBeEmpty = "Account ID cannot be empty";
 
 	public Transaction(Guid? id, Guid receiptId, Guid accountId, Money amount, DateOnly date)
 	{

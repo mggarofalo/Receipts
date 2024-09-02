@@ -4,7 +4,7 @@ using AutoMapper;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 
 namespace API.Controllers;
 

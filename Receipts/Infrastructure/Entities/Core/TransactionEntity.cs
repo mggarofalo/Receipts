@@ -10,8 +10,4 @@ public class TransactionEntity
 	public decimal Amount { get; set; }
 	public required Currency AmountCurrency { get; set; }
 	public DateOnly Date { get; set; }
-
-	// Navigation properties
-	public virtual ReceiptEntity? Receipt { get; set; }
-	public virtual AccountEntity? Account { get; set; }
 }

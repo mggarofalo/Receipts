@@ -1,5 +1,5 @@
 using FluentValidation;
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 
 namespace Shared.Validators;
 
@@ -10,6 +10,7 @@ public class AccountValidator : AbstractValidator<AccountVM>
 		RuleFor(x => x.AccountCode)
 			.NotEmpty()
 			.WithMessage("Account code is required.");
+
 		RuleFor(x => x.Name)
 			.NotEmpty()
 			.WithMessage("Name is required.");

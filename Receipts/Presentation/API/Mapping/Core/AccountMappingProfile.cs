@@ -1,8 +1,8 @@
 using AutoMapper;
 using Domain.Core;
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 
-namespace API.Mapping;
+namespace API.Mapping.Core;
 
 public class AccountMappingProfile : Profile
 {

@@ -1,13 +1,10 @@
-using Common;
+namespace Shared.ViewModels.Core;
 
-namespace Infrastructure.Entities.Core;
-
-public class ReceiptEntity
+public class ReceiptVM
 {
-	public Guid Id { get; set; }
+	public Guid? Id { get; set; }
 	public string? Description { get; set; }
 	public string Location { get; set; } = string.Empty;
 	public DateOnly Date { get; set; }
 	public decimal TaxAmount { get; set; }
-	public required Currency TaxAmountCurrency { get; set; }
 }

@@ -23,8 +23,6 @@ public class ReceiptTests
 		Assert.Equal(date, receipt.Date);
 		Assert.Equal(taxAmount, receipt.TaxAmount);
 		Assert.Equal(description, receipt.Description);
-		Assert.Empty(receipt.Items);
-		Assert.Empty(receipt.Transactions);
 	}
 
 	[Fact]
@@ -70,55 +68,5 @@ public class ReceiptTests
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, location, date, taxAmount));
 		Assert.StartsWith(Receipt.DateCannotBeInTheFuture, exception.Message);
-	}
-
-	[Fact]
-	public void AddTransaction_ValidTransaction_AddsToTransactions()
-	{
-		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
-		Transaction transaction = new(Guid.NewGuid(), receipt.Id!.Value, Guid.NewGuid(), new Money(100.00m), DateOnly.FromDateTime(DateTime.Today));
-
-		// Act
-		receipt.AddTransaction(transaction);
-
-		// Assert
-		Assert.Single(receipt.Transactions);
-		Assert.Contains(transaction, receipt.Transactions);
-	}
-
-	[Fact]
-	public void AddTransaction_NullTransaction_ThrowsArgumentNullException()
-	{
-		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
-
-		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => receipt.AddTransaction(null!));
-	}
-
-	[Fact]
-	public void AddItem_ValidItem_AddsToItems()
-	{
-		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
-		ReceiptItem item = new(Guid.NewGuid(), Guid.NewGuid(), "ITEM001", "Test Item", 1, new Money(10.00m), new Money(10.00m), "Test Category", "Test Subcategory");
-
-		// Act
-		receipt.AddItem(item);
-
-		// Assert
-		Assert.Single(receipt.Items);
-		Assert.Contains(item, receipt.Items);
-	}
-
-	[Fact]
-	public void AddItem_NullItem_ThrowsArgumentNullException()
-	{
-		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Store", DateOnly.FromDateTime(DateTime.Today), new Money(5.00m));
-
-		// Act & Assert
-		Assert.Throws<ArgumentNullException>(() => receipt.AddItem(null!));
 	}
 }

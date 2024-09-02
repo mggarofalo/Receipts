@@ -1,5 +1,5 @@
 using FluentValidation;
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 
 namespace Shared.Validators;
 
@@ -10,19 +10,15 @@ public class ReceiptValidator : AbstractValidator<ReceiptVM>
 		RuleFor(x => x.Description)
 			.MaximumLength(256)
 			.WithMessage("Description must not exceed 256 characters.");
+
 		RuleFor(x => x.Location)
 			.NotEmpty()
 			.MaximumLength(200)
 			.WithMessage("Location must not exceed 200 characters.");
+
 		RuleFor(x => x.Date.ToDateTime(new TimeOnly()))
 			.NotEmpty()
 			.LessThanOrEqualTo(DateTime.Today)
 			.WithMessage("Date must be prior to the current date");
-		RuleFor(x => x.Transactions)
-			.NotEmpty()
-			.WithMessage("Receipts must have at least one transaction.");
-		RuleFor(x => x.Items)
-			.NotEmpty()
-			.WithMessage("Receipts must have at least one item.");
 	}
 }

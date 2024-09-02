@@ -1,4 +1,4 @@
-namespace Shared.ViewModels;
+namespace Shared.ViewModels.Core;
 
 public class AccountVM
 {

@@ -178,11 +178,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		{
 			entity.HasKey(e => e.Id);
 			entity.Property(e => e.Id).ValueGeneratedOnAdd();
-			entity.HasOne(e => e.Receipt)
+			entity.HasOne<ReceiptEntity>()
 				.WithMany()
 				.HasForeignKey(e => e.ReceiptId)
 				.OnDelete(DeleteBehavior.Cascade);
-			entity.HasOne(e => e.Account)
+			entity.HasOne<AccountEntity>()
 				.WithMany()
 				.HasForeignKey(e => e.AccountId)
 				.OnDelete(DeleteBehavior.Cascade);
@@ -195,7 +195,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		{
 			entity.HasKey(e => e.Id);
 			entity.Property(e => e.Id).ValueGeneratedOnAdd();
-			entity.HasOne(e => e.Receipt)
+			entity.HasOne<ReceiptEntity>()
 				.WithMany()
 				.HasForeignKey(e => e.ReceiptId)
 				.OnDelete(DeleteBehavior.Cascade);

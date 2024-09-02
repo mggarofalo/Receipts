@@ -1,5 +1,5 @@
 using FluentValidation;
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 
 namespace Shared.Validators;
 

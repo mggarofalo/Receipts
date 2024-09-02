@@ -2,9 +2,9 @@ using AutoMapper;
 using Common;
 using Domain;
 using Domain.Core;
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 
-namespace API.Mapping;
+namespace API.Mapping.Core;
 
 public class TransactionMappingProfile : Profile
 {
@@ -15,9 +15,9 @@ public class TransactionMappingProfile : Profile
 
 		CreateMap<TransactionVM, Transaction>()
 			.ConstructUsing(src => new(
-				null,
+				src.Id,
 				src.ReceiptId,
-				src.Account.Id!.Value,
+				src.AccountId,
 				new Money(src.Amount, Currency.USD),
 				src.Date
 			));

@@ -5,10 +5,8 @@ namespace Application.Queries.Transaction;
 
 public class GetTransactionByIdQueryHandler(ITransactionRepository transactionRepository) : IRequestHandler<GetTransactionByIdQuery, Domain.Core.Transaction?>
 {
-	private readonly ITransactionRepository _transactionRepository = transactionRepository;
-
 	public async Task<Domain.Core.Transaction?> Handle(GetTransactionByIdQuery request, CancellationToken cancellationToken)
 	{
-		return await _transactionRepository.GetByIdAsync(request.Id, cancellationToken);
+		return await transactionRepository.GetByIdAsync(request.Id, cancellationToken);
 	}
 }

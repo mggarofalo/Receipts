@@ -1,10 +1,9 @@
 using AutoMapper;
-using Common;
 using Domain;
 using Domain.Core;
-using Shared.ViewModels;
+using Shared.ViewModels.Core;
 
-namespace API.Mapping;
+namespace API.Mapping.Core;
 
 public class ReceiptMappingProfile : Profile
 {
@@ -15,10 +14,10 @@ public class ReceiptMappingProfile : Profile
 
 		CreateMap<ReceiptVM, Receipt>()
 			.ConstructUsing(src => new(
-				null,
+				src.Id,
 				src.Location,
 				src.Date,
-				new Money(src.TaxAmount, Currency.USD),
+				new Money(src.TaxAmount),
 				src.Description
 			));
 	}
