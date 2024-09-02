@@ -56,6 +56,20 @@ public class TransactionTests
 	}
 
 	[Fact]
+	public void Constructor_EmptyAccountId_ThrowsArgumentException()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
+		Money amount = new(100.50m);
+		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
+
+		// Act & Assert
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Transaction(id, receiptId, Guid.Empty, amount, date));
+		Assert.StartsWith(Transaction.AccountIdCannotBeEmpty, exception.Message);
+	}
+
+	[Fact]
 	public void Constructor_ZeroAmount_ThrowsArgumentException()
 	{
 		// Arrange
