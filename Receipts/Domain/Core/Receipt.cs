@@ -1,6 +1,6 @@
 namespace Domain.Core;
 
-public class Receipt
+public class Receipt : IEquatable<Receipt>
 {
 	public Guid? Id { get; }
 	public string? Description { get; }
@@ -28,5 +28,65 @@ public class Receipt
 		Date = date;
 		TaxAmount = taxAmount;
 		Description = description;
+	}
+
+	public bool Equals(Receipt? other)
+	{
+		if (other is null)
+		{
+			return false;
+		}
+
+		if (ReferenceEquals(this, other))
+		{
+			return true;
+		}
+
+		return Id == other.Id &&
+			Description == other.Description &&
+			Location == other.Location &&
+			Date.Equals(other.Date) &&
+			TaxAmount.Equals(other.TaxAmount);
+	}
+
+	public override bool Equals(object? obj)
+	{
+		if (obj is null)
+		{
+			return false;
+		}
+
+		if (ReferenceEquals(this, obj))
+		{
+			return true;
+		}
+
+		if (obj.GetType() != GetType())
+		{
+			return false;
+		}
+
+		return Equals((Receipt)obj);
+	}
+
+	public override int GetHashCode()
+	{
+		HashCode hash = new();
+		hash.Add(Id);
+		hash.Add(Description);
+		hash.Add(Location);
+		hash.Add(Date);
+		hash.Add(TaxAmount);
+		return hash.ToHashCode();
+	}
+
+	public static bool operator ==(Receipt? left, Receipt? right)
+	{
+		return Equals(left, right);
+	}
+
+	public static bool operator !=(Receipt? left, Receipt? right)
+	{
+		return !Equals(left, right);
 	}
 }

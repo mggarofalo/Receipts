@@ -1,6 +1,6 @@
 namespace Domain.Core;
 
-public class Account
+public class Account : IEquatable<Account>
 {
 	public Guid? Id { get; }
 	public string AccountCode { get; }
@@ -26,5 +26,63 @@ public class Account
 		AccountCode = accountCode;
 		Name = name;
 		IsActive = isActive;
+	}
+
+	public bool Equals(Account? other)
+	{
+		if (other is null)
+		{
+			return false;
+		}
+
+		if (ReferenceEquals(this, other))
+		{
+			return true;
+		}
+
+		return Id == other.Id &&
+			AccountCode == other.AccountCode &&
+			Name == other.Name &&
+			IsActive == other.IsActive;
+	}
+
+	public override bool Equals(object? obj)
+	{
+		if (obj is null)
+		{
+			return false;
+		}
+
+		if (ReferenceEquals(this, obj))
+		{
+			return true;
+		}
+
+		if (obj.GetType() != GetType())
+		{
+			return false;
+		}
+
+		return Equals((Account)obj);
+	}
+
+	public override int GetHashCode()
+	{
+		HashCode hash = new();
+		hash.Add(Id);
+		hash.Add(AccountCode);
+		hash.Add(Name);
+		hash.Add(IsActive);
+		return hash.ToHashCode();
+	}
+
+	public static bool operator ==(Account? left, Account? right)
+	{
+		return Equals(left, right);
+	}
+
+	public static bool operator !=(Account? left, Account? right)
+	{
+		return !Equals(left, right);
 	}
 }

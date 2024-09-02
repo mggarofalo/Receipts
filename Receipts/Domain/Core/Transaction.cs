@@ -1,6 +1,6 @@
 namespace Domain.Core;
 
-public class Transaction
+public class Transaction : IEquatable<Transaction>
 {
 	public Guid? Id { get; }
 	public Guid ReceiptId { get; }
@@ -40,5 +40,65 @@ public class Transaction
 		AccountId = accountId;
 		Amount = amount;
 		Date = date;
+	}
+
+	public bool Equals(Transaction? other)
+	{
+		if (other is null)
+		{
+			return false;
+		}
+
+		if (ReferenceEquals(this, other))
+		{
+			return true;
+		}
+
+		return Id == other.Id &&
+			ReceiptId == other.ReceiptId &&
+			AccountId == other.AccountId &&
+			Amount.Equals(other.Amount) &&
+			Date.Equals(other.Date);
+	}
+
+	public override bool Equals(object? obj)
+	{
+		if (obj is null)
+		{
+			return false;
+		}
+
+		if (ReferenceEquals(this, obj))
+		{
+			return true;
+		}
+
+		if (obj.GetType() != GetType())
+		{
+			return false;
+		}
+
+		return Equals((Transaction)obj);
+	}
+
+	public override int GetHashCode()
+	{
+		HashCode hash = new();
+		hash.Add(Id);
+		hash.Add(ReceiptId);
+		hash.Add(AccountId);
+		hash.Add(Amount);
+		hash.Add(Date);
+		return hash.ToHashCode();
+	}
+
+	public static bool operator ==(Transaction? left, Transaction? right)
+	{
+		return Equals(left, right);
+	}
+
+	public static bool operator !=(Transaction? left, Transaction? right)
+	{
+		return !Equals(left, right);
 	}
 }
