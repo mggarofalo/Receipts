@@ -62,15 +62,23 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 	}
 
 	[HttpGet("by-receipt-id/{receiptId}")]
-	public async Task<ActionResult<List<TransactionVM>>> GetTransactionsByReceiptId(Guid receiptId)
+	public async Task<ActionResult<List<TransactionVM>?>> GetTransactionsByReceiptId(Guid receiptId)
 	{
 		try
 		{
 			logger.LogDebug("GetTransactionsByReceiptId called with receiptId: {ReceiptId}", receiptId);
 			GetTransactionsByReceiptIdQuery query = new(receiptId);
-			List<Transaction> result = await mediator.Send(query);
+			List<Transaction>? result = await mediator.Send(query);
+
+			if (result == null)
+			{
+				logger.LogWarning("GetTransactionsByReceiptId called with receiptId: {ReceiptId} not found", receiptId);
+				return NotFound();
+			}
+
+			List<TransactionVM> model = result.Select(mapper.Map<Transaction, TransactionVM>).ToList();
 			logger.LogDebug("GetTransactionsByReceiptId called with receiptId: {ReceiptId} found", receiptId);
-			return Ok(result);
+			return Ok(model);
 		}
 		catch (Exception ex)
 		{

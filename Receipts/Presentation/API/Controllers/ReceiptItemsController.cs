@@ -62,15 +62,23 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 	}
 
 	[HttpGet("by-receipt-id/{receiptId}")]
-	public async Task<ActionResult<List<ReceiptItemVM>>> GetReceiptItemsByReceiptId(Guid receiptId)
+	public async Task<ActionResult<List<ReceiptItemVM>?>> GetReceiptItemsByReceiptId(Guid receiptId)
 	{
 		try
 		{
 			logger.LogDebug("GetReceiptItemsByReceiptId called with receiptId: {ReceiptId}", receiptId);
 			GetReceiptItemsByReceiptIdQuery query = new(receiptId);
-			List<ReceiptItem> result = await mediator.Send(query);
+			List<ReceiptItem>? result = await mediator.Send(query);
+
+			if (result == null)
+			{
+				logger.LogWarning("GetReceiptItemsByReceiptId called with receiptId: {ReceiptId} not found", receiptId);
+				return NotFound();
+			}
+
+			List<ReceiptItemVM> model = result.Select(mapper.Map<ReceiptItem, ReceiptItemVM>).ToList();
 			logger.LogDebug("GetReceiptItemsByReceiptId called with receiptId: {ReceiptId} found", receiptId);
-			return Ok(result);
+			return Ok(model);
 		}
 		catch (Exception ex)
 		{

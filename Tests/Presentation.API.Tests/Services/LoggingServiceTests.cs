@@ -2,7 +2,6 @@ using API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Moq;
 using Serilog;
 
 namespace Presentation.API.Tests.Services;

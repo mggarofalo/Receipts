@@ -1,5 +1,4 @@
 using API.Controllers;
-using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Commands.Account;
 using Application.Queries.Core.Account;
@@ -27,28 +26,14 @@ public class AccountsControllerTests
 	{
 		MapperConfiguration configuration = new(cfg =>
 		{
-			cfg.AddProfile<TripMappingProfile>();
-			cfg.AddProfile<ReceiptWithItemsMappingProfile>();
-			cfg.AddProfile<ReceiptMappingProfile>();
-			cfg.AddProfile<ReceiptItemMappingProfile>();
-			cfg.AddProfile<TransactionAccountMappingProfile>();
-			cfg.AddProfile<TransactionMappingProfile>();
 			cfg.AddProfile<AccountMappingProfile>();
 		});
 
 		_mapper = configuration.CreateMapper();
-
 		_mediatorMock = new Mock<IMediator>();
-
-		_mapperMock = new Mock<IMapper>();
-		_mapperMock.Setup(m => m.Map<Account, AccountVM>(It.IsAny<Account>())).Returns<Account>(_mapper.Map<AccountVM>);
-		_mapperMock.Setup(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>())).Returns<AccountVM>(_mapper.Map<Account>);
-
-		_loggerMock = new Mock<ILogger<AccountsController>>();
-
+		_mapperMock = ControllerTestHelpers.GetMapperMock<Account, AccountVM>(_mapper);
+		_loggerMock = ControllerTestHelpers.GetLoggerMock<AccountsController>();
 		_controller = new AccountsController(_mediatorMock.Object, _mapperMock.Object, _loggerMock.Object);
-
-		// TODO: Add verification of mapper and mediator calls to each test
 	}
 
 	[Fact]
@@ -58,7 +43,9 @@ public class AccountsControllerTests
 		Account account = AccountGenerator.Generate();
 		AccountVM expectedReturn = _mapper.Map<AccountVM>(account);
 
-		_mediatorMock.Setup(m => m.Send(It.IsAny<GetAccountByIdQuery>(), It.IsAny<CancellationToken>()))
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAccountByIdQuery>(q => q.Id == account.Id),
+			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(account);
 
 		// Act
@@ -68,6 +55,16 @@ public class AccountsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		AccountVM actualReturn = Assert.IsType<AccountVM>(okResult.Value);
 		Assert.Equal(expectedReturn, actualReturn);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAccountByIdQuery>(q => q.Id == account.Id),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<Account, AccountVM>(account), Times.Once);
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -76,7 +73,9 @@ public class AccountsControllerTests
 		// Arrange
 		Guid missingAccountId = Guid.NewGuid();
 
-		_mediatorMock.Setup(m => m.Send(It.IsAny<GetAccountByIdQuery>(), It.IsAny<CancellationToken>()))
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAccountByIdQuery>(q => q.Id == missingAccountId),
+			It.IsAny<CancellationToken>()))
 			.ReturnsAsync((Account?)null);
 
 		// Act
@@ -84,6 +83,46 @@ public class AccountsControllerTests
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAccountByIdQuery>(q => q.Id == missingAccountId),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
+	}
+
+	[Fact]
+	public async Task GetAccountById_ReturnsInternalServerError_WhenExceptionIsThrown()
+	{
+		// Arrange
+		Guid id = AccountGenerator.Generate().Id!.Value;
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAccountByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		ActionResult<AccountVM> result = await _controller.GetAccountById(id);
+
+		// Assert
+		Assert.IsType<ObjectResult>(result.Result);
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
+		Assert.Equal(500, objectResult.StatusCode);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAccountByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
+
+		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.GetAccountById));
+		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -93,7 +132,9 @@ public class AccountsControllerTests
 		List<Account> accounts = AccountGenerator.GenerateList(2);
 		List<AccountVM> expectedReturn = _mapper.Map<List<AccountVM>>(accounts);
 
-		_mediatorMock.Setup(m => m.Send(It.IsAny<GetAllAccountsQuery>(), It.IsAny<CancellationToken>()))
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllAccountsQuery>(q => true),
+			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(accounts);
 
 		// Act
@@ -103,8 +144,45 @@ public class AccountsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<AccountVM> actualReturn = Assert.IsType<List<AccountVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn.Count, actualReturn.Count);
 		Assert.Equal(expectedReturn, actualReturn);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.IsAny<GetAllAccountsQuery>(),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Exactly(accounts.Count));
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
+	}
+
+	[Fact]
+	public async Task GetAllAccounts_ReturnsInternalServerError_WhenExceptionIsThrown()
+	{
+		// Arrange
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllAccountsQuery>(q => true),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		ActionResult<List<AccountVM>> result = await _controller.GetAllAccounts();
+
+		// Assert
+		Assert.IsType<ObjectResult>(result.Result);
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
+		Assert.Equal(500, objectResult.StatusCode);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.IsAny<GetAllAccountsQuery>(),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
+
+		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.GetAllAccounts));
+		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -114,7 +192,9 @@ public class AccountsControllerTests
 		List<Account> accounts = AccountGenerator.GenerateList(2);
 		List<AccountVM> expectedReturn = _mapper.Map<List<AccountVM>>(accounts);
 
-		_mediatorMock.Setup(m => m.Send(It.IsAny<CreateAccountCommand>(), It.IsAny<CancellationToken>()))
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateAccountCommand>(c => c.Accounts.Count == accounts.Count),
+			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(accounts);
 
 		List<AccountVM> models = _mapper.Map<List<AccountVM>>(accounts);
@@ -127,8 +207,48 @@ public class AccountsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<AccountVM> actualReturn = Assert.IsType<List<AccountVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn.Count, actualReturn.Count);
 		Assert.Equal(expectedReturn, actualReturn);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<CreateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
+		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Exactly(accounts.Count));
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
+	}
+
+	[Fact]
+	public async Task CreateAccount_ReturnsInternalServerError_WhenExceptionIsThrown()
+	{
+		// Arrange
+		List<AccountVM> models = AccountVMGenerator.GenerateList(2);
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		ActionResult<AccountVM> result = await _controller.CreateAccount(models);
+
+		// Assert
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
+		Assert.Equal(500, objectResult.StatusCode);
+		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<CreateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
+		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
+
+		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.CreateAccount));
+		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -138,7 +258,9 @@ public class AccountsControllerTests
 		List<AccountVM> models = AccountVMGenerator.GenerateList(2);
 		List<Account> accounts = _mapper.Map<List<Account>>(models);
 
-		_mediatorMock.Setup(m => m.Send(It.IsAny<UpdateAccountCommand>(), It.IsAny<CancellationToken>()))
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
 		// Act
@@ -147,6 +269,16 @@ public class AccountsControllerTests
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
 		Assert.Equal(204, noContentResult.StatusCode);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -155,7 +287,9 @@ public class AccountsControllerTests
 		// Arrange
 		List<AccountVM> models = AccountVMGenerator.GenerateList(2);
 
-		_mediatorMock.Setup(m => m.Send(It.IsAny<UpdateAccountCommand>(), It.IsAny<CancellationToken>()))
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
 		// Act
@@ -164,6 +298,45 @@ public class AccountsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
+	}
+
+	[Fact]
+	public async Task UpdateAccounts_ReturnsInternalServerError_WhenExceptionThrown()
+	{
+		// Arrange
+		List<AccountVM> models = AccountVMGenerator.GenerateList(2);
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		ActionResult<bool> result = await _controller.UpdateAccounts(models);
+
+		// Assert
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
+		Assert.Equal(500, objectResult.StatusCode);
+		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
+
+		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.UpdateAccounts));
+		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -172,7 +345,9 @@ public class AccountsControllerTests
 		// Arrange
 		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
 
-		_mediatorMock.Setup(m => m.Send(It.IsAny<DeleteAccountCommand>(), It.IsAny<CancellationToken>()))
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
 		// Act
@@ -181,32 +356,25 @@ public class AccountsControllerTests
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
 		Assert.Equal(204, noContentResult.StatusCode);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
 	public async Task DeleteAccounts_ReturnsNotFound_WhenSingleAccountDeleteFails()
 	{
 		// Arrange
-		Guid id = AccountGenerator.Generate().Id!.Value;
+		List<Guid> ids = [AccountGenerator.Generate().Id!.Value];
 
-		_mediatorMock.Setup(m => m.Send(It.IsAny<DeleteAccountCommand>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		// Act
-		ActionResult<bool> result = await _controller.DeleteAccounts([id]);
-
-		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
-	}
-
-	[Fact]
-	public async Task DeleteAccounts_ReturnsNotFound_WhenMultipleAccountsDeleteFails()
-	{
-		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
-
-		_mediatorMock.Setup(m => m.Send(It.IsAny<DeleteAccountCommand>(), It.IsAny<CancellationToken>()))
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<DeleteAccountCommand>(),
+			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
 		// Act
@@ -215,5 +383,68 @@ public class AccountsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
+	}
+
+	[Fact]
+	public async Task DeleteAccounts_ReturnsNotFound_WhenMultipleAccountsDeleteFails()
+	{
+		// Arrange
+		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<DeleteAccountCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		ActionResult<bool> result = await _controller.DeleteAccounts(ids);
+
+		// Assert
+		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
+		Assert.Equal(404, notFoundResult.StatusCode);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_loggerMock.VerifyNoErrorLoggingCalls();
+		_loggerMock.VerifyNoCriticalLoggingCalls();
+	}
+
+	[Fact]
+	public async Task DeleteAccounts_ReturnsInternalServerError_WhenExceptionThrown()
+	{
+		// Arrange
+		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<DeleteAccountCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		ActionResult<bool> result = await _controller.DeleteAccounts(ids);
+
+		// Assert
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
+		Assert.Equal(500, objectResult.StatusCode);
+		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.DeleteAccounts));
+		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 }
