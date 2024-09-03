@@ -12,6 +12,9 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<ReceiptItemsController> logger) : ControllerBase
 {
+	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
+	public const string MessageWithoutId = "Error occurred in {Method}";
+
 	[HttpGet("{id}")]
 	public async Task<ActionResult<ReceiptItemVM>> GetReceiptItemById(Guid id)
 	{
@@ -33,7 +36,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetReceiptItemById for id: {Id}", id);
+			logger.LogError(ex, MessageWithId, nameof(GetReceiptItemById), id);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -53,7 +56,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetAllReceiptItems");
+			logger.LogError(ex, MessageWithoutId, nameof(GetAllReceiptItems));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -71,7 +74,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetReceiptItemsByReceiptId for receiptId: {ReceiptId}", receiptId);
+			logger.LogError(ex, MessageWithId, nameof(GetReceiptItemsByReceiptId), receiptId);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -89,7 +92,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in CreateReceiptItem");
+			logger.LogError(ex, MessageWithoutId, nameof(CreateReceiptItem));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -115,7 +118,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in UpdateReceiptItems");
+			logger.LogError(ex, MessageWithoutId, nameof(UpdateReceiptItems));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -141,7 +144,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in DeleteReceiptItems");
+			logger.LogError(ex, MessageWithoutId, nameof(DeleteReceiptItems));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

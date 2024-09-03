@@ -12,6 +12,9 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
 {
+	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
+	public const string MessageWithoutId = "Error occurred in {Method}";
+
 	[HttpGet("{id}")]
 	public async Task<ActionResult<TransactionVM>> GetTransactionById(Guid id)
 	{
@@ -33,7 +36,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetTransactionById for id: {Id}", id);
+			logger.LogError(ex, MessageWithId, nameof(GetTransactionById), id);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -53,7 +56,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetAllTransactions");
+			logger.LogError(ex, MessageWithoutId, nameof(GetAllTransactions));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -71,7 +74,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetTransactionsByReceiptId for receiptId: {ReceiptId}", receiptId);
+			logger.LogError(ex, MessageWithId, nameof(GetTransactionsByReceiptId), receiptId);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -89,7 +92,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in CreateTransaction");
+			logger.LogError(ex, MessageWithoutId, nameof(CreateTransaction));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -115,7 +118,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in UpdateTransactions");
+			logger.LogError(ex, MessageWithoutId, nameof(UpdateTransactions));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -141,7 +144,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in DeleteTransactions");
+			logger.LogError(ex, MessageWithoutId, nameof(DeleteTransactions));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

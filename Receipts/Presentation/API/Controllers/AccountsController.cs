@@ -12,6 +12,9 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class AccountsController(IMediator mediator, IMapper mapper, ILogger<AccountsController> logger) : ControllerBase
 {
+	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
+	public const string MessageWithoutId = "Error occurred in {Method}";
+
 	[HttpGet("{id}")]
 	public async Task<ActionResult<AccountVM>> GetAccountById(Guid id)
 	{
@@ -33,7 +36,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetAccountById for id: {Id}", id);
+			logger.LogError(ex, MessageWithId, nameof(GetAccountById), id);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -53,7 +56,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetAllAccounts");
+			logger.LogError(ex, MessageWithoutId, nameof(GetAllAccounts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -70,7 +73,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in CreateAccount");
+			logger.LogError(ex, MessageWithoutId, nameof(CreateAccount));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -96,7 +99,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in UpdateAccounts");
+			logger.LogError(ex, MessageWithoutId, nameof(UpdateAccounts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -122,7 +125,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in DeleteAccounts");
+			logger.LogError(ex, MessageWithoutId, nameof(DeleteAccounts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

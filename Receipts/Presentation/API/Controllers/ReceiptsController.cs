@@ -12,6 +12,9 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<ReceiptsController> logger) : ControllerBase
 {
+	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
+	public const string MessageWithoutId = "Error occurred in {Method}";
+
 	[HttpGet("{id}")]
 	public async Task<ActionResult<ReceiptVM>> GetReceiptById(Guid id)
 	{
@@ -33,7 +36,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetReceiptById for id: {Id}", id);
+			logger.LogError(ex, MessageWithId, nameof(GetReceiptById), id);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -53,7 +56,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in GetAllReceipts");
+			logger.LogError(ex, MessageWithoutId, nameof(GetAllReceipts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -71,7 +74,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in CreateReceipt");
+			logger.LogError(ex, MessageWithoutId, nameof(CreateReceipt));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -97,7 +100,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in UpdateReceipts");
+			logger.LogError(ex, MessageWithoutId, nameof(UpdateReceipts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -123,7 +126,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, "Error occurred in DeleteReceipts");
+			logger.LogError(ex, MessageWithoutId, nameof(DeleteReceipts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
