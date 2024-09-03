@@ -27,7 +27,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 				return NotFound();
 			}
 
-			ReceiptItemVM model = mapper.Map<ReceiptItemVM>(result);
+			ReceiptItemVM model = mapper.Map<ReceiptItem, ReceiptItemVM>(result);
 			logger.LogDebug("GetReceiptItemById called with id: {Id} found", id);
 			return Ok(model);
 		}
@@ -47,7 +47,9 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 			GetAllReceiptItemsQuery query = new();
 			List<ReceiptItem> result = await mediator.Send(query);
 			logger.LogDebug("GetAllReceiptItems called with {Count} receipt items", result.Count);
-			return Ok(result);
+
+			List<ReceiptItemVM> model = result.Select(mapper.Map<ReceiptItem, ReceiptItemVM>).ToList();
+			return Ok(model);
 		}
 		catch (Exception ex)
 		{

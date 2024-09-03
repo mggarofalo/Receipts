@@ -27,7 +27,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 				return NotFound();
 			}
 
-			AccountVM model = mapper.Map<AccountVM>(result);
+			AccountVM model = mapper.Map<Account, AccountVM>(result);
 			logger.LogDebug("GetAccountById called with id: {Id} found", id);
 			return Ok(model);
 		}
@@ -48,7 +48,8 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 			List<Account> result = await mediator.Send(query);
 			logger.LogDebug("GetAllAccounts called with {Count} accounts", result.Count);
 
-			return Ok(result);
+			List<AccountVM> model = result.Select(mapper.Map<Account, AccountVM>).ToList();
+			return Ok(model);
 		}
 		catch (Exception ex)
 		{

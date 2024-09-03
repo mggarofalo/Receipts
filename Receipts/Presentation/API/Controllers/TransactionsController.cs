@@ -27,7 +27,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 				return NotFound();
 			}
 
-			TransactionVM model = mapper.Map<TransactionVM>(result);
+			TransactionVM model = mapper.Map<Transaction, TransactionVM>(result);
 			logger.LogDebug("GetTransactionById called with id: {Id} found", id);
 			return Ok(model);
 		}
@@ -47,7 +47,9 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 			GetAllTransactionsQuery query = new();
 			List<Transaction> result = await mediator.Send(query);
 			logger.LogDebug("GetAllTransactions called with {Count} transactions", result.Count);
-			return Ok(result);
+
+			List<TransactionVM> model = result.Select(mapper.Map<Transaction, TransactionVM>).ToList();
+			return Ok(model);
 		}
 		catch (Exception ex)
 		{
