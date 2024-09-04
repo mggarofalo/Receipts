@@ -1,5 +1,7 @@
 using Domain.Aggregates;
 using Domain.Core;
+using SampleData.Domain.Aggregates;
+using SampleData.Domain.Core;
 
 namespace Domain.Tests.Aggregates;
 
@@ -9,33 +11,8 @@ public class TripTests
 	public void Trip_ShouldHaveRequiredProperties()
 	{
 		// Arrange
-		Receipt receipt = new(Guid.NewGuid(), "Test Receipt", DateOnly.FromDateTime(DateTime.Now), new Money(100), "Test Description");
-
-		List<ReceiptItem> items =
-		[
-			new(Guid.NewGuid(), Guid.NewGuid(), "Test Item 1", "Test Description 1", 100, new Money(100), new Money(100), "Test Category 1", "Test Subcategory 1"),
-			new(Guid.NewGuid(), Guid.NewGuid(), "Test Item 2", "Test Description 2", 200, new Money(200), new Money(200), "Test Category 2", "Test Subcategory 2")
-		];
-
-		ReceiptWithItems receiptWithItems = new()
-		{
-			Receipt = receipt,
-			Items = items
-		};
-
-		List<TransactionAccount> transactions =
-		[
-			new()
-			{
-				Transaction = new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now)),
-				Account = new(Guid.NewGuid(), "Test Account 1", "Test Description 1")
-			},
-			new()
-			{
-				Transaction = new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new Money(200), DateOnly.FromDateTime(DateTime.Now)),
-				Account = new(Guid.NewGuid(), "Test Account 2", "Test Description 2")
-			}
-		];
+		ReceiptWithItems receiptWithItems = ReceiptWithItemsGenerator.Generate();
+		List<TransactionAccount> transactions = TransactionAccountGenerator.GenerateList(2);
 
 		// Act
 		Trip trip = new()
@@ -48,5 +25,107 @@ public class TripTests
 		Assert.NotNull(trip.Receipt);
 		Assert.NotNull(trip.Transactions);
 		Assert.Equal(2, trip.Transactions.Count);
+	}
+
+	[Fact]
+	public void Equals_SameTrip_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptWithItems receiptWithItems = ReceiptWithItemsGenerator.Generate();
+		List<TransactionAccount> transactions = TransactionAccountGenerator.GenerateList(2);
+
+		Trip trip1 = new()
+		{
+			Receipt = receiptWithItems,
+			Transactions = transactions
+		};
+
+		Trip trip2 = new()
+		{
+			Receipt = receiptWithItems,
+			Transactions = transactions
+		};
+
+		// Act & Assert
+		Assert.True(trip1 == trip2);
+		Assert.False(trip1 != trip2);
+		Assert.True(trip1.Equals(trip2));
+	}
+
+	[Fact]
+	public void Equals_DifferentTrip_ReturnsFalse()
+	{
+		// Arrange
+		Trip trip1 = TripGenerator.Generate();
+		Trip trip2 = TripGenerator.Generate();
+
+		// Act & Assert
+		Assert.False(trip1 == trip2);
+		Assert.True(trip1 != trip2);
+		Assert.False(trip1.Equals(trip2));
+	}
+
+	[Fact]
+	public void Equals_NullTrip_ReturnsFalse()
+	{
+		// Arrange
+		Trip trip = TripGenerator.Generate();
+
+		// Act & Assert
+		Assert.False(trip.Equals(null));
+	}
+
+	[Fact]
+	public void Equals_NullObject_ReturnsFalse()
+	{
+		// Arrange
+		Trip trip = TripGenerator.Generate();
+
+		// Act & Assert
+		Assert.False(trip.Equals((object?)null));
+	}
+
+	[Fact]
+	public void Equals_DifferentType_ReturnsFalse()
+	{
+		// Arrange
+		Trip trip = TripGenerator.Generate();
+
+		// Act & Assert
+		Assert.False(trip.Equals("not a trip"));
+	}
+
+	[Fact]
+	public void GetHashCode_SameTrip_ReturnsSameHashCode()
+	{
+		// Arrange
+		ReceiptWithItems receiptWithItems = ReceiptWithItemsGenerator.Generate();
+		List<TransactionAccount> transactions = TransactionAccountGenerator.GenerateList(2);
+
+		Trip trip1 = new()
+		{
+			Receipt = receiptWithItems,
+			Transactions = transactions
+		};
+
+		Trip trip2 = new()
+		{
+			Receipt = receiptWithItems,
+			Transactions = transactions
+		};
+
+		// Act & Assert
+		Assert.Equal(trip1.GetHashCode(), trip2.GetHashCode());
+	}
+
+	[Fact]
+	public void GetHashCode_DifferentTrip_ReturnsDifferentHashCode()
+	{
+		// Arrange
+		Trip trip1 = TripGenerator.Generate();
+		Trip trip2 = TripGenerator.Generate();
+
+		// Act & Assert
+		Assert.NotEqual(trip1.GetHashCode(), trip2.GetHashCode());
 	}
 }

@@ -14,13 +14,7 @@ public class TransactionAccount : IEquatable<TransactionAccount>
 			return false;
 		}
 
-		if (ReferenceEquals(this, other))
-		{
-			return true;
-		}
-
-		return Transaction.Equals(other.Transaction) &&
-			Account.Equals(other.Account);
+		return GetHashCode() == other.GetHashCode();
 	}
 
 	public override bool Equals(object? obj)
@@ -28,11 +22,6 @@ public class TransactionAccount : IEquatable<TransactionAccount>
 		if (obj is null)
 		{
 			return false;
-		}
-
-		if (ReferenceEquals(this, obj))
-		{
-			return true;
 		}
 
 		if (obj.GetType() != GetType())

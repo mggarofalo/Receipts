@@ -15,16 +15,7 @@ public class ReceiptVM : IEquatable<ReceiptVM>
 			return false;
 		}
 
-		if (ReferenceEquals(this, other))
-		{
-			return true;
-		}
-
-		return Id == other.Id &&
-			Description == other.Description &&
-			Location == other.Location &&
-			Date == other.Date &&
-			TaxAmount == other.TaxAmount;
+		return GetHashCode() == other.GetHashCode();
 	}
 
 	public override bool Equals(object? obj)
@@ -32,11 +23,6 @@ public class ReceiptVM : IEquatable<ReceiptVM>
 		if (obj is null)
 		{
 			return false;
-		}
-
-		if (ReferenceEquals(this, obj))
-		{
-			return true;
 		}
 
 		if (obj.GetType() != GetType())

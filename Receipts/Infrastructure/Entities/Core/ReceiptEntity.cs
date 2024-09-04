@@ -18,17 +18,7 @@ public class ReceiptEntity : IEquatable<ReceiptEntity>
 			return false;
 		}
 
-		if (ReferenceEquals(this, other))
-		{
-			return true;
-		}
-
-		return Id.Equals(other.Id) &&
-			Description == other.Description &&
-			Location == other.Location &&
-			Date.Equals(other.Date) &&
-			TaxAmount == other.TaxAmount &&
-			TaxAmountCurrency.Equals(other.TaxAmountCurrency);
+		return GetHashCode() == other.GetHashCode();
 	}
 
 	public override bool Equals(object? obj)
@@ -36,11 +26,6 @@ public class ReceiptEntity : IEquatable<ReceiptEntity>
 		if (obj is null)
 		{
 			return false;
-		}
-
-		if (ReferenceEquals(this, obj))
-		{
-			return true;
 		}
 
 		if (obj.GetType() != GetType())

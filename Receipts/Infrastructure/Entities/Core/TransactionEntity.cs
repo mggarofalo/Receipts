@@ -18,17 +18,7 @@ public class TransactionEntity : IEquatable<TransactionEntity>
 			return false;
 		}
 
-		if (ReferenceEquals(this, other))
-		{
-			return true;
-		}
-
-		return Id.Equals(other.Id) &&
-			ReceiptId.Equals(other.ReceiptId) &&
-			AccountId.Equals(other.AccountId) &&
-			Amount == other.Amount &&
-			AmountCurrency.Equals(other.AmountCurrency) &&
-			Date.Equals(other.Date);
+		return GetHashCode() == other.GetHashCode();
 	}
 
 	public override bool Equals(object? obj)
@@ -36,11 +26,6 @@ public class TransactionEntity : IEquatable<TransactionEntity>
 		if (obj is null)
 		{
 			return false;
-		}
-
-		if (ReferenceEquals(this, obj))
-		{
-			return true;
 		}
 
 		if (obj.GetType() != GetType())

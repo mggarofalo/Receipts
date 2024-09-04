@@ -18,7 +18,7 @@ public class Receipt : IEquatable<Receipt>
 			throw new ArgumentException(LocationCannotBeEmpty, nameof(location));
 		}
 
-		if (date.ToDateTime(new TimeOnly()) > DateTime.Today)
+		if (date.ToDateTime(TimeOnly.MinValue) > DateTime.Today)
 		{
 			throw new ArgumentException(DateCannotBeInTheFuture, nameof(date));
 		}
@@ -37,16 +37,7 @@ public class Receipt : IEquatable<Receipt>
 			return false;
 		}
 
-		if (ReferenceEquals(this, other))
-		{
-			return true;
-		}
-
-		return Id == other.Id &&
-			Description == other.Description &&
-			Location == other.Location &&
-			Date.Equals(other.Date) &&
-			TaxAmount.Equals(other.TaxAmount);
+		return GetHashCode() == other.GetHashCode();
 	}
 
 	public override bool Equals(object? obj)
@@ -54,11 +45,6 @@ public class Receipt : IEquatable<Receipt>
 		if (obj is null)
 		{
 			return false;
-		}
-
-		if (ReferenceEquals(this, obj))
-		{
-			return true;
 		}
 
 		if (obj.GetType() != GetType())

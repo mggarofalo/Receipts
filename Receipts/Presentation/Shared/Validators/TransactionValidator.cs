@@ -12,7 +12,7 @@ public class TransactionValidator : AbstractValidator<TransactionVM>
 			.NotEqual(0)
 			.WithMessage("Amount must be non-zero.");
 
-		RuleFor(x => x.Date.ToDateTime(new TimeOnly()))
+		RuleFor(x => x.Date.ToDateTime(TimeOnly.MinValue))
 			.NotEmpty()
 			.LessThanOrEqualTo(DateTime.Today)
 			.WithMessage("Date must be prior to the current date.");

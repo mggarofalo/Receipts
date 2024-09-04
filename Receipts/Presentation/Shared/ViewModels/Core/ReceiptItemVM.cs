@@ -19,20 +19,7 @@ public class ReceiptItemVM : IEquatable<ReceiptItemVM>
 			return false;
 		}
 
-		if (ReferenceEquals(this, other))
-		{
-			return true;
-		}
-
-		return Id == other.Id &&
-			ReceiptId == other.ReceiptId &&
-			ReceiptItemCode == other.ReceiptItemCode &&
-			Description == other.Description &&
-			Quantity == other.Quantity &&
-			UnitPrice == other.UnitPrice &&
-			TotalAmount == other.TotalAmount &&
-			Category == other.Category &&
-			Subcategory == other.Subcategory;
+		return GetHashCode() == other.GetHashCode();
 	}
 
 	public override bool Equals(object? obj)
@@ -40,11 +27,6 @@ public class ReceiptItemVM : IEquatable<ReceiptItemVM>
 		if (obj is null)
 		{
 			return false;
-		}
-
-		if (ReferenceEquals(this, obj))
-		{
-			return true;
 		}
 
 		if (obj.GetType() != GetType())

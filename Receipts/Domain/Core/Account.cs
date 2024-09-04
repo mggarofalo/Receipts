@@ -35,15 +35,7 @@ public class Account : IEquatable<Account>
 			return false;
 		}
 
-		if (ReferenceEquals(this, other))
-		{
-			return true;
-		}
-
-		return Id == other.Id &&
-			AccountCode == other.AccountCode &&
-			Name == other.Name &&
-			IsActive == other.IsActive;
+		return GetHashCode() == other.GetHashCode();
 	}
 
 	public override bool Equals(object? obj)
@@ -51,11 +43,6 @@ public class Account : IEquatable<Account>
 		if (obj is null)
 		{
 			return false;
-		}
-
-		if (ReferenceEquals(this, obj))
-		{
-			return true;
 		}
 
 		if (obj.GetType() != GetType())
