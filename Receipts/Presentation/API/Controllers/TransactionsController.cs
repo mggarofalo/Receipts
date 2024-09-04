@@ -88,7 +88,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<TransactionVM>> CreateTransaction(List<TransactionVM> models)
+	public async Task<ActionResult<TransactionVM>> CreateTransactions(List<TransactionVM> models)
 	{
 		try
 		{
@@ -100,7 +100,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateTransaction));
+			logger.LogError(ex, MessageWithoutId, nameof(CreateTransactions));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

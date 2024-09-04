@@ -310,7 +310,7 @@ public class ReceiptItemsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateReceiptItem_ReturnsOkResult_WithCreatedReceiptItems()
+	public async Task CreateReceiptItems_ReturnsOkResult_WithCreatedReceiptItems()
 	{
 		// Arrange
 		List<ReceiptItem> receiptItems = ReceiptItemGenerator.GenerateList(2);
@@ -325,7 +325,7 @@ public class ReceiptItemsControllerTests
 		models.ForEach(a => a.Id = null);
 
 		// Act
-		ActionResult<ReceiptItemVM> result = await _controller.CreateReceiptItem(models);
+		ActionResult<ReceiptItemVM> result = await _controller.CreateReceiptItems(models);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -346,7 +346,7 @@ public class ReceiptItemsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateReceiptItem_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateReceiptItems_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
 		List<ReceiptItemVM> models = ReceiptItemVMGenerator.GenerateList(2);
@@ -356,7 +356,7 @@ public class ReceiptItemsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<ReceiptItemVM> result = await _controller.CreateReceiptItem(models);
+		ActionResult<ReceiptItemVM> result = await _controller.CreateReceiptItems(models);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -371,7 +371,7 @@ public class ReceiptItemsControllerTests
 		_mapperMock.Verify(m => m.Map<ReceiptItemVM, ReceiptItem>(It.IsAny<ReceiptItemVM>()), Times.Exactly(models.Count));
 		_mapperMock.Verify(m => m.Map<ReceiptItem, ReceiptItemVM>(It.IsAny<ReceiptItem>()), Times.Never);
 
-		_loggerMock.VerifyErrorLoggingCalls(nameof(ReceiptItemsController.CreateReceiptItem));
+		_loggerMock.VerifyErrorLoggingCalls(nameof(ReceiptItemsController.CreateReceiptItems));
 		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 

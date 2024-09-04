@@ -62,7 +62,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<ReceiptVM>> CreateReceipt(List<ReceiptVM> models)
+	public async Task<ActionResult<ReceiptVM>> CreateReceipts(List<ReceiptVM> models)
 	{
 		try
 		{
@@ -74,7 +74,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateReceipt));
+			logger.LogError(ex, MessageWithoutId, nameof(CreateReceipts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

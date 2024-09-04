@@ -62,7 +62,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<AccountVM>> CreateAccount(List<AccountVM> models)
+	public async Task<ActionResult<AccountVM>> CreateAccounts(List<AccountVM> models)
 	{
 		try
 		{
@@ -73,7 +73,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateAccount));
+			logger.LogError(ex, MessageWithoutId, nameof(CreateAccounts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

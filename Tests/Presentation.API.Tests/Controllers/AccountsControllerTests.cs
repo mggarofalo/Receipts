@@ -186,7 +186,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateAccount_ReturnsOkResult_WithCreatedAccounts()
+	public async Task CreateAccounts_ReturnsOkResult_WithCreatedAccounts()
 	{
 		// Arrange
 		List<Account> accounts = AccountGenerator.GenerateList(2);
@@ -201,7 +201,7 @@ public class AccountsControllerTests
 		models.ForEach(a => a.Id = null);
 
 		// Act
-		ActionResult<AccountVM> result = await _controller.CreateAccount(models);
+		ActionResult<AccountVM> result = await _controller.CreateAccounts(models);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -222,7 +222,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateAccount_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateAccounts_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
 		List<AccountVM> models = AccountVMGenerator.GenerateList(2);
@@ -232,7 +232,7 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AccountVM> result = await _controller.CreateAccount(models);
+		ActionResult<AccountVM> result = await _controller.CreateAccounts(models);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -247,7 +247,7 @@ public class AccountsControllerTests
 		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
 		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
 
-		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.CreateAccount));
+		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.CreateAccounts));
 		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 

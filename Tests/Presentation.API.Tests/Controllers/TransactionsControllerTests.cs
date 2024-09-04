@@ -310,7 +310,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateTransaction_ReturnsOkResult_WithCreatedTransactions()
+	public async Task CreateTransactions_ReturnsOkResult_WithCreatedTransactions()
 	{
 		// Arrange
 		List<Transaction> Transactions = TransactionGenerator.GenerateList(2);
@@ -325,7 +325,7 @@ public class TransactionsControllerTests
 		models.ForEach(a => a.Id = null);
 
 		// Act
-		ActionResult<TransactionVM> result = await _controller.CreateTransaction(models);
+		ActionResult<TransactionVM> result = await _controller.CreateTransactions(models);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -346,7 +346,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateTransaction_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
 		List<TransactionVM> models = TransactionVMGenerator.GenerateList(2);
@@ -356,7 +356,7 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TransactionVM> result = await _controller.CreateTransaction(models);
+		ActionResult<TransactionVM> result = await _controller.CreateTransactions(models);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -371,7 +371,7 @@ public class TransactionsControllerTests
 		_mapperMock.Verify(m => m.Map<TransactionVM, Transaction>(It.IsAny<TransactionVM>()), Times.Exactly(models.Count));
 		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Never);
 
-		_loggerMock.VerifyErrorLoggingCalls(nameof(TransactionsController.CreateTransaction));
+		_loggerMock.VerifyErrorLoggingCalls(nameof(TransactionsController.CreateTransactions));
 		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
