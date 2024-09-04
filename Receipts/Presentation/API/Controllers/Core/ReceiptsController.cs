@@ -6,7 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Shared.ViewModels.Core;
 
-namespace API.Controllers;
+namespace API.Controllers.Core;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -57,12 +57,12 @@ public static class ControllerTestHelpers
 			Times.Never());
 	}
 
-	public static void VerifyLoggingCallWithMessage<T>(this Mock<ILogger<T>> loggerMock, LogLevel logLevel, string message)
+	public static void VerifyLoggingCallWithMessage<T>(this Mock<ILogger<T>> loggerMock, LogLevel logLevel, string messageContained)
 	{
 		loggerMock.Verify(logger => logger.Log(
 			It.Is<LogLevel>(l => l == logLevel),
 			It.IsAny<EventId>(),
-			It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains(message)),
+			It.Is<It.IsAnyType>((o, t) => o.ToString()!.Contains(messageContained)),
 			It.IsAny<Exception>(),
 			It.IsAny<Func<It.IsAnyType, Exception?, string>>()));
 	}
@@ -107,9 +107,9 @@ public static class ControllerTestHelpers
 		loggerMock.VerifyNoLoggingCalls(LogLevel.Warning);
 	}
 
-	public static void VerifyErrorLoggingCalls<T>(this Mock<ILogger<T>> loggerMock, string message)
+	public static void VerifyErrorLoggingCalls<T>(this Mock<ILogger<T>> loggerMock, string messageContained)
 	{
-		loggerMock.VerifyLoggingCallWithMessage(LogLevel.Error, message);
+		loggerMock.VerifyLoggingCallWithMessage(LogLevel.Error, messageContained);
 	}
 
 	public static void VerifyNoErrorLoggingCalls<T>(this Mock<ILogger<T>> loggerMock)
@@ -117,9 +117,9 @@ public static class ControllerTestHelpers
 		loggerMock.VerifyNoLoggingCalls(LogLevel.Error);
 	}
 
-	public static void VerifyCriticalLoggingCalls<T>(this Mock<ILogger<T>> loggerMock, string message)
+	public static void VerifyCriticalLoggingCalls<T>(this Mock<ILogger<T>> loggerMock, string messageContained)
 	{
-		loggerMock.VerifyLoggingCallWithMessage(LogLevel.Critical, message);
+		loggerMock.VerifyLoggingCallWithMessage(LogLevel.Critical, messageContained);
 	}
 
 	public static void VerifyNoCriticalLoggingCalls<T>(this Mock<ILogger<T>> loggerMock)

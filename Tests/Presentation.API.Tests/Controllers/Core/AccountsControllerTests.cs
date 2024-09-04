@@ -1,4 +1,4 @@
-using API.Controllers;
+using API.Controllers.Core;
 using API.Mapping.Core;
 using Application.Commands.Account;
 using Application.Queries.Core.Account;
@@ -12,7 +12,7 @@ using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
 
-namespace Presentation.API.Tests.Controllers;
+namespace Presentation.API.Tests.Controllers.Core;
 
 public class AccountsControllerTests
 {
