@@ -5,20 +5,24 @@ namespace Shared.Validators;
 
 public class TransactionValidator : AbstractValidator<TransactionVM>
 {
+	public const string AmountMustBeNonZero = "Amount must be non-zero.";
+	public const string DateMustBePriorToCurrentDate = "Date must be prior to the current date";
+	public const string AccountIsRequired = "Account is required.";
+
 	public TransactionValidator()
 	{
 		RuleFor(x => x.Amount)
 			.NotEmpty()
 			.NotEqual(0)
-			.WithMessage("Amount must be non-zero.");
+			.WithMessage(AmountMustBeNonZero);
 
 		RuleFor(x => x.Date.ToDateTime(TimeOnly.MinValue))
 			.NotEmpty()
 			.LessThanOrEqualTo(DateTime.Today)
-			.WithMessage("Date must be prior to the current date.");
+			.WithMessage(DateMustBePriorToCurrentDate);
 
 		RuleFor(x => x.AccountId)
 			.NotEmpty()
-			.WithMessage("Account is required.");
+			.WithMessage(AccountIsRequired);
 	}
 }

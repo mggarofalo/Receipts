@@ -5,20 +5,27 @@ namespace Shared.Validators;
 
 public class ReceiptValidator : AbstractValidator<ReceiptVM>
 {
+	public const string DescriptionMustNotExceed256Characters = "Description must not exceed 256 characters.";
+	public const string LocationIsRequired = "Location is required.";
+	public const string LocationMustNotExceed200Characters = "Location must not exceed 200 characters.";
+	public const string DateMustBePriorToCurrentDate = "Date must be prior to the current date";
+
 	public ReceiptValidator()
 	{
 		RuleFor(x => x.Description)
 			.MaximumLength(256)
-			.WithMessage("Description must not exceed 256 characters.");
+			.WithMessage(DescriptionMustNotExceed256Characters);
 
 		RuleFor(x => x.Location)
 			.NotEmpty()
+			.WithMessage(LocationIsRequired);
+
+		RuleFor(x => x.Location)
 			.MaximumLength(200)
-			.WithMessage("Location must not exceed 200 characters.");
+			.WithMessage(LocationMustNotExceed200Characters);
 
 		RuleFor(x => x.Date.ToDateTime(TimeOnly.MinValue))
-			.NotEmpty()
 			.LessThanOrEqualTo(DateTime.Today)
-			.WithMessage("Date must be prior to the current date");
+			.WithMessage(DateMustBePriorToCurrentDate);
 	}
 }

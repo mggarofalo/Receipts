@@ -8,7 +8,7 @@ public class ReceiptItemVM : IEquatable<ReceiptItemVM>
 	public required string Description { get; set; }
 	public required decimal Quantity { get; set; }
 	public required decimal UnitPrice { get; set; }
-	public required decimal TotalAmount { get; set; }
+	public required decimal TotalAmount { get; set; } // TODO: Remove this property and calculate it in the mapper instead
 	public required string Category { get; set; }
 	public required string Subcategory { get; set; }
 
