@@ -379,7 +379,7 @@ public class TransactionsControllerTests
 	public async Task UpdateTransactions_ReturnsNoContent_WhenUpdateSucceeds()
 	{
 		// Arrange
-		List<TransactionVM> models = TransactionVMGenerator.GenerateList(2);
+		List<TransactionVM> models = TransactionVMGenerator.GenerateList(2, receiptId: Guid.NewGuid(), accountId: Guid.NewGuid());
 		List<Transaction> Transactions = _mapper.Map<List<Transaction>>(models);
 
 		_mediatorMock.Setup(m => m.Send(

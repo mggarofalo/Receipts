@@ -3,47 +3,50 @@ using System.Net.Http.Json;
 
 namespace Shared.ApiClients;
 
-public static class ReceiptItemClient
+public class ReceiptItemClient(HttpClient? httpClient = default)
 {
-	private static readonly HttpClient _httpClient = new() { BaseAddress = new Uri("http://localhost:5136/api/") };
+	private const string HttpClientBaseAddress = "http://localhost:5136/api/";
+	private readonly HttpClient _httpClient = httpClient ?? new() { BaseAddress = new Uri(HttpClientBaseAddress) };
 
-	public static async Task<ReceiptItemVM?> CreateReceiptItem(ReceiptItemVM model)
+	public async Task<ReceiptItemVM?> CreateReceiptItemAsync(ReceiptItemVM model, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("receiptitems", model);
+		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("receiptitems", model, cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<ReceiptItemVM>();
+		return await response.Content.ReadFromJsonAsync<ReceiptItemVM>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<ReceiptItemVM?> GetReceiptItemById(Guid id)
+	public async Task<ReceiptItemVM?> GetReceiptItemByIdAsync(Guid id, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"receiptitems/{id}");
+		HttpResponseMessage response = await _httpClient.GetAsync($"receiptitems/{id}", cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<ReceiptItemVM>();
+		return await response.Content.ReadFromJsonAsync<ReceiptItemVM>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<List<ReceiptItemVM>?> GetAllReceiptItems()
+	public async Task<List<ReceiptItemVM>?> GetAllReceiptItemsAsync(CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync("receiptitems");
+		HttpResponseMessage response = await _httpClient.GetAsync("receiptitems", cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<ReceiptItemVM>>();
+		return await response.Content.ReadFromJsonAsync<List<ReceiptItemVM>>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<List<ReceiptItemVM>?> GetReceiptItemsByReceiptId(Guid receiptId)
+	public async Task<List<ReceiptItemVM>?> GetReceiptItemsByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"receiptitems/by-receipt-id/{receiptId}");
+		HttpResponseMessage response = await _httpClient.GetAsync($"receiptitems/by-receipt-id/{receiptId}", cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<ReceiptItemVM>>();
+		return await response.Content.ReadFromJsonAsync<List<ReceiptItemVM>>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<bool> UpdateReceiptItem(ReceiptItemVM model)
+	public async Task<bool> UpdateReceiptItemAsync(ReceiptItemVM model, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PutAsJsonAsync("receiptitems", model);
-		return response.IsSuccessStatusCode;
+		HttpResponseMessage response = await _httpClient.PutAsJsonAsync("receiptitems", model, cancellationToken);
+		response.EnsureSuccessStatusCode();
+		return true;
 	}
 
-	public static async Task<bool> DeleteReceiptItems(List<Guid> ids)
+	public async Task<bool> DeleteReceiptItemsAsync(List<Guid> ids, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("receiptitems/delete", ids);
-		return response.IsSuccessStatusCode;
+		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("receiptitems/delete", ids, cancellationToken);
+		response.EnsureSuccessStatusCode();
+		return true;
 	}
 }

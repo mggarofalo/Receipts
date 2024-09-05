@@ -11,8 +11,8 @@ public class TransactionAccountVMTests
 	public void Constructor_ValidInput_CreatesTransactionAccountVM()
 	{
 		// Arrange
-		TransactionVM transaction = TransactionVMGenerator.Generate();
 		AccountVM account = AccountVMGenerator.Generate();
+		TransactionVM transaction = TransactionVMGenerator.Generate(accountId: account.Id);
 
 		// Act
 		TransactionAccountVM transactionAccountVM = new()
@@ -30,8 +30,8 @@ public class TransactionAccountVMTests
 	public void Equals_SameTransactionAccountVM_ReturnsTrue()
 	{
 		// Arrange
-		TransactionVM transaction = TransactionVMGenerator.Generate();
 		AccountVM account = AccountVMGenerator.Generate();
+		TransactionVM transaction = TransactionVMGenerator.Generate(accountId: account.Id);
 
 		TransactionAccountVM transactionAccountVM1 = new()
 		{
@@ -98,8 +98,8 @@ public class TransactionAccountVMTests
 	public void GetHashCode_SameTransactionAccountVM_ReturnsSameHashCode()
 	{
 		// Arrange
-		TransactionVM transaction = TransactionVMGenerator.Generate();
 		AccountVM account = AccountVMGenerator.Generate();
+		TransactionVM transaction = TransactionVMGenerator.Generate(accountId: account.Id);
 
 		TransactionAccountVM transactionAccountVM1 = new()
 		{

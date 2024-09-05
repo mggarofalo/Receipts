@@ -3,40 +3,43 @@ using System.Net.Http.Json;
 
 namespace Shared.ApiClients;
 
-public static class AccountClient
+public class AccountClient(HttpClient? httpClient = default)
 {
-	private static readonly HttpClient _httpClient = new() { BaseAddress = new Uri("http://localhost:5136/api/") };
+	private const string HttpClientBaseAddress = "http://localhost:5136/api/";
+	private readonly HttpClient _httpClient = httpClient ?? new() { BaseAddress = new Uri(HttpClientBaseAddress) };
 
-	public static async Task<List<AccountVM>?> CreateAccounts(List<AccountVM> models)
+	public async Task<List<AccountVM>?> CreateAccountsAsync(List<AccountVM> models, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("accounts", models);
+		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("accounts", models, cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<AccountVM>?>();
+		return await response.Content.ReadFromJsonAsync<List<AccountVM>>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<AccountVM?> GetAccountById(Guid id)
+	public async Task<AccountVM?> GetAccountByIdAsync(Guid id, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"accounts/{id}");
+		HttpResponseMessage response = await _httpClient.GetAsync($"accounts/{id}", cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<AccountVM>();
+		return await response.Content.ReadFromJsonAsync<AccountVM>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<List<AccountVM>?> GetAllAccounts()
+	public async Task<List<AccountVM>?> GetAllAccountsAsync(CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync("accounts");
+		HttpResponseMessage response = await _httpClient.GetAsync("accounts", cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<AccountVM>>();
+		return await response.Content.ReadFromJsonAsync<List<AccountVM>>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<bool> UpdateAccounts(List<AccountVM> models)
+	public async Task<bool> UpdateAccountsAsync(List<AccountVM> models, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PutAsJsonAsync("accounts", models);
-		return response.IsSuccessStatusCode;
+		HttpResponseMessage response = await _httpClient.PutAsJsonAsync("accounts", models, cancellationToken);
+		response.EnsureSuccessStatusCode();
+		return true;
 	}
 
-	public static async Task<bool> DeleteAccounts(List<Guid> ids)
+	public async Task<bool> DeleteAccountsAsync(List<Guid> ids, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("accounts/delete", ids);
-		return response.IsSuccessStatusCode;
+		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("accounts/delete", ids, cancellationToken);
+		response.EnsureSuccessStatusCode();
+		return true;
 	}
 }

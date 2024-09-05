@@ -3,47 +3,50 @@ using System.Net.Http.Json;
 
 namespace Shared.ApiClients;
 
-public static class TransactionClient
+public class TransactionClient(HttpClient? httpClient = default)
 {
-	private static readonly HttpClient _httpClient = new() { BaseAddress = new Uri("http://localhost:5136/api/") };
+	private const string HttpClientBaseAddress = "http://localhost:5136/api/";
+	private readonly HttpClient _httpClient = httpClient ?? new() { BaseAddress = new Uri(HttpClientBaseAddress) };
 
-	public static async Task<TransactionVM?> CreateTransaction(TransactionVM model)
+	public async Task<TransactionVM?> CreateTransactionAsync(TransactionVM model, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("transactions", model);
+		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("transactions", model, cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<TransactionVM>();
+		return await response.Content.ReadFromJsonAsync<TransactionVM>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<TransactionVM?> GetTransactionById(Guid id)
+	public async Task<TransactionVM?> GetTransactionByIdAsync(Guid id, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"transactions/{id}");
+		HttpResponseMessage response = await _httpClient.GetAsync($"transactions/{id}", cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<TransactionVM>();
+		return await response.Content.ReadFromJsonAsync<TransactionVM>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<List<TransactionVM>?> GetAllTransactions()
+	public async Task<List<TransactionVM>?> GetAllTransactionsAsync(CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync("transactions");
+		HttpResponseMessage response = await _httpClient.GetAsync("transactions", cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<TransactionVM>>();
+		return await response.Content.ReadFromJsonAsync<List<TransactionVM>>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<List<TransactionVM>?> GetTransactionsByReceiptId(Guid receiptId)
+	public async Task<List<TransactionVM>?> GetTransactionsByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.GetAsync($"transactions/by-receipt-id/{receiptId}");
+		HttpResponseMessage response = await _httpClient.GetAsync($"transactions/by-receipt-id/{receiptId}", cancellationToken);
 		response.EnsureSuccessStatusCode();
-		return await response.Content.ReadFromJsonAsync<List<TransactionVM>>();
+		return await response.Content.ReadFromJsonAsync<List<TransactionVM>>(cancellationToken: cancellationToken);
 	}
 
-	public static async Task<bool> UpdateTransaction(TransactionVM model)
+	public async Task<bool> UpdateTransactionAsync(TransactionVM model, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PutAsJsonAsync("transactions", model);
-		return response.IsSuccessStatusCode;
+		HttpResponseMessage response = await _httpClient.PutAsJsonAsync("transactions", model, cancellationToken);
+		response.EnsureSuccessStatusCode();
+		return true;
 	}
 
-	public static async Task<bool> DeleteTransactions(List<Guid> ids)
+	public async Task<bool> DeleteTransactionsAsync(List<Guid> ids, CancellationToken cancellationToken = default)
 	{
-		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("transactions/delete", ids);
-		return response.IsSuccessStatusCode;
+		HttpResponseMessage response = await _httpClient.PostAsJsonAsync("transactions/delete", ids, cancellationToken);
+		response.EnsureSuccessStatusCode();
+		return true;
 	}
 }
