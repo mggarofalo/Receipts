@@ -15,11 +15,4 @@ public static class TripVMGenerator
 			Transactions = transactions
 		};
 	}
-
-	public static List<TripVM> GenerateList(int count)
-	{
-		return Enumerable.Range(0, count)
-			.Select(_ => Generate())
-			.ToList();
-	}
 }

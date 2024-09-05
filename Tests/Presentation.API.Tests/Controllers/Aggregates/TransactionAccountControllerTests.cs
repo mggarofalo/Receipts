@@ -139,7 +139,7 @@ public class TransactionAccountControllerTests
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionAccountsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new List<TransactionAccount> { transactionAccount });
+			.ReturnsAsync([transactionAccount]);
 
 		// Act
 		ActionResult<List<TransactionAccountVM>> result = await _controller.GetTransactionAccountsByReceiptId(receiptId);

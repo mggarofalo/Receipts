@@ -1,5 +1,4 @@
 using Application.Queries.Aggregates.ReceiptsWithItems;
-using Xunit;
 
 namespace Application.Tests.Queries.Aggregates.ReceiptsWithItems;
 

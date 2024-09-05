@@ -1,7 +1,5 @@
 using Domain.Aggregates;
-using Domain.Core;
 using SampleData.Domain.Aggregates;
-using SampleData.Domain.Core;
 
 namespace Domain.Tests.Aggregates;
 

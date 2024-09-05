@@ -17,11 +17,4 @@ public static class ReceiptWithItemsVMGenerator
 			Items = receiptItems
 		};
 	}
-
-	public static List<ReceiptWithItemsVM> GenerateList(int count)
-	{
-		return Enumerable.Range(0, count)
-			.Select(_ => Generate())
-			.ToList();
-	}
 }

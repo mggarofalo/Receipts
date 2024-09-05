@@ -1,5 +1,4 @@
 using Application.Queries.Aggregates.TransactionAccounts;
-using Xunit;
 
 namespace Application.Tests.Queries.Aggregates.TransactionAccounts;
 

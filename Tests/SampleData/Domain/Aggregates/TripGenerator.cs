@@ -15,11 +15,4 @@ public static class TripGenerator
 			Transactions = transactions
 		};
 	}
-
-	public static List<Trip> GenerateList(int count)
-	{
-		return Enumerable.Range(0, count)
-			.Select(_ => Generate())
-			.ToList();
-	}
 }
