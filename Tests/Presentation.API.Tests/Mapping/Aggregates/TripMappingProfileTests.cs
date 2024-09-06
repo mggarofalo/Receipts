@@ -26,33 +26,34 @@ public class TripMappingProfileTests
 		});
 
 		_mapper = configuration.CreateMapper();
+		_mapper.ConfigurationProvider.AssertConfigurationIsValid();
 	}
 
 	[Fact]
-	public void ShouldMapTripToTripVMAndBackWithoutLosingData()
+	public void ShouldMapTripToTripVM()
 	{
 		// Arrange
-		Trip original = TripGenerator.Generate();
+		Trip trip = TripGenerator.Generate();
 
 		// Act
-		TripVM mapped = _mapper.Map<TripVM>(original);
-		Trip reverseMapped = _mapper.Map<Trip>(mapped);
+		TripVM tripVM = _mapper.Map<TripVM>(trip);
+		Trip reverseMapped = _mapper.Map<Trip>(tripVM);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(trip, reverseMapped);
 	}
 
 	[Fact]
-	public void ShouldMapTripVMToTripAndBackWithoutLosingData()
+	public void ShouldMapTripVMToTrip()
 	{
 		// Arrange
-		TripVM original = TripVMGenerator.Generate();
+		TripVM tripVM = TripVMGenerator.Generate();
 
 		// Act
-		Trip mapped = _mapper.Map<Trip>(original);
-		TripVM reverseMapped = _mapper.Map<TripVM>(mapped);
+		Trip trip = _mapper.Map<Trip>(tripVM);
+		TripVM reverseMapped = _mapper.Map<TripVM>(trip);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(tripVM, reverseMapped);
 	}
 }

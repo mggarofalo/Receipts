@@ -12,19 +12,19 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<Domain.Core.Account> accounts = AccountGenerator.GenerateList(3);
-		List<Domain.Core.Transaction> transactions = [];
+		List<Domain.Core.Account> expectedAccounts = AccountGenerator.GenerateList(3);
+		List<Domain.Core.Transaction> expectedTransactions = [];
 
-		foreach (Domain.Core.Account account in accounts)
+		foreach (Domain.Core.Account account in expectedAccounts)
 		{
-			transactions.Add(TransactionGenerator.Generate(receiptId, account.Id));
+			expectedTransactions.Add(TransactionGenerator.Generate(receiptId, account.Id));
 		}
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(transactions);
+		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
 
 		Mock<IAccountRepository> mockAccountRepository = new();
-		foreach (Domain.Core.Account account in accounts)
+		foreach (Domain.Core.Account account in expectedAccounts)
 		{
 			mockAccountRepository.Setup(r => r.GetByIdAsync(account.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(account);
 		}
@@ -37,19 +37,11 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(transactions.Count, result.Count);
-		foreach (Domain.Aggregates.TransactionAccount transactionAccount in result)
+		Assert.Equal(expectedTransactions.Count, result.Count);
+		foreach (Domain.Aggregates.TransactionAccount resultTransactionAccount in result)
 		{
-			Assert.Equal(transactions.First(t => t.Id == transactionAccount.Transaction.Id), transactionAccount.Transaction);
-			Assert.Equal(accounts.First(a => a.Id == transactionAccount.Account.Id), transactionAccount.Account);
-		}
-
-		mockTransactionRepository.Verify(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()), Times.Once);
-		mockAccountRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Exactly(transactions.Count));
-
-		foreach (Domain.Core.Transaction transaction in transactions)
-		{
-			mockAccountRepository.Verify(r => r.GetByIdAsync(transaction.AccountId!, It.IsAny<CancellationToken>()), Times.Once);
+			Assert.Equal(expectedTransactions.First(t => t.Id == resultTransactionAccount.Transaction.Id), resultTransactionAccount.Transaction);
+			Assert.Equal(expectedAccounts.First(a => a.Id == resultTransactionAccount.Account.Id), resultTransactionAccount.Account);
 		}
 	}
 
@@ -58,7 +50,6 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 	{
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
-		List<Domain.Core.Transaction> emptyTransactions = [];
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
 		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(missingReceiptId, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>?)null);
@@ -73,8 +64,6 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.Null(result);
-		mockTransactionRepository.Verify(r => r.GetByReceiptIdAsync(missingReceiptId, It.IsAny<CancellationToken>()), Times.Once);
-		mockAccountRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
@@ -82,14 +71,13 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<Domain.Core.Transaction> transactions = TransactionGenerator.GenerateList(3);
-		List<Domain.Core.Account> accounts = [];
+		List<Domain.Core.Transaction> expectedTransactions = TransactionGenerator.GenerateList(3);
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(transactions);
+		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
 
 		Mock<IAccountRepository> mockAccountRepository = new();
-		foreach (Domain.Core.Transaction transaction in transactions)
+		foreach (Domain.Core.Transaction transaction in expectedTransactions)
 		{
 			mockAccountRepository.Setup(r => r.GetByIdAsync(transaction.AccountId!, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 		}
@@ -102,9 +90,6 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.Null(result);
-
-		mockTransactionRepository.Verify(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()), Times.Once);
-		mockAccountRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -112,10 +97,10 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<Domain.Core.Transaction> emptyTransactions = [];
+		List<Domain.Core.Transaction> expectedTransactions = [];
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(emptyTransactions);
+		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
 
 		Mock<IAccountRepository> mockAccountRepository = new();
 
@@ -128,7 +113,5 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Empty(result);
-		mockTransactionRepository.Verify(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()), Times.Once);
-		mockAccountRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 }

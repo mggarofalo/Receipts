@@ -21,8 +21,9 @@ public class TripTests
 
 		// Assert
 		Assert.NotNull(trip.Receipt);
+		Assert.Equal(receiptWithItems, trip.Receipt);
 		Assert.NotNull(trip.Transactions);
-		Assert.Equal(2, trip.Transactions.Count);
+		Assert.Equal(transactions, trip.Transactions);
 	}
 
 	[Fact]
@@ -45,9 +46,7 @@ public class TripTests
 		};
 
 		// Act & Assert
-		Assert.True(trip1 == trip2);
-		Assert.False(trip1 != trip2);
-		Assert.True(trip1.Equals(trip2));
+		Assert.Equal(trip1, trip2);
 	}
 
 	[Fact]
@@ -58,9 +57,7 @@ public class TripTests
 		Trip trip2 = TripGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(trip1 == trip2);
-		Assert.True(trip1 != trip2);
-		Assert.False(trip1.Equals(trip2));
+		Assert.NotEqual(trip1, trip2);
 	}
 
 	[Fact]
@@ -125,5 +122,61 @@ public class TripTests
 
 		// Act & Assert
 		Assert.NotEqual(trip1.GetHashCode(), trip2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEqual_SameTrip_ReturnsTrue()
+	{
+		// Arrange
+		Trip trip1 = TripGenerator.Generate();
+		Trip trip2 = trip1;
+
+		// Act
+		bool result = trip1 == trip2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEqual_DifferentTrip_ReturnsFalse()
+	{
+		// Arrange
+		Trip trip1 = TripGenerator.Generate();
+		Trip trip2 = TripGenerator.Generate();
+
+		// Act
+		bool result = trip1 == trip2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_SameTrip_ReturnsFalse()
+	{
+		// Arrange
+		Trip trip1 = TripGenerator.Generate();
+		Trip trip2 = trip1;
+
+		// Act
+		bool result = trip1 != trip2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_DifferentTrip_ReturnsTrue()
+	{
+		// Arrange
+		Trip trip1 = TripGenerator.Generate();
+		Trip trip2 = TripGenerator.Generate();
+
+		// Act
+		bool result = trip1 != trip2;
+
+		// Assert
+		Assert.True(result);
 	}
 }

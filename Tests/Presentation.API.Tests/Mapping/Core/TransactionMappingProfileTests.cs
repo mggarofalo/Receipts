@@ -1,7 +1,8 @@
 using API.Mapping.Core;
 using AutoMapper;
-using Domain;
 using Domain.Core;
+using SampleData.Domain.Core;
+using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
 
 namespace Presentation.API.Tests.Mapping.Core;
@@ -18,46 +19,34 @@ public class TransactionMappingProfileTests
 		});
 
 		_mapper = configuration.CreateMapper();
+		_mapper.ConfigurationProvider.AssertConfigurationIsValid();
 	}
 
 	[Fact]
 	public void ShouldMapTransactionToTransactionVM()
 	{
-		Transaction transaction = new(
-			Guid.NewGuid(),
-			Guid.NewGuid(),
-			Guid.NewGuid(),
-			new Money(100),
-			DateOnly.FromDateTime(DateTime.Now)
-		);
+		// Arrange
+		Transaction transaction = TransactionGenerator.Generate();
 
+		// Act
 		TransactionVM transactionVM = _mapper.Map<TransactionVM>(transaction);
+		Transaction reverseMapped = _mapper.Map<Transaction>(transactionVM);
 
-		Assert.Equal(transaction.Id, transactionVM.Id);
-		Assert.Equal(transaction.ReceiptId, transactionVM.ReceiptId);
-		Assert.Equal(transaction.AccountId, transactionVM.AccountId);
-		Assert.Equal(transaction.Amount.Amount, transactionVM.Amount);
-		Assert.Equal(transaction.Date, transactionVM.Date);
+		// Assert
+		Assert.Equal(transaction, reverseMapped);
 	}
 
 	[Fact]
 	public void ShouldMapTransactionVMToTransaction()
 	{
-		TransactionVM transactionVM = new()
-		{
-			Id = Guid.NewGuid(),
-			ReceiptId = Guid.NewGuid(),
-			AccountId = Guid.NewGuid(),
-			Amount = 100,
-			Date = DateOnly.FromDateTime(DateTime.Now)
-		};
+		// Arrange
+		TransactionVM transactionVM = TransactionVMGenerator.Generate();
 
+		// Act
 		Transaction transaction = _mapper.Map<Transaction>(transactionVM);
+		TransactionVM reverseMapped = _mapper.Map<TransactionVM>(transaction);
 
-		Assert.Equal(transactionVM.Id, transaction.Id);
-		Assert.Equal(transactionVM.ReceiptId, transaction.ReceiptId);
-		Assert.Equal(transactionVM.AccountId, transaction.AccountId);
-		Assert.Equal(transactionVM.Amount, transaction.Amount.Amount);
-		Assert.Equal(transactionVM.Date, transaction.Date);
+		// Assert
+		Assert.Equal(transactionVM, reverseMapped);
 	}
 }

@@ -52,9 +52,7 @@ public class TripVMTests
 		};
 
 		// Act & Assert
-		Assert.True(tripVM1 == tripVM2);
-		Assert.False(tripVM1 != tripVM2);
-		Assert.True(tripVM1.Equals(tripVM2));
+		Assert.Equal(tripVM1, tripVM2);
 	}
 
 	[Fact]
@@ -74,9 +72,7 @@ public class TripVMTests
 		};
 
 		// Act & Assert
-		Assert.False(tripVM1 == tripVM2);
-		Assert.True(tripVM1 != tripVM2);
-		Assert.False(tripVM1.Equals(tripVM2));
+		Assert.NotEqual(tripVM1, tripVM2);
 	}
 
 	[Fact]
@@ -166,5 +162,119 @@ public class TripVMTests
 
 		// Act & Assert
 		Assert.NotEqual(tripVM1.GetHashCode(), tripVM2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEquals_SameTripVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptWithItemsVM receipt = ReceiptWithItemsVMGenerator.Generate();
+		List<TransactionAccountVM> transactions =
+		[
+			TransactionAccountVMGenerator.Generate(),
+			TransactionAccountVMGenerator.Generate()
+		];
+
+		TripVM tripVM1 = new()
+		{
+			Receipt = receipt,
+			Transactions = transactions
+		};
+
+		TripVM tripVM2 = new()
+		{
+			Receipt = receipt,
+			Transactions = transactions
+		};
+
+		// Act
+		bool result = tripVM1 == tripVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_DifferentTripVM_ReturnsFalse()
+	{
+		// Arrange
+		TripVM tripVM1 = TripVMGenerator.Generate();
+		TripVM tripVM2 = TripVMGenerator.Generate();
+
+		// Act
+		bool result = tripVM1 == tripVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_SameTripVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptWithItemsVM receipt = ReceiptWithItemsVMGenerator.Generate();
+		List<TransactionAccountVM> transactions =
+		[
+			TransactionAccountVMGenerator.Generate(),
+			TransactionAccountVMGenerator.Generate()
+		];
+
+		TripVM tripVM1 = new()
+		{
+			Receipt = receipt,
+			Transactions = transactions
+		};
+
+		TripVM tripVM2 = new()
+		{
+			Receipt = receipt,
+			Transactions = transactions
+		};
+
+		// Act
+		bool result = tripVM1 != tripVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_DifferentTripVM_ReturnsTrue()
+	{
+		// Arrange
+		TripVM tripVM1 = TripVMGenerator.Generate();
+		TripVM tripVM2 = TripVMGenerator.Generate();
+
+		// Act
+		bool result = tripVM1 != tripVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_NullTripVM_ReturnsFalse()
+	{
+		// Arrange
+		TripVM tripVM = TripVMGenerator.Generate();
+
+		// Act
+		bool result = tripVM == null;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_NullTripVM_ReturnsTrue()
+	{
+		// Arrange
+		TripVM tripVM = TripVMGenerator.Generate();
+
+		// Act
+		bool result = tripVM != null;
+
+		// Assert
+		Assert.True(result);
 	}
 }

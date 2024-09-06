@@ -11,28 +11,19 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 	public async Task Handle_ShouldReturnReceiptItems_WhenReceiptExistsAndHasItems()
 	{
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
-		List<Domain.Core.ReceiptItem> receiptItems = ReceiptItemGenerator.GenerateList(2, receipt.Id!.Value);
+		List<Domain.Core.ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2, receipt.Id!.Value);
 
 		Mock<IReceiptItemRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(receiptItems);
+		mockRepository.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetReceiptItemsByReceiptIdQueryHandler handler = new(mockRepository.Object);
 		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id!.Value);
 		List<Domain.Core.ReceiptItem>? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
-		Assert.Equal(receiptItems.Count, result.Count);
-		Assert.True(receiptItems.All(ri => result.Any(rr =>
-			rr.ReceiptId == ri.ReceiptId &&
-			rr.ReceiptItemCode == ri.ReceiptItemCode &&
-			rr.Description == ri.Description &&
-			rr.Quantity == ri.Quantity &&
-			rr.UnitPrice == ri.UnitPrice &&
-			rr.TotalAmount == ri.TotalAmount &&
-			rr.Category == ri.Category &&
-			rr.Subcategory == ri.Subcategory)));
-
-		mockRepository.Verify(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>()), Times.Once);
+		Assert.Equal(expected.Count, result.Count);
+		Assert.True(expected.All(result.Contains));
+		Assert.True(result.All(expected.Contains));
 	}
 
 	[Fact]
@@ -49,7 +40,6 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 
 		Assert.NotNull(result);
 		Assert.Empty(result);
-		mockRepository.Verify(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -66,6 +56,5 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 		List<Domain.Core.ReceiptItem>? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);
-		mockRepository.Verify(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

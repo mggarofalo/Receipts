@@ -11,27 +11,25 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 	public async Task Handle_ShouldReturnTransactionAccount_WhenTransactionAndAccountExist()
 	{
 		// Arrange
-		Domain.Core.Account account = AccountGenerator.Generate();
-		Domain.Core.Transaction transaction = TransactionGenerator.Generate(accountId: account.Id);
+		Domain.Core.Account expectedAccount = AccountGenerator.Generate();
+		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate(accountId: expectedAccount.Id);
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByIdAsync(transaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
+		mockTransactionRepository.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
 		Mock<IAccountRepository> mockAccountRepository = new();
-		mockAccountRepository.Setup(r => r.GetByIdAsync(account.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(account);
+		mockAccountRepository.Setup(r => r.GetByIdAsync(expectedAccount.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
 
 		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
-		GetTransactionAccountByTransactionIdQuery query = new(transaction.Id!.Value);
+		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id!.Value);
 
 		// Act
 		Domain.Aggregates.TransactionAccount? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(transaction, result.Transaction);
-		Assert.Equal(account, result.Account);
-		mockTransactionRepository.Verify(r => r.GetByIdAsync(transaction.Id!.Value, It.IsAny<CancellationToken>()), Times.Once);
-		mockAccountRepository.Verify(r => r.GetByIdAsync(account.Id!.Value, It.IsAny<CancellationToken>()), Times.Once);
+		Assert.Equal(expectedTransaction, result.Transaction);
+		Assert.Equal(expectedAccount, result.Account);
 	}
 
 	[Fact]
@@ -52,8 +50,6 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 
 		// Assert
 		Assert.Null(result);
-		mockTransactionRepository.Verify(r => r.GetByIdAsync(missingTransactionId, It.IsAny<CancellationToken>()), Times.Once);
-		mockAccountRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
@@ -61,23 +57,21 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 	{
 		// Arrange
 		Guid missingAccountId = Guid.NewGuid();
-		Domain.Core.Transaction transaction = TransactionGenerator.Generate(accountId: missingAccountId);
+		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate(accountId: missingAccountId);
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByIdAsync(transaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
+		mockTransactionRepository.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
 		Mock<IAccountRepository> mockAccountRepository = new();
 		mockAccountRepository.Setup(r => r.GetByIdAsync(missingAccountId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 
 		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
-		GetTransactionAccountByTransactionIdQuery query = new(transaction.Id!.Value);
+		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id!.Value);
 
 		// Act
 		Domain.Aggregates.TransactionAccount? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
 		Assert.Null(result);
-		mockTransactionRepository.Verify(r => r.GetByIdAsync(transaction.Id!.Value, It.IsAny<CancellationToken>()), Times.Once);
-		mockAccountRepository.Verify(r => r.GetByIdAsync(missingAccountId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

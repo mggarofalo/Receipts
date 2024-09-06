@@ -83,9 +83,7 @@ public class ReceiptVMTests
 		};
 
 		// Act & Assert
-		Assert.True(receiptVM1 == receiptVM2);
-		Assert.False(receiptVM1 != receiptVM2);
-		Assert.True(receiptVM1.Equals(receiptVM2));
+		Assert.Equal(receiptVM1, receiptVM2);
 	}
 
 	[Fact]
@@ -96,9 +94,7 @@ public class ReceiptVMTests
 		ReceiptVM receiptVM2 = ReceiptVMGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(receiptVM1 == receiptVM2);
-		Assert.True(receiptVM1 != receiptVM2);
-		Assert.False(receiptVM1.Equals(receiptVM2));
+		Assert.NotEqual(receiptVM1, receiptVM2);
 	}
 
 	[Fact]
@@ -215,5 +211,101 @@ public class ReceiptVMTests
 
 		// Act & Assert
 		Assert.NotEqual(receiptVM1.GetHashCode(), receiptVM2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEquals_SameReceiptVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptVM receiptVM1 = ReceiptVMGenerator.Generate();
+		ReceiptVM receiptVM2 = new()
+		{
+			Id = receiptVM1.Id,
+			Description = receiptVM1.Description,
+			Location = receiptVM1.Location,
+			Date = receiptVM1.Date,
+			TaxAmount = receiptVM1.TaxAmount
+		};
+
+		// Act
+		bool result = receiptVM1 == receiptVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_DifferentReceiptVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptVM receiptVM1 = ReceiptVMGenerator.Generate();
+		ReceiptVM receiptVM2 = ReceiptVMGenerator.Generate();
+
+		// Act
+		bool result = receiptVM1 == receiptVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_SameReceiptVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptVM receiptVM1 = ReceiptVMGenerator.Generate();
+		ReceiptVM receiptVM2 = new()
+		{
+			Id = receiptVM1.Id,
+			Description = receiptVM1.Description,
+			Location = receiptVM1.Location,
+			Date = receiptVM1.Date,
+			TaxAmount = receiptVM1.TaxAmount
+		};
+
+		// Act
+		bool result = receiptVM1 != receiptVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_DifferentReceiptVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptVM receiptVM1 = ReceiptVMGenerator.Generate();
+		ReceiptVM receiptVM2 = ReceiptVMGenerator.Generate();
+
+		// Act
+		bool result = receiptVM1 != receiptVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_NullReceiptVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptVM receiptVM = ReceiptVMGenerator.Generate();
+
+		// Act
+		bool result = receiptVM == null;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_NullReceiptVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptVM receiptVM = ReceiptVMGenerator.Generate();
+
+		// Act
+		bool result = receiptVM != null;
+
+		// Assert
+		Assert.True(result);
 	}
 }

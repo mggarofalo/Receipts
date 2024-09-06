@@ -10,23 +10,18 @@ public class GetAllAccountsQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnAllAccounts()
 	{
-		List<Domain.Core.Account> accounts = AccountGenerator.GenerateList(2);
+		List<Domain.Core.Account> expected = AccountGenerator.GenerateList(2);
 
 		Mock<IAccountRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(accounts);
+		mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetAllAccountsQueryHandler handler = new(mockRepository.Object);
 		GetAllAccountsQuery query = new();
 
 		List<Domain.Core.Account> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.Equal(accounts.Count, result.Count);
-		Assert.True(accounts.All(input => result.Any(output =>
-			output.Id == input.Id &&
-			output.AccountCode == input.AccountCode &&
-			output.Name == input.Name &&
-			output.IsActive == input.IsActive)));
-
-		mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+		Assert.Equal(expected.Count, result.Count);
+		Assert.True(expected.All(result.Contains));
+		Assert.True(result.All(expected.Contains));
 	}
 }

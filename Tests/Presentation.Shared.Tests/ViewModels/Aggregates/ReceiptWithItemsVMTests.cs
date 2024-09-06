@@ -47,9 +47,7 @@ public class ReceiptWithItemsVMTests
 		};
 
 		// Act & Assert
-		Assert.True(receiptWithItemsVM1 == receiptWithItemsVM2);
-		Assert.False(receiptWithItemsVM1 != receiptWithItemsVM2);
-		Assert.True(receiptWithItemsVM1.Equals(receiptWithItemsVM2));
+		Assert.Equal(receiptWithItemsVM1, receiptWithItemsVM2);
 	}
 
 	[Fact]
@@ -60,9 +58,7 @@ public class ReceiptWithItemsVMTests
 		ReceiptWithItemsVM receiptWithItemsVM2 = ReceiptWithItemsVMGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(receiptWithItemsVM1 == receiptWithItemsVM2);
-		Assert.True(receiptWithItemsVM1 != receiptWithItemsVM2);
-		Assert.False(receiptWithItemsVM1.Equals(receiptWithItemsVM2));
+		Assert.NotEqual(receiptWithItemsVM1, receiptWithItemsVM2);
 	}
 
 	[Fact]
@@ -127,5 +123,95 @@ public class ReceiptWithItemsVMTests
 
 		// Act & Assert
 		Assert.NotEqual(receiptWithItemsVM1.GetHashCode(), receiptWithItemsVM2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEquals_SameReceiptWithItemsVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptWithItemsVM receiptWithItemsVM1 = ReceiptWithItemsVMGenerator.Generate();
+		ReceiptWithItemsVM receiptWithItemsVM2 = new()
+		{
+			Receipt = receiptWithItemsVM1.Receipt,
+			Items = receiptWithItemsVM1.Items
+		};
+
+		// Act
+		bool result = receiptWithItemsVM1 == receiptWithItemsVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_DifferentReceiptWithItemsVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptWithItemsVM receiptWithItemsVM1 = ReceiptWithItemsVMGenerator.Generate();
+		ReceiptWithItemsVM receiptWithItemsVM2 = ReceiptWithItemsVMGenerator.Generate();
+
+		// Act
+		bool result = receiptWithItemsVM1 == receiptWithItemsVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_SameReceiptWithItemsVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptWithItemsVM receiptWithItemsVM1 = ReceiptWithItemsVMGenerator.Generate();
+		ReceiptWithItemsVM receiptWithItemsVM2 = new()
+		{
+			Receipt = receiptWithItemsVM1.Receipt,
+			Items = receiptWithItemsVM1.Items
+		};
+
+		// Act
+		bool result = receiptWithItemsVM1 != receiptWithItemsVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_DifferentReceiptWithItemsVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptWithItemsVM receiptWithItemsVM1 = ReceiptWithItemsVMGenerator.Generate();
+		ReceiptWithItemsVM receiptWithItemsVM2 = ReceiptWithItemsVMGenerator.Generate();
+
+		// Act
+		bool result = receiptWithItemsVM1 != receiptWithItemsVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_NullReceiptWithItemsVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptWithItemsVM receiptWithItemsVM = ReceiptWithItemsVMGenerator.Generate();
+
+		// Act
+		bool result = receiptWithItemsVM == null;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_NullReceiptWithItemsVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptWithItemsVM receiptWithItemsVM = ReceiptWithItemsVMGenerator.Generate();
+
+		// Act
+		bool result = receiptWithItemsVM != null;
+
+		// Assert
+		Assert.True(result);
 	}
 }

@@ -1,7 +1,8 @@
 using API.Mapping.Core;
 using AutoMapper;
-using Domain;
 using Domain.Core;
+using SampleData.Domain.Core;
+using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
 
 namespace Presentation.API.Tests.Mapping.Core;
@@ -18,46 +19,34 @@ public class ReceiptMappingProfileTests
 		});
 
 		_mapper = configuration.CreateMapper();
+		_mapper.ConfigurationProvider.AssertConfigurationIsValid();
 	}
 
 	[Fact]
 	public void ShouldMapReceiptToReceiptVM()
 	{
-		Guid receiptId = Guid.NewGuid();
+		// Arrange
+		Receipt receipt = ReceiptGenerator.Generate();
 
-		Receipt receipt = new(
-			receiptId,
-			"Location",
-			new DateOnly(2024, 1, 1),
-			new Money(100),
-			"Description"
-		);
-
+		// Act
 		ReceiptVM receiptVM = _mapper.Map<ReceiptVM>(receipt);
+		Receipt reverseMapped = _mapper.Map<Receipt>(receiptVM);
 
-		Assert.Equal(receipt.Id, receiptVM.Id);
-		Assert.Equal(receipt.Location, receiptVM.Location);
-		Assert.Equal(receipt.Date, receiptVM.Date);
-		Assert.Equal(receipt.TaxAmount.Amount, receiptVM.TaxAmount);
+		// Assert
+		Assert.Equal(receipt, reverseMapped);
 	}
 
 	[Fact]
 	public void ShouldMapReceiptVMToReceipt()
 	{
-		Guid receiptId = Guid.NewGuid();
-		ReceiptVM receiptVM = new()
-		{
-			Id = receiptId,
-			Location = "Location",
-			Date = new DateOnly(2024, 1, 1),
-			TaxAmount = 100
-		};
+		// Arrange
+		ReceiptVM receiptVM = ReceiptVMGenerator.Generate();
 
+		// Act
 		Receipt receipt = _mapper.Map<Receipt>(receiptVM);
+		ReceiptVM reverseMapped = _mapper.Map<ReceiptVM>(receipt);
 
-		Assert.Equal(receiptVM.Id, receipt.Id);
-		Assert.Equal(receiptVM.Location, receipt.Location);
-		Assert.Equal(receiptVM.Date, receipt.Date);
-		Assert.Equal(receiptVM.TaxAmount, receipt.TaxAmount.Amount);
+		// Assert
+		Assert.Equal(receiptVM, reverseMapped);
 	}
 }

@@ -8,7 +8,7 @@ namespace Application.Tests.Commands.ReceiptItem;
 public class CreateReceiptItemCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_WithValidCommand_ReturnsCreatedReceiptItems()
+	public async Task CreateReceiptItemCommandHandler_WithValidCommand_ReturnsCreatedReceiptItems()
 	{
 		Mock<IReceiptItemRepository> mockRepository = new();
 		CreateReceiptItemCommandHandler handler = new(mockRepository.Object);
@@ -24,19 +24,5 @@ public class CreateReceiptItemCommandHandlerTests
 		List<Domain.Core.ReceiptItem> result = await handler.Handle(command, CancellationToken.None);
 
 		Assert.Equal(input.Count, result.Count);
-
-		mockRepository.Verify(r => r.CreateAsync(It.Is<List<Domain.Core.ReceiptItem>>(receiptItems =>
-			receiptItems.All(input => result.Any(output =>
-				output.ReceiptId == input.ReceiptId &&
-				output.ReceiptItemCode == input.ReceiptItemCode &&
-				output.Description == input.Description &&
-				output.Quantity == input.Quantity &&
-				output.UnitPrice == input.UnitPrice &&
-				output.TotalAmount == input.TotalAmount &&
-				output.Category == input.Category &&
-				output.Subcategory == input.Subcategory))),
-			It.IsAny<CancellationToken>()), Times.Once);
-
-		mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

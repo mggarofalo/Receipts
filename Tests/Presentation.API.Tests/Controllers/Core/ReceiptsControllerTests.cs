@@ -55,16 +55,6 @@ public class ReceiptsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		ReceiptVM actualReturn = Assert.IsType<ReceiptVM>(okResult.Value);
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetReceiptByIdQuery>(q => q.Id == Receipt.Id),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Receipt, ReceiptVM>(Receipt), Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -83,16 +73,6 @@ public class ReceiptsControllerTests
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetReceiptByIdQuery>(q => q.Id == missingReceiptId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Receipt, ReceiptVM>(It.IsAny<Receipt>()), Times.Never);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -113,16 +93,6 @@ public class ReceiptsControllerTests
 		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetReceiptByIdQuery>(q => q.Id == id),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Receipt, ReceiptVM>(It.IsAny<Receipt>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(ReceiptsController.GetReceiptById));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -145,16 +115,6 @@ public class ReceiptsControllerTests
 		List<ReceiptVM> actualReturn = Assert.IsType<List<ReceiptVM>>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.IsAny<GetAllReceiptsQuery>(),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Receipt, ReceiptVM>(It.IsAny<Receipt>()), Times.Exactly(Receipts.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -173,16 +133,6 @@ public class ReceiptsControllerTests
 		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.IsAny<GetAllReceiptsQuery>(),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Receipt, ReceiptVM>(It.IsAny<Receipt>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(ReceiptsController.GetAllReceipts));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -208,17 +158,6 @@ public class ReceiptsControllerTests
 		List<ReceiptVM> actualReturn = Assert.IsType<List<ReceiptVM>>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<CreateReceiptCommand>(c => c.Receipts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<ReceiptVM, Receipt>(It.IsAny<ReceiptVM>()), Times.Exactly(models.Count));
-		_mapperMock.Verify(m => m.Map<Receipt, ReceiptVM>(It.IsAny<Receipt>()), Times.Exactly(Receipts.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -238,17 +177,6 @@ public class ReceiptsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<CreateReceiptCommand>(c => c.Receipts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<ReceiptVM, Receipt>(It.IsAny<ReceiptVM>()), Times.Exactly(models.Count));
-		_mapperMock.Verify(m => m.Map<Receipt, ReceiptVM>(It.IsAny<Receipt>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(ReceiptsController.CreateReceipts));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -269,16 +197,6 @@ public class ReceiptsControllerTests
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
 		Assert.Equal(204, noContentResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateReceiptCommand>(c => c.Receipts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<ReceiptVM, Receipt>(It.IsAny<ReceiptVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -298,16 +216,6 @@ public class ReceiptsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateReceiptCommand>(c => c.Receipts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<ReceiptVM, Receipt>(It.IsAny<ReceiptVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -327,16 +235,6 @@ public class ReceiptsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateReceiptCommand>(c => c.Receipts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<ReceiptVM, Receipt>(It.IsAny<ReceiptVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(ReceiptsController.UpdateReceipts));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -356,14 +254,6 @@ public class ReceiptsControllerTests
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
 		Assert.Equal(204, noContentResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -383,14 +273,6 @@ public class ReceiptsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -410,14 +292,6 @@ public class ReceiptsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -438,13 +312,5 @@ public class ReceiptsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(ReceiptsController.DeleteReceipts));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 }

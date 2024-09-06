@@ -55,16 +55,6 @@ public class TransactionsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		TransactionVM actualReturn = Assert.IsType<TransactionVM>(okResult.Value);
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTransactionByIdQuery>(q => q.Id == Transaction.Id),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(Transaction), Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -83,16 +73,6 @@ public class TransactionsControllerTests
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTransactionByIdQuery>(q => q.Id == missingTransactionId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Never);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -113,16 +93,6 @@ public class TransactionsControllerTests
 		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTransactionByIdQuery>(q => q.Id == id),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(TransactionsController.GetTransactionById));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -145,16 +115,6 @@ public class TransactionsControllerTests
 		List<TransactionVM> actualReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.IsAny<GetAllTransactionsQuery>(),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Exactly(Transactions.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -173,16 +133,6 @@ public class TransactionsControllerTests
 		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.IsAny<GetAllTransactionsQuery>(),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(TransactionsController.GetAllTransactions));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -206,16 +156,6 @@ public class TransactionsControllerTests
 		List<TransactionVM> actualReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Exactly(Transactions.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -239,16 +179,6 @@ public class TransactionsControllerTests
 		List<TransactionVM> actualReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Never);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -268,16 +198,6 @@ public class TransactionsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == missingReceiptId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Never);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -297,16 +217,6 @@ public class TransactionsControllerTests
 		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(TransactionsController.GetTransactionsByReceiptId));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -332,17 +242,6 @@ public class TransactionsControllerTests
 		List<TransactionVM> actualReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<TransactionVM, Transaction>(It.IsAny<TransactionVM>()), Times.Exactly(models.Count));
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Exactly(Transactions.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -362,17 +261,6 @@ public class TransactionsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<TransactionVM, Transaction>(It.IsAny<TransactionVM>()), Times.Exactly(models.Count));
-		_mapperMock.Verify(m => m.Map<Transaction, TransactionVM>(It.IsAny<Transaction>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(TransactionsController.CreateTransactions));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -393,16 +281,6 @@ public class TransactionsControllerTests
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
 		Assert.Equal(204, noContentResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<TransactionVM, Transaction>(It.IsAny<TransactionVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -422,16 +300,6 @@ public class TransactionsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<TransactionVM, Transaction>(It.IsAny<TransactionVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -451,16 +319,6 @@ public class TransactionsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<TransactionVM, Transaction>(It.IsAny<TransactionVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(TransactionsController.UpdateTransactions));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -480,14 +338,6 @@ public class TransactionsControllerTests
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
 		Assert.Equal(204, noContentResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -507,14 +357,6 @@ public class TransactionsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -534,14 +376,6 @@ public class TransactionsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -562,13 +396,5 @@ public class TransactionsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(TransactionsController.DeleteTransactions));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 }

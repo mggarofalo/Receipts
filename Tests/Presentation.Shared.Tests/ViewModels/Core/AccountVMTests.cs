@@ -75,9 +75,7 @@ public class AccountVMTests
 		};
 
 		// Act & Assert
-		Assert.True(accountVM1 == accountVM2);
-		Assert.False(accountVM1 != accountVM2);
-		Assert.True(accountVM1.Equals(accountVM2));
+		Assert.Equal(accountVM1, accountVM2);
 	}
 
 	[Fact]
@@ -88,9 +86,7 @@ public class AccountVMTests
 		AccountVM accountVM2 = AccountVMGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(accountVM1 == accountVM2);
-		Assert.True(accountVM1 != accountVM2);
-		Assert.False(accountVM1.Equals(accountVM2));
+		Assert.NotEqual(accountVM1, accountVM2);
 	}
 
 	[Fact]
@@ -199,5 +195,99 @@ public class AccountVMTests
 
 		// Act & Assert
 		Assert.NotEqual(accountVM1.GetHashCode(), accountVM2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEquals_SameAccountVM_ReturnsTrue()
+	{
+		// Arrange
+		AccountVM accountVM1 = AccountVMGenerator.Generate();
+		AccountVM accountVM2 = new()
+		{
+			Id = accountVM1.Id,
+			AccountCode = accountVM1.AccountCode,
+			Name = accountVM1.Name,
+			IsActive = accountVM1.IsActive
+		};
+
+		// Act
+		bool result = accountVM1 == accountVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_DifferentAccountVM_ReturnsFalse()
+	{
+		// Arrange
+		AccountVM accountVM1 = AccountVMGenerator.Generate();
+		AccountVM accountVM2 = AccountVMGenerator.Generate();
+
+		// Act
+		bool result = accountVM1 == accountVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_SameAccountVM_ReturnsFalse()
+	{
+		// Arrange
+		AccountVM accountVM1 = AccountVMGenerator.Generate();
+		AccountVM accountVM2 = new()
+		{
+			Id = accountVM1.Id,
+			AccountCode = accountVM1.AccountCode,
+			Name = accountVM1.Name,
+			IsActive = accountVM1.IsActive
+		};
+
+		// Act
+		bool result = accountVM1 != accountVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_DifferentAccountVM_ReturnsTrue()
+	{
+		// Arrange
+		AccountVM accountVM1 = AccountVMGenerator.Generate();
+		AccountVM accountVM2 = AccountVMGenerator.Generate();
+
+		// Act
+		bool result = accountVM1 != accountVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_NullAccountVM_ReturnsFalse()
+	{
+		// Arrange
+		AccountVM accountVM = AccountVMGenerator.Generate();
+
+		// Act
+		bool result = accountVM == null;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_NullAccountVM_ReturnsTrue()
+	{
+		// Arrange
+		AccountVM accountVM = AccountVMGenerator.Generate();
+
+		// Act
+		bool result = accountVM != null;
+
+		// Assert
+		Assert.True(result);
 	}
 }

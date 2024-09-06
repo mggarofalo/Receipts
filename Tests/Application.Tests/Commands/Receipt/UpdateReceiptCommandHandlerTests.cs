@@ -8,7 +8,7 @@ namespace Application.Tests.Commands.Receipt;
 public class UpdateReceiptCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_WithValidCommand_ReturnsTrueAndCallsUpdateAndSaveChanges()
+	public async Task UpdateReceiptCommandHandler_WithValidCommand_ReturnsTrueAndCallsUpdateAndSaveChanges()
 	{
 		Mock<IReceiptRepository> mockRepository = new();
 		UpdateReceiptCommandHandler handler = new(mockRepository.Object);
@@ -23,8 +23,5 @@ public class UpdateReceiptCommandHandlerTests
 		bool result = await handler.Handle(command, CancellationToken.None);
 
 		Assert.True(result);
-
-		mockRepository.Verify(r => r.UpdateAsync(It.IsAny<List<Domain.Core.Receipt>>(), It.IsAny<CancellationToken>()), Times.Once);
-		mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

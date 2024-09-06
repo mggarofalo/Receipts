@@ -22,8 +22,9 @@ public class ReceiptWithItemsTests
 
 		// Assert
 		Assert.NotNull(receiptWithItems.Receipt);
+		Assert.Equal(receipt, receiptWithItems.Receipt);
 		Assert.NotNull(receiptWithItems.Items);
-		Assert.Equal(2, receiptWithItems.Items.Count);
+		Assert.Equal(items, receiptWithItems.Items);
 	}
 
 	[Fact]
@@ -46,9 +47,7 @@ public class ReceiptWithItemsTests
 		};
 
 		// Act & Assert
-		Assert.True(receiptWithItems1 == receiptWithItems2);
-		Assert.False(receiptWithItems1 != receiptWithItems2);
-		Assert.True(receiptWithItems1.Equals(receiptWithItems2));
+		Assert.Equal(receiptWithItems1, receiptWithItems2);
 	}
 
 	[Fact]
@@ -59,9 +58,7 @@ public class ReceiptWithItemsTests
 		ReceiptWithItems receiptWithItems2 = ReceiptWithItemsGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(receiptWithItems1 == receiptWithItems2);
-		Assert.True(receiptWithItems1 != receiptWithItems2);
-		Assert.False(receiptWithItems1.Equals(receiptWithItems2));
+		Assert.NotEqual(receiptWithItems1, receiptWithItems2);
 	}
 
 	[Fact]
@@ -126,5 +123,61 @@ public class ReceiptWithItemsTests
 
 		// Act & Assert
 		Assert.NotEqual(receiptWithItems1.GetHashCode(), receiptWithItems2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEqual_SameReceiptWithItems_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptWithItems receiptWithItems1 = ReceiptWithItemsGenerator.Generate();
+		ReceiptWithItems receiptWithItems2 = receiptWithItems1;
+
+		// Act
+		bool result = receiptWithItems1 == receiptWithItems2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEqual_DifferentReceiptWithItems_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptWithItems receiptWithItems1 = ReceiptWithItemsGenerator.Generate();
+		ReceiptWithItems receiptWithItems2 = ReceiptWithItemsGenerator.Generate();
+
+		// Act
+		bool result = receiptWithItems1 == receiptWithItems2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_SameReceiptWithItems_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptWithItems receiptWithItems1 = ReceiptWithItemsGenerator.Generate();
+		ReceiptWithItems receiptWithItems2 = receiptWithItems1;
+
+		// Act
+		bool result = receiptWithItems1 != receiptWithItems2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_DifferentReceiptWithItems_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptWithItems receiptWithItems1 = ReceiptWithItemsGenerator.Generate();
+		ReceiptWithItems receiptWithItems2 = ReceiptWithItemsGenerator.Generate();
+
+		// Act
+		bool result = receiptWithItems1 != receiptWithItems2;
+
+		// Assert
+		Assert.True(result);
 	}
 }

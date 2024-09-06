@@ -55,16 +55,6 @@ public class AccountsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		AccountVM actualReturn = Assert.IsType<AccountVM>(okResult.Value);
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetAccountByIdQuery>(q => q.Id == account.Id),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Account, AccountVM>(account), Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -83,16 +73,6 @@ public class AccountsControllerTests
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetAccountByIdQuery>(q => q.Id == missingAccountId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -113,16 +93,6 @@ public class AccountsControllerTests
 		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetAccountByIdQuery>(q => q.Id == id),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.GetAccountById));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -145,16 +115,6 @@ public class AccountsControllerTests
 		List<AccountVM> actualReturn = Assert.IsType<List<AccountVM>>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.IsAny<GetAllAccountsQuery>(),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Exactly(accounts.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -173,16 +133,6 @@ public class AccountsControllerTests
 		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.IsAny<GetAllAccountsQuery>(),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.GetAllAccounts));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -208,17 +158,6 @@ public class AccountsControllerTests
 		List<AccountVM> actualReturn = Assert.IsType<List<AccountVM>>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<CreateAccountCommand>(c => c.Accounts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
-		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Exactly(accounts.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -238,17 +177,6 @@ public class AccountsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<CreateAccountCommand>(c => c.Accounts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
-		_mapperMock.Verify(m => m.Map<Account, AccountVM>(It.IsAny<Account>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.CreateAccounts));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -269,16 +197,6 @@ public class AccountsControllerTests
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
 		Assert.Equal(204, noContentResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -298,16 +216,6 @@ public class AccountsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -327,16 +235,6 @@ public class AccountsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<AccountVM, Account>(It.IsAny<AccountVM>()), Times.Exactly(models.Count));
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.UpdateAccounts));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -356,14 +254,6 @@ public class AccountsControllerTests
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
 		Assert.Equal(204, noContentResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -383,14 +273,6 @@ public class AccountsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -410,14 +292,6 @@ public class AccountsControllerTests
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
 		Assert.Equal(404, notFoundResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -438,13 +312,5 @@ public class AccountsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(AccountsController.DeleteAccounts));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 }

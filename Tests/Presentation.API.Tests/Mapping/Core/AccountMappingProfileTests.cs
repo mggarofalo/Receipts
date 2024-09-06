@@ -1,6 +1,8 @@
 using API.Mapping.Core;
 using AutoMapper;
 using Domain.Core;
+using SampleData.Domain.Core;
+using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
 
 namespace Presentation.API.Tests.Mapping.Core;
@@ -17,37 +19,34 @@ public class AccountMappingProfileTests
 		});
 
 		_mapper = configuration.CreateMapper();
+		_mapper.ConfigurationProvider.AssertConfigurationIsValid();
 	}
 
 	[Fact]
 	public void ShouldMapAccountToAccountVM()
 	{
-		Account account = new(Guid.NewGuid(), "123456", "Test Account", true);
-		AccountVM accountVM = _mapper.Map<AccountVM>(account);
+		// Arrange
+		Account account = AccountGenerator.Generate();
 
-		Assert.Equal(account.Id, accountVM.Id);
-		Assert.Equal(account.AccountCode, accountVM.AccountCode);
-		Assert.Equal(account.Name, accountVM.Name);
-		Assert.Equal(account.IsActive, accountVM.IsActive);
+		// Act
+		AccountVM accountVM = _mapper.Map<AccountVM>(account);
+		Account reverseMapped = _mapper.Map<Account>(accountVM);
+
+		// Assert
+		Assert.Equal(account, reverseMapped);
 	}
 
 	[Fact]
 	public void ShouldMapAccountVMToAccount()
 	{
-		AccountVM accountVM = new()
-		{
-			Id = Guid.NewGuid(),
-			AccountCode = "123456",
-			Name = "Test Account VM",
-			IsActive = true
-		};
+		// Arrange
+		AccountVM accountVM = AccountVMGenerator.Generate();
 
+		// Act
 		Account account = _mapper.Map<Account>(accountVM);
+		AccountVM reverseMapped = _mapper.Map<AccountVM>(account);
 
-		Assert.Equal(accountVM.Id, account.Id);
-		Assert.Equal(accountVM.AccountCode, account.AccountCode);
-		Assert.Equal(accountVM.Name, account.Name);
-		Assert.Equal(accountVM.IsActive, account.IsActive);
-
+		// Assert
+		Assert.Equal(accountVM, reverseMapped);
 	}
 }

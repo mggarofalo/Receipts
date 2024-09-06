@@ -10,6 +10,7 @@ public class ReceiptItemTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2;
@@ -19,10 +20,11 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act
-		ReceiptItem receiptItem = new(id, Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
 
 		// Assert
 		Assert.Equal(id, receiptItem.Id);
+		Assert.Equal(receiptId, receiptItem.ReceiptId);
 		Assert.Equal(receiptItemCode, receiptItem.ReceiptItemCode);
 		Assert.Equal(description, receiptItem.Description);
 		Assert.Equal(quantity, receiptItem.Quantity);
@@ -36,6 +38,7 @@ public class ReceiptItemTests
 	public void Constructor_NullId_CreatesReceiptItemWithNullId()
 	{
 		// Arrange
+		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2;
@@ -45,7 +48,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act
-		ReceiptItem receiptItem = new(null, Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem = new(null, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
 
 		// Assert
 		Assert.Null(receiptItem.Id);
@@ -77,6 +80,7 @@ public class ReceiptItemTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
 		string description = "Test Item";
 		decimal quantity = 2;
 		Money unitPrice = new(10.00m);
@@ -85,7 +89,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), invalidReceiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptId, invalidReceiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory));
 		Assert.StartsWith(ReceiptItem.ReceiptItemCodeCannotBeEmpty, exception.Message);
 	}
 
@@ -97,6 +101,7 @@ public class ReceiptItemTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		decimal quantity = 2;
 		Money unitPrice = new(10.00m);
@@ -105,7 +110,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), receiptItemCode, invalidDescription, quantity, unitPrice, totalAmount, category, subcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptId, receiptItemCode, invalidDescription, quantity, unitPrice, totalAmount, category, subcategory));
 		Assert.StartsWith(ReceiptItem.DescriptionCannotBeEmpty, exception.Message);
 	}
 
@@ -116,6 +121,7 @@ public class ReceiptItemTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		Money unitPrice = new(10.00m);
@@ -124,7 +130,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), receiptItemCode, description, invalidQuantity, unitPrice, totalAmount, category, subcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptId, receiptItemCode, description, invalidQuantity, unitPrice, totalAmount, category, subcategory));
 		Assert.StartsWith(ReceiptItem.QuantityMustBePositive, exception.Message);
 	}
 
@@ -136,6 +142,7 @@ public class ReceiptItemTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2;
@@ -144,7 +151,7 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, totalAmount, invalidCategory, subcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, invalidCategory, subcategory));
 		Assert.StartsWith(ReceiptItem.CategoryCannotBeEmpty, exception.Message);
 	}
 
@@ -156,6 +163,7 @@ public class ReceiptItemTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2;
@@ -164,7 +172,7 @@ public class ReceiptItemTests
 		string category = "Test Category";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, Guid.NewGuid(), receiptItemCode, description, quantity, unitPrice, totalAmount, category, invalidSubcategory));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, invalidSubcategory));
 		Assert.StartsWith(ReceiptItem.SubcategoryCannotBeEmpty, exception.Message);
 	}
 
@@ -172,215 +180,22 @@ public class ReceiptItemTests
 	public void Equals_SameReceiptItem_ReturnsTrue()
 	{
 		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem1 = ReceiptItemGenerator.Generate();
+		ReceiptItem receiptItem2 = new(receiptItem1.Id, receiptItem1.ReceiptId, receiptItem1.ReceiptItemCode, receiptItem1.Description, receiptItem1.Quantity, receiptItem1.UnitPrice, receiptItem1.TotalAmount, receiptItem1.Category, receiptItem1.Subcategory);
 
 		// Act & Assert
-		Assert.True(receiptItem1 == receiptItem2);
-		Assert.False(receiptItem1 != receiptItem2);
-		Assert.True(receiptItem1.Equals(receiptItem2));
+		Assert.Equal(receiptItem1, receiptItem2);
 	}
 
 	[Fact]
 	public void Equals_DifferentReceiptItem_ReturnsFalse()
 	{
 		// Arrange
-		Guid id1 = Guid.NewGuid();
-		Guid id2 = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id1, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
-		ReceiptItem receiptItem2 = new(id2, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem1 = ReceiptItemGenerator.Generate();
+		ReceiptItem receiptItem2 = ReceiptItemGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(receiptItem1 == receiptItem2);
-		Assert.True(receiptItem1 != receiptItem2);
-		Assert.False(receiptItem1.Equals(receiptItem2));
-	}
-
-	[Fact]
-	public void Equals_DifferentReceiptItemCode_ReturnsFalse()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode1 = "ITEM001";
-		string receiptItemCode2 = "ITEM002";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode1, description, quantity, unitPrice, totalAmount, category, subcategory);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode2, description, quantity, unitPrice, totalAmount, category, subcategory);
-
-		// Act & Assert
-		Assert.False(receiptItem1 == receiptItem2);
-		Assert.True(receiptItem1 != receiptItem2);
-		Assert.False(receiptItem1.Equals(receiptItem2));
-	}
-
-	[Fact]
-	public void Equals_DifferentDescription_ReturnsFalse()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description1 = "Test Item";
-		string description2 = "Test Item 2";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode, description1, quantity, unitPrice, totalAmount, category, subcategory);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode, description2, quantity, unitPrice, totalAmount, category, subcategory);
-
-		// Act & Assert
-		Assert.False(receiptItem1 == receiptItem2);
-		Assert.True(receiptItem1 != receiptItem2);
-		Assert.False(receiptItem1.Equals(receiptItem2));
-	}
-
-	[Fact]
-	public void Equals_DifferentQuantity_ReturnsFalse()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity1 = 2;
-		decimal quantity2 = 3;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode, description, quantity1, unitPrice, totalAmount, category, subcategory);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode, description, quantity2, unitPrice, totalAmount, category, subcategory);
-
-		// Act & Assert
-		Assert.False(receiptItem1 == receiptItem2);
-		Assert.True(receiptItem1 != receiptItem2);
-		Assert.False(receiptItem1.Equals(receiptItem2));
-	}
-
-	[Fact]
-	public void Equals_DifferentUnitPrice_ReturnsFalse()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice1 = new(10.00m);
-		Money unitPrice2 = new(15.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice1, totalAmount, category, subcategory);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice2, totalAmount, category, subcategory);
-
-		// Act & Assert
-		Assert.False(receiptItem1 == receiptItem2);
-		Assert.True(receiptItem1 != receiptItem2);
-		Assert.False(receiptItem1.Equals(receiptItem2));
-	}
-
-	[Fact]
-	public void Equals_DifferentTotalAmount_ReturnsFalse()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount1 = new(20.00m);
-		Money totalAmount2 = new(30.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount1, category, subcategory);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount2, category, subcategory);
-
-		// Act & Assert
-		Assert.False(receiptItem1 == receiptItem2);
-		Assert.True(receiptItem1 != receiptItem2);
-		Assert.False(receiptItem1.Equals(receiptItem2));
-	}
-
-	[Fact]
-	public void Equals_DifferentCategory_ReturnsFalse()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category1 = "Test Category";
-		string category2 = "Test Category 2";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category1, subcategory);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category2, subcategory);
-
-		// Act & Assert
-		Assert.False(receiptItem1 == receiptItem2);
-		Assert.True(receiptItem1 != receiptItem2);
-		Assert.False(receiptItem1.Equals(receiptItem2));
-	}
-
-	[Fact]
-	public void Equals_DifferentSubcategory_ReturnsFalse()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory1 = "Test Subcategory";
-		string subcategory2 = "Test Subcategory 2";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory1);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory2);
-
-		// Act & Assert
-		Assert.False(receiptItem1 == receiptItem2);
-		Assert.True(receiptItem1 != receiptItem2);
-		Assert.False(receiptItem1.Equals(receiptItem2));
+		Assert.NotEqual(receiptItem1, receiptItem2);
 	}
 
 	[Fact]
@@ -417,18 +232,8 @@ public class ReceiptItemTests
 	public void GetHashCode_SameReceiptItem_ReturnsSameHashCode()
 	{
 		// Arrange
-		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
-		ReceiptItem receiptItem2 = new(id, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem1 = ReceiptItemGenerator.Generate();
+		ReceiptItem receiptItem2 = new(receiptItem1.Id, receiptItem1.ReceiptId, receiptItem1.ReceiptItemCode, receiptItem1.Description, receiptItem1.Quantity, receiptItem1.UnitPrice, receiptItem1.TotalAmount, receiptItem1.Category, receiptItem1.Subcategory);
 
 		// Act & Assert
 		Assert.Equal(receiptItem1.GetHashCode(), receiptItem2.GetHashCode());
@@ -438,21 +243,66 @@ public class ReceiptItemTests
 	public void GetHashCode_DifferentReceiptItem_ReturnsDifferentHashCode()
 	{
 		// Arrange
-		Guid id1 = Guid.NewGuid();
-		Guid id2 = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 2;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(20.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		ReceiptItem receiptItem1 = new(id1, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
-		ReceiptItem receiptItem2 = new(id2, receiptId, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem1 = ReceiptItemGenerator.Generate();
+		ReceiptItem receiptItem2 = ReceiptItemGenerator.Generate();
 
 		// Act & Assert
 		Assert.NotEqual(receiptItem1.GetHashCode(), receiptItem2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEqual_SameReceiptItem_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptItem receiptItem1 = ReceiptItemGenerator.Generate();
+		ReceiptItem receiptItem2 = receiptItem1;
+
+		// Act
+		bool result = receiptItem1 == receiptItem2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEqual_DifferentReceiptItem_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptItem receiptItem1 = ReceiptItemGenerator.Generate();
+		ReceiptItem receiptItem2 = ReceiptItemGenerator.Generate();
+
+		// Act
+		bool result = receiptItem1 == receiptItem2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_SameReceiptItem_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptItem receiptItem1 = ReceiptItemGenerator.Generate();
+		ReceiptItem receiptItem2 = receiptItem1;
+
+		// Act
+		bool result = receiptItem1 != receiptItem2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_DifferentReceiptItem_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptItem receiptItem1 = ReceiptItemGenerator.Generate();
+		ReceiptItem receiptItem2 = ReceiptItemGenerator.Generate();
+
+		// Act
+		bool result = receiptItem1 != receiptItem2;
+
+		// Assert
+		Assert.True(result);
 	}
 }

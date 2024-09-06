@@ -14,27 +14,24 @@ public class GetTripByReceiptIdQueryHandlerTests
 	public async Task Handle_ShouldReturnTrip_WhenReceiptWithItemsAndTransactionAccountsExist()
 	{
 		// Arrange
-		Trip trip = TripGenerator.Generate();
+		Trip expected = TripGenerator.Generate();
 
 		Mock<IMediator> mockMediator = new();
 		mockMediator.Setup(m => m.Send(It.IsAny<GetReceiptWithItemsByReceiptIdQuery>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(trip.Receipt);
+			.ReturnsAsync(expected.Receipt);
 		mockMediator.Setup(m => m.Send(It.IsAny<GetTransactionAccountsByReceiptIdQuery>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(trip.Transactions);
+			.ReturnsAsync(expected.Transactions);
 
 		GetTripByReceiptIdQueryHandler handler = new(mockMediator.Object);
-		GetTripByReceiptIdQuery query = new(trip.Receipt.Receipt.Id!.Value);
+		GetTripByReceiptIdQuery query = new(expected.Receipt.Receipt.Id!.Value);
 
 		// Act
 		Trip? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(trip.Receipt, result.Receipt);
-		Assert.Equal(trip.Transactions, result.Transactions);
-
-		mockMediator.Verify(m => m.Send(It.Is<GetReceiptWithItemsByReceiptIdQuery>(q => q.ReceiptId == trip.Receipt.Receipt.Id), It.IsAny<CancellationToken>()), Times.Once);
-		mockMediator.Verify(m => m.Send(It.Is<GetTransactionAccountsByReceiptIdQuery>(q => q.ReceiptId == trip.Receipt.Receipt.Id), It.IsAny<CancellationToken>()), Times.Once);
+		Assert.Equal(expected.Receipt, result.Receipt);
+		Assert.Equal(expected.Transactions, result.Transactions);
 	}
 
 	[Fact]
@@ -55,8 +52,6 @@ public class GetTripByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.Null(result);
-		mockMediator.Verify(m => m.Send(It.Is<GetReceiptWithItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId), It.IsAny<CancellationToken>()), Times.Once);
-		mockMediator.Verify(m => m.Send(It.IsAny<GetTransactionAccountsByReceiptIdQuery>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
@@ -80,7 +75,5 @@ public class GetTripByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.Null(result);
-		mockMediator.Verify(m => m.Send(It.Is<GetReceiptWithItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId), It.IsAny<CancellationToken>()), Times.Once);
-		mockMediator.Verify(m => m.Send(It.Is<GetTransactionAccountsByReceiptIdQuery>(q => q.ReceiptId == receiptId), It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

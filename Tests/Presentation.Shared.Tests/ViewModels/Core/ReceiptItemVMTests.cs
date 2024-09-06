@@ -115,9 +115,7 @@ public class ReceiptItemVMTests
 		};
 
 		// Act & Assert
-		Assert.True(receiptItemVM1 == receiptItemVM2);
-		Assert.False(receiptItemVM1 != receiptItemVM2);
-		Assert.True(receiptItemVM1.Equals(receiptItemVM2));
+		Assert.Equal(receiptItemVM1, receiptItemVM2);
 	}
 
 	[Fact]
@@ -128,9 +126,7 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM2 = ReceiptItemVMGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(receiptItemVM1 == receiptItemVM2);
-		Assert.True(receiptItemVM1 != receiptItemVM2);
-		Assert.False(receiptItemVM1.Equals(receiptItemVM2));
+		Assert.NotEqual(receiptItemVM1, receiptItemVM2);
 	}
 
 	[Fact]
@@ -280,5 +276,109 @@ public class ReceiptItemVMTests
 
 		// Act & Assert
 		Assert.NotEqual(receiptItemVM1.GetHashCode(), receiptItemVM2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEquals_SameReceiptItemVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptItemVM receiptItemVM1 = ReceiptItemVMGenerator.Generate();
+		ReceiptItemVM receiptItemVM2 = new()
+		{
+			Id = receiptItemVM1.Id,
+			ReceiptId = receiptItemVM1.ReceiptId,
+			ReceiptItemCode = receiptItemVM1.ReceiptItemCode,
+			Description = receiptItemVM1.Description,
+			Quantity = receiptItemVM1.Quantity,
+			UnitPrice = receiptItemVM1.UnitPrice,
+			TotalAmount = receiptItemVM1.TotalAmount,
+			Category = receiptItemVM1.Category,
+			Subcategory = receiptItemVM1.Subcategory
+		};
+
+		// Act
+		bool result = receiptItemVM1 == receiptItemVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_DifferentReceiptItemVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptItemVM receiptItemVM1 = ReceiptItemVMGenerator.Generate();
+		ReceiptItemVM receiptItemVM2 = ReceiptItemVMGenerator.Generate();
+
+		// Act
+		bool result = receiptItemVM1 == receiptItemVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_SameReceiptItemVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptItemVM receiptItemVM1 = ReceiptItemVMGenerator.Generate();
+		ReceiptItemVM receiptItemVM2 = new()
+		{
+			Id = receiptItemVM1.Id,
+			ReceiptId = receiptItemVM1.ReceiptId,
+			ReceiptItemCode = receiptItemVM1.ReceiptItemCode,
+			Description = receiptItemVM1.Description,
+			Quantity = receiptItemVM1.Quantity,
+			UnitPrice = receiptItemVM1.UnitPrice,
+			TotalAmount = receiptItemVM1.TotalAmount,
+			Category = receiptItemVM1.Category,
+			Subcategory = receiptItemVM1.Subcategory
+		};
+
+		// Act
+		bool result = receiptItemVM1 != receiptItemVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_DifferentReceiptItemVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptItemVM receiptItemVM1 = ReceiptItemVMGenerator.Generate();
+		ReceiptItemVM receiptItemVM2 = ReceiptItemVMGenerator.Generate();
+
+		// Act
+		bool result = receiptItemVM1 != receiptItemVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_NullReceiptItemVM_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptItemVM receiptItemVM = ReceiptItemVMGenerator.Generate();
+
+		// Act
+		bool result = receiptItemVM == null;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_NullReceiptItemVM_ReturnsTrue()
+	{
+		// Arrange
+		ReceiptItemVM receiptItemVM = ReceiptItemVMGenerator.Generate();
+
+		// Act
+		bool result = receiptItemVM != null;
+
+		// Assert
+		Assert.True(result);
 	}
 }

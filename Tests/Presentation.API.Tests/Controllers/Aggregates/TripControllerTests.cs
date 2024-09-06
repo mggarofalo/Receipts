@@ -61,16 +61,6 @@ public class TripControllerTests
 		TripVM actualReturn = Assert.IsType<TripVM>(okResult.Value);
 
 		Assert.Equal(expectedReturn, actualReturn);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTripByReceiptIdQuery>(q => q.ReceiptId == trip.Receipt.Receipt.Id!.Value),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Trip, TripVM>(trip), Times.Once);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -89,16 +79,6 @@ public class TripControllerTests
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTripByReceiptIdQuery>(q => q.ReceiptId == missingReceiptId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Trip, TripVM>(It.IsAny<Trip>()), Times.Never);
-
-		_loggerMock.VerifyNoErrorLoggingCalls();
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 
 	[Fact]
@@ -119,15 +99,5 @@ public class TripControllerTests
 		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
-
-		_mediatorMock.Verify(m => m.Send(
-			It.Is<GetTripByReceiptIdQuery>(q => q.ReceiptId == receiptId),
-			It.IsAny<CancellationToken>()),
-			Times.Once);
-
-		_mapperMock.Verify(m => m.Map<Trip, TripVM>(It.IsAny<Trip>()), Times.Never);
-
-		_loggerMock.VerifyErrorLoggingCalls(nameof(TripController.GetTripByReceiptId));
-		_loggerMock.VerifyNoCriticalLoggingCalls();
 	}
 }

@@ -114,9 +114,7 @@ public class TransactionTests
 		Transaction transaction2 = new(id, receiptId, accountId, amount, date);
 
 		// Act & Assert
-		Assert.True(transaction1 == transaction2);
-		Assert.False(transaction1 != transaction2);
-		Assert.True(transaction1.Equals(transaction2));
+		Assert.Equal(transaction1, transaction2);
 	}
 
 	[Fact]
@@ -134,9 +132,7 @@ public class TransactionTests
 		Transaction transaction2 = new(id2, receiptId, accountId, amount, date);
 
 		// Act & Assert
-		Assert.False(transaction1 == transaction2);
-		Assert.True(transaction1 != transaction2);
-		Assert.False(transaction1.Equals(transaction2));
+		Assert.NotEqual(transaction1, transaction2);
 	}
 
 	[Fact]
@@ -154,9 +150,7 @@ public class TransactionTests
 		Transaction transaction2 = new(id, receiptId2, accountId, amount, date);
 
 		// Act & Assert
-		Assert.False(transaction1 == transaction2);
-		Assert.True(transaction1 != transaction2);
-		Assert.False(transaction1.Equals(transaction2));
+		Assert.NotEqual(transaction1, transaction2);
 	}
 
 	[Fact]
@@ -174,9 +168,7 @@ public class TransactionTests
 		Transaction transaction2 = new(id, receiptId, accountId2, amount, date);
 
 		// Act & Assert
-		Assert.False(transaction1 == transaction2);
-		Assert.True(transaction1 != transaction2);
-		Assert.False(transaction1.Equals(transaction2));
+		Assert.NotEqual(transaction1, transaction2);
 	}
 
 	[Fact]
@@ -194,9 +186,7 @@ public class TransactionTests
 		Transaction transaction2 = new(id, receiptId, accountId, amount2, date);
 
 		// Act & Assert
-		Assert.False(transaction1 == transaction2);
-		Assert.True(transaction1 != transaction2);
-		Assert.False(transaction1.Equals(transaction2));
+		Assert.NotEqual(transaction1, transaction2);
 	}
 
 	[Fact]
@@ -214,9 +204,7 @@ public class TransactionTests
 		Transaction transaction2 = new(id, receiptId, accountId, amount, date2);
 
 		// Act & Assert
-		Assert.False(transaction1 == transaction2);
-		Assert.True(transaction1 != transaction2);
-		Assert.False(transaction1.Equals(transaction2));
+		Assert.NotEqual(transaction1, transaction2);
 	}
 
 	[Fact]
@@ -282,5 +270,61 @@ public class TransactionTests
 
 		// Act & Assert
 		Assert.NotEqual(transaction1.GetHashCode(), transaction2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEqual_SameTransaction_ReturnsTrue()
+	{
+		// Arrange
+		Transaction transaction1 = TransactionGenerator.Generate();
+		Transaction transaction2 = transaction1;
+
+		// Act
+		bool result = transaction1 == transaction2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEqual_DifferentTransaction_ReturnsFalse()
+	{
+		// Arrange
+		Transaction transaction1 = TransactionGenerator.Generate();
+		Transaction transaction2 = TransactionGenerator.Generate();
+
+		// Act
+		bool result = transaction1 == transaction2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_SameTransaction_ReturnsFalse()
+	{
+		// Arrange
+		Transaction transaction1 = TransactionGenerator.Generate();
+		Transaction transaction2 = transaction1;
+
+		// Act
+		bool result = transaction1 != transaction2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_DifferentTransaction_ReturnsTrue()
+	{
+		// Arrange
+		Transaction transaction1 = TransactionGenerator.Generate();
+		Transaction transaction2 = TransactionGenerator.Generate();
+
+		// Act
+		bool result = transaction1 != transaction2;
+
+		// Assert
+		Assert.True(result);
 	}
 }

@@ -12,15 +12,16 @@ public class AccountTests
 		Guid id = Guid.NewGuid();
 		string accountCode = "ACC001";
 		string name = "Test Account";
+		bool isActive = true;
 
 		// Act
-		Account account = new(id, accountCode, name);
+		Account account = new(id, accountCode, name, isActive);
 
 		// Assert
 		Assert.Equal(id, account.Id);
 		Assert.Equal(accountCode, account.AccountCode);
 		Assert.Equal(name, account.Name);
-		Assert.True(account.IsActive);
+		Assert.Equal(isActive, account.IsActive);
 	}
 
 	[Fact]
@@ -29,14 +30,31 @@ public class AccountTests
 		// Arrange
 		string accountCode = "ACC001";
 		string name = "Test Account";
+		bool isActive = true;
 
 		// Act
-		Account account = new(null, accountCode, name);
+		Account account = new(null, accountCode, name, isActive);
 
 		// Assert
 		Assert.Null(account.Id);
 		Assert.Equal(accountCode, account.AccountCode);
 		Assert.Equal(name, account.Name);
+		Assert.Equal(isActive, account.IsActive);
+	}
+
+	[Fact]
+	public void Constructor_DefaultIsActive_CreatesActiveAccount()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string accountCode = "ACC001";
+		string name = "Test Account";
+
+		// Act
+		Account account = new(id, accountCode, name);
+
+		// Assert
+		Assert.True(account.IsActive);
 	}
 
 	[Theory]
@@ -48,9 +66,10 @@ public class AccountTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		string name = "Test Account";
+		bool isActive = true;
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Account(id, invalidAccountCode, name));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Account(id, invalidAccountCode, name, isActive));
 		Assert.StartsWith(Account.AccountCodeCannotBeEmpty, exception.Message);
 	}
 
@@ -63,26 +82,11 @@ public class AccountTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		string accountCode = "ACC001";
+		bool isActive = true;
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Account(id, accountCode, invalidName));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Account(id, accountCode, invalidName, isActive));
 		Assert.StartsWith(Account.NameCannotBeEmpty, exception.Message);
-	}
-
-	[Fact]
-	public void Constructor_InactiveAccount_CreatesInactiveAccount()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		string accountCode = "ACC001";
-		string name = "Test Account";
-		bool isActive = false;
-
-		// Act
-		Account account = new(id, accountCode, name, isActive);
-
-		// Assert
-		Assert.False(account.IsActive);
 	}
 
 	[Fact]
@@ -98,9 +102,7 @@ public class AccountTests
 		Account account2 = new(id, accountCode, name, isActive);
 
 		// Act & Assert
-		Assert.True(account1 == account2);
-		Assert.False(account1 != account2);
-		Assert.True(account1.Equals(account2));
+		Assert.Equal(account1, account2);
 	}
 
 	[Fact]
@@ -117,9 +119,7 @@ public class AccountTests
 		Account account2 = new(id2, accountCode, name, isActive);
 
 		// Act & Assert
-		Assert.False(account1 == account2);
-		Assert.True(account1 != account2);
-		Assert.False(account1.Equals(account2));
+		Assert.NotEqual(account1, account2);
 	}
 
 	[Fact]
@@ -136,9 +136,7 @@ public class AccountTests
 		Account account2 = new(id, accountCode2, name, isActive);
 
 		// Act & Assert
-		Assert.False(account1 == account2);
-		Assert.True(account1 != account2);
-		Assert.False(account1.Equals(account2));
+		Assert.NotEqual(account1, account2);
 	}
 
 	[Fact]
@@ -147,7 +145,7 @@ public class AccountTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		string accountCode = "ACC001";
-		string name1 = "Test Account";
+		string name1 = "Test Account 1";
 		string name2 = "Test Account 2";
 		bool isActive = true;
 
@@ -155,9 +153,7 @@ public class AccountTests
 		Account account2 = new(id, accountCode, name2, isActive);
 
 		// Act & Assert
-		Assert.False(account1 == account2);
-		Assert.True(account1 != account2);
-		Assert.False(account1.Equals(account2));
+		Assert.NotEqual(account1, account2);
 	}
 
 	[Fact]
@@ -174,9 +170,7 @@ public class AccountTests
 		Account account2 = new(id, accountCode, name, isActive2);
 
 		// Act & Assert
-		Assert.False(account1 == account2);
-		Assert.True(account1 != account2);
-		Assert.False(account1.Equals(account2));
+		Assert.NotEqual(account1, account2);
 	}
 
 	[Fact]
@@ -240,5 +234,61 @@ public class AccountTests
 
 		// Act & Assert
 		Assert.NotEqual(account1.GetHashCode(), account2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEqual_SameAccount_ReturnsTrue()
+	{
+		// Arrange
+		Account account1 = AccountGenerator.Generate();
+		Account account2 = account1;
+
+		// Act
+		bool result = account1 == account2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEqual_DifferentAccounts_ReturnsFalse()
+	{
+		// Arrange
+		Account account1 = AccountGenerator.Generate();
+		Account account2 = AccountGenerator.Generate();
+
+		// Act
+		bool result = account1 == account2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_SameAccount_ReturnsFalse()
+	{
+		// Arrange
+		Account account1 = AccountGenerator.Generate();
+		Account account2 = account1;
+
+		// Act
+		bool result = account1 != account2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_DifferentAccounts_ReturnsTrue()
+	{
+		// Arrange
+		Account account1 = AccountGenerator.Generate();
+		Account account2 = AccountGenerator.Generate();
+
+		// Act
+		bool result = account1 != account2;
+
+		// Assert
+		Assert.True(result);
 	}
 }

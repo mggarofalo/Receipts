@@ -10,17 +10,17 @@ public class GetTransactionByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnTransaction_WhenTransactionExists()
 	{
-		Domain.Core.Transaction transaction = TransactionGenerator.Generate();
+		Domain.Core.Transaction expected = TransactionGenerator.Generate();
 
 		Mock<ITransactionRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(transaction);
+		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetTransactionByIdQueryHandler handler = new(mockRepository.Object);
-		GetTransactionByIdQuery query = new(transaction.Id!.Value);
+		GetTransactionByIdQuery query = new(expected.Id!.Value);
 		Domain.Core.Transaction? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
-		mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
+		Assert.Equal(expected, result);
 	}
 
 	[Fact]
@@ -34,6 +34,5 @@ public class GetTransactionByIdQueryHandlerTests
 		Domain.Core.Transaction? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);
-		mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

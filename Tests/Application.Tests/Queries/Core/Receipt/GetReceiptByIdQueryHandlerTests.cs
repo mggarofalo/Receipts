@@ -10,17 +10,17 @@ public class GetReceiptByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnReceipt_WhenReceiptExists()
 	{
-		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
+		Domain.Core.Receipt expected = ReceiptGenerator.Generate();
 
 		Mock<IReceiptRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(receipt);
+		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetReceiptByIdQueryHandler handler = new(mockRepository.Object);
-		GetReceiptByIdQuery query = new(receipt.Id!.Value);
+		GetReceiptByIdQuery query = new(expected.Id!.Value);
 		Domain.Core.Receipt? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
-		mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
+		Assert.Equal(expected, result);
 	}
 
 	[Fact]
@@ -34,6 +34,5 @@ public class GetReceiptByIdQueryHandlerTests
 		Domain.Core.Receipt? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);
-		mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

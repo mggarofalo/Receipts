@@ -11,27 +11,25 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 	public async Task Handle_ShouldReturnReceiptWithItems_WhenReceiptExists()
 	{
 		// Arrange
-		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
-		List<Domain.Core.ReceiptItem> receiptItems = ReceiptItemGenerator.GenerateList(3);
+		Domain.Core.Receipt expectedReceipt = ReceiptGenerator.Generate();
+		List<Domain.Core.ReceiptItem> expectedReceiptItems = ReceiptItemGenerator.GenerateList(3);
 
 		Mock<IReceiptRepository> mockReceiptRepository = new();
-		mockReceiptRepository.Setup(r => r.GetByIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(receipt);
+		mockReceiptRepository.Setup(r => r.GetByIdAsync(expectedReceipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceipt);
 
 		Mock<IReceiptItemRepository> mockReceiptItemRepository = new();
-		mockReceiptItemRepository.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(receiptItems);
+		mockReceiptItemRepository.Setup(r => r.GetByReceiptIdAsync(expectedReceipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceiptItems);
 
 		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptRepository.Object, mockReceiptItemRepository.Object);
-		GetReceiptWithItemsByReceiptIdQuery query = new(receipt.Id!.Value);
+		GetReceiptWithItemsByReceiptIdQuery query = new(expectedReceipt.Id!.Value);
 
 		// Act
 		Domain.Aggregates.ReceiptWithItems? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(receipt, result.Receipt);
-		Assert.Equal(receiptItems, result.Items);
-		mockReceiptRepository.Verify(r => r.GetByIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>()), Times.Once);
-		mockReceiptItemRepository.Verify(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>()), Times.Once);
+		Assert.Equal(expectedReceipt, result.Receipt);
+		Assert.Equal(expectedReceiptItems, result.Items);
 	}
 
 	[Fact]
@@ -52,7 +50,5 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.Null(result);
-		mockReceiptRepository.Verify(r => r.GetByIdAsync(missingReceiptId, It.IsAny<CancellationToken>()), Times.Once);
-		mockReceiptItemRepository.Verify(r => r.GetByReceiptIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 }

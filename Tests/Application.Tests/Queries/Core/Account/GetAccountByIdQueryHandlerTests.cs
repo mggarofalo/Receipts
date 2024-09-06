@@ -10,17 +10,17 @@ public class GetAccountByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnAccount_WhenAccountExists()
 	{
-		Domain.Core.Account account = AccountGenerator.Generate();
+		Domain.Core.Account expected = AccountGenerator.Generate();
 
 		Mock<IAccountRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(account);
+		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetAccountByIdQueryHandler handler = new(mockRepository.Object);
-		GetAccountByIdQuery query = new(account.Id!.Value);
+		GetAccountByIdQuery query = new(expected.Id!.Value);
 		Domain.Core.Account? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
-		mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
+		Assert.Equal(expected, result);
 	}
 
 	[Fact]
@@ -34,6 +34,5 @@ public class GetAccountByIdQueryHandlerTests
 		Domain.Core.Account? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);
-		mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

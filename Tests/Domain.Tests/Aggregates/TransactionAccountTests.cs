@@ -23,7 +23,9 @@ public class TransactionAccountTests
 
 		// Assert
 		Assert.NotNull(transactionAccount.Transaction);
+		Assert.Equal(transaction, transactionAccount.Transaction);
 		Assert.NotNull(transactionAccount.Account);
+		Assert.Equal(account, transactionAccount.Account);
 	}
 
 	[Fact]
@@ -46,9 +48,7 @@ public class TransactionAccountTests
 		};
 
 		// Act & Assert
-		Assert.True(transactionAccount1 == transactionAccount2);
-		Assert.False(transactionAccount1 != transactionAccount2);
-		Assert.True(transactionAccount1.Equals(transactionAccount2));
+		Assert.Equal(transactionAccount1, transactionAccount2);
 	}
 
 	[Fact]
@@ -59,9 +59,7 @@ public class TransactionAccountTests
 		TransactionAccount transactionAccount2 = TransactionAccountGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(transactionAccount1 == transactionAccount2);
-		Assert.True(transactionAccount1 != transactionAccount2);
-		Assert.False(transactionAccount1.Equals(transactionAccount2));
+		Assert.NotEqual(transactionAccount1, transactionAccount2);
 	}
 
 	[Fact]
@@ -126,5 +124,61 @@ public class TransactionAccountTests
 
 		// Act & Assert
 		Assert.NotEqual(transactionAccount1.GetHashCode(), transactionAccount2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEqual_SameTransactionAccount_ReturnsTrue()
+	{
+		// Arrange
+		TransactionAccount transactionAccount1 = TransactionAccountGenerator.Generate();
+		TransactionAccount transactionAccount2 = transactionAccount1;
+
+		// Act
+		bool result = transactionAccount1 == transactionAccount2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEqual_DifferentTransactionAccount_ReturnsFalse()
+	{
+		// Arrange
+		TransactionAccount transactionAccount1 = TransactionAccountGenerator.Generate();
+		TransactionAccount transactionAccount2 = TransactionAccountGenerator.Generate();
+
+		// Act
+		bool result = transactionAccount1 == transactionAccount2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_SameTransactionAccount_ReturnsFalse()
+	{
+		// Arrange
+		TransactionAccount transactionAccount1 = TransactionAccountGenerator.Generate();
+		TransactionAccount transactionAccount2 = transactionAccount1;
+
+		// Act
+		bool result = transactionAccount1 != transactionAccount2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEqual_DifferentTransactionAccount_ReturnsTrue()
+	{
+		// Arrange
+		TransactionAccount transactionAccount1 = TransactionAccountGenerator.Generate();
+		TransactionAccount transactionAccount2 = TransactionAccountGenerator.Generate();
+
+		// Act
+		bool result = transactionAccount1 != transactionAccount2;
+
+		// Assert
+		Assert.True(result);
 	}
 }

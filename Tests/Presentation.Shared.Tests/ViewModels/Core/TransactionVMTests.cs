@@ -83,9 +83,7 @@ public class TransactionVMTests
 		};
 
 		// Act & Assert
-		Assert.True(transactionVM1 == transactionVM2);
-		Assert.False(transactionVM1 != transactionVM2);
-		Assert.True(transactionVM1.Equals(transactionVM2));
+		Assert.Equal(transactionVM1, transactionVM2);
 	}
 
 	[Fact]
@@ -96,9 +94,7 @@ public class TransactionVMTests
 		TransactionVM transactionVM2 = TransactionVMGenerator.Generate();
 
 		// Act & Assert
-		Assert.False(transactionVM1 == transactionVM2);
-		Assert.True(transactionVM1 != transactionVM2);
-		Assert.False(transactionVM1.Equals(transactionVM2));
+		Assert.NotEqual(transactionVM1, transactionVM2);
 	}
 
 	[Fact]
@@ -217,5 +213,101 @@ public class TransactionVMTests
 
 		// Act & Assert
 		Assert.NotEqual(transactionVM1.GetHashCode(), transactionVM2.GetHashCode());
+	}
+
+	[Fact]
+	public void OperatorEquals_SameTransactionVM_ReturnsTrue()
+	{
+		// Arrange
+		TransactionVM transactionVM1 = TransactionVMGenerator.Generate();
+		TransactionVM transactionVM2 = new()
+		{
+			Id = transactionVM1.Id,
+			ReceiptId = transactionVM1.ReceiptId,
+			AccountId = transactionVM1.AccountId,
+			Amount = transactionVM1.Amount,
+			Date = transactionVM1.Date
+		};
+
+		// Act
+		bool result = transactionVM1 == transactionVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_DifferentTransactionVM_ReturnsFalse()
+	{
+		// Arrange
+		TransactionVM transactionVM1 = TransactionVMGenerator.Generate();
+		TransactionVM transactionVM2 = TransactionVMGenerator.Generate();
+
+		// Act
+		bool result = transactionVM1 == transactionVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_SameTransactionVM_ReturnsFalse()
+	{
+		// Arrange
+		TransactionVM transactionVM1 = TransactionVMGenerator.Generate();
+		TransactionVM transactionVM2 = new()
+		{
+			Id = transactionVM1.Id,
+			ReceiptId = transactionVM1.ReceiptId,
+			AccountId = transactionVM1.AccountId,
+			Amount = transactionVM1.Amount,
+			Date = transactionVM1.Date
+		};
+
+		// Act
+		bool result = transactionVM1 != transactionVM2;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_DifferentTransactionVM_ReturnsTrue()
+	{
+		// Arrange
+		TransactionVM transactionVM1 = TransactionVMGenerator.Generate();
+		TransactionVM transactionVM2 = TransactionVMGenerator.Generate();
+
+		// Act
+		bool result = transactionVM1 != transactionVM2;
+
+		// Assert
+		Assert.True(result);
+	}
+
+	[Fact]
+	public void OperatorEquals_NullTransactionVM_ReturnsFalse()
+	{
+		// Arrange
+		TransactionVM transactionVM = TransactionVMGenerator.Generate();
+
+		// Act
+		bool result = transactionVM == null;
+
+		// Assert
+		Assert.False(result);
+	}
+
+	[Fact]
+	public void OperatorNotEquals_NullTransactionVM_ReturnsTrue()
+	{
+		// Arrange
+		TransactionVM transactionVM = TransactionVMGenerator.Generate();
+
+		// Act
+		bool result = transactionVM != null;
+
+		// Assert
+		Assert.True(result);
 	}
 }
