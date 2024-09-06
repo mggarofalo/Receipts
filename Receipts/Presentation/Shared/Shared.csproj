@@ -8,7 +8,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.csproj" />
+	<ProjectReference Include="..\..\Domain\Domain.csproj" />
     <PackageReference Include="FluentValidation" Version="11.9.0" />
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
   </ItemGroup>
 
 </Project>

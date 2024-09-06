@@ -2,7 +2,7 @@ using AutoMapper;
 using Domain.Aggregates;
 using Shared.ViewModels.Aggregates;
 
-namespace API.Mapping.Aggregates;
+namespace Shared.Mapping.Aggregates;
 
 public class ReceiptWithItemsMappingProfile : Profile
 {

@@ -1,12 +1,12 @@
-using API.Mapping.Aggregates;
 using AutoMapper;
 using Domain.Aggregates;
 using Shared.ViewModels.Aggregates;
 using SampleData.Domain.Aggregates;
 using SampleData.ViewModels.Aggregates;
-using API.Mapping.Core;
+using Shared.Mapping.Aggregates;
+using Shared.Mapping.Core;
 
-namespace Presentation.API.Tests.Mapping.Aggregates;
+namespace Presentation.Shared.Tests.Mapping.Aggregates;
 
 public class TripMappingProfileTests
 {

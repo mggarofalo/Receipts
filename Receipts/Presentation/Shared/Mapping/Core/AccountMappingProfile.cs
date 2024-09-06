@@ -2,7 +2,7 @@ using AutoMapper;
 using Domain.Core;
 using Shared.ViewModels.Core;
 
-namespace API.Mapping.Core;
+namespace Shared.Mapping.Core;
 
 public class AccountMappingProfile : Profile
 {

@@ -1,6 +1,4 @@
 using API.Controllers.Aggregates;
-using API.Mapping.Aggregates;
-using API.Mapping.Core;
 using Application.Queries.Aggregates.TransactionAccounts;
 using AutoMapper;
 using Domain.Aggregates;
@@ -10,6 +8,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
 using SampleData.Domain.Core;
+using Shared.Mapping.Aggregates;
+using Shared.Mapping.Core;
 using Shared.ViewModels.Aggregates;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;

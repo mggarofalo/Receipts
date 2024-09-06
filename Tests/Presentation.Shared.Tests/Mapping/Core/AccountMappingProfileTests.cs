@@ -1,11 +1,11 @@
-using API.Mapping.Core;
 using AutoMapper;
 using Domain.Core;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
+using Shared.Mapping.Core;
 using Shared.ViewModels.Core;
 
-namespace Presentation.API.Tests.Mapping.Core;
+namespace Presentation.Shared.Tests.Mapping.Core;
 
 public class AccountMappingProfileTests
 {
