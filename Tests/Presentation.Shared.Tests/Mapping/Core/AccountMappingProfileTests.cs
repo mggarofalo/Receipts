@@ -18,35 +18,36 @@ public class AccountMappingProfileTests
 			cfg.AddProfile<AccountMappingProfile>();
 		});
 
+		configuration.AssertConfigurationIsValid();
+
 		_mapper = configuration.CreateMapper();
-		_mapper.ConfigurationProvider.AssertConfigurationIsValid();
 	}
 
 	[Fact]
 	public void ShouldMapAccountToAccountVM()
 	{
 		// Arrange
-		Account account = AccountGenerator.Generate();
+		Account original = AccountGenerator.Generate();
 
 		// Act
-		AccountVM accountVM = _mapper.Map<AccountVM>(account);
-		Account reverseMapped = _mapper.Map<Account>(accountVM);
+		AccountVM mapped = _mapper.Map<AccountVM>(original);
+		Account reverseMapped = _mapper.Map<Account>(mapped);
 
 		// Assert
-		Assert.Equal(account, reverseMapped);
+		Assert.Equal(original, reverseMapped);
 	}
 
 	[Fact]
 	public void ShouldMapAccountVMToAccount()
 	{
 		// Arrange
-		AccountVM accountVM = AccountVMGenerator.Generate();
+		AccountVM original = AccountVMGenerator.Generate();
 
 		// Act
-		Account account = _mapper.Map<Account>(accountVM);
-		AccountVM reverseMapped = _mapper.Map<AccountVM>(account);
+		Account mapped = _mapper.Map<Account>(original);
+		AccountVM reverseMapped = _mapper.Map<AccountVM>(mapped);
 
 		// Assert
-		Assert.Equal(accountVM, reverseMapped);
+		Assert.Equal(original, reverseMapped);
 	}
 }

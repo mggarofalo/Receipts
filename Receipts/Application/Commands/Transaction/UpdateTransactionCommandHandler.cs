@@ -7,7 +7,7 @@ public class UpdateTransactionCommandHandler(ITransactionRepository transactionR
 {
 	public async Task<bool> Handle(UpdateTransactionCommand request, CancellationToken cancellationToken)
 	{
-		await transactionRepository.UpdateAsync([.. request.Transactions], cancellationToken);
+		await transactionRepository.UpdateAsync([.. request.Transactions], request.AccountId, request.ReceiptId, cancellationToken);
 		await transactionRepository.SaveChangesAsync(cancellationToken);
 		return true;
 	}

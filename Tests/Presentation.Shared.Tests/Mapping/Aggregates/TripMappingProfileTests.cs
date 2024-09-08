@@ -18,42 +18,43 @@ public class TripMappingProfileTests
 		{
 			cfg.AddProfile<TripMappingProfile>();
 			cfg.AddProfile<ReceiptWithItemsMappingProfile>();
+			cfg.AddProfile<TransactionAccountMappingProfile>();
 			cfg.AddProfile<ReceiptMappingProfile>();
 			cfg.AddProfile<ReceiptItemMappingProfile>();
-			cfg.AddProfile<TransactionAccountMappingProfile>();
 			cfg.AddProfile<TransactionMappingProfile>();
 			cfg.AddProfile<AccountMappingProfile>();
 		});
 
+		configuration.AssertConfigurationIsValid();
+
 		_mapper = configuration.CreateMapper();
-		_mapper.ConfigurationProvider.AssertConfigurationIsValid();
 	}
 
 	[Fact]
 	public void ShouldMapTripToTripVM()
 	{
 		// Arrange
-		Trip trip = TripGenerator.Generate();
+		Trip original = TripGenerator.Generate();
 
 		// Act
-		TripVM tripVM = _mapper.Map<TripVM>(trip);
-		Trip reverseMapped = _mapper.Map<Trip>(tripVM);
+		TripVM mapped = _mapper.Map<TripVM>(original);
+		Trip reverseMapped = _mapper.Map<Trip>(mapped);
 
 		// Assert
-		Assert.Equal(trip, reverseMapped);
+		Assert.Equal(original, reverseMapped);
 	}
 
 	[Fact]
 	public void ShouldMapTripVMToTrip()
 	{
 		// Arrange
-		TripVM tripVM = TripVMGenerator.Generate();
+		TripVM original = TripVMGenerator.Generate();
 
 		// Act
-		Trip trip = _mapper.Map<Trip>(tripVM);
-		TripVM reverseMapped = _mapper.Map<TripVM>(trip);
+		Trip mapped = _mapper.Map<Trip>(original);
+		TripVM reverseMapped = _mapper.Map<TripVM>(mapped);
 
 		// Assert
-		Assert.Equal(tripVM, reverseMapped);
+		Assert.Equal(original, reverseMapped);
 	}
 }

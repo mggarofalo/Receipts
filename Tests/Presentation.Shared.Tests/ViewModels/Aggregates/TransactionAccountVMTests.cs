@@ -12,7 +12,7 @@ public class TransactionAccountVMTests
 	{
 		// Arrange
 		AccountVM account = AccountVMGenerator.Generate();
-		TransactionVM transaction = TransactionVMGenerator.Generate(accountId: account.Id);
+		TransactionVM transaction = TransactionVMGenerator.Generate();
 
 		// Act
 		TransactionAccountVM transactionAccountVM = new()
@@ -31,7 +31,7 @@ public class TransactionAccountVMTests
 	{
 		// Arrange
 		AccountVM account = AccountVMGenerator.Generate();
-		TransactionVM transaction = TransactionVMGenerator.Generate(accountId: account.Id);
+		TransactionVM transaction = TransactionVMGenerator.Generate();
 
 		TransactionAccountVM transactionAccountVM1 = new()
 		{
@@ -95,7 +95,7 @@ public class TransactionAccountVMTests
 	{
 		// Arrange
 		AccountVM account = AccountVMGenerator.Generate();
-		TransactionVM transaction = TransactionVMGenerator.Generate(accountId: account.Id);
+		TransactionVM transaction = TransactionVMGenerator.Generate();
 
 		TransactionAccountVM transactionAccountVM1 = new()
 		{

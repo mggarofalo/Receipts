@@ -21,11 +21,11 @@ public class GetTransactionAccountsByReceiptIdQueryHandler(
 
 		foreach (Domain.Core.Transaction transaction in transactions)
 		{
-			Domain.Core.Account? account = await accountRepository.GetByIdAsync(transaction.AccountId, cancellationToken);
+			Domain.Core.Account? account = await accountRepository.GetByTransactionIdAsync(transaction.Id!.Value, cancellationToken);
 
 			if (account == null)
 			{
-				return null;
+				continue;
 			}
 
 			transactionAccounts.Add(new Domain.Aggregates.TransactionAccount()

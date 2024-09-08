@@ -11,7 +11,7 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 	public async Task Handle_ShouldReturnTransactions_WhenReceiptExistsAndHasItems()
 	{
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
-		List<Domain.Core.Transaction> expected = TransactionGenerator.GenerateList(2, receipt.Id!.Value);
+		List<Domain.Core.Transaction> expected = TransactionGenerator.GenerateList(2);
 
 		Mock<ITransactionRepository> mockRepository = new();
 		mockRepository.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expected);

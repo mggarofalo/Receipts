@@ -16,7 +16,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
 	[HttpGet("{id}")]
-	public async Task<ActionResult<AccountVM>> GetAccountById(Guid id)
+	public async Task<ActionResult<AccountVM>> GetAccountById([FromRoute] Guid id)
 	{
 		try
 		{
@@ -62,7 +62,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<AccountVM>> CreateAccounts(List<AccountVM> models)
+	public async Task<ActionResult<List<AccountVM>>> CreateAccounts([FromBody] List<AccountVM> models)
 	{
 		try
 		{
@@ -79,7 +79,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 	}
 
 	[HttpPut]
-	public async Task<ActionResult<bool>> UpdateAccounts(List<AccountVM> models)
+	public async Task<ActionResult<bool>> UpdateAccounts([FromBody] List<AccountVM> models)
 	{
 		try
 		{

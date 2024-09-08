@@ -19,7 +19,7 @@ public class TripController(IMediator mediator, IMapper mapper, ILogger<TripCont
 	private readonly ILogger<TripController> _logger = logger;
 
 	[HttpGet("by-receipt-id/{receiptId}")]
-	public async Task<ActionResult<TripVM>> GetTripByReceiptId(Guid receiptId)
+	public async Task<ActionResult<TripVM>> GetTripByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{

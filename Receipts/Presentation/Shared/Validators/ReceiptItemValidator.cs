@@ -26,7 +26,7 @@ public class ReceiptItemValidator : AbstractValidator<ReceiptItemVM>
 			.NotEmpty()
 			.WithMessage(SubcategoryIsRequired);
 		RuleFor(x => x.TotalAmount)
-			.Equal(x => Math.Round(x.Quantity * x.UnitPrice, 2))
+			.Equal(x => Math.Floor(x.Quantity * x.UnitPrice * 100) / 100)
 			.WithMessage(TotalAmountErrorMessage);
 	}
 }

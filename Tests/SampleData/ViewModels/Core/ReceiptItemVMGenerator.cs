@@ -4,12 +4,11 @@ namespace SampleData.ViewModels.Core;
 
 public static class ReceiptItemVMGenerator
 {
-	public static ReceiptItemVM Generate(Guid? receiptId = null)
+	public static ReceiptItemVM Generate()
 	{
 		return new ReceiptItemVM
 		{
 			Id = Guid.NewGuid(),
-			ReceiptId = receiptId ?? Guid.NewGuid(),
 			ReceiptItemCode = "ITEMCODE",
 			Description = "Test Item",
 			Quantity = 1,
@@ -20,10 +19,21 @@ public static class ReceiptItemVMGenerator
 		};
 	}
 
-	public static List<ReceiptItemVM> GenerateList(int count, Guid? receiptId = null)
+	public static List<ReceiptItemVM> GenerateList(int count)
 	{
 		return Enumerable.Range(0, count)
-			.Select(_ => Generate(receiptId))
+			.Select(_ => Generate())
 			.ToList();
+	}
+
+	public static ReceiptItemVM WithNullId(ReceiptItemVM model)
+	{
+		model.Id = null;
+		return model;
+	}
+
+	public static List<ReceiptItemVM> WithNullIds(this List<ReceiptItemVM> models)
+	{
+		return models.Select(WithNullId).ToList();
 	}
 }

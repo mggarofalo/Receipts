@@ -2,6 +2,7 @@ using Application.Interfaces.Repositories;
 using AutoMapper;
 using Domain.Core;
 using Infrastructure.Entities.Core;
+using Infrastructure.Mapping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
@@ -27,7 +28,7 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 
 	public async Task<List<ReceiptItem>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
-		bool receiptExists = await context.Receipts.AnyAsync(e => e.Id == receiptId, cancellationToken);
+		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
 
 		if (!receiptExists)
 		{
@@ -41,11 +42,18 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 		return entities.Select(mapper.Map<ReceiptItem>).ToList();
 	}
 
-	public async Task<List<ReceiptItem>> CreateAsync(List<ReceiptItem> models, CancellationToken cancellationToken)
+	public async Task<List<ReceiptItem>> CreateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
 	{
+		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
+
+		if (!receiptExists)
+		{
+			throw new ArgumentException($"Receipt does not exist (ID: {receiptId})");
+		}
+
 		List<ReceiptItemEntity> createdEntities = [];
 
-		foreach (ReceiptItemEntity entity in models.Select(mapper.Map<ReceiptItemEntity>).ToList())
+		foreach (ReceiptItemEntity entity in models.Select(domain => mapper.MapToReceiptItemEntity(domain, receiptId)).ToList())
 		{
 			EntityEntry<ReceiptItemEntity> entityEntry = await context.ReceiptItems.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
@@ -54,9 +62,16 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 		return createdEntities.Select(mapper.Map<ReceiptItem>).ToList();
 	}
 
-	public async Task UpdateAsync(List<ReceiptItem> models, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> newEntities = models.Select(mapper.Map<ReceiptItemEntity>).ToList();
+		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
+
+		if (!receiptExists)
+		{
+			throw new ArgumentException($"Receipt does not exist (ID: {receiptId})");
+		}
+
+		List<ReceiptItemEntity> newEntities = models.Select(domain => mapper.MapToReceiptItemEntity(domain, receiptId)).ToList();
 
 		foreach (ReceiptItemEntity newEntity in newEntities)
 		{

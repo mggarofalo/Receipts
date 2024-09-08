@@ -19,7 +19,7 @@ public class TransactionAccountController(IMediator mediator, IMapper mapper, IL
 	private readonly ILogger<TransactionAccountController> _logger = logger;
 
 	[HttpGet("by-transaction-id/{transactionId}")]
-	public async Task<ActionResult<TransactionAccountVM>> GetTransactionAccountByTransactionId(Guid transactionId)
+	public async Task<ActionResult<TransactionAccountVM>> GetTransactionAccountByTransactionId([FromRoute] Guid transactionId)
 	{
 		try
 		{
@@ -45,7 +45,7 @@ public class TransactionAccountController(IMediator mediator, IMapper mapper, IL
 	}
 
 	[HttpGet("by-receipt-id/{receiptId}")]
-	public async Task<ActionResult<List<TransactionAccountVM>>> GetTransactionAccountsByReceiptId(Guid receiptId)
+	public async Task<ActionResult<List<TransactionAccountVM>>> GetTransactionAccountsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{

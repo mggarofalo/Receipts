@@ -22,4 +22,15 @@ public static class ReceiptVMGenerator
 			.Select(_ => Generate())
 			.ToList();
 	}
+
+	public static ReceiptVM WithNullId(ReceiptVM model)
+	{
+		model.Id = null;
+		return model;
+	}
+
+	public static List<ReceiptVM> WithNullIds(this List<ReceiptVM> models)
+	{
+		return models.Select(WithNullId).ToList();
+	}
 }

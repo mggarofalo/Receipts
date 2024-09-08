@@ -21,35 +21,36 @@ public class TransactionAccountMappingProfileTests
 			cfg.AddProfile<AccountMappingProfile>();
 		});
 
+		configuration.AssertConfigurationIsValid();
+
 		_mapper = configuration.CreateMapper();
-		_mapper.ConfigurationProvider.AssertConfigurationIsValid();
 	}
 
 	[Fact]
 	public void ShouldMapTransactionAccountToTransactionAccountVM()
 	{
 		// Arrange
-		TransactionAccount transactionAccount = TransactionAccountGenerator.Generate();
+		TransactionAccount original = TransactionAccountGenerator.Generate();
 
 		// Act
-		TransactionAccountVM transactionAccountVM = _mapper.Map<TransactionAccountVM>(transactionAccount);
-		TransactionAccount reverseMapped = _mapper.Map<TransactionAccount>(transactionAccountVM);
+		TransactionAccountVM mapped = _mapper.Map<TransactionAccountVM>(original);
+		TransactionAccount reverseMapped = _mapper.Map<TransactionAccount>(mapped);
 
 		// Assert
-		Assert.Equal(transactionAccount, reverseMapped);
+		Assert.Equal(original, reverseMapped);
 	}
 
 	[Fact]
 	public void ShouldMapTransactionAccountVMToTransactionAccount()
 	{
 		// Arrange
-		TransactionAccountVM transactionAccountVM = TransactionAccountVMGenerator.Generate();
+		TransactionAccountVM original = TransactionAccountVMGenerator.Generate();
 
 		// Act
-		TransactionAccount transactionAccount = _mapper.Map<TransactionAccount>(transactionAccountVM);
-		TransactionAccountVM reverseMapped = _mapper.Map<TransactionAccountVM>(transactionAccount);
+		TransactionAccount mapped = _mapper.Map<TransactionAccount>(original);
+		TransactionAccountVM reverseMapped = _mapper.Map<TransactionAccountVM>(mapped);
 
 		// Assert
-		Assert.Equal(transactionAccountVM, reverseMapped);
+		Assert.Equal(original, reverseMapped);
 	}
 }

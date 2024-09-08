@@ -5,11 +5,10 @@ namespace SampleData.Domain.Core;
 
 public static class ReceiptItemGenerator
 {
-	public static ReceiptItem Generate(Guid? receiptId = null)
+	public static ReceiptItem Generate()
 	{
 		return new ReceiptItem(
 			Guid.NewGuid(),
-			receiptId ?? Guid.NewGuid(),
 			"ITEMCODE",
 			"Test Item",
 			1,
@@ -20,10 +19,10 @@ public static class ReceiptItemGenerator
 		);
 	}
 
-	public static List<ReceiptItem> GenerateList(int count, Guid? receiptId = null)
+	public static List<ReceiptItem> GenerateList(int count)
 	{
 		return Enumerable.Range(0, count)
-			.Select(_ => Generate(receiptId))
+			.Select(_ => Generate())
 			.ToList();
 	}
 }

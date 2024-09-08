@@ -9,7 +9,7 @@ public static class ReceiptWithItemsGenerator
 	public static ReceiptWithItems Generate()
 	{
 		Receipt receipt = ReceiptGenerator.Generate();
-		List<ReceiptItem> receiptItems = ReceiptItemGenerator.GenerateList(5, receipt.Id);
+		List<ReceiptItem> receiptItems = ReceiptItemGenerator.GenerateList(5);
 
 		return new ReceiptWithItems()
 		{

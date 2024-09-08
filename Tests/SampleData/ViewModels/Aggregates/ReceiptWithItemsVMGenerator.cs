@@ -9,7 +9,7 @@ public static class ReceiptWithItemsVMGenerator
 	public static ReceiptWithItemsVM Generate()
 	{
 		ReceiptVM receipt = ReceiptVMGenerator.Generate();
-		List<ReceiptItemVM> receiptItems = ReceiptItemVMGenerator.GenerateList(5, receipt.Id);
+		List<ReceiptItemVM> receiptItems = ReceiptItemVMGenerator.GenerateList(5);
 
 		return new ReceiptWithItemsVM()
 		{

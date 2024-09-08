@@ -16,10 +16,10 @@ public class UpdateTransactionCommandHandlerTests
 		List<Domain.Core.Transaction> input = TransactionGenerator.GenerateList(2);
 
 		mockRepository.Setup(r => r
-			.UpdateAsync(It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<CancellationToken>()))
+			.UpdateAsync(It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
-		UpdateTransactionCommand command = new(input);
+		UpdateTransactionCommand command = new(input, Guid.NewGuid(), Guid.NewGuid());
 		bool result = await handler.Handle(command, CancellationToken.None);
 
 		Assert.True(result);

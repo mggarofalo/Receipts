@@ -19,7 +19,7 @@ public class ReceiptWithItemsController(IMediator mediator, IMapper mapper, ILog
 	private readonly ILogger<ReceiptWithItemsController> _logger = logger;
 
 	[HttpGet("by-receipt-id/{receiptId}")]
-	public async Task<ActionResult<ReceiptWithItemsVM>> GetReceiptWithItemsByReceiptId(Guid receiptId)
+	public async Task<ActionResult<ReceiptWithItemsVM>> GetReceiptWithItemsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{

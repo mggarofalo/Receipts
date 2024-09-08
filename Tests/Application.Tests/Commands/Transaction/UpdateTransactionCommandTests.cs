@@ -12,7 +12,7 @@ public class UpdateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 		List<Domain.Core.Transaction> items = null;
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8604 // Possible null reference argument.
-		Assert.Throws<ArgumentNullException>(() => new UpdateTransactionCommand(items));
+		Assert.Throws<ArgumentNullException>(() => new UpdateTransactionCommand(items, Guid.NewGuid(), Guid.NewGuid()));
 #pragma warning restore CS8604 // Possible null reference argument.
 	}
 
@@ -20,14 +20,14 @@ public class UpdateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	public void Command_WithEmptyItems_ThrowsArgumentException()
 	{
 		List<Domain.Core.Transaction> items = [];
-		Assert.Throws<ArgumentException>(() => new UpdateTransactionCommand(items));
+		Assert.Throws<ArgumentException>(() => new UpdateTransactionCommand(items, Guid.NewGuid(), Guid.NewGuid()));
 	}
 
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
 		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
-		UpdateTransactionCommand command = new(items);
+		UpdateTransactionCommand command = new(items, Guid.NewGuid(), Guid.NewGuid());
 		Assert.Equal(items, command.Transactions);
 	}
 
@@ -35,7 +35,7 @@ public class UpdateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	public void Items_ShouldBeImmutable()
 	{
 		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
-		UpdateTransactionCommand command = new(items);
+		UpdateTransactionCommand command = new(items, Guid.NewGuid(), Guid.NewGuid());
 		Assert.True(command.Transactions is not null);
 	}
 }

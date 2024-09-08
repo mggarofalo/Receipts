@@ -10,7 +10,6 @@ public class ReceiptItemVMTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2.0m;
@@ -23,7 +22,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
 			ReceiptItemCode = receiptItemCode,
 			Description = description,
 			Quantity = quantity,
@@ -35,7 +33,6 @@ public class ReceiptItemVMTests
 
 		// Assert
 		Assert.Equal(id, receiptItemVM.Id);
-		Assert.Equal(receiptId, receiptItemVM.ReceiptId);
 		Assert.Equal(receiptItemCode, receiptItemVM.ReceiptItemCode);
 		Assert.Equal(description, receiptItemVM.Description);
 		Assert.Equal(quantity, receiptItemVM.Quantity);
@@ -49,7 +46,6 @@ public class ReceiptItemVMTests
 	public void Constructor_NullId_CreatesReceiptItemVMWithNullId()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2.0m;
@@ -61,7 +57,6 @@ public class ReceiptItemVMTests
 		// Act
 		ReceiptItemVM receiptItemVM = new()
 		{
-			ReceiptId = receiptId,
 			ReceiptItemCode = receiptItemCode,
 			Description = description,
 			Quantity = quantity,
@@ -80,7 +75,6 @@ public class ReceiptItemVMTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2.0m;
@@ -92,7 +86,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM1 = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
 			ReceiptItemCode = receiptItemCode,
 			Description = description,
 			Quantity = quantity,
@@ -104,7 +97,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM2 = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
 			ReceiptItemCode = receiptItemCode,
 			Description = description,
 			Quantity = quantity,
@@ -164,7 +156,6 @@ public class ReceiptItemVMTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2.0m;
@@ -176,7 +167,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM1 = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
 			ReceiptItemCode = receiptItemCode,
 			Description = description,
 			Quantity = quantity,
@@ -188,7 +178,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM2 = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
 			ReceiptItemCode = receiptItemCode,
 			Description = description,
 			Quantity = quantity,
@@ -206,10 +195,8 @@ public class ReceiptItemVMTests
 	public void GetHashCode_NullId_ReturnsSameHashCode()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
 		ReceiptItemVM receiptItemVM1 = new()
 		{
-			ReceiptId = receiptId,
 			ReceiptItemCode = "ITEM001",
 			Description = "Test Item",
 			Quantity = 2.0m,
@@ -220,7 +207,6 @@ public class ReceiptItemVMTests
 		};
 		ReceiptItemVM receiptItemVM2 = new()
 		{
-			ReceiptId = receiptId,
 			ReceiptItemCode = "ITEM001",
 			Description = "Test Item",
 			Quantity = 2.0m,
@@ -240,7 +226,6 @@ public class ReceiptItemVMTests
 		// Arrange
 		Guid id1 = Guid.NewGuid();
 		Guid id2 = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
 		string receiptItemCode = "ITEM001";
 		string description = "Test Item";
 		decimal quantity = 2.0m;
@@ -252,7 +237,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM1 = new()
 		{
 			Id = id1,
-			ReceiptId = receiptId,
 			ReceiptItemCode = receiptItemCode,
 			Description = description,
 			Quantity = quantity,
@@ -264,7 +248,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM2 = new()
 		{
 			Id = id2,
-			ReceiptId = receiptId,
 			ReceiptItemCode = receiptItemCode,
 			Description = description,
 			Quantity = quantity,
@@ -286,7 +269,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM2 = new()
 		{
 			Id = receiptItemVM1.Id,
-			ReceiptId = receiptItemVM1.ReceiptId,
 			ReceiptItemCode = receiptItemVM1.ReceiptItemCode,
 			Description = receiptItemVM1.Description,
 			Quantity = receiptItemVM1.Quantity,
@@ -325,7 +307,6 @@ public class ReceiptItemVMTests
 		ReceiptItemVM receiptItemVM2 = new()
 		{
 			Id = receiptItemVM1.Id,
-			ReceiptId = receiptItemVM1.ReceiptId,
 			ReceiptItemCode = receiptItemVM1.ReceiptItemCode,
 			Description = receiptItemVM1.Description,
 			Quantity = receiptItemVM1.Quantity,

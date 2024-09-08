@@ -12,13 +12,13 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 	{
 		// Arrange
 		Domain.Core.Account expectedAccount = AccountGenerator.Generate();
-		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate(accountId: expectedAccount.Id);
+		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate();
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
 		mockTransactionRepository.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
 		Mock<IAccountRepository> mockAccountRepository = new();
-		mockAccountRepository.Setup(r => r.GetByIdAsync(expectedAccount.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
+		mockAccountRepository.Setup(r => r.GetByTransactionIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
 
 		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
 		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id!.Value);
@@ -57,7 +57,7 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 	{
 		// Arrange
 		Guid missingAccountId = Guid.NewGuid();
-		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate(accountId: missingAccountId);
+		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate();
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
 		mockTransactionRepository.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);

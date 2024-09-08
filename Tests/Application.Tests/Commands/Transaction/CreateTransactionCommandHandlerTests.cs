@@ -13,15 +13,13 @@ public class CreateTransactionCommandHandlerTests
 		Mock<ITransactionRepository> mockRepository = new();
 		CreateTransactionCommandHandler handler = new(mockRepository.Object);
 
-		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
-		Domain.Core.Account account = AccountGenerator.Generate();
-		List<Domain.Core.Transaction> input = TransactionGenerator.GenerateList(2, receipt.Id!.Value, account.Id!.Value);
+		List<Domain.Core.Transaction> input = TransactionGenerator.GenerateList(2);
 
 		mockRepository.Setup(r => r
-			.CreateAsync(It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<CancellationToken>()))
+			.CreateAsync(It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(input);
 
-		CreateTransactionCommand command = new(input);
+		CreateTransactionCommand command = new(input, Guid.NewGuid(), Guid.NewGuid());
 		List<Domain.Core.Transaction> result = await handler.Handle(command, CancellationToken.None);
 
 		Assert.Equal(input.Count, result.Count);

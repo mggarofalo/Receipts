@@ -10,8 +10,6 @@ public class TransactionVMTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		decimal amount = 100.0m;
 		DateOnly date = DateOnly.FromDateTime(DateTime.Now);
 
@@ -19,16 +17,12 @@ public class TransactionVMTests
 		TransactionVM transactionVM = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = amount,
 			Date = date
 		};
 
 		// Assert
 		Assert.Equal(id, transactionVM.Id);
-		Assert.Equal(receiptId, transactionVM.ReceiptId);
-		Assert.Equal(accountId, transactionVM.AccountId);
 		Assert.Equal(amount, transactionVM.Amount);
 		Assert.Equal(date, transactionVM.Date);
 	}
@@ -37,16 +31,12 @@ public class TransactionVMTests
 	public void Constructor_NullId_CreatesTransactionVMWithNullId()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		decimal amount = 100.0m;
 		DateOnly date = DateOnly.FromDateTime(DateTime.Now);
 
 		// Act
 		TransactionVM transactionVM = new()
 		{
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = amount,
 			Date = date
 		};
@@ -60,24 +50,18 @@ public class TransactionVMTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		decimal amount = 100.0m;
 		DateOnly date = DateOnly.FromDateTime(DateTime.Now);
 
 		TransactionVM transactionVM1 = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = amount,
 			Date = date
 		};
 		TransactionVM transactionVM2 = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = amount,
 			Date = date
 		};
@@ -132,24 +116,18 @@ public class TransactionVMTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		decimal amount = 100.0m;
 		DateOnly date = DateOnly.FromDateTime(DateTime.Now);
 
 		TransactionVM transactionVM1 = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = amount,
 			Date = date
 		};
 		TransactionVM transactionVM2 = new()
 		{
 			Id = id,
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = amount,
 			Date = date
 		};
@@ -162,19 +140,13 @@ public class TransactionVMTests
 	public void GetHashCode_NullId_ReturnsSameHashCode()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		TransactionVM transactionVM1 = new()
 		{
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = 100.0m,
 			Date = DateOnly.FromDateTime(DateTime.Now)
 		};
 		TransactionVM transactionVM2 = new()
 		{
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = 100.0m,
 			Date = DateOnly.FromDateTime(DateTime.Now)
 		};
@@ -189,24 +161,18 @@ public class TransactionVMTests
 		// Arrange
 		Guid id1 = Guid.NewGuid();
 		Guid id2 = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		decimal amount = 100.0m;
 		DateOnly date = DateOnly.FromDateTime(DateTime.Now);
 
 		TransactionVM transactionVM1 = new()
 		{
 			Id = id1,
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = amount,
 			Date = date
 		};
 		TransactionVM transactionVM2 = new()
 		{
 			Id = id2,
-			ReceiptId = receiptId,
-			AccountId = accountId,
 			Amount = amount,
 			Date = date
 		};
@@ -223,8 +189,6 @@ public class TransactionVMTests
 		TransactionVM transactionVM2 = new()
 		{
 			Id = transactionVM1.Id,
-			ReceiptId = transactionVM1.ReceiptId,
-			AccountId = transactionVM1.AccountId,
 			Amount = transactionVM1.Amount,
 			Date = transactionVM1.Date
 		};
@@ -258,8 +222,6 @@ public class TransactionVMTests
 		TransactionVM transactionVM2 = new()
 		{
 			Id = transactionVM1.Id,
-			ReceiptId = transactionVM1.ReceiptId,
-			AccountId = transactionVM1.AccountId,
 			Amount = transactionVM1.Amount,
 			Date = transactionVM1.Date
 		};

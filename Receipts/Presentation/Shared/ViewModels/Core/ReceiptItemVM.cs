@@ -3,7 +3,6 @@ namespace Shared.ViewModels.Core;
 public class ReceiptItemVM : IEquatable<ReceiptItemVM>
 {
 	public Guid? Id { get; set; }
-	public Guid ReceiptId { get; set; }
 	public required string ReceiptItemCode { get; set; }
 	public required string Description { get; set; }
 	public required decimal Quantity { get; set; }
@@ -41,7 +40,6 @@ public class ReceiptItemVM : IEquatable<ReceiptItemVM>
 	{
 		HashCode hash = new();
 		hash.Add(Id);
-		hash.Add(ReceiptId);
 		hash.Add(ReceiptItemCode);
 		hash.Add(Description);
 		hash.Add(Quantity);

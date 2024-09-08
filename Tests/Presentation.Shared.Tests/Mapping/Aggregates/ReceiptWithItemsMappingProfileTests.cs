@@ -21,35 +21,39 @@ public class ReceiptWithItemsMappingProfileTests
 			cfg.AddProfile<ReceiptItemMappingProfile>();
 		});
 
+		configuration.AssertConfigurationIsValid();
+
 		_mapper = configuration.CreateMapper();
-		_mapper.ConfigurationProvider.AssertConfigurationIsValid();
 	}
 
 	[Fact]
 	public void ShouldMapReceiptWithItemsToReceiptWithItemsVM()
 	{
 		// Arrange
-		ReceiptWithItems receiptWithItems = ReceiptWithItemsGenerator.Generate();
+		ReceiptWithItems original = ReceiptWithItemsGenerator.Generate();
 
 		// Act
-		ReceiptWithItemsVM receiptWithItemsVM = _mapper.Map<ReceiptWithItemsVM>(receiptWithItems);
-		ReceiptWithItems reverseMapped = _mapper.Map<ReceiptWithItems>(receiptWithItemsVM);
+		ReceiptWithItemsVM mapped = _mapper.Map<ReceiptWithItemsVM>(original);
+		ReceiptWithItems reverseMapped = _mapper.Map<ReceiptWithItems>(mapped);
 
 		// Assert
-		Assert.Equal(receiptWithItems, reverseMapped);
+		Assert.Equal(original.Items, reverseMapped.Items);
+		Assert.Equal(original, reverseMapped);
 	}
 
 	[Fact]
 	public void ShouldMapReceiptWithItemsVMToReceiptWithItems()
 	{
 		// Arrange
-		ReceiptWithItemsVM receiptWithItemsVM = ReceiptWithItemsVMGenerator.Generate();
+		ReceiptWithItemsVM original = ReceiptWithItemsVMGenerator.Generate();
+		Guid receiptId = original.Receipt.Id!.Value;
 
 		// Act
-		ReceiptWithItems receiptWithItems = _mapper.Map<ReceiptWithItems>(receiptWithItemsVM);
-		ReceiptWithItemsVM reverseMapped = _mapper.Map<ReceiptWithItemsVM>(receiptWithItems);
+		ReceiptWithItems mapped = _mapper.Map<ReceiptWithItems>(original);
+		ReceiptWithItemsVM reverseMapped = _mapper.Map<ReceiptWithItemsVM>(mapped);
 
 		// Assert
-		Assert.Equal(receiptWithItemsVM, reverseMapped);
+		Assert.Equal(original.Items, reverseMapped.Items);
+		Assert.Equal(original, reverseMapped);
 	}
 }

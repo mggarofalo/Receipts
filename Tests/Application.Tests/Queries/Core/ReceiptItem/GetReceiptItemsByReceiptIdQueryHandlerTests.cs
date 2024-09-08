@@ -11,7 +11,7 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 	public async Task Handle_ShouldReturnReceiptItems_WhenReceiptExistsAndHasItems()
 	{
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
-		List<Domain.Core.ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2, receipt.Id!.Value);
+		List<Domain.Core.ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2);
 
 		Mock<IReceiptItemRepository> mockRepository = new();
 		mockRepository.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expected);

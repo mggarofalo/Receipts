@@ -21,4 +21,15 @@ public static class AccountVMGenerator
 			.Select(_ => Generate())
 			.ToList();
 	}
+
+	public static AccountVM WithNullId(AccountVM model)
+	{
+		model.Id = null;
+		return model;
+	}
+
+	public static List<AccountVM> WithNullIds(this List<AccountVM> models)
+	{
+		return models.Select(WithNullId).ToList();
+	}
 }

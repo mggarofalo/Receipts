@@ -4,6 +4,7 @@ using AutoMapper;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Mapping;
 using Shared.ViewModels.Core;
 
 namespace API.Controllers.Core;
@@ -16,7 +17,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
 	[HttpGet("{id}")]
-	public async Task<ActionResult<ReceiptItemVM>> GetReceiptItemById(Guid id)
+	public async Task<ActionResult<ReceiptItemVM>> GetReceiptItemById([FromRoute] Guid id)
 	{
 		try
 		{
@@ -62,7 +63,7 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 	}
 
 	[HttpGet("by-receipt-id/{receiptId}")]
-	public async Task<ActionResult<List<ReceiptItemVM>?>> GetReceiptItemsByReceiptId(Guid receiptId)
+	public async Task<ActionResult<List<ReceiptItemVM>?>> GetReceiptItemsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{
@@ -87,16 +88,20 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpPost]
-	public async Task<ActionResult<ReceiptItemVM>> CreateReceiptItems(List<ReceiptItemVM> models)
+	[HttpPost("{receiptId}")]
+	public async Task<ActionResult<List<ReceiptItemVM>>> CreateReceiptItems([FromBody] List<ReceiptItemVM> models, [FromRoute] Guid receiptId)
 	{
 		try
 		{
 			logger.LogDebug("CreateReceiptItem called with {Count} receipt items", models.Count);
-			CreateReceiptItemCommand command = new(models.Select(mapper.Map<ReceiptItemVM, ReceiptItem>).ToList());
-			List<ReceiptItem> receiptitems = await mediator.Send(command);
+			CreateReceiptItemCommand command = new(models.Select(mapper.Map<ReceiptItem>).ToList(), receiptId);
+			List<ReceiptItem> createdReceiptItems = await mediator.Send(command);
+			ArgumentNullException.ThrowIfNull(createdReceiptItems);
 			logger.LogDebug("CreateReceiptItem called with {Count} receipt items, and created", models.Count);
-			return Ok(receiptitems.Select(mapper.Map<ReceiptItem, ReceiptItemVM>).ToList());
+
+			List<ReceiptItemVM> createdReceiptItemVMs = createdReceiptItems.Select(mapper.Map<ReceiptItem, ReceiptItemVM>).ToList();
+			ArgumentNullException.ThrowIfNull(createdReceiptItemVMs);
+			return Ok(createdReceiptItemVMs);
 		}
 		catch (Exception ex)
 		{
@@ -105,13 +110,14 @@ public class ReceiptItemsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpPut]
-	public async Task<ActionResult<bool>> UpdateReceiptItems(List<ReceiptItemVM> models)
+	[HttpPut("{receiptId}")]
+	public async Task<ActionResult<bool>> UpdateReceiptItems([FromBody] List<ReceiptItemVM> models, [FromRoute] Guid receiptId)
 	{
 		try
 		{
 			logger.LogDebug("UpdateReceiptItems called with {Count} receipt items", models.Count);
-			UpdateReceiptItemCommand command = new(models.Select(mapper.Map<ReceiptItemVM, ReceiptItem>).ToList());
+			List<ReceiptItem> receiptItems = models.Select(mapper.Map<ReceiptItem>).ToList();
+			UpdateReceiptItemCommand command = new(receiptItems, receiptId);
 			bool result = await mediator.Send(command);
 
 			if (!result)

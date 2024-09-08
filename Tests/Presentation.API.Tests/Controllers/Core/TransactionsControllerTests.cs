@@ -37,24 +37,24 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task GetTransactionById_ReturnsOkResult_WhenTransactionExists()
+	public async Task GetTransactionById_ReturnsOkResult_WithTransaction()
 	{
 		// Arrange
-		Transaction Transaction = TransactionGenerator.Generate();
-		TransactionVM expectedReturn = _mapper.Map<TransactionVM>(Transaction);
+		Transaction mediatorReturn = TransactionGenerator.Generate();
+		TransactionVM expectedControllerReturn = _mapper.Map<TransactionVM>(mediatorReturn);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetTransactionByIdQuery>(q => q.Id == Transaction.Id),
+			It.Is<GetTransactionByIdQuery>(q => q.Id == mediatorReturn.Id),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(Transaction);
+			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<TransactionVM> result = await _controller.GetTransactionById(Transaction.Id!.Value);
+		ActionResult<TransactionVM> result = await _controller.GetTransactionById(mediatorReturn.Id!.Value);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TransactionVM actualReturn = Assert.IsType<TransactionVM>(okResult.Value);
-		Assert.Equal(expectedReturn, actualReturn);
+		TransactionVM actualControllerReturn = Assert.IsType<TransactionVM>(okResult.Value);
+		Assert.Equal(expectedControllerReturn, actualControllerReturn);
 	}
 
 	[Fact]
@@ -90,7 +90,6 @@ public class TransactionsControllerTests
 		ActionResult<TransactionVM> result = await _controller.GetTransactionById(id);
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 	}
@@ -99,30 +98,30 @@ public class TransactionsControllerTests
 	public async Task GetAllTransactions_ReturnsOkResult_WithListOfTransactions()
 	{
 		// Arrange
-		List<Transaction> Transactions = TransactionGenerator.GenerateList(2);
-		List<TransactionVM> expectedReturn = _mapper.Map<List<TransactionVM>>(Transactions);
+		List<Transaction> mediatorReturn = TransactionGenerator.GenerateList(2);
+		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.Map<Transaction, TransactionVM>).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAllTransactionsQuery>(q => true),
+			It.IsAny<GetAllTransactionsQuery>(),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(Transactions);
+			.ReturnsAsync(mediatorReturn);
 
 		// Act
 		ActionResult<List<TransactionVM>> result = await _controller.GetAllTransactions();
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionVM> actualReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
+		List<TransactionVM> actualControllerReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn);
+		Assert.Equal(expectedControllerReturn, actualControllerReturn);
 	}
 
 	[Fact]
-	public async Task GetAllAccounts_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAllTransactionsQuery>(q => true),
+			It.IsAny<GetAllTransactionsQuery>(),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
@@ -130,7 +129,6 @@ public class TransactionsControllerTests
 		ActionResult<List<TransactionVM>> result = await _controller.GetAllTransactions();
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 	}
@@ -140,22 +138,22 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<Transaction> Transactions = TransactionGenerator.GenerateList(2);
-		List<TransactionVM> expectedReturn = _mapper.Map<List<TransactionVM>>(Transactions);
+		List<Transaction> mediatorReturn = TransactionGenerator.GenerateList(2);
+		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.Map<Transaction, TransactionVM>).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(Transactions);
+			.ReturnsAsync(mediatorReturn);
 
 		// Act
 		ActionResult<List<TransactionVM>?> result = await _controller.GetTransactionsByReceiptId(receiptId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionVM> actualReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
+		List<TransactionVM> actualControllerReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn);
+		Assert.Equal(expectedControllerReturn, actualControllerReturn);
 	}
 
 	[Fact]
@@ -163,22 +161,22 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<Transaction> Transactions = [];
-		List<TransactionVM> expectedReturn = _mapper.Map<List<TransactionVM>>(Transactions);
+		List<Transaction> mediatorReturn = [];
+		List<TransactionVM> expectedControllerReturn = [];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(Transactions);
+			.ReturnsAsync(mediatorReturn);
 
 		// Act
 		ActionResult<List<TransactionVM>?> result = await _controller.GetTransactionsByReceiptId(receiptId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionVM> actualReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
+		List<TransactionVM> actualControllerReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn);
+		Assert.Equal(expectedControllerReturn, actualControllerReturn);
 	}
 
 	[Fact]
@@ -196,8 +194,7 @@ public class TransactionsControllerTests
 		ActionResult<List<TransactionVM>?> result = await _controller.GetTransactionsByReceiptId(missingReceiptId);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFoundResult>(result.Result);
 	}
 
 	[Fact]
@@ -214,7 +211,6 @@ public class TransactionsControllerTests
 		ActionResult<List<TransactionVM>?> result = await _controller.GetTransactionsByReceiptId(receiptId);
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 	}
@@ -223,39 +219,42 @@ public class TransactionsControllerTests
 	public async Task CreateTransactions_ReturnsOkResult_WithCreatedTransactions()
 	{
 		// Arrange
-		List<Transaction> Transactions = TransactionGenerator.GenerateList(2);
-		List<TransactionVM> expectedReturn = _mapper.Map<List<TransactionVM>>(Transactions);
+		Guid receiptId = Guid.NewGuid();
+		Guid accountId = Guid.NewGuid();
+		List<TransactionVM> controllerInput = TransactionVMGenerator.GenerateList(2);
+		List<Transaction> mediatorReturn = controllerInput.Select(_mapper.Map<TransactionVM, Transaction>).ToList();
+		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.Map<Transaction, TransactionVM>).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == Transactions.Count),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(Transactions);
-
-		List<TransactionVM> models = _mapper.Map<List<TransactionVM>>(Transactions);
-		models.ForEach(a => a.Id = null);
+			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<TransactionVM> result = await _controller.CreateTransactions(models);
+		ActionResult<List<TransactionVM>> result = await _controller.CreateTransactions(controllerInput, receiptId, accountId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionVM> actualReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
+		List<TransactionVM> actualControllerReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn);
+		Assert.Equal(expectedControllerReturn, actualControllerReturn);
 	}
 
 	[Fact]
 	public async Task CreateTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		List<TransactionVM> models = TransactionVMGenerator.GenerateList(2);
+		Guid receiptId = Guid.NewGuid();
+		Guid accountId = Guid.NewGuid();
+		List<TransactionVM> controllerInput = TransactionVMGenerator.GenerateList(2);
+
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == models.Count),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TransactionVM> result = await _controller.CreateTransactions(models);
+		ActionResult<List<TransactionVM>> result = await _controller.CreateTransactions(controllerInput, receiptId, accountId);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -267,53 +266,57 @@ public class TransactionsControllerTests
 	public async Task UpdateTransactions_ReturnsNoContent_WhenUpdateSucceeds()
 	{
 		// Arrange
-		List<TransactionVM> models = TransactionVMGenerator.GenerateList(2, receiptId: Guid.NewGuid(), accountId: Guid.NewGuid());
-		List<Transaction> Transactions = _mapper.Map<List<Transaction>>(models);
+		Guid accountId = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
+		List<TransactionVM> controllerInput = TransactionVMGenerator.GenerateList(2);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == models.Count),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(models);
+		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput, receiptId, accountId);
 
 		// Assert
-		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
-		Assert.Equal(204, noContentResult.StatusCode);
+		Assert.IsType<NoContentResult>(result.Result);
 	}
 
 	[Fact]
 	public async Task UpdateTransactions_ReturnsNotFound_WhenUpdateFails()
 	{
 		// Arrange
-		List<TransactionVM> models = TransactionVMGenerator.GenerateList(2);
+		Guid accountId = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
+		List<TransactionVM> controllerInput = TransactionVMGenerator.GenerateList(2);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == models.Count),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(models);
+		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput, receiptId, accountId);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFoundResult>(result.Result);
 	}
 
 	[Fact]
 	public async Task UpdateTransactions_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		List<TransactionVM> models = TransactionVMGenerator.GenerateList(2);
+		Guid accountId = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
+		List<TransactionVM> controllerInput = TransactionVMGenerator.GenerateList(2);
+
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == models.Count),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(models);
+		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput, receiptId, accountId);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -325,72 +328,69 @@ public class TransactionsControllerTests
 	public async Task DeleteTransactions_ReturnsNoContent_WhenDeleteSucceeds()
 	{
 		// Arrange
-		List<Guid> ids = TransactionGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(controllerInput)),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteTransactions(ids);
+		ActionResult<bool> result = await _controller.DeleteTransactions(controllerInput);
 
 		// Assert
-		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
-		Assert.Equal(204, noContentResult.StatusCode);
+		Assert.IsType<NoContentResult>(result.Result);
 	}
 
 	[Fact]
-	public async Task DeleteTransactions_ReturnsNotFound_WhenSingleTransactionDeleteFails()
+	public async Task DeleteTransactions_ReturnsNotFound_WhenDeleteFails()
 	{
 		// Arrange
-		List<Guid> ids = [AccountGenerator.Generate().Id!.Value];
+		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<DeleteTransactionCommand>(),
+			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(controllerInput)),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteTransactions(ids);
+		ActionResult<bool> result = await _controller.DeleteTransactions(controllerInput);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFoundResult>(result.Result);
 	}
 
 	[Fact]
 	public async Task DeleteTransactions_ReturnsNotFound_WhenMultipleTransactionsDeleteFails()
 	{
 		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<DeleteTransactionCommand>(),
+			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(controllerInput)),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteTransactions(ids);
+		ActionResult<bool> result = await _controller.DeleteTransactions(controllerInput);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFoundResult>(result.Result);
 	}
 
 	[Fact]
-	public async Task DeleteTransactions_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task DeleteTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<DeleteTransactionCommand>(),
+			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(controllerInput)),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteTransactions(ids);
+		ActionResult<bool> result = await _controller.DeleteTransactions(controllerInput);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);

@@ -16,7 +16,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
 	[HttpGet("{id}")]
-	public async Task<ActionResult<ReceiptVM>> GetReceiptById(Guid id)
+	public async Task<ActionResult<ReceiptVM>> GetReceiptById([FromRoute] Guid id)
 	{
 		try
 		{
@@ -62,7 +62,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<ReceiptVM>> CreateReceipts(List<ReceiptVM> models)
+	public async Task<ActionResult<List<ReceiptVM>>> CreateReceipts([FromBody] List<ReceiptVM> models)
 	{
 		try
 		{
@@ -80,7 +80,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 	}
 
 	[HttpPut]
-	public async Task<ActionResult<bool>> UpdateReceipts(List<ReceiptVM> models)
+	public async Task<ActionResult<bool>> UpdateReceipts([FromBody] List<ReceiptVM> models)
 	{
 		try
 		{

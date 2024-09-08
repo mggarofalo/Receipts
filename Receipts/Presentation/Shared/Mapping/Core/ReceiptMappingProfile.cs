@@ -11,9 +11,9 @@ public class ReceiptMappingProfile : Profile
 	public ReceiptMappingProfile()
 	{
 		CreateMap<Receipt, ReceiptVM>()
-			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => src.TaxAmount.Amount));
+			.ForMember(vm => vm.TaxAmount, opt => opt.MapFrom(domain => domain.TaxAmount.Amount));
 
 		CreateMap<ReceiptVM, Receipt>()
-			.ForMember(dest => dest.TaxAmount, opt => opt.MapFrom(src => new Money(src.TaxAmount, Currency.USD)));
+			.ForPath(domain => domain.TaxAmount, opt => opt.MapFrom(vm => new Money(vm.TaxAmount, Currency.USD)));
 	}
 }

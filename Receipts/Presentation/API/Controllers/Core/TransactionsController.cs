@@ -16,7 +16,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
 	[HttpGet("{id}")]
-	public async Task<ActionResult<TransactionVM>> GetTransactionById(Guid id)
+	public async Task<ActionResult<TransactionVM>> GetTransactionById([FromRoute] Guid id)
 	{
 		try
 		{
@@ -62,7 +62,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 	}
 
 	[HttpGet("by-receipt-id/{receiptId}")]
-	public async Task<ActionResult<List<TransactionVM>?>> GetTransactionsByReceiptId(Guid receiptId)
+	public async Task<ActionResult<List<TransactionVM>?>> GetTransactionsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{
@@ -87,13 +87,13 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpPost]
-	public async Task<ActionResult<TransactionVM>> CreateTransactions(List<TransactionVM> models)
+	[HttpPost("{receiptId}/{accountId}")]
+	public async Task<ActionResult<List<TransactionVM>>> CreateTransactions([FromBody] List<TransactionVM> models, [FromRoute] Guid receiptId, [FromRoute] Guid accountId)
 	{
 		try
 		{
 			logger.LogDebug("CreateTransaction called with {Count} transactions", models.Count);
-			CreateTransactionCommand command = new(models.Select(mapper.Map<TransactionVM, Transaction>).ToList());
+			CreateTransactionCommand command = new(models.Select(mapper.Map<TransactionVM, Transaction>).ToList(), receiptId, accountId);
 			List<Transaction> transactions = await mediator.Send(command);
 			logger.LogDebug("CreateTransaction called with {Count} transactions, and created", models.Count);
 			return Ok(transactions.Select(mapper.Map<Transaction, TransactionVM>).ToList());
@@ -105,13 +105,13 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpPut]
-	public async Task<ActionResult<bool>> UpdateTransactions(List<TransactionVM> models)
+	[HttpPut("{receiptId}/{accountId}")]
+	public async Task<ActionResult<bool>> UpdateTransactions([FromBody] List<TransactionVM> models, [FromRoute] Guid receiptId, [FromRoute] Guid accountId)
 	{
 		try
 		{
 			logger.LogDebug("UpdateTransactions called with {Count} transactions", models.Count);
-			UpdateTransactionCommand command = new(models.Select(mapper.Map<TransactionVM, Transaction>).ToList());
+			UpdateTransactionCommand command = new(models.Select(mapper.Map<TransactionVM, Transaction>).ToList(), receiptId, accountId);
 			bool result = await mediator.Send(command);
 
 			if (!result)

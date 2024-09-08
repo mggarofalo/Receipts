@@ -8,8 +8,8 @@ public static class TransactionAccountGenerator
 {
 	public static TransactionAccount Generate()
 	{
-		Transaction transaction = TransactionGenerator.Generate();
 		Account account = AccountGenerator.Generate();
+		Transaction transaction = TransactionGenerator.Generate();
 
 		return new TransactionAccount()
 		{

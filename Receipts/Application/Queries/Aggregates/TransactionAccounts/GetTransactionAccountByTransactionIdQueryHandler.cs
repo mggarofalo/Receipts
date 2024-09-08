@@ -11,13 +11,12 @@ public class GetTransactionAccountByTransactionIdQueryHandler(
 	public async Task<Domain.Aggregates.TransactionAccount?> Handle(GetTransactionAccountByTransactionIdQuery request, CancellationToken cancellationToken)
 	{
 		Domain.Core.Transaction? transaction = await transactionRepository.GetByIdAsync(request.TransactionId, cancellationToken);
+		Domain.Core.Account? account = await accountRepository.GetByTransactionIdAsync(request.TransactionId, cancellationToken);
 
 		if (transaction == null)
 		{
 			return null;
 		}
-
-		Domain.Core.Account? account = await accountRepository.GetByIdAsync(transaction.AccountId, cancellationToken);
 
 		if (account == null)
 		{

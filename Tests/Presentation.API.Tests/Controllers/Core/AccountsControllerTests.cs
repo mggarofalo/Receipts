@@ -100,7 +100,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<Account> accounts = AccountGenerator.GenerateList(2);
-		List<AccountVM> expectedReturn = _mapper.Map<List<AccountVM>>(accounts);
+		List<AccountVM> expectedReturn = accounts.Select(_mapper.Map<Account, AccountVM>).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetAllAccountsQuery>(q => true),
@@ -140,18 +140,18 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<Account> accounts = AccountGenerator.GenerateList(2);
-		List<AccountVM> expectedReturn = _mapper.Map<List<AccountVM>>(accounts);
+		List<AccountVM> expectedReturn = accounts.Select(_mapper.Map<Account, AccountVM>).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == accounts.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(accounts);
 
-		List<AccountVM> models = _mapper.Map<List<AccountVM>>(accounts);
+		List<AccountVM> models = accounts.Select(_mapper.Map<Account, AccountVM>).ToList();
 		models.ForEach(a => a.Id = null);
 
 		// Act
-		ActionResult<AccountVM> result = await _controller.CreateAccounts(models);
+		ActionResult<List<AccountVM>> result = await _controller.CreateAccounts(models);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -171,7 +171,7 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AccountVM> result = await _controller.CreateAccounts(models);
+		ActionResult<List<AccountVM>> result = await _controller.CreateAccounts(models);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -184,7 +184,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<AccountVM> models = AccountVMGenerator.GenerateList(2);
-		List<Account> accounts = _mapper.Map<List<Account>>(models);
+		List<Account> accounts = models.Select(_mapper.Map<AccountVM, Account>).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),

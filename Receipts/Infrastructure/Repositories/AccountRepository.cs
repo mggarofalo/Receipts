@@ -17,6 +17,20 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 		return mapper.Map<Account>(entity);
 	}
 
+	public async Task<Account?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken)
+	{
+		TransactionEntity? transactionEntity = await context.Transactions.FindAsync([transactionId], cancellationToken);
+
+		if (transactionEntity == null)
+		{
+			return null;
+		}
+
+		AccountEntity? accountEntity = await context.Accounts.FindAsync([transactionEntity.AccountId], cancellationToken);
+
+		return mapper.Map<Account>(accountEntity);
+	}
+
 	public async Task<List<Account>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<AccountEntity> entities = await context.Accounts

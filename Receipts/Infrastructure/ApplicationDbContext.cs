@@ -155,9 +155,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<AccountEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Id).ValueGeneratedOnAdd();
-			entity.Property(e => e.AccountCode).IsRequired();
-			entity.Property(e => e.Name).IsRequired();
+			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
 		});
 	}
 
@@ -166,9 +164,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<ReceiptEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Id).ValueGeneratedOnAdd();
-			entity.Property(e => e.Location).IsRequired();
-			entity.Property(e => e.TaxAmount).IsRequired();
+			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
 		});
 	}
 
@@ -177,15 +173,19 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<TransactionEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Id).ValueGeneratedOnAdd();
+			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
 			entity.HasOne<ReceiptEntity>()
 				.WithMany()
 				.HasForeignKey(e => e.ReceiptId)
+				.IsRequired()
 				.OnDelete(DeleteBehavior.Cascade);
 			entity.HasOne<AccountEntity>()
 				.WithMany()
 				.HasForeignKey(e => e.AccountId)
+				.IsRequired()
 				.OnDelete(DeleteBehavior.Cascade);
+			entity.HasIndex(e => e.ReceiptId);
+			entity.HasIndex(e => e.AccountId);
 		});
 	}
 
@@ -194,11 +194,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<ReceiptItemEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Id).ValueGeneratedOnAdd();
+			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
 			entity.HasOne<ReceiptEntity>()
 				.WithMany()
 				.HasForeignKey(e => e.ReceiptId)
+				.IsRequired()
 				.OnDelete(DeleteBehavior.Cascade);
+			entity.HasIndex(e => e.ReceiptId);
 		});
 	}
 }

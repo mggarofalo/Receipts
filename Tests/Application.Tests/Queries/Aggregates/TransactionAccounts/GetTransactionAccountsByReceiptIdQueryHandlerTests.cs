@@ -2,6 +2,7 @@ using Application.Interfaces.Repositories;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Moq;
 using SampleData.Domain.Core;
+using Xunit.Sdk;
 
 namespace Application.Tests.Queries.Aggregates.TransactionAccounts;
 
@@ -13,20 +14,15 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		List<Domain.Core.Account> expectedAccounts = AccountGenerator.GenerateList(3);
-		List<Domain.Core.Transaction> expectedTransactions = [];
-
-		foreach (Domain.Core.Account account in expectedAccounts)
-		{
-			expectedTransactions.Add(TransactionGenerator.Generate(receiptId, account.Id));
-		}
+		List<Domain.Core.Transaction> expectedTransactions = TransactionGenerator.GenerateList(3);
 
 		Mock<ITransactionRepository> mockTransactionRepository = new();
 		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
 
 		Mock<IAccountRepository> mockAccountRepository = new();
-		foreach (Domain.Core.Account account in expectedAccounts)
+		for (int i = 0; i < expectedTransactions.Count; i++)
 		{
-			mockAccountRepository.Setup(r => r.GetByIdAsync(account.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(account);
+			mockAccountRepository.Setup(r => r.GetByTransactionIdAsync(expectedTransactions[i].Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccounts[i]);
 		}
 
 		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
@@ -67,7 +63,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_ShouldReturnNull_WhenTransactionsExistButAccountsDoNotExist()
+	public async Task Handle_ShouldReturnEmptyList_WhenTransactionsExistButAccountsDoNotExist()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -79,7 +75,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		Mock<IAccountRepository> mockAccountRepository = new();
 		foreach (Domain.Core.Transaction transaction in expectedTransactions)
 		{
-			mockAccountRepository.Setup(r => r.GetByIdAsync(transaction.AccountId!, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
+			mockAccountRepository.Setup(r => r.GetByTransactionIdAsync(transaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 		}
 
 		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
@@ -89,7 +85,8 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		List<Domain.Aggregates.TransactionAccount>? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
-		Assert.Null(result);
+		Assert.NotNull(result);
+		Assert.Empty(result);
 	}
 
 	[Fact]

@@ -16,10 +16,10 @@ public class UpdateReceiptItemCommandHandlerTests
 		List<Domain.Core.ReceiptItem> input = ReceiptItemGenerator.GenerateList(2);
 
 		mockRepository.Setup(r => r
-			.UpdateAsync(It.IsAny<List<Domain.Core.ReceiptItem>>(), It.IsAny<CancellationToken>()))
+			.UpdateAsync(It.IsAny<List<Domain.Core.ReceiptItem>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
-		UpdateReceiptItemCommand command = new(input);
+		UpdateReceiptItemCommand command = new(input, Guid.NewGuid());
 		bool result = await handler.Handle(command, CancellationToken.None);
 
 		Assert.True(result);

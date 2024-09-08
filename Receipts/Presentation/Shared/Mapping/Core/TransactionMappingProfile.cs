@@ -11,9 +11,9 @@ public class TransactionMappingProfile : Profile
 	public TransactionMappingProfile()
 	{
 		CreateMap<Transaction, TransactionVM>()
-			.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount.Amount));
+			.ForMember(vm => vm.Amount, opt => opt.MapFrom(domain => domain.Amount.Amount));
 
 		CreateMap<TransactionVM, Transaction>()
-			.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => new Money(src.Amount, Currency.USD)));
+			.ForMember(domain => domain.Amount, opt => opt.MapFrom(vm => new Money(vm.Amount, Currency.USD)));
 	}
 }

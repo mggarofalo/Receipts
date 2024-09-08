@@ -11,11 +11,11 @@ public class ReceiptItemMappingProfile : Profile
 	public ReceiptItemMappingProfile()
 	{
 		CreateMap<ReceiptItem, ReceiptItemVM>()
-			.ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice.Amount))
-			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount));
+			.ForMember(vm => vm.UnitPrice, opt => opt.MapFrom(domain => domain.UnitPrice.Amount))
+			.ForMember(vm => vm.TotalAmount, opt => opt.MapFrom(domain => domain.TotalAmount.Amount));
 
 		CreateMap<ReceiptItemVM, ReceiptItem>()
-			.ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => new Money(src.UnitPrice, Currency.USD)))
-			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => new Money(src.TotalAmount, Currency.USD)));
+			.ForMember(domain => domain.UnitPrice, opt => opt.MapFrom(vm => new Money(vm.UnitPrice, Currency.USD)))
+			.ForMember(domain => domain.TotalAmount, opt => opt.MapFrom(vm => new Money(vm.TotalAmount, Currency.USD)));
 	}
 }
