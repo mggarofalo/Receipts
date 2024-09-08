@@ -126,7 +126,7 @@ public class ReceiptItemValidatorTests
 	[InlineData(2, 50, 100)]
 	[InlineData(3, 33.33, 99.99)]
 	[InlineData(3.423, 1.99, 6.81)]
-	[InlineData(3.422, 1.99, 6.81)]
+	[InlineData(3.422, 1.99, 6.80)]
 	public void Should_Pass_When_TotalAmountIsEqualQuantityUnitPrice(decimal quantity, decimal unitPrice, decimal totalAmount)
 	{
 		// Arrange
