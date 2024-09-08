@@ -6,6 +6,7 @@ public class AccountEntity : IEquatable<AccountEntity>
 	public string AccountCode { get; set; } = string.Empty;
 	public string Name { get; set; } = string.Empty;
 	public bool IsActive { get; set; }
+	public virtual ICollection<TransactionEntity>? Transactions { get; set; }
 
 	public bool Equals(AccountEntity? other)
 	{

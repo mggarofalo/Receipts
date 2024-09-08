@@ -156,6 +156,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		{
 			entity.HasKey(e => e.Id);
 			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
+			entity.Navigation(e => e.Transactions).AutoInclude();
 		});
 	}
 
@@ -165,6 +166,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		{
 			entity.HasKey(e => e.Id);
 			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
+			entity.Navigation(e => e.Transactions).AutoInclude();
 		});
 	}
 
@@ -174,18 +176,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		{
 			entity.HasKey(e => e.Id);
 			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
-			entity.HasOne<ReceiptEntity>()
-				.WithMany()
-				.HasForeignKey(e => e.ReceiptId)
-				.IsRequired()
-				.OnDelete(DeleteBehavior.Cascade);
-			entity.HasOne<AccountEntity>()
-				.WithMany()
-				.HasForeignKey(e => e.AccountId)
-				.IsRequired()
-				.OnDelete(DeleteBehavior.Cascade);
-			entity.HasIndex(e => e.ReceiptId);
-			entity.HasIndex(e => e.AccountId);
+			entity.Navigation(e => e.Receipt).AutoInclude();
+			entity.Navigation(e => e.Account).AutoInclude();
 		});
 	}
 
@@ -195,12 +187,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		{
 			entity.HasKey(e => e.Id);
 			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
-			entity.HasOne<ReceiptEntity>()
-				.WithMany()
-				.HasForeignKey(e => e.ReceiptId)
-				.IsRequired()
-				.OnDelete(DeleteBehavior.Cascade);
-			entity.HasIndex(e => e.ReceiptId);
+			entity.Navigation(e => e.Receipt).AutoInclude();
 		});
 	}
 }

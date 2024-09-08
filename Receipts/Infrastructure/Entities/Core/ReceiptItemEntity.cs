@@ -10,11 +10,12 @@ public class ReceiptItemEntity : IEquatable<ReceiptItemEntity>
 	public string Description { get; set; } = string.Empty;
 	public decimal Quantity { get; set; }
 	public decimal UnitPrice { get; set; }
-	public required Currency UnitPriceCurrency { get; set; }
+	public Currency UnitPriceCurrency { get; set; }
 	public decimal TotalAmount { get; set; }
-	public required Currency TotalAmountCurrency { get; set; }
+	public Currency TotalAmountCurrency { get; set; }
 	public string Category { get; set; } = string.Empty;
 	public string Subcategory { get; set; } = string.Empty;
+	public virtual ReceiptEntity? Receipt { get; set; }
 
 	public bool Equals(ReceiptItemEntity? other)
 	{
