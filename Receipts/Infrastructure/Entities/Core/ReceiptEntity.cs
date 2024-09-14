@@ -10,8 +10,6 @@ public class ReceiptEntity : IEquatable<ReceiptEntity>
 	public DateOnly Date { get; set; }
 	public decimal TaxAmount { get; set; }
 	public Currency TaxAmountCurrency { get; set; }
-	public virtual ICollection<ReceiptItemEntity>? Items { get; set; }
-	public virtual ICollection<TransactionEntity>? Transactions { get; set; }
 
 	public bool Equals(ReceiptEntity? other)
 	{

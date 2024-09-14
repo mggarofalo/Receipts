@@ -29,7 +29,7 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 	{
 		List<ReceiptEntity> createdEntities = [];
 
-		foreach (ReceiptEntity entity in models.Select(mapper.Map<ReceiptEntity>).ToList())
+		foreach (ReceiptEntity entity in models.Select(mapper.Map<ReceiptEntity>))
 		{
 			EntityEntry<ReceiptEntity> entityEntry = await context.Receipts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);

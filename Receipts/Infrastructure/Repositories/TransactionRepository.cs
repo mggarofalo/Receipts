@@ -60,7 +60,7 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 
 		List<TransactionEntity> createdEntities = [];
 
-		foreach (TransactionEntity entity in models.Select(domain => mapper.MapToTransactionEntity(domain, accountId, receiptId)).ToList())
+		foreach (TransactionEntity entity in models.Select(domain => mapper.MapToTransactionEntity(domain, accountId, receiptId)))
 		{
 			EntityEntry<TransactionEntity> entityEntry = await context.Transactions.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);

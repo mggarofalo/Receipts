@@ -10,12 +10,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	private const string MSSQL = "Microsoft.EntityFrameworkCore.SqlServer";
 	private const string PostgreSQL = "Npgsql.EntityFrameworkCore.PostgreSQL";
 	private const string MySQL = "Pomelo.EntityFrameworkCore.MySql";
+	private const string InMemory = "Microsoft.EntityFrameworkCore.InMemory";
+	private const string SQLite = "Microsoft.EntityFrameworkCore.Sqlite";
 	private const string DatabaseProviderNotSupported = "Database provider {0} not supported";
 
-	public DbSet<AccountEntity> Accounts { get; set; } = null!;
-	public DbSet<ReceiptEntity> Receipts { get; set; } = null!;
-	public DbSet<TransactionEntity> Transactions { get; set; } = null!;
-	public DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
+	public virtual DbSet<AccountEntity> Accounts { get; set; } = null!;
+	public virtual DbSet<ReceiptEntity> Receipts { get; set; } = null!;
+	public virtual DbSet<TransactionEntity> Transactions { get; set; } = null!;
+	public virtual DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -26,6 +28,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
 	private static void PrepareEntityTypesInModelBuilder(ModelBuilder modelBuilder, string? providerName)
 	{
+		if (providerName == InMemory)
+		{
+			return;
+		}
+
 		Dictionary<Type, string> columnTypes = new()
 		{
 			{ typeof(decimal), GetMoneyType(providerName) },
@@ -46,7 +53,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		foreach (IMutableProperty property in entityType.GetProperties())
 		{
-			property.SetColumnType(GetColumnType(property, columnTypes));
+			string columnType = GetColumnType(property, columnTypes);
+			property.SetColumnType(columnType);
 		}
 	}
 
@@ -83,6 +91,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "decimal(18,2)",
 			PostgreSQL => "decimal(18,2)",
 			MySQL => "decimal(18,2)",
+			SQLite => "decimal(18,2)",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -94,6 +103,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "datetime2",
 			PostgreSQL => "timestamptz",
 			MySQL => "datetime",
+			SQLite => "datetime",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -105,6 +115,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "date",
 			PostgreSQL => "date",
 			MySQL => "date",
+			SQLite => "date",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -116,6 +127,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "bit",
 			PostgreSQL => "boolean",
 			MySQL => "tinyint(1)",
+			SQLite => "boolean",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -127,6 +139,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "nvarchar(max)",
 			PostgreSQL => "text",
 			MySQL => "varchar(255)",
+			SQLite => "text",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -138,6 +151,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			MSSQL => "uniqueidentifier",
 			PostgreSQL => "uuid",
 			MySQL => "char(36)",
+			SQLite => "text",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -155,8 +169,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<AccountEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
-			entity.Navigation(e => e.Transactions).AutoInclude();
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
 		});
 	}
 
@@ -165,8 +181,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<ReceiptEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
-			entity.Navigation(e => e.Transactions).AutoInclude();
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
 		});
 	}
 
@@ -175,9 +193,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<TransactionEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
-			entity.Navigation(e => e.Receipt).AutoInclude();
-			entity.Navigation(e => e.Account).AutoInclude();
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
+
+			entity.Navigation(e => e.Receipt)
+				.AutoInclude();
+
+			entity.Navigation(e => e.Account)
+				.AutoInclude();
 		});
 	}
 
@@ -186,8 +211,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		modelBuilder.Entity<ReceiptItemEntity>(entity =>
 		{
 			entity.HasKey(e => e.Id);
-			entity.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
-			entity.Navigation(e => e.Receipt).AutoInclude();
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
+
+			entity.Navigation(e => e.Receipt)
+				.AutoInclude();
 		});
 	}
 }

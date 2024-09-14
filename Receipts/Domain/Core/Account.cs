@@ -2,10 +2,10 @@ namespace Domain.Core;
 
 public class Account : IEquatable<Account>
 {
-	public Guid? Id { get; }
-	public string AccountCode { get; }
-	public string Name { get; }
-	public bool IsActive { get; private set; }
+	public Guid? Id { get; set; }
+	public string AccountCode { get; set; }
+	public string Name { get; set; }
+	public bool IsActive { get; set; }
 
 	public const string AccountCodeCannotBeEmpty = "Account code cannot be empty";
 	public const string NameCannotBeEmpty = "Name cannot be empty";

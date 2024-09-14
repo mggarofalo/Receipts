@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
+// TODO: Update repositories to call their own SaveChangesAsync method when applicable
+// TODO: Handle cases where a caller sends entities that haven't been saved yet to methods that expect saved entities
+
 public class AccountRepository(ApplicationDbContext context, IMapper mapper) : IAccountRepository
 {
 	public async Task<Account?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -19,31 +22,26 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 
 	public async Task<Account?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken)
 	{
-		TransactionEntity? transactionEntity = await context.Transactions.FindAsync([transactionId], cancellationToken);
-
-		if (transactionEntity == null)
-		{
-			return null;
-		}
-
-		AccountEntity? accountEntity = await context.Accounts.FindAsync([transactionEntity.AccountId], cancellationToken);
+		AccountEntity? accountEntity = await context.Transactions
+			.Where(t => t.Id == transactionId)
+			.Select(t => t.Account)
+			.FirstOrDefaultAsync(cancellationToken);
 
 		return mapper.Map<Account>(accountEntity);
 	}
 
 	public async Task<List<Account>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		List<AccountEntity> entities = await context.Accounts
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(mapper.Map<Account>).ToList();
+		IQueryable<AccountEntity> accountEntities = context.Accounts.AsNoTracking();
+		await accountEntities.LoadAsync(cancellationToken);
+		return accountEntities.Select(mapper.Map<Account>).ToList();
 	}
 
 	public async Task<List<Account>> CreateAsync(List<Account> models, CancellationToken cancellationToken)
 	{
 		List<AccountEntity> createdEntities = [];
 
-		foreach (AccountEntity entity in models.Select(mapper.Map<AccountEntity>).ToList())
+		foreach (AccountEntity entity in models.Select(mapper.Map<AccountEntity>))
 		{
 			EntityEntry<AccountEntity> entityEntry = await context.Accounts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);

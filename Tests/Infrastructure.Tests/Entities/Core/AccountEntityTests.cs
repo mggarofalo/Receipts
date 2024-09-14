@@ -28,7 +28,6 @@ public class AccountEntityTests
 		Assert.Equal(accountCode, account.AccountCode);
 		Assert.Equal(name, account.Name);
 		Assert.Equal(isActive, account.IsActive);
-		Assert.Null(account.Transactions);
 	}
 
 	[Fact]

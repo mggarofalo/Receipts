@@ -2,9 +2,9 @@ namespace Domain.Core;
 
 public class Transaction : IEquatable<Transaction>
 {
-	public Guid? Id { get; }
-	public Money Amount { get; }
-	public DateOnly Date { get; }
+	public Guid? Id { get; set; }
+	public Money Amount { get; set; }
+	public DateOnly Date { get; set; }
 
 	public const string AmountMustBeNonZero = "Amount must be non-zero";
 	public const string DateCannotBeInTheFuture = "Date cannot be in the future";

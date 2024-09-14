@@ -2,11 +2,11 @@ namespace Domain.Core;
 
 public class Receipt : IEquatable<Receipt>
 {
-	public Guid? Id { get; }
-	public string? Description { get; }
-	public string Location { get; }
-	public DateOnly Date { get; }
-	public Money TaxAmount { get; }
+	public Guid? Id { get; set; }
+	public string? Description { get; set; }
+	public string Location { get; set; }
+	public DateOnly Date { get; set; }
+	public Money TaxAmount { get; set; }
 
 	public const string LocationCannotBeEmpty = "Location cannot be empty";
 	public const string DateCannotBeInTheFuture = "Date cannot be in the future";
