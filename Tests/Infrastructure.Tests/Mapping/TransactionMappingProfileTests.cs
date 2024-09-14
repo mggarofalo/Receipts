@@ -27,27 +27,27 @@ public class TransactionMappingProfileTests
 	public void ShouldMapTransactionToTransactionEntity()
 	{
 		// Arrange
-		Transaction original = TransactionGenerator.Generate();
+		Transaction expected = TransactionGenerator.Generate();
 
 		// Act
-		TransactionEntity mapped = _mapper.MapToTransactionEntity(original, Guid.NewGuid(), Guid.NewGuid());
-		Transaction reverseMapped = _mapper.Map<Transaction>(mapped);
+		TransactionEntity mapped = _mapper.MapToTransactionEntity(expected, Guid.NewGuid(), Guid.NewGuid());
+		Transaction actual = _mapper.Map<Transaction>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 
 	[Fact]
 	public void ShouldMapTransactionEntityToTransaction()
 	{
 		// Arrange
-		TransactionEntity original = TransactionEntityGenerator.Generate();
+		TransactionEntity expected = TransactionEntityGenerator.Generate();
 
 		// Act
-		Transaction mapped = _mapper.Map<Transaction>(original);
-		TransactionEntity reverseMapped = _mapper.MapToTransactionEntity(mapped, original.ReceiptId, original.AccountId);
+		Transaction mapped = _mapper.Map<Transaction>(expected);
+		TransactionEntity actual = _mapper.MapToTransactionEntity(mapped, expected.ReceiptId, expected.AccountId);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 }

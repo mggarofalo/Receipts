@@ -27,27 +27,27 @@ public class ReceiptMappingProfileTests
 	public void ShouldMapReceiptToReceiptEntity()
 	{
 		// Arrange
-		Receipt original = ReceiptGenerator.Generate();
+		Receipt expected = ReceiptGenerator.Generate();
 
 		// Act
-		ReceiptEntity mapped = _mapper.Map<ReceiptEntity>(original);
-		Receipt reverseMapped = _mapper.Map<Receipt>(mapped);
+		ReceiptEntity mapped = _mapper.Map<ReceiptEntity>(expected);
+		Receipt actual = _mapper.Map<Receipt>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 
 	[Fact]
 	public void ShouldMapReceiptEntityToReceipt()
 	{
 		// Arrange
-		ReceiptEntity original = ReceiptEntityGenerator.Generate();
+		ReceiptEntity expected = ReceiptEntityGenerator.Generate();
 
 		// Act
-		Receipt mapped = _mapper.Map<Receipt>(original);
-		ReceiptEntity reverseMapped = _mapper.Map<ReceiptEntity>(mapped);
+		Receipt mapped = _mapper.Map<Receipt>(expected);
+		ReceiptEntity actual = _mapper.Map<ReceiptEntity>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 }

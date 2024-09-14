@@ -27,27 +27,27 @@ public class AccountMappingProfileTests
 	public void ShouldMapAccountToAccountEntity()
 	{
 		// Arrange
-		Account original = AccountGenerator.Generate();
+		Account expected = AccountGenerator.Generate();
 
 		// Act
-		AccountEntity mapped = _mapper.Map<AccountEntity>(original);
-		Account reverseMapped = _mapper.Map<Account>(mapped);
+		AccountEntity mapped = _mapper.Map<AccountEntity>(expected);
+		Account actual = _mapper.Map<Account>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 
 	[Fact]
 	public void ShouldMapAccountEntityToAccount()
 	{
 		// Arrange
-		AccountEntity original = AccountEntityGenerator.Generate();
+		AccountEntity expected = AccountEntityGenerator.Generate();
 
 		// Act
-		Account mapped = _mapper.Map<Account>(original);
-		AccountEntity reverseMapped = _mapper.Map<AccountEntity>(mapped);
+		Account mapped = _mapper.Map<Account>(expected);
+		AccountEntity actual = _mapper.Map<AccountEntity>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 }

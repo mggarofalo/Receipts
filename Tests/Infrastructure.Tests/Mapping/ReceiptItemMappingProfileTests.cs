@@ -27,27 +27,27 @@ public class ReceiptItemMappingProfileTests
 	public void ShouldMapReceiptItemToReceiptItemEntity()
 	{
 		// Arrange
-		ReceiptItem original = ReceiptItemGenerator.Generate();
+		ReceiptItem expected = ReceiptItemGenerator.Generate();
 
 		// Act
-		ReceiptItemEntity mapped = _mapper.MapToReceiptItemEntity(original, Guid.NewGuid());
-		ReceiptItem reverseMapped = _mapper.Map<ReceiptItem>(mapped);
+		ReceiptItemEntity mapped = _mapper.MapToReceiptItemEntity(expected, Guid.NewGuid());
+		ReceiptItem actual = _mapper.Map<ReceiptItem>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 
 	[Fact]
 	public void ShouldMapReceiptItemEntityToReceiptItem()
 	{
 		// Arrange
-		ReceiptItemEntity original = ReceiptItemEntityGenerator.Generate();
+		ReceiptItemEntity expected = ReceiptItemEntityGenerator.Generate();
 
 		// Act
-		ReceiptItem mapped = _mapper.Map<ReceiptItem>(original);
-		ReceiptItemEntity reverseMapped = _mapper.MapToReceiptItemEntity(mapped, original.ReceiptId);
+		ReceiptItem mapped = _mapper.Map<ReceiptItem>(expected);
+		ReceiptItemEntity actual = _mapper.MapToReceiptItemEntity(mapped, expected.ReceiptId);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 }
