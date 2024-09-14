@@ -10,35 +10,16 @@ public class ReceiptItemMappingProfile : Profile
 	public ReceiptItemMappingProfile()
 	{
 		CreateMap<ReceiptItem, ReceiptItemEntity>()
-			.ConstructUsing((src, context) =>
-			{
-				return new ReceiptItemEntity
-				{
-					Id = src.Id ?? Guid.Empty,
-					ReceiptId = context.GetValueFromContext(nameof(ReceiptItemEntity.ReceiptId)),
-					ReceiptItemCode = src.ReceiptItemCode,
-					Description = src.Description,
-					Quantity = src.Quantity,
-					UnitPrice = src.UnitPrice.Amount,
-					UnitPriceCurrency = src.UnitPrice.Currency,
-					TotalAmount = src.TotalAmount.Amount,
-					TotalAmountCurrency = src.TotalAmount.Currency
-				};
-			});
+			.ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id ?? Guid.Empty))
+			.ForMember(dest => dest.Receipt, opt => opt.Ignore())
+			.ForMember(dest => dest.ReceiptId, opt => opt.MapFrom((src, dest, _, context) => context.GetValueFromContext(nameof(ReceiptItemEntity.ReceiptId))))
+			.ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.UnitPrice.Amount))
+			.ForMember(dest => dest.UnitPriceCurrency, opt => opt.MapFrom(src => src.UnitPrice.Currency))
+			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount.Amount))
+			.ForMember(dest => dest.TotalAmountCurrency, opt => opt.MapFrom(src => src.TotalAmount.Currency));
 
 		CreateMap<ReceiptItemEntity, ReceiptItem>()
-			.ConstructUsing((src, context) =>
-			{
-				return new ReceiptItem(
-					src.Id == Guid.Empty ? null : src.Id,
-					src.ReceiptItemCode,
-					src.Description,
-					src.Quantity,
-					new Money(src.UnitPrice, src.UnitPriceCurrency),
-					new Money(src.TotalAmount, src.TotalAmountCurrency),
-					src.Category,
-					src.Subcategory
-				);
-			});
+			.ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => new Money(src.UnitPrice, src.UnitPriceCurrency)))
+			.ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => new Money(src.TotalAmount, src.TotalAmountCurrency)));
 	}
 }

@@ -8,6 +8,9 @@ public class AccountMappingProfile : Profile
 {
 	public AccountMappingProfile()
 	{
-		CreateMap<Account, AccountEntity>().ReverseMap();
+		CreateMap<Account, AccountEntity>()
+			.ForMember(dest => dest.Transactions, opt => opt.Ignore());
+
+		CreateMap<AccountEntity, Account>();
 	}
 }

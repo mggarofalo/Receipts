@@ -10,26 +10,15 @@ public class TransactionMappingProfile : Profile
 	public TransactionMappingProfile()
 	{
 		CreateMap<Transaction, TransactionEntity>()
-			.ConstructUsing((src, context) =>
-			{
-				return new TransactionEntity
-				{
-					Id = src.Id ?? Guid.Empty,
-					ReceiptId = context.GetValueFromContext(nameof(TransactionEntity.ReceiptId)),
-					AccountId = context.GetValueFromContext(nameof(TransactionEntity.AccountId)),
-					Amount = src.Amount.Amount,
-					AmountCurrency = src.Amount.Currency
-				};
-			});
+			.ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id ?? Guid.Empty))
+			.ForMember(dest => dest.Receipt, opt => opt.Ignore())
+			.ForMember(dest => dest.ReceiptId, opt => opt.MapFrom((src, dest, _, context) => context.GetValueFromContext(nameof(TransactionEntity.ReceiptId))))
+			.ForMember(dest => dest.Account, opt => opt.Ignore())
+			.ForMember(dest => dest.AccountId, opt => opt.MapFrom((src, dest, _, context) => context.GetValueFromContext(nameof(TransactionEntity.AccountId))))
+			.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount.Amount))
+			.ForMember(dest => dest.AmountCurrency, opt => opt.MapFrom(src => src.Amount.Currency));
 
 		CreateMap<TransactionEntity, Transaction>()
-			.ConstructUsing((src, context) =>
-			{
-				return new Transaction(
-					src.Id == Guid.Empty ? null : src.Id,
-					new Money(src.Amount, src.AmountCurrency),
-					src.Date
-				);
-			});
+			.ForMember(dest => dest.Amount, opt => opt.MapFrom(src => new Money(src.Amount, src.AmountCurrency)));
 	}
 }
