@@ -30,27 +30,27 @@ public class TransactionAccountMappingProfileTests
 	public void ShouldMapTransactionAccountToTransactionAccountVM()
 	{
 		// Arrange
-		TransactionAccount original = TransactionAccountGenerator.Generate();
+		TransactionAccount expected = TransactionAccountGenerator.Generate();
 
 		// Act
-		TransactionAccountVM mapped = _mapper.Map<TransactionAccountVM>(original);
-		TransactionAccount reverseMapped = _mapper.Map<TransactionAccount>(mapped);
+		TransactionAccountVM mapped = _mapper.Map<TransactionAccountVM>(expected);
+		TransactionAccount actual = _mapper.Map<TransactionAccount>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 
 	[Fact]
 	public void ShouldMapTransactionAccountVMToTransactionAccount()
 	{
 		// Arrange
-		TransactionAccountVM original = TransactionAccountVMGenerator.Generate();
+		TransactionAccountVM expected = TransactionAccountVMGenerator.Generate();
 
 		// Act
-		TransactionAccount mapped = _mapper.Map<TransactionAccount>(original);
-		TransactionAccountVM reverseMapped = _mapper.Map<TransactionAccountVM>(mapped);
+		TransactionAccount mapped = _mapper.Map<TransactionAccount>(expected);
+		TransactionAccountVM actual = _mapper.Map<TransactionAccountVM>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 }

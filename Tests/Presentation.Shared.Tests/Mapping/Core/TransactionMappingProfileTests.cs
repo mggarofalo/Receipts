@@ -27,27 +27,27 @@ public class TransactionMappingProfileTests
 	public void ShouldMapTransactionToTransactionVM()
 	{
 		// Arrange
-		Transaction original = TransactionGenerator.Generate();
+		Transaction expected = TransactionGenerator.Generate();
 
 		// Act
-		TransactionVM mapped = _mapper.Map<TransactionVM>(original);
-		Transaction reverseMapped = _mapper.Map<Transaction>(mapped);
+		TransactionVM mapped = _mapper.Map<TransactionVM>(expected);
+		Transaction actual = _mapper.Map<Transaction>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 
 	[Fact]
 	public void ShouldMapTransactionVMToTransaction()
 	{
 		// Arrange
-		TransactionVM original = TransactionVMGenerator.Generate();
+		TransactionVM expected = TransactionVMGenerator.Generate();
 
 		// Act
-		Transaction mapped = _mapper.Map<Transaction>(original);
-		TransactionVM reverseMapped = _mapper.Map<TransactionVM>(mapped);
+		Transaction mapped = _mapper.Map<Transaction>(expected);
+		TransactionVM actual = _mapper.Map<TransactionVM>(mapped);
 
 		// Assert
-		Assert.Equal(original, reverseMapped);
+		Assert.Equal(expected, actual);
 	}
 }
