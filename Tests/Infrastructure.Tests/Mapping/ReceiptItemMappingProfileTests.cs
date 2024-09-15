@@ -50,4 +50,14 @@ public class ReceiptItemMappingProfileTests
 		// Assert
 		Assert.Equal(expected, actual);
 	}
+
+	[Fact]
+	public void ShouldFailToMapReceiptItemToReceiptItemEntityWithStandardMappingCall()
+	{
+		// Arrange
+		ReceiptItem expected = ReceiptItemGenerator.Generate();
+
+		// Act & Assert
+		Assert.Throws<AutoMapperMappingException>(() => _mapper.Map<ReceiptItemEntity>(expected));
+	}
 }

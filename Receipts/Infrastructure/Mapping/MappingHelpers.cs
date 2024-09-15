@@ -8,12 +8,13 @@ public static class MappingHelpers
 {
 	public static Guid GetValueFromContext(this ResolutionContext context, string key)
 	{
-		if (!context.Items.TryGetValue($"{key}", out var idObj) || idObj is not Guid)
-		{
-			throw new AutoMapperConfigurationException($"{key} must be provided in the mapping context.");
-		}
+		// This method can assume that the key will always be present in the mapping context.
+		// If it's not present, the mapping will fail prior to this call being made. If it
+		// does not fail prior to this call, then the new mapping was incorrect and we'll
+		// throw an InvalidOperationException anyway.
 
-		return (Guid)idObj;
+		Guid? id = context.Items.GetValueOrDefault(key) as Guid?;
+		return id!.Value;
 	}
 
 	public static ReceiptItemEntity MapToReceiptItemEntity(this IMapper mapper, ReceiptItem source, Guid receiptId)

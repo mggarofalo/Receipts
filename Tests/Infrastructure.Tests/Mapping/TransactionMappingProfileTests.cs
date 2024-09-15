@@ -50,4 +50,14 @@ public class TransactionMappingProfileTests
 		// Assert
 		Assert.Equal(expected, actual);
 	}
+
+	[Fact]
+	public void ShouldFailToMapTransactionToTransactionEntityWithStandardMappingCall()
+	{
+		// Arrange
+		Transaction expected = TransactionGenerator.Generate();
+
+		// Act & Assert
+		Assert.Throws<AutoMapperMappingException>(() => _mapper.Map<TransactionEntity>(expected));
+	}
 }
