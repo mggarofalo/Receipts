@@ -14,32 +14,28 @@ public class ReceiptWithItemsController(IMediator mediator, IMapper mapper, ILog
 	public const string MessageWithId = "Error occurred in {Method} for receiptId: {receiptId}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
-	private readonly IMediator _mediator = mediator;
-	private readonly IMapper _mapper = mapper;
-	private readonly ILogger<ReceiptWithItemsController> _logger = logger;
-
 	[HttpGet("by-receipt-id/{receiptId}")]
 	public async Task<ActionResult<ReceiptWithItemsVM>> GetReceiptWithItemsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{
-			_logger.LogDebug("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId}", receiptId);
+			logger.LogDebug("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId}", receiptId);
 			GetReceiptWithItemsByReceiptIdQuery query = new(receiptId);
-			ReceiptWithItems? result = await _mediator.Send(query);
+			ReceiptWithItems? result = await mediator.Send(query);
 
 			if (result == null)
 			{
-				_logger.LogWarning("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId} not found", receiptId);
+				logger.LogWarning("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId} not found", receiptId);
 				return NotFound();
 			}
 
-			ReceiptWithItemsVM model = _mapper.Map<ReceiptWithItems, ReceiptWithItemsVM>(result);
-			_logger.LogDebug("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId} found", receiptId);
+			ReceiptWithItemsVM model = mapper.Map<ReceiptWithItems, ReceiptWithItemsVM>(result);
+			logger.LogDebug("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId} found", receiptId);
 			return Ok(model);
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, MessageWithId, nameof(GetReceiptWithItemsByReceiptId), receiptId);
+			logger.LogError(ex, MessageWithId, nameof(GetReceiptWithItemsByReceiptId), receiptId);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
