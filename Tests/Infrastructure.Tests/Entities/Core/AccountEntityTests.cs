@@ -79,6 +79,16 @@ public class AccountEntityTests
 	}
 
 	[Fact]
+	public void Equals_NullObject_ReturnsFalse()
+	{
+		// Arrange
+		AccountEntity account = AccountEntityGenerator.Generate();
+
+		// Act & Assert
+		Assert.False(account.Equals((object?)null));
+	}
+
+	[Fact]
 	public void GetHashCode_SameAccountEntity_ReturnsSameHashCode()
 	{
 		// Arrange

@@ -8,7 +8,7 @@ find . -path "**/TestResults" -type d -exec rm -rf {} +
 
 # Run tests with code coverage
 echo "Running tests with code coverage..."
-dotnet test --collect:"XPlat Code Coverage"
+dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings
 
 # Find all coverage files
 coverage_files=$(find . -name "coverage.cobertura.xml" -type f)

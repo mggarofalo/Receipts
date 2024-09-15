@@ -88,6 +88,16 @@ public class ReceiptEntityTests
 	}
 
 	[Fact]
+	public void Equals_NullObject_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+
+		// Act & Assert
+		Assert.False(receipt.Equals((object?)null));
+	}
+
+	[Fact]
 	public void GetHashCode_SameReceiptEntity_ReturnsSameHashCode()
 	{
 		// Arrange

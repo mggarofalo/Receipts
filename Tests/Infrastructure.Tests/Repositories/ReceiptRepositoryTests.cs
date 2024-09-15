@@ -13,7 +13,7 @@ namespace Infrastructure.Tests.Repositories;
 public class ReceiptRepositoryTests
 {
 	private readonly IMapper _mapper = RepositoryHelpers.CreateMapper<ReceiptMappingProfile>();
-	private readonly ApplicationDbContext _context = RepositoryHelpers.CreateInMemoryContext();
+	private readonly ApplicationDbContext _context = DbContextHelpers.CreateInMemoryContext();
 
 	[Fact]
 	public async Task GetByIdAsync_ExistingId_ReturnsReceipt()

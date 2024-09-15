@@ -38,6 +38,54 @@ public class TransactionEntityTests
 	}
 
 	[Fact]
+	public async Task VirtualReceiptEntity_IsNavigable()
+	{
+		// Arrange
+		ApplicationDbContext context = DbContextHelpers.CreateInMemoryContext();
+		AccountEntity account = AccountEntityGenerator.Generate();
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+
+		await context.Accounts.AddAsync(account);
+		await context.Receipts.AddAsync(receipt);
+		await context.Transactions.AddAsync(transaction);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		ReceiptEntity? loadedReceipt = await context.Receipts.FindAsync(receipt.Id);
+		TransactionEntity? loadedTransaction = await context.Transactions.FindAsync(transaction.Id);
+
+		// Act & Assert
+		Assert.NotNull(loadedReceipt);
+		Assert.NotNull(loadedTransaction);
+		Assert.NotNull(loadedTransaction.Receipt);
+		Assert.Equal(loadedReceipt, loadedTransaction.Receipt);
+	}
+
+	[Fact]
+	public async Task VirtualAccountEntity_IsNavigable()
+	{
+		// Arrange
+		ApplicationDbContext context = DbContextHelpers.CreateInMemoryContext();
+		AccountEntity account = AccountEntityGenerator.Generate();
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+
+		await context.Accounts.AddAsync(account);
+		await context.Receipts.AddAsync(receipt);
+		await context.Transactions.AddAsync(transaction);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		AccountEntity? loadedAccount = await context.Accounts.FindAsync(account.Id);
+		TransactionEntity? loadedTransaction = await context.Transactions.FindAsync(transaction.Id);
+
+		// Act & Assert
+		Assert.NotNull(loadedAccount);
+		Assert.NotNull(loadedTransaction);
+		Assert.NotNull(loadedTransaction.Account);
+		Assert.Equal(loadedAccount, loadedTransaction.Account);
+	}
+
+	[Fact]
 	public void Equals_SameTransactionEntity_ReturnsTrue()
 	{
 		// Arrange
@@ -85,6 +133,16 @@ public class TransactionEntityTests
 
 		// Act & Assert
 		Assert.False(transaction.Equals("not a transaction entity"));
+	}
+
+	[Fact]
+	public void Equals_NullObject_ReturnsFalse()
+	{
+		// Arrange
+		TransactionEntity transaction = TransactionEntityGenerator.Generate();
+
+		// Act & Assert
+		Assert.False(transaction.Equals((object?)null));
 	}
 
 	[Fact]

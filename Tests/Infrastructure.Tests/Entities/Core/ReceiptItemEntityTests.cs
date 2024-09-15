@@ -53,6 +53,27 @@ public class ReceiptItemEntityTests
 	}
 
 	[Fact]
+	public async Task VirtualReceiptEntity_IsNavigable()
+	{
+		// Arrange
+		ApplicationDbContext context = DbContextHelpers.CreateInMemoryContext();
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+		ReceiptItemEntity receiptItem = ReceiptItemEntityGenerator.Generate(receipt.Id);
+
+		await context.Receipts.AddAsync(receipt);
+		await context.ReceiptItems.AddAsync(receiptItem);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		ReceiptEntity? loadedReceipt = await context.Receipts.FindAsync(receipt.Id);
+		ReceiptItemEntity? loadedReceiptItem = await context.ReceiptItems.FindAsync(receiptItem.Id);
+
+		// Act & Assert
+		Assert.NotNull(loadedReceipt);
+		Assert.NotNull(loadedReceiptItem);
+		Assert.Equal(loadedReceipt, loadedReceiptItem.Receipt);
+	}
+
+	[Fact]
 	public void Equals_SameReceiptItemEntity_ReturnsTrue()
 	{
 		// Arrange
@@ -105,6 +126,16 @@ public class ReceiptItemEntityTests
 
 		// Act & Assert
 		Assert.False(receiptItem.Equals("not a receipt item entity"));
+	}
+
+	[Fact]
+	public void Equals_NullObject_ReturnsFalse()
+	{
+		// Arrange
+		ReceiptItemEntity receiptItem = ReceiptItemEntityGenerator.Generate();
+
+		// Act & Assert
+		Assert.False(receiptItem.Equals((object?)null));
 	}
 
 	[Fact]
