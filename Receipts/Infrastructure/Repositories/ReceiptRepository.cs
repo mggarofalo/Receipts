@@ -19,10 +19,11 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 
 	public async Task<List<Receipt>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> entities = await context.Receipts
+		List<ReceiptEntity> receiptEntities = await context.Receipts
+			.AsNoTracking()
 			.ToListAsync(cancellationToken);
 
-		return entities.Select(mapper.Map<Receipt>).ToList();
+		return receiptEntities.Select(mapper.Map<Receipt>).ToList();
 	}
 
 	public async Task<List<Receipt>> CreateAsync(List<Receipt> models, CancellationToken cancellationToken)
@@ -34,6 +35,8 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 			EntityEntry<ReceiptEntity> entityEntry = await context.Receipts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
 		}
+
+		await context.SaveChangesAsync(cancellationToken);
 
 		return createdEntities.Select(mapper.Map<Receipt>).ToList();
 	}
@@ -50,12 +53,18 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 			existingEntity.Date = newEntity.Date;
 			existingEntity.TaxAmount = newEntity.TaxAmount;
 		}
+
+		await context.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> entities = await context.Receipts.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
+		List<ReceiptEntity> entities = await context.Receipts
+			.Where(e => ids.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
 		context.Receipts.RemoveRange(entities);
+		await context.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
@@ -66,10 +75,5 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
 		return await context.Receipts.CountAsync(cancellationToken);
-	}
-
-	public async Task SaveChangesAsync(CancellationToken cancellationToken)
-	{
-		await context.SaveChangesAsync(cancellationToken);
 	}
 }

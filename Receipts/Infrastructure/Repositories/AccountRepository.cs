@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-// TODO: Update repositories to call their own SaveChangesAsync method when applicable
 // TODO: Handle cases where a caller sends entities that haven't been saved yet to methods that expect saved entities
 
 public class AccountRepository(ApplicationDbContext context, IMapper mapper) : IAccountRepository
@@ -32,8 +31,10 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 
 	public async Task<List<Account>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		IQueryable<AccountEntity> accountEntities = context.Accounts.AsNoTracking();
-		await accountEntities.LoadAsync(cancellationToken);
+		List<AccountEntity> accountEntities = await context.Accounts
+			.AsNoTracking()
+			.ToListAsync(cancellationToken);
+
 		return accountEntities.Select(mapper.Map<Account>).ToList();
 	}
 
@@ -46,6 +47,8 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 			EntityEntry<AccountEntity> entityEntry = await context.Accounts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
 		}
+
+		await context.SaveChangesAsync(cancellationToken);
 
 		return createdEntities.Select(mapper.Map<Account>).ToList();
 	}
@@ -61,12 +64,18 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 			existingEntity.Name = newEntity.Name;
 			existingEntity.IsActive = newEntity.IsActive;
 		}
+
+		await context.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
-		List<AccountEntity> entities = await context.Accounts.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
+		List<AccountEntity> entities = await context.Accounts
+			.Where(e => ids.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
 		context.Accounts.RemoveRange(entities);
+		await context.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
@@ -77,10 +86,5 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
 		return await context.Accounts.CountAsync(cancellationToken);
-	}
-
-	public async Task SaveChangesAsync(CancellationToken cancellationToken)
-	{
-		await context.SaveChangesAsync(cancellationToken);
 	}
 }

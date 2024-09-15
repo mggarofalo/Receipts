@@ -18,74 +18,43 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 		return mapper.Map<Transaction>(entity);
 	}
 
-	public async Task<List<Transaction>> GetAllAsync(CancellationToken cancellationToken)
-	{
-		List<TransactionEntity> entities = await context.Transactions
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(mapper.Map<Transaction>).ToList();
-	}
-
 	public async Task<List<Transaction>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
-		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
-
-		if (!receiptExists)
-		{
-			return null;
-		}
-
-		List<TransactionEntity> entities = await context.Transactions
-			.Where(x => x.ReceiptId == receiptId)
+		List<TransactionEntity> transactionEntities = await context.Transactions
+			.Where(t => t.ReceiptId == receiptId)
+			.AsNoTracking()
 			.ToListAsync(cancellationToken);
 
-		return entities.Select(mapper.Map<Transaction>).ToList();
+		return transactionEntities.Select(mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid accountId, Guid receiptId, CancellationToken cancellationToken)
+	public async Task<List<Transaction>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
+		List<TransactionEntity> transactionEntities = await context.Transactions
+			.AsNoTracking()
+			.ToListAsync(cancellationToken);
 
-		if (!receiptExists)
-		{
-			throw new ArgumentException("Receipt does not exist.", nameof(receiptId));
-		}
+		return transactionEntities.Select(mapper.Map<Transaction>).ToList();
+	}
 
-		bool accountExists = await ExistsAsync(accountId, cancellationToken);
-
-		if (!accountExists)
-		{
-			throw new ArgumentException("Account does not exist.", nameof(accountId));
-		}
-
+	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
+	{
 		List<TransactionEntity> createdEntities = [];
 
-		foreach (TransactionEntity entity in models.Select(domain => mapper.MapToTransactionEntity(domain, accountId, receiptId)))
+		foreach (TransactionEntity entity in models.Select(m => mapper.MapToTransactionEntity(m, receiptId, accountId)))
 		{
 			EntityEntry<TransactionEntity> entityEntry = await context.Transactions.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
 		}
 
+		await context.SaveChangesAsync(cancellationToken);
+
 		return createdEntities.Select(mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task UpdateAsync(List<Transaction> models, Guid accountId, Guid receiptId, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
 	{
-		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
-
-		if (!receiptExists)
-		{
-			throw new ArgumentException("Receipt does not exist.", nameof(receiptId));
-		}
-
-		bool accountExists = await ExistsAsync(accountId, cancellationToken);
-
-		if (!accountExists)
-		{
-			throw new ArgumentException("Account does not exist.", nameof(accountId));
-		}
-
-		List<TransactionEntity> newEntities = models.Select(domain => mapper.MapToTransactionEntity(domain, accountId, receiptId)).ToList();
+		List<TransactionEntity> newEntities = models.Select(m => mapper.MapToTransactionEntity(m, receiptId, accountId)).ToList();
 
 		foreach (TransactionEntity newEntity in newEntities)
 		{
@@ -95,12 +64,18 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 			existingEntity.Amount = newEntity.Amount;
 			existingEntity.Date = newEntity.Date;
 		}
+
+		await context.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> entities = await context.Transactions.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
+		List<TransactionEntity> entities = await context.Transactions
+			.Where(e => ids.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
 		context.Transactions.RemoveRange(entities);
+		await context.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
@@ -111,10 +86,5 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
 		return await context.Transactions.CountAsync(cancellationToken);
-	}
-
-	public async Task SaveChangesAsync(CancellationToken cancellationToken)
-	{
-		await context.SaveChangesAsync(cancellationToken);
 	}
 }

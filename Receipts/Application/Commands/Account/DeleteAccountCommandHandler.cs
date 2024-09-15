@@ -8,7 +8,6 @@ public class DeleteAccountCommandHandler(IAccountRepository accountRepository) :
 	public async Task<bool> Handle(DeleteAccountCommand request, CancellationToken cancellationToken)
 	{
 		await accountRepository.DeleteAsync([.. request.Ids], cancellationToken);
-		await accountRepository.SaveChangesAsync(cancellationToken);
 		return true;
 	}
 }

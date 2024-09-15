@@ -18,60 +18,43 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 		return mapper.Map<ReceiptItem>(entity);
 	}
 
-	public async Task<List<ReceiptItem>> GetAllAsync(CancellationToken cancellationToken)
-	{
-		List<ReceiptItemEntity> entities = await context.ReceiptItems
-			.ToListAsync(cancellationToken);
-
-		return entities.Select(mapper.Map<ReceiptItem>).ToList();
-	}
-
 	public async Task<List<ReceiptItem>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
-		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
-
-		if (!receiptExists)
-		{
-			return null;
-		}
-
-		List<ReceiptItemEntity> entities = await context.ReceiptItems
-			.Where(x => x.ReceiptId == receiptId)
+		List<ReceiptItemEntity> receiptItemEntities = await context.ReceiptItems
+			.Where(ri => ri.ReceiptId == receiptId)
+			.AsNoTracking()
 			.ToListAsync(cancellationToken);
 
-		return entities.Select(mapper.Map<ReceiptItem>).ToList();
+		return receiptItemEntities.Select(mapper.Map<ReceiptItem>).ToList();
+	}
+
+	public async Task<List<ReceiptItem>> GetAllAsync(CancellationToken cancellationToken)
+	{
+		List<ReceiptItemEntity> receiptItemEntities = await context.ReceiptItems
+			.AsNoTracking()
+			.ToListAsync(cancellationToken);
+
+		return receiptItemEntities.Select(mapper.Map<ReceiptItem>).ToList();
 	}
 
 	public async Task<List<ReceiptItem>> CreateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
 	{
-		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
-
-		if (!receiptExists)
-		{
-			throw new ArgumentException($"Receipt does not exist (ID: {receiptId})");
-		}
-
 		List<ReceiptItemEntity> createdEntities = [];
 
-		foreach (ReceiptItemEntity entity in models.Select(domain => mapper.MapToReceiptItemEntity(domain, receiptId)))
+		foreach (ReceiptItemEntity entity in models.Select(m => mapper.MapToReceiptItemEntity(m, receiptId)))
 		{
 			EntityEntry<ReceiptItemEntity> entityEntry = await context.ReceiptItems.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
 		}
+
+		await context.SaveChangesAsync(cancellationToken);
 
 		return createdEntities.Select(mapper.Map<ReceiptItem>).ToList();
 	}
 
 	public async Task UpdateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
 	{
-		bool receiptExists = await ExistsAsync(receiptId, cancellationToken);
-
-		if (!receiptExists)
-		{
-			throw new ArgumentException($"Receipt does not exist (ID: {receiptId})");
-		}
-
-		List<ReceiptItemEntity> newEntities = models.Select(domain => mapper.MapToReceiptItemEntity(domain, receiptId)).ToList();
+		List<ReceiptItemEntity> newEntities = models.Select(m => mapper.MapToReceiptItemEntity(m, receiptId)).ToList();
 
 		foreach (ReceiptItemEntity newEntity in newEntities)
 		{
@@ -85,12 +68,18 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 			existingEntity.Subcategory = newEntity.Subcategory;
 			existingEntity.TotalAmount = newEntity.TotalAmount;
 		}
+
+		await context.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> entities = await context.ReceiptItems.Where(e => ids.Contains(e.Id)).ToListAsync(cancellationToken);
+		List<ReceiptItemEntity> entities = await context.ReceiptItems
+			.Where(e => ids.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
 		context.ReceiptItems.RemoveRange(entities);
+		await context.SaveChangesAsync(cancellationToken);
 	}
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
@@ -101,10 +90,5 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
 		return await context.ReceiptItems.CountAsync(cancellationToken);
-	}
-
-	public async Task SaveChangesAsync(CancellationToken cancellationToken)
-	{
-		await context.SaveChangesAsync(cancellationToken);
 	}
 }
