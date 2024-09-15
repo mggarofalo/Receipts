@@ -7,11 +7,8 @@ namespace Infrastructure;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-	private const string MSSQL = "Microsoft.EntityFrameworkCore.SqlServer";
 	private const string PostgreSQL = "Npgsql.EntityFrameworkCore.PostgreSQL";
-	private const string MySQL = "Pomelo.EntityFrameworkCore.MySql";
 	private const string InMemory = "Microsoft.EntityFrameworkCore.InMemory";
-	private const string SQLite = "Microsoft.EntityFrameworkCore.Sqlite";
 	private const string DatabaseProviderNotSupported = "Database provider {0} not supported";
 
 	public virtual DbSet<AccountEntity> Accounts { get; set; } = null!;
@@ -88,10 +85,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		return providerName switch
 		{
-			MSSQL => "decimal(18,2)",
 			PostgreSQL => "decimal(18,2)",
-			MySQL => "decimal(18,2)",
-			SQLite => "decimal(18,2)",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -100,10 +94,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		return providerName switch
 		{
-			MSSQL => "datetime2",
 			PostgreSQL => "timestamptz",
-			MySQL => "datetime",
-			SQLite => "datetime",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -112,10 +103,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		return providerName switch
 		{
-			MSSQL => "date",
 			PostgreSQL => "date",
-			MySQL => "date",
-			SQLite => "date",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -124,10 +112,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		return providerName switch
 		{
-			MSSQL => "bit",
 			PostgreSQL => "boolean",
-			MySQL => "tinyint(1)",
-			SQLite => "boolean",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -136,10 +121,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		return providerName switch
 		{
-			MSSQL => "nvarchar(max)",
 			PostgreSQL => "text",
-			MySQL => "varchar(255)",
-			SQLite => "text",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
@@ -148,10 +130,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		return providerName switch
 		{
-			MSSQL => "uniqueidentifier",
 			PostgreSQL => "uuid",
-			MySQL => "char(36)",
-			SQLite => "text",
 			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
 		};
 	}
