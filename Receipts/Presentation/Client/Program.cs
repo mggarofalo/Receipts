@@ -1,10 +1,16 @@
 using Client.Components;
+using Client.Services;
+using MudBlazor.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
+
+builder.Services.AddMudServices();
+
+builder.Services.AddScoped<SignalRService>();
 
 WebApplication app = builder.Build();
 
