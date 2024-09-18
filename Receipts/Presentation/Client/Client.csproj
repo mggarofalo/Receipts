@@ -8,6 +8,7 @@
 
   <ItemGroup>
 	<ProjectReference Include="..\Shared\Shared.csproj" />
+	<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

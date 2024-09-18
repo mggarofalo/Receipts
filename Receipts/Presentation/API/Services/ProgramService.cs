@@ -10,6 +10,7 @@ public static class ProgramService
 		services.AddEndpointsApiExplorer();
 		services.AddSwaggerGen();
 		services.AddAutoMapper(assembly);
+		services.AddSignalR();
 
 		return services;
 	}

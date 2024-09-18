@@ -1,3 +1,4 @@
+using API.Hubs;
 using API.Services;
 using Application.Interfaces;
 using Application.Services;
@@ -8,7 +9,8 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddLoggingService();
 
-builder.Services.RegisterProgramServices(Assembly.GetExecutingAssembly())
+builder.Services
+	.RegisterProgramServices(Assembly.GetExecutingAssembly())
 	.RegisterApplicationServices(builder.Configuration)
 	.RegisterInfrastructureServices(builder.Configuration);
 
@@ -32,5 +34,6 @@ using (IServiceScope scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ReceiptsHub>("/receipts");
 
 await app.RunAsync();
