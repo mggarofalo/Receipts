@@ -1,33 +1,28 @@
-using Client.Components;
-using Client.Services;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Client;
 using MudBlazor.Services;
+using Client.Services;
+using Client.Interfaces.Services.Core;
+using Client.Interfaces.Services.Aggregates;
+using Client.Services.Core;
+using Client.Services.Aggregates;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-	.AddInteractiveServerComponents();
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-builder.Services.AddMudServices();
+builder.Services
+	.AddMudServices()
+	.AddScoped<SignalRService>()
+	.AddTransient<IAccountService, AccountService>()
+	.AddTransient<IReceiptItemService, ReceiptItemService>()
+	.AddTransient<IReceiptService, ReceiptService>()
+	.AddTransient<ITransactionService, TransactionService>()
+	.AddTransient<IReceiptWithItemsService, ReceiptWithItemsService>()
+	.AddTransient<ITransactionAccountService, TransactionAccountService>()
+	.AddTransient<ITripService, TripService>();
 
-builder.Services.AddScoped<SignalRService>();
-
-WebApplication app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-	app.UseExceptionHandler("/Error", createScopeForErrors: true);
-	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-	app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-
-app.UseStaticFiles();
-app.UseAntiforgery();
-
-app.MapRazorComponents<App>()
-	.AddInteractiveServerRenderMode();
-
-await app.RunAsync();
+await builder.Build().RunAsync();

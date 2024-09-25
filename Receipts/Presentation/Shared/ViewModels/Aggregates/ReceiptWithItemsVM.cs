@@ -4,8 +4,8 @@ namespace Shared.ViewModels.Aggregates;
 
 public class ReceiptWithItemsVM : IEquatable<ReceiptWithItemsVM>
 {
-	public required ReceiptVM Receipt { get; set; }
-	public required List<ReceiptItemVM> Items { get; set; }
+	public ReceiptVM? Receipt { get; set; }
+	public List<ReceiptItemVM>? Items { get; set; }
 
 	public bool Equals(ReceiptWithItemsVM? other)
 	{
@@ -36,7 +36,7 @@ public class ReceiptWithItemsVM : IEquatable<ReceiptWithItemsVM>
 	{
 		HashCode hash = new();
 		hash.Add(Receipt);
-		Items.ForEach(item => hash.Add(item));
+		Items?.ForEach(item => hash.Add(item));
 		return hash.ToHashCode();
 	}
 

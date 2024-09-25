@@ -4,8 +4,8 @@ namespace Shared.ViewModels.Aggregates;
 
 public class TransactionAccountVM : IEquatable<TransactionAccountVM>
 {
-	public required TransactionVM Transaction { get; set; }
-	public required AccountVM Account { get; set; }
+	public TransactionVM? Transaction { get; set; }
+	public AccountVM? Account { get; set; }
 
 	public bool Equals(TransactionAccountVM? other)
 	{

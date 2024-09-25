@@ -3,14 +3,13 @@ using API.Services;
 using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Services;
-using System.Reflection;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddLoggingService();
 
 builder.Services
-	.RegisterProgramServices(Assembly.GetExecutingAssembly())
+	.RegisterProgramServices()
 	.RegisterApplicationServices(builder.Configuration)
 	.RegisterInfrastructureServices(builder.Configuration);
 
@@ -31,6 +30,7 @@ using (IServiceScope scope = app.Services.CreateScope())
 	await scope.ServiceProvider.GetRequiredService<IDatabaseMigrator>().MigrateAsync();
 }
 
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

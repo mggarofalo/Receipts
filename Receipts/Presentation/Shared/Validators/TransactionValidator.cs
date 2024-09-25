@@ -15,9 +15,9 @@ public class TransactionValidator : AbstractValidator<TransactionVM>
 			.NotEqual(0)
 			.WithMessage(AmountMustBeNonZero);
 
-		RuleFor(x => x.Date.ToDateTime(TimeOnly.MinValue))
+		RuleFor(x => x.Date)
 			.NotEmpty()
-			.LessThanOrEqualTo(DateTime.Today)
+			.Must(date => date.HasValue && date.Value.ToDateTime(TimeOnly.MinValue) <= DateTime.Today)
 			.WithMessage(DateMustBePriorToCurrentDate);
 	}
 }

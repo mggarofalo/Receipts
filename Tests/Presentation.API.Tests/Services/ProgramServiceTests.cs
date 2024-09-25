@@ -1,7 +1,6 @@
 using API.Services;
 using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
 namespace Presentation.API.Tests.Services;
 
@@ -11,7 +10,7 @@ public class ProgramServiceTests
 	public void RegisterProgramServices_RegistersRequiredServices()
 	{
 		ServiceCollection serviceCollection = new();
-		serviceCollection.RegisterProgramServices(Assembly.GetExecutingAssembly());
+		serviceCollection.RegisterProgramServices();
 		ServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
 
 		// Assume that the built-in services are registered

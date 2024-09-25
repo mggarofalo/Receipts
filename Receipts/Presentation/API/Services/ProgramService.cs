@@ -4,12 +4,12 @@ namespace API.Services;
 
 public static class ProgramService
 {
-	public static IServiceCollection RegisterProgramServices(this IServiceCollection services, Assembly assembly)
+	public static IServiceCollection RegisterProgramServices(this IServiceCollection services)
 	{
 		services.AddControllers();
 		services.AddEndpointsApiExplorer();
 		services.AddSwaggerGen();
-		services.AddAutoMapper(assembly);
+		services.AddAutoMapper(Assembly.GetExecutingAssembly());
 		services.AddSignalR();
 
 		return services;

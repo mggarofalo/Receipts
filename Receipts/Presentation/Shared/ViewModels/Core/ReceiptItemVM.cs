@@ -3,13 +3,13 @@ namespace Shared.ViewModels.Core;
 public class ReceiptItemVM : IEquatable<ReceiptItemVM>
 {
 	public Guid? Id { get; set; }
-	public required string ReceiptItemCode { get; set; }
-	public required string Description { get; set; }
-	public required decimal Quantity { get; set; }
-	public required decimal UnitPrice { get; set; }
-	public required decimal TotalAmount { get; set; } // TODO: Remove this property and calculate it in the mapper instead
-	public required string Category { get; set; }
-	public required string Subcategory { get; set; }
+	public string? ReceiptItemCode { get; set; }
+	public string? Description { get; set; }
+	public decimal? Quantity { get; set; }
+	public decimal? UnitPrice { get; set; }
+	public decimal? TotalAmount { get; set; } // TODO: Remove this property and calculate it in the mapper instead
+	public string? Category { get; set; }
+	public string? Subcategory { get; set; }
 
 	public bool Equals(ReceiptItemVM? other)
 	{

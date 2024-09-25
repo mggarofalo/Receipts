@@ -2,8 +2,8 @@ namespace Shared.ViewModels.Aggregates;
 
 public class TripVM : IEquatable<TripVM>
 {
-	public required ReceiptWithItemsVM Receipt { get; set; }
-	public required List<TransactionAccountVM> Transactions { get; set; }
+	public ReceiptWithItemsVM? Receipt { get; set; }
+	public List<TransactionAccountVM>? Transactions { get; set; }
 
 	public bool Equals(TripVM? other)
 	{
@@ -34,7 +34,7 @@ public class TripVM : IEquatable<TripVM>
 	{
 		HashCode hash = new();
 		hash.Add(Receipt);
-		Transactions.ForEach(transaction => hash.Add(transaction));
+		Transactions?.ForEach(transaction => hash.Add(transaction));
 		return hash.ToHashCode();
 	}
 

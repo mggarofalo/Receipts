@@ -10,12 +10,29 @@ namespace API.Controllers.Core;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class AccountsController(IMediator mediator, IMapper mapper, ILogger<AccountsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
+	public const string RouteGetById = "{id}";
+	public const string RouteGetAll = "";
+	public const string RouteCreate = "";
+	public const string RouteUpdate = "";
+	public const string RouteDelete = "";
 
-	[HttpGet("{id}")]
+	/// <summary>
+	/// Get an account by its ID
+	/// </summary>
+	/// <param name="id">The ID of the account</param>
+	/// <returns>The account</returns>
+	/// <response code="200">Returns the account</response>
+	/// <response code="404">If the account is not found</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpGet(RouteGetById)]
+	[ProducesResponseType(typeof(AccountVM), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<AccountVM>> GetAccountById([FromRoute] Guid id)
 	{
 		try
@@ -41,7 +58,15 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 	}
 
-	[HttpGet]
+	/// <summary>
+	/// Get all accounts
+	/// </summary>
+	/// <returns>A list of all accounts</returns>
+	/// <response code="200">Returns the list of accounts</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpGet(RouteGetAll)]
+	[ProducesResponseType(typeof(List<AccountVM>), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<AccountVM>>> GetAllAccounts()
 	{
 		try
@@ -61,7 +86,16 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 	}
 
-	[HttpPost]
+	/// <summary>
+	/// Create new accounts
+	/// </summary>
+	/// <param name="models">The accounts to create</param>
+	/// <returns>The created accounts</returns>
+	/// <response code="200">Returns the created accounts</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpPost(RouteCreate)]
+	[ProducesResponseType(typeof(List<AccountVM>), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<AccountVM>>> CreateAccounts([FromBody] List<AccountVM> models)
 	{
 		try
@@ -78,7 +112,18 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 	}
 
-	[HttpPut]
+	/// <summary>
+	/// Update existing accounts
+	/// </summary>
+	/// <param name="models">The accounts to update</param>
+	/// <returns>A status indicating success or failure</returns>
+	/// <response code="204">If the accounts were successfully updated</response>
+	/// <response code="404">If the accounts were not found</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpPut(RouteUpdate)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateAccounts([FromBody] List<AccountVM> models)
 	{
 		try
@@ -104,7 +149,18 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		}
 	}
 
-	[HttpDelete]
+	/// <summary>
+	/// Delete accounts
+	/// </summary>
+	/// <param name="ids">The IDs of the accounts to delete</param>
+	/// <returns>A status indicating success or failure</returns>
+	/// <response code="204">If the accounts were successfully deleted</response>
+	/// <response code="404">If the accounts were not found</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpDelete(RouteDelete)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> DeleteAccounts([FromBody] List<Guid> ids)
 	{
 		try

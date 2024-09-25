@@ -10,12 +10,31 @@ namespace API.Controllers.Core;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
-	[HttpGet("{id}")]
+	public const string RouteGetById = "{id}";
+	public const string RouteGetAll = "";
+	public const string RouteGetByReceiptId = "by-receipt-id/{receiptId}";
+	public const string RouteCreate = "{receiptId}/{accountId}";
+	public const string RouteUpdate = "{receiptId}/{accountId}";
+	public const string RouteDelete = "";
+
+	/// <summary>
+	/// Get a transaction by its ID
+	/// </summary>
+	/// <param name="id">The ID of the transaction</param>
+	/// <returns>The transaction</returns>
+	/// <response code="200">Returns the transaction</response>
+	/// <response code="404">If the transaction is not found</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpGet(RouteGetById)]
+	[ProducesResponseType(typeof(TransactionVM), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<TransactionVM>> GetTransactionById([FromRoute] Guid id)
 	{
 		try
@@ -41,7 +60,15 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpGet]
+	/// <summary>
+	/// Get all transactions
+	/// </summary>
+	/// <returns>A list of all transactions</returns>
+	/// <response code="200">Returns the list of transactions</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpGet(RouteGetAll)]
+	[ProducesResponseType(typeof(List<TransactionVM>), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionVM>>> GetAllTransactions()
 	{
 		try
@@ -61,7 +88,18 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpGet("by-receipt-id/{receiptId}")]
+	/// <summary>
+	/// Get transactions by receipt ID
+	/// </summary>
+	/// <param name="receiptId">The ID of the receipt</param>
+	/// <returns>A list of transactions associated with the receipt</returns>
+	/// <response code="200">Returns the list of transactions</response>
+	/// <response code="404">If no transactions are found for the receipt</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpGet(RouteGetByReceiptId)]
+	[ProducesResponseType(typeof(List<TransactionVM>), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionVM>?>> GetTransactionsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
@@ -87,7 +125,18 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpPost("{receiptId}/{accountId}")]
+	/// <summary>
+	/// Create new transactions
+	/// </summary>
+	/// <param name="models">The transactions to create</param>
+	/// <param name="receiptId">The ID of the associated receipt</param>
+	/// <param name="accountId">The ID of the associated account</param>
+	/// <returns>The created transactions</returns>
+	/// <response code="200">Returns the created transactions</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpPost(RouteCreate)]
+	[ProducesResponseType(typeof(List<TransactionVM>), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionVM>>> CreateTransactions([FromBody] List<TransactionVM> models, [FromRoute] Guid receiptId, [FromRoute] Guid accountId)
 	{
 		try
@@ -105,7 +154,20 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpPut("{receiptId}/{accountId}")]
+	/// <summary>
+	/// Update existing transactions
+	/// </summary>
+	/// <param name="models">The transactions to update</param>
+	/// <param name="receiptId">The ID of the associated receipt</param>
+	/// <param name="accountId">The ID of the associated account</param>
+	/// <returns>A status indicating success or failure</returns>
+	/// <response code="204">If the transactions were successfully updated</response>
+	/// <response code="404">If the transactions were not found</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpPut(RouteUpdate)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateTransactions([FromBody] List<TransactionVM> models, [FromRoute] Guid receiptId, [FromRoute] Guid accountId)
 	{
 		try
@@ -131,7 +193,18 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		}
 	}
 
-	[HttpDelete]
+	/// <summary>
+	/// Delete transactions
+	/// </summary>
+	/// <param name="ids">The IDs of the transactions to delete</param>
+	/// <returns>A status indicating success or failure</returns>
+	/// <response code="204">If the transactions were successfully deleted</response>
+	/// <response code="404">If the transactions were not found</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpDelete(RouteDelete)]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> DeleteTransactions([FromBody] List<Guid> ids)
 	{
 		try

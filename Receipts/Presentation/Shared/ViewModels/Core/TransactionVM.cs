@@ -3,8 +3,8 @@ namespace Shared.ViewModels.Core;
 public class TransactionVM : IEquatable<TransactionVM>
 {
 	public Guid? Id { get; set; }
-	public required decimal Amount { get; set; }
-	public required DateOnly Date { get; set; }
+	public decimal? Amount { get; set; }
+	public DateOnly? Date { get; set; }
 
 	public bool Equals(TransactionVM? other)
 	{

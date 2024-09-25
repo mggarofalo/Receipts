@@ -9,12 +9,25 @@ namespace API.Controllers.Aggregates;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class ReceiptWithItemsController(IMediator mediator, IMapper mapper, ILogger<ReceiptWithItemsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for receiptId: {receiptId}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
+	public const string RouteByReceiptId = "by-receipt-id/{receiptId}";
 
-	[HttpGet("by-receipt-id/{receiptId}")]
+	/// <summary>
+	/// Get a receipt with its items by receipt ID
+	/// </summary>
+	/// <param name="receiptId">The ID of the receipt</param>
+	/// <returns>The receipt with its items</returns>
+	/// <response code="200">Returns the receipt with its items</response>
+	/// <response code="404">If the receipt is not found</response>
+	/// <response code="500">If there was an internal server error</response>
+	[HttpGet(RouteByReceiptId)]
+	[ProducesResponseType(typeof(ReceiptWithItemsVM), StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ReceiptWithItemsVM>> GetReceiptWithItemsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try

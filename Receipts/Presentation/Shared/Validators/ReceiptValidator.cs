@@ -24,8 +24,8 @@ public class ReceiptValidator : AbstractValidator<ReceiptVM>
 			.MaximumLength(200)
 			.WithMessage(LocationMustNotExceed200Characters);
 
-		RuleFor(x => x.Date.ToDateTime(TimeOnly.MinValue))
-			.LessThanOrEqualTo(DateTime.Today)
+		RuleFor(x => x.Date)
+			.Must(date => date.HasValue && date.Value.ToDateTime(TimeOnly.MinValue) <= DateTime.Today)
 			.WithMessage(DateMustBePriorToCurrentDate);
 	}
 }

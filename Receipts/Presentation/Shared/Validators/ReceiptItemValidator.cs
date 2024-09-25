@@ -16,17 +16,21 @@ public class ReceiptItemValidator : AbstractValidator<ReceiptItemVM>
 		RuleFor(x => x.ReceiptItemCode)
 			.NotEmpty()
 			.WithMessage(ReceiptItemCodeIsRequired);
+
 		RuleFor(x => x.Description)
 			.NotEmpty()
 			.WithMessage(DescriptionIsRequired);
+
 		RuleFor(x => x.Category)
 			.NotEmpty()
 			.WithMessage(CategoryIsRequired);
+
 		RuleFor(x => x.Subcategory)
 			.NotEmpty()
 			.WithMessage(SubcategoryIsRequired);
+
 		RuleFor(x => x.TotalAmount)
-			.Equal(x => Math.Floor(x.Quantity * x.UnitPrice * 100) / 100)
+			.Equal(x => Math.Floor((x.Quantity ?? 0) * (x.UnitPrice ?? 0) * 100) / 100)
 			.WithMessage(TotalAmountErrorMessage);
 	}
 }
