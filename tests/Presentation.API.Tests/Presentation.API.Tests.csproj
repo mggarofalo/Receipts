@@ -21,10 +21,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Receipts\Presentation\Shared\Shared.csproj" />
+    <ProjectReference Include="..\..\src\Presentation\API\API.csproj" />
     <ProjectReference Include="..\SampleData\SampleData.csproj" />
   </ItemGroup>
 
