@@ -1,6 +1,6 @@
-namespace Application.Interfaces.Repositories;
+namespace Application.Interfaces.Services;
 
-public interface IRepository<T>
+public interface IService<T>
 {
 	Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 	Task<List<T>> GetAllAsync(CancellationToken cancellationToken);

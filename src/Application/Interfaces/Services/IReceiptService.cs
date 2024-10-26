@@ -1,8 +1,8 @@
 using Domain.Core;
 
-namespace Application.Interfaces.Repositories;
+namespace Application.Interfaces.Services;
 
-public interface IReceiptRepository : IRepository<Receipt>
+public interface IReceiptService : IService<Receipt>
 {
 	Task<List<Receipt>> CreateAsync(List<Receipt> models, CancellationToken cancellationToken);
 	Task UpdateAsync(List<Receipt> models, CancellationToken cancellationToken);

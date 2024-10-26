@@ -1,36 +1,31 @@
-using Application.Interfaces.Repositories;
-using AutoMapper;
-using Domain.Core;
 using Infrastructure.Entities.Core;
+using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : IReceiptRepository
-{
-	public async Task<Receipt?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
-	{
-		ReceiptEntity? entity = await context.Receipts
-			.FindAsync([id], cancellationToken);
+// TODO: Handle cases where a caller sends entities that haven't been saved yet to methods that expect saved entities
 
-		return mapper.Map<Receipt>(entity);
+public class ReceiptRepository(ApplicationDbContext context) : IReceiptRepository
+{
+	public async Task<ReceiptEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+	{
+		return await context.Receipts.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<Receipt>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<List<ReceiptEntity>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> receiptEntities = await context.Receipts
+		return await context.Receipts
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
-
-		return receiptEntities.Select(mapper.Map<Receipt>).ToList();
 	}
 
-	public async Task<List<Receipt>> CreateAsync(List<Receipt> models, CancellationToken cancellationToken)
+	public async Task<List<ReceiptEntity>> CreateAsync(List<ReceiptEntity> entities, CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> createdEntities = [];
 
-		foreach (ReceiptEntity entity in models.Select(mapper.Map<ReceiptEntity>))
+		foreach (ReceiptEntity entity in entities)
 		{
 			EntityEntry<ReceiptEntity> entityEntry = await context.Receipts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
@@ -38,20 +33,18 @@ public class ReceiptRepository(ApplicationDbContext context, IMapper mapper) : I
 
 		await context.SaveChangesAsync(cancellationToken);
 
-		return createdEntities.Select(mapper.Map<Receipt>).ToList();
+		return createdEntities;
 	}
 
-	public async Task UpdateAsync(List<Receipt> models, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<ReceiptEntity> entities, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> newEntities = models.Select(mapper.Map<ReceiptEntity>).ToList();
-
-		foreach (ReceiptEntity newEntity in newEntities)
+		foreach (ReceiptEntity entity in entities)
 		{
-			ReceiptEntity existingEntity = await context.Receipts.SingleAsync(e => e.Id == newEntity.Id, cancellationToken);
-			existingEntity.Description = newEntity.Description;
-			existingEntity.Location = newEntity.Location;
-			existingEntity.Date = newEntity.Date;
-			existingEntity.TaxAmount = newEntity.TaxAmount;
+			ReceiptEntity existingEntity = await context.Receipts.SingleAsync(e => e.Id == entity.Id, cancellationToken);
+			existingEntity.Description = entity.Description;
+			existingEntity.Location = entity.Location;
+			existingEntity.Date = entity.Date;
+			existingEntity.TaxAmount = entity.TaxAmount;
 		}
 
 		await context.SaveChangesAsync(cancellationToken);

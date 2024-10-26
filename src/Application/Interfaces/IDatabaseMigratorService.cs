@@ -1,6 +1,6 @@
 namespace Application.Interfaces;
 
-public interface IDatabaseMigrator
+public interface IDatabaseMigratorService
 {
 	Task MigrateAsync();
 }

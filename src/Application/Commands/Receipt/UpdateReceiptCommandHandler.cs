@@ -1,13 +1,13 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using MediatR;
 
 namespace Application.Commands.Receipt;
 
-public class UpdateReceiptCommandHandler(IReceiptRepository receiptRepository) : IRequestHandler<UpdateReceiptCommand, bool>
+public class UpdateReceiptCommandHandler(IReceiptService receiptService) : IRequestHandler<UpdateReceiptCommand, bool>
 {
 	public async Task<bool> Handle(UpdateReceiptCommand request, CancellationToken cancellationToken)
 	{
-		await receiptRepository.UpdateAsync([.. request.Receipts], cancellationToken);
+		await receiptService.UpdateAsync([.. request.Receipts], cancellationToken);
 		return true;
 	}
 }

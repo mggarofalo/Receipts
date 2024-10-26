@@ -1,47 +1,39 @@
-using Application.Interfaces.Repositories;
-using AutoMapper;
-using Domain.Core;
 using Infrastructure.Entities.Core;
-using Infrastructure.Mapping;
+using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-public class TransactionRepository(ApplicationDbContext context, IMapper mapper) : ITransactionRepository
-{
-	public async Task<Transaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
-	{
-		TransactionEntity? entity = await context.Transactions
-			.FindAsync([id], cancellationToken);
+// TODO: Handle cases where a caller sends entities that haven't been saved yet to methods that expect saved entities
 
-		return mapper.Map<Transaction>(entity);
+public class TransactionRepository(ApplicationDbContext context) : ITransactionRepository
+{
+	public async Task<TransactionEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+	{
+		return await context.Transactions.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<Transaction>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
+	public async Task<List<TransactionEntity>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> transactionEntities = await context.Transactions
+		return await context.Transactions
 			.Where(t => t.ReceiptId == receiptId)
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
-
-		return transactionEntities.Select(mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task<List<Transaction>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<List<TransactionEntity>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> transactionEntities = await context.Transactions
+		return await context.Transactions
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
-
-		return transactionEntities.Select(mapper.Map<Transaction>).ToList();
 	}
 
-	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
+	public async Task<List<TransactionEntity>> CreateAsync(List<TransactionEntity> entities, CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> createdEntities = [];
 
-		foreach (TransactionEntity entity in models.Select(m => mapper.MapToTransactionEntity(m, receiptId, accountId)))
+		foreach (TransactionEntity entity in entities)
 		{
 			EntityEntry<TransactionEntity> entityEntry = await context.Transactions.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
@@ -49,20 +41,18 @@ public class TransactionRepository(ApplicationDbContext context, IMapper mapper)
 
 		await context.SaveChangesAsync(cancellationToken);
 
-		return createdEntities.Select(mapper.Map<Transaction>).ToList();
+		return createdEntities;
 	}
 
-	public async Task UpdateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<TransactionEntity> entities, CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> newEntities = models.Select(m => mapper.MapToTransactionEntity(m, receiptId, accountId)).ToList();
-
-		foreach (TransactionEntity newEntity in newEntities)
+		foreach (TransactionEntity entity in entities)
 		{
-			TransactionEntity existingEntity = await context.Transactions.SingleAsync(e => e.Id == newEntity.Id, cancellationToken);
-			existingEntity.ReceiptId = newEntity.ReceiptId;
-			existingEntity.AccountId = newEntity.AccountId;
-			existingEntity.Amount = newEntity.Amount;
-			existingEntity.Date = newEntity.Date;
+			TransactionEntity existingEntity = await context.Transactions.SingleAsync(e => e.Id == entity.Id, cancellationToken);
+			existingEntity.ReceiptId = entity.ReceiptId;
+			existingEntity.AccountId = entity.AccountId;
+			existingEntity.Amount = entity.Amount;
+			existingEntity.Date = entity.Date;
 		}
 
 		await context.SaveChangesAsync(cancellationToken);

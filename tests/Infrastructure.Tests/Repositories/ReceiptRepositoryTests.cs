@@ -1,18 +1,12 @@
-using AutoMapper;
-using Domain;
-using Domain.Core;
 using Infrastructure.Entities.Core;
-using Infrastructure.Mapping;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using SampleData.Domain.Core;
 using SampleData.Entities;
 
 namespace Infrastructure.Tests.Repositories;
 
 public class ReceiptRepositoryTests
 {
-	private readonly IMapper _mapper = RepositoryHelpers.CreateMapper<ReceiptMappingProfile>();
 	private readonly ApplicationDbContext _context = DbContextHelpers.CreateInMemoryContext();
 
 	[Fact]
@@ -25,15 +19,14 @@ public class ReceiptRepositoryTests
 		await _context.Receipts.AddAsync(entity);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		Receipt expected = _mapper.Map<Receipt>(entity);
-		ReceiptRepository repository = new(_context, _mapper);
+		ReceiptRepository repository = new(_context);
 
 		// Act
-		Receipt? actual = await repository.GetByIdAsync(entity.Id, CancellationToken.None);
+		ReceiptEntity? actual = await repository.GetByIdAsync(entity.Id, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(expected, actual);
+		Assert.Equal(entity, actual);
 	}
 
 	[Fact]
@@ -42,10 +35,10 @@ public class ReceiptRepositoryTests
 		// Arrange
 		_context.ResetDatabase();
 
-		ReceiptRepository repository = new(_context, _mapper);
+		ReceiptRepository repository = new(_context);
 
 		// Act
-		Receipt? result = await repository.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
+		ReceiptEntity? result = await repository.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
 
 		// Assert
 		Assert.Null(result);
@@ -61,16 +54,14 @@ public class ReceiptRepositoryTests
 		await _context.Receipts.AddRangeAsync(entities);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		List<Receipt> expected = entities.Select(_mapper.Map<Receipt>).ToList();
-		ReceiptRepository repository = new(_context, _mapper);
+		ReceiptRepository repository = new(_context);
 
 		// Act
-		List<Receipt> actual = await repository.GetAllAsync(CancellationToken.None);
+		List<ReceiptEntity> actual = await repository.GetAllAsync(CancellationToken.None);
 
 		// Assert
 		Assert.Equal(entities.Count, actual.Count);
-		Assert.All(actual, r => Assert.Contains(r, expected));
-		Assert.All(expected, r => Assert.Contains(r, actual));
+		Assert.Equal(entities, actual);
 	}
 
 	[Fact]
@@ -79,27 +70,24 @@ public class ReceiptRepositoryTests
 		// Arrange
 		_context.ResetDatabase();
 
-		List<Receipt> expected = ReceiptGenerator.GenerateList(2);
-		expected.ForEach(e => e.Id = null);
-		ReceiptRepository repository = new(_context, _mapper);
+		List<ReceiptEntity> entities = ReceiptEntityGenerator.GenerateList(2);
+		entities.ForEach(e => e.Id = Guid.Empty);
+		ReceiptRepository repository = new(_context);
 
 		// Act
-		List<Receipt> actual = await repository.CreateAsync(expected, CancellationToken.None);
+		List<ReceiptEntity> actual = await repository.CreateAsync(entities, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Count);
 
 		Assert.All(actual, r =>
 		{
-			// Ensure IDs were correctly set by the database
 			Assert.NotEqual(Guid.Empty, r.Id);
-			Assert.NotNull(r.Id);
 		});
 
-		Assert.Equal(expected, actual.Select(r =>
+		Assert.Equal(entities, actual.Select(r =>
 		{
-			// Compare expected (null IDs) to actual (overwrite IDs with null)
-			r.Id = null;
+			r.Id = Guid.Empty;
 			return r;
 		}));
 	}
@@ -114,29 +102,28 @@ public class ReceiptRepositoryTests
 		await _context.Receipts.AddRangeAsync(entities);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		List<Receipt> expected = entities.Select(_mapper.Map<Receipt>).ToList();
-		ReceiptRepository repository = new(_context, _mapper);
+		ReceiptRepository repository = new(_context);
 
 		// Modify receipt
-		expected.ForEach(e =>
+		entities.ForEach(e =>
 		{
 			e.Description = "Updated " + e.Description;
-			e.TaxAmount = new Money(e.TaxAmount.Amount + 1.0m, e.TaxAmount.Currency);
+			e.TaxAmount += 1.0m;
 		});
 
 		// Act
-		await repository.UpdateAsync(expected, CancellationToken.None);
+		await repository.UpdateAsync(entities, CancellationToken.None);
 		List<ReceiptEntity> updatedEntities = await _context.Receipts.ToListAsync();
 
 		// Assert
-		Assert.Equal(expected.Count, updatedEntities.Count);
+		Assert.Equal(entities.Count, updatedEntities.Count);
 
-		foreach (Receipt expectedReceipt in expected)
+		foreach (ReceiptEntity expectedReceipt in entities)
 		{
 			ReceiptEntity? updatedEntity = updatedEntities.FirstOrDefault(e => e.Id == expectedReceipt.Id);
 			Assert.NotNull(updatedEntity);
 			Assert.Equal(expectedReceipt.Description, updatedEntity.Description);
-			Assert.Equal(expectedReceipt.TaxAmount.Amount, updatedEntity.TaxAmount);
+			Assert.Equal(expectedReceipt.TaxAmount, updatedEntity.TaxAmount);
 		}
 	}
 
@@ -151,7 +138,7 @@ public class ReceiptRepositoryTests
 		await _context.SaveChangesAsync(CancellationToken.None);
 
 		List<Guid> idsToDelete = entities.Take(2).Select(e => e.Id).ToList();
-		ReceiptRepository repository = new(_context, _mapper);
+		ReceiptRepository repository = new(_context);
 
 		// Act
 		await repository.DeleteAsync(idsToDelete, CancellationToken.None);
@@ -172,7 +159,7 @@ public class ReceiptRepositoryTests
 		await _context.Receipts.AddAsync(entity);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		ReceiptRepository repository = new(_context, _mapper);
+		ReceiptRepository repository = new(_context);
 
 		// Act
 		bool result = await repository.ExistsAsync(entity.Id, CancellationToken.None);
@@ -187,7 +174,7 @@ public class ReceiptRepositoryTests
 		// Arrange
 		_context.ResetDatabase();
 
-		ReceiptRepository repository = new(_context, _mapper);
+		ReceiptRepository repository = new(_context);
 
 		// Act
 		bool result = await repository.ExistsAsync(Guid.NewGuid(), CancellationToken.None);
@@ -206,7 +193,7 @@ public class ReceiptRepositoryTests
 		await _context.Receipts.AddRangeAsync(entities);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		ReceiptRepository repository = new(_context, _mapper);
+		ReceiptRepository repository = new(_context);
 
 		// Act
 		int count = await repository.GetCountAsync(CancellationToken.None);

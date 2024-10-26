@@ -27,7 +27,7 @@ if (app.Environment.IsDevelopment())
 
 using (IServiceScope scope = app.Services.CreateScope())
 {
-	await scope.ServiceProvider.GetRequiredService<IDatabaseMigrator>().MigrateAsync();
+	await scope.ServiceProvider.GetRequiredService<IDatabaseMigratorService>().MigrateAsync();
 }
 
 app.UseStaticFiles();

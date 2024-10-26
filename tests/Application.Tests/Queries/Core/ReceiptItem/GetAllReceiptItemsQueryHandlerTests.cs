@@ -1,7 +1,7 @@
-using Application.Interfaces.Repositories;
 using SampleData.Domain.Core;
 using Moq;
 using Application.Queries.Core.ReceiptItem;
+using Application.Interfaces.Services;
 
 namespace Application.Tests.Queries.Core.ReceiptItem;
 
@@ -12,10 +12,10 @@ public class GetAllReceiptItemsQueryHandlerTests
 	{
 		List<Domain.Core.ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2);
 
-		Mock<IReceiptItemRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		Mock<IReceiptItemService> mockService = new();
+		mockService.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
-		GetAllReceiptItemsQueryHandler handler = new(mockRepository.Object);
+		GetAllReceiptItemsQueryHandler handler = new(mockService.Object);
 		GetAllReceiptItemsQuery query = new();
 
 		List<Domain.Core.ReceiptItem> result = await handler.Handle(query, CancellationToken.None);

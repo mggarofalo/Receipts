@@ -1,13 +1,13 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using MediatR;
 
 namespace Application.Commands.Transaction;
 
-public class CreateTransactionCommandHandler(ITransactionRepository transactionRepository) : IRequestHandler<CreateTransactionCommand, List<Domain.Core.Transaction>>
+public class CreateTransactionCommandHandler(ITransactionService transactionService) : IRequestHandler<CreateTransactionCommand, List<Domain.Core.Transaction>>
 {
 	public async Task<List<Domain.Core.Transaction>> Handle(CreateTransactionCommand request, CancellationToken cancellationToken)
 	{
-		List<Domain.Core.Transaction> createdEntities = await transactionRepository.CreateAsync([.. request.Transactions], request.AccountId, request.ReceiptId, cancellationToken);
+		List<Domain.Core.Transaction> createdEntities = await transactionService.CreateAsync([.. request.Transactions], request.AccountId, request.ReceiptId, cancellationToken);
 		return createdEntities;
 	}
 }

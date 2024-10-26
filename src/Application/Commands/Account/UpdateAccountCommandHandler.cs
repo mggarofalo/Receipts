@@ -1,13 +1,13 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using MediatR;
 
 namespace Application.Commands.Account;
 
-public class UpdateAccountCommandHandler(IAccountRepository accountRepository) : IRequestHandler<UpdateAccountCommand, bool>
+public class UpdateAccountCommandHandler(IAccountService accountService) : IRequestHandler<UpdateAccountCommand, bool>
 {
 	public async Task<bool> Handle(UpdateAccountCommand request, CancellationToken cancellationToken)
 	{
-		await accountRepository.UpdateAsync([.. request.Accounts], cancellationToken);
+		await accountService.UpdateAsync([.. request.Accounts], cancellationToken);
 		return true;
 	}
 }

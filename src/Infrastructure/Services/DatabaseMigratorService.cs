@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Services;
 
-public class DatabaseMigrator(IServiceProvider serviceProvider) : IDatabaseMigrator
+public class DatabaseMigratorService(IServiceProvider serviceProvider) : IDatabaseMigratorService
 {
 	public async Task MigrateAsync()
 	{

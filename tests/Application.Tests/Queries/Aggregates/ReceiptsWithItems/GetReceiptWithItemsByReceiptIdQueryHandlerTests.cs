@@ -1,4 +1,4 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using Application.Queries.Aggregates.ReceiptsWithItems;
 using Moq;
 using SampleData.Domain.Core;
@@ -14,13 +14,13 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt expectedReceipt = ReceiptGenerator.Generate();
 		List<Domain.Core.ReceiptItem> expectedReceiptItems = ReceiptItemGenerator.GenerateList(3);
 
-		Mock<IReceiptRepository> mockReceiptRepository = new();
-		mockReceiptRepository.Setup(r => r.GetByIdAsync(expectedReceipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceipt);
+		Mock<IReceiptService> mockReceiptService = new();
+		mockReceiptService.Setup(r => r.GetByIdAsync(expectedReceipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceipt);
 
-		Mock<IReceiptItemRepository> mockReceiptItemRepository = new();
-		mockReceiptItemRepository.Setup(r => r.GetByReceiptIdAsync(expectedReceipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceiptItems);
+		Mock<IReceiptItemService> mockReceiptItemService = new();
+		mockReceiptItemService.Setup(r => r.GetByReceiptIdAsync(expectedReceipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceiptItems);
 
-		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptRepository.Object, mockReceiptItemRepository.Object);
+		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptService.Object, mockReceiptItemService.Object);
 		GetReceiptWithItemsByReceiptIdQuery query = new(expectedReceipt.Id!.Value);
 
 		// Act
@@ -37,12 +37,12 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 	{
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
-		Mock<IReceiptRepository> mockReceiptRepository = new();
-		mockReceiptRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Receipt?)null);
+		Mock<IReceiptService> mockReceiptService = new();
+		mockReceiptService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Receipt?)null);
 
-		Mock<IReceiptItemRepository> mockReceiptItemRepository = new();
+		Mock<IReceiptItemService> mockReceiptItemService = new();
 
-		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptRepository.Object, mockReceiptItemRepository.Object);
+		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptService.Object, mockReceiptItemService.Object);
 		GetReceiptWithItemsByReceiptIdQuery query = new(missingReceiptId);
 
 		// Act

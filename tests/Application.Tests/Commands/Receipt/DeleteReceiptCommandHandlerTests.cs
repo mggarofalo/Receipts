@@ -1,5 +1,5 @@
 using Application.Commands.Receipt;
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using Moq;
 using SampleData.Domain.Core;
 
@@ -10,8 +10,8 @@ public class DeleteReceiptCommandHandlerTests
 	[Fact]
 	public async Task DeleteReceiptCommandHandler_WithValidCommand_ReturnsTrueAndCallsDeleteAndSaveChanges()
 	{
-		Mock<IReceiptRepository> mockRepository = new();
-		DeleteReceiptCommandHandler handler = new(mockRepository.Object);
+		Mock<IReceiptService> mockService = new();
+		DeleteReceiptCommandHandler handler = new(mockService.Object);
 
 		List<Guid> input = ReceiptGenerator.GenerateList(2).Select(r => r.Id!.Value).ToList();
 

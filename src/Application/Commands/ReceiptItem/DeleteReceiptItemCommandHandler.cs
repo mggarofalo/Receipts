@@ -1,13 +1,13 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using MediatR;
 
 namespace Application.Commands.ReceiptItem;
 
-public class DeleteReceiptItemCommandHandler(IReceiptItemRepository receiptitemRepository) : IRequestHandler<DeleteReceiptItemCommand, bool>
+public class DeleteReceiptItemCommandHandler(IReceiptItemService receiptitemService) : IRequestHandler<DeleteReceiptItemCommand, bool>
 {
 	public async Task<bool> Handle(DeleteReceiptItemCommand request, CancellationToken cancellationToken)
 	{
-		await receiptitemRepository.DeleteAsync([.. request.Ids], cancellationToken);
+		await receiptitemService.DeleteAsync([.. request.Ids], cancellationToken);
 		return true;
 	}
 }

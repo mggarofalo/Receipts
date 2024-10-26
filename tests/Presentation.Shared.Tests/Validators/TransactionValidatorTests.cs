@@ -43,6 +43,42 @@ public class TransactionValidatorTests
 	}
 
 	[Fact]
+	public void Should_Pass_When_DateIsInThePast()
+	{
+		// Arrange
+		DateOnly pastDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+		TransactionVM transaction = new()
+		{
+			Amount = 100,
+			Date = pastDate
+		};
+
+		// Act
+		FluentValidation.Results.ValidationResult result = _validator.Validate(transaction);
+
+		// Assert
+		Assert.True(result.IsValid);
+	}
+
+	[Fact]
+	public void Should_Pass_When_DateIsToday()
+	{
+		// Arrange
+		DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+		TransactionVM transaction = new()
+		{
+			Amount = 100,
+			Date = today
+		};
+
+		// Act
+		FluentValidation.Results.ValidationResult result = _validator.Validate(transaction);
+
+		// Assert
+		Assert.True(result.IsValid);
+	}
+
+	[Fact]
 	public void Should_Fail_When_DateIsInTheFuture()
 	{
 		// Arrange
@@ -50,6 +86,24 @@ public class TransactionValidatorTests
 		{
 			Amount = 100,
 			Date = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+		};
+
+		// Act
+		FluentValidation.Results.ValidationResult result = _validator.Validate(transaction);
+
+		// Assert
+		Assert.False(result.IsValid);
+		Assert.Contains(result.Errors, e => e.ErrorMessage == TransactionValidator.DateMustBePriorToCurrentDate);
+	}
+
+	[Fact]
+	public void Should_Fail_When_DateIsNull()
+	{
+		// Arrange
+		TransactionVM transaction = new()
+		{
+			Amount = 100,
+			Date = null
 		};
 
 		// Act

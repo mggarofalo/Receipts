@@ -1,7 +1,7 @@
 using Application.Commands.Receipt;
-using Application.Interfaces.Repositories;
 using SampleData.Domain.Core;
 using Moq;
+using Application.Interfaces.Services;
 
 namespace Application.Tests.Commands.Receipt;
 
@@ -10,12 +10,12 @@ public class UpdateReceiptCommandHandlerTests
 	[Fact]
 	public async Task UpdateReceiptCommandHandler_WithValidCommand_ReturnsTrueAndCallsUpdateAndSaveChanges()
 	{
-		Mock<IReceiptRepository> mockRepository = new();
-		UpdateReceiptCommandHandler handler = new(mockRepository.Object);
+		Mock<IReceiptService> mockService = new();
+		UpdateReceiptCommandHandler handler = new(mockService.Object);
 
 		List<Domain.Core.Receipt> input = ReceiptGenerator.GenerateList(2);
 
-		mockRepository.Setup(r => r
+		mockService.Setup(r => r
 			.UpdateAsync(It.IsAny<List<Domain.Core.Receipt>>(), It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 

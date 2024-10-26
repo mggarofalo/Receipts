@@ -1,4 +1,4 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Moq;
 using SampleData.Domain.Core;
@@ -16,16 +16,16 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		List<Domain.Core.Account> expectedAccounts = AccountGenerator.GenerateList(3);
 		List<Domain.Core.Transaction> expectedTransactions = TransactionGenerator.GenerateList(3);
 
-		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
+		Mock<ITransactionService> mockTransactionService = new();
+		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
 
-		Mock<IAccountRepository> mockAccountRepository = new();
+		Mock<IAccountService> mockAccountService = new();
 		for (int i = 0; i < expectedTransactions.Count; i++)
 		{
-			mockAccountRepository.Setup(r => r.GetByTransactionIdAsync(expectedTransactions[i].Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccounts[i]);
+			mockAccountService.Setup(r => r.GetByTransactionIdAsync(expectedTransactions[i].Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccounts[i]);
 		}
 
-		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
+		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountsByReceiptIdQuery query = new(receiptId);
 
 		// Act
@@ -47,12 +47,12 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
 
-		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(missingReceiptId, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>?)null);
+		Mock<ITransactionService> mockTransactionService = new();
+		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(missingReceiptId, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>?)null);
 
-		Mock<IAccountRepository> mockAccountRepository = new();
+		Mock<IAccountService> mockAccountService = new();
 
-		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
+		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountsByReceiptIdQuery query = new(missingReceiptId);
 
 		// Act
@@ -69,16 +69,16 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		Guid receiptId = Guid.NewGuid();
 		List<Domain.Core.Transaction> expectedTransactions = TransactionGenerator.GenerateList(3);
 
-		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
+		Mock<ITransactionService> mockTransactionService = new();
+		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
 
-		Mock<IAccountRepository> mockAccountRepository = new();
+		Mock<IAccountService> mockAccountService = new();
 		foreach (Domain.Core.Transaction transaction in expectedTransactions)
 		{
-			mockAccountRepository.Setup(r => r.GetByTransactionIdAsync(transaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
+			mockAccountService.Setup(r => r.GetByTransactionIdAsync(transaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 		}
 
-		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
+		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountsByReceiptIdQuery query = new(receiptId);
 
 		// Act
@@ -96,12 +96,12 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		Guid receiptId = Guid.NewGuid();
 		List<Domain.Core.Transaction> expectedTransactions = [];
 
-		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
+		Mock<ITransactionService> mockTransactionService = new();
+		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
 
-		Mock<IAccountRepository> mockAccountRepository = new();
+		Mock<IAccountService> mockAccountService = new();
 
-		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
+		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountsByReceiptIdQuery query = new(receiptId);
 
 		// Act

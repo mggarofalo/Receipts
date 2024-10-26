@@ -1,18 +1,12 @@
-using AutoMapper;
-using Domain;
-using Domain.Core;
 using Infrastructure.Entities.Core;
-using Infrastructure.Mapping;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-using SampleData.Domain.Core;
 using SampleData.Entities;
 
 namespace Infrastructure.Tests.Repositories;
 
 public class TransactionRepositoryTests
 {
-	private readonly IMapper _mapper = RepositoryHelpers.CreateMapper<TransactionMappingProfile>();
 	private readonly ApplicationDbContext _context = DbContextHelpers.CreateInMemoryContext();
 
 	[Fact]
@@ -25,15 +19,14 @@ public class TransactionRepositoryTests
 		await _context.Transactions.AddAsync(entity);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		Transaction expected = _mapper.Map<Transaction>(entity);
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Act
-		Transaction? actual = await repository.GetByIdAsync(entity.Id, CancellationToken.None);
+		TransactionEntity? actual = await repository.GetByIdAsync(entity.Id, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(expected, actual);
+		Assert.Equal(entity, actual);
 	}
 
 	[Fact]
@@ -42,10 +35,10 @@ public class TransactionRepositoryTests
 		// Arrange
 		_context.ResetDatabase();
 
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Act
-		Transaction? result = await repository.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
+		TransactionEntity? result = await repository.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
 
 		// Assert
 		Assert.Null(result);
@@ -65,16 +58,15 @@ public class TransactionRepositoryTests
 		await _context.Transactions.AddRangeAsync(entities);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		List<Transaction> expected = entities.Select(_mapper.Map<Transaction>).ToList();
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Act
-		List<Transaction>? actual = await repository.GetByReceiptIdAsync(receipt.Id, CancellationToken.None);
+		List<TransactionEntity>? actual = await repository.GetByReceiptIdAsync(receipt.Id, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(expected.Count, actual.Count);
-		Assert.Equal(expected, actual);
+		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(entities, actual);
 	}
 
 	[Fact]
@@ -91,15 +83,14 @@ public class TransactionRepositoryTests
 		await _context.Transactions.AddRangeAsync(entities);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		List<Transaction> expected = entities.Select(_mapper.Map<Transaction>).ToList();
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Act
-		List<Transaction> actual = await repository.GetAllAsync(CancellationToken.None);
+		List<TransactionEntity> actual = await repository.GetAllAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
-		Assert.Equal(expected, actual);
+		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(entities, actual);
 	}
 
 	[Fact]
@@ -108,31 +99,24 @@ public class TransactionRepositoryTests
 		// Arrange
 		_context.ResetDatabase();
 
-		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		AccountEntity account = AccountEntityGenerator.Generate();
-		await _context.Receipts.AddAsync(receipt);
-		await _context.Accounts.AddAsync(account);
-		await _context.SaveChangesAsync(CancellationToken.None);
-
-		List<Transaction> expected = TransactionGenerator.GenerateList(2);
-		expected.ForEach(e => e.Id = null);
-		TransactionRepository repository = new(_context, _mapper);
+		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2);
+		entities.ForEach(e => e.Id = Guid.Empty);
+		TransactionRepository repository = new(_context);
 
 		// Act
-		List<Transaction> actual = await repository.CreateAsync(expected, receipt.Id, account.Id, CancellationToken.None);
+		List<TransactionEntity> actual = await repository.CreateAsync(entities, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Count);
 
 		Assert.All(actual, t =>
 		{
 			Assert.NotEqual(Guid.Empty, t.Id);
-			Assert.NotNull(t.Id);
 		});
 
-		Assert.Equal(expected, actual.Select(t =>
+		Assert.Equal(entities, actual.Select(t =>
 		{
-			t.Id = null;
+			t.Id = Guid.Empty;
 			return t;
 		}));
 	}
@@ -144,37 +128,36 @@ public class TransactionRepositoryTests
 		_context.ResetDatabase();
 
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		AccountEntity account = AccountEntityGenerator.Generate();
 		await _context.Receipts.AddAsync(receipt);
+
+		AccountEntity account = AccountEntityGenerator.Generate();
 		await _context.Accounts.AddAsync(account);
-		await _context.SaveChangesAsync(CancellationToken.None);
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2, receipt.Id, account.Id);
 		await _context.Transactions.AddRangeAsync(entities);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		List<Transaction> expected = entities.Select(_mapper.Map<Transaction>).ToList();
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Modify transactions
-		expected.ForEach(e =>
+		entities.ForEach(e =>
 		{
-			e.Amount = new Money(e.Amount.Amount + 10.0m, e.Amount.Currency);
+			e.Amount += 10.0m;
 			e.Date = e.Date.AddDays(1);
 		});
 
 		// Act
-		await repository.UpdateAsync(expected, receipt.Id, account.Id, CancellationToken.None);
+		await repository.UpdateAsync(entities, CancellationToken.None);
 		List<TransactionEntity> updatedEntities = await _context.Transactions.ToListAsync();
 
 		// Assert
-		Assert.Equal(expected.Count, updatedEntities.Count);
+		Assert.Equal(entities.Count, updatedEntities.Count);
 
-		foreach (Transaction expectedTransaction in expected)
+		foreach (TransactionEntity expectedTransaction in entities)
 		{
 			TransactionEntity? updatedEntity = updatedEntities.FirstOrDefault(e => e.Id == expectedTransaction.Id);
 			Assert.NotNull(updatedEntity);
-			Assert.Equal(expectedTransaction.Amount.Amount, updatedEntity.Amount);
+			Assert.Equal(expectedTransaction.Amount, updatedEntity.Amount);
 			Assert.Equal(expectedTransaction.Date, updatedEntity.Date);
 		}
 	}
@@ -186,17 +169,17 @@ public class TransactionRepositoryTests
 		_context.ResetDatabase();
 
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		AccountEntity account = AccountEntityGenerator.Generate();
 		await _context.Receipts.AddAsync(receipt);
+
+		AccountEntity account = AccountEntityGenerator.Generate();
 		await _context.Accounts.AddAsync(account);
-		await _context.SaveChangesAsync(CancellationToken.None);
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(3, receipt.Id, account.Id);
 		await _context.Transactions.AddRangeAsync(entities);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
 		List<Guid> idsToDelete = entities.Take(2).Select(e => e.Id).ToList();
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Act
 		await repository.DeleteAsync(idsToDelete, CancellationToken.None);
@@ -217,7 +200,7 @@ public class TransactionRepositoryTests
 		await _context.Transactions.AddAsync(entity);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Act
 		bool result = await repository.ExistsAsync(entity.Id, CancellationToken.None);
@@ -232,7 +215,7 @@ public class TransactionRepositoryTests
 		// Arrange
 		_context.ResetDatabase();
 
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Act
 		bool result = await repository.ExistsAsync(Guid.NewGuid(), CancellationToken.None);
@@ -251,7 +234,7 @@ public class TransactionRepositoryTests
 		await _context.Transactions.AddRangeAsync(entities);
 		await _context.SaveChangesAsync(CancellationToken.None);
 
-		TransactionRepository repository = new(_context, _mapper);
+		TransactionRepository repository = new(_context);
 
 		// Act
 		int count = await repository.GetCountAsync(CancellationToken.None);

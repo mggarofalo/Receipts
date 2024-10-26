@@ -1,5 +1,6 @@
 using Application.Interfaces;
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
+using Infrastructure.Interfaces.Repositories;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -22,11 +23,15 @@ public static class InfrastructureService
 		});
 
 		services
+			.AddScoped<IReceiptService, ReceiptService>()
+			.AddScoped<IAccountService, AccountService>()
+			.AddScoped<ITransactionService, TransactionService>()
+			.AddScoped<IReceiptItemService, ReceiptItemService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
 			.AddScoped<IAccountRepository, AccountRepository>()
 			.AddScoped<ITransactionRepository, TransactionRepository>()
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
-			.AddScoped<IDatabaseMigrator, DatabaseMigrator>();
+			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>();
 
 		services.AddAutoMapper(typeof(InfrastructureService).Assembly);
 

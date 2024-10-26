@@ -1,7 +1,7 @@
 using Application.Commands.Transaction;
-using Application.Interfaces.Repositories;
 using SampleData.Domain.Core;
 using Moq;
+using Application.Interfaces.Services;
 
 namespace Application.Tests.Commands.Transaction;
 
@@ -10,12 +10,12 @@ public class UpdateTransactionCommandHandlerTests
 	[Fact]
 	public async Task UpdateTransactionCommandHandler_WithValidCommand_ReturnsTrueAndCallsUpdateAndSaveChanges()
 	{
-		Mock<ITransactionRepository> mockRepository = new();
-		UpdateTransactionCommandHandler handler = new(mockRepository.Object);
+		Mock<ITransactionService> mockService = new();
+		UpdateTransactionCommandHandler handler = new(mockService.Object);
 
 		List<Domain.Core.Transaction> input = TransactionGenerator.GenerateList(2);
 
-		mockRepository.Setup(r => r
+		mockService.Setup(r => r
 			.UpdateAsync(It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 

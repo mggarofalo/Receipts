@@ -1,7 +1,7 @@
-using Application.Interfaces.Repositories;
 using SampleData.Domain.Core;
 using Moq;
 using Application.Queries.Core.Transaction;
+using Application.Interfaces.Services;
 
 namespace Application.Tests.Queries.Core.Transaction;
 
@@ -12,10 +12,10 @@ public class GetTransactionByIdQueryHandlerTests
 	{
 		Domain.Core.Transaction expected = TransactionGenerator.Generate();
 
-		Mock<ITransactionRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		Mock<ITransactionService> mockService = new();
+		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
-		GetTransactionByIdQueryHandler handler = new(mockRepository.Object);
+		GetTransactionByIdQueryHandler handler = new(mockService.Object);
 		GetTransactionByIdQuery query = new(expected.Id!.Value);
 		Domain.Core.Transaction? result = await handler.Handle(query, CancellationToken.None);
 
@@ -26,10 +26,10 @@ public class GetTransactionByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnNull_WhenTransactionDoesNotExist()
 	{
-		Mock<ITransactionRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Transaction?)null);
+		Mock<ITransactionService> mockService = new();
+		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Transaction?)null);
 
-		GetTransactionByIdQueryHandler handler = new(mockRepository.Object);
+		GetTransactionByIdQueryHandler handler = new(mockService.Object);
 		GetTransactionByIdQuery query = new(Guid.NewGuid());
 		Domain.Core.Transaction? result = await handler.Handle(query, CancellationToken.None);
 

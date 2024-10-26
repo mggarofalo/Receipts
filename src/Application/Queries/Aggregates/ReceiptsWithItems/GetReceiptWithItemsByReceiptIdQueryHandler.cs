@@ -1,11 +1,11 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using MediatR;
 
 namespace Application.Queries.Aggregates.ReceiptsWithItems;
 
 public class GetReceiptWithItemsByReceiptIdQueryHandler(
-	IReceiptRepository receiptRepository,
-	IReceiptItemRepository receiptItemRepository
+	IReceiptService receiptRepository,
+	IReceiptItemService receiptItemRepository
 ) : IRequestHandler<GetReceiptWithItemsByReceiptIdQuery, Domain.Aggregates.ReceiptWithItems?>
 {
 	public async Task<Domain.Aggregates.ReceiptWithItems?> Handle(GetReceiptWithItemsByReceiptIdQuery request, CancellationToken cancellationToken)

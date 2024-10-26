@@ -1,7 +1,7 @@
-using Application.Interfaces.Repositories;
 using SampleData.Domain.Core;
 using Moq;
 using Application.Queries.Core.Account;
+using Application.Interfaces.Services;
 
 namespace Application.Tests.Queries.Core.Account;
 
@@ -12,10 +12,10 @@ public class GetAllAccountsQueryHandlerTests
 	{
 		List<Domain.Core.Account> expected = AccountGenerator.GenerateList(2);
 
-		Mock<IAccountRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		Mock<IAccountService> mockService = new();
+		mockService.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
-		GetAllAccountsQueryHandler handler = new(mockRepository.Object);
+		GetAllAccountsQueryHandler handler = new(mockService.Object);
 		GetAllAccountsQuery query = new();
 
 		List<Domain.Core.Account> result = await handler.Handle(query, CancellationToken.None);

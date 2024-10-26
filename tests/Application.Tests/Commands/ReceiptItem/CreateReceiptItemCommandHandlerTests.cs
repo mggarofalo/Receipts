@@ -1,7 +1,7 @@
 using Application.Commands.ReceiptItem;
-using Application.Interfaces.Repositories;
 using SampleData.Domain.Core;
 using Moq;
+using Application.Interfaces.Services;
 
 namespace Application.Tests.Commands.ReceiptItem;
 
@@ -10,13 +10,13 @@ public class CreateReceiptItemCommandHandlerTests
 	[Fact]
 	public async Task CreateReceiptItemCommandHandler_WithValidCommand_ReturnsCreatedReceiptItems()
 	{
-		Mock<IReceiptItemRepository> mockRepository = new();
-		CreateReceiptItemCommandHandler handler = new(mockRepository.Object);
+		Mock<IReceiptItemService> mockService = new();
+		CreateReceiptItemCommandHandler handler = new(mockService.Object);
 
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 		List<Domain.Core.ReceiptItem> input = ReceiptItemGenerator.GenerateList(2);
 
-		mockRepository.Setup(r => r
+		mockService.Setup(r => r
 			.CreateAsync(It.IsAny<List<Domain.Core.ReceiptItem>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(input);
 

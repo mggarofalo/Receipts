@@ -1,47 +1,39 @@
-using Application.Interfaces.Repositories;
-using AutoMapper;
-using Domain.Core;
 using Infrastructure.Entities.Core;
-using Infrastructure.Mapping;
+using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper) : IReceiptItemRepository
-{
-	public async Task<ReceiptItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
-	{
-		ReceiptItemEntity? entity = await context.ReceiptItems
-			.FindAsync([id], cancellationToken);
+// TODO: Handle cases where a caller sends entities that haven't been saved yet to methods that expect saved entities
 
-		return mapper.Map<ReceiptItem>(entity);
+public class ReceiptItemRepository(ApplicationDbContext context) : IReceiptItemRepository
+{
+	public async Task<ReceiptItemEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+	{
+		return await context.ReceiptItems.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<ReceiptItem>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
+	public async Task<List<ReceiptItemEntity>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> receiptItemEntities = await context.ReceiptItems
+		return await context.ReceiptItems
 			.Where(ri => ri.ReceiptId == receiptId)
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
-
-		return receiptItemEntities.Select(mapper.Map<ReceiptItem>).ToList();
 	}
 
-	public async Task<List<ReceiptItem>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<List<ReceiptItemEntity>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> receiptItemEntities = await context.ReceiptItems
+		return await context.ReceiptItems
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
-
-		return receiptItemEntities.Select(mapper.Map<ReceiptItem>).ToList();
 	}
 
-	public async Task<List<ReceiptItem>> CreateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
+	public async Task<List<ReceiptItemEntity>> CreateAsync(List<ReceiptItemEntity> entities, CancellationToken cancellationToken)
 	{
 		List<ReceiptItemEntity> createdEntities = [];
 
-		foreach (ReceiptItemEntity entity in models.Select(m => mapper.MapToReceiptItemEntity(m, receiptId)))
+		foreach (ReceiptItemEntity entity in entities)
 		{
 			EntityEntry<ReceiptItemEntity> entityEntry = await context.ReceiptItems.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
@@ -49,24 +41,22 @@ public class ReceiptItemRepository(ApplicationDbContext context, IMapper mapper)
 
 		await context.SaveChangesAsync(cancellationToken);
 
-		return createdEntities.Select(mapper.Map<ReceiptItem>).ToList();
+		return createdEntities;
 	}
 
-	public async Task UpdateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<ReceiptItemEntity> entities, CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> newEntities = models.Select(m => mapper.MapToReceiptItemEntity(m, receiptId)).ToList();
-
-		foreach (ReceiptItemEntity newEntity in newEntities)
+		foreach (ReceiptItemEntity entity in entities)
 		{
-			ReceiptItemEntity existingEntity = await context.ReceiptItems.SingleAsync(e => e.Id == newEntity.Id, cancellationToken);
-			existingEntity.ReceiptId = newEntity.ReceiptId;
-			existingEntity.ReceiptItemCode = newEntity.ReceiptItemCode;
-			existingEntity.Description = newEntity.Description;
-			existingEntity.Quantity = newEntity.Quantity;
-			existingEntity.UnitPrice = newEntity.UnitPrice;
-			existingEntity.Category = newEntity.Category;
-			existingEntity.Subcategory = newEntity.Subcategory;
-			existingEntity.TotalAmount = newEntity.TotalAmount;
+			ReceiptItemEntity existingEntity = await context.ReceiptItems.SingleAsync(e => e.Id == entity.Id, cancellationToken);
+			existingEntity.ReceiptId = entity.ReceiptId;
+			existingEntity.ReceiptItemCode = entity.ReceiptItemCode;
+			existingEntity.Description = entity.Description;
+			existingEntity.Quantity = entity.Quantity;
+			existingEntity.UnitPrice = entity.UnitPrice;
+			existingEntity.Category = entity.Category;
+			existingEntity.Subcategory = entity.Subcategory;
+			existingEntity.TotalAmount = entity.TotalAmount;
 		}
 
 		await context.SaveChangesAsync(cancellationToken);

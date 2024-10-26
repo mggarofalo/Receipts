@@ -1,8 +1,8 @@
 using Domain.Core;
 
-namespace Application.Interfaces.Repositories;
+namespace Application.Interfaces.Services;
 
-public interface IReceiptItemRepository : IRepository<ReceiptItem>
+public interface IReceiptItemService : IService<ReceiptItem>
 {
 	Task<List<ReceiptItem>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken);
 	Task<List<ReceiptItem>> CreateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken);

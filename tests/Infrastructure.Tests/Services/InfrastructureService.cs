@@ -1,5 +1,5 @@
 using Application.Interfaces;
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using AutoMapper;
 using Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
@@ -35,15 +35,15 @@ public class InfrastructureServiceTests
 
 	private static void AssertThatRepositoriesAreRegistered(ServiceProvider serviceProvider)
 	{
-		Assert.NotNull(serviceProvider.GetService<IReceiptRepository>());
-		Assert.NotNull(serviceProvider.GetService<IAccountRepository>());
-		Assert.NotNull(serviceProvider.GetService<ITransactionRepository>());
-		Assert.NotNull(serviceProvider.GetService<IReceiptItemRepository>());
+		Assert.NotNull(serviceProvider.GetService<IReceiptService>());
+		Assert.NotNull(serviceProvider.GetService<IAccountService>());
+		Assert.NotNull(serviceProvider.GetService<ITransactionService>());
+		Assert.NotNull(serviceProvider.GetService<IReceiptItemService>());
 	}
 
 	private static void AssertThatDatabaseMigratorIsRegistered(ServiceProvider serviceProvider)
 	{
-		Assert.NotNull(serviceProvider.GetService<IDatabaseMigrator>());
+		Assert.NotNull(serviceProvider.GetService<IDatabaseMigratorService>());
 	}
 
 	private static void AssertThatAutoMapperIsRegistered(ServiceProvider serviceProvider)

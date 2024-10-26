@@ -1,48 +1,37 @@
-using Application.Interfaces.Repositories;
-using AutoMapper;
-using Domain.Core;
 using Infrastructure.Entities.Core;
+using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-// TODO: Handle cases where a caller sends entities that haven't been saved yet to methods that expect saved entities
-
-public class AccountRepository(ApplicationDbContext context, IMapper mapper) : IAccountRepository
+public class AccountRepository(ApplicationDbContext context) : IAccountRepository
 {
-	public async Task<Account?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+	public async Task<AccountEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
-		AccountEntity? entity = await context.Accounts
-			.FindAsync([id], cancellationToken);
-
-		return mapper.Map<Account>(entity);
+		return await context.Accounts.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<Account?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken)
+	public async Task<AccountEntity?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken)
 	{
-		AccountEntity? accountEntity = await context.Transactions
+		return await context.Transactions
 			.Where(t => t.Id == transactionId)
 			.Select(t => t.Account)
 			.FirstOrDefaultAsync(cancellationToken);
-
-		return mapper.Map<Account>(accountEntity);
 	}
 
-	public async Task<List<Account>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<List<AccountEntity>> GetAllAsync(CancellationToken cancellationToken)
 	{
-		List<AccountEntity> accountEntities = await context.Accounts
+		return await context.Accounts
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
-
-		return accountEntities.Select(mapper.Map<Account>).ToList();
 	}
 
-	public async Task<List<Account>> CreateAsync(List<Account> models, CancellationToken cancellationToken)
+	public async Task<List<AccountEntity>> CreateAsync(List<AccountEntity> entities, CancellationToken cancellationToken)
 	{
 		List<AccountEntity> createdEntities = [];
 
-		foreach (AccountEntity entity in models.Select(mapper.Map<AccountEntity>))
+		foreach (AccountEntity entity in entities)
 		{
 			EntityEntry<AccountEntity> entityEntry = await context.Accounts.AddAsync(entity, cancellationToken);
 			createdEntities.Add(entityEntry.Entity);
@@ -50,19 +39,17 @@ public class AccountRepository(ApplicationDbContext context, IMapper mapper) : I
 
 		await context.SaveChangesAsync(cancellationToken);
 
-		return createdEntities.Select(mapper.Map<Account>).ToList();
+		return createdEntities;
 	}
 
-	public async Task UpdateAsync(List<Account> models, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<AccountEntity> entities, CancellationToken cancellationToken)
 	{
-		List<AccountEntity> newEntities = models.Select(mapper.Map<AccountEntity>).ToList();
-
-		foreach (AccountEntity newEntity in newEntities)
+		foreach (AccountEntity entity in entities)
 		{
-			AccountEntity existingEntity = await context.Accounts.SingleAsync(e => e.Id == newEntity.Id, cancellationToken);
-			existingEntity.AccountCode = newEntity.AccountCode;
-			existingEntity.Name = newEntity.Name;
-			existingEntity.IsActive = newEntity.IsActive;
+			AccountEntity existingEntity = await context.Accounts.SingleAsync(e => e.Id == entity.Id, cancellationToken);
+			existingEntity.AccountCode = entity.AccountCode;
+			existingEntity.Name = entity.Name;
+			existingEntity.IsActive = entity.IsActive;
 		}
 
 		await context.SaveChangesAsync(cancellationToken);

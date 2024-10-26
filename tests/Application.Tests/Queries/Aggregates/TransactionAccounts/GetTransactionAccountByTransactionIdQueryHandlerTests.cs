@@ -1,4 +1,4 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Moq;
 using SampleData.Domain.Core;
@@ -14,13 +14,13 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 		Domain.Core.Account expectedAccount = AccountGenerator.Generate();
 		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate();
 
-		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
+		Mock<ITransactionService> mockTransactionService = new();
+		mockTransactionService.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
-		Mock<IAccountRepository> mockAccountRepository = new();
-		mockAccountRepository.Setup(r => r.GetByTransactionIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
+		Mock<IAccountService> mockAccountService = new();
+		mockAccountService.Setup(r => r.GetByTransactionIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
 
-		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
+		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id!.Value);
 
 		// Act
@@ -37,12 +37,12 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 	{
 		// Arrange
 		Guid missingTransactionId = Guid.NewGuid();
-		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByIdAsync(missingTransactionId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Transaction?)null);
+		Mock<ITransactionService> mockTransactionService = new();
+		mockTransactionService.Setup(r => r.GetByIdAsync(missingTransactionId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Transaction?)null);
 
-		Mock<IAccountRepository> mockAccountRepository = new();
+		Mock<IAccountService> mockAccountService = new();
 
-		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
+		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountByTransactionIdQuery query = new(missingTransactionId);
 
 		// Act
@@ -59,13 +59,13 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 		Guid missingAccountId = Guid.NewGuid();
 		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate();
 
-		Mock<ITransactionRepository> mockTransactionRepository = new();
-		mockTransactionRepository.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
+		Mock<ITransactionService> mockTransactionService = new();
+		mockTransactionService.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
-		Mock<IAccountRepository> mockAccountRepository = new();
-		mockAccountRepository.Setup(r => r.GetByIdAsync(missingAccountId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
+		Mock<IAccountService> mockAccountService = new();
+		mockAccountService.Setup(r => r.GetByIdAsync(missingAccountId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 
-		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionRepository.Object, mockAccountRepository.Object);
+		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id!.Value);
 
 		// Act

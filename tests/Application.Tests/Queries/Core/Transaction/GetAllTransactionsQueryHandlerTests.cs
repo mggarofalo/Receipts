@@ -1,7 +1,7 @@
-using Application.Interfaces.Repositories;
 using SampleData.Domain.Core;
 using Moq;
 using Application.Queries.Core.Transaction;
+using Application.Interfaces.Services;
 
 namespace Application.Tests.Queries.Core.Transaction;
 
@@ -12,10 +12,10 @@ public class GetAllTransactionsQueryHandlerTests
 	{
 		List<Domain.Core.Transaction> expected = TransactionGenerator.GenerateList(2);
 
-		Mock<ITransactionRepository> mockRepository = new();
-		mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		Mock<ITransactionService> mockService = new();
+		mockService.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
-		GetAllTransactionsQueryHandler handler = new(mockRepository.Object);
+		GetAllTransactionsQueryHandler handler = new(mockService.Object);
 		GetAllTransactionsQuery query = new();
 
 		List<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);

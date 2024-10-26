@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Tests;
 
@@ -9,9 +8,8 @@ public static class DbContextHelpers
 	{
 		DbContextOptionsBuilder<ApplicationDbContext> optionsBuilder = new();
 		optionsBuilder.UseInMemoryDatabase(databaseName: $"TestDatabase_{Guid.NewGuid()}");
-		DbContextOptions<ApplicationDbContext> options = optionsBuilder.Options;
 
-		ApplicationDbContext context = new(options);
+		ApplicationDbContext context = new(optionsBuilder.Options);
 		context.ResetDatabase();
 
 		return context;

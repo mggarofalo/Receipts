@@ -1,11 +1,11 @@
-using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using MediatR;
 
 namespace Application.Queries.Aggregates.TransactionAccounts;
 
 public class GetTransactionAccountByTransactionIdQueryHandler(
-	ITransactionRepository transactionRepository,
-	IAccountRepository accountRepository
+	ITransactionService transactionRepository,
+	IAccountService accountRepository
 ) : IRequestHandler<GetTransactionAccountByTransactionIdQuery, Domain.Aggregates.TransactionAccount?>
 {
 	public async Task<Domain.Aggregates.TransactionAccount?> Handle(GetTransactionAccountByTransactionIdQuery request, CancellationToken cancellationToken)

@@ -1,9 +1,8 @@
-using Application.Commands.Transaction;
 using Domain.Core;
 
-namespace Application.Interfaces.Repositories;
+namespace Application.Interfaces.Services;
 
-public interface ITransactionRepository : IRepository<Transaction>
+public interface ITransactionService : IService<Transaction>
 {
 	Task<List<Transaction>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken);
 	Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken);
