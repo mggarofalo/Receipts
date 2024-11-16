@@ -36,6 +36,7 @@ public class DeleteReceiptCommandTests : ICommandTests<Guid>
 	{
 		List<Guid> items = ReceiptGenerator.GenerateList(2).Select(r => r.Id!.Value).ToList();
 		DeleteReceiptCommand command = new(items);
-		Assert.True(command.Ids is not null);
+		Assert.IsAssignableFrom<IReadOnlyList<Guid>>(command.Ids);
+		Assert.NotSame(items, command.Ids);
 	}
 }

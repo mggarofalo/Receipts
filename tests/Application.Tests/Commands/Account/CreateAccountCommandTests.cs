@@ -36,6 +36,7 @@ public class CreateAccountCommandTests : ICommandTests<Domain.Core.Account>
 	{
 		List<Domain.Core.Account> items = AccountGenerator.GenerateList(2);
 		CreateAccountCommand command = new(items);
-		Assert.True(command.Accounts is not null);
+		Assert.IsAssignableFrom<IReadOnlyList<Domain.Core.Account>>(command.Accounts);
+		Assert.NotSame(items, command.Accounts);
 	}
 }

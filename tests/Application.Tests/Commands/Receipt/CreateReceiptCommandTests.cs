@@ -36,6 +36,7 @@ public class CreateReceiptCommandTests : ICommandTests<Domain.Core.Receipt>
 	{
 		List<Domain.Core.Receipt> items = ReceiptGenerator.GenerateList(2);
 		CreateReceiptCommand command = new(items);
-		Assert.True(command.Receipts is not null);
+		Assert.IsAssignableFrom<IReadOnlyList<Domain.Core.Receipt>>(command.Receipts);
+		Assert.NotSame(items, command.Receipts);
 	}
 }

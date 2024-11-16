@@ -36,6 +36,7 @@ public class DeleteTransactionCommandTests : ICommandTests<Guid>
 	{
 		List<Guid> items = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
 		DeleteTransactionCommand command = new(items);
-		Assert.True(command.Ids is not null);
+		Assert.IsAssignableFrom<IReadOnlyList<Guid>>(command.Ids);
+		Assert.NotSame(items, command.Ids);
 	}
 }

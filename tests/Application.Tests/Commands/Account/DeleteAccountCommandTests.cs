@@ -36,6 +36,7 @@ public class DeleteAccountCommandTests : ICommandTests<Guid>
 	{
 		List<Guid> items = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
 		DeleteAccountCommand command = new(items);
-		Assert.True(command.Ids is not null);
+		Assert.IsAssignableFrom<IReadOnlyList<Guid>>(command.Ids);
+		Assert.NotSame(items, command.Ids);
 	}
 }

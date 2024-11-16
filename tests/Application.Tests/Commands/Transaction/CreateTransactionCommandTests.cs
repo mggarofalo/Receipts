@@ -36,6 +36,7 @@ public class CreateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	{
 		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
 		CreateTransactionCommand command = new(items, Guid.NewGuid(), Guid.NewGuid());
-		Assert.True(command.Transactions is not null);
+		Assert.IsAssignableFrom<IReadOnlyList<Domain.Core.Transaction>>(command.Transactions);
+		Assert.NotSame(items, command.Transactions);
 	}
 }
