@@ -1,5 +1,7 @@
 using Common;
 using Infrastructure.Entities.Core;
+using Infrastructure.Tests.Repositories;
+using Microsoft.EntityFrameworkCore;
 using SampleData.Entities;
 
 namespace Infrastructure.Tests.Entities.Core;
@@ -41,7 +43,8 @@ public class TransactionEntityTests
 	public async Task VirtualReceiptEntity_IsNavigable()
 	{
 		// Arrange
-		ApplicationDbContext context = DbContextHelpers.CreateInMemoryContext();
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		AccountEntity account = AccountEntityGenerator.Generate();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
@@ -59,13 +62,16 @@ public class TransactionEntityTests
 		Assert.NotNull(loadedTransaction);
 		Assert.NotNull(loadedTransaction.Receipt);
 		Assert.Equal(loadedReceipt, loadedTransaction.Receipt);
+
+		contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task VirtualAccountEntity_IsNavigable()
 	{
 		// Arrange
-		ApplicationDbContext context = DbContextHelpers.CreateInMemoryContext();
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		AccountEntity account = AccountEntityGenerator.Generate();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
@@ -83,6 +89,8 @@ public class TransactionEntityTests
 		Assert.NotNull(loadedTransaction);
 		Assert.NotNull(loadedTransaction.Account);
 		Assert.Equal(loadedAccount, loadedTransaction.Account);
+
+		contextFactory.ResetDatabase();
 	}
 
 	[Fact]

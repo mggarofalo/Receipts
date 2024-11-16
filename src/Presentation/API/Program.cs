@@ -6,6 +6,13 @@ using Infrastructure.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration
+	.SetBasePath(Directory.GetCurrentDirectory())
+	.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+	.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+	.AddEnvironmentVariables()
+	.AddUserSecrets<Program>(optional: true);
+
 builder.AddLoggingService();
 
 builder.Services

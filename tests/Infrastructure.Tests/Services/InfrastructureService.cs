@@ -2,6 +2,7 @@ using Application.Interfaces;
 using Application.Interfaces.Services;
 using AutoMapper;
 using Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -22,15 +23,15 @@ public class InfrastructureServiceTests
 		ServiceProvider serviceProvider = services.BuildServiceProvider();
 
 		// Assert
-		AssertThatDbContextIsRegistered(serviceProvider);
+		AssertThatDbContextFactoryIsRegistered(serviceProvider);
 		AssertThatRepositoriesAreRegistered(serviceProvider);
 		AssertThatDatabaseMigratorIsRegistered(serviceProvider);
 		AssertThatAutoMapperIsRegistered(serviceProvider);
 	}
 
-	private static void AssertThatDbContextIsRegistered(ServiceProvider serviceProvider)
+	private static void AssertThatDbContextFactoryIsRegistered(ServiceProvider serviceProvider)
 	{
-		Assert.NotNull(serviceProvider.GetService<ApplicationDbContext>());
+		Assert.NotNull(serviceProvider.GetService<IDbContextFactory<ApplicationDbContext>>());
 	}
 
 	private static void AssertThatRepositoriesAreRegistered(ServiceProvider serviceProvider)

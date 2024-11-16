@@ -12,9 +12,9 @@ public static class InfrastructureService
 {
 	public static IServiceCollection RegisterInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
 	{
-		services.AddDbContext<ApplicationDbContext>(options =>
+		services.AddDbContextFactory<ApplicationDbContext>(options =>
 		{
-			string? connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
+			string? connectionString = configuration["POSTGRES_CONNECTION_STRING"];
 			options.UseNpgsql(connectionString, b =>
 			{
 				string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;

@@ -1,5 +1,7 @@
 using Common;
 using Infrastructure.Entities.Core;
+using Infrastructure.Tests.Repositories;
+using Microsoft.EntityFrameworkCore;
 using SampleData.Entities;
 
 namespace Infrastructure.Tests.Entities.Core;
@@ -56,7 +58,8 @@ public class ReceiptItemEntityTests
 	public async Task VirtualReceiptEntity_IsNavigable()
 	{
 		// Arrange
-		ApplicationDbContext context = DbContextHelpers.CreateInMemoryContext();
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		ReceiptItemEntity receiptItem = ReceiptItemEntityGenerator.Generate(receipt.Id);
 
@@ -71,6 +74,8 @@ public class ReceiptItemEntityTests
 		Assert.NotNull(loadedReceipt);
 		Assert.NotNull(loadedReceiptItem);
 		Assert.Equal(loadedReceipt, loadedReceiptItem.Receipt);
+
+		contextFactory.ResetDatabase();
 	}
 
 	[Fact]

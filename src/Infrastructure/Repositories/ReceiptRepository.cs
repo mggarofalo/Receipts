@@ -5,17 +5,17 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-// TODO: Handle cases where a caller sends entities that haven't been saved yet to methods that expect saved entities
-
-public class ReceiptRepository(ApplicationDbContext context) : IReceiptRepository
+public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : IReceiptRepository
 {
 	public async Task<ReceiptEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts.FindAsync([id], cancellationToken);
 	}
 
 	public async Task<List<ReceiptEntity>> GetAllAsync(CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
@@ -23,6 +23,7 @@ public class ReceiptRepository(ApplicationDbContext context) : IReceiptRepositor
 
 	public async Task<List<ReceiptEntity>> CreateAsync(List<ReceiptEntity> entities, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<ReceiptEntity> createdEntities = [];
 
 		foreach (ReceiptEntity entity in entities)
@@ -38,13 +39,16 @@ public class ReceiptRepository(ApplicationDbContext context) : IReceiptRepositor
 
 	public async Task UpdateAsync(List<ReceiptEntity> entities, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		IEnumerable<Guid> ids = entities.Select(e => e.Id);
+		List<ReceiptEntity> existingEntities = await context.Receipts
+			.Where(e => ids.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
 		foreach (ReceiptEntity entity in entities)
 		{
-			ReceiptEntity existingEntity = await context.Receipts.SingleAsync(e => e.Id == entity.Id, cancellationToken);
-			existingEntity.Description = entity.Description;
-			existingEntity.Location = entity.Location;
-			existingEntity.Date = entity.Date;
-			existingEntity.TaxAmount = entity.TaxAmount;
+			ReceiptEntity existingEntity = existingEntities.Single(e => e.Id == entity.Id);
+			context.Entry(existingEntity).CurrentValues.SetValues(entity);
 		}
 
 		await context.SaveChangesAsync(cancellationToken);
@@ -52,6 +56,7 @@ public class ReceiptRepository(ApplicationDbContext context) : IReceiptRepositor
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<ReceiptEntity> entities = await context.Receipts
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
@@ -62,11 +67,13 @@ public class ReceiptRepository(ApplicationDbContext context) : IReceiptRepositor
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts.AnyAsync(e => e.Id == id, cancellationToken);
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts.CountAsync(cancellationToken);
 	}
 }

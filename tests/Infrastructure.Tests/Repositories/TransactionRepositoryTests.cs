@@ -7,19 +7,33 @@ namespace Infrastructure.Tests.Repositories;
 
 public class TransactionRepositoryTests
 {
-	private readonly ApplicationDbContext _context = DbContextHelpers.CreateInMemoryContext();
+	private readonly IDbContextFactory<ApplicationDbContext> _contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+	private async Task<(ReceiptEntity receipt, AccountEntity account)> CreateParentEntitiesAsync()
+	{
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+		await context.Receipts.AddAsync(receipt);
+
+		AccountEntity account = AccountEntityGenerator.Generate();
+		await context.Accounts.AddAsync(account);
+
+		await context.SaveChangesAsync(CancellationToken.None);
+		return (receipt, account);
+	}
 
 	[Fact]
 	public async Task GetByIdAsync_ExistingId_ReturnsTransaction()
 	{
 		// Arrange
-		_context.ResetDatabase();
+		var (receipt, account) = await CreateParentEntitiesAsync();
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
-		TransactionEntity entity = TransactionEntityGenerator.Generate();
-		await _context.Transactions.AddAsync(entity);
-		await _context.SaveChangesAsync(CancellationToken.None);
+		TransactionEntity entity = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+		await context.Transactions.AddAsync(entity);
+		await context.SaveChangesAsync(CancellationToken.None);
 
-		TransactionRepository repository = new(_context);
+		TransactionRepository repository = new(_contextFactory);
 
 		// Act
 		TransactionEntity? actual = await repository.GetByIdAsync(entity.Id, CancellationToken.None);
@@ -27,87 +41,92 @@ public class TransactionRepositoryTests
 		// Assert
 		Assert.NotNull(actual);
 		Assert.Equal(entity, actual);
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task GetByIdAsync_NonExistingId_ReturnsNull()
 	{
 		// Arrange
-		_context.ResetDatabase();
-
-		TransactionRepository repository = new(_context);
+		const int expectedCount = 0;
+		TransactionRepository repository = new(_contextFactory);
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		Assert.Equal(expectedCount, await context.Transactions.CountAsync());
 
 		// Act
 		TransactionEntity? result = await repository.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
 
 		// Assert
 		Assert.Null(result);
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task GetByReceiptIdAsync_ExistingReceiptId_ReturnsTransactions()
 	{
 		// Arrange
-		_context.ResetDatabase();
+		const int expectedTransactionCount = 3;
+		var (receipt, account) = await CreateParentEntitiesAsync();
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
-		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		AccountEntity account = AccountEntityGenerator.Generate();
-		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(3, receipt.Id, account.Id);
-		await _context.Receipts.AddAsync(receipt);
-		await _context.Accounts.AddAsync(account);
-		await _context.Transactions.AddRangeAsync(entities);
-		await _context.SaveChangesAsync(CancellationToken.None);
+		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
+		await context.Transactions.AddRangeAsync(entities);
+		await context.SaveChangesAsync(CancellationToken.None);
 
-		TransactionRepository repository = new(_context);
+		TransactionRepository repository = new(_contextFactory);
 
 		// Act
 		List<TransactionEntity>? actual = await repository.GetByReceiptIdAsync(receipt.Id, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(expectedTransactionCount, actual.Count);
 		Assert.Equal(entities, actual);
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task GetAllAsync_ReturnsAllTransactions()
 	{
 		// Arrange
-		_context.ResetDatabase();
+		const int expectedTransactionCount = 3;
+		var (receipt, account) = await CreateParentEntitiesAsync();
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
-		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		AccountEntity account = AccountEntityGenerator.Generate();
-		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(3, receipt.Id, account.Id);
-		await _context.Receipts.AddAsync(receipt);
-		await _context.Accounts.AddAsync(account);
-		await _context.Transactions.AddRangeAsync(entities);
-		await _context.SaveChangesAsync(CancellationToken.None);
+		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
+		await context.Transactions.AddRangeAsync(entities);
+		await context.SaveChangesAsync(CancellationToken.None);
+		Assert.Equal(expectedTransactionCount, await context.Transactions.CountAsync());
 
-		TransactionRepository repository = new(_context);
+		TransactionRepository repository = new(_contextFactory);
 
 		// Act
 		List<TransactionEntity> actual = await repository.GetAllAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(expectedTransactionCount, actual.Count);
 		Assert.Equal(entities, actual);
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task CreateAsync_ValidTransactions_ReturnsCreatedTransactions()
 	{
 		// Arrange
-		_context.ResetDatabase();
-
-		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2);
+		const int expectedTransactionCount = 2;
+		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount);
 		entities.ForEach(e => e.Id = Guid.Empty);
-		TransactionRepository repository = new(_context);
+		TransactionRepository repository = new(_contextFactory);
 
 		// Act
 		List<TransactionEntity> actual = await repository.CreateAsync(entities, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(expectedTransactionCount, actual.Count);
 
 		Assert.All(actual, t =>
 		{
@@ -119,25 +138,24 @@ public class TransactionRepositoryTests
 			t.Id = Guid.Empty;
 			return t;
 		}));
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task UpdateAsync_ValidTransactions_UpdatesTransactions()
 	{
 		// Arrange
-		_context.ResetDatabase();
+		const int expectedTransactionCount = 2;
+		var (receipt, account) = await CreateParentEntitiesAsync();
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
-		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		await _context.Receipts.AddAsync(receipt);
+		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
+		await context.Transactions.AddRangeAsync(entities);
+		await context.SaveChangesAsync(CancellationToken.None);
+		Assert.Equal(expectedTransactionCount, await context.Transactions.CountAsync());
 
-		AccountEntity account = AccountEntityGenerator.Generate();
-		await _context.Accounts.AddAsync(account);
-
-		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2, receipt.Id, account.Id);
-		await _context.Transactions.AddRangeAsync(entities);
-		await _context.SaveChangesAsync(CancellationToken.None);
-
-		TransactionRepository repository = new(_context);
+		TransactionRepository repository = new(_contextFactory);
 
 		// Modify transactions
 		entities.ForEach(e =>
@@ -148,10 +166,12 @@ public class TransactionRepositoryTests
 
 		// Act
 		await repository.UpdateAsync(entities, CancellationToken.None);
-		List<TransactionEntity> updatedEntities = await _context.Transactions.ToListAsync();
+
+		using ApplicationDbContext verifyContext = _contextFactory.CreateDbContext();
+		List<TransactionEntity> updatedEntities = await verifyContext.Transactions.ToListAsync();
 
 		// Assert
-		Assert.Equal(entities.Count, updatedEntities.Count);
+		Assert.Equal(expectedTransactionCount, updatedEntities.Count);
 
 		foreach (TransactionEntity expectedTransaction in entities)
 		{
@@ -160,86 +180,101 @@ public class TransactionRepositoryTests
 			Assert.Equal(expectedTransaction.Amount, updatedEntity.Amount);
 			Assert.Equal(expectedTransaction.Date, updatedEntity.Date);
 		}
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task DeleteAsync_ValidIds_DeletesTransactions()
 	{
 		// Arrange
-		_context.ResetDatabase();
+		const int initialTransactionCount = 5;
+		const int transactionsToDeleteCount = 2;
+		const int expectedRemainingCount = 3;
 
-		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		await _context.Receipts.AddAsync(receipt);
+		var (receipt, account) = await CreateParentEntitiesAsync();
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
-		AccountEntity account = AccountEntityGenerator.Generate();
-		await _context.Accounts.AddAsync(account);
+		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(initialTransactionCount, receipt.Id, account.Id);
+		await context.Transactions.AddRangeAsync(entities);
+		await context.SaveChangesAsync(CancellationToken.None);
+		Assert.Equal(initialTransactionCount, await context.Transactions.CountAsync());
 
-		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(3, receipt.Id, account.Id);
-		await _context.Transactions.AddRangeAsync(entities);
-		await _context.SaveChangesAsync(CancellationToken.None);
-
-		List<Guid> idsToDelete = entities.Take(2).Select(e => e.Id).ToList();
-		TransactionRepository repository = new(_context);
+		List<Guid> idsToDelete = entities.Take(transactionsToDeleteCount).Select(e => e.Id).ToList();
+		TransactionRepository repository = new(_contextFactory);
 
 		// Act
 		await repository.DeleteAsync(idsToDelete, CancellationToken.None);
-		List<TransactionEntity> remainingEntities = await _context.Transactions.ToListAsync();
+
+		using ApplicationDbContext verifyContext = _contextFactory.CreateDbContext();
+		List<TransactionEntity> remainingEntities = await verifyContext.Transactions.ToListAsync();
 
 		// Assert
-		Assert.Single(remainingEntities);
+		Assert.Equal(expectedRemainingCount, remainingEntities.Count);
 		Assert.DoesNotContain(remainingEntities, e => idsToDelete.Contains(e.Id));
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task ExistsAsync_ExistingId_ReturnsTrue()
 	{
 		// Arrange
-		_context.ResetDatabase();
-
+		const int expectedCount = 1;
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 		TransactionEntity entity = TransactionEntityGenerator.Generate();
-		await _context.Transactions.AddAsync(entity);
-		await _context.SaveChangesAsync(CancellationToken.None);
+		await context.Transactions.AddAsync(entity);
+		await context.SaveChangesAsync(CancellationToken.None);
+		Assert.Equal(expectedCount, await context.Transactions.CountAsync());
 
-		TransactionRepository repository = new(_context);
+		TransactionRepository repository = new(_contextFactory);
 
 		// Act
 		bool result = await repository.ExistsAsync(entity.Id, CancellationToken.None);
 
 		// Assert
 		Assert.True(result);
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task ExistsAsync_NonExistingId_ReturnsFalse()
 	{
 		// Arrange
-		_context.ResetDatabase();
-
-		TransactionRepository repository = new(_context);
+		const int expectedCount = 0;
+		TransactionRepository repository = new(_contextFactory);
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		Assert.Equal(expectedCount, await context.Transactions.CountAsync());
 
 		// Act
 		bool result = await repository.ExistsAsync(Guid.NewGuid(), CancellationToken.None);
 
 		// Assert
 		Assert.False(result);
+
+		_contextFactory.ResetDatabase();
 	}
 
 	[Fact]
 	public async Task GetCountAsync_ReturnsCorrectCount()
 	{
 		// Arrange
-		_context.ResetDatabase();
+		const int expectedTransactionCount = 3;
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount);
+		await context.Transactions.AddRangeAsync(entities);
+		await context.SaveChangesAsync(CancellationToken.None);
+		Assert.Equal(expectedTransactionCount, await context.Transactions.CountAsync());
 
-		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(3);
-		await _context.Transactions.AddRangeAsync(entities);
-		await _context.SaveChangesAsync(CancellationToken.None);
-
-		TransactionRepository repository = new(_context);
+		TransactionRepository repository = new(_contextFactory);
 
 		// Act
 		int count = await repository.GetCountAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, count);
+		Assert.Equal(expectedTransactionCount, count);
+
+		_contextFactory.ResetDatabase();
 	}
 }

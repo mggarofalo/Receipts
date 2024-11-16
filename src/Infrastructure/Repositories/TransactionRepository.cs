@@ -5,17 +5,17 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-// TODO: Handle cases where a caller sends entities that haven't been saved yet to methods that expect saved entities
-
-public class TransactionRepository(ApplicationDbContext context) : ITransactionRepository
+public class TransactionRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : ITransactionRepository
 {
 	public async Task<TransactionEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions.FindAsync([id], cancellationToken);
 	}
 
 	public async Task<List<TransactionEntity>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.Where(t => t.ReceiptId == receiptId)
 			.AsNoTracking()
@@ -24,6 +24,7 @@ public class TransactionRepository(ApplicationDbContext context) : ITransactionR
 
 	public async Task<List<TransactionEntity>> GetAllAsync(CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
@@ -31,6 +32,7 @@ public class TransactionRepository(ApplicationDbContext context) : ITransactionR
 
 	public async Task<List<TransactionEntity>> CreateAsync(List<TransactionEntity> entities, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<TransactionEntity> createdEntities = [];
 
 		foreach (TransactionEntity entity in entities)
@@ -46,13 +48,16 @@ public class TransactionRepository(ApplicationDbContext context) : ITransactionR
 
 	public async Task UpdateAsync(List<TransactionEntity> entities, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		IEnumerable<Guid> ids = entities.Select(e => e.Id);
+		List<TransactionEntity> existingEntities = await context.Transactions
+			.Where(e => ids.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
 		foreach (TransactionEntity entity in entities)
 		{
-			TransactionEntity existingEntity = await context.Transactions.SingleAsync(e => e.Id == entity.Id, cancellationToken);
-			existingEntity.ReceiptId = entity.ReceiptId;
-			existingEntity.AccountId = entity.AccountId;
-			existingEntity.Amount = entity.Amount;
-			existingEntity.Date = entity.Date;
+			TransactionEntity existingEntity = existingEntities.Single(e => e.Id == entity.Id);
+			context.Entry(existingEntity).CurrentValues.SetValues(entity);
 		}
 
 		await context.SaveChangesAsync(cancellationToken);
@@ -60,6 +65,7 @@ public class TransactionRepository(ApplicationDbContext context) : ITransactionR
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<TransactionEntity> entities = await context.Transactions
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
@@ -70,11 +76,13 @@ public class TransactionRepository(ApplicationDbContext context) : ITransactionR
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions.AnyAsync(e => e.Id == id, cancellationToken);
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions.CountAsync(cancellationToken);
 	}
 }

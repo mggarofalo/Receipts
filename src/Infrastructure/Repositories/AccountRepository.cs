@@ -5,15 +5,17 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
-public class AccountRepository(ApplicationDbContext context) : IAccountRepository
+public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : IAccountRepository
 {
 	public async Task<AccountEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts.FindAsync([id], cancellationToken);
 	}
 
 	public async Task<AccountEntity?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.Where(t => t.Id == transactionId)
 			.Select(t => t.Account)
@@ -22,6 +24,7 @@ public class AccountRepository(ApplicationDbContext context) : IAccountRepositor
 
 	public async Task<List<AccountEntity>> GetAllAsync(CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
@@ -29,6 +32,7 @@ public class AccountRepository(ApplicationDbContext context) : IAccountRepositor
 
 	public async Task<List<AccountEntity>> CreateAsync(List<AccountEntity> entities, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<AccountEntity> createdEntities = [];
 
 		foreach (AccountEntity entity in entities)
@@ -44,12 +48,16 @@ public class AccountRepository(ApplicationDbContext context) : IAccountRepositor
 
 	public async Task UpdateAsync(List<AccountEntity> entities, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		IEnumerable<Guid> ids = entities.Select(e => e.Id);
+		List<AccountEntity> existingEntities = await context.Accounts
+			.Where(e => ids.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
 		foreach (AccountEntity entity in entities)
 		{
-			AccountEntity existingEntity = await context.Accounts.SingleAsync(e => e.Id == entity.Id, cancellationToken);
-			existingEntity.AccountCode = entity.AccountCode;
-			existingEntity.Name = entity.Name;
-			existingEntity.IsActive = entity.IsActive;
+			AccountEntity existingEntity = existingEntities.Single(e => e.Id == entity.Id);
+			context.Entry(existingEntity).CurrentValues.SetValues(entity);
 		}
 
 		await context.SaveChangesAsync(cancellationToken);
@@ -57,6 +65,7 @@ public class AccountRepository(ApplicationDbContext context) : IAccountRepositor
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<AccountEntity> entities = await context.Accounts
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
@@ -67,11 +76,13 @@ public class AccountRepository(ApplicationDbContext context) : IAccountRepositor
 
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts.AnyAsync(e => e.Id == id, cancellationToken);
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts.CountAsync(cancellationToken);
 	}
 }
