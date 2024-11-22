@@ -4,14 +4,14 @@ using MediatR;
 namespace Application.Queries.Aggregates.TransactionAccounts;
 
 public class GetTransactionAccountByTransactionIdQueryHandler(
-	ITransactionService transactionRepository,
-	IAccountService accountRepository
+	ITransactionService transactionService,
+	IAccountService accountService
 ) : IRequestHandler<GetTransactionAccountByTransactionIdQuery, Domain.Aggregates.TransactionAccount?>
 {
 	public async Task<Domain.Aggregates.TransactionAccount?> Handle(GetTransactionAccountByTransactionIdQuery request, CancellationToken cancellationToken)
 	{
-		Domain.Core.Transaction? transaction = await transactionRepository.GetByIdAsync(request.TransactionId, cancellationToken);
-		Domain.Core.Account? account = await accountRepository.GetByTransactionIdAsync(request.TransactionId, cancellationToken);
+		Domain.Core.Transaction? transaction = await transactionService.GetByIdAsync(request.TransactionId, cancellationToken);
+		Domain.Core.Account? account = await accountService.GetByTransactionIdAsync(request.TransactionId, cancellationToken);
 
 		if (transaction == null)
 		{

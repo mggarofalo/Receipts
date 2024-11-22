@@ -3,10 +3,10 @@ using MediatR;
 
 namespace Application.Queries.Core.Account;
 
-public class GetAccountByIdQueryHandler(IAccountService accountRepository) : IRequestHandler<GetAccountByIdQuery, Domain.Core.Account?>
+public class GetAccountByIdQueryHandler(IAccountService accountService) : IRequestHandler<GetAccountByIdQuery, Domain.Core.Account?>
 {
 	public async Task<Domain.Core.Account?> Handle(GetAccountByIdQuery request, CancellationToken cancellationToken)
 	{
-		return await accountRepository.GetByIdAsync(request.Id, cancellationToken);
+		return await accountService.GetByIdAsync(request.Id, cancellationToken);
 	}
 }

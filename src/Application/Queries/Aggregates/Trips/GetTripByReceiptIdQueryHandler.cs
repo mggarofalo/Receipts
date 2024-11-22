@@ -9,25 +9,27 @@ public class GetTripByReceiptIdQueryHandler(IMediator mediator) : IRequestHandle
 	public async Task<Domain.Aggregates.Trip?> Handle(GetTripByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
 		GetReceiptWithItemsByReceiptIdQuery getReceiptWithItemsByReceiptIdQuery = new(request.ReceiptId);
-		Domain.Aggregates.ReceiptWithItems? receiptWithItems = await mediator.Send(getReceiptWithItemsByReceiptIdQuery, cancellationToken);
+		Task<Domain.Aggregates.ReceiptWithItems?> receiptWithItemsTask = mediator.Send(getReceiptWithItemsByReceiptIdQuery, cancellationToken);
 
-		if (receiptWithItems == null)
+		GetTransactionAccountsByReceiptIdQuery getTransactionAccountsByReceiptIdQuery = new(request.ReceiptId);
+		Task<List<Domain.Aggregates.TransactionAccount>?> transactionAccountsTask = mediator.Send(getTransactionAccountsByReceiptIdQuery, cancellationToken);
+
+		await Task.WhenAll(receiptWithItemsTask, transactionAccountsTask);
+
+		if (receiptWithItemsTask.Result == null)
 		{
 			return null;
 		}
 
-		GetTransactionAccountsByReceiptIdQuery getTransactionAccountsByReceiptIdQuery = new(request.ReceiptId);
-		List<Domain.Aggregates.TransactionAccount>? transactionAccounts = await mediator.Send(getTransactionAccountsByReceiptIdQuery, cancellationToken);
-
-		if (transactionAccounts == null)
+		if (transactionAccountsTask.Result == null)
 		{
 			return null;
 		}
 
 		return new Domain.Aggregates.Trip()
 		{
-			Receipt = receiptWithItems,
-			Transactions = transactionAccounts
+			Receipt = receiptWithItemsTask.Result,
+			Transactions = transactionAccountsTask.Result
 		};
 	}
 }

@@ -4,13 +4,13 @@ using MediatR;
 namespace Application.Queries.Aggregates.TransactionAccounts;
 
 public class GetTransactionAccountsByReceiptIdQueryHandler(
-	ITransactionService transactionRepository,
-	IAccountService accountRepository
+	ITransactionService transactionService,
+	IAccountService accountService
 ) : IRequestHandler<GetTransactionAccountsByReceiptIdQuery, List<Domain.Aggregates.TransactionAccount>?>
 {
 	public async Task<List<Domain.Aggregates.TransactionAccount>?> Handle(GetTransactionAccountsByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
-		List<Domain.Core.Transaction>? transactions = await transactionRepository.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
+		List<Domain.Core.Transaction>? transactions = await transactionService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
 
 		if (transactions == null)
 		{
@@ -21,7 +21,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandler(
 
 		foreach (Domain.Core.Transaction transaction in transactions)
 		{
-			Domain.Core.Account? account = await accountRepository.GetByTransactionIdAsync(transaction.Id!.Value, cancellationToken);
+			Domain.Core.Account? account = await accountService.GetByTransactionIdAsync(transaction.Id!.Value, cancellationToken);
 
 			if (account == null)
 			{
