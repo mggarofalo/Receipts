@@ -22,7 +22,7 @@ public partial class DateOnlyPicker
 		{
 			if (value.HasValue)
 			{
-				var newValue = DateOnly.FromDateTime(value.Value);
+				DateOnly newValue = DateOnly.FromDateTime(value.Value);
 				if (newValue != Value)
 				{
 					Value = newValue;

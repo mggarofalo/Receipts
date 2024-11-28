@@ -26,7 +26,7 @@ public class TransactionRepositoryTests
 	public async Task GetByIdAsync_ExistingId_ReturnsTransaction()
 	{
 		// Arrange
-		var (receipt, account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		TransactionEntity entity = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
@@ -68,7 +68,7 @@ public class TransactionRepositoryTests
 	{
 		// Arrange
 		const int expectedTransactionCount = 3;
-		var (receipt, account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
@@ -93,7 +93,7 @@ public class TransactionRepositoryTests
 	{
 		// Arrange
 		const int expectedTransactionCount = 3;
-		var (receipt, account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
@@ -147,7 +147,7 @@ public class TransactionRepositoryTests
 	{
 		// Arrange
 		const int expectedTransactionCount = 2;
-		var (receipt, account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
@@ -192,7 +192,7 @@ public class TransactionRepositoryTests
 		const int transactionsToDeleteCount = 2;
 		const int expectedRemainingCount = 3;
 
-		var (receipt, account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(initialTransactionCount, receipt.Id, account.Id);
