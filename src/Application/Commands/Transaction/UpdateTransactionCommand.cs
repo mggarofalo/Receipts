@@ -13,8 +13,6 @@ public record UpdateTransactionCommand : ICommand<bool>
 	public UpdateTransactionCommand(List<Domain.Core.Transaction> transactions, Guid receiptId, Guid accountId)
 	{
 		ArgumentNullException.ThrowIfNull(transactions);
-		ArgumentNullException.ThrowIfNull(receiptId);
-		ArgumentNullException.ThrowIfNull(accountId);
 
 		if (transactions.Count == 0)
 		{

@@ -12,7 +12,6 @@ public record UpdateReceiptItemCommand : ICommand<bool>
 	public UpdateReceiptItemCommand(List<Domain.Core.ReceiptItem> receiptItems, Guid receiptId)
 	{
 		ArgumentNullException.ThrowIfNull(receiptItems);
-		ArgumentNullException.ThrowIfNull(receiptId);
 
 		if (receiptItems.Count == 0)
 		{

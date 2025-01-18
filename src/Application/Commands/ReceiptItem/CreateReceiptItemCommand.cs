@@ -11,7 +11,6 @@ public record CreateReceiptItemCommand : ICommand<List<Domain.Core.ReceiptItem>>
 	public CreateReceiptItemCommand(List<Domain.Core.ReceiptItem> receiptItems, Guid receiptId)
 	{
 		ArgumentNullException.ThrowIfNull(receiptItems);
-		ArgumentNullException.ThrowIfNull(receiptId);
 
 		if (receiptItems.Count == 0)
 		{
