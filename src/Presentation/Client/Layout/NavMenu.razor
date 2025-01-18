@@ -3,12 +3,12 @@
 
 <MudAppBar Color="Color.Primary" Elevation="4">
 	<MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-		OnClick="ToggleNavMenuAsync" />
+		OnClick="async () => await ToggleNavMenuAsync()" />
 	<MudText Typo="Typo.h6">Client</MudText>
 </MudAppBar>
 
 <MudDrawer @bind-Open="navMenuOpen" Anchor="Anchor.Left" Elevation="4">
-	<MudNavMenu>
+	<MudNavMenu Class="mt-12">
 		<MudNavLink Href="" Match="NavLinkMatch.All">
 			<MudIcon Icon="@Icons.Material.Filled.Home" />
 			<span>Home</span>
