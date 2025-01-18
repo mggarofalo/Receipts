@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 
 namespace Client.Components;
+
 public partial class DateOnlyPicker
 {
 	[Parameter]

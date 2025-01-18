@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Client.Components;
+
 public partial class ConfirmationDialog
 {
 	[CascadingParameter]
