@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+	<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
 	<PackageReference Include="MudBlazor" Version="7.8.0" />
 	<ProjectReference Include="..\Shared\Shared.csproj" />
 	<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />

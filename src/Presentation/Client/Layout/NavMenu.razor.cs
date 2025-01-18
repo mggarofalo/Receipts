@@ -1,12 +1,29 @@
+using Client.Interfaces;
+
 namespace Client.Layout;
-public partial class NavMenu
+
+public partial class NavMenu(IClientStorageManager clientStorageManager)
 {
-	private bool collapseNavMenu = true;
+	private const string NavMenuOpen = "NavMenuOpen";
+	private bool navMenuOpen;
+	private string? NavMenuCssClass => navMenuOpen ? "collapse" : null;
 
-	private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-	private void ToggleNavMenu()
+	protected override async Task OnInitializedAsync()
 	{
-		collapseNavMenu = !collapseNavMenu;
+		if (await clientStorageManager.ContainsKeyAsync(NavMenuOpen))
+		{
+			navMenuOpen = await clientStorageManager.GetItemAsync<bool>(NavMenuOpen);
+		}
+		else
+		{
+			navMenuOpen = true;
+			await clientStorageManager.SetItemAsync(NavMenuOpen, navMenuOpen);
+		}
+	}
+
+	private async Task ToggleNavMenuAsync()
+	{
+		navMenuOpen = !navMenuOpen;
+		await clientStorageManager.SetItemAsync(NavMenuOpen, navMenuOpen);
 	}
 }

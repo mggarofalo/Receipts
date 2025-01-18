@@ -7,6 +7,8 @@ using Client.Interfaces.Services.Core;
 using Client.Interfaces.Services.Aggregates;
 using Client.Services.Core;
 using Client.Services.Aggregates;
+using Blazored.LocalStorage;
+using Client.Interfaces;
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -24,7 +26,9 @@ builder.Services.AddScoped(sp =>
 
 builder.Services
 	.AddMudServices()
+	.AddBlazoredLocalStorage()
 	.AddScoped<SignalRService>()
+	.AddTransient<IClientStorageManager, ClientStorageManager>()
 	.AddTransient<IAccountService, AccountService>()
 	.AddTransient<IReceiptItemService, ReceiptItemService>()
 	.AddTransient<IReceiptService, ReceiptService>()
