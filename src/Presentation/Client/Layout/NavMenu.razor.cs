@@ -1,29 +1,31 @@
 using Client.Interfaces;
+using Microsoft.AspNetCore.Components;
 
 namespace Client.Layout;
 
-public partial class NavMenu(IClientStorageManager clientStorageManager)
+public partial class NavMenu() : ComponentBase
 {
+	[Inject] public required IClientStorageManager ClientStorageManager { get; set; }
 	private const string NavMenuOpen = "NavMenuOpen";
 	private bool navMenuOpen;
 	private string? NavMenuCssClass => navMenuOpen ? "collapse" : null;
 
 	protected override async Task OnInitializedAsync()
 	{
-		if (await clientStorageManager.ContainsKeyAsync(NavMenuOpen))
+		if (await ClientStorageManager.ContainsKeyAsync(NavMenuOpen))
 		{
-			navMenuOpen = await clientStorageManager.GetItemAsync<bool>(NavMenuOpen);
+			navMenuOpen = await ClientStorageManager.GetItemAsync<bool>(NavMenuOpen);
 		}
 		else
 		{
 			navMenuOpen = true;
-			await clientStorageManager.SetItemAsync(NavMenuOpen, navMenuOpen);
+			await ClientStorageManager.SetItemAsync(NavMenuOpen, navMenuOpen);
 		}
 	}
 
 	private async Task ToggleNavMenuAsync()
 	{
 		navMenuOpen = !navMenuOpen;
-		await clientStorageManager.SetItemAsync(NavMenuOpen, navMenuOpen);
+		await ClientStorageManager.SetItemAsync(NavMenuOpen, navMenuOpen);
 	}
 }
