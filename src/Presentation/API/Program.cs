@@ -31,15 +31,23 @@ if (app.Environment.IsDevelopment())
 		options.RoutePrefix = string.Empty;
 	});
 }
+else
+{
+	app.UseExceptionHandler("/Error");
+	app.UseHsts();
+}
 
 using (IServiceScope scope = app.Services.CreateScope())
 {
 	await scope.ServiceProvider.GetRequiredService<IDatabaseMigratorService>().MigrateAsync();
 }
 
-app.UseStaticFiles();
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
 app.UseAuthorization();
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
 app.MapControllers();
 app.MapHub<ReceiptsHub>("/receipts");
 
