@@ -14,8 +14,16 @@ public static class InfrastructureService
 	{
 		services.AddDbContextFactory<ApplicationDbContext>(options =>
 		{
-			string? connectionString = configuration["POSTGRES_CONNECTION_STRING"];
-			options.UseNpgsql(connectionString, b =>
+			Npgsql.NpgsqlConnectionStringBuilder builder = new()
+			{
+				Host = configuration["POSTGRES_HOST"]!,
+				Port = int.Parse(configuration["POSTGRES_PORT"]!),
+				Username = configuration["POSTGRES_USER"]!,
+				Password = configuration["POSTGRES_PASSWORD"]!,
+				Database = configuration["POSTGRES_DB"]!
+			};
+
+			options.UseNpgsql(builder.ConnectionString, b =>
 			{
 				string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
 				b.MigrationsAssembly(assemblyName);
