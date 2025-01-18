@@ -10,9 +10,12 @@ public static class SnackbarMethods
 		snackbar.Add(message, Severity.Success);
 	}
 
-	public static void ShowErrorMessage(this ISnackbar snackbar, string message)
+	public static void ShowErrorMessage(this ISnackbar snackbar, string message, bool requireInteraction = false)
 	{
-		snackbar.Add(message, Severity.Error);
+		snackbar.Add(message, Severity.Error, options =>
+		{
+			options.RequireInteraction = requireInteraction;
+		});
 	}
 
 	public static void ShowValidationErrors(this ISnackbar snackbar, ValidationResult validationResult)
