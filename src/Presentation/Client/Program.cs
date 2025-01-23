@@ -16,7 +16,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp =>
 {
-	Uri uri = new(builder.HostEnvironment.BaseAddress);
+	Uri uri = new("http://localhost:5000");
 
 	return new HttpClient
 	{
