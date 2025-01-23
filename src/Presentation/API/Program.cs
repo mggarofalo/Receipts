@@ -42,17 +42,15 @@ WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-	Console.WriteLine("Development environment detected. Enabling Swagger.");
 	app.UseSwagger();
 	app.UseSwaggerUI(options =>
 	{
 		options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-		options.RoutePrefix = string.Empty;
+		options.RoutePrefix = "swagger";
 	});
 }
 else
 {
-	Console.WriteLine("Production environment detected. Disabling Swagger.");
 	app.UseExceptionHandler("/Error");
 	app.UseHsts();
 }
