@@ -4,6 +4,8 @@ using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Services;
 
+const string CorsPolicyAllowAll = "AllowAll";
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
@@ -16,14 +18,31 @@ builder.Configuration
 builder.AddLoggingService();
 
 builder.Services
+	.AddControllers()
+	.AddJsonOptions(options =>
+	{
+		options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+	});
+
+builder.Services
 	.RegisterProgramServices()
 	.RegisterApplicationServices(builder.Configuration)
-	.RegisterInfrastructureServices(builder.Configuration);
+	.RegisterInfrastructureServices(builder.Configuration)
+	.AddCors(options =>
+	{
+		options.AddPolicy(CorsPolicyAllowAll, builder =>
+		{
+			builder.AllowAnyOrigin()
+				   .AllowAnyMethod()
+				   .AllowAnyHeader();
+		});
+	});
 
 WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+	Console.WriteLine("Development environment detected. Enabling Swagger.");
 	app.UseSwagger();
 	app.UseSwaggerUI(options =>
 	{
@@ -33,6 +52,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+	Console.WriteLine("Production environment detected. Disabling Swagger.");
 	app.UseExceptionHandler("/Error");
 	app.UseHsts();
 }
@@ -43,11 +63,8 @@ using (IServiceScope scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
 app.UseRouting();
-app.UseAuthorization();
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
+app.UseCors(CorsPolicyAllowAll);
 app.MapControllers();
 app.MapHub<ReceiptsHub>("/receipts");
 

@@ -3,13 +3,11 @@ using Application.Queries.Core.Account;
 using AutoMapper;
 using Domain.Core;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared.ViewModels.Core;
 
 namespace API.Controllers.Core;
 
-[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]

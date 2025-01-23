@@ -2,13 +2,11 @@ using Application.Queries.Aggregates.ReceiptsWithItems;
 using AutoMapper;
 using Domain.Aggregates;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared.ViewModels.Aggregates;
 
 namespace API.Controllers.Aggregates;
 
-[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
