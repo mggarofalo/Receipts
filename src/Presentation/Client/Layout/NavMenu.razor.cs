@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace Client.Layout;
 
-public partial class NavMenu() : ComponentBase
+public partial class NavMenu : ComponentBase
 {
 	[Inject] public required IClientStorageManager ClientStorageManager { get; set; }
 	private const string NavMenuOpen = "NavMenuOpen";
