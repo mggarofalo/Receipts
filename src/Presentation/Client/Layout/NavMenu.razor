@@ -1,21 +1,12 @@
 ﻿@using MudBlazor
 @namespace Client.Layout
 
-<MudAppBar Color="Color.Primary" Elevation="4">
-	<MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-		OnClick="async () => await ToggleNavMenuAsync()" />
-	<MudText Typo="Typo.h6">Client</MudText>
-</MudAppBar>
-
-<MudDrawer @bind-Open="navMenuOpen" Anchor="Anchor.Left" Elevation="4">
-	<MudNavMenu Class="mt-12">
-		<MudNavLink Href="" Match="NavLinkMatch.All">
-			<MudIcon Icon="@Icons.Material.Filled.Home" />
-			<span>Home</span>
-		</MudNavLink>
-		<MudNavLink Href="accounts">
-			<MudIcon Icon="@Icons.Material.Filled.AccountCircle" />
-			<span>Accounts</span>
-		</MudNavLink>
-	</MudNavMenu>
-</MudDrawer>
+<MudNavMenu>
+	<MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+	<MudNavLink Href="search" Icon="@Icons.Material.Filled.Search">Search</MudNavLink>
+	<MudNavLink Href="reports" Icon="@Icons.Material.Filled.Assessment">Reports</MudNavLink>
+	<MudNavLink Href="accounts" Icon="@Icons.Material.Filled.CreditCard">Accounts</MudNavLink>
+	<MudNavLink Href="trips" Icon="@Icons.Material.Filled.DirectionsBus">Trips</MudNavLink>
+	<MudNavLink Href="receipts" Icon="@Icons.Material.Filled.Receipt">Receipts</MudNavLink>
+	<MudNavLink Href="transactions" Icon="@Icons.Material.Filled.Money">Transactions</MudNavLink>
+</MudNavMenu>
