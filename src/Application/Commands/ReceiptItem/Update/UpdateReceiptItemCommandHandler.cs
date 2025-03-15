@@ -1,7 +1,7 @@
 using Application.Interfaces.Services;
 using MediatR;
 
-namespace Application.Commands.ReceiptItem;
+namespace Application.Commands.ReceiptItem.Update;
 
 public class UpdateReceiptItemCommandHandler(IReceiptItemService receiptitemService) : IRequestHandler<UpdateReceiptItemCommand, bool>
 {

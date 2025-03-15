@@ -1,7 +1,7 @@
 using Application.Interfaces.Services;
 using MediatR;
 
-namespace Application.Commands.Transaction;
+namespace Application.Commands.Transaction.Create;
 
 public class CreateTransactionCommandHandler(ITransactionService transactionService) : IRequestHandler<CreateTransactionCommand, List<Domain.Core.Transaction>>
 {

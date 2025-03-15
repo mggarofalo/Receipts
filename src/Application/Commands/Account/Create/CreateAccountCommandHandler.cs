@@ -1,7 +1,7 @@
 using Application.Interfaces.Services;
 using MediatR;
 
-namespace Application.Commands.Account;
+namespace Application.Commands.Account.Create;
 
 public class CreateAccountCommandHandler(IAccountService accountService) : IRequestHandler<CreateAccountCommand, List<Domain.Core.Account>>
 {

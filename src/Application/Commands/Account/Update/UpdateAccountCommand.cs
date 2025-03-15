@@ -1,6 +1,6 @@
 using Application.Interfaces;
 
-namespace Application.Commands.Account;
+namespace Application.Commands.Account.Update;
 
 public record UpdateAccountCommand : ICommand<bool>
 {

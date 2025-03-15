@@ -1,4 +1,4 @@
-using Application.Commands.Receipt;
+using Application.Commands.Receipt.Delete;
 using Application.Interfaces.Services;
 using Moq;
 using SampleData.Domain.Core;

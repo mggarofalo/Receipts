@@ -1,4 +1,4 @@
-using Application.Commands.Account;
+using Application.Commands.Account.Delete;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Account;

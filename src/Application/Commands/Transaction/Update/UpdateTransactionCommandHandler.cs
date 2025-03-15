@@ -1,7 +1,7 @@
 using Application.Interfaces.Services;
 using MediatR;
 
-namespace Application.Commands.Transaction;
+namespace Application.Commands.Transaction.Update;
 
 public class UpdateTransactionCommandHandler(ITransactionService transactionService) : IRequestHandler<UpdateTransactionCommand, bool>
 {

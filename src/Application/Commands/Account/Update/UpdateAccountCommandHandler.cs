@@ -1,7 +1,7 @@
 using Application.Interfaces.Services;
 using MediatR;
 
-namespace Application.Commands.Account;
+namespace Application.Commands.Account.Update;
 
 public class UpdateAccountCommandHandler(IAccountService accountService) : IRequestHandler<UpdateAccountCommand, bool>
 {

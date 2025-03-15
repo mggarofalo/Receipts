@@ -1,6 +1,7 @@
 using Application.Interfaces;
 using Application.Interfaces.Services;
 using AutoMapper;
+using Common;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,7 +17,7 @@ public class InfrastructureServiceTests
 	{
 		// Arrange
 		ServiceCollection services = new();
-		Mock<IConfiguration> mockConfiguration = new();
+		Mock<IConfiguration> mockConfiguration = SetupMockConfiguration();
 
 		// Act
 		services.RegisterInfrastructureServices(mockConfiguration.Object);
@@ -27,6 +28,19 @@ public class InfrastructureServiceTests
 		AssertThatRepositoriesAreRegistered(serviceProvider);
 		AssertThatDatabaseMigratorIsRegistered(serviceProvider);
 		AssertThatAutoMapperIsRegistered(serviceProvider);
+	}
+
+	private static Mock<IConfiguration> SetupMockConfiguration()
+	{
+		Mock<IConfiguration> mockConfiguration = new();
+
+		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresHost]).Returns("localhost");
+		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresPort]).Returns("5432");
+		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresUser]).Returns("user");
+		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresPassword]).Returns("password");
+		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresDb]).Returns("database");
+
+		return mockConfiguration;
 	}
 
 	private static void AssertThatDbContextFactoryIsRegistered(ServiceProvider serviceProvider)

@@ -1,14 +1,14 @@
 using Application.Interfaces;
 
-namespace Application.Commands.ReceiptItem;
+namespace Application.Commands.Account.Delete;
 
-public record DeleteReceiptItemCommand : ICommand<bool>
+public record DeleteAccountCommand : ICommand<bool>
 {
 	public IReadOnlyList<Guid> Ids { get; }
 
 	public const string IdsListCannotBeEmpty = "Ids list cannot be empty.";
 
-	public DeleteReceiptItemCommand(List<Guid> ids)
+	public DeleteAccountCommand(List<Guid> ids)
 	{
 		ArgumentNullException.ThrowIfNull(ids);
 

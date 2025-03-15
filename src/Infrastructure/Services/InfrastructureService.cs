@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using Application.Interfaces.Services;
+using Common;
 using Infrastructure.Interfaces.Repositories;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +17,11 @@ public static class InfrastructureService
 		{
 			Npgsql.NpgsqlConnectionStringBuilder builder = new()
 			{
-				Host = configuration["POSTGRES_HOST"]!,
-				Port = int.Parse(configuration["POSTGRES_PORT"]!),
-				Username = configuration["POSTGRES_USER"]!,
-				Password = configuration["POSTGRES_PASSWORD"]!,
-				Database = configuration["POSTGRES_DB"]!
+				Host = configuration[ConfigurationVariables.PostgresHost]!,
+				Port = int.Parse(configuration[ConfigurationVariables.PostgresPort]!),
+				Username = configuration[ConfigurationVariables.PostgresUser]!,
+				Password = configuration[ConfigurationVariables.PostgresPassword]!,
+				Database = configuration[ConfigurationVariables.PostgresDb]!
 			};
 
 			options.UseNpgsql(builder.ConnectionString, b =>

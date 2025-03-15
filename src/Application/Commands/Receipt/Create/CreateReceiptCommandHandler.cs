@@ -1,7 +1,7 @@
 using Application.Interfaces.Services;
 using MediatR;
 
-namespace Application.Commands.Receipt;
+namespace Application.Commands.Receipt.Create;
 
 public class CreateReceiptCommandHandler(IReceiptService receiptService) : IRequestHandler<CreateReceiptCommand, List<Domain.Core.Receipt>>
 {

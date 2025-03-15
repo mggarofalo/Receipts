@@ -1,6 +1,6 @@
 using Application.Interfaces;
 
-namespace Application.Commands.Receipt;
+namespace Application.Commands.Receipt.Update;
 
 public record UpdateReceiptCommand : ICommand<bool>
 {

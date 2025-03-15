@@ -1,6 +1,6 @@
 using Application.Interfaces;
 
-namespace Application.Commands.Transaction;
+namespace Application.Commands.Transaction.Delete;
 
 public record DeleteTransactionCommand : ICommand<bool>
 {

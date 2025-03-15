@@ -1,6 +1,6 @@
 using Application.Interfaces;
 
-namespace Application.Commands.ReceiptItem;
+namespace Application.Commands.ReceiptItem.Create;
 
 public record CreateReceiptItemCommand : ICommand<List<Domain.Core.ReceiptItem>>
 {

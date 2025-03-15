@@ -1,4 +1,6 @@
-using Application.Commands.Account;
+using Application.Commands.Account.Create;
+using Application.Commands.Account.Delete;
+using Application.Commands.Account.Update;
 using Application.Queries.Core.Account;
 using AutoMapper;
 using Domain.Core;

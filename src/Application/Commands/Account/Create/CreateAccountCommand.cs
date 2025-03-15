@@ -1,6 +1,6 @@
 using Application.Interfaces;
 
-namespace Application.Commands.Account;
+namespace Application.Commands.Account.Create;
 
 public record CreateAccountCommand : ICommand<List<Domain.Core.Account>>
 {

@@ -1,4 +1,4 @@
-using Application.Commands.Account;
+using Application.Commands.Account.Create;
 using SampleData.Domain.Core;
 using Moq;
 using Application.Interfaces.Services;

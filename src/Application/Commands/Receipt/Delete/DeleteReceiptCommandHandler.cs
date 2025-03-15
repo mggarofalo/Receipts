@@ -1,7 +1,7 @@
 using Application.Interfaces.Services;
 using MediatR;
 
-namespace Application.Commands.Receipt;
+namespace Application.Commands.Receipt.Delete;
 
 public class DeleteReceiptCommandHandler(IReceiptService receiptService) : IRequestHandler<DeleteReceiptCommand, bool>
 {

@@ -1,4 +1,6 @@
-using Application.Commands.ReceiptItem;
+using Application.Commands.ReceiptItem.Create;
+using Application.Commands.ReceiptItem.Update;
+using Application.Commands.ReceiptItem.Delete;
 using Application.Queries.Core.ReceiptItem;
 using AutoMapper;
 using Domain.Core;

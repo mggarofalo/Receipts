@@ -1,8 +1,8 @@
 using Application.Interfaces;
 
-namespace Application.Commands.Transaction;
+namespace Application.Commands.Transaction.Create;
 
-public record UpdateTransactionCommand : ICommand<bool>
+public record CreateTransactionCommand : ICommand<List<Domain.Core.Transaction>>
 {
 	public IReadOnlyList<Domain.Core.Transaction> Transactions { get; }
 	public Guid ReceiptId { get; }
@@ -10,7 +10,7 @@ public record UpdateTransactionCommand : ICommand<bool>
 
 	public const string TransactionsCannotBeEmptyExceptionMessage = "Transactions list cannot be empty.";
 
-	public UpdateTransactionCommand(List<Domain.Core.Transaction> transactions, Guid receiptId, Guid accountId)
+	public CreateTransactionCommand(List<Domain.Core.Transaction> transactions, Guid receiptId, Guid accountId)
 	{
 		ArgumentNullException.ThrowIfNull(transactions);
 

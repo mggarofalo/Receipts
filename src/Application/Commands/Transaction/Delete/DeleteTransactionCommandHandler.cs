@@ -1,7 +1,7 @@
 using Application.Interfaces.Services;
 using MediatR;
 
-namespace Application.Commands.Transaction;
+namespace Application.Commands.Transaction.Delete;
 
 public class DeleteTransactionCommandHandler(ITransactionService transactionService) : IRequestHandler<DeleteTransactionCommand, bool>
 {

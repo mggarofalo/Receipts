@@ -1,4 +1,4 @@
-using Application.Commands.Transaction;
+using Application.Commands.Transaction.Update;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Transaction;

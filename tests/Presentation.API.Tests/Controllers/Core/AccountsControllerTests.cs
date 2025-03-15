@@ -1,6 +1,8 @@
 using API.Controllers.Core;
 using API.Mapping.Core;
-using Application.Commands.Account;
+using Application.Commands.Account.Create;
+using Application.Commands.Account.Update;
+using Application.Commands.Account.Delete;
 using Application.Queries.Core.Account;
 using AutoMapper;
 using Domain.Core;

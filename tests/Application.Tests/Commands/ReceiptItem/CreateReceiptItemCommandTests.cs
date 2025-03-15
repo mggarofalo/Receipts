@@ -1,4 +1,4 @@
-using Application.Commands.ReceiptItem;
+using Application.Commands.ReceiptItem.Create;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.ReceiptItem;

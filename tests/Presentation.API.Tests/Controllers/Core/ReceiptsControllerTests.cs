@@ -1,6 +1,8 @@
 using API.Controllers.Core;
 using API.Mapping.Core;
-using Application.Commands.Receipt;
+using Application.Commands.Receipt.Create;
+using Application.Commands.Receipt.Update;
+using Application.Commands.Receipt.Delete;
 using Application.Queries.Core.Receipt;
 using AutoMapper;
 using Domain.Core;
