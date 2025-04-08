@@ -12,7 +12,9 @@ public class Trip : IEquatable<Trip>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return Receipt == other.Receipt &&
+			   Transactions.Count == other.Transactions.Count &&
+			   Transactions.All(transaction => other.Transactions.Any(otherTransaction => transaction == otherTransaction));
 	}
 
 	public override bool Equals(object? obj)

@@ -15,7 +15,10 @@ public class ReceiptVM : IEquatable<ReceiptVM>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return Description == other.Description &&
+			   Location == other.Location &&
+			   Date == other.Date &&
+			   TaxAmount == other.TaxAmount;
 	}
 
 	public override bool Equals(object? obj)

@@ -20,7 +20,11 @@ public class TransactionEntity : IEquatable<TransactionEntity>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return ReceiptId == other.ReceiptId &&
+			   AccountId == other.AccountId &&
+			   Amount == other.Amount &&
+			   AmountCurrency == other.AmountCurrency &&
+			   Date == other.Date;
 	}
 
 	public override bool Equals(object? obj)

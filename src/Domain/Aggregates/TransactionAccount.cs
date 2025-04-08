@@ -14,7 +14,8 @@ public class TransactionAccount : IEquatable<TransactionAccount>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return Transaction == other.Transaction &&
+			   Account == other.Account;
 	}
 
 	public override bool Equals(object? obj)

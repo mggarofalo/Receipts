@@ -14,7 +14,9 @@ public class ReceiptWithItems : IEquatable<ReceiptWithItems>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return Receipt == other.Receipt &&
+			   Items.Count == other.Items.Count &&
+			   Items.All(item => other.Items.Any(otherItem => item == otherItem));
 	}
 
 	public override bool Equals(object? obj)

@@ -35,7 +35,9 @@ public class Account : IEquatable<Account>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return AccountCode == other.AccountCode &&
+			   Name == other.Name &&
+			   IsActive == other.IsActive;
 	}
 
 	public override bool Equals(object? obj)

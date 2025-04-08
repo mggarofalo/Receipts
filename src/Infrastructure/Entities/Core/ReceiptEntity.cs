@@ -18,7 +18,11 @@ public class ReceiptEntity : IEquatable<ReceiptEntity>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return Description == other.Description &&
+			   Location == other.Location &&
+			   Date == other.Date &&
+			   TaxAmount == other.TaxAmount &&
+			   TaxAmountCurrency == other.TaxAmountCurrency;
 	}
 
 	public override bool Equals(object? obj)

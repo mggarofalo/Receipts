@@ -12,7 +12,9 @@ public class TripVM : IEquatable<TripVM>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return Receipt == other.Receipt &&
+			   Transactions?.Count == other.Transactions?.Count &&
+			   Transactions?.All(transaction => other.Transactions?.Any(otherTransaction => transaction == otherTransaction) ?? false) == true;
 	}
 
 	public override bool Equals(object? obj)

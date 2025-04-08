@@ -24,7 +24,15 @@ public class ReceiptItemEntity : IEquatable<ReceiptItemEntity>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return ReceiptItemCode == other.ReceiptItemCode &&
+			   Description == other.Description &&
+			   Quantity == other.Quantity &&
+			   UnitPrice == other.UnitPrice &&
+			   UnitPriceCurrency == other.UnitPriceCurrency &&
+			   TotalAmount == other.TotalAmount &&
+			   TotalAmountCurrency == other.TotalAmountCurrency &&
+			   Category == other.Category &&
+			   Subcategory == other.Subcategory;
 	}
 
 	public override bool Equals(object? obj)

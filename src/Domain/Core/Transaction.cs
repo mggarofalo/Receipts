@@ -33,7 +33,8 @@ public class Transaction : IEquatable<Transaction>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return Amount == other.Amount &&
+			   Date == other.Date;
 	}
 
 	public override bool Equals(object? obj)

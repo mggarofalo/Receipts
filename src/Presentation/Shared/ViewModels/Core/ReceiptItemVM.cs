@@ -18,7 +18,13 @@ public class ReceiptItemVM : IEquatable<ReceiptItemVM>
 			return false;
 		}
 
-		return GetHashCode() == other.GetHashCode();
+		return ReceiptItemCode == other.ReceiptItemCode &&
+			   Description == other.Description &&
+			   Quantity == other.Quantity &&
+			   UnitPrice == other.UnitPrice &&
+			   TotalAmount == other.TotalAmount &&
+			   Category == other.Category &&
+			   Subcategory == other.Subcategory;
 	}
 
 	public override bool Equals(object? obj)
