@@ -1,0 +1,39 @@
+@page "/receipts"
+@using Client.Interfaces.Services.Core
+@namespace Client.Pages.Receipts
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IReceiptService ReceiptService
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h4" Class="mb-4">Receipts List</MudText>
+
+<MudTable Items="@receipts" Dense="true" Hover="true" Bordered="true" Striped="true" Filter="new Func<ReceiptVM,bool>(FilterFunc)">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Receipts</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Description</MudTh>
+        <MudTh>Location</MudTh>
+        <MudTh>Date</MudTh>
+        <MudTh>Tax</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Location">@context.Location</MudTd>
+        <MudTd DataLabel="Date">@context.Date?.ToString("yyyy-MM-dd")</MudTd>
+        <MudTd DataLabel="Tax">@context.TaxAmount</MudTd>
+        <MudTd>
+            <MudButton @onclick="() => EditReceipt(context)" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">Edit</MudButton>
+            <MudButton @onclick="() => DeleteReceipt(context)" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small">Delete</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<MudButton @onclick="AddReceipt" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Class="mt-4">Add Receipt</MudButton>

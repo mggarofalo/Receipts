@@ -1,0 +1,35 @@
+@page "/transactions"
+@using Client.Interfaces.Services.Core
+@namespace Client.Pages.Transactions
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ITransactionService TransactionService
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h4" Class="mb-4">Transactions List</MudText>
+
+<MudTable Items="@transactions" Dense="true" Hover="true" Bordered="true" Striped="true" Filter="new Func<TransactionVM,bool>(FilterFunc)">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Transactions</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Amount</MudTh>
+        <MudTh>Date</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Amount">@context.Amount</MudTd>
+        <MudTd DataLabel="Date">@context.Date?.ToString("yyyy-MM-dd")</MudTd>
+        <MudTd>
+            <MudButton @onclick="() => EditTransaction(context)" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">Edit</MudButton>
+            <MudButton @onclick="() => DeleteTransaction(context)" Color="Color.Error" Variant="Variant.Filled" Size="Size.Small">Delete</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<MudButton @onclick="AddTransaction" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Class="mt-4">Add Transaction</MudButton>

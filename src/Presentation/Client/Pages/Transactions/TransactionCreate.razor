@@ -1,0 +1,18 @@
+@page "/transactions/create"
+@using Client.Interfaces.Services.Core
+@namespace Client.Pages.Transactions
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject ITransactionService TransactionService
+
+<MudText Typo="Typo.h4" Class="mb-4">Create New Transaction</MudText>
+
+<MudForm @ref="form" @bind-IsValid="@success">
+    <MudNumericField T="decimal" Label="Amount" Required="true" @bind-Value="_transaction.Amount" RequiredError=@TransactionValidator.AmountMustBeNonZero />
+    <DateOnlyPicker @bind-Value="_transaction.Date" Label="Date" />
+
+    <div class="d-flex justify-space-between mt-6">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" OnClick="@SubmitTransaction">Create Transaction</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="@(() => NavigationManager.NavigateTo("/transactions"))">Cancel</MudButton>
+    </div>
+</MudForm>

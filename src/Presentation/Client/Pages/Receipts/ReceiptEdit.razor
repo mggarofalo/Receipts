@@ -1,0 +1,20 @@
+@page "/receipts/edit/{Id:guid}"
+@using Client.Interfaces.Services.Core
+@namespace Client.Pages.Receipts
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject IReceiptService ReceiptService
+
+<MudText Typo="Typo.h4" Class="mb-4">@(Id == null ? "Create New Receipt" : "Edit Receipt")</MudText>
+
+<MudForm @ref="form" @bind-IsValid="@success">
+    <MudTextField T="string" Label="Description" @bind-Value="_receipt.Description" />
+    <MudTextField T="string" Label="Location" Required="true" @bind-Value="_receipt.Location" RequiredError=@ReceiptValidator.LocationIsRequired />
+    <DateOnlyPicker @bind-Value="_receipt.Date" Label="Date" />
+    <MudNumericField T="decimal" Label="Tax Amount" @bind-Value="_receipt.TaxAmount" />
+
+    <div class="d-flex justify-space-between mt-6">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!success)" OnClick="@SubmitReceipt">@(Id == null ? "Create Receipt" : "Update Receipt")</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="@(() => NavigationManager.NavigateTo("/receipts"))">Cancel</MudButton>
+    </div>
+</MudForm>
