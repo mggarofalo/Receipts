@@ -56,7 +56,6 @@ Receipts/Presentation/Client/
 │ ├── css/
 │ │ ├── app.css
 │ │ └── bootstrap/
-│ ├── favicon.png
 │ └── index.html
 ├── App.razor
 ├── Program.cs
@@ -180,7 +179,6 @@ Static assets served by the application.
   - **...**: JavaScript files if any additional client-side scripting is required.
 
 - **images/**
-  - **favicon.png**: Favicon for the application.
   - **...**: Additional images as needed.
 
 ### 4. Layout Styling
