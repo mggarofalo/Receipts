@@ -2,7 +2,7 @@
 
 <Project>
 	<ItemGroup>
-		<PackageVersion Include="AutoMapper" Version="16.0.0" />
+		<PackageVersion Include="AutoMapper" Version="14.0.0" />
 		<PackageVersion Include="Blazored.LocalStorage" Version="4.5.0" />
 		<PackageVersion Include="coverlet.collector" Version="6.0.4" />
 		<PackageVersion Include="FluentValidation" Version="12.1.1" />
