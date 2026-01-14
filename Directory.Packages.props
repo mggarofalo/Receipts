@@ -2,29 +2,29 @@
 
 <Project>
 	<ItemGroup>
-		<PackageVersion Include="AutoMapper" Version="13.0.1" />
+		<PackageVersion Include="AutoMapper" Version="16.0.0" />
 		<PackageVersion Include="Blazored.LocalStorage" Version="4.5.0" />
-		<PackageVersion Include="coverlet.collector" Version="6.0.3" />
-		<PackageVersion Include="FluentValidation" Version="11.11.0" />
-		<PackageVersion Include="MediatR" Version="12.4.1" />
-		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.1" />
-		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.1" />
-		<PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
-		<PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.1" />
-		<PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.1" />
-		<PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.1" />
-		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.1" />
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
-		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+		<PackageVersion Include="coverlet.collector" Version="6.0.4" />
+		<PackageVersion Include="FluentValidation" Version="12.1.1" />
+		<PackageVersion Include="MediatR" Version="14.0.0" />
+		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.1" />
+		<PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+		<PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+		<PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.1" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.1" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.1" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
 		<PackageVersion Include="Moq" Version="4.20.72" />
 		<PackageVersion Include="MudBlazor" Version="7.16.0" />
-		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
-		<PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
-		<PackageVersion Include="Serilog.Extensions.Logging" Version="9.0.0" />
-		<PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
-		<PackageVersion Include="Serilog" Version="4.2.0" />
-		<PackageVersion Include="Swashbuckle.AspNetCore" Version="7.2.0" />
-		<PackageVersion Include="xunit.runner.visualstudio" Version="3.0.1" />
+		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+		<PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+		<PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
+		<PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageVersion Include="Serilog" Version="4.3.0" />
+		<PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
 		<PackageVersion Include="xunit" Version="2.9.3" />
 	</ItemGroup>
 </Project>

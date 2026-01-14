@@ -26,7 +26,7 @@ dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructu
 
 ## Architecture
 
-This is a .NET 9 Clean Architecture solution for a receipt management application. It uses central package management via `Directory.Packages.props`.
+This is a .NET 10 Clean Architecture solution for a receipt management application. It uses central package management via `Directory.Packages.props`.
 
 ### Layer Structure
 
