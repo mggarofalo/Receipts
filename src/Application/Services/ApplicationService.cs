@@ -14,7 +14,12 @@ public static class ApplicationService
 			cfg.RegisterServicesFromAssembly(typeof(IQuery<>).Assembly);
 		});
 
-		services.AddAutoMapper(typeof(ApplicationService).Assembly);
+		// TODO: Add AutoMapper license key (see MGG-17)
+		// Register at https://automapper.io for free Community Edition
+		services.AddAutoMapper(cfg =>
+		{
+			// cfg.LicenseKey = configuration["AutoMapper:LicenseKey"];
+		}, typeof(ApplicationService).Assembly);
 
 		return services;
 	}

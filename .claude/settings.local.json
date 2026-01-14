@@ -11,7 +11,11 @@
       "Bash(test:*)",
       "mcp__linear-server__create_project",
       "mcp__linear-server__create_issue",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(dotnet clean:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet test:*)",
+      "mcp__linear-server__list_teams"
     ]
   }
 }

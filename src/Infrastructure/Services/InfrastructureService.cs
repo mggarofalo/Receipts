@@ -42,7 +42,12 @@ public static class InfrastructureService
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
 			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>();
 
-		services.AddAutoMapper(typeof(InfrastructureService).Assembly);
+		// TODO: Add AutoMapper license key (see MGG-17)
+		// Register at https://automapper.io for free Community Edition
+		services.AddAutoMapper(cfg =>
+		{
+			// cfg.LicenseKey = configuration["AutoMapper:LicenseKey"];
+		}, typeof(InfrastructureService).Assembly);
 
 		return services;
 	}
