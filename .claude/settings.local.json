@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "WebSearch",
+      "Bash(dotnet build:*)",
+      "Bash(claude mcp add:*)",
+      "mcp__linear-server__list_projects",
+      "Bash(find:*)",
+      "Bash(test:*)",
+      "mcp__linear-server__create_project",
+      "mcp__linear-server__create_issue",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}
