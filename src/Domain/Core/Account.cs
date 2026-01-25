@@ -58,7 +58,6 @@ public class Account : IEquatable<Account>
 	public override int GetHashCode()
 	{
 		HashCode hash = new();
-		hash.Add(Id);
 		hash.Add(AccountCode);
 		hash.Add(Name);
 		hash.Add(IsActive);

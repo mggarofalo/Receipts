@@ -174,13 +174,13 @@ public class TransactionTests
 	public void GetHashCode_DifferentTransaction_ReturnsDifferentHashCode()
 	{
 		// Arrange
-		Guid id1 = Guid.NewGuid();
-		Guid id2 = Guid.NewGuid();
-		Money amount = new(100.50m);
+		Guid id = Guid.NewGuid();
+		Money amount1 = new(100.50m);
+		Money amount2 = new(200.75m);
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 
-		Transaction transaction1 = new(id1, amount, date);
-		Transaction transaction2 = new(id2, amount, date);
+		Transaction transaction1 = new(id, amount1, date);
+		Transaction transaction2 = new(id, amount2, date);
 
 		// Act & Assert
 		Assert.NotEqual(transaction1.GetHashCode(), transaction2.GetHashCode());

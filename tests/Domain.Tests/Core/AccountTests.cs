@@ -223,14 +223,14 @@ public class AccountTests
 	public void GetHashCode_DifferentAccount_ReturnsDifferentHashCode()
 	{
 		// Arrange
-		Guid id1 = Guid.NewGuid();
-		Guid id2 = Guid.NewGuid();
-		string accountCode = "ACC001";
+		Guid id = Guid.NewGuid();
+		string accountCode1 = "ACC001";
+		string accountCode2 = "ACC002";
 		string name = "Test Account";
 		bool isActive = true;
 
-		Account account1 = new(id1, accountCode, name, isActive);
-		Account account2 = new(id2, accountCode, name, isActive);
+		Account account1 = new(id, accountCode1, name, isActive);
+		Account account2 = new(id, accountCode2, name, isActive);
 
 		// Act & Assert
 		Assert.NotEqual(account1.GetHashCode(), account2.GetHashCode());

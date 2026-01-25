@@ -248,15 +248,15 @@ public class ReceiptTests
 	public void GetHashCode_DifferentReceipt_ReturnsDifferentHashCode()
 	{
 		// Arrange
-		Guid id1 = Guid.NewGuid();
-		Guid id2 = Guid.NewGuid();
-		string location = "Test Store";
+		Guid id = Guid.NewGuid();
+		string location1 = "Test Store";
+		string location2 = "Different Store";
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 		Money taxAmount = new(5.00m);
 		string description = "Test Receipt";
 
-		Receipt receipt1 = new(id1, location, date, taxAmount, description);
-		Receipt receipt2 = new(id2, location, date, taxAmount, description);
+		Receipt receipt1 = new(id, location1, date, taxAmount, description);
+		Receipt receipt2 = new(id, location2, date, taxAmount, description);
 
 		// Act & Assert
 		Assert.NotEqual(receipt1.GetHashCode(), receipt2.GetHashCode());

@@ -55,7 +55,6 @@ public class Transaction : IEquatable<Transaction>
 	public override int GetHashCode()
 	{
 		HashCode hash = new();
-		hash.Add(Id);
 		hash.Add(Amount);
 		hash.Add(Date);
 		return hash.ToHashCode();

@@ -88,7 +88,6 @@ public class ReceiptItem : IEquatable<ReceiptItem>
 	public override int GetHashCode()
 	{
 		HashCode hash = new();
-		hash.Add(Id);
 		hash.Add(ReceiptItemCode);
 		hash.Add(Description);
 		hash.Add(Quantity);
