@@ -136,3 +136,54 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 - `fix(client): correct date picker timezone handling`
 - `refactor(infrastructure): simplify repository base class`
 - `docs: update agent guidance documentation`
+
+## Spec-Driven Development (SpecKit)
+
+This project uses [GitHub Spec Kit](https://github.com/github/spec-kit) for specification-driven development. The `.specify/` directory contains:
+
+### Directory Structure
+
+```
+.specify/
+├── memory/
+│   └── constitution.md      # Non-negotiable project principles
+├── specs/
+│   └── [FEATURE-NUMBER]/    # Feature-specific artifacts
+│       ├── spec.md          # Functional specification
+│       ├── plan.md          # Technical implementation plan
+│       └── tasks.md         # Ordered task breakdown
+└── templates/
+    ├── spec-template.md     # Specification template
+    ├── plan-template.md     # Technical plan template
+    ├── tasks-template.md    # Task breakdown template
+    └── CLAUDE-template.md   # Claude Code context template
+```
+
+### Constitution
+
+The constitution (`.specify/memory/constitution.md`) defines mandatory principles:
+
+1. **Clean Architecture Compliance** - Strict layer separation
+2. **CQRS Pattern Enforcement** - Commands and Queries via MediatR
+3. **Test-First Development** - Tests before implementation
+4. **Explicit Type Declarations** - Avoid `var` except for obvious types
+5. **Domain Separation** - Separate Domain, Entity, and ViewModel
+6. **Database Access Patterns** - Repository pattern with EF Core
+7. **API Design Standards** - REST conventions with FluentValidation
+8. **Simplicity Over Cleverness** - No over-engineering
+9. **Security and Configuration** - No hardcoded secrets
+10. **Conventional Commits** - Standardized commit messages
+
+### Workflow Phases
+
+1. **Specify** - Define functional requirements using `spec-template.md`
+2. **Plan** - Create technical plan using `plan-template.md`
+3. **Tasks** - Break down into ordered tasks using `tasks-template.md`
+4. **Implement** - Execute tasks following test-first principles
+
+### Creating a New Feature
+
+1. Create a new directory: `.specify/specs/[FEATURE-NUMBER]/`
+2. Copy templates and fill in feature-specific content
+3. Review specification against constitution
+4. Implement following the task breakdown
