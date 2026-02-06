@@ -4,6 +4,8 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Development Workflow
 
+This repository uses Linear for issue tracking in the **Receipts** project: https://linear.app/mggarofalo/project/receipts-764b44b5cefa
+
 When working on tasks that are expected to result in code changes, follow this standard process:
 
 1. **Linear Issue Management**
@@ -16,14 +18,19 @@ When working on tasks that are expected to result in code changes, follow this s
 
 2. **Branch-Based Development**
    - Create a feature branch from `master` using the Linear issue identifier
-   - Branch naming convention: Use the suggested git branch name from Linear (usually `{team-key}-{issue-number}-{slug}`)
-   - Example: `REC-123-add-receipt-export`
+   - Branch naming convention: Use the `gitBranchName` provided by Linear (format: `{username}/{team-key}-{issue-number}-{slug}`)
+   - Example: `mggarofalo/mgg-123-add-receipt-export`
+   - **IMPORTANT**: Using Linear's exact branch name enables automatic issue status updates via GitHub integration
 
 3. **Pull Request Process**
    - When work in a branch is complete, create a PR against `master`
-   - PR title should reference the Linear issue (e.g., "REC-123: Add receipt export endpoint")
+   - **PR title**: Must include the Linear issue ID (e.g., "MGG-123: Add receipt export endpoint")
+   - **PR description**: Include a magic word + issue ID to enable Linear automation
+     - Use closing magic words to auto-close issue on merge: `Fixes MGG-123`, `Closes MGG-123`, `Resolves MGG-123`
+     - Use contributing magic words to link without auto-closing: `Ref MGG-123`, `Part of MGG-123`, `Related to MGG-123`
    - Include a summary of changes and link to the Linear issue
    - Ensure all tests pass and the build succeeds before requesting review
+   - Linear will automatically update issue status as PR moves through draft → open → review → merged states
 
 4. **Direct Commits to Master**
    - Only use for trivial changes like typo fixes or documentation updates
