@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Queries.Core.Account;
+using FluentAssertions;
 using Moq;
 using SampleData.Domain.Core;
 
@@ -20,7 +21,7 @@ public class GetAccountByIdQueryHandlerTests
 		Domain.Core.Account? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
-		Assert.Equal(expected, result);
+		result.Should().BeSameAs(expected);
 	}
 
 	[Fact]

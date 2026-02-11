@@ -1,4 +1,5 @@
 using Application.Commands.Account.Delete;
+using FluentAssertions;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Account;
@@ -28,7 +29,7 @@ public class DeleteAccountCommandTests : ICommandTests<Guid>
 	{
 		List<Guid> items = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
 		DeleteAccountCommand command = new(items);
-		Assert.Equal(items, command.Ids);
+		command.Ids.Should().BeEquivalentTo(items);
 	}
 
 	[Fact]

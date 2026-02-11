@@ -1,8 +1,8 @@
 using Application.Interfaces.Services;
 using Application.Queries.Aggregates.TransactionAccounts;
+using FluentAssertions;
 using Moq;
 using SampleData.Domain.Core;
-using Xunit.Sdk;
 
 namespace Application.Tests.Queries.Aggregates.TransactionAccounts;
 
@@ -33,11 +33,11 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(expectedTransactions.Count, result.Count);
+		result.Should().HaveCount(expectedTransactions.Count);
 		foreach (Domain.Aggregates.TransactionAccount resultTransactionAccount in result)
 		{
-			Assert.Equal(expectedTransactions.First(t => t.Id == resultTransactionAccount.Transaction.Id), resultTransactionAccount.Transaction);
-			Assert.Equal(expectedAccounts.First(a => a.Id == resultTransactionAccount.Account.Id), resultTransactionAccount.Account);
+			resultTransactionAccount.Transaction.Should().BeSameAs(expectedTransactions.First(t => t.Id == resultTransactionAccount.Transaction.Id));
+			resultTransactionAccount.Account.Should().BeSameAs(expectedAccounts.First(a => a.Id == resultTransactionAccount.Account.Id));
 		}
 	}
 

@@ -2,6 +2,7 @@ using SampleData.Domain.Core;
 using Moq;
 using Application.Queries.Core.Transaction;
 using Application.Interfaces.Services;
+using FluentAssertions;
 
 namespace Application.Tests.Queries.Core.Transaction;
 
@@ -20,8 +21,6 @@ public class GetAllTransactionsQueryHandlerTests
 
 		List<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.Equal(expected.Count, result.Count);
-		Assert.True(expected.All(result.Contains));
-		Assert.True(result.All(expected.Contains));
+		result.Should().BeSameAs(expected);
 	}
 }

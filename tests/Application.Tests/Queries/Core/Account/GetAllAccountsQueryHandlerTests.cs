@@ -2,6 +2,7 @@ using SampleData.Domain.Core;
 using Moq;
 using Application.Queries.Core.Account;
 using Application.Interfaces.Services;
+using FluentAssertions;
 
 namespace Application.Tests.Queries.Core.Account;
 
@@ -20,8 +21,6 @@ public class GetAllAccountsQueryHandlerTests
 
 		List<Domain.Core.Account> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.Equal(expected.Count, result.Count);
-		Assert.True(expected.All(result.Contains));
-		Assert.True(result.All(expected.Contains));
+		result.Should().BeSameAs(expected);
 	}
 }

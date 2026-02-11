@@ -1,7 +1,8 @@
 using Application.Commands.Transaction.Create;
-using SampleData.Domain.Core;
-using Moq;
 using Application.Interfaces.Services;
+using FluentAssertions;
+using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Transaction;
 
@@ -22,6 +23,6 @@ public class CreateTransactionCommandHandlerTests
 		CreateTransactionCommand command = new(input, Guid.NewGuid(), Guid.NewGuid());
 		List<Domain.Core.Transaction> result = await handler.Handle(command, CancellationToken.None);
 
-		Assert.Equal(input.Count, result.Count);
+		result.Should().HaveCount(input.Count);
 	}
 }

@@ -1,4 +1,5 @@
 using Application.Commands.Receipt.Update;
+using FluentAssertions;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Receipt;
@@ -28,7 +29,7 @@ public class UpdateReceiptCommandTests : ICommandTests<Domain.Core.Receipt>
 	{
 		List<Domain.Core.Receipt> items = ReceiptGenerator.GenerateList(2);
 		UpdateReceiptCommand command = new(items);
-		Assert.Equal(items, command.Receipts);
+		command.Receipts.Should().BeEquivalentTo(items);
 	}
 
 	[Fact]

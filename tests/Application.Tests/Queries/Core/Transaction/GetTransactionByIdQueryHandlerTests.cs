@@ -2,6 +2,7 @@ using SampleData.Domain.Core;
 using Moq;
 using Application.Queries.Core.Transaction;
 using Application.Interfaces.Services;
+using FluentAssertions;
 
 namespace Application.Tests.Queries.Core.Transaction;
 
@@ -20,7 +21,7 @@ public class GetTransactionByIdQueryHandlerTests
 		Domain.Core.Transaction? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
-		Assert.Equal(expected, result);
+		result.Should().BeSameAs(expected);
 	}
 
 	[Fact]

@@ -1,4 +1,5 @@
 using Application.Commands.Transaction.Create;
+using FluentAssertions;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Transaction;
@@ -28,7 +29,7 @@ public class CreateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	{
 		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
 		CreateTransactionCommand command = new(items, Guid.NewGuid(), Guid.NewGuid());
-		Assert.Equal(items, command.Transactions);
+		command.Transactions.Should().BeEquivalentTo(items);
 	}
 
 	[Fact]

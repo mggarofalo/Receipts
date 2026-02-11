@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Queries.Aggregates.ReceiptsWithItems;
+using FluentAssertions;
 using Moq;
 using SampleData.Domain.Core;
 
@@ -28,8 +29,8 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(expectedReceipt, result.Receipt);
-		Assert.Equal(expectedReceiptItems, result.Items);
+		result.Receipt.Should().BeSameAs(expectedReceipt);
+		result.Items.Should().BeSameAs(expectedReceiptItems);
 	}
 
 	[Fact]

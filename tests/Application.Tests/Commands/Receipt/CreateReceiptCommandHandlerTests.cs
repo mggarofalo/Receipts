@@ -1,7 +1,8 @@
 using Application.Commands.Receipt.Create;
-using SampleData.Domain.Core;
-using Moq;
 using Application.Interfaces.Services;
+using FluentAssertions;
+using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Receipt;
 
@@ -22,6 +23,6 @@ public class CreateReceiptCommandHandlerTests
 		CreateReceiptCommand command = new(input);
 		List<Domain.Core.Receipt> result = await handler.Handle(command, CancellationToken.None);
 
-		Assert.Equal(input.Count, result.Count);
+		result.Should().HaveCount(input.Count);
 	}
 }

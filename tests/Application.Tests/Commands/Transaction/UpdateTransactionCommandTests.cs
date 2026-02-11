@@ -1,4 +1,5 @@
 using Application.Commands.Transaction.Update;
+using FluentAssertions;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Transaction;
@@ -28,7 +29,7 @@ public class UpdateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	{
 		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
 		UpdateTransactionCommand command = new(items, Guid.NewGuid(), Guid.NewGuid());
-		Assert.Equal(items, command.Transactions);
+		command.Transactions.Should().BeEquivalentTo(items);
 	}
 
 	[Fact]

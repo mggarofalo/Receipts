@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Queries.Core.Receipt;
+using FluentAssertions;
 using Moq;
 using SampleData.Domain.Core;
 
@@ -20,7 +21,7 @@ public class GetReceiptByIdQueryHandlerTests
 		Domain.Core.Receipt? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
-		Assert.Equal(expected, result);
+		result.Should().BeSameAs(expected);
 	}
 
 	[Fact]

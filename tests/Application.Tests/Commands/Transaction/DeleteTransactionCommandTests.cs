@@ -1,4 +1,5 @@
 using Application.Commands.Transaction.Delete;
+using FluentAssertions;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Transaction;
@@ -28,7 +29,7 @@ public class DeleteTransactionCommandTests : ICommandTests<Guid>
 	{
 		List<Guid> items = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
 		DeleteTransactionCommand command = new(items);
-		Assert.Equal(items, command.Ids);
+		command.Ids.Should().BeEquivalentTo(items);
 	}
 
 	[Fact]

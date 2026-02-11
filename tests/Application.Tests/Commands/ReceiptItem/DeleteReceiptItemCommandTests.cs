@@ -1,4 +1,5 @@
 using Application.Commands.ReceiptItem.Delete;
+using FluentAssertions;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.ReceiptItem;
@@ -28,7 +29,7 @@ public class DeleteReceiptItemCommandTests : ICommandTests<Guid>
 	{
 		List<Guid> items = ReceiptItemGenerator.GenerateList(2).Select(ri => ri.Id!.Value).ToList();
 		DeleteReceiptItemCommand command = new(items);
-		Assert.Equal(items, command.Ids);
+		command.Ids.Should().BeEquivalentTo(items);
 	}
 
 	[Fact]

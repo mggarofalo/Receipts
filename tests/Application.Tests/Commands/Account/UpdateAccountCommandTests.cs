@@ -1,4 +1,5 @@
 using Application.Commands.Account.Update;
+using FluentAssertions;
 using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Account;
@@ -28,7 +29,7 @@ public class UpdateAccountCommandTests : ICommandTests<Domain.Core.Account>
 	{
 		List<Domain.Core.Account> items = AccountGenerator.GenerateList(2);
 		UpdateAccountCommand command = new(items);
-		Assert.Equal(items, command.Accounts);
+		command.Accounts.Should().BeEquivalentTo(items);
 	}
 
 	[Fact]

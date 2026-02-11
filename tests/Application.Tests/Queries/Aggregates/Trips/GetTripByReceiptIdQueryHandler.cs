@@ -2,6 +2,7 @@ using Application.Queries.Aggregates.ReceiptsWithItems;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Application.Queries.Aggregates.Trips;
 using Domain.Aggregates;
+using FluentAssertions;
 using MediatR;
 using Moq;
 using SampleData.Domain.Aggregates;
@@ -30,8 +31,8 @@ public class GetTripByReceiptIdQueryHandlerTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(expected.Receipt, result.Receipt);
-		Assert.Equal(expected.Transactions, result.Transactions);
+		result.Receipt.Should().BeSameAs(expected.Receipt);
+		result.Transactions.Should().BeSameAs(expected.Transactions);
 	}
 
 	[Fact]

@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Queries.Aggregates.TransactionAccounts;
+using FluentAssertions;
 using Moq;
 using SampleData.Domain.Core;
 
@@ -28,8 +29,8 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(expectedTransaction, result.Transaction);
-		Assert.Equal(expectedAccount, result.Account);
+		result.Transaction.Should().BeSameAs(expectedTransaction);
+		result.Account.Should().BeSameAs(expectedAccount);
 	}
 
 	[Fact]

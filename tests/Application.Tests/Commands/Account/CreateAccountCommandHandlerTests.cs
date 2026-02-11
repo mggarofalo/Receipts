@@ -1,7 +1,8 @@
 using Application.Commands.Account.Create;
-using SampleData.Domain.Core;
-using Moq;
 using Application.Interfaces.Services;
+using FluentAssertions;
+using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Account;
 
@@ -22,6 +23,6 @@ public class CreateAccountCommandHandlerTests
 		CreateAccountCommand command = new(input);
 		List<Domain.Core.Account> result = await handler.Handle(command, CancellationToken.None);
 
-		Assert.Equal(input.Count, result.Count);
+		result.Should().HaveCount(input.Count);
 	}
 }
