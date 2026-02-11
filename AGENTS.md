@@ -70,11 +70,11 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
   - `Entities/` - Database entity classes (separate from Domain)
   - `Repositories/` - Repository pattern implementation
   - `Services/` - Service implementations
-  - `Mapping/` - AutoMapper profiles (Domain <-> Entity)
+  - `Mapping/` - Mapperly mappers (Domain <-> Entity)
 - **Presentation**
   - **API** - ASP.NET Core Web API with SignalR hub for real-time updates
     - `Controllers/Core/` and `Controllers/Aggregates/` - REST endpoints
-    - `Mapping/` - AutoMapper profiles (Domain <-> ViewModel)
+    - `Mapping/` - Mapperly mappers (Domain <-> ViewModel)
     - `Configuration/` - Service registration extension methods
     - `Hubs/ReceiptsHub.cs` - SignalR hub
   - **Client** - Blazor WebAssembly frontend using MudBlazor
@@ -88,7 +88,7 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
 - **CQRS**: Commands and Queries are separate with dedicated handlers
 - **Mediator Pattern**: MediatR dispatches commands/queries to handlers
 - **Repository Pattern**: Infrastructure repositories abstract EF Core
-- **Mapping**: AutoMapper handles Domain <-> Entity (Infrastructure) and Domain <-> ViewModel (API)
+- **Mapping**: Mapperly handles Domain <-> Entity (Infrastructure) and Domain <-> ViewModel (API)
 - **Service Registration**: Each layer has a static extension method (`RegisterApplicationServices`, `RegisterInfrastructureServices`) for DI setup
 
 ### Database
@@ -136,3 +136,107 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) format:
 - `fix(client): correct date picker timezone handling`
 - `refactor(infrastructure): simplify repository base class`
 - `docs: update agent guidance documentation`
+
+## Object Mapping with Mapperly
+
+This project uses [Mapperly](https://github.com/riok/mapperly) for compile-time object mapping. Mapperly was chosen over AutoMapper for:
+- Zero licensing costs (Apache 2.0 vs AutoMapper's commercial license)
+- 8.61x faster performance (no reflection)
+- Compile-time safety (mapping errors caught during build)
+- Debuggable generated code
+
+### Mapperly Patterns
+
+**Basic Mapper Structure:**
+```csharp
+[Mapper]
+public partial class AccountMapper
+{
+    public partial AccountVM ToViewModel(Account source);
+    public partial Account ToDomain(AccountVM source);
+}
+```
+
+**Value Object Decomposition (Money → decimal + Currency):**
+```csharp
+[Mapper]
+public partial class ReceiptMapper
+{
+    // Flatten Money value object to separate fields
+    [MapProperty(nameof(Receipt.TaxAmount.Amount), nameof(ReceiptEntity.TaxAmount))]
+    [MapProperty(nameof(Receipt.TaxAmount.Currency), nameof(ReceiptEntity.TaxAmountCurrency))]
+    public partial ReceiptEntity ToEntity(Receipt source);
+
+    // Reconstruct Money value object from separate fields
+    private Money MapTaxAmount(decimal amount, Currency currency) => new(amount, currency);
+
+    public partial Receipt ToDomain(ReceiptEntity source);
+}
+```
+
+**Ignoring Navigation Properties:**
+```csharp
+[MapperIgnoreTarget(nameof(ReceiptItemEntity.Receipt))]
+[MapperIgnoreTarget(nameof(ReceiptItemEntity.ReceiptId))]
+public partial ReceiptItemEntity ToEntity(ReceiptItem source);
+```
+
+**Aggregate Mappers with Nested Objects:**
+
+When mapping aggregates that contain nested objects with value object decomposition, create manual mapping methods that delegate to the appropriate Core mappers:
+
+```csharp
+[Mapper]
+public partial class ReceiptWithItemsMapper
+{
+    private readonly ReceiptMapper _receiptMapper = new();
+    private readonly ReceiptItemMapper _receiptItemMapper = new();
+
+    public ReceiptWithItemsVM ToViewModel(ReceiptWithItems source)
+    {
+        return new ReceiptWithItemsVM
+        {
+            Receipt = _receiptMapper.ToViewModel(source.Receipt),
+            Items = source.Items.Select(_receiptItemMapper.ToViewModel).ToList()
+        };
+    }
+}
+```
+
+**Note:** Don't use `[UseMapper(typeof(...))]` - it doesn't work as expected. Instead, instantiate mapper dependencies as fields and call them explicitly.
+
+### Testing with Mapperly
+
+Use concrete mapper instances in tests instead of mocks:
+
+```csharp
+// GOOD: Use actual mapper
+private readonly AccountMapper _mapper = new();
+private readonly AccountService _service;
+
+public AccountServiceTests()
+{
+    _service = new AccountService(_mockRepository.Object, _mapper);
+}
+
+// BAD: Don't mock mappers
+Mock<IMapper> mapperMock = new();
+```
+
+Benefits:
+- Tests use actual mapping logic (more realistic)
+- No need to set up mock behaviors
+- Catches mapping errors in tests
+- Simpler test setup
+
+## Library Migration Best Practices
+
+When migrating between libraries (e.g., AutoMapper → Mapperly):
+
+1. **Layer-by-layer approach**: Migrate Infrastructure → API → Tests in sequence
+2. **Test at each phase**: Run tests after completing each layer
+3. **Update tests alongside production code**: Don't defer test updates to the end
+4. **Delete obsolete code only after verification**: Keep old profiles until new mappers are working
+5. **Use Task agents for repetitive updates**: Controllers and test files often follow similar patterns
+6. **Verify clean build**: After removing old package, ensure no lingering references remain
+7. **Document benefits in commit message**: Explain why the migration was necessary
