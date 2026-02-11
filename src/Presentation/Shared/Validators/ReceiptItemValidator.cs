@@ -9,7 +9,6 @@ public class ReceiptItemValidator : AbstractValidator<ReceiptItemVM>
 	public const string DescriptionIsRequired = "Description is required.";
 	public const string CategoryIsRequired = "Category is required.";
 	public const string SubcategoryIsRequired = "Subcategory is required.";
-	public const string TotalAmountErrorMessage = "Total amount must be equal to the product of Quantity and Unit Price.";
 
 	public ReceiptItemValidator()
 	{
@@ -28,9 +27,5 @@ public class ReceiptItemValidator : AbstractValidator<ReceiptItemVM>
 		RuleFor(x => x.Subcategory)
 			.NotEmpty()
 			.WithMessage(SubcategoryIsRequired);
-
-		RuleFor(x => x.TotalAmount)
-			.Equal(x => Math.Floor((x.Quantity ?? 0) * (x.UnitPrice ?? 0) * 100) / 100)
-			.WithMessage(TotalAmountErrorMessage);
 	}
 }
