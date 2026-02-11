@@ -13,6 +13,7 @@ using Moq;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Core;
@@ -57,7 +58,7 @@ public class ReceiptsControllerTests
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		ReceiptVM actualControllerReturn = Assert.IsType<ReceiptVM>(okResult.Value);
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -117,7 +118,7 @@ public class ReceiptsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<ReceiptVM> actualControllerReturn = Assert.IsType<List<ReceiptVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -159,7 +160,7 @@ public class ReceiptsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<ReceiptVM> actualControllerReturn = Assert.IsType<List<ReceiptVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]

@@ -11,6 +11,7 @@ using Moq;
 using SampleData.Domain.Aggregates;
 using SampleData.Domain.Core;
 using Shared.ViewModels.Aggregates;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
@@ -58,7 +59,7 @@ public class TransactionAccountControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		TransactionAccountVM actualReturn = Assert.IsType<TransactionAccountVM>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn);
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
 
 	[Fact]
@@ -119,7 +120,7 @@ public class TransactionAccountControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<TransactionAccountVM> actualReturn = Assert.IsType<List<TransactionAccountVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn[0]);
+		actualReturn[0].Should().BeEquivalentTo(expectedReturn);
 	}
 
 	[Fact]

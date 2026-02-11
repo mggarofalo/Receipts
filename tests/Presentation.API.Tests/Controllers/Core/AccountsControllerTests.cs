@@ -13,6 +13,7 @@ using Moq;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Core;
@@ -57,7 +58,7 @@ public class AccountsControllerTests
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		AccountVM actualReturn = Assert.IsType<AccountVM>(okResult.Value);
-		Assert.Equal(expectedReturn, actualReturn);
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
 
 	[Fact]
@@ -117,7 +118,7 @@ public class AccountsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<AccountVM> actualReturn = Assert.IsType<List<AccountVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn);
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
 
 	[Fact]
@@ -160,7 +161,7 @@ public class AccountsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<AccountVM> actualReturn = Assert.IsType<List<AccountVM>>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn);
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
 
 	[Fact]

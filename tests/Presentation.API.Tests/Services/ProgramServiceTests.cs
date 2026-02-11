@@ -1,6 +1,8 @@
 using API.Services;
 using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Services;
 
@@ -10,6 +12,7 @@ public class ProgramServiceTests
 	public void RegisterProgramServices_RegistersRequiredServices()
 	{
 		ServiceCollection serviceCollection = new();
+		serviceCollection.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
 		serviceCollection.RegisterProgramServices();
 		ServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
 

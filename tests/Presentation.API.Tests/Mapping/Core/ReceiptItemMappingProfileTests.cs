@@ -4,6 +4,7 @@ using Domain.Core;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Mapping.Core;
@@ -35,7 +36,7 @@ public class ReceiptItemMappingProfileTests
 		ReceiptItem actual = _mapper.Map<ReceiptItem>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 
 	[Fact]
@@ -50,6 +51,6 @@ public class ReceiptItemMappingProfileTests
 		ReceiptItemVM actual = _mapper.Map<ReceiptItemVM>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 }

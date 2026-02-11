@@ -13,6 +13,7 @@ using Moq;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Core;
@@ -57,7 +58,7 @@ public class TransactionsControllerTests
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		TransactionVM actualControllerReturn = Assert.IsType<TransactionVM>(okResult.Value);
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -116,7 +117,7 @@ public class TransactionsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<TransactionVM> actualControllerReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -156,7 +157,7 @@ public class TransactionsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<TransactionVM> actualControllerReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -179,7 +180,7 @@ public class TransactionsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<TransactionVM> actualControllerReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -240,7 +241,7 @@ public class TransactionsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<TransactionVM> actualControllerReturn = Assert.IsType<List<TransactionVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]

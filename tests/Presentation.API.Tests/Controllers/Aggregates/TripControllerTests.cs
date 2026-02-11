@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
 using Shared.ViewModels.Aggregates;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
@@ -61,7 +62,7 @@ public class TripControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		TripVM actualReturn = Assert.IsType<TripVM>(okResult.Value);
 
-		Assert.Equal(expectedReturn, actualReturn);
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
 
 	[Fact]

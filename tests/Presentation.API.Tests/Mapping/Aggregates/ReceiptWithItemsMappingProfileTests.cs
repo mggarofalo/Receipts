@@ -5,6 +5,7 @@ using SampleData.Domain.Aggregates;
 using SampleData.ViewModels.Aggregates;
 using API.Mapping.Core;
 using API.Mapping.Aggregates;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Mapping.Aggregates;
@@ -38,8 +39,8 @@ public class ReceiptWithItemsMappingProfileTests
 		ReceiptWithItems actual = _mapper.Map<ReceiptWithItems>(mapped);
 
 		// Assert
-		Assert.Equal(expected.Items, actual.Items);
-		Assert.Equal(expected, actual);
+		actual.Items.Should().BeEquivalentTo(expected.Items);
+		actual.Should().BeEquivalentTo(expected);
 	}
 
 	[Fact]
@@ -54,7 +55,7 @@ public class ReceiptWithItemsMappingProfileTests
 		ReceiptWithItemsVM actual = _mapper.Map<ReceiptWithItemsVM>(mapped);
 
 		// Assert
-		Assert.Equal(expected.Items, actual.Items);
-		Assert.Equal(expected, actual);
+		actual.Items.Should().BeEquivalentTo(expected.Items);
+		actual.Should().BeEquivalentTo(expected);
 	}
 }

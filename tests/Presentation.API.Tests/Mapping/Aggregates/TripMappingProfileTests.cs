@@ -5,6 +5,7 @@ using SampleData.Domain.Aggregates;
 using SampleData.ViewModels.Aggregates;
 using API.Mapping.Core;
 using API.Mapping.Aggregates;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Mapping.Aggregates;
@@ -42,7 +43,7 @@ public class TripMappingProfileTests
 		Trip actual = _mapper.Map<Trip>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 
 	[Fact]
@@ -56,6 +57,6 @@ public class TripMappingProfileTests
 		TripVM actual = _mapper.Map<TripVM>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 }

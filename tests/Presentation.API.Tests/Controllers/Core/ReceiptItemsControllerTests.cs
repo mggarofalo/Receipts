@@ -13,6 +13,7 @@ using Moq;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Core;
@@ -57,7 +58,7 @@ public class ReceiptItemsControllerTests
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		ReceiptItemVM actualControllerReturn = Assert.IsType<ReceiptItemVM>(okResult.Value);
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -116,7 +117,7 @@ public class ReceiptItemsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<ReceiptItemVM> actualControllerReturn = Assert.IsType<List<ReceiptItemVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -156,7 +157,7 @@ public class ReceiptItemsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<ReceiptItemVM> actualControllerReturn = Assert.IsType<List<ReceiptItemVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -179,7 +180,7 @@ public class ReceiptItemsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<ReceiptItemVM> actualControllerReturn = Assert.IsType<List<ReceiptItemVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]
@@ -241,7 +242,7 @@ public class ReceiptItemsControllerTests
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
 		List<ReceiptItemVM> actualControllerReturn = Assert.IsType<List<ReceiptItemVM>>(okResult.Value);
 
-		Assert.Equal(expectedControllerReturn, actualControllerReturn);
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
 
 	[Fact]

@@ -5,6 +5,7 @@ using SampleData.Domain.Aggregates;
 using SampleData.ViewModels.Aggregates;
 using API.Mapping.Core;
 using API.Mapping.Aggregates;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Mapping.Aggregates;
@@ -38,7 +39,7 @@ public class TransactionAccountMappingProfileTests
 		TransactionAccount actual = _mapper.Map<TransactionAccount>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 
 	[Fact]
@@ -52,6 +53,6 @@ public class TransactionAccountMappingProfileTests
 		TransactionAccountVM actual = _mapper.Map<TransactionAccountVM>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 }
