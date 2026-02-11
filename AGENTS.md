@@ -15,19 +15,31 @@ When working on tasks that are expected to result in code changes, follow this s
    - Link the issue ID to your work
 
 2. **Branch-Based Development**
-   - Create a feature branch from `master` using the Linear issue identifier
+   - **ALWAYS** create a feature branch for Linear-based work - NEVER commit directly to master
    - Branch naming convention: Use the suggested git branch name from Linear (usually `{team-key}-{issue-number}-{slug}`)
    - Example: `REC-123-add-receipt-export`
+   - For multiple connected issues with subfeatures, use your judgment on whether to create a branch per subissue or combine related work
 
-3. **Pull Request Process**
-   - When work in a branch is complete, create a PR against `master`
-   - PR title should reference the Linear issue (e.g., "REC-123: Add receipt export endpoint")
-   - Include a summary of changes and link to the Linear issue
-   - Ensure all tests pass and the build succeeds before requesting review
+3. **Local Merge Process**
+   - When work in a branch is complete, merge locally into `master` (no PRs needed)
+   - Prefer squashing your feature commits into a single net-change commit with a clear message
+   - This applies even to epics - squash the entire feature into one commit
+   - Commit message should reference the Linear issue (e.g., "feat: add receipt export endpoint (REC-123)")
+   - Always clean up branches after merge:
+     ```bash
+     git checkout master
+     git merge --squash feature-branch
+     git commit -m "feat: descriptive message (LINEAR-ID)"
+     git branch -d feature-branch  # Delete local branch
+     ```
 
 4. **Direct Commits to Master**
-   - Only use for trivial changes like typo fixes or documentation updates
-   - When in doubt, create a branch and PR
+   - Only use for non-Linear work like:
+     - Trivial typo fixes
+     - Documentation updates
+     - Tooling/build configuration
+   - **NEVER** commit Linear-based work directly to master
+   - When in doubt, create a branch
 
 ## Build and Test Commands
 
