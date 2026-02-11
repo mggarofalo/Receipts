@@ -13,7 +13,6 @@ public class ReceiptItemVMTests
 		string description = "Test Item";
 		decimal quantity = 2.0m;
 		decimal unitPrice = 5.0m;
-		decimal totalAmount = 10.0m;
 		string category = "Test Category";
 		string subcategory = "Test Subcategory";
 
@@ -25,7 +24,6 @@ public class ReceiptItemVMTests
 			Description = description,
 			Quantity = quantity,
 			UnitPrice = unitPrice,
-			TotalAmount = totalAmount,
 			Category = category,
 			Subcategory = subcategory
 		};
@@ -36,7 +34,6 @@ public class ReceiptItemVMTests
 		Assert.Equal(description, receiptItemVM.Description);
 		Assert.Equal(quantity, receiptItemVM.Quantity);
 		Assert.Equal(unitPrice, receiptItemVM.UnitPrice);
-		Assert.Equal(totalAmount, receiptItemVM.TotalAmount);
 		Assert.Equal(category, receiptItemVM.Category);
 		Assert.Equal(subcategory, receiptItemVM.Subcategory);
 	}
@@ -49,7 +46,6 @@ public class ReceiptItemVMTests
 		string description = "Test Item";
 		decimal quantity = 2.0m;
 		decimal unitPrice = 5.0m;
-		decimal totalAmount = 10.0m;
 		string category = "Test Category";
 		string subcategory = "Test Subcategory";
 
@@ -60,7 +56,6 @@ public class ReceiptItemVMTests
 			Description = description,
 			Quantity = quantity,
 			UnitPrice = unitPrice,
-			TotalAmount = totalAmount,
 			Category = category,
 			Subcategory = subcategory
 		};

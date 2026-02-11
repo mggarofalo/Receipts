@@ -7,7 +7,6 @@ public class ReceiptItemVM
 	public string? Description { get; set; }
 	public decimal? Quantity { get; set; }
 	public decimal? UnitPrice { get; set; }
-	public decimal? TotalAmount { get; set; } // TODO: Remove this property and calculate it in the mapper instead
 	public string? Category { get; set; }
 	public string? Subcategory { get; set; }
 }

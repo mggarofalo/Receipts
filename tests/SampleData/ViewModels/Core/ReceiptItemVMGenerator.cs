@@ -13,7 +13,6 @@ public static class ReceiptItemVMGenerator
 			Description = "Test Item",
 			Quantity = 1,
 			UnitPrice = 5m,
-			TotalAmount = 5m,
 			Category = "Test Category",
 			Subcategory = "Test Subcategory"
 		};
