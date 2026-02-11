@@ -15,10 +15,10 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 		List<Domain.Core.ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2);
 
 		Mock<IReceiptItemService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetReceiptItemsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id!.Value);
+		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id);
 		List<Domain.Core.ReceiptItem>? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
@@ -31,10 +31,10 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<IReceiptItemService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
 		GetReceiptItemsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id!.Value);
+		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id);
 		List<Domain.Core.ReceiptItem>? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);
@@ -47,10 +47,10 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<IReceiptItemService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.ReceiptItem>?)null);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.ReceiptItem>?)null);
 
 		GetReceiptItemsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id!.Value);
+		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id);
 
 		List<Domain.Core.ReceiptItem>? result = await handler.Handle(query, CancellationToken.None);
 

@@ -13,7 +13,7 @@ public class DeleteTransactionCommandHandlerTests
 		Mock<ITransactionService> mockService = new();
 		DeleteTransactionCommandHandler handler = new(mockService.Object);
 
-		List<Guid> input = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
+		List<Guid> input = TransactionGenerator.GenerateList(2).Select(t => t.Id).ToList();
 
 		DeleteTransactionCommand command = new(input);
 		bool result = await handler.Handle(command, CancellationToken.None);

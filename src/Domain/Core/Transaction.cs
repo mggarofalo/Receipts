@@ -2,14 +2,14 @@ namespace Domain.Core;
 
 public class Transaction
 {
-	public Guid? Id { get; set; }
+	public Guid Id { get; set; }
 	public Money Amount { get; set; }
 	public DateOnly Date { get; set; }
 
 	public const string AmountMustBeNonZero = "Amount must be non-zero";
 	public const string DateCannotBeInTheFuture = "Date cannot be in the future";
 
-	public Transaction(Guid? id, Money amount, DateOnly date)
+	public Transaction(Guid id, Money amount, DateOnly date)
 	{
 		if (amount.Amount == 0)
 		{

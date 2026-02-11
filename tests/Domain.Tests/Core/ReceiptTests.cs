@@ -26,7 +26,7 @@ public class ReceiptTests
 	}
 
 	[Fact]
-	public void Constructor_NullId_CreatesReceiptWithNullId()
+	public void Constructor_EmptyId_CreatesReceiptWithEmptyId()
 	{
 		// Arrange
 		string location = "Test Store";
@@ -35,10 +35,10 @@ public class ReceiptTests
 		string description = "Test Receipt";
 
 		// Act
-		Receipt receipt = new(null, location, date, taxAmount, description);
+		Receipt receipt = new(Guid.Empty, location, date, taxAmount, description);
 
 		// Assert
-		Assert.Null(receipt.Id);
+		Assert.Equal(Guid.Empty, receipt.Id);
 	}
 
 	[Fact]

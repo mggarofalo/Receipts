@@ -16,13 +16,13 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate();
 
 		Mock<ITransactionService> mockTransactionService = new();
-		mockTransactionService.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
+		mockTransactionService.Setup(r => r.GetByIdAsync(expectedTransaction.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
 		Mock<IAccountService> mockAccountService = new();
-		mockAccountService.Setup(r => r.GetByTransactionIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
+		mockAccountService.Setup(r => r.GetByTransactionIdAsync(expectedTransaction.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
 
 		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
-		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id!.Value);
+		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id);
 
 		// Act
 		Domain.Aggregates.TransactionAccount? result = await handler.Handle(query, CancellationToken.None);
@@ -61,13 +61,13 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate();
 
 		Mock<ITransactionService> mockTransactionService = new();
-		mockTransactionService.Setup(r => r.GetByIdAsync(expectedTransaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
+		mockTransactionService.Setup(r => r.GetByIdAsync(expectedTransaction.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
 		Mock<IAccountService> mockAccountService = new();
 		mockAccountService.Setup(r => r.GetByIdAsync(missingAccountId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 
 		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
-		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id!.Value);
+		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id);
 
 		// Act
 		Domain.Aggregates.TransactionAccount? result = await handler.Handle(query, CancellationToken.None);

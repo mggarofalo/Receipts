@@ -44,7 +44,7 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<ReceiptVM> result = await _controller.GetReceiptById(mediatorReturn.Id!.Value);
+		ActionResult<ReceiptVM> result = await _controller.GetReceiptById(mediatorReturn.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -74,7 +74,7 @@ public class ReceiptsControllerTests
 	public async Task GetReceiptById_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		Guid id = ReceiptGenerator.Generate().Id!.Value;
+		Guid id = ReceiptGenerator.Generate().Id;
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetReceiptByIdQuery>(q => q.Id == id),
@@ -234,7 +234,7 @@ public class ReceiptsControllerTests
 	public async Task DeleteReceipts_ReturnsNoContent_WhenDeleteSucceeds()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -252,7 +252,7 @@ public class ReceiptsControllerTests
 	public async Task DeleteReceipts_ReturnsNotFound_WhenDeleteFails()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -270,7 +270,7 @@ public class ReceiptsControllerTests
 	public async Task DeleteReceipts_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(controllerInput)),

@@ -37,12 +37,12 @@ public class TransactionAccountControllerTests
 		TransactionAccountVM expectedReturn = _mapper.ToViewModel(transactionAccount);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetTransactionAccountByTransactionIdQuery>(q => q.TransactionId == transactionAccount.Transaction.Id!.Value),
+			It.Is<GetTransactionAccountByTransactionIdQuery>(q => q.TransactionId == transactionAccount.Transaction.Id),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(transactionAccount);
 
 		// Act
-		ActionResult<TransactionAccountVM> result = await _controller.GetTransactionAccountByTransactionId(transactionAccount.Transaction.Id!.Value);
+		ActionResult<TransactionAccountVM> result = await _controller.GetTransactionAccountByTransactionId(transactionAccount.Transaction.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -73,7 +73,7 @@ public class TransactionAccountControllerTests
 	public async Task GetTransactionAccountByTransactionId_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		Guid transactionId = TransactionAccountGenerator.Generate().Transaction.Id!.Value;
+		Guid transactionId = TransactionAccountGenerator.Generate().Transaction.Id;
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionAccountByTransactionIdQuery>(q => q.TransactionId == transactionId),
@@ -93,7 +93,7 @@ public class TransactionAccountControllerTests
 	public async Task GetTransactionAccountsByReceiptId_ReturnsOkResult_WhenReceiptExists()
 	{
 		// Arrange
-		Guid receiptId = ReceiptGenerator.Generate().Id!.Value;
+		Guid receiptId = ReceiptGenerator.Generate().Id;
 		TransactionAccount transactionAccount = TransactionAccountGenerator.Generate();
 		TransactionAccountVM expectedReturn = _mapper.ToViewModel(transactionAccount);
 
@@ -134,7 +134,7 @@ public class TransactionAccountControllerTests
 	public async Task GetTransactionAccountsByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		Guid receiptId = ReceiptGenerator.Generate().Id!.Value;
+		Guid receiptId = ReceiptGenerator.Generate().Id;
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionAccountsByReceiptIdQuery>(q => q.ReceiptId == receiptId),

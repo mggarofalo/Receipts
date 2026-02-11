@@ -15,10 +15,10 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		List<Domain.Core.Transaction> expected = TransactionGenerator.GenerateList(2);
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id!.Value);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id);
 
 		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
 
@@ -32,10 +32,10 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id!.Value);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id);
 
 		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
 
@@ -49,10 +49,10 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>?)null);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>?)null);
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id!.Value);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id);
 
 		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
 

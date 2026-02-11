@@ -15,6 +15,7 @@ public partial class ReceiptItemMapper
 
 	private Money MapUnitPrice(decimal? unitPrice) => new(unitPrice ?? 0, Currency.USD);
 	private Money MapTotalAmount(decimal? totalAmount) => new(totalAmount ?? 0, Currency.USD);
+	private Guid MapId(Guid? id) => id ?? Guid.Empty;
 
 	public partial ReceiptItem ToDomain(ReceiptItemVM source);
 }

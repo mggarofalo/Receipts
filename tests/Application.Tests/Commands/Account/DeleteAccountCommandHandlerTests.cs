@@ -13,7 +13,7 @@ public class DeleteAccountCommandHandlerTests
 		Mock<IAccountService> mockService = new();
 		DeleteAccountCommandHandler handler = new(mockService.Object);
 
-		List<Guid> input = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> input = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
 
 		DeleteAccountCommand command = new(input);
 		bool result = await handler.Handle(command, CancellationToken.None);

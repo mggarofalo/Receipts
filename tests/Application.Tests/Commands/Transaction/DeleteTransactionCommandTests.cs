@@ -27,7 +27,7 @@ public class DeleteTransactionCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
-		List<Guid> items = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
+		List<Guid> items = TransactionGenerator.GenerateList(2).Select(t => t.Id).ToList();
 		DeleteTransactionCommand command = new(items);
 		command.Ids.Should().BeEquivalentTo(items);
 	}
@@ -35,7 +35,7 @@ public class DeleteTransactionCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Items_ShouldBeImmutable()
 	{
-		List<Guid> items = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
+		List<Guid> items = TransactionGenerator.GenerateList(2).Select(t => t.Id).ToList();
 		DeleteTransactionCommand command = new(items);
 		Assert.IsAssignableFrom<IReadOnlyList<Guid>>(command.Ids);
 		Assert.NotSame(items, command.Ids);

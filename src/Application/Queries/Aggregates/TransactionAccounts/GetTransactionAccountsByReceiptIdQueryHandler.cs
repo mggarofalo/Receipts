@@ -21,7 +21,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandler(
 
 		foreach (Domain.Core.Transaction transaction in transactions)
 		{
-			Domain.Core.Account? account = await accountService.GetByTransactionIdAsync(transaction.Id!.Value, cancellationToken);
+			Domain.Core.Account? account = await accountService.GetByTransactionIdAsync(transaction.Id, cancellationToken);
 
 			if (account == null)
 			{

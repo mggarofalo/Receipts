@@ -32,7 +32,7 @@ public class ReceiptItemTests
 	}
 
 	[Fact]
-	public void Constructor_NullId_CreatesReceiptItemWithNullId()
+	public void Constructor_EmptyId_CreatesReceiptItemWithEmptyId()
 	{
 		// Arrange
 		string receiptItemCode = "ITEM001";
@@ -44,10 +44,10 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act
-		ReceiptItem receiptItem = new(null, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+		ReceiptItem receiptItem = new(Guid.Empty, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
 
 		// Assert
-		Assert.Null(receiptItem.Id);
+		Assert.Equal(Guid.Empty, receiptItem.Id);
 	}
 
 	[Theory]

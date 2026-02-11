@@ -9,4 +9,6 @@ public partial class AccountMapper
 {
 	public partial AccountVM ToViewModel(Account source);
 	public partial Account ToDomain(AccountVM source);
+
+	private Guid MapId(Guid? id) => id ?? Guid.Empty;
 }

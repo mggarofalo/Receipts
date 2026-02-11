@@ -2,7 +2,7 @@ namespace Domain.Core;
 
 public class ReceiptItem
 {
-	public Guid? Id { get; set; }
+	public Guid Id { get; set; }
 	public string ReceiptItemCode { get; set; }
 	public string Description { get; set; }
 	public decimal Quantity { get; set; }
@@ -17,7 +17,7 @@ public class ReceiptItem
 	public const string CategoryCannotBeEmpty = "Category cannot be empty";
 	public const string SubcategoryCannotBeEmpty = "Subcategory cannot be empty";
 
-	public ReceiptItem(Guid? id, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory)
+	public ReceiptItem(Guid id, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory)
 	{
 		if (string.IsNullOrWhiteSpace(receiptItemCode))
 		{

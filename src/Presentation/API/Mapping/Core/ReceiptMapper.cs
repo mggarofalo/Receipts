@@ -13,6 +13,7 @@ public partial class ReceiptMapper
 	public partial ReceiptVM ToViewModel(Receipt source);
 
 	private Money MapTaxAmount(decimal? taxAmount) => new(taxAmount ?? 0, Currency.USD);
+	private Guid MapId(Guid? id) => id ?? Guid.Empty;
 
 	public partial Receipt ToDomain(ReceiptVM source);
 }

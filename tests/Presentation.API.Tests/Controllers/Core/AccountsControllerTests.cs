@@ -44,7 +44,7 @@ public class AccountsControllerTests
 			.ReturnsAsync(account);
 
 		// Act
-		ActionResult<AccountVM> result = await _controller.GetAccountById(account.Id!.Value);
+		ActionResult<AccountVM> result = await _controller.GetAccountById(account.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -74,7 +74,7 @@ public class AccountsControllerTests
 	public async Task GetAccountById_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		Guid id = AccountGenerator.Generate().Id!.Value;
+		Guid id = AccountGenerator.Generate().Id;
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetAccountByIdQuery>(q => q.Id == id),
@@ -236,7 +236,7 @@ public class AccountsControllerTests
 	public async Task DeleteAccounts_ReturnsNoContent_WhenDeleteSucceeds()
 	{
 		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
@@ -255,7 +255,7 @@ public class AccountsControllerTests
 	public async Task DeleteAccounts_ReturnsNotFound_WhenSingleAccountDeleteFails()
 	{
 		// Arrange
-		List<Guid> ids = [AccountGenerator.Generate().Id!.Value];
+		List<Guid> ids = [AccountGenerator.Generate().Id];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<DeleteAccountCommand>(),
@@ -274,7 +274,7 @@ public class AccountsControllerTests
 	public async Task DeleteAccounts_ReturnsNotFound_WhenMultipleAccountsDeleteFails()
 	{
 		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<DeleteAccountCommand>(),
@@ -293,7 +293,7 @@ public class AccountsControllerTests
 	public async Task DeleteAccounts_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<DeleteAccountCommand>(),

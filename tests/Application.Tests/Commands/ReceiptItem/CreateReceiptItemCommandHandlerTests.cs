@@ -21,7 +21,7 @@ public class CreateReceiptItemCommandHandlerTests
 			.CreateAsync(It.IsAny<List<Domain.Core.ReceiptItem>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(input);
 
-		CreateReceiptItemCommand command = new(input, receipt.Id!.Value);
+		CreateReceiptItemCommand command = new(input, receipt.Id);
 		List<Domain.Core.ReceiptItem> result = await handler.Handle(command, CancellationToken.None);
 
 		result.Should().HaveCount(input.Count);

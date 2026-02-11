@@ -22,7 +22,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		Mock<IAccountService> mockAccountService = new();
 		for (int i = 0; i < expectedTransactions.Count; i++)
 		{
-			mockAccountService.Setup(r => r.GetByTransactionIdAsync(expectedTransactions[i].Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccounts[i]);
+			mockAccountService.Setup(r => r.GetByTransactionIdAsync(expectedTransactions[i].Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccounts[i]);
 		}
 
 		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
@@ -75,7 +75,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		Mock<IAccountService> mockAccountService = new();
 		foreach (Domain.Core.Transaction transaction in expectedTransactions)
 		{
-			mockAccountService.Setup(r => r.GetByTransactionIdAsync(transaction.Id!.Value, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
+			mockAccountService.Setup(r => r.GetByTransactionIdAsync(transaction.Id, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 		}
 
 		GetTransactionAccountsByReceiptIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);

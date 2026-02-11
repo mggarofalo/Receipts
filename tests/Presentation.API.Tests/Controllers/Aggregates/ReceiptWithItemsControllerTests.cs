@@ -36,12 +36,12 @@ public class ReceiptWithItemsControllerTests
 		ReceiptWithItemsVM expectedReturn = _mapper.ToViewModel(receiptWithItems);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetReceiptWithItemsByReceiptIdQuery>(q => q.ReceiptId == receiptWithItems.Receipt.Id!.Value),
+			It.Is<GetReceiptWithItemsByReceiptIdQuery>(q => q.ReceiptId == receiptWithItems.Receipt.Id),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(receiptWithItems);
 
 		// Act
-		ActionResult<ReceiptWithItemsVM> result = await _controller.GetReceiptWithItemsByReceiptId(receiptWithItems.Receipt.Id!.Value);
+		ActionResult<ReceiptWithItemsVM> result = await _controller.GetReceiptWithItemsByReceiptId(receiptWithItems.Receipt.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -72,7 +72,7 @@ public class ReceiptWithItemsControllerTests
 	public async Task GetReceiptWithItemsByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		Guid receiptId = ReceiptWithItemsGenerator.Generate().Receipt.Id!.Value;
+		Guid receiptId = ReceiptWithItemsGenerator.Generate().Receipt.Id;
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetReceiptWithItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId),

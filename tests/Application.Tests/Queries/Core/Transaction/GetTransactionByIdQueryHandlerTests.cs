@@ -17,7 +17,7 @@ public class GetTransactionByIdQueryHandlerTests
 		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetTransactionByIdQueryHandler handler = new(mockService.Object);
-		GetTransactionByIdQuery query = new(expected.Id!.Value);
+		GetTransactionByIdQuery query = new(expected.Id);
 		Domain.Core.Transaction? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);

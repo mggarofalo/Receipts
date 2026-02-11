@@ -2,7 +2,7 @@ namespace Domain.Core;
 
 public class Account
 {
-	public Guid? Id { get; set; }
+	public Guid Id { get; set; }
 	public string AccountCode { get; set; }
 	public string Name { get; set; }
 	public bool IsActive { get; set; }
@@ -10,7 +10,7 @@ public class Account
 	public const string AccountCodeCannotBeEmpty = "Account code cannot be empty";
 	public const string NameCannotBeEmpty = "Name cannot be empty";
 
-	public Account(Guid? id, string accountCode, string name, bool isActive = true)
+	public Account(Guid id, string accountCode, string name, bool isActive = true)
 	{
 		if (string.IsNullOrWhiteSpace(accountCode))
 		{

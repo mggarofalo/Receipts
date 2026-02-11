@@ -36,12 +36,12 @@ public class TripControllerTests
 		TripVM expectedReturn = _mapper.ToViewModel(trip);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetTripByReceiptIdQuery>(q => q.ReceiptId == trip.Receipt.Receipt.Id!.Value),
+			It.Is<GetTripByReceiptIdQuery>(q => q.ReceiptId == trip.Receipt.Receipt.Id),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(trip);
 
 		// Act
-		ActionResult<TripVM> result = await _controller.GetTripByReceiptId(trip.Receipt.Receipt.Id!.Value);
+		ActionResult<TripVM> result = await _controller.GetTripByReceiptId(trip.Receipt.Receipt.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -72,7 +72,7 @@ public class TripControllerTests
 	public async Task GetTripByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		Guid receiptId = TripGenerator.Generate().Receipt.Receipt.Id!.Value;
+		Guid receiptId = TripGenerator.Generate().Receipt.Receipt.Id;
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTripByReceiptIdQuery>(q => q.ReceiptId == receiptId),

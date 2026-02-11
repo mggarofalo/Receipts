@@ -17,7 +17,7 @@ public class GetAccountByIdQueryHandlerTests
 		mockRService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetAccountByIdQueryHandler handler = new(mockRService.Object);
-		GetAccountByIdQuery query = new(expected.Id!.Value);
+		GetAccountByIdQuery query = new(expected.Id);
 		Domain.Core.Account? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);

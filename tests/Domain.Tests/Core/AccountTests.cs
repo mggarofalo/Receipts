@@ -24,7 +24,7 @@ public class AccountTests
 	}
 
 	[Fact]
-	public void Constructor_NullId_CreatesAccountWithNullId()
+	public void Constructor_EmptyId_CreatesAccountWithEmptyId()
 	{
 		// Arrange
 		string accountCode = "ACC001";
@@ -32,10 +32,10 @@ public class AccountTests
 		bool isActive = true;
 
 		// Act
-		Account account = new(null, accountCode, name, isActive);
+		Account account = new(Guid.Empty, accountCode, name, isActive);
 
 		// Assert
-		Assert.Null(account.Id);
+		Assert.Equal(Guid.Empty, account.Id);
 		Assert.Equal(accountCode, account.AccountCode);
 		Assert.Equal(name, account.Name);
 		Assert.Equal(isActive, account.IsActive);

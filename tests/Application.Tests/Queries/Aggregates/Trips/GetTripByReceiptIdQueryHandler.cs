@@ -24,7 +24,7 @@ public class GetTripByReceiptIdQueryHandlerTests
 			.ReturnsAsync(expected.Transactions);
 
 		GetTripByReceiptIdQueryHandler handler = new(mockMediator.Object);
-		GetTripByReceiptIdQuery query = new(expected.Receipt.Receipt.Id!.Value);
+		GetTripByReceiptIdQuery query = new(expected.Receipt.Receipt.Id);
 
 		// Act
 		Trip? result = await handler.Handle(query, CancellationToken.None);

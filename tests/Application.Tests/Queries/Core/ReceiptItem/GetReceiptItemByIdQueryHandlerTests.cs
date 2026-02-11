@@ -17,7 +17,7 @@ public class GetReceiptItemByReceiptIdQueryHandlerTests
 		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetReceiptItemByIdQueryHandler handler = new(mockService.Object);
-		GetReceiptItemByIdQuery query = new(expected.Id!.Value);
+		GetReceiptItemByIdQuery query = new(expected.Id);
 		Domain.Core.ReceiptItem? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.NotNull(result);

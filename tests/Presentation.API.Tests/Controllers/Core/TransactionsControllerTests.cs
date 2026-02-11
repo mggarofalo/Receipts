@@ -44,7 +44,7 @@ public class TransactionsControllerTests
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<TransactionVM> result = await _controller.GetTransactionById(mediatorReturn.Id!.Value);
+		ActionResult<TransactionVM> result = await _controller.GetTransactionById(mediatorReturn.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -74,7 +74,7 @@ public class TransactionsControllerTests
 	public async Task GetTransactionById_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		Guid id = TransactionGenerator.Generate().Id!.Value;
+		Guid id = TransactionGenerator.Generate().Id;
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionByIdQuery>(q => q.Id == id),
@@ -323,7 +323,7 @@ public class TransactionsControllerTests
 	public async Task DeleteTransactions_ReturnsNoContent_WhenDeleteSucceeds()
 	{
 		// Arrange
-		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(a => a.Id!.Value).ToList();
+		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(a => a.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -341,7 +341,7 @@ public class TransactionsControllerTests
 	public async Task DeleteTransactions_ReturnsNotFound_WhenDeleteFails()
 	{
 		// Arrange
-		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
+		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -359,7 +359,7 @@ public class TransactionsControllerTests
 	public async Task DeleteTransactions_ReturnsNotFound_WhenMultipleTransactionsDeleteFails()
 	{
 		// Arrange
-		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
+		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -377,7 +377,7 @@ public class TransactionsControllerTests
 	public async Task DeleteTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id!.Value).ToList();
+		List<Guid> controllerInput = TransactionGenerator.GenerateList(2).Select(t => t.Id).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteTransactionCommand>(c => c.Ids.SequenceEqual(controllerInput)),

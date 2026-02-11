@@ -22,17 +22,17 @@ public class TransactionTests
 	}
 
 	[Fact]
-	public void Constructor_NullId_CreatesTransactionWithNullId()
+	public void Constructor_EmptyId_CreatesTransactionWithEmptyId()
 	{
 		// Arrange
 		Money amount = new(100.50m);
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 
 		// Act
-		Transaction transaction = new(null, amount, date);
+		Transaction transaction = new(Guid.Empty, amount, date);
 
 		// Assert
-		Assert.Null(transaction.Id);
+		Assert.Equal(Guid.Empty, transaction.Id);
 	}
 
 	[Fact]
