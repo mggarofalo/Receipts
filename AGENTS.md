@@ -14,6 +14,12 @@ When working on tasks that are expected to result in code changes, follow this s
      - Appropriate labels and team assignment
    - Link the issue ID to your work
 
+   **Linear MCP Access:**
+   - Linear is available via MCP server - you can directly create/update issues
+   - Team is "Mggarofalo" (team ID: `a4aff05d-41e6-45dc-b670-cdb485fef765`)
+   - **Do not check for teams** - the team information is stable and documented here
+   - Use the team name "Mggarofalo" directly when creating issues
+
 2. **Branch-Based Development**
    - **ALWAYS** create a feature branch for Linear-based work - NEVER commit directly to master
    - Branch naming convention: Use the suggested git branch name from Linear (usually `{team-key}-{issue-number}-{slug}`)
