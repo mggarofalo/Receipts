@@ -63,6 +63,34 @@ dotnet run --project src/Presentation/API/API.csproj
 dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructure.csproj --startup-project src/Presentation/API/API.csproj
 ```
 
+## Validation and Code Quality
+
+### LSP Server Checks
+
+When validating code changes, **always check the LSP (Language Server Protocol) server** for warnings and hints when possible. The LSP provides real-time diagnostics that may not appear in build output but indicate potential issues.
+
+**Common LSP Warnings That Require Action:**
+
+- **Mapperly nullable mapping warnings**:
+  - Example: "Mapping the nullable source property Id of Domain.Core.Account to the target property Id of Infrastructure.Entities.Core.AccountEntity which is not nullable"
+  - **Action Required**: These warnings indicate a design mismatch that should trigger additional research and potential refactoring
+  - Do not ignore these - they can lead to runtime null reference exceptions
+  - Consider whether:
+    - The source should be non-nullable (more common)
+    - The target should be nullable (less common)
+    - Additional null-handling logic is needed
+
+- **Unused usings, variables, or parameters**: Often indicate incomplete refactoring or dead code
+
+- **Potential null reference warnings**: Especially important with C# nullable reference types enabled
+
+**Validation Workflow:**
+1. Build the solution: `dotnet build`
+2. Run tests: `dotnet test`
+3. Check LSP diagnostics in your editor/IDE
+4. Address any warnings or hints before considering work complete
+5. If warnings indicate design issues, create a Linear issue for follow-up if the fix is non-trivial
+
 ## Architecture
 
 This is a .NET 10 Clean Architecture solution for a receipt management application. It uses central package management via `Directory.Packages.props`.
