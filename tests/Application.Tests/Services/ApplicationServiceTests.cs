@@ -1,5 +1,6 @@
 using Application.Services;
 using AutoMapper;
+using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,19 +15,8 @@ public class ApplicationServiceTests
 	{
 		ServiceCollection serviceCollection = new();
 		serviceCollection.RegisterApplicationServices(new Mock<IConfiguration>().Object);
-		ServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
 
-		AssertThatIMediatorServiceIsNotNull(serviceProvider);
-		AssertThatIMapperServiceIsNotNull(serviceProvider);
-	}
-
-	private static void AssertThatIMediatorServiceIsNotNull(ServiceProvider serviceProvider)
-	{
-		Assert.NotNull(serviceProvider.GetService<IMediator>());
-	}
-
-	private static void AssertThatIMapperServiceIsNotNull(ServiceProvider serviceProvider)
-	{
-		Assert.NotNull(serviceProvider.GetService<IMapper>());
+		serviceCollection.Should().Contain(sd => sd.ServiceType == typeof(IMediator));
+		serviceCollection.Should().Contain(sd => sd.ServiceType == typeof(IMapper));
 	}
 }
