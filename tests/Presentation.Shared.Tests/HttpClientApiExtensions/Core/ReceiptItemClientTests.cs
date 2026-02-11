@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Moq;
 using Moq.Protected;
 using Shared.ViewModels.Core;
@@ -41,7 +42,7 @@ public class ReceiptItemClientTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Equal(receiptItems.Count, result.Count);
-		Assert.All(receiptItems, r => Assert.Contains(result, res => res.Id == r.Id));
+		result.Should().BeEquivalentTo(receiptItems);
 	}
 
 	[Theory]
@@ -127,7 +128,7 @@ public class ReceiptItemClientTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Equal(receiptItems.Count, result.Count);
-		Assert.All(receiptItems, r => Assert.Contains(result, res => res.Id == r.Id));
+		result.Should().BeEquivalentTo(receiptItems);
 	}
 
 	[Theory]
@@ -171,7 +172,7 @@ public class ReceiptItemClientTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Equal(receiptItems.Count, result.Count);
-		Assert.All(receiptItems, r => Assert.Contains(result, res => res.Id == r.Id));
+		result.Should().BeEquivalentTo(receiptItems);
 	}
 
 	[Theory]

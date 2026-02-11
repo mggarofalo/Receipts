@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Moq;
 using Moq.Protected;
 using SampleData.ViewModels.Aggregates;
@@ -41,8 +42,7 @@ public class TransactionAccountClientTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(transactionAccount.Transaction, result.Transaction);
-		Assert.Equal(transactionAccount.Account, result.Account);
+		result.Should().BeEquivalentTo(transactionAccount);
 	}
 
 	[Fact]
@@ -68,7 +68,7 @@ public class TransactionAccountClientTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Equal(transactionAccounts.Count, result.Count);
-		Assert.All(transactionAccounts, ta => Assert.Contains(result, r => r.Transaction!.Id == ta.Transaction!.Id && r.Account!.Id == ta.Account!.Id));
+		result.Should().BeEquivalentTo(transactionAccounts);
 	}
 
 	[Theory]

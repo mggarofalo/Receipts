@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Moq;
 using Moq.Protected;
 using SampleData.ViewModels.Core;
@@ -73,8 +74,7 @@ public class AccountClientTests
 		Assert.NotNull(result);
 		Assert.Equal(accounts.Count, result.Count);
 		Assert.Equal(createdAccounts.Count, result.Count);
-		Assert.All(result, r => Assert.Contains(createdAccounts, a => a.Id == r.Id));
-		Assert.All(createdAccounts, a => Assert.Contains(result, r => r.Id == a.Id));
+		result.Should().BeEquivalentTo(createdAccounts);
 	}
 
 	[Fact]
@@ -98,7 +98,7 @@ public class AccountClientTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(account, result);
+		result.Should().BeEquivalentTo(account);
 	}
 
 	[Theory]
@@ -141,8 +141,7 @@ public class AccountClientTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Equal(accounts.Count, result.Count);
-		Assert.All(accounts, a => Assert.Contains(result, r => r.Id == a.Id));
-		Assert.All(result, r => Assert.Contains(accounts, a => a.Id == r.Id));
+		result.Should().BeEquivalentTo(accounts);
 	}
 
 	[Theory]

@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Moq;
 using Moq.Protected;
 using SampleData.ViewModels.Aggregates;
@@ -41,9 +42,7 @@ public class ReceiptWithItemsClientTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(receiptWithItems.Receipt, result.Receipt);
-		Assert.All(receiptWithItems.Items!, item => Assert.Contains(result.Items!, r => r.Id == item.Id));
-		Assert.All(result.Items!, item => Assert.Contains(receiptWithItems.Items!, r => r.Id == item.Id));
+		result.Should().BeEquivalentTo(receiptWithItems);
 	}
 
 	[Theory]

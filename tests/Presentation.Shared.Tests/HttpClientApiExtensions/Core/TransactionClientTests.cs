@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Moq;
 using Moq.Protected;
 using Shared.ViewModels.Core;
@@ -41,7 +42,7 @@ public class TransactionClientTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Equal(transactions.Count, result.Count);
-		Assert.All(transactions, t => Assert.Contains(result, res => res.Id == t.Id));
+		result.Should().BeEquivalentTo(transactions);
 	}
 
 	[Theory]
@@ -127,8 +128,7 @@ public class TransactionClientTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Equal(transactions.Count, result.Count);
-		Assert.All(transactions, t => Assert.Contains(result, res => res.Id == t.Id));
-		Assert.All(result, res => Assert.Contains(transactions, t => t.Id == res.Id));
+		result.Should().BeEquivalentTo(transactions);
 	}
 
 	[Theory]
@@ -172,8 +172,7 @@ public class TransactionClientTests
 		// Assert
 		Assert.NotNull(result);
 		Assert.Equal(transactions.Count, result.Count);
-		Assert.All(transactions, t => Assert.Contains(result, res => res.Id == t.Id));
-		Assert.All(result, res => Assert.Contains(transactions, t => t.Id == res.Id));
+		result.Should().BeEquivalentTo(transactions);
 	}
 
 	[Theory]

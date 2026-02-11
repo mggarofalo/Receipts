@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Moq;
 using Moq.Protected;
 using SampleData.ViewModels.Aggregates;
@@ -41,9 +42,7 @@ public class TripClientTests
 
 		// Assert
 		Assert.NotNull(result);
-		Assert.Equal(trip.Receipt, result.Receipt);
-		Assert.All(trip.Transactions!, t => Assert.Contains(result.Transactions!, r => r.Transaction == t.Transaction));
-		Assert.All(result.Transactions!, r => Assert.Contains(trip.Transactions!, t => t.Transaction == r.Transaction));
+		result.Should().BeEquivalentTo(trip);
 	}
 
 	[Theory]
