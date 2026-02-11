@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Core;
+using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
 using Infrastructure.Services;
@@ -105,7 +106,7 @@ public class TransactionServiceTests
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(expected, actual);
+		actual.Should().BeSameAs(expected);
 	}
 
 	[Fact]

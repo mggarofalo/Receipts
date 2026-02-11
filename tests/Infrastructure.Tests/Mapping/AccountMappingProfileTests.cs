@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Core;
+using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Mapping;
 using SampleData.Domain.Core;
@@ -35,7 +36,7 @@ public class AccountMappingProfileTests
 		Account actual = _mapper.Map<Account>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 
 	[Fact]
@@ -49,6 +50,6 @@ public class AccountMappingProfileTests
 		AccountEntity actual = _mapper.Map<AccountEntity>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 }

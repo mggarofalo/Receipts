@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +37,7 @@ public class ReceiptItemRepositoryTests
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(entity, actual);
+		actual.Should().BeEquivalentTo(entity, opt => opt.Excluding(member => member.Name == nameof(ReceiptItemEntity.Receipt)));
 
 		_contextFactory.ResetDatabase();
 	}
@@ -75,8 +76,7 @@ public class ReceiptItemRepositoryTests
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(expectedItemCount, actual.Count);
-		Assert.Equal(entities, actual);
+		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(ReceiptItemEntity.Receipt)));
 
 		_contextFactory.ResetDatabase();
 	}
@@ -99,8 +99,7 @@ public class ReceiptItemRepositoryTests
 		List<ReceiptItemEntity> actual = await repository.GetAllAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expectedItemCount, actual.Count);
-		Assert.Equal(entities, actual);
+		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(ReceiptItemEntity.Receipt)));
 
 		_contextFactory.ResetDatabase();
 	}
@@ -118,18 +117,12 @@ public class ReceiptItemRepositoryTests
 		List<ReceiptItemEntity> actual = await repository.CreateAsync(entities, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expectedItemCount, actual.Count);
-
 		Assert.All(actual, r =>
 		{
 			Assert.NotEqual(Guid.Empty, r.Id);
 		});
 
-		Assert.Equal(entities, actual.Select(r =>
-		{
-			r.Id = Guid.Empty;
-			return r;
-		}));
+		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(x => x.Id));
 
 		_contextFactory.ResetDatabase();
 	}
@@ -162,15 +155,7 @@ public class ReceiptItemRepositoryTests
 		List<ReceiptItemEntity> updatedEntities = await verifyContext.ReceiptItems.ToListAsync();
 
 		// Assert
-		Assert.Equal(expectedItemCount, updatedEntities.Count);
-
-		foreach (ReceiptItemEntity expectedItem in entities)
-		{
-			ReceiptItemEntity? updatedEntity = updatedEntities.FirstOrDefault(e => e.Id == expectedItem.Id);
-			Assert.NotNull(updatedEntity);
-			Assert.Equal(expectedItem.Description, updatedEntity.Description);
-			Assert.Equal(expectedItem.Quantity, updatedEntity.Quantity);
-		}
+		updatedEntities.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(ReceiptItemEntity.Receipt)));
 
 		_contextFactory.ResetDatabase();
 	}
@@ -200,7 +185,7 @@ public class ReceiptItemRepositoryTests
 		List<ReceiptItemEntity> remainingEntities = await verifyContext.ReceiptItems.ToListAsync();
 
 		// Assert
-		Assert.Equal(expectedRemainingCount, remainingEntities.Count);
+		remainingEntities.Count.Should().Be(expectedRemainingCount);
 		Assert.DoesNotContain(remainingEntities, e => idsToDelete.Contains(e.Id));
 
 		_contextFactory.ResetDatabase();
@@ -223,7 +208,7 @@ public class ReceiptItemRepositoryTests
 
 		// Assert
 		Assert.True(result);
-		Assert.Equal(expectedCount, await context.ReceiptItems.CountAsync());
+		(await context.ReceiptItems.CountAsync()).Should().Be(expectedCount);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -240,7 +225,7 @@ public class ReceiptItemRepositoryTests
 
 		// Assert
 		Assert.False(result);
-		Assert.Equal(expectedCount, await _contextFactory.CreateDbContext().ReceiptItems.CountAsync());
+		(await _contextFactory.CreateDbContext().ReceiptItems.CountAsync()).Should().Be(expectedCount);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -261,7 +246,7 @@ public class ReceiptItemRepositoryTests
 		int count = await repository.GetCountAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expectedCount, count);
+		count.Should().Be(expectedCount);
 
 		_contextFactory.ResetDatabase();
 	}

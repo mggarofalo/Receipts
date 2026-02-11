@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Core;
+using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Mapping;
 using SampleData.Domain.Core;
@@ -35,7 +36,7 @@ public class ReceiptItemMappingProfileTests
 		ReceiptItem actual = _mapper.Map<ReceiptItem>(mapped);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 
 	[Fact]
@@ -49,7 +50,7 @@ public class ReceiptItemMappingProfileTests
 		ReceiptItemEntity actual = _mapper.MapToReceiptItemEntity(mapped, expected.ReceiptId);
 
 		// Assert
-		Assert.Equal(expected, actual);
+		actual.Should().BeEquivalentTo(expected);
 	}
 
 	[Fact]

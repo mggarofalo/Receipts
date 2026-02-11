@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,7 @@ public class ReceiptRepositoryTests
 		ReceiptEntity entity = ReceiptEntityGenerator.Generate();
 		await context.Receipts.AddAsync(entity);
 		await context.SaveChangesAsync(CancellationToken.None);
-		Assert.Equal(expectedCount, await context.Receipts.CountAsync());
+		(await context.Receipts.CountAsync()).Should().Be(expectedCount);
 
 		ReceiptRepository repository = new(_contextFactory);
 
@@ -27,7 +28,7 @@ public class ReceiptRepositoryTests
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(entity, actual);
+		actual.Should().BeEquivalentTo(entity);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -39,7 +40,7 @@ public class ReceiptRepositoryTests
 		const int expectedCount = 0;
 		ReceiptRepository repository = new(_contextFactory);
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
-		Assert.Equal(expectedCount, await context.Receipts.CountAsync());
+		(await context.Receipts.CountAsync()).Should().Be(expectedCount);
 
 		// Act
 		ReceiptEntity? result = await repository.GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
@@ -59,7 +60,7 @@ public class ReceiptRepositoryTests
 		List<ReceiptEntity> entities = ReceiptEntityGenerator.GenerateList(expectedReceiptCount);
 		await context.Receipts.AddRangeAsync(entities);
 		await context.SaveChangesAsync(CancellationToken.None);
-		Assert.Equal(expectedReceiptCount, await context.Receipts.CountAsync());
+		(await context.Receipts.CountAsync()).Should().Be(expectedReceiptCount);
 
 		ReceiptRepository repository = new(_contextFactory);
 
@@ -67,8 +68,7 @@ public class ReceiptRepositoryTests
 		List<ReceiptEntity> actual = await repository.GetAllAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expectedReceiptCount, actual.Count);
-		Assert.Equal(entities, actual);
+		actual.Should().BeEquivalentTo(entities);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -86,21 +86,15 @@ public class ReceiptRepositoryTests
 		List<ReceiptEntity> actual = await repository.CreateAsync(entities, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expectedReceiptCount, actual.Count);
-
 		Assert.All(actual, r =>
 		{
 			Assert.NotEqual(Guid.Empty, r.Id);
 		});
 
-		Assert.Equal(entities, actual.Select(r =>
-		{
-			r.Id = Guid.Empty;
-			return r;
-		}));
+		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(x => x.Id));
 
 		using ApplicationDbContext verifyContext = _contextFactory.CreateDbContext();
-		Assert.Equal(expectedReceiptCount, await verifyContext.Receipts.CountAsync());
+		(await verifyContext.Receipts.CountAsync()).Should().Be(expectedReceiptCount);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -114,7 +108,7 @@ public class ReceiptRepositoryTests
 		List<ReceiptEntity> entities = ReceiptEntityGenerator.GenerateList(expectedReceiptCount);
 		await context.Receipts.AddRangeAsync(entities);
 		await context.SaveChangesAsync(CancellationToken.None);
-		Assert.Equal(expectedReceiptCount, await context.Receipts.CountAsync());
+		(await context.Receipts.CountAsync()).Should().Be(expectedReceiptCount);
 
 		ReceiptRepository repository = new(_contextFactory);
 
@@ -132,15 +126,7 @@ public class ReceiptRepositoryTests
 		List<ReceiptEntity> updatedEntities = await verifyContext.Receipts.ToListAsync();
 
 		// Assert
-		Assert.Equal(expectedReceiptCount, updatedEntities.Count);
-
-		foreach (ReceiptEntity expectedReceipt in entities)
-		{
-			ReceiptEntity? updatedEntity = updatedEntities.FirstOrDefault(e => e.Id == expectedReceipt.Id);
-			Assert.NotNull(updatedEntity);
-			Assert.Equal(expectedReceipt.Description, updatedEntity.Description);
-			Assert.Equal(expectedReceipt.TaxAmount, updatedEntity.TaxAmount);
-		}
+		updatedEntities.Should().BeEquivalentTo(entities);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -156,7 +142,7 @@ public class ReceiptRepositoryTests
 		List<ReceiptEntity> entities = ReceiptEntityGenerator.GenerateList(initialReceiptCount);
 		await context.Receipts.AddRangeAsync(entities);
 		await context.SaveChangesAsync(CancellationToken.None);
-		Assert.Equal(initialReceiptCount, await context.Receipts.CountAsync());
+		(await context.Receipts.CountAsync()).Should().Be(initialReceiptCount);
 
 		List<Guid> idsToDelete = entities.Take(deleteCount).Select(e => e.Id).ToList();
 		ReceiptRepository repository = new(_contextFactory);
@@ -168,7 +154,7 @@ public class ReceiptRepositoryTests
 		List<ReceiptEntity> remainingEntities = await verifyContext.Receipts.ToListAsync();
 
 		// Assert
-		Assert.Equal(expectedRemainingCount, remainingEntities.Count);
+		remainingEntities.Count.Should().Be(expectedRemainingCount);
 		Assert.DoesNotContain(remainingEntities, e => idsToDelete.Contains(e.Id));
 
 		_contextFactory.ResetDatabase();
@@ -183,7 +169,7 @@ public class ReceiptRepositoryTests
 		ReceiptEntity entity = ReceiptEntityGenerator.Generate();
 		await context.Receipts.AddAsync(entity);
 		await context.SaveChangesAsync(CancellationToken.None);
-		Assert.Equal(expectedCount, await context.Receipts.CountAsync());
+		(await context.Receipts.CountAsync()).Should().Be(expectedCount);
 
 		ReceiptRepository repository = new(_contextFactory);
 
@@ -203,7 +189,7 @@ public class ReceiptRepositoryTests
 		const int expectedCount = 0;
 		ReceiptRepository repository = new(_contextFactory);
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
-		Assert.Equal(expectedCount, await context.Receipts.CountAsync());
+		(await context.Receipts.CountAsync()).Should().Be(expectedCount);
 
 		// Act
 		bool result = await repository.ExistsAsync(Guid.NewGuid(), CancellationToken.None);
@@ -223,7 +209,7 @@ public class ReceiptRepositoryTests
 		List<ReceiptEntity> entities = ReceiptEntityGenerator.GenerateList(expectedReceiptCount);
 		await context.Receipts.AddRangeAsync(entities);
 		await context.SaveChangesAsync(CancellationToken.None);
-		Assert.Equal(expectedReceiptCount, await context.Receipts.CountAsync());
+		(await context.Receipts.CountAsync()).Should().Be(expectedReceiptCount);
 
 		ReceiptRepository repository = new(_contextFactory);
 
@@ -231,7 +217,7 @@ public class ReceiptRepositoryTests
 		int count = await repository.GetCountAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expectedReceiptCount, count);
+		count.Should().Be(expectedReceiptCount);
 
 		_contextFactory.ResetDatabase();
 	}

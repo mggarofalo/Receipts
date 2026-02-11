@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,7 @@ public class AccountRepositoryTests
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(entity, actual);
+		actual.Should().BeEquivalentTo(entity);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -63,7 +64,7 @@ public class AccountRepositoryTests
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(accountEntity, actual);
+		actual.Should().BeEquivalentTo(accountEntity);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -98,8 +99,7 @@ public class AccountRepositoryTests
 		List<AccountEntity> actual = await repository.GetAllAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, actual.Count);
-		Assert.Equal(entities, actual);
+		actual.Should().BeEquivalentTo(entities);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -116,18 +116,12 @@ public class AccountRepositoryTests
 		List<AccountEntity> actual = await repository.CreateAsync(entities, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, actual.Count);
-
 		Assert.All(actual, a =>
 		{
 			Assert.NotEqual(Guid.Empty, a.Id);
 		});
 
-		Assert.Equal(entities, actual.Select(a =>
-		{
-			a.Id = Guid.Empty;
-			return a;
-		}));
+		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(x => x.Id));
 
 		_contextFactory.ResetDatabase();
 	}
@@ -157,15 +151,7 @@ public class AccountRepositoryTests
 		List<AccountEntity> updatedEntities = await verifyContext.Accounts.ToListAsync();
 
 		// Assert
-		Assert.Equal(entities.Count, updatedEntities.Count);
-
-		foreach (AccountEntity expectedAccount in entities)
-		{
-			AccountEntity? updatedEntity = updatedEntities.FirstOrDefault(e => e.Id == expectedAccount.Id);
-			Assert.NotNull(updatedEntity);
-			Assert.Equal(expectedAccount.Name, updatedEntity.Name);
-			Assert.Equal(expectedAccount.IsActive, updatedEntity.IsActive);
-		}
+		updatedEntities.Should().BeEquivalentTo(entities);
 
 		_contextFactory.ResetDatabase();
 	}
@@ -245,7 +231,7 @@ public class AccountRepositoryTests
 		int count = await repository.GetCountAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, count);
+		count.Should().Be(entities.Count);
 
 		_contextFactory.ResetDatabase();
 	}

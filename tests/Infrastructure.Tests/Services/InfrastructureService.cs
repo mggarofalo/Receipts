@@ -6,6 +6,8 @@ using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Infrastructure.Tests.Services;
@@ -17,6 +19,7 @@ public class InfrastructureServiceTests
 	{
 		// Arrange
 		ServiceCollection services = new();
+		services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
 		Mock<IConfiguration> mockConfiguration = SetupMockConfiguration();
 
 		// Act
