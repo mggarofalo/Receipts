@@ -1,5 +1,6 @@
+using API.Mapping.Aggregates;
+using API.Mapping.Core;
 using API.Services;
-using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -16,19 +17,21 @@ public class ProgramServiceTests
 		serviceCollection.RegisterProgramServices();
 		ServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
 
-		// Assume that the built-in services are registered
-		AssertThatIMapperServiceIsNotNull(serviceProvider);
-		AssertThatIMapperServiceHasValidConfiguration(serviceProvider);
+		// Verify that all Mapperly mappers are registered
+		AssertThatMappersAreRegistered(serviceProvider);
 	}
 
-	private static void AssertThatIMapperServiceIsNotNull(ServiceProvider serviceProvider)
+	private static void AssertThatMappersAreRegistered(ServiceProvider serviceProvider)
 	{
-		Assert.NotNull(serviceProvider.GetService<IMapper>());
-	}
+		// Core mappers
+		Assert.NotNull(serviceProvider.GetService<AccountMapper>());
+		Assert.NotNull(serviceProvider.GetService<ReceiptMapper>());
+		Assert.NotNull(serviceProvider.GetService<ReceiptItemMapper>());
+		Assert.NotNull(serviceProvider.GetService<TransactionMapper>());
 
-	private static void AssertThatIMapperServiceHasValidConfiguration(ServiceProvider serviceProvider)
-	{
-		IMapper mapper = serviceProvider.GetService<IMapper>()!;
-		mapper.ConfigurationProvider.AssertConfigurationIsValid();
+		// Aggregate mappers
+		Assert.NotNull(serviceProvider.GetService<ReceiptWithItemsMapper>());
+		Assert.NotNull(serviceProvider.GetService<TransactionAccountMapper>());
+		Assert.NotNull(serviceProvider.GetService<TripMapper>());
 	}
 }

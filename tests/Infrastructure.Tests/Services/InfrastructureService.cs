@@ -1,7 +1,7 @@
 using Application.Interfaces;
 using Application.Interfaces.Services;
-using AutoMapper;
 using Common;
+using Infrastructure.Mapping;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -30,7 +30,7 @@ public class InfrastructureServiceTests
 		AssertThatDbContextFactoryIsRegistered(serviceProvider);
 		AssertThatRepositoriesAreRegistered(serviceProvider);
 		AssertThatDatabaseMigratorIsRegistered(serviceProvider);
-		AssertThatAutoMapperIsRegistered(serviceProvider);
+		AssertThatMappersAreRegistered(serviceProvider);
 	}
 
 	private static Mock<IConfiguration> SetupMockConfiguration()
@@ -64,8 +64,11 @@ public class InfrastructureServiceTests
 		Assert.NotNull(serviceProvider.GetService<IDatabaseMigratorService>());
 	}
 
-	private static void AssertThatAutoMapperIsRegistered(ServiceProvider serviceProvider)
+	private static void AssertThatMappersAreRegistered(ServiceProvider serviceProvider)
 	{
-		Assert.NotNull(serviceProvider.GetService<IMapper>());
+		Assert.NotNull(serviceProvider.GetService<AccountMapper>());
+		Assert.NotNull(serviceProvider.GetService<ReceiptMapper>());
+		Assert.NotNull(serviceProvider.GetService<ReceiptItemMapper>());
+		Assert.NotNull(serviceProvider.GetService<TransactionMapper>());
 	}
 }

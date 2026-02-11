@@ -2,7 +2,7 @@ using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Update;
 using Application.Commands.Transaction.Delete;
 using Application.Queries.Core.Transaction;
-using AutoMapper;
+using API.Mapping.Core;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,7 @@ namespace API.Controllers.Core;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
+public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -51,7 +51,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 				return NotFound();
 			}
 
-			TransactionVM model = mapper.Map<Transaction, TransactionVM>(result);
+			TransactionVM model = mapper.ToViewModel(result);
 			logger.LogDebug("GetTransactionById called with id: {Id} found", id);
 			return Ok(model);
 		}
@@ -80,7 +80,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 			List<Transaction> result = await mediator.Send(query);
 			logger.LogDebug("GetAllTransactions called with {Count} transactions", result.Count);
 
-			List<TransactionVM> model = result.Select(mapper.Map<Transaction, TransactionVM>).ToList();
+			List<TransactionVM> model = result.Select(mapper.ToViewModel).ToList();
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -116,7 +116,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 				return NotFound();
 			}
 
-			List<TransactionVM> model = result.Select(mapper.Map<Transaction, TransactionVM>).ToList();
+			List<TransactionVM> model = result.Select(mapper.ToViewModel).ToList();
 			logger.LogDebug("GetTransactionsByReceiptId called with receiptId: {ReceiptId} found", receiptId);
 			return Ok(model);
 		}
@@ -144,10 +144,10 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		try
 		{
 			logger.LogDebug("CreateTransaction called with {Count} transactions", models.Count);
-			CreateTransactionCommand command = new(models.Select(mapper.Map<TransactionVM, Transaction>).ToList(), receiptId, accountId);
+			CreateTransactionCommand command = new(models.Select(mapper.ToDomain).ToList(), receiptId, accountId);
 			List<Transaction> transactions = await mediator.Send(command);
 			logger.LogDebug("CreateTransaction called with {Count} transactions, and created", models.Count);
-			return Ok(transactions.Select(mapper.Map<Transaction, TransactionVM>).ToList());
+			return Ok(transactions.Select(mapper.ToViewModel).ToList());
 		}
 		catch (Exception ex)
 		{
@@ -175,7 +175,7 @@ public class TransactionsController(IMediator mediator, IMapper mapper, ILogger<
 		try
 		{
 			logger.LogDebug("UpdateTransactions called with {Count} transactions", models.Count);
-			UpdateTransactionCommand command = new(models.Select(mapper.Map<TransactionVM, Transaction>).ToList(), receiptId, accountId);
+			UpdateTransactionCommand command = new(models.Select(mapper.ToDomain).ToList(), receiptId, accountId);
 			bool result = await mediator.Send(command);
 
 			if (!result)

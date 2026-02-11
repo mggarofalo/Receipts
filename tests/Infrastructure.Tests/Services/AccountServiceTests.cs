@@ -1,8 +1,8 @@
-using AutoMapper;
 using Domain.Core;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
+using Infrastructure.Mapping;
 using Infrastructure.Services;
 using Moq;
 using SampleData.Domain.Core;
@@ -13,33 +13,30 @@ namespace Infrastructure.Tests.Services;
 public class AccountServiceTests
 {
 	private readonly Mock<IAccountRepository> _mockRepository;
-	private readonly Mock<IMapper> _mockMapper;
+	private readonly AccountMapper _mapper;
 	private readonly AccountService _service;
 
 	public AccountServiceTests()
 	{
 		_mockRepository = new Mock<IAccountRepository>();
-		_mockMapper = new Mock<IMapper>();
-		_service = new AccountService(_mockRepository.Object, _mockMapper.Object);
+		_mapper = new AccountMapper();
+		_service = new AccountService(_mockRepository.Object, _mapper);
 	}
 
 	[Fact]
 	public async Task CreateAsync_ValidAccounts_CallsRepositoryCreateAsyncAndReturnsCreatedAccounts()
 	{
 		// Arrange
-		List<Account> expected = AccountGenerator.GenerateList(2);
-		List<AccountEntity> entities = AccountEntityGenerator.GenerateList(2);
+		List<Account> models = AccountGenerator.GenerateList(2);
 		List<AccountEntity> createdEntities = AccountEntityGenerator.GenerateList(2);
 
-		_mockMapper.Setup(m => m.Map<AccountEntity>(It.IsAny<Account>())).Returns<Account>(a => entities.First());
 		_mockRepository.Setup(r => r.CreateAsync(It.IsAny<List<AccountEntity>>(), It.IsAny<CancellationToken>())).ReturnsAsync(createdEntities);
-		_mockMapper.Setup(m => m.Map<Account>(It.IsAny<AccountEntity>())).Returns<AccountEntity>(e => expected.First());
 
 		// Act
-		List<Account> actual = await _service.CreateAsync(expected, CancellationToken.None);
+		List<Account> actual = await _service.CreateAsync(models, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(createdEntities.Count, actual.Count);
 		_mockRepository.Verify(r => r.CreateAsync(It.IsAny<List<AccountEntity>>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -76,16 +73,14 @@ public class AccountServiceTests
 	{
 		// Arrange
 		List<AccountEntity> entities = AccountEntityGenerator.GenerateList(3);
-		List<Account> expected = AccountGenerator.GenerateList(3);
 
 		_mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities);
-		_mockMapper.Setup(m => m.Map<Account>(It.IsAny<AccountEntity>())).Returns<AccountEntity>(e => expected.First());
 
 		// Act
 		List<Account> actual = await _service.GetAllAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Count);
 	}
 
 	[Fact]
@@ -94,17 +89,15 @@ public class AccountServiceTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		AccountEntity entity = AccountEntityGenerator.Generate();
-		Account expected = AccountGenerator.Generate();
 
 		_mockRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
-		_mockMapper.Setup(m => m.Map<Account>(entity)).Returns(expected);
 
 		// Act
 		Account? actual = await _service.GetByIdAsync(id, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		actual.Should().BeSameAs(expected);
+		actual.Id.Should().Be(entity.Id);
 	}
 
 	[Fact]
@@ -127,17 +120,15 @@ public class AccountServiceTests
 		// Arrange
 		Guid transactionId = Guid.NewGuid();
 		AccountEntity entity = AccountEntityGenerator.Generate();
-		Account expected = AccountGenerator.Generate();
 
 		_mockRepository.Setup(r => r.GetByTransactionIdAsync(transactionId, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
-		_mockMapper.Setup(m => m.Map<Account>(entity)).Returns(expected);
 
 		// Act
 		Account? actual = await _service.GetByTransactionIdAsync(transactionId, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		actual.Should().BeSameAs(expected);
+		actual.Id.Should().Be(entity.Id);
 	}
 
 	[Fact]
@@ -173,9 +164,6 @@ public class AccountServiceTests
 	{
 		// Arrange
 		List<Account> models = AccountGenerator.GenerateList(2);
-		List<AccountEntity> entities = AccountEntityGenerator.GenerateList(2);
-
-		_mockMapper.Setup(m => m.Map<AccountEntity>(It.IsAny<Account>())).Returns<Account>(a => entities.First());
 
 		// Act
 		await _service.UpdateAsync(models, CancellationToken.None);

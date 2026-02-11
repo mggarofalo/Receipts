@@ -1,18 +1,18 @@
 using Application.Interfaces.Services;
-using AutoMapper;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
+using Infrastructure.Mapping;
 
 namespace Infrastructure.Services;
 
-public class AccountService(IAccountRepository repository, IMapper mapper) : IAccountService
+public class AccountService(IAccountRepository repository, AccountMapper mapper) : IAccountService
 {
 	public async Task<List<Account>> CreateAsync(List<Account> models, CancellationToken cancellationToken)
 	{
-		List<AccountEntity> accountEntities = models.Select(mapper.Map<AccountEntity>).ToList();
+		List<AccountEntity> accountEntities = models.Select(mapper.ToEntity).ToList();
 		List<AccountEntity> createdAccountEntities = await repository.CreateAsync(accountEntities, cancellationToken);
-		return createdAccountEntities.Select(mapper.Map<Account>).ToList();
+		return createdAccountEntities.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
@@ -28,19 +28,19 @@ public class AccountService(IAccountRepository repository, IMapper mapper) : IAc
 	public async Task<List<Account>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<AccountEntity> accountEntities = await repository.GetAllAsync(cancellationToken);
-		return accountEntities.Select(mapper.Map<Account>).ToList();
+		return accountEntities.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task<Account?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		AccountEntity? accountEntity = await repository.GetByIdAsync(id, cancellationToken);
-		return accountEntity == null ? null : mapper.Map<Account>(accountEntity);
+		return accountEntity == null ? null : mapper.ToDomain(accountEntity);
 	}
 
 	public async Task<Account?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken)
 	{
 		AccountEntity? accountEntity = await repository.GetByTransactionIdAsync(transactionId, cancellationToken);
-		return accountEntity == null ? null : mapper.Map<Account>(accountEntity);
+		return accountEntity == null ? null : mapper.ToDomain(accountEntity);
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
@@ -50,7 +50,7 @@ public class AccountService(IAccountRepository repository, IMapper mapper) : IAc
 
 	public async Task UpdateAsync(List<Account> models, CancellationToken cancellationToken)
 	{
-		List<AccountEntity> accountEntities = models.Select(mapper.Map<AccountEntity>).ToList();
+		List<AccountEntity> accountEntities = models.Select(mapper.ToEntity).ToList();
 		await repository.UpdateAsync(accountEntities, cancellationToken);
 	}
 }

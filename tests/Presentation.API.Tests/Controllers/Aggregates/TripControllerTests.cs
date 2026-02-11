@@ -2,7 +2,6 @@ using API.Controllers.Aggregates;
 using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Queries.Aggregates.Trips;
-using AutoMapper;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -11,36 +10,22 @@ using Moq;
 using SampleData.Domain.Aggregates;
 using Shared.ViewModels.Aggregates;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 
 public class TripControllerTests
 {
-	private readonly IMapper _mapper;
+	private readonly TripMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
-	private readonly Mock<IMapper> _mapperMock;
 	private readonly Mock<ILogger<TripController>> _loggerMock;
 	private readonly TripController _controller;
 
 	public TripControllerTests()
 	{
-		MapperConfiguration configuration = new(cfg =>
-		{
-			cfg.AddProfile<TripMappingProfile>();
-			cfg.AddProfile<ReceiptWithItemsMappingProfile>();
-			cfg.AddProfile<TransactionAccountMappingProfile>();
-			cfg.AddProfile<ReceiptMappingProfile>();
-			cfg.AddProfile<ReceiptItemMappingProfile>();
-			cfg.AddProfile<TransactionMappingProfile>();
-			cfg.AddProfile<AccountMappingProfile>();
-		}, NullLoggerFactory.Instance);
-
-		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();
-		_mapperMock = ControllerTestHelpers.GetMapperMock<Trip, TripVM>(_mapper);
+		_mapper = new TripMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<TripController>();
-		_controller = new TripController(_mediatorMock.Object, _mapperMock.Object, _loggerMock.Object);
+		_controller = new TripController(_mediatorMock.Object, _mapper, _loggerMock.Object);
 	}
 
 	[Fact]
@@ -48,7 +33,7 @@ public class TripControllerTests
 	{
 		// Arrange
 		Trip trip = TripGenerator.Generate();
-		TripVM expectedReturn = _mapper.Map<TripVM>(trip);
+		TripVM expectedReturn = _mapper.ToViewModel(trip);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTripByReceiptIdQuery>(q => q.ReceiptId == trip.Receipt.Receipt.Id!.Value),

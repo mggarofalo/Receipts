@@ -2,7 +2,7 @@ using Application.Commands.Account.Create;
 using Application.Commands.Account.Delete;
 using Application.Commands.Account.Update;
 using Application.Queries.Core.Account;
-using AutoMapper;
+using API.Mapping.Core;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,7 @@ namespace API.Controllers.Core;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class AccountsController(IMediator mediator, IMapper mapper, ILogger<AccountsController> logger) : ControllerBase
+public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -49,7 +49,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 				return NotFound();
 			}
 
-			AccountVM model = mapper.Map<Account, AccountVM>(result);
+			AccountVM model = mapper.ToViewModel(result);
 			logger.LogDebug("GetAccountById called with id: {Id} found", id);
 			return Ok(model);
 		}
@@ -78,7 +78,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 			List<Account> result = await mediator.Send(query);
 			logger.LogDebug("GetAllAccounts called with {Count} accounts", result.Count);
 
-			List<AccountVM> model = result.Select(mapper.Map<Account, AccountVM>).ToList();
+			List<AccountVM> model = result.Select(mapper.ToViewModel).ToList();
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -103,9 +103,9 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		try
 		{
 			logger.LogDebug("CreateAccount called with {Count} accounts", models.Count);
-			CreateAccountCommand command = new(models.Select(mapper.Map<AccountVM, Account>).ToList());
+			CreateAccountCommand command = new(models.Select(mapper.ToDomain).ToList());
 			List<Account> accounts = await mediator.Send(command);
-			return Ok(accounts.Select(mapper.Map<Account, AccountVM>).ToList());
+			return Ok(accounts.Select(mapper.ToViewModel).ToList());
 		}
 		catch (Exception ex)
 		{
@@ -131,7 +131,7 @@ public class AccountsController(IMediator mediator, IMapper mapper, ILogger<Acco
 		try
 		{
 			logger.LogDebug("UpdateAccounts called with {Count} accounts", models.Count);
-			UpdateAccountCommand command = new(models.Select(mapper.Map<AccountVM, Account>).ToList());
+			UpdateAccountCommand command = new(models.Select(mapper.ToDomain).ToList());
 			bool result = await mediator.Send(command);
 
 			if (!result)

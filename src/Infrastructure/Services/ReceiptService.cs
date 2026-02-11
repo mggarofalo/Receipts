@@ -1,18 +1,18 @@
 using Application.Interfaces.Services;
-using AutoMapper;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
+using Infrastructure.Mapping;
 
 namespace Infrastructure.Services;
 
-public class ReceiptService(IReceiptRepository repository, IMapper mapper) : IReceiptService
+public class ReceiptService(IReceiptRepository repository, ReceiptMapper mapper) : IReceiptService
 {
 	public async Task<List<Receipt>> CreateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> receiptEntities = models.Select(mapper.Map<ReceiptEntity>).ToList();
+		List<ReceiptEntity> receiptEntities = models.Select(mapper.ToEntity).ToList();
 		List<ReceiptEntity> createdReceiptEntities = await repository.CreateAsync(receiptEntities, cancellationToken);
-		return createdReceiptEntities.Select(mapper.Map<Receipt>).ToList();
+		return createdReceiptEntities.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
@@ -28,13 +28,13 @@ public class ReceiptService(IReceiptRepository repository, IMapper mapper) : IRe
 	public async Task<List<Receipt>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> receiptEntities = await repository.GetAllAsync(cancellationToken);
-		return receiptEntities.Select(mapper.Map<Receipt>).ToList();
+		return receiptEntities.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task<Receipt?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		ReceiptEntity? receiptEntity = await repository.GetByIdAsync(id, cancellationToken);
-		return receiptEntity == null ? null : mapper.Map<Receipt>(receiptEntity);
+		return receiptEntity == null ? null : mapper.ToDomain(receiptEntity);
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
@@ -44,7 +44,7 @@ public class ReceiptService(IReceiptRepository repository, IMapper mapper) : IRe
 
 	public async Task UpdateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> receiptEntities = models.Select(mapper.Map<ReceiptEntity>).ToList();
+		List<ReceiptEntity> receiptEntities = models.Select(mapper.ToEntity).ToList();
 		await repository.UpdateAsync(receiptEntities, cancellationToken);
 	}
 }

@@ -4,7 +4,6 @@ using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Update;
 using Application.Commands.Transaction.Delete;
 using Application.Queries.Core.Transaction;
-using AutoMapper;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -14,30 +13,22 @@ using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Core;
 
 public class TransactionsControllerTests
 {
-	private readonly IMapper _mapper;
+	private readonly TransactionMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
-	private readonly Mock<IMapper> _mapperMock;
 	private readonly Mock<ILogger<TransactionsController>> _loggerMock;
 	private readonly TransactionsController _controller;
 
 	public TransactionsControllerTests()
 	{
-		MapperConfiguration configuration = new(cfg =>
-		{
-			cfg.AddProfile<TransactionMappingProfile>();
-		}, NullLoggerFactory.Instance);
-
-		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();
-		_mapperMock = ControllerTestHelpers.GetMapperMock<Transaction, TransactionVM>(_mapper);
+		_mapper = new TransactionMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<TransactionsController>();
-		_controller = new TransactionsController(_mediatorMock.Object, _mapperMock.Object, _loggerMock.Object);
+		_controller = new TransactionsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
 	}
 
 	[Fact]
@@ -45,7 +36,7 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		Transaction mediatorReturn = TransactionGenerator.Generate();
-		TransactionVM expectedControllerReturn = _mapper.Map<TransactionVM>(mediatorReturn);
+		TransactionVM expectedControllerReturn = _mapper.ToViewModel(mediatorReturn);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionByIdQuery>(q => q.Id == mediatorReturn.Id),
@@ -103,7 +94,7 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		List<Transaction> mediatorReturn = TransactionGenerator.GenerateList(2);
-		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.Map<Transaction, TransactionVM>).ToList();
+		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.ToViewModel).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<GetAllTransactionsQuery>(),
@@ -143,7 +134,7 @@ public class TransactionsControllerTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		List<Transaction> mediatorReturn = TransactionGenerator.GenerateList(2);
-		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.Map<Transaction, TransactionVM>).ToList();
+		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.ToViewModel).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
@@ -226,8 +217,8 @@ public class TransactionsControllerTests
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
 		List<TransactionVM> controllerInput = TransactionVMGenerator.GenerateList(2);
-		List<Transaction> mediatorReturn = controllerInput.Select(_mapper.Map<TransactionVM, Transaction>).ToList();
-		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.Map<Transaction, TransactionVM>).ToList();
+		List<Transaction> mediatorReturn = controllerInput.Select(_mapper.ToDomain).ToList();
+		List<TransactionVM> expectedControllerReturn = mediatorReturn.Select(_mapper.ToViewModel).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),

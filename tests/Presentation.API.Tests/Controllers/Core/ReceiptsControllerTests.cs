@@ -4,7 +4,6 @@ using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Update;
 using Application.Commands.Receipt.Delete;
 using Application.Queries.Core.Receipt;
-using AutoMapper;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -14,30 +13,22 @@ using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Core;
 
 public class ReceiptsControllerTests
 {
-	private readonly IMapper _mapper;
+	private readonly ReceiptMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
-	private readonly Mock<IMapper> _mapperMock;
 	private readonly Mock<ILogger<ReceiptsController>> _loggerMock;
 	private readonly ReceiptsController _controller;
 
 	public ReceiptsControllerTests()
 	{
-		MapperConfiguration configuration = new(cfg =>
-		{
-			cfg.AddProfile<ReceiptMappingProfile>();
-		}, NullLoggerFactory.Instance);
-
-		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();
-		_mapperMock = ControllerTestHelpers.GetMapperMock<Receipt, ReceiptVM>(_mapper);
+		_mapper = new ReceiptMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<ReceiptsController>();
-		_controller = new ReceiptsController(_mediatorMock.Object, _mapperMock.Object, _loggerMock.Object);
+		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
 	}
 
 	[Fact]
@@ -45,7 +36,7 @@ public class ReceiptsControllerTests
 	{
 		// Arrange
 		Receipt mediatorReturn = ReceiptGenerator.Generate();
-		ReceiptVM expectedControllerReturn = _mapper.Map<ReceiptVM>(mediatorReturn);
+		ReceiptVM expectedControllerReturn = _mapper.ToViewModel(mediatorReturn);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetReceiptByIdQuery>(q => q.Id == mediatorReturn.Id),
@@ -104,7 +95,7 @@ public class ReceiptsControllerTests
 	{
 		// Arrange
 		List<Receipt> mediatorReturn = ReceiptGenerator.GenerateList(2);
-		List<ReceiptVM> expectedControllerReturn = mediatorReturn.Select(_mapper.Map<Receipt, ReceiptVM>).ToList();
+		List<ReceiptVM> expectedControllerReturn = mediatorReturn.Select(_mapper.ToViewModel).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<GetAllReceiptsQuery>(),
@@ -144,14 +135,14 @@ public class ReceiptsControllerTests
 	{
 		// Arrange
 		List<Receipt> mediatorReturn = ReceiptGenerator.GenerateList(2);
-		List<ReceiptVM> expectedControllerReturn = mediatorReturn.Select(_mapper.Map<Receipt, ReceiptVM>).ToList();
+		List<ReceiptVM> expectedControllerReturn = mediatorReturn.Select(_mapper.ToViewModel).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateReceiptCommand>(c => c.Receipts.Count == mediatorReturn.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(mediatorReturn);
 
-		List<ReceiptVM> controllerInput = mediatorReturn.Select(_mapper.Map<Receipt, ReceiptVM>).ToList().WithNullIds();
+		List<ReceiptVM> controllerInput = mediatorReturn.Select(_mapper.ToViewModel).ToList().WithNullIds();
 
 		// Act
 		ActionResult<List<ReceiptVM>> result = await _controller.CreateReceipts(controllerInput);

@@ -1,16 +1,16 @@
 using Application.Interfaces.Services;
-using AutoMapper;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
+using Infrastructure.Mapping;
 
 namespace Infrastructure.Services;
 
-public class ReceiptItemService(IReceiptItemRepository repository, IMapper mapper) : IReceiptItemService
+public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMapper mapper) : IReceiptItemService
 {
 	public async Task<List<ReceiptItem>> CreateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> receiptItemEntities = models.Select(mapper.Map<ReceiptItemEntity>).ToList();
+		List<ReceiptItemEntity> receiptItemEntities = models.Select(mapper.ToEntity).ToList();
 
 		foreach (ReceiptItemEntity entity in receiptItemEntities)
 		{
@@ -18,7 +18,7 @@ public class ReceiptItemService(IReceiptItemRepository repository, IMapper mappe
 		}
 
 		List<ReceiptItemEntity> createdReceiptItemEntities = await repository.CreateAsync(receiptItemEntities, cancellationToken);
-		return createdReceiptItemEntities.Select(mapper.Map<ReceiptItem>).ToList();
+		return createdReceiptItemEntities.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
@@ -34,19 +34,19 @@ public class ReceiptItemService(IReceiptItemRepository repository, IMapper mappe
 	public async Task<List<ReceiptItem>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<ReceiptItemEntity> receiptItemEntities = await repository.GetAllAsync(cancellationToken);
-		return receiptItemEntities.Select(mapper.Map<ReceiptItem>).ToList();
+		return receiptItemEntities.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task<ReceiptItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		ReceiptItemEntity? receiptItemEntity = await repository.GetByIdAsync(id, cancellationToken);
-		return receiptItemEntity == null ? null : mapper.Map<ReceiptItem>(receiptItemEntity);
+		return receiptItemEntity == null ? null : mapper.ToDomain(receiptItemEntity);
 	}
 
 	public async Task<List<ReceiptItem>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
 		List<ReceiptItemEntity>? receiptItemEntities = await repository.GetByReceiptIdAsync(receiptId, cancellationToken);
-		return receiptItemEntities?.Select(mapper.Map<ReceiptItem>).ToList();
+		return receiptItemEntities?.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
@@ -56,7 +56,7 @@ public class ReceiptItemService(IReceiptItemRepository repository, IMapper mappe
 
 	public async Task UpdateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> receiptItemEntities = models.Select(mapper.Map<ReceiptItemEntity>).ToList();
+		List<ReceiptItemEntity> receiptItemEntities = models.Select(mapper.ToEntity).ToList();
 
 		foreach (ReceiptItemEntity entity in receiptItemEntities)
 		{

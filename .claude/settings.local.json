@@ -15,7 +15,6 @@
       "Bash(git status:*)",
       "Bash(git switch:*)",
       "Bash(git tag:*)",
-
       "Bash(dotnet add:*)",
       "Bash(dotnet build:*)",
       "Bash(dotnet clean:*)",
@@ -28,19 +27,18 @@
       "Bash(dotnet run:*)",
       "Bash(dotnet test:*)",
       "Bash(dotnet tool:*)",
-
       "mcp__linear-server__create_issue",
       "mcp__linear-server__create_project",
       "mcp__linear-server__list_issue_labels",
       "mcp__linear-server__list_projects",
       "mcp__linear-server__list_teams",
       "mcp__linear-server__update_issue",
-
       "WebFetch(domain:docs.automapper.io)",
       "WebFetch(domain:github.com)",
       "WebSearch",
-
-      "Bash(claude mcp add:*)"
+      "Bash(claude mcp add:*)",
+      "mcp__linear-server__get_issue",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -1,8 +1,8 @@
-using AutoMapper;
 using Domain.Core;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
+using Infrastructure.Mapping;
 using Infrastructure.Services;
 using Moq;
 using SampleData.Domain.Core;
@@ -13,34 +13,32 @@ namespace Infrastructure.Tests.Services;
 public class ReceiptItemServiceTests
 {
 	private readonly Mock<IReceiptItemRepository> _mockRepository;
-	private readonly Mock<IMapper> _mockMapper;
+	private readonly ReceiptItemMapper _mapper;
 	private readonly ReceiptItemService _service;
 
 	public ReceiptItemServiceTests()
 	{
 		_mockRepository = new Mock<IReceiptItemRepository>();
-		_mockMapper = new Mock<IMapper>();
-		_service = new ReceiptItemService(_mockRepository.Object, _mockMapper.Object);
+		_mapper = new ReceiptItemMapper();
+		_service = new ReceiptItemService(_mockRepository.Object, _mapper);
 	}
 
 	[Fact]
 	public async Task CreateAsync_ValidReceiptItems_CallsRepositoryCreateAsyncAndReturnsCreatedReceiptItems()
 	{
 		// Arrange
-		List<ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2);
+		List<ReceiptItem> models = ReceiptItemGenerator.GenerateList(2);
 		Guid receiptId = Guid.NewGuid();
-		List<ReceiptItemEntity> entities = ReceiptItemEntityGenerator.GenerateList(2);
 		List<ReceiptItemEntity> createdEntities = ReceiptItemEntityGenerator.GenerateList(2);
 
-		_mockMapper.Setup(m => m.Map<ReceiptItemEntity>(It.IsAny<ReceiptItem>())).Returns<ReceiptItem>(r => entities.First());
 		_mockRepository.Setup(r => r.CreateAsync(It.IsAny<List<ReceiptItemEntity>>(), It.IsAny<CancellationToken>())).ReturnsAsync(createdEntities);
-		_mockMapper.Setup(m => m.Map<ReceiptItem>(It.IsAny<ReceiptItemEntity>())).Returns<ReceiptItemEntity>(e => expected.First());
 
 		// Act
-		List<ReceiptItem> actual = await _service.CreateAsync(expected, receiptId, CancellationToken.None);
+		List<ReceiptItem> actual = await _service.CreateAsync(models, receiptId, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(createdEntities.Count, actual.Count);
+		_mockRepository.Verify(r => r.CreateAsync(It.IsAny<List<ReceiptItemEntity>>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -76,16 +74,14 @@ public class ReceiptItemServiceTests
 	{
 		// Arrange
 		List<ReceiptItemEntity> entities = ReceiptItemEntityGenerator.GenerateList(3);
-		List<ReceiptItem> expected = ReceiptItemGenerator.GenerateList(3);
 
 		_mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities);
-		_mockMapper.Setup(m => m.Map<ReceiptItem>(It.IsAny<ReceiptItemEntity>())).Returns<ReceiptItemEntity>(e => expected.First());
 
 		// Act
 		List<ReceiptItem> actual = await _service.GetAllAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Count);
 	}
 
 	[Fact]
@@ -94,17 +90,15 @@ public class ReceiptItemServiceTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		ReceiptItemEntity entity = ReceiptItemEntityGenerator.Generate();
-		ReceiptItem expected = ReceiptItemGenerator.Generate();
 
 		_mockRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
-		_mockMapper.Setup(m => m.Map<ReceiptItem>(entity)).Returns(expected);
 
 		// Act
 		ReceiptItem? actual = await _service.GetByIdAsync(id, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		actual.Should().BeSameAs(expected);
+		actual.Id.Should().Be(entity.Id);
 	}
 
 	[Fact]
@@ -127,17 +121,15 @@ public class ReceiptItemServiceTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		List<ReceiptItemEntity> entities = ReceiptItemEntityGenerator.GenerateList(2);
-		List<ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2);
 
 		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
-		_mockMapper.Setup(m => m.Map<ReceiptItem>(It.IsAny<ReceiptItemEntity>())).Returns<ReceiptItemEntity>(e => expected.First());
 
 		// Act
 		List<ReceiptItem>? actual = await _service.GetByReceiptIdAsync(receiptId, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Count);
 	}
 
 	[Fact]
@@ -174,9 +166,6 @@ public class ReceiptItemServiceTests
 		// Arrange
 		List<ReceiptItem> models = ReceiptItemGenerator.GenerateList(2);
 		Guid receiptId = Guid.NewGuid();
-		List<ReceiptItemEntity> entities = ReceiptItemEntityGenerator.GenerateList(2);
-
-		_mockMapper.Setup(m => m.Map<ReceiptItemEntity>(It.IsAny<ReceiptItem>())).Returns<ReceiptItem>(r => entities.First());
 
 		// Act
 		await _service.UpdateAsync(models, receiptId, CancellationToken.None);

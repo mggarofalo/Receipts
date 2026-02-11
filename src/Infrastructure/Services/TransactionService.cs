@@ -1,16 +1,16 @@
 using Application.Interfaces.Services;
-using AutoMapper;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
+using Infrastructure.Mapping;
 
 namespace Infrastructure.Services;
 
-public class TransactionService(ITransactionRepository repository, IMapper mapper) : ITransactionService
+public class TransactionService(ITransactionRepository repository, TransactionMapper mapper) : ITransactionService
 {
 	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> transactionEntities = models.Select(mapper.Map<TransactionEntity>).ToList();
+		List<TransactionEntity> transactionEntities = models.Select(mapper.ToEntity).ToList();
 
 		foreach (TransactionEntity entity in transactionEntities)
 		{
@@ -19,7 +19,7 @@ public class TransactionService(ITransactionRepository repository, IMapper mappe
 		}
 
 		List<TransactionEntity> createdTransactionEntities = await repository.CreateAsync(transactionEntities, cancellationToken);
-		return createdTransactionEntities.Select(mapper.Map<Transaction>).ToList();
+		return createdTransactionEntities.Select(mapper.ToDomain).ToList();
 	}
 
 
@@ -36,19 +36,19 @@ public class TransactionService(ITransactionRepository repository, IMapper mappe
 	public async Task<List<Transaction>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> transactionEntities = await repository.GetAllAsync(cancellationToken);
-		return transactionEntities.Select(mapper.Map<Transaction>).ToList();
+		return transactionEntities.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task<Transaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		TransactionEntity? transactionEntity = await repository.GetByIdAsync(id, cancellationToken);
-		return transactionEntity == null ? null : mapper.Map<Transaction>(transactionEntity);
+		return transactionEntity == null ? null : mapper.ToDomain(transactionEntity);
 	}
 
 	public async Task<List<Transaction>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
 		List<TransactionEntity>? transactionEntities = await repository.GetByReceiptIdAsync(receiptId, cancellationToken);
-		return transactionEntities?.Select(mapper.Map<Transaction>).ToList();
+		return transactionEntities?.Select(mapper.ToDomain).ToList();
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
@@ -58,7 +58,7 @@ public class TransactionService(ITransactionRepository repository, IMapper mappe
 
 	public async Task UpdateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> transactionEntities = models.Select(mapper.Map<TransactionEntity>).ToList();
+		List<TransactionEntity> transactionEntities = models.Select(mapper.ToEntity).ToList();
 
 		foreach (TransactionEntity entity in transactionEntities)
 		{

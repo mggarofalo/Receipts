@@ -2,7 +2,7 @@ using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Update;
 using Application.Queries.Core.Receipt;
-using AutoMapper;
+using API.Mapping.Core;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,7 @@ namespace API.Controllers.Core;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<ReceiptsController> logger) : ControllerBase
+public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogger<ReceiptsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -50,7 +50,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 				return NotFound();
 			}
 
-			ReceiptVM model = mapper.Map<Receipt, ReceiptVM>(result);
+			ReceiptVM model = mapper.ToViewModel(result);
 			logger.LogDebug("GetReceiptById called with id: {Id} found", id);
 			return Ok(model);
 		}
@@ -79,7 +79,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 			List<Receipt> result = await mediator.Send(query);
 			logger.LogDebug("GetAllReceipts called with {Count} receipts", result.Count);
 
-			List<ReceiptVM> model = result.Select(mapper.Map<Receipt, ReceiptVM>).ToList();
+			List<ReceiptVM> model = result.Select(mapper.ToViewModel).ToList();
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -104,10 +104,10 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 		try
 		{
 			logger.LogDebug("CreateReceipt called with {Count} receipts", models.Count);
-			CreateReceiptCommand command = new(models.Select(mapper.Map<ReceiptVM, Receipt>).ToList());
+			CreateReceiptCommand command = new(models.Select(mapper.ToDomain).ToList());
 			List<Receipt> receipts = await mediator.Send(command);
 			logger.LogDebug("CreateReceipt called with {Count} receipts, and created", models.Count);
-			return Ok(receipts.Select(mapper.Map<Receipt, ReceiptVM>).ToList());
+			return Ok(receipts.Select(mapper.ToViewModel).ToList());
 		}
 		catch (Exception ex)
 		{
@@ -133,7 +133,7 @@ public class ReceiptsController(IMediator mediator, IMapper mapper, ILogger<Rece
 		try
 		{
 			logger.LogDebug("UpdateReceipts called with {Count} receipts", models.Count);
-			UpdateReceiptCommand command = new(models.Select(mapper.Map<ReceiptVM, Receipt>).ToList());
+			UpdateReceiptCommand command = new(models.Select(mapper.ToDomain).ToList());
 			bool result = await mediator.Send(command);
 
 			if (!result)

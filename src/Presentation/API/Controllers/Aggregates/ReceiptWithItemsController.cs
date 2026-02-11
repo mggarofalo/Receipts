@@ -1,5 +1,5 @@
 using Application.Queries.Aggregates.ReceiptsWithItems;
-using AutoMapper;
+using API.Mapping.Aggregates;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +10,7 @@ namespace API.Controllers.Aggregates;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class ReceiptWithItemsController(IMediator mediator, IMapper mapper, ILogger<ReceiptWithItemsController> logger) : ControllerBase
+public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapper mapper, ILogger<ReceiptWithItemsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for receiptId: {receiptId}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -42,7 +42,7 @@ public class ReceiptWithItemsController(IMediator mediator, IMapper mapper, ILog
 				return NotFound();
 			}
 
-			ReceiptWithItemsVM model = mapper.Map<ReceiptWithItems, ReceiptWithItemsVM>(result);
+			ReceiptWithItemsVM model = mapper.ToViewModel(result);
 			logger.LogDebug("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId} found", receiptId);
 			return Ok(model);
 		}

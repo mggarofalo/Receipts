@@ -4,7 +4,6 @@ using Application.Commands.Account.Create;
 using Application.Commands.Account.Update;
 using Application.Commands.Account.Delete;
 using Application.Queries.Core.Account;
-using AutoMapper;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -14,30 +13,22 @@ using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Core;
 
 public class AccountsControllerTests
 {
-	private readonly IMapper _mapper;
+	private readonly AccountMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
-	private readonly Mock<IMapper> _mapperMock;
 	private readonly Mock<ILogger<AccountsController>> _loggerMock;
 	private readonly AccountsController _controller;
 
 	public AccountsControllerTests()
 	{
-		MapperConfiguration configuration = new(cfg =>
-		{
-			cfg.AddProfile<AccountMappingProfile>();
-		}, NullLoggerFactory.Instance);
-
-		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();
-		_mapperMock = ControllerTestHelpers.GetMapperMock<Account, AccountVM>(_mapper);
+		_mapper = new AccountMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<AccountsController>();
-		_controller = new AccountsController(_mediatorMock.Object, _mapperMock.Object, _loggerMock.Object);
+		_controller = new AccountsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
 	}
 
 	[Fact]
@@ -45,7 +36,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		Account account = AccountGenerator.Generate();
-		AccountVM expectedReturn = _mapper.Map<AccountVM>(account);
+		AccountVM expectedReturn = _mapper.ToViewModel(account);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetAccountByIdQuery>(q => q.Id == account.Id),
@@ -104,7 +95,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<Account> accounts = AccountGenerator.GenerateList(2);
-		List<AccountVM> expectedReturn = accounts.Select(_mapper.Map<Account, AccountVM>).ToList();
+		List<AccountVM> expectedReturn = accounts.Select(_mapper.ToViewModel).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetAllAccountsQuery>(q => true),
@@ -144,14 +135,14 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<Account> accounts = AccountGenerator.GenerateList(2);
-		List<AccountVM> expectedReturn = accounts.Select(_mapper.Map<Account, AccountVM>).ToList();
+		List<AccountVM> expectedReturn = accounts.Select(_mapper.ToViewModel).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == accounts.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(accounts);
 
-		List<AccountVM> models = accounts.Select(_mapper.Map<Account, AccountVM>).ToList();
+		List<AccountVM> models = accounts.Select(_mapper.ToViewModel).ToList();
 		models.ForEach(a => a.Id = null);
 
 		// Act
@@ -188,7 +179,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<AccountVM> models = AccountVMGenerator.GenerateList(2);
-		List<Account> accounts = models.Select(_mapper.Map<AccountVM, Account>).ToList();
+		List<Account> accounts = models.Select(_mapper.ToDomain).ToList();
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<UpdateAccountCommand>(c => c.Accounts.Count == models.Count),

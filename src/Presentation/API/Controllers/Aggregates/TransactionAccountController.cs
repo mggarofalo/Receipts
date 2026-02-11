@@ -1,5 +1,5 @@
 using Application.Queries.Aggregates.TransactionAccounts;
-using AutoMapper;
+using API.Mapping.Aggregates;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +10,7 @@ namespace API.Controllers.Aggregates;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class TransactionAccountController(IMediator mediator, IMapper mapper, ILogger<TransactionAccountController> logger) : ControllerBase
+public class TransactionAccountController(IMediator mediator, TransactionAccountMapper mapper, ILogger<TransactionAccountController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -43,7 +43,7 @@ public class TransactionAccountController(IMediator mediator, IMapper mapper, IL
 				return NotFound();
 			}
 
-			TransactionAccountVM model = mapper.Map<TransactionAccount, TransactionAccountVM>(result);
+			TransactionAccountVM model = mapper.ToViewModel(result);
 			logger.LogDebug("GetTransactionAccountByTransactionId called with transactionId: {transactionId} found", transactionId);
 			return Ok(model);
 		}
@@ -80,7 +80,7 @@ public class TransactionAccountController(IMediator mediator, IMapper mapper, IL
 				return NotFound();
 			}
 
-			List<TransactionAccountVM> model = result.Select(mapper.Map<TransactionAccount, TransactionAccountVM>).ToList();
+			List<TransactionAccountVM> model = result.Select(mapper.ToViewModel).ToList();
 			logger.LogDebug("GetTransactionAccountsByReceiptId called with receiptId: {receiptId} found", receiptId);
 			return Ok(model);
 		}

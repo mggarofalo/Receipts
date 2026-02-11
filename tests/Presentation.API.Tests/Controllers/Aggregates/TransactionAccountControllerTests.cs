@@ -2,7 +2,6 @@ using API.Controllers.Aggregates;
 using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Queries.Aggregates.TransactionAccounts;
-using AutoMapper;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -12,32 +11,22 @@ using SampleData.Domain.Aggregates;
 using SampleData.Domain.Core;
 using Shared.ViewModels.Aggregates;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 
 public class TransactionAccountControllerTests
 {
-	private readonly IMapper _mapper;
+	private readonly TransactionAccountMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
-	private readonly Mock<IMapper> _mapperMock;
 	private readonly Mock<ILogger<TransactionAccountController>> _loggerMock;
 	private readonly TransactionAccountController _controller;
 
 	public TransactionAccountControllerTests()
 	{
-		MapperConfiguration configuration = new(cfg =>
-		{
-			cfg.AddProfile<TransactionAccountMappingProfile>();
-			cfg.AddProfile<TransactionMappingProfile>();
-			cfg.AddProfile<AccountMappingProfile>();
-		}, NullLoggerFactory.Instance);
-
-		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();
-		_mapperMock = ControllerTestHelpers.GetMapperMock<TransactionAccount, TransactionAccountVM>(_mapper);
+		_mapper = new TransactionAccountMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<TransactionAccountController>();
-		_controller = new TransactionAccountController(_mediatorMock.Object, _mapperMock.Object, _loggerMock.Object);
+		_controller = new TransactionAccountController(_mediatorMock.Object, _mapper, _loggerMock.Object);
 	}
 
 	[Fact]
@@ -45,7 +34,7 @@ public class TransactionAccountControllerTests
 	{
 		// Arrange
 		TransactionAccount transactionAccount = TransactionAccountGenerator.Generate();
-		TransactionAccountVM expectedReturn = _mapper.Map<TransactionAccountVM>(transactionAccount);
+		TransactionAccountVM expectedReturn = _mapper.ToViewModel(transactionAccount);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionAccountByTransactionIdQuery>(q => q.TransactionId == transactionAccount.Transaction.Id!.Value),
@@ -106,7 +95,7 @@ public class TransactionAccountControllerTests
 		// Arrange
 		Guid receiptId = ReceiptGenerator.Generate().Id!.Value;
 		TransactionAccount transactionAccount = TransactionAccountGenerator.Generate();
-		TransactionAccountVM expectedReturn = _mapper.Map<TransactionAccountVM>(transactionAccount);
+		TransactionAccountVM expectedReturn = _mapper.ToViewModel(transactionAccount);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionAccountsByReceiptIdQuery>(q => q.ReceiptId == receiptId),

@@ -2,8 +2,8 @@
 
 <Project>
 	<ItemGroup>
-		<PackageVersion Include="AutoMapper" Version="16.0.0" />
 		<PackageVersion Include="Blazored.LocalStorage" Version="4.5.0" />
+		<PackageVersion Include="Riok.Mapperly" Version="4.2.0" />
 		<PackageVersion Include="coverlet.collector" Version="6.0.4" />
 		<PackageVersion Include="FluentAssertions" Version="8.2.0" />
 		<PackageVersion Include="FluentValidation" Version="12.1.1" />

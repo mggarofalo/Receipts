@@ -2,7 +2,6 @@ using API.Controllers.Aggregates;
 using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Queries.Aggregates.ReceiptsWithItems;
-using AutoMapper;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -11,32 +10,22 @@ using Moq;
 using SampleData.Domain.Aggregates;
 using Shared.ViewModels.Aggregates;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 
 public class ReceiptWithItemsControllerTests
 {
-	private readonly IMapper _mapper;
+	private readonly ReceiptWithItemsMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
-	private readonly Mock<IMapper> _mapperMock;
 	private readonly Mock<ILogger<ReceiptWithItemsController>> _loggerMock;
 	private readonly ReceiptWithItemsController _controller;
 
 	public ReceiptWithItemsControllerTests()
 	{
-		MapperConfiguration configuration = new(cfg =>
-		{
-			cfg.AddProfile<ReceiptWithItemsMappingProfile>();
-			cfg.AddProfile<ReceiptMappingProfile>();
-			cfg.AddProfile<ReceiptItemMappingProfile>();
-		}, NullLoggerFactory.Instance);
-
-		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();
-		_mapperMock = ControllerTestHelpers.GetMapperMock<ReceiptWithItems, ReceiptWithItemsVM>(_mapper);
+		_mapper = new ReceiptWithItemsMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<ReceiptWithItemsController>();
-		_controller = new ReceiptWithItemsController(_mediatorMock.Object, _mapperMock.Object, _loggerMock.Object);
+		_controller = new ReceiptWithItemsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
 	}
 
 	[Fact]
@@ -44,7 +33,7 @@ public class ReceiptWithItemsControllerTests
 	{
 		// Arrange
 		ReceiptWithItems receiptWithItems = ReceiptWithItemsGenerator.Generate();
-		ReceiptWithItemsVM expectedReturn = _mapper.Map<ReceiptWithItemsVM>(receiptWithItems);
+		ReceiptWithItemsVM expectedReturn = _mapper.ToViewModel(receiptWithItems);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetReceiptWithItemsByReceiptIdQuery>(q => q.ReceiptId == receiptWithItems.Receipt.Id!.Value),

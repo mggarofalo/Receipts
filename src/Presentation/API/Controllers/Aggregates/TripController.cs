@@ -1,5 +1,5 @@
 using Application.Queries.Aggregates.Trips;
-using AutoMapper;
+using API.Mapping.Aggregates;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +10,7 @@ namespace API.Controllers.Aggregates;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-public class TripController(IMediator mediator, IMapper mapper, ILogger<TripController> logger) : ControllerBase
+public class TripController(IMediator mediator, TripMapper mapper, ILogger<TripController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for receiptId: {receiptId}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -42,7 +42,7 @@ public class TripController(IMediator mediator, IMapper mapper, ILogger<TripCont
 				return NotFound();
 			}
 
-			TripVM model = mapper.Map<Trip, TripVM>(result);
+			TripVM model = mapper.ToViewModel(result);
 			logger.LogDebug("GetTripById called with receiptId: {receiptId} found", receiptId);
 			return Ok(model);
 		}

@@ -1,5 +1,4 @@
 using Application.Services;
-using AutoMapper;
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +16,5 @@ public class ApplicationServiceTests
 		serviceCollection.RegisterApplicationServices(new Mock<IConfiguration>().Object);
 
 		serviceCollection.Should().Contain(sd => sd.ServiceType == typeof(IMediator));
-		serviceCollection.Should().Contain(sd => sd.ServiceType == typeof(IMapper));
 	}
 }

@@ -2,6 +2,7 @@ using Application.Interfaces;
 using Application.Interfaces.Services;
 using Common;
 using Infrastructure.Interfaces.Repositories;
+using Infrastructure.Mapping;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -42,7 +43,11 @@ public static class InfrastructureService
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
 			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>();
 
-		services.AddAutoMapper(cfg => { }, typeof(InfrastructureService).Assembly);
+		services
+			.AddSingleton<AccountMapper>()
+			.AddSingleton<ReceiptMapper>()
+			.AddSingleton<ReceiptItemMapper>()
+			.AddSingleton<TransactionMapper>();
 
 		return services;
 	}

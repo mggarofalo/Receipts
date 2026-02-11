@@ -1,8 +1,8 @@
-using AutoMapper;
 using Domain.Core;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
+using Infrastructure.Mapping;
 using Infrastructure.Services;
 using Moq;
 using SampleData.Domain.Core;
@@ -13,35 +13,32 @@ namespace Infrastructure.Tests.Services;
 public class TransactionServiceTests
 {
 	private readonly Mock<ITransactionRepository> _mockRepository;
-	private readonly Mock<IMapper> _mockMapper;
+	private readonly TransactionMapper _mapper;
 	private readonly TransactionService _service;
 
 	public TransactionServiceTests()
 	{
 		_mockRepository = new Mock<ITransactionRepository>();
-		_mockMapper = new Mock<IMapper>();
-		_service = new TransactionService(_mockRepository.Object, _mockMapper.Object);
+		_mapper = new TransactionMapper();
+		_service = new TransactionService(_mockRepository.Object, _mapper);
 	}
 
 	[Fact]
 	public async Task CreateAsync_ValidTransactions_CallsRepositoryCreateAsyncAndReturnsCreatedTransactions()
 	{
 		// Arrange
-		List<Transaction> expected = TransactionGenerator.GenerateList(2);
+		List<Transaction> models = TransactionGenerator.GenerateList(2);
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
-		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2);
 		List<TransactionEntity> createdEntities = TransactionEntityGenerator.GenerateList(2);
 
-		_mockMapper.Setup(m => m.Map<TransactionEntity>(It.IsAny<Transaction>())).Returns<Transaction>(t => entities.First());
 		_mockRepository.Setup(r => r.CreateAsync(It.IsAny<List<TransactionEntity>>(), It.IsAny<CancellationToken>())).ReturnsAsync(createdEntities);
-		_mockMapper.Setup(m => m.Map<Transaction>(It.IsAny<TransactionEntity>())).Returns<TransactionEntity>(e => expected.First());
 
 		// Act
-		List<Transaction> actual = await _service.CreateAsync(expected, receiptId, accountId, CancellationToken.None);
+		List<Transaction> actual = await _service.CreateAsync(models, receiptId, accountId, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(createdEntities.Count, actual.Count);
 		_mockRepository.Verify(r => r.CreateAsync(It.IsAny<List<TransactionEntity>>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -78,16 +75,14 @@ public class TransactionServiceTests
 	{
 		// Arrange
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(3);
-		List<Transaction> expected = TransactionGenerator.GenerateList(3);
 
 		_mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities);
-		_mockMapper.Setup(m => m.Map<Transaction>(It.IsAny<TransactionEntity>())).Returns<TransactionEntity>(e => expected.First());
 
 		// Act
 		List<Transaction> actual = await _service.GetAllAsync(CancellationToken.None);
 
 		// Assert
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Count);
 	}
 
 	[Fact]
@@ -96,17 +91,15 @@ public class TransactionServiceTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		TransactionEntity entity = TransactionEntityGenerator.Generate();
-		Transaction expected = TransactionGenerator.Generate();
 
 		_mockRepository.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(entity);
-		_mockMapper.Setup(m => m.Map<Transaction>(entity)).Returns(expected);
 
 		// Act
 		Transaction? actual = await _service.GetByIdAsync(id, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		actual.Should().BeSameAs(expected);
+		actual.Id.Should().Be(entity.Id);
 	}
 
 	[Fact]
@@ -129,17 +122,15 @@ public class TransactionServiceTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2);
-		List<Transaction> expected = TransactionGenerator.GenerateList(2);
 
 		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
-		_mockMapper.Setup(m => m.Map<Transaction>(It.IsAny<TransactionEntity>())).Returns<TransactionEntity>(e => expected.First());
 
 		// Act
 		List<Transaction>? actual = await _service.GetByReceiptIdAsync(receiptId, CancellationToken.None);
 
 		// Assert
 		Assert.NotNull(actual);
-		Assert.Equal(expected.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Count);
 	}
 
 	[Fact]
@@ -177,9 +168,6 @@ public class TransactionServiceTests
 		List<Transaction> models = TransactionGenerator.GenerateList(2);
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
-		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2);
-
-		_mockMapper.Setup(m => m.Map<TransactionEntity>(It.IsAny<Transaction>())).Returns<Transaction>(t => entities.First());
 
 		// Act
 		await _service.UpdateAsync(models, receiptId, accountId, CancellationToken.None);
