@@ -13,6 +13,7 @@ using Moq;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Core;
 
@@ -29,7 +30,7 @@ public class AccountsControllerTests
 		MapperConfiguration configuration = new(cfg =>
 		{
 			cfg.AddProfile<AccountMappingProfile>();
-		});
+		}, NullLoggerFactory.Instance);
 
 		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();

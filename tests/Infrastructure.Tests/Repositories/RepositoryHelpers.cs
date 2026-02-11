@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Infrastructure.Tests.Repositories;
 
@@ -9,7 +10,7 @@ public static class RepositoryHelpers
 		MapperConfiguration configuration = new(cfg =>
 		{
 			cfg.AddProfile<TProfile>();
-		});
+		}, NullLoggerFactory.Instance);
 
 		configuration.AssertConfigurationIsValid();
 

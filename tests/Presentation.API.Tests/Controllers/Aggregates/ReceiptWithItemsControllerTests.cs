@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
 using Shared.ViewModels.Aggregates;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 
@@ -28,7 +29,7 @@ public class ReceiptWithItemsControllerTests
 			cfg.AddProfile<ReceiptWithItemsMappingProfile>();
 			cfg.AddProfile<ReceiptMappingProfile>();
 			cfg.AddProfile<ReceiptItemMappingProfile>();
-		});
+		}, NullLoggerFactory.Instance);
 
 		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();

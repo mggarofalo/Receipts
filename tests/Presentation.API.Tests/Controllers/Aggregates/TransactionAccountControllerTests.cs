@@ -11,6 +11,7 @@ using Moq;
 using SampleData.Domain.Aggregates;
 using SampleData.Domain.Core;
 using Shared.ViewModels.Aggregates;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 
@@ -29,7 +30,7 @@ public class TransactionAccountControllerTests
 			cfg.AddProfile<TransactionAccountMappingProfile>();
 			cfg.AddProfile<TransactionMappingProfile>();
 			cfg.AddProfile<AccountMappingProfile>();
-		});
+		}, NullLoggerFactory.Instance);
 
 		_mapper = configuration.CreateMapper();
 		_mediatorMock = new Mock<IMediator>();

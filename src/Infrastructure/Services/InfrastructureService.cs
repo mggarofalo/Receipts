@@ -42,7 +42,7 @@ public static class InfrastructureService
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
 			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>();
 
-		services.AddAutoMapper(typeof(InfrastructureService).Assembly);
+		services.AddAutoMapper(cfg => { }, typeof(InfrastructureService).Assembly);
 
 		return services;
 	}

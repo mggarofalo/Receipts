@@ -9,7 +9,7 @@ public static class ProgramService
 		services.AddControllers();
 		services.AddEndpointsApiExplorer();
 		services.AddSwaggerGen();
-		services.AddAutoMapper(Assembly.GetExecutingAssembly());
+		services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
 		services.AddSignalR();
 
 		return services;

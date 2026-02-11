@@ -4,6 +4,7 @@ using Domain.Core;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Mapping.Core;
 
@@ -16,7 +17,7 @@ public class ReceiptItemMappingProfileTests
 		MapperConfiguration configuration = new(cfg =>
 		{
 			cfg.AddProfile<ReceiptItemMappingProfile>();
-		});
+		}, NullLoggerFactory.Instance);
 
 		configuration.AssertConfigurationIsValid();
 

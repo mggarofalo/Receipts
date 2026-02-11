@@ -5,6 +5,7 @@ using SampleData.Domain.Aggregates;
 using SampleData.ViewModels.Aggregates;
 using API.Mapping.Core;
 using API.Mapping.Aggregates;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Presentation.API.Tests.Mapping.Aggregates;
 
@@ -23,7 +24,7 @@ public class TripMappingProfileTests
 			cfg.AddProfile<ReceiptItemMappingProfile>();
 			cfg.AddProfile<TransactionMappingProfile>();
 			cfg.AddProfile<AccountMappingProfile>();
-		});
+		}, NullLoggerFactory.Instance);
 
 		configuration.AssertConfigurationIsValid();
 

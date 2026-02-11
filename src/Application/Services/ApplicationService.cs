@@ -14,7 +14,7 @@ public static class ApplicationService
 			cfg.RegisterServicesFromAssembly(typeof(IQuery<>).Assembly);
 		});
 
-		services.AddAutoMapper(typeof(ApplicationService).Assembly);
+		services.AddAutoMapper(cfg => { }, typeof(ApplicationService).Assembly);
 
 		return services;
 	}

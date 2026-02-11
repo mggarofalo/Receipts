@@ -3,6 +3,7 @@ using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Mapping;
 using SampleData.Domain.Core;
+using Microsoft.Extensions.Logging.Abstractions;
 using SampleData.Entities;
 
 namespace Infrastructure.Tests.Mapping;
@@ -16,7 +17,7 @@ public class ReceiptItemMappingProfileTests
 		MapperConfiguration configuration = new(cfg =>
 		{
 			cfg.AddProfile<ReceiptItemMappingProfile>();
-		});
+		}, NullLoggerFactory.Instance);
 
 		// configuration.AssertConfigurationIsValid();
 
