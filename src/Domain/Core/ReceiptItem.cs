@@ -1,6 +1,6 @@
 namespace Domain.Core;
 
-public class ReceiptItem : IEquatable<ReceiptItem>
+public class ReceiptItem
 {
 	public Guid? Id { get; set; }
 	public string ReceiptItemCode { get; set; }
@@ -52,60 +52,5 @@ public class ReceiptItem : IEquatable<ReceiptItem>
 		TotalAmount = totalAmount;
 		Category = category;
 		Subcategory = subcategory;
-	}
-
-	public bool Equals(ReceiptItem? other)
-	{
-		if (other is null)
-		{
-			return false;
-		}
-
-		return ReceiptItemCode == other.ReceiptItemCode &&
-			   Description == other.Description &&
-			   Quantity == other.Quantity &&
-			   UnitPrice == other.UnitPrice &&
-			   TotalAmount == other.TotalAmount &&
-			   Category == other.Category &&
-			   Subcategory == other.Subcategory;
-	}
-
-	public override bool Equals(object? obj)
-	{
-		if (obj is null)
-		{
-			return false;
-		}
-
-		if (obj.GetType() != GetType())
-		{
-			return false;
-		}
-
-		return Equals((ReceiptItem)obj);
-	}
-
-	public override int GetHashCode()
-	{
-		HashCode hash = new();
-		hash.Add(Id);
-		hash.Add(ReceiptItemCode);
-		hash.Add(Description);
-		hash.Add(Quantity);
-		hash.Add(UnitPrice);
-		hash.Add(TotalAmount);
-		hash.Add(Category);
-		hash.Add(Subcategory);
-		return hash.ToHashCode();
-	}
-
-	public static bool operator ==(ReceiptItem? left, ReceiptItem? right)
-	{
-		return Equals(left, right);
-	}
-
-	public static bool operator !=(ReceiptItem? left, ReceiptItem? right)
-	{
-		return !Equals(left, right);
 	}
 }

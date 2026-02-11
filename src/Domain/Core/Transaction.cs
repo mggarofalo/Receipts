@@ -1,6 +1,6 @@
 namespace Domain.Core;
 
-public class Transaction : IEquatable<Transaction>
+public class Transaction
 {
 	public Guid? Id { get; set; }
 	public Money Amount { get; set; }
@@ -24,50 +24,5 @@ public class Transaction : IEquatable<Transaction>
 		Id = id;
 		Amount = amount;
 		Date = date;
-	}
-
-	public bool Equals(Transaction? other)
-	{
-		if (other is null)
-		{
-			return false;
-		}
-
-		return Amount == other.Amount &&
-			   Date == other.Date;
-	}
-
-	public override bool Equals(object? obj)
-	{
-		if (obj is null)
-		{
-			return false;
-		}
-
-		if (obj.GetType() != GetType())
-		{
-			return false;
-		}
-
-		return Equals((Transaction)obj);
-	}
-
-	public override int GetHashCode()
-	{
-		HashCode hash = new();
-		hash.Add(Id);
-		hash.Add(Amount);
-		hash.Add(Date);
-		return hash.ToHashCode();
-	}
-
-	public static bool operator ==(Transaction? left, Transaction? right)
-	{
-		return Equals(left, right);
-	}
-
-	public static bool operator !=(Transaction? left, Transaction? right)
-	{
-		return !Equals(left, right);
 	}
 }
