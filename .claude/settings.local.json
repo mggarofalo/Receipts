@@ -2,6 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(gh pr checks:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh run list:*)",
       "Bash(gh run view:*)",
       "Bash(git add:*)",
       "Bash(git branch:*)",
@@ -23,6 +25,7 @@
       "Bash(dotnet clean:*)",
       "Bash(dotnet ef:*)",
       "Bash(dotnet format:*)",
+      "Bash(dotnet husky:*)",
       "Bash(dotnet list:*)",
       "Bash(dotnet new:*)",
       "Bash(dotnet remove:*)",
