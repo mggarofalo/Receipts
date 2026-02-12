@@ -1,8 +1,7 @@
 {
   "mcpServers": {
     "linear-server": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
+      "url": "https://mcp.linear.app/mcp"
     }
   }
 }
