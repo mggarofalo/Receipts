@@ -42,7 +42,7 @@ Create a git worktree for isolated, parallel development on a Linear issue branc
 
 5. **Restore dependencies** in the new worktree:
    ```bash
-   dotnet restore .worktrees/<branch-name>/Receipts.sln
+   dotnet restore .worktrees/<branch-name>/Receipts.slnx
    ```
 
 6. **Update issue status**: Move the Linear issue to "In Progress" using `update_issue`.

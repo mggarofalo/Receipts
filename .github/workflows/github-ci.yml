@@ -10,6 +10,7 @@ env:
   DOTNET_VERSION: "10.0.x"
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  HUSKY: 0
 
 jobs:
   build:
@@ -33,13 +34,13 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
-        run: dotnet restore Receipts.sln
+        run: dotnet restore Receipts.slnx
 
       - name: Build with warnings-as-errors
-        run: dotnet build Receipts.sln --no-restore -p:TreatWarningsAsErrors=true
+        run: dotnet build Receipts.slnx --no-restore -p:TreatWarningsAsErrors=true
 
       - name: Test
-        run: dotnet test Receipts.sln --no-build --verbosity normal
+        run: dotnet test Receipts.slnx --no-build --verbosity normal
 
   lint:
     name: Code Formatting
@@ -54,7 +55,7 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Check formatting
-        run: dotnet format Receipts.sln --verify-no-changes
+        run: dotnet format Receipts.slnx --verify-no-changes
 
   security:
     name: Vulnerability Scan
@@ -69,11 +70,11 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        run: dotnet restore Receipts.sln
+        run: dotnet restore Receipts.slnx
 
       - name: Check for vulnerable packages
         run: |
-          OUTPUT=$(dotnet list Receipts.sln package --vulnerable 2>&1)
+          OUTPUT=$(dotnet list Receipts.slnx package --vulnerable 2>&1)
           echo "$OUTPUT"
           if echo "$OUTPUT" | grep -q "has the following vulnerable packages"; then
             echo "::error::Vulnerable packages detected!"
