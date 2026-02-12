@@ -1,0 +1,23 @@
+{
+   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
+   "tasks": [
+      {
+         "name": "format-check",
+         "group": "pre-commit",
+         "command": "dotnet",
+         "args": ["format", "Receipts.slnx", "--verify-no-changes"]
+      },
+      {
+         "name": "build",
+         "group": "pre-commit",
+         "command": "dotnet",
+         "args": ["build", "Receipts.slnx", "-p:TreatWarningsAsErrors=true", "--no-restore"]
+      },
+      {
+         "name": "test",
+         "group": "pre-commit",
+         "command": "dotnet",
+         "args": ["test", "Receipts.slnx", "--no-build", "--verbosity", "normal"]
+      }
+   ]
+}

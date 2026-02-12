@@ -100,10 +100,10 @@ When working on tasks that are expected to result in code changes, follow this s
 
 ```bash
 # Build entire solution
-dotnet build Receipts.sln
+dotnet build Receipts.slnx
 
 # Run all tests
-dotnet test Receipts.sln
+dotnet test Receipts.slnx
 
 # Run tests for a specific project
 dotnet test tests/Application.Tests/Application.Tests.csproj
@@ -116,6 +116,31 @@ dotnet run --project src/Presentation/API/API.csproj
 
 # Add EF Core migration (run from Infrastructure project)
 dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructure.csproj --startup-project src/Presentation/API/API.csproj
+```
+
+## Pre-commit Hooks (Husky.NET)
+
+This repo uses [Husky.NET](https://alirezanet.github.io/Husky.Net/) for pre-commit hooks. Hooks install automatically on `dotnet restore` or `dotnet build`.
+
+**Pre-commit pipeline (runs on every `git commit`):**
+1. `dotnet format --verify-no-changes` — code formatting check
+2. `dotnet build -p:TreatWarningsAsErrors=true` — build with warnings-as-errors
+3. `dotnet test --no-build` — run all tests
+
+**Skipping hooks** (use sparingly):
+```bash
+git commit --no-verify -m "message"
+```
+
+**Disabling hooks for a session** (e.g., CI):
+```bash
+export HUSKY=0
+```
+
+**Manual setup** (if hooks aren't installed):
+```bash
+dotnet tool restore
+dotnet husky install
 ```
 
 ## Validation and Code Quality
@@ -172,7 +197,7 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
     - `Mapping/` - Mapperly mappers (Domain <-> ViewModel)
     - `Configuration/` - Service registration extension methods
     - `Hubs/ReceiptsHub.cs` - SignalR hub
-  - **Client** - Blazor WebAssembly frontend (**deprecated**, removal tracked in MGG-90; being replaced by React/Vite SPA in MGG-32)
+  - **Client** - ~~Removed~~ (was Blazor WebAssembly; removed in MGG-90; being replaced by React/Vite SPA in MGG-32)
   - **Shared** - ViewModels and HTTP clients shared between API and Client (**will be replaced** by spec-generated DTOs in MGG-83/MGG-88)
     - `ViewModels/` - DTOs for API communication
     - `HttpClientApiExtensions/` - Typed HTTP clients
