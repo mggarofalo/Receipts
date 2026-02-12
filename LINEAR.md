@@ -6,7 +6,42 @@ Guidance for AI agents working with the Linear workspace for this project.
 
 - **Team:** Mggarofalo (ID: `a4aff05d-41e6-45dc-b670-cdb485fef765`)
 - **Project:** Receipts (ID: `06199e4e-d3a8-4f98-9edf-e1e02efb6cee`)
-- **Execution Roadmap:** A Linear document attached to the Receipts project with full phase-by-phase ordering and decision rules. Query it with `get_document` using slug `0c391490ba60`.
+- **Execution Roadmap:** A Linear document attached to the Receipts project with full phase-by-phase ordering, label reference, and decision rules. Query it with `get_document` using slug `0c391490ba60`.
+
+## Labels
+
+Every issue has at least one **layer** label and zero or more **type** labels. Labels tell agents what skills/tools are needed and what kind of work the issue represents.
+
+### Layer Labels (where the work happens)
+
+| Label | Meaning |
+|-------|---------|
+| `backend` | .NET layers: Domain, Application, Infrastructure, API |
+| `frontend` | React/TypeScript SPA |
+| `infra` | Docker, CI/CD, Aspire, deployment, build config |
+| `docs` | Documentation only — no code changes |
+
+### Type Labels (what kind of work)
+
+| Label | Meaning |
+|-------|---------|
+| `Feature` | New user-facing functionality |
+| `Improvement` | Enhancement to existing functionality |
+| `Bug` | Defect fix |
+| `cleanup` | Removal, housekeeping, dead code |
+| `security` | Auth, hardening, rate limiting, audit |
+| `codegen` | Code generation from OpenAPI spec |
+| `dx` | Developer experience, tooling, local dev |
+| `testing` | Test infrastructure, test suites |
+| `epic` | **Parent issue — do NOT work directly, work its children** |
+
+### Label Rules for New Issues
+
+- Always assign at least one layer label (`backend`, `frontend`, `infra`, or `docs`)
+- Add type labels as appropriate (can have multiple)
+- Mark parent issues with `epic` — agents will skip these and work children
+- Use `codegen` for any work involving OpenAPI spec generation
+- Use `security` for anything touching auth, audit, or hardening
 
 ## Milestones (Execution Phases)
 
@@ -36,10 +71,12 @@ Priority reflects **execution readiness**, not importance:
 
 1. **Query:** `list_issues` with `team: "Mggarofalo"`, `state: "backlog"` (or "todo")
 2. **Filter:** Exclude Done, Canceled, and Duplicate statuses
-3. **Check blockers:** For each issue, use `get_issue` with `includeRelations: true` and inspect `blockedBy`. If ANY blocker is not Done, the issue cannot start.
-4. **Sort:** Among unblocked issues, sort by priority (Urgent > High > Medium > Low)
-5. **Pick:** The first unblocked issue at the highest priority is "what's next"
-6. **Parallel work:** Multiple unblocked issues at the same priority can be worked in parallel
+3. **Skip epics:** If the issue has label `epic`, skip it and work its children instead
+4. **Check blockers:** For each issue, use `get_issue` with `includeRelations: true` and inspect `blockedBy`. If ANY blocker is not Done, the issue cannot start.
+5. **Sort:** Among unblocked issues, sort by priority (Urgent > High > Medium > Low)
+6. **Pick:** The first unblocked issue at the highest priority is "what's next"
+7. **Label check:** Use layer labels to verify you have the right tools/context (e.g., `frontend` = Node.js/React, `backend` = .NET/C#, `infra` = Docker/CI)
+8. **Parallel work:** Multiple unblocked issues at the same priority can be worked in parallel
 
 ## Epics (Parent Issues)
 
@@ -97,8 +134,9 @@ MGG-32 (React Frontend epic) ──blocks──> MGG-51 (Docker epic)
 
 ## Linear View (UI)
 
-A "Roadmap" view should exist in the Mggarofalo team configured as:
+A "Receipts Roadmap" view should exist in the Mggarofalo team configured as:
 - **Filter:** Project = Receipts, exclude Done/Canceled/Duplicate
 - **Grouping:** Milestone
 - **Ordering:** Priority
 - **Sub-issues:** Shown
+- **Display properties:** Status, Priority, Labels, Milestone

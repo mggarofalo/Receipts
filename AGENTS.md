@@ -11,7 +11,8 @@ When working on tasks that are expected to result in code changes, follow this s
    - If no issue exists, create one with:
      - Clear title describing the work
      - Description with acceptance criteria
-     - Appropriate labels and team assignment
+     - At least one layer label (`backend`, `frontend`, `infra`, `docs`) + type labels as needed
+     - Team assignment to "Mggarofalo"
    - Link the issue ID to your work
    - **See [LINEAR.md](LINEAR.md)** for full workspace structure, milestone phases, priority semantics, and how to determine "what's next"
 
