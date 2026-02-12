@@ -1,8 +1,8 @@
+using API.Mapping.Core;
 using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Update;
 using Application.Queries.Core.Receipt;
-using API.Mapping.Core;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

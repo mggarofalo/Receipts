@@ -1,9 +1,9 @@
+using Client.Common;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Shared.ViewModels.Core;
 using Shared.Validators;
-using FluentValidation.Results;
-using Client.Common;
+using Shared.ViewModels.Core;
 
 namespace Client.Pages.Accounts;
 

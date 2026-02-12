@@ -1,8 +1,8 @@
-using SampleData.Domain.Core;
-using Moq;
-using Application.Queries.Core.Receipt;
 using Application.Interfaces.Services;
+using Application.Queries.Core.Receipt;
 using FluentAssertions;
+using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Queries.Core.Receipt;
 

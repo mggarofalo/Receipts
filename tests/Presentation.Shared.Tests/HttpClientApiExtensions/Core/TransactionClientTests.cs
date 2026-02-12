@@ -1,11 +1,11 @@
 using FluentAssertions;
 using Moq;
 using Moq.Protected;
+using SampleData.ViewModels.Core;
+using Shared.HttpClientApiExtensions.Core;
 using Shared.ViewModels.Core;
 using System.Net;
 using System.Net.Http.Json;
-using SampleData.ViewModels.Core;
-using Shared.HttpClientApiExtensions.Core;
 
 namespace Presentation.Shared.Tests.HttpClientApiExtensions.Core;
 

@@ -3,13 +3,13 @@ using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Queries.Aggregates.Trips;
 using Domain.Aggregates;
+using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
 using Shared.ViewModels.Aggregates;
-using FluentAssertions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 

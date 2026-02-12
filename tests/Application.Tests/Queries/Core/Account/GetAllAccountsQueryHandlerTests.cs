@@ -1,8 +1,8 @@
-using SampleData.Domain.Core;
-using Moq;
-using Application.Queries.Core.Account;
 using Application.Interfaces.Services;
+using Application.Queries.Core.Account;
 using FluentAssertions;
+using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Queries.Core.Account;
 

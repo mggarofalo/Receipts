@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using MudBlazor.Services;
 using Blazored.LocalStorage;
 using Client;
 using Client.Interfaces;
@@ -9,6 +6,9 @@ using Client.Interfaces.Services.Core;
 using Client.Services;
 using Client.Services.Aggregates;
 using Client.Services.Core;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using MudBlazor.Services;
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

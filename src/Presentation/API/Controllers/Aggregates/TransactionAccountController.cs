@@ -1,5 +1,5 @@
-using Application.Queries.Aggregates.TransactionAccounts;
 using API.Mapping.Aggregates;
+using Application.Queries.Aggregates.TransactionAccounts;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
