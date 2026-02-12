@@ -13,12 +13,14 @@ When working on tasks that are expected to result in code changes, follow this s
      - Description with acceptance criteria
      - Appropriate labels and team assignment
    - Link the issue ID to your work
+   - **See [LINEAR.md](LINEAR.md)** for full workspace structure, milestone phases, priority semantics, and how to determine "what's next"
 
    **Linear MCP Access:**
    - Linear is available via MCP server - you can directly create/update issues
    - Team is "Mggarofalo" (team ID: `a4aff05d-41e6-45dc-b670-cdb485fef765`)
    - **Do not check for teams** - the team information is stable and documented here
    - Use the team name "Mggarofalo" directly when creating issues
+   - All issues should be assigned to project "Receipts" and an appropriate milestone (Phase 0–5)
 
 2. **Branch-Based Development**
    - **ALWAYS** create a feature branch for Linear-based work - NEVER commit directly to master
@@ -123,8 +125,8 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
     - `Mapping/` - Mapperly mappers (Domain <-> ViewModel)
     - `Configuration/` - Service registration extension methods
     - `Hubs/ReceiptsHub.cs` - SignalR hub
-  - **Client** - Blazor WebAssembly frontend using MudBlazor
-  - **Shared** - ViewModels and HTTP clients shared between API and Client
+  - **Client** - Blazor WebAssembly frontend (**deprecated**, removal tracked in MGG-90; being replaced by React/Vite SPA in MGG-32)
+  - **Shared** - ViewModels and HTTP clients shared between API and Client (**will be replaced** by spec-generated DTOs in MGG-83/MGG-88)
     - `ViewModels/` - DTOs for API communication
     - `HttpClientApiExtensions/` - Typed HTTP clients
     - `Validators/` - FluentValidation validators
