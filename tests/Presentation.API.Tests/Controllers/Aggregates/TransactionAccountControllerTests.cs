@@ -3,6 +3,7 @@ using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Domain.Aggregates;
+using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,7 +11,6 @@ using Moq;
 using SampleData.Domain.Aggregates;
 using SampleData.Domain.Core;
 using Shared.ViewModels.Aggregates;
-using FluentAssertions;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 

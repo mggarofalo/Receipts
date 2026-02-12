@@ -2,10 +2,10 @@ using FluentAssertions;
 using Moq;
 using Moq.Protected;
 using SampleData.ViewModels.Aggregates;
+using Shared.HttpClientApiExtensions.Aggregates;
 using Shared.ViewModels.Aggregates;
 using System.Net;
 using System.Net.Http.Json;
-using Shared.HttpClientApiExtensions.Aggregates;
 
 namespace Presentation.Shared.Tests.HttpClientApiExtensions.Aggregates;
 
