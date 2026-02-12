@@ -23,26 +23,72 @@ When working on tasks that are expected to result in code changes, follow this s
    - Use the team name "Mggarofalo" directly when creating issues
    - All issues should be assigned to project "Receipts" and an appropriate milestone (Phase 0–5)
 
-2. **Branch-Based Development**
-   - **ALWAYS** create a feature branch for Linear-based work - NEVER commit directly to master
-   - Branch naming convention: Use the suggested git branch name from Linear (usually `{team-key}-{issue-number}-{slug}`)
-   - Example: `REC-123-add-receipt-export`
-   - For multiple connected issues with subfeatures, use your judgment on whether to create a branch per subissue or combine related work
+2. **Branch Strategy (Two-Tier)**
 
-3. **Local Merge Process**
-   - When work in a branch is complete, merge locally into `master` (no PRs needed)
-   - Prefer squashing your feature commits into a single net-change commit with a clear message
-   - This applies even to epics - squash the entire feature into one commit
-   - Commit message should reference the Linear issue (e.g., "feat: add receipt export endpoint (REC-123)")
-   - Always clean up branches after merge:
+   This project uses a two-tier branching model: **milestone branches** for CI/PR gating and **issue branches** for individual work items.
+
+   **Milestone branches** (one per phase):
+   - Created when work on a milestone begins, named `milestone/phase-N` (e.g., `milestone/phase-0`)
+   - All issue work within that phase merges locally into the milestone branch
+   - When the milestone is complete, open a **PR from the milestone branch to `master`**
+   - The PR triggers CI — this is the safety net that catches issues the agent may have missed
+   - After PR merge, delete the milestone branch
+
+   **Issue branches** (one per Linear issue):
+   - Branch off the milestone branch, NOT `master`
+   - Use the `gitBranchName` from the Linear issue
+   - Merge locally into the milestone branch via squash merge (no PR needed)
+   - Delete the issue branch after merge
+
+   ```
+   master
+     └── milestone/phase-0
+           ├── mggarofalo/mgg-90-remove-blazor   (squash-merge into milestone)
+           └── mggarofalo/mgg-82-update-ci        (squash-merge into milestone)
+                                                    └── PR: milestone/phase-0 → master
+   ```
+
+   **Worktrees (mandatory for all branch work):**
+   - **ALWAYS** use worktrees for issue and milestone branches — do NOT checkout branches in the main repo
+   - The main repo at `Source/Receipts` must **always stay on `master`** and never be switched to another branch
+   - Use `/worktree <issue-id>` to create an isolated working directory in `.worktrees/`
+   - **ALWAYS** create worktrees in `.worktrees/` at the repo root — NEVER as sibling directories
+   - This gives agents full filesystem control in their worktree without affecting the main repo
+
+3. **Merging Issue Work into Milestone Branch**
+   - All merges happen inside worktrees — never checkout branches in the main repo
+   - Remove the issue worktree, then merge from the milestone worktree:
      ```bash
-     git checkout master
-     git merge --squash feature-branch
-     git commit -m "feat: descriptive message (LINEAR-ID)"
-     git branch -d feature-branch  # Delete local branch
+     git worktree remove .worktrees/mggarofalo-mgg-90-remove-blazor
+     cd .worktrees/milestone-phase-0
+     git merge --squash mggarofalo/mgg-90-remove-blazor
+     git commit -m "cleanup(client): remove Blazor WASM frontend (MGG-90)"
+     git branch -d mggarofalo/mgg-90-remove-blazor
+     ```
+   - If no milestone worktree exists yet, create one:
+     ```bash
+     git worktree add .worktrees/milestone-phase-0 milestone/phase-0
      ```
 
-4. **Direct Commits to Master**
+4. **PR: Milestone → Master**
+   - When all issues in a milestone are complete, push the milestone branch and open a PR:
+     ```bash
+     cd .worktrees/milestone-phase-0
+     git push -u origin milestone/phase-0
+     gh pr create --title "Phase 0: Housekeeping" --body "..."
+     ```
+   - The PR triggers CI (build + test) — this is the checkpoint that surfaces issues
+   - After CI passes and the PR is approved, merge into `master`
+   - Clean up worktree and branches:
+     ```bash
+     cd <repo-root>
+     git worktree remove .worktrees/milestone-phase-0
+     git branch -d milestone/phase-0
+     git push origin --delete milestone/phase-0
+     git pull   # update master with the merged PR
+     ```
+
+5. **Direct Commits to Master**
    - Only use for non-Linear work like:
      - Trivial typo fixes
      - Documentation updates
