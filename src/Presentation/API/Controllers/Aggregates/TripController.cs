@@ -1,5 +1,5 @@
-using Application.Queries.Aggregates.Trips;
 using API.Mapping.Aggregates;
+using Application.Queries.Aggregates.Trips;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

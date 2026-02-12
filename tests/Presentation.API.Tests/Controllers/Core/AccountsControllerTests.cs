@@ -1,10 +1,11 @@
 using API.Controllers.Core;
 using API.Mapping.Core;
 using Application.Commands.Account.Create;
-using Application.Commands.Account.Update;
 using Application.Commands.Account.Delete;
+using Application.Commands.Account.Update;
 using Application.Queries.Core.Account;
 using Domain.Core;
+using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -12,7 +13,6 @@ using Moq;
 using SampleData.Domain.Core;
 using SampleData.ViewModels.Core;
 using Shared.ViewModels.Core;
-using FluentAssertions;
 
 namespace Presentation.API.Tests.Controllers.Core;
 

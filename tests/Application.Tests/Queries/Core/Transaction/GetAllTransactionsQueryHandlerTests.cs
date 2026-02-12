@@ -1,8 +1,8 @@
-using SampleData.Domain.Core;
-using Moq;
-using Application.Queries.Core.Transaction;
 using Application.Interfaces.Services;
+using Application.Queries.Core.Transaction;
 using FluentAssertions;
+using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Queries.Core.Transaction;
 

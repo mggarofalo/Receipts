@@ -20,6 +20,9 @@ public partial class TransactionMapper
 	private Money MapAmount(decimal amount, Currency currency) => new(amount, currency);
 
 	[MapperIgnoreSource(nameof(TransactionEntity.Receipt))]
+	[MapperIgnoreSource(nameof(TransactionEntity.ReceiptId))]
 	[MapperIgnoreSource(nameof(TransactionEntity.Account))]
+	[MapperIgnoreSource(nameof(TransactionEntity.AccountId))]
+	[MapperIgnoreSource(nameof(TransactionEntity.AmountCurrency))]
 	public partial Transaction ToDomain(TransactionEntity source);
 }

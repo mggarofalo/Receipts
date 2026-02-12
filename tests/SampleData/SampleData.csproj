@@ -13,7 +13,6 @@
     <ProjectReference Include="..\..\src\Application\Application.csproj" />
     <ProjectReference Include="..\..\src\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Presentation\Shared\Shared.csproj" />
-    <ProjectReference Include="..\..\src\Presentation\Client\Client.csproj" />
     <ProjectReference Include="..\..\src\Presentation\API\API.csproj" />
   </ItemGroup>
   

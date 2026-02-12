@@ -1,7 +1,7 @@
 using Application.Commands.Transaction.Update;
-using SampleData.Domain.Core;
-using Moq;
 using Application.Interfaces.Services;
+using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Transaction;
 

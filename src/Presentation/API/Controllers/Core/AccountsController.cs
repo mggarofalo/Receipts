@@ -1,8 +1,8 @@
+using API.Mapping.Core;
 using Application.Commands.Account.Create;
 using Application.Commands.Account.Delete;
 using Application.Commands.Account.Update;
 using Application.Queries.Core.Account;
-using API.Mapping.Core;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

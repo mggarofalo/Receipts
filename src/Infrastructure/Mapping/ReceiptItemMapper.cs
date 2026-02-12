@@ -21,5 +21,8 @@ public partial class ReceiptItemMapper
 	private Money MapTotalAmount(decimal amount, Currency currency) => new(amount, currency);
 
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.Receipt))]
+	[MapperIgnoreSource(nameof(ReceiptItemEntity.ReceiptId))]
+	[MapperIgnoreSource(nameof(ReceiptItemEntity.UnitPriceCurrency))]
+	[MapperIgnoreSource(nameof(ReceiptItemEntity.TotalAmountCurrency))]
 	public partial ReceiptItem ToDomain(ReceiptItemEntity source);
 }

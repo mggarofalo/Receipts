@@ -2,21 +2,20 @@
 
 #nullable disable
 
-namespace Infrastructure.Migrations
+namespace Infrastructure.Migrations;
+
+/// <inheritdoc />
+public partial class InfrastructureChangesAfterBuildingTests : Migration
 {
-    /// <inheritdoc />
-    public partial class InfrastructureChangesAfterBuildingTests : Migration
-    {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+	/// <inheritdoc />
+	protected override void Up(MigrationBuilder migrationBuilder)
+	{
 
-        }
+	}
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+	/// <inheritdoc />
+	protected override void Down(MigrationBuilder migrationBuilder)
+	{
 
-        }
-    }
+	}
 }

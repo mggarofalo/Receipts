@@ -1,5 +1,5 @@
-using Application.Queries.Aggregates.ReceiptsWithItems;
 using API.Mapping.Aggregates;
+using Application.Queries.Aggregates.ReceiptsWithItems;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
