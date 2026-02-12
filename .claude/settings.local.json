@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Bash(gh pr checks:*)",
+      "Bash(gh run view:*)",
       "Bash(git add:*)",
       "Bash(git branch:*)",
       "Bash(git checkout:*)",
