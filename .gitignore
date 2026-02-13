@@ -289,5 +289,8 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
+# Build-time generated OpenAPI spec
+openapi/API.json
+
 # Git worktrees
 .worktrees/

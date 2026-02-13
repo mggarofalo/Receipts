@@ -12,25 +12,44 @@ namespace Infrastructure.Services;
 
 public static class InfrastructureService
 {
+	public static bool IsDatabaseConfigured(IConfiguration configuration)
+	{
+		return !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresHost])
+			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresPort])
+			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresUser])
+			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresPassword])
+			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresDb]);
+	}
+
 	public static IServiceCollection RegisterInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
 	{
-		services.AddDbContextFactory<ApplicationDbContext>(options =>
+		if (IsDatabaseConfigured(configuration))
 		{
-			Npgsql.NpgsqlConnectionStringBuilder builder = new()
+			services.AddDbContextFactory<ApplicationDbContext>(options =>
 			{
-				Host = configuration[ConfigurationVariables.PostgresHost]!,
-				Port = int.Parse(configuration[ConfigurationVariables.PostgresPort]!),
-				Username = configuration[ConfigurationVariables.PostgresUser]!,
-				Password = configuration[ConfigurationVariables.PostgresPassword]!,
-				Database = configuration[ConfigurationVariables.PostgresDb]!
-			};
+				Npgsql.NpgsqlConnectionStringBuilder builder = new()
+				{
+					Host = configuration[ConfigurationVariables.PostgresHost]!,
+					Port = int.Parse(configuration[ConfigurationVariables.PostgresPort]!),
+					Username = configuration[ConfigurationVariables.PostgresUser]!,
+					Password = configuration[ConfigurationVariables.PostgresPassword]!,
+					Database = configuration[ConfigurationVariables.PostgresDb]!
+				};
 
-			options.UseNpgsql(builder.ConnectionString, b =>
-			{
-				string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
-				b.MigrationsAssembly(assemblyName);
+				options.UseNpgsql(builder.ConnectionString, b =>
+				{
+					string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
+					b.MigrationsAssembly(assemblyName);
+				});
 			});
-		});
+		}
+		else
+		{
+			services.AddDbContextFactory<ApplicationDbContext>(options =>
+			{
+				options.UseNpgsql();
+			});
+		}
 
 		services
 			.AddScoped<IReceiptService, ReceiptService>()

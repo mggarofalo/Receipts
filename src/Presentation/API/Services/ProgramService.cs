@@ -7,8 +7,6 @@ public static class ProgramService
 	public static IServiceCollection RegisterProgramServices(this IServiceCollection services)
 	{
 		services.AddControllers();
-		services.AddEndpointsApiExplorer();
-		services.AddSwaggerGen();
 
 		services
 			.AddSingleton<API.Mapping.Core.AccountMapper>()
