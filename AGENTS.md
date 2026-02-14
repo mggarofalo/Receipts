@@ -385,6 +385,19 @@ Benefits:
 - Catches mapping errors in tests
 - Simpler test setup
 
+## README Maintenance
+
+The project README (`README.md`) is the primary onboarding document for developers. When making changes, consider whether the README needs updating:
+
+- **New endpoints or controllers**: Update the API Endpoints tables
+- **New dependencies or tooling**: Update the Tech Stack table and relevant sections
+- **Architecture changes**: Update the Architecture section and directory tree
+- **Test count changes**: Update the test count table after adding/removing test classes
+- **Build/CI changes**: Update the CI/CD, Pre-commit Hooks, or Development sections
+- **New environment variables**: Update the Getting Started configuration table
+
+Keep the README factual and concise. It should reflect the current state of the project, not aspirational future state.
+
 ## Library Migration Best Practices
 
 When migrating between libraries (e.g., AutoMapper → Mapperly):
