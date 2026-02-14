@@ -1,3 +1,5 @@
+[![.NET CI](https://github.com/mggarofalo/Receipts/actions/workflows/github-ci.yml/badge.svg)](https://github.com/mggarofalo/Receipts/actions/workflows/github-ci.yml)
+
 # Receipts
 
 A receipt management API built with .NET 10 and Clean Architecture. Tracks accounts, receipts, receipt line items, and transactions with full CRUD operations and aggregate views.
