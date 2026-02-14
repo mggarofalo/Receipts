@@ -53,7 +53,8 @@
       "Skill(worktree)",
       "WebFetch(domain:docs.automapper.io)",
       "WebFetch(domain:github.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(test:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
