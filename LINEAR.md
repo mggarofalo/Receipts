@@ -55,6 +55,7 @@ All active issues are assigned to a milestone. Milestones are ordered and repres
 | **Phase 3: Aspire Developer Experience** | Local dev orchestration with .NET Aspire | Mostly immediate (MGG-75 needs Phase 4 started) |
 | **Phase 4: React Frontend** | Build React/Vite SPA | Phase 0 done (for setup), Phase 1 done (for codegen) |
 | **Phase 5: Docker Deployment** | Containerize and deploy to Raspberry Pi | Phase 4 done |
+| **Phase 6: Correctness Hardening** | Business invariants, receipt coherence validation, reconciliation | Phase 2 done (stable API model) |
 
 ## Priority Semantics
 
@@ -90,7 +91,7 @@ Epics are parent issues that group related work. Key epics:
 | **MGG-32** React/Vite Frontend | Phase 4 | MGG-33–50, MGG-66–69 |
 | **MGG-51** Docker Deployment | Phase 5 | MGG-52–65, MGG-70 |
 
-Standalone issues (no parent): **MGG-90** (Remove Blazor), **MGG-82** (CI/.NET 10)
+Standalone issues (no parent): **MGG-90** (Remove Blazor), **MGG-82** (CI/.NET 10), **MGG-94** (Receipt coherence validation — Phase 6)
 
 ## Key Cross-Epic Dependencies
 
