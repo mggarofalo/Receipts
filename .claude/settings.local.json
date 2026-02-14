@@ -34,6 +34,7 @@
       "Bash(dotnet run:*)",
       "Bash(dotnet test:*)",
       "Bash(dotnet tool:*)",
+      "Bash(findstr:*)",
       "Bash(grep:*)",
       "mcp__plugin_linear_linear__create_issue",
       "mcp__plugin_linear_linear__create_issue_label",
