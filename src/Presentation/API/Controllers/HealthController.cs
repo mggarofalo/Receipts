@@ -7,6 +7,8 @@ namespace API.Controllers;
 public class HealthController : ControllerBase
 {
 	[HttpGet]
+	[EndpointSummary("Check API health")]
+	[ProducesResponseType(StatusCodes.Status200OK)]
 	public IActionResult Get()
 	{
 		return Ok(new { status = "Hello there." });
