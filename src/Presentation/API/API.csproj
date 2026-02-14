@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
-    <OpenApiDocumentsDirectory>$(MSBuildThisFileDirectory)..\..\..\openapi</OpenApiDocumentsDirectory>
+    <OpenApiDocumentsDirectory>$(MSBuildThisFileDirectory)..\..\..\openapi\generated</OpenApiDocumentsDirectory>
   </PropertyGroup>
 
   <ItemGroup>

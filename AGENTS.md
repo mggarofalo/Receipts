@@ -2,6 +2,19 @@
 
 This file provides guidance to AI agents when working with code in this repository.
 
+## Prerequisites
+
+- **.NET 10 SDK** — build, test, and run the API
+- **Node.js 18+** and **npm** — OpenAPI spec linting (`@stoplight/spectral-cli`) and drift detection (`js-yaml`)
+- **PostgreSQL** — runtime database (connection via environment variables)
+
+After cloning, run:
+
+```bash
+dotnet restore Receipts.slnx
+npm install
+```
+
 ## Development Workflow
 
 When working on tasks that are expected to result in code changes, follow this standard process:
@@ -123,9 +136,11 @@ dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructu
 This repo uses [Husky.NET](https://alirezanet.github.io/Husky.Net/) for pre-commit hooks. Hooks install automatically on `dotnet restore` or `dotnet build`.
 
 **Pre-commit pipeline (runs on every `git commit`):**
-1. `dotnet format --verify-no-changes` — code formatting check
-2. `dotnet build -p:TreatWarningsAsErrors=true` — build with warnings-as-errors
-3. `dotnet test --no-build` — run all tests
+1. `npx spectral lint openapi/spec.yaml` — OpenAPI spec linting
+2. `dotnet format --verify-no-changes` — code formatting check
+3. `dotnet build -p:TreatWarningsAsErrors=true` — build with warnings-as-errors (also generates `openapi/generated/API.json`)
+4. `node scripts/check-drift.mjs` — drift detection (spec vs generated output)
+5. `dotnet test --no-build` — run all tests
 
 **Skipping hooks** (use sparingly):
 ```bash
@@ -142,6 +157,27 @@ export HUSKY=0
 dotnet tool restore
 dotnet husky install
 ```
+
+## OpenAPI Spec-First Workflow
+
+The canonical API contract lives in `openapi/spec.yaml` (OpenAPI 3.1.0). All API changes follow a spec-first workflow:
+
+1. **Edit the spec** — modify `openapi/spec.yaml` to reflect the desired API change
+2. **Lint** — `npm run lint:spec` (or `npx spectral lint openapi/spec.yaml --fail-severity warn`)
+3. **Build** — `dotnet build` regenerates `openapi/generated/API.json` from the running API
+4. **Check drift** — `npm run check:drift` (or `node scripts/check-drift.mjs`) compares spec vs generated output
+
+The pre-commit pipeline runs all of these automatically. If the spec and generated output diverge, the drift check fails and the commit is blocked.
+
+**Key files:**
+- `openapi/spec.yaml` — hand-authored canonical spec (checked in)
+- `openapi/generated/API.json` — build-time export from the API (gitignored)
+- `.spectral.yaml` — Spectral linting rules
+- `scripts/check-drift.mjs` — drift detection script
+
+**npm scripts:**
+- `npm run lint:spec` — lint the OpenAPI spec
+- `npm run check:drift` — check for drift between spec and generated output
 
 ## Validation and Code Quality
 
