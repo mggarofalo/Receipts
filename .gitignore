@@ -290,7 +290,8 @@ __pycache__/
 *.xsd.cs
 
 # Build-time generated OpenAPI spec
-openapi/API.json
+openapi/generated/
+!openapi/generated/.gitkeep
 
 # Git worktrees
 .worktrees/

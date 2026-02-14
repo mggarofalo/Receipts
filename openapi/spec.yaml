@@ -1,0 +1,899 @@
+openapi: 3.1.0
+info:
+  title: Receipts API
+  version: 1.0.0
+
+paths:
+  /api/Health:
+    get:
+      operationId: Get
+      tags: [Health]
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+
+  /api/Accounts/{id}:
+    get:
+      operationId: GetAccountById
+      tags: [Accounts]
+      summary: Get account by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/Accounts:
+    get:
+      operationId: GetAllAccounts
+      tags: [Accounts]
+      summary: Get all accounts
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountVM"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateAccounts
+      tags: [Accounts]
+      summary: Create accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/AccountVM"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountVM"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateAccounts
+      tags: [Accounts]
+      summary: Update accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/AccountVM"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeleteAccounts
+      tags: [Accounts]
+      summary: Delete accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/Receipts/{id}:
+    get:
+      operationId: GetReceiptById
+      tags: [Receipts]
+      summary: Get receipt by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/Receipts:
+    get:
+      operationId: GetAllReceipts
+      tags: [Receipts]
+      summary: Get all receipts
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptVM"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateReceipts
+      tags: [Receipts]
+      summary: Create receipts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ReceiptVM"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptVM"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateReceipts
+      tags: [Receipts]
+      summary: Update receipts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ReceiptVM"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeleteReceipts
+      tags: [Receipts]
+      summary: Delete receipts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/ReceiptItems/{id}:
+    get:
+      operationId: GetReceiptItemById
+      tags: [ReceiptItems]
+      summary: Get receipt item by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Receipt item ID (GET) or receipt ID (POST/PUT)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptItemVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateReceiptItems
+      tags: [ReceiptItems]
+      summary: Create receipt items for a receipt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Receipt ID to create items for
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ReceiptItemVM"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptItemVM"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateReceiptItems
+      tags: [ReceiptItems]
+      summary: Update receipt items for a receipt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Receipt ID to update items for
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ReceiptItemVM"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/ReceiptItems:
+    get:
+      operationId: GetAllReceiptItems
+      tags: [ReceiptItems]
+      summary: Get all receipt items
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptItemVM"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeleteReceiptItems
+      tags: [ReceiptItems]
+      summary: Delete receipt items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/ReceiptItems/by-receipt-id/{receiptId}:
+    get:
+      operationId: GetReceiptItemsByReceiptId
+      tags: [ReceiptItems]
+      summary: Get receipt items by receipt ID
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptItemVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/Transactions/{id}:
+    get:
+      operationId: GetTransactionById
+      tags: [Transactions]
+      summary: Get transaction by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/Transactions:
+    get:
+      operationId: GetAllTransactions
+      tags: [Transactions]
+      summary: Get all transactions
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionVM"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeleteTransactions
+      tags: [Transactions]
+      summary: Delete transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/Transactions/by-receipt-id/{receiptId}:
+    get:
+      operationId: GetTransactionsByReceiptId
+      tags: [Transactions]
+      summary: Get transactions by receipt ID
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/Transactions/{receiptId}/{accountId}:
+    post:
+      operationId: CreateTransactions
+      tags: [Transactions]
+      summary: Create transactions for a receipt and account
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/TransactionVM"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionVM"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateTransactions
+      tags: [Transactions]
+      summary: Update transactions for a receipt and account
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/TransactionVM"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/ReceiptWithItems/by-receipt-id/{receiptId}:
+    get:
+      operationId: GetReceiptWithItemsByReceiptId
+      tags: [ReceiptWithItems]
+      summary: Get receipt with items by receipt ID
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptWithItemsVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/TransactionAccount/by-transaction-id/{transactionId}:
+    get:
+      operationId: GetTransactionAccountByTransactionId
+      tags: [TransactionAccount]
+      summary: Get transaction account by transaction ID
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionAccountVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/TransactionAccount/by-receipt-id/{receiptId}:
+    get:
+      operationId: GetTransactionAccountsByReceiptId
+      tags: [TransactionAccount]
+      summary: Get transaction accounts by receipt ID
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionAccountVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/Trip/by-receipt-id/{receiptId}:
+    get:
+      operationId: GetTripByReceiptId
+      tags: [Trip]
+      summary: Get trip by receipt ID
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripVM"
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+components:
+  schemas:
+    AccountVM:
+      type: object
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        accountCode:
+          type:
+            - string
+            - "null"
+        name:
+          type:
+            - string
+            - "null"
+        isActive:
+          type: boolean
+
+    ReceiptVM:
+      type: object
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        description:
+          type:
+            - string
+            - "null"
+        location:
+          type:
+            - string
+            - "null"
+        date:
+          type:
+            - string
+            - "null"
+          format: date
+        taxAmount:
+          type:
+            - number
+            - "null"
+          format: double
+
+    ReceiptItemVM:
+      type: object
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        receiptItemCode:
+          type:
+            - string
+            - "null"
+        description:
+          type:
+            - string
+            - "null"
+        quantity:
+          type:
+            - number
+            - "null"
+          format: double
+        unitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        category:
+          type:
+            - string
+            - "null"
+        subcategory:
+          type:
+            - string
+            - "null"
+
+    TransactionVM:
+      type: object
+      properties:
+        id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        amount:
+          type:
+            - number
+            - "null"
+          format: double
+        date:
+          type:
+            - string
+            - "null"
+          format: date
+
+    ReceiptWithItemsVM:
+      type: object
+      properties:
+        receipt:
+          oneOf:
+            - $ref: "#/components/schemas/ReceiptVM"
+            - type: "null"
+        items:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/ReceiptItemVM"
+
+    TransactionAccountVM:
+      type: object
+      properties:
+        transaction:
+          oneOf:
+            - $ref: "#/components/schemas/TransactionVM"
+            - type: "null"
+        account:
+          oneOf:
+            - $ref: "#/components/schemas/AccountVM"
+            - type: "null"
+
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type:
+            - string
+            - "null"
+        title:
+          type:
+            - string
+            - "null"
+        status:
+          type:
+            - integer
+            - "null"
+          format: int32
+        detail:
+          type:
+            - string
+            - "null"
+        instance:
+          type:
+            - string
+            - "null"
+
+    TripVM:
+      type: object
+      properties:
+        receipt:
+          oneOf:
+            - $ref: "#/components/schemas/ReceiptWithItemsVM"
+            - type: "null"
+        transactions:
+          type:
+            - array
+            - "null"
+          items:
+            $ref: "#/components/schemas/TransactionAccountVM"
