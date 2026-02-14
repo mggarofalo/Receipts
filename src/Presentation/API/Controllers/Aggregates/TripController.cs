@@ -16,16 +16,10 @@ public class TripController(IMediator mediator, TripMapper mapper, ILogger<TripC
 	public const string MessageWithoutId = "Error occurred in {Method}";
 	public const string RouteByReceiptId = "by-receipt-id/{receiptId}";
 
-	/// <summary>
-	/// Get a trip by receipt ID
-	/// </summary>
-	/// <param name="receiptId">The ID of the receipt</param>
-	/// <returns>The trip associated with the receipt</returns>
-	/// <response code="200">Returns the trip</response>
-	/// <response code="404">If the trip is not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteByReceiptId)]
-	[ProducesResponseType(typeof(TripVM), StatusCodes.Status200OK)]
+	[EndpointSummary("Get a trip by receipt ID")]
+	[EndpointDescription("Returns the full trip aggregate for a receipt, including the receipt, its items, transactions, and associated accounts.")]
+	[ProducesResponseType<TripVM>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<TripVM>> GetTripByReceiptId([FromRoute] Guid receiptId)

@@ -11,7 +11,7 @@ builder.AddApplicationConfiguration();
 
 // Register services
 builder.Services
-	.AddSwaggerServices()
+	.AddOpenApiServices()
 	.AddApplicationServices()
 	.AddCorsServices()
 	.RegisterProgramServices()
@@ -22,13 +22,14 @@ builder.Services
 WebApplication app = builder.Build();
 
 // Configure middleware
-app.UseSwaggerServices()
+app.UseOpenApiServices()
    .UseApplicationServices()
    .UseCorsServices();
 
-// Run database migrations
-using (IServiceScope scope = app.Services.CreateScope())
+// Run database migrations (skipped when DB is not configured, e.g. build-time OpenAPI generation)
+if (Infrastructure.Services.InfrastructureService.IsDatabaseConfigured(builder.Configuration))
 {
+	using IServiceScope scope = app.Services.CreateScope();
 	await scope.ServiceProvider.GetRequiredService<IDatabaseMigratorService>().MigrateAsync();
 }
 

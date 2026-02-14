@@ -23,16 +23,10 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public const string RouteUpdate = "";
 	public const string RouteDelete = "";
 
-	/// <summary>
-	/// Get an account by its ID
-	/// </summary>
-	/// <param name="id">The ID of the account</param>
-	/// <returns>The account</returns>
-	/// <response code="200">Returns the account</response>
-	/// <response code="404">If the account is not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteGetById)]
-	[ProducesResponseType(typeof(AccountVM), StatusCodes.Status200OK)]
+	[EndpointSummary("Get an account by ID")]
+	[EndpointDescription("Returns a single account matching the provided GUID.")]
+	[ProducesResponseType<AccountVM>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<AccountVM>> GetAccountById([FromRoute] Guid id)
@@ -60,14 +54,9 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		}
 	}
 
-	/// <summary>
-	/// Get all accounts
-	/// </summary>
-	/// <returns>A list of all accounts</returns>
-	/// <response code="200">Returns the list of accounts</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteGetAll)]
-	[ProducesResponseType(typeof(List<AccountVM>), StatusCodes.Status200OK)]
+	[EndpointSummary("Get all accounts")]
+	[ProducesResponseType<List<AccountVM>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<AccountVM>>> GetAllAccounts()
 	{
@@ -88,15 +77,10 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		}
 	}
 
-	/// <summary>
-	/// Create new accounts
-	/// </summary>
-	/// <param name="models">The accounts to create</param>
-	/// <returns>The created accounts</returns>
-	/// <response code="200">Returns the created accounts</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpPost(RouteCreate)]
-	[ProducesResponseType(typeof(List<AccountVM>), StatusCodes.Status200OK)]
+	[EndpointSummary("Create accounts")]
+	[EndpointDescription("Creates one or more accounts from the provided list and returns the created accounts with their assigned IDs.")]
+	[ProducesResponseType<List<AccountVM>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<AccountVM>>> CreateAccounts([FromBody] List<AccountVM> models)
 	{
@@ -114,15 +98,9 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		}
 	}
 
-	/// <summary>
-	/// Update existing accounts
-	/// </summary>
-	/// <param name="models">The accounts to update</param>
-	/// <returns>A status indicating success or failure</returns>
-	/// <response code="204">If the accounts were successfully updated</response>
-	/// <response code="404">If the accounts were not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpPut(RouteUpdate)]
+	[EndpointSummary("Update accounts")]
+	[EndpointDescription("Updates one or more existing accounts. Returns 404 if any account in the list is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -151,15 +129,9 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		}
 	}
 
-	/// <summary>
-	/// Delete accounts
-	/// </summary>
-	/// <param name="ids">The IDs of the accounts to delete</param>
-	/// <returns>A status indicating success or failure</returns>
-	/// <response code="204">If the accounts were successfully deleted</response>
-	/// <response code="404">If the accounts were not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpDelete(RouteDelete)]
+	[EndpointSummary("Delete accounts")]
+	[EndpointDescription("Deletes one or more accounts by their IDs. Returns 404 if any account is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]

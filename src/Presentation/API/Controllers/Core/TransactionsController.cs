@@ -25,16 +25,10 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	public const string RouteUpdate = "{receiptId}/{accountId}";
 	public const string RouteDelete = "";
 
-	/// <summary>
-	/// Get a transaction by its ID
-	/// </summary>
-	/// <param name="id">The ID of the transaction</param>
-	/// <returns>The transaction</returns>
-	/// <response code="200">Returns the transaction</response>
-	/// <response code="404">If the transaction is not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteGetById)]
-	[ProducesResponseType(typeof(TransactionVM), StatusCodes.Status200OK)]
+	[EndpointSummary("Get a transaction by ID")]
+	[EndpointDescription("Returns a single transaction matching the provided GUID.")]
+	[ProducesResponseType<TransactionVM>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<TransactionVM>> GetTransactionById([FromRoute] Guid id)
@@ -62,14 +56,9 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Get all transactions
-	/// </summary>
-	/// <returns>A list of all transactions</returns>
-	/// <response code="200">Returns the list of transactions</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteGetAll)]
-	[ProducesResponseType(typeof(List<TransactionVM>), StatusCodes.Status200OK)]
+	[EndpointSummary("Get all transactions")]
+	[ProducesResponseType<List<TransactionVM>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionVM>>> GetAllTransactions()
 	{
@@ -90,16 +79,10 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Get transactions by receipt ID
-	/// </summary>
-	/// <param name="receiptId">The ID of the receipt</param>
-	/// <returns>A list of transactions associated with the receipt</returns>
-	/// <response code="200">Returns the list of transactions</response>
-	/// <response code="404">If no transactions are found for the receipt</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteGetByReceiptId)]
-	[ProducesResponseType(typeof(List<TransactionVM>), StatusCodes.Status200OK)]
+	[EndpointSummary("Get transactions by receipt ID")]
+	[EndpointDescription("Returns all transactions associated with the specified receipt.")]
+	[ProducesResponseType<List<TransactionVM>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionVM>?>> GetTransactionsByReceiptId([FromRoute] Guid receiptId)
@@ -127,17 +110,10 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Create new transactions
-	/// </summary>
-	/// <param name="models">The transactions to create</param>
-	/// <param name="receiptId">The ID of the associated receipt</param>
-	/// <param name="accountId">The ID of the associated account</param>
-	/// <returns>The created transactions</returns>
-	/// <response code="200">Returns the created transactions</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpPost(RouteCreate)]
-	[ProducesResponseType(typeof(List<TransactionVM>), StatusCodes.Status200OK)]
+	[EndpointSummary("Create transactions")]
+	[EndpointDescription("Creates one or more transactions linked to the specified receipt and account, and returns the created transactions with their assigned IDs.")]
+	[ProducesResponseType<List<TransactionVM>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionVM>>> CreateTransactions([FromBody] List<TransactionVM> models, [FromRoute] Guid receiptId, [FromRoute] Guid accountId)
 	{
@@ -156,17 +132,9 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Update existing transactions
-	/// </summary>
-	/// <param name="models">The transactions to update</param>
-	/// <param name="receiptId">The ID of the associated receipt</param>
-	/// <param name="accountId">The ID of the associated account</param>
-	/// <returns>A status indicating success or failure</returns>
-	/// <response code="204">If the transactions were successfully updated</response>
-	/// <response code="404">If the transactions were not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpPut(RouteUpdate)]
+	[EndpointSummary("Update transactions")]
+	[EndpointDescription("Updates one or more transactions linked to the specified receipt and account. Returns 404 if any transaction is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -195,15 +163,9 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Delete transactions
-	/// </summary>
-	/// <param name="ids">The IDs of the transactions to delete</param>
-	/// <returns>A status indicating success or failure</returns>
-	/// <response code="204">If the transactions were successfully deleted</response>
-	/// <response code="404">If the transactions were not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpDelete(RouteDelete)]
+	[EndpointSummary("Delete transactions")]
+	[EndpointDescription("Deletes one or more transactions by their IDs. Returns 404 if any transaction is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]

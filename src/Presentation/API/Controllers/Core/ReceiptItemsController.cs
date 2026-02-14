@@ -25,16 +25,10 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	public const string RouteUpdate = "{receiptId}";
 	public const string RouteDelete = "";
 
-	/// <summary>
-	/// Get a receipt item by its ID
-	/// </summary>
-	/// <param name="id">The ID of the receipt item</param>
-	/// <returns>The receipt item</returns>
-	/// <response code="200">Returns the receipt item</response>
-	/// <response code="404">If the receipt item is not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteGetById)]
-	[ProducesResponseType(typeof(ReceiptItemVM), StatusCodes.Status200OK)]
+	[EndpointSummary("Get a receipt item by ID")]
+	[EndpointDescription("Returns a single receipt item matching the provided GUID.")]
+	[ProducesResponseType<ReceiptItemVM>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ReceiptItemVM>> GetReceiptItemById([FromRoute] Guid id)
@@ -62,14 +56,9 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Get all receipt items
-	/// </summary>
-	/// <returns>A list of all receipt items</returns>
-	/// <response code="200">Returns the list of receipt items</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteGetAll)]
-	[ProducesResponseType(typeof(List<ReceiptItemVM>), StatusCodes.Status200OK)]
+	[EndpointSummary("Get all receipt items")]
+	[ProducesResponseType<List<ReceiptItemVM>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<ReceiptItemVM>>> GetAllReceiptItems()
 	{
@@ -90,16 +79,10 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Get receipt items by receipt ID
-	/// </summary>
-	/// <param name="receiptId">The ID of the receipt</param>
-	/// <returns>A list of receipt items associated with the receipt</returns>
-	/// <response code="200">Returns the list of receipt items</response>
-	/// <response code="404">If no receipt items are found for the receipt</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpGet(RouteGetByReceiptId)]
-	[ProducesResponseType(typeof(List<ReceiptItemVM>), StatusCodes.Status200OK)]
+	[EndpointSummary("Get receipt items by receipt ID")]
+	[EndpointDescription("Returns all receipt items associated with the specified receipt.")]
+	[ProducesResponseType<List<ReceiptItemVM>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<ReceiptItemVM>?>> GetReceiptItemsByReceiptId([FromRoute] Guid receiptId)
@@ -127,16 +110,10 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Create new receipt items
-	/// </summary>
-	/// <param name="models">The receipt items to create</param>
-	/// <param name="receiptId">The ID of the associated receipt</param>
-	/// <returns>The created receipt items</returns>
-	/// <response code="200">Returns the created receipt items</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpPost(RouteCreate)]
-	[ProducesResponseType(typeof(List<ReceiptItemVM>), StatusCodes.Status200OK)]
+	[EndpointSummary("Create receipt items")]
+	[EndpointDescription("Creates one or more receipt items under the specified receipt and returns the created items with their assigned IDs.")]
+	[ProducesResponseType<List<ReceiptItemVM>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<ReceiptItemVM>>> CreateReceiptItems([FromBody] List<ReceiptItemVM> models, [FromRoute] Guid receiptId)
 	{
@@ -159,16 +136,9 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Update existing receipt items
-	/// </summary>
-	/// <param name="models">The receipt items to update</param>
-	/// <param name="receiptId">The ID of the associated receipt</param>
-	/// <returns>A status indicating success or failure</returns>
-	/// <response code="204">If the receipt items were successfully updated</response>
-	/// <response code="404">If the receipt items were not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpPut(RouteUpdate)]
+	[EndpointSummary("Update receipt items")]
+	[EndpointDescription("Updates one or more receipt items under the specified receipt. Returns 404 if any item is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -198,15 +168,9 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		}
 	}
 
-	/// <summary>
-	/// Delete receipt items
-	/// </summary>
-	/// <param name="ids">The IDs of the receipt items to delete</param>
-	/// <returns>A status indicating success or failure</returns>
-	/// <response code="204">If the receipt items were successfully deleted</response>
-	/// <response code="404">If the receipt items were not found</response>
-	/// <response code="500">If there was an internal server error</response>
 	[HttpDelete(RouteDelete)]
+	[EndpointSummary("Delete receipt items")]
+	[EndpointDescription("Deletes one or more receipt items by their IDs. Returns 404 if any item is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
