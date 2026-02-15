@@ -5,14 +5,17 @@
  * Usage: node scripts/create-linear-issues.mjs <snyk-json-file>
  *
  * Required environment variables:
+ * - LINEAR_API_KEY: Linear API key
  * - LINEAR_TEAM_ID: Linear team ID
- * - LINEAR_PROJECT_ID: Linear project ID
+ * - LINEAR_PROJECT_ID: Linear project ID (optional)
  */
 
 import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
+import https from 'https';
 
 // Configuration from environment variables
+const LINEAR_API_KEY = process.env.LINEAR_API_KEY;
 const TEAM_ID = process.env.LINEAR_TEAM_ID;
 const PROJECT_ID = process.env.LINEAR_PROJECT_ID;
 
@@ -31,8 +34,46 @@ function parseSnykResults(jsonFile) {
 
     const vulnerabilities = [];
 
-    // Snyk JSON structure varies, but typically has vulnerabilities array
-    if (results.vulnerabilities) {
+    // Handle Snyk Code Test results (source code analysis) - SARIF format
+    if (results.runs && results.runs[0]?.results) {
+      const resultsArray = Array.isArray(results.runs[0].results) ? results.runs[0].results : [];
+
+      for (const vuln of resultsArray) {
+        const severity = vuln.level || vuln.properties?.priorityScore || 'medium';
+        const severityLower = typeof severity === 'string' ? severity.toLowerCase() : 'medium';
+
+        // Check severity by level or priority score
+        const isSevere = ['critical', 'high', 'medium'].includes(severityLower) ||
+                        (vuln.properties?.priorityScore && vuln.properties.priorityScore >= 300) || // Include medium+ severity by priority score
+                        (typeof severity === 'number' && severity >= 7); // High numeric severity scores
+
+        if (isSevere) {
+          const location = vuln.locations?.[0]?.physicalLocation;
+          const filePath = location?.artifactLocation?.uri || 'Unknown file';
+          const line = location?.region?.startLine || 'Unknown line';
+
+          vulnerabilities.push({
+            title: `Security Vulnerability: ${vuln.ruleId || 'Unknown'}`,
+            description: `
+**Severity:** ${severity}
+**File:** ${filePath}
+**Line:** ${line}
+**Rule ID:** ${vuln.ruleId || 'Unknown'}
+**Message:** ${vuln.message?.text || 'Security vulnerability detected'}
+
+**Description:**
+${vuln.message?.text || 'A security vulnerability was detected in the code.'}
+
+**Finding ID:** ${vuln.properties?.['snyk/finding-id'] || 'N/A'}
+            `,
+            severity: severityLower
+          });
+        }
+      }
+    }
+
+    // Handle Snyk Open Source results (dependency scanning) - fallback
+    if (vulnerabilities.length === 0 && results.vulnerabilities) {
       for (const vuln of results.vulnerabilities) {
         if (['critical', 'high', 'medium'].includes(vuln.severity)) {
           vulnerabilities.push({
@@ -69,33 +110,102 @@ ${vuln.references?.map(ref => `- ${ref.url}`).join('\n') || 'None'}
 }
 
 function createLinearIssue(vulnerability) {
-  const title = `[Security] ${vulnerability.title}`;
-  const description = vulnerability.description;
-  const priority = SEVERITY_TO_PRIORITY[vulnerability.severity] || 3;
+  return new Promise((resolve, reject) => {
+    const title = `[Security] ${vulnerability.title}`;
+    const description = vulnerability.description;
+    const priority = SEVERITY_TO_PRIORITY[vulnerability.severity] || 3;
 
-  // Using Linear MCP to create issue
-  // This assumes Linear MCP is available and configured
-  const linearCommand = `linear issue create --team "${TEAM_ID}" --project "${PROJECT_ID}" --title "${title}" --description "${description}" --priority ${priority} --label "security" --label "backend"`;
+    const query = `
+      mutation IssueCreate($input: IssueCreateInput!) {
+        issueCreate(input: $input) {
+          success
+          issue {
+            id
+            number
+            title
+          }
+        }
+      }
+    `;
 
-  try {
-    console.log(`Creating Linear issue: ${title}`);
-    const result = execSync(linearCommand, { encoding: 'utf8' });
-    console.log('Issue created:', result);
-    return true;
-  } catch (error) {
-    console.error('Failed to create Linear issue:', error);
-    return false;
-  }
+    const variables = {
+      input: {
+        teamId: TEAM_ID,
+        title: title,
+        description: description,
+        priority: priority,
+        labelIds: [], // Could add security/backend labels if we look them up
+        ...(PROJECT_ID && { projectId: PROJECT_ID })
+      }
+    };
+
+    const postData = JSON.stringify({
+      query: query,
+      variables: variables
+    });
+
+    const options = {
+      hostname: 'api.linear.app',
+      port: 443,
+      path: '/graphql',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
+        'Authorization': LINEAR_API_KEY
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          const response = JSON.parse(data);
+
+          if (response.errors) {
+            console.error('Linear API error:', response.errors);
+            resolve(false);
+            return;
+          }
+
+          if (response.data?.issueCreate?.success) {
+            const issue = response.data.issueCreate.issue;
+            console.log(`Created Linear issue: ${issue.title} (#${issue.number})`);
+            resolve(true);
+          } else {
+            console.error('Failed to create Linear issue:', response);
+            resolve(false);
+          }
+        } catch (error) {
+          console.error('Error parsing Linear response:', error);
+          resolve(false);
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      console.error('Error creating Linear issue:', error);
+      resolve(false);
+    });
+
+    req.write(postData);
+    req.end();
+  });
 }
 
-function main() {
+async function main() {
   // Validate required environment variables
-  if (!TEAM_ID) {
-    console.error('Error: LINEAR_TEAM_ID environment variable is required');
+  if (!LINEAR_API_KEY) {
+    console.error('Error: LINEAR_API_KEY environment variable is required');
     process.exit(1);
   }
-  if (!PROJECT_ID) {
-    console.error('Error: LINEAR_PROJECT_ID environment variable is required');
+  if (!TEAM_ID) {
+    console.error('Error: LINEAR_TEAM_ID environment variable is required');
     process.exit(1);
   }
 
@@ -118,7 +228,7 @@ function main() {
 
   let created = 0;
   for (const vuln of vulnerabilities) {
-    if (createLinearIssue(vuln)) {
+    if (await createLinearIssue(vuln)) {
       created++;
     }
   }

@@ -5,6 +5,7 @@ on:
     branches: ["master"]
   pull_request:
     branches: ["master"]
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: "10.0.x"
@@ -60,6 +61,8 @@ jobs:
   security:
     name: Vulnerability Scan
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
 
     steps:
       - uses: actions/checkout@v4
@@ -82,15 +85,15 @@ jobs:
           fi
 
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/dotnet@master
+        run: |
+          npm install -g snyk
+          snyk code test --severity-threshold=medium --sarif-file-output=snyk.sarif --json-file-output=snyk-results.json
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=medium --sarif-file-output=snyk.sarif --json-file-output=snyk-results.json
 
       - name: Upload Snyk results to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: snyk.sarif

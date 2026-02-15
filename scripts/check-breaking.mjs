@@ -49,7 +49,12 @@ function usage() {
 
 function loadBaseSpec(gitRef) {
   try {
-    const content = execSync(`git show ${gitRef}:openapi/spec.yaml`, {
+    // Sanitize gitRef to prevent command injection - only allow safe characters
+    if (!/^[\w\/\-\.]+$/.test(gitRef)) {
+      throw new Error(`Invalid git reference: ${gitRef}`);
+    }
+
+    const content = execSync(`git show "${gitRef}:openapi/spec.yaml"`, {
       cwd: ROOT,
       encoding: "utf8",
       stdio: ["pipe", "pipe", "pipe"],
