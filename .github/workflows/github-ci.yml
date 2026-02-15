@@ -81,6 +81,30 @@ jobs:
             exit 1
           fi
 
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/dotnet@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --sarif-file-output=snyk.sarif --json-file-output=snyk-results.json
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+        continue-on-error: true
+
+      - name: Create Linear issues for vulnerabilities
+        if: env.LINEAR_API_KEY != ''
+        run: node scripts/create-linear-issues.mjs snyk-results.json
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
+          LINEAR_PROJECT_ID: ${{ secrets.LINEAR_PROJECT_ID }}
+        continue-on-error: true
+
   api-compat:
     name: API Breaking Changes
     runs-on: ubuntu-latest
