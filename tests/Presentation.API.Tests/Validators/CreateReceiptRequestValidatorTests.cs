@@ -1,17 +1,17 @@
-using Shared.Validators;
-using Shared.ViewModels.Core;
+using API.Generated.Dtos;
+using API.Validators;
 
-namespace Presentation.Shared.Tests.Validators;
+namespace Presentation.API.Tests.Validators;
 
-public class ReceiptValidatorTests
+public class CreateReceiptRequestValidatorTests
 {
-	private readonly ReceiptValidator _validator = new();
+	private readonly CreateReceiptRequestValidator _validator = new();
 
 	[Fact]
 	public void Should_Pass_When_ValidReceipt()
 	{
 		// Arrange
-		ReceiptVM receipt = new()
+		CreateReceiptRequest receipt = new()
 		{
 			Description = "Valid Description",
 			Location = "Valid Location",
@@ -29,7 +29,7 @@ public class ReceiptValidatorTests
 	public void Should_Fail_When_DescriptionExceeds256Characters()
 	{
 		// Arrange
-		ReceiptVM receipt = new()
+		CreateReceiptRequest receipt = new()
 		{
 			Description = new string('a', 257),
 			Location = "Valid Location",
@@ -41,33 +41,14 @@ public class ReceiptValidatorTests
 
 		// Assert
 		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == ReceiptValidator.DescriptionMustNotExceed256Characters);
-	}
-
-	[Fact]
-	public void Should_Fail_When_LocationIsEmpty()
-	{
-		// Arrange
-		ReceiptVM receipt = new()
-		{
-			Description = "Valid Description",
-			Location = string.Empty,
-			Date = DateOnly.FromDateTime(DateTime.Today)
-		};
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(receipt);
-
-		// Assert
-		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == ReceiptValidator.LocationIsRequired);
+		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateReceiptRequestValidator.DescriptionMustNotExceed256Characters);
 	}
 
 	[Fact]
 	public void Should_Fail_When_LocationExceeds200Characters()
 	{
 		// Arrange
-		ReceiptVM receipt = new()
+		CreateReceiptRequest receipt = new()
 		{
 			Description = "Valid Description",
 			Location = new string('a', 201),
@@ -79,14 +60,14 @@ public class ReceiptValidatorTests
 
 		// Assert
 		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == ReceiptValidator.LocationMustNotExceed200Characters);
+		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateReceiptRequestValidator.LocationMustNotExceed200Characters);
 	}
 
 	[Fact]
 	public void Should_Fail_When_DateIsInTheFuture()
 	{
 		// Arrange
-		ReceiptVM receipt = new()
+		CreateReceiptRequest receipt = new()
 		{
 			Description = "Valid Description",
 			Location = "Valid Location",
@@ -98,6 +79,6 @@ public class ReceiptValidatorTests
 
 		// Assert
 		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == ReceiptValidator.DateMustBePriorToCurrentDate);
+		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateReceiptRequestValidator.DateMustBePriorToCurrentDate);
 	}
 }

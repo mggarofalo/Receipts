@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/health")]
 public class HealthController : ControllerBase
 {
 	[HttpGet]
@@ -11,6 +11,6 @@ public class HealthController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status200OK)]
 	public IActionResult Get()
 	{
-		return Ok(new { status = "Hello there." });
+		return Ok(new { status = "Healthy" });
 	}
 }

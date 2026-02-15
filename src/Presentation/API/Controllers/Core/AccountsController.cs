@@ -1,3 +1,4 @@
+using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Account.Create;
 using Application.Commands.Account.Delete;
@@ -6,12 +7,11 @@ using Application.Queries.Core.Account;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Shared.ViewModels.Core;
 
 namespace API.Controllers.Core;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/accounts")]
 [Produces("application/json")]
 public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger) : ControllerBase
 {
@@ -20,16 +20,18 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "";
-	public const string RouteUpdate = "";
+	public const string RouteCreateBatch = "batch";
+	public const string RouteUpdate = "{id}";
+	public const string RouteUpdateBatch = "batch";
 	public const string RouteDelete = "";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get an account by ID")]
 	[EndpointDescription("Returns a single account matching the provided GUID.")]
-	[ProducesResponseType<AccountVM>(StatusCodes.Status200OK)]
+	[ProducesResponseType<AccountResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<AccountVM>> GetAccountById([FromRoute] Guid id)
+	public async Task<ActionResult<AccountResponse>> GetAccountById([FromRoute] Guid id)
 	{
 		try
 		{
@@ -43,7 +45,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 				return NotFound();
 			}
 
-			AccountVM model = mapper.ToViewModel(result);
+			AccountResponse model = mapper.ToResponse(result);
 			logger.LogDebug("GetAccountById called with id: {Id} found", id);
 			return Ok(model);
 		}
@@ -56,9 +58,9 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all accounts")]
-	[ProducesResponseType<List<AccountVM>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<AccountResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<AccountVM>>> GetAllAccounts()
+	public async Task<ActionResult<List<AccountResponse>>> GetAllAccounts()
 	{
 		try
 		{
@@ -67,7 +69,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			List<Account> result = await mediator.Send(query);
 			logger.LogDebug("GetAllAccounts called with {Count} accounts", result.Count);
 
-			List<AccountVM> model = result.Select(mapper.ToViewModel).ToList();
+			List<AccountResponse> model = result.Select(mapper.ToResponse).ToList();
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -78,18 +80,37 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	}
 
 	[HttpPost(RouteCreate)]
-	[EndpointSummary("Create accounts")]
-	[EndpointDescription("Creates one or more accounts from the provided list and returns the created accounts with their assigned IDs.")]
-	[ProducesResponseType<List<AccountVM>>(StatusCodes.Status200OK)]
+	[EndpointSummary("Create a single account")]
+	[ProducesResponseType<AccountResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<AccountVM>>> CreateAccounts([FromBody] List<AccountVM> models)
+	public async Task<ActionResult<AccountResponse>> CreateAccount([FromBody] CreateAccountRequest model)
 	{
 		try
 		{
-			logger.LogDebug("CreateAccount called with {Count} accounts", models.Count);
+			logger.LogDebug("CreateAccount called");
+			CreateAccountCommand command = new([mapper.ToDomain(model)]);
+			List<Account> accounts = await mediator.Send(command);
+			return Ok(mapper.ToResponse(accounts[0]));
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithoutId, nameof(CreateAccount));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpPost(RouteCreateBatch)]
+	[EndpointSummary("Create accounts in batch")]
+	[ProducesResponseType<List<AccountResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<List<AccountResponse>>> CreateAccounts([FromBody] List<CreateAccountRequest> models)
+	{
+		try
+		{
+			logger.LogDebug("CreateAccounts called with {Count} accounts", models.Count);
 			CreateAccountCommand command = new(models.Select(mapper.ToDomain).ToList());
 			List<Account> accounts = await mediator.Send(command);
-			return Ok(accounts.Select(mapper.ToViewModel).ToList());
+			return Ok(accounts.Select(mapper.ToResponse).ToList());
 		}
 		catch (Exception ex)
 		{
@@ -99,12 +120,39 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	}
 
 	[HttpPut(RouteUpdate)]
-	[EndpointSummary("Update accounts")]
-	[EndpointDescription("Updates one or more existing accounts. Returns 404 if any account in the list is not found.")]
+	[EndpointSummary("Update a single account")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<bool>> UpdateAccounts([FromBody] List<AccountVM> models)
+	public async Task<ActionResult<bool>> UpdateAccount([FromRoute] Guid id, [FromBody] UpdateAccountRequest model)
+	{
+		try
+		{
+			logger.LogDebug("UpdateAccount called for id: {Id}", id);
+			UpdateAccountCommand command = new([mapper.ToDomain(model)]);
+			bool result = await mediator.Send(command);
+
+			if (!result)
+			{
+				logger.LogWarning("UpdateAccount called for id: {Id}, but not found", id);
+				return NotFound();
+			}
+
+			return NoContent();
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithId, nameof(UpdateAccount), id);
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpPut(RouteUpdateBatch)]
+	[EndpointSummary("Update accounts in batch")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<bool>> UpdateAccounts([FromBody] List<UpdateAccountRequest> models)
 	{
 		try
 		{

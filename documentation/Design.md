@@ -1,3 +1,5 @@
+> **DEPRECATED**: This document describes the original Blazor WebAssembly client, which was removed in MGG-90. The frontend is being replaced by a React/Vite SPA (MGG-32). ViewModels referenced below have been replaced by NSwag-generated Request/Response DTOs (MGG-88).
+
 # Receipt Management Client Application Design Document
 
 ## Table of Contents

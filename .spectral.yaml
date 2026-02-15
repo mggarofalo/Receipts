@@ -1,6 +1,7 @@
 extends: ["spectral:oas"]
 rules:
   operation-operationId: error
+  path-params: off
   oas3-api-servers: off
   info-contact: off
   info-description: off

@@ -1,4 +1,5 @@
 using API.Controllers.Aggregates;
+using API.Generated.Dtos;
 using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Queries.Aggregates.ReceiptsWithItems;
@@ -9,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
-using Shared.ViewModels.Aggregates;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 
@@ -33,7 +33,7 @@ public class ReceiptWithItemsControllerTests
 	{
 		// Arrange
 		ReceiptWithItems receiptWithItems = ReceiptWithItemsGenerator.Generate();
-		ReceiptWithItemsVM expectedReturn = _mapper.ToViewModel(receiptWithItems);
+		ReceiptWithItemsResponse expectedReturn = _mapper.ToResponse(receiptWithItems);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetReceiptWithItemsByReceiptIdQuery>(q => q.ReceiptId == receiptWithItems.Receipt.Id),
@@ -41,11 +41,11 @@ public class ReceiptWithItemsControllerTests
 			.ReturnsAsync(receiptWithItems);
 
 		// Act
-		ActionResult<ReceiptWithItemsVM> result = await _controller.GetReceiptWithItemsByReceiptId(receiptWithItems.Receipt.Id);
+		ActionResult<ReceiptWithItemsResponse> result = await _controller.GetReceiptWithItemsByReceiptId(receiptWithItems.Receipt.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptWithItemsVM actualReturn = Assert.IsType<ReceiptWithItemsVM>(okResult.Value);
+		ReceiptWithItemsResponse actualReturn = Assert.IsType<ReceiptWithItemsResponse>(okResult.Value);
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -62,7 +62,7 @@ public class ReceiptWithItemsControllerTests
 			.ReturnsAsync((ReceiptWithItems?)null);
 
 		// Act
-		ActionResult<ReceiptWithItemsVM> result = await _controller.GetReceiptWithItemsByReceiptId(missingReceiptId);
+		ActionResult<ReceiptWithItemsResponse> result = await _controller.GetReceiptWithItemsByReceiptId(missingReceiptId);
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
@@ -80,7 +80,7 @@ public class ReceiptWithItemsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<ReceiptWithItemsVM> result = await _controller.GetReceiptWithItemsByReceiptId(receiptId);
+		ActionResult<ReceiptWithItemsResponse> result = await _controller.GetReceiptWithItemsByReceiptId(receiptId);
 
 		// Assert
 		Assert.IsType<ObjectResult>(result.Result);

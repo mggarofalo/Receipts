@@ -38,7 +38,7 @@ When working on tasks that are expected to result in code changes, follow this s
 
 2. **Branch Strategy (Two-Tier)**
 
-   This project uses a two-tier branching model: **milestone branches** for CI/PR gating and **issue branches** for individual work items.
+   This project uses a hierarchical branching model: **milestone branches** for CI/PR gating, optional **parent branches** for epics, and **issue branches** for individual work items.
 
    **Milestone branches** (one per phase):
    - Created when work on a milestone begins, named `milestone/phase-N` (e.g., `milestone/phase-0`)
@@ -47,18 +47,28 @@ When working on tasks that are expected to result in code changes, follow this s
    - The PR triggers CI — this is the safety net that catches issues the agent may have missed
    - After PR merge, delete the milestone branch
 
+   **Parent branches** (for epics with multiple children):
+   - When an epic has multiple child issues, create a parent branch using the epic's `gitBranchName`
+   - Parent branch is created off `master` (or the milestone branch if one exists)
+   - Child issue branches are created off the parent branch and squash-merge back into it
+   - When all children are complete, the parent branch gets a PR to `master`
+   - This keeps related changes grouped and avoids polluting `master` with intermediate work
+
    **Issue branches** (one per Linear issue):
-   - Branch off the milestone branch, NOT `master`
+   - Branch off the parent branch (if epic) or milestone branch, NOT `master`
    - Use the `gitBranchName` from the Linear issue
-   - Merge locally into the milestone branch via squash merge (no PR needed)
+   - Merge locally into the parent/milestone branch via squash merge (no PR needed)
    - Delete the issue branch after merge
 
    ```
    master
-     └── milestone/phase-0
-           ├── mggarofalo/mgg-90-remove-blazor   (squash-merge into milestone)
-           └── mggarofalo/mgg-82-update-ci        (squash-merge into milestone)
-                                                    └── PR: milestone/phase-0 → master
+     ├── milestone/phase-0                              (PR → master)
+     │     ├── mggarofalo/mgg-90-remove-blazor          (squash-merge into milestone)
+     │     └── mggarofalo/mgg-82-update-ci              (squash-merge into milestone)
+     │
+     └── mggarofalo/mgg-83-replace-viewmodels-...       (epic parent, PR → master)
+           ├── mggarofalo/mgg-88-generate-dtos          (squash-merge into parent)
+           └── mggarofalo/mgg-87-update-docs            (squash-merge into parent)
    ```
 
    **Worktrees (mandatory for all branch work):**
@@ -68,36 +78,37 @@ When working on tasks that are expected to result in code changes, follow this s
    - **ALWAYS** create worktrees in `.worktrees/` at the repo root — NEVER as sibling directories
    - This gives agents full filesystem control in their worktree without affecting the main repo
 
-3. **Merging Issue Work into Milestone Branch**
+3. **Merging Issue Work into Parent/Milestone Branch**
    - All merges happen inside worktrees — never checkout branches in the main repo
-   - Remove the issue worktree, then merge from the milestone worktree:
+   - Remove the issue worktree, then merge from the parent (or milestone) worktree:
      ```bash
-     git worktree remove .worktrees/mggarofalo-mgg-90-remove-blazor
-     cd .worktrees/milestone-phase-0
-     git merge --squash mggarofalo/mgg-90-remove-blazor
-     git commit -m "cleanup(client): remove Blazor WASM frontend (MGG-90)"
-     git branch -d mggarofalo/mgg-90-remove-blazor
+     git worktree remove .worktrees/mggarofalo-mgg-88-generate-dtos
+     cd .worktrees/mggarofalo-mgg-83-replace-viewmodels
+     git merge --squash mggarofalo/mgg-88-generate-dtos
+     git commit -m "feat(api): generate DTOs from OpenAPI spec (MGG-88)"
+     git branch -D mggarofalo/mgg-88-generate-dtos
      ```
-   - If no milestone worktree exists yet, create one:
+   - If no parent/milestone worktree exists yet, create one:
      ```bash
-     git worktree add .worktrees/milestone-phase-0 milestone/phase-0
+     git branch mggarofalo/mgg-83-replace-viewmodels master
+     git worktree add .worktrees/mggarofalo-mgg-83-replace-viewmodels mggarofalo/mgg-83-replace-viewmodels
      ```
 
-4. **PR: Milestone → Master**
-   - When all issues in a milestone are complete, push the milestone branch and open a PR:
+4. **PR: Parent/Milestone → Master**
+   - When all issues are complete, push the branch and open a PR:
      ```bash
-     cd .worktrees/milestone-phase-0
-     git push -u origin milestone/phase-0
-     gh pr create --title "Phase 0: Housekeeping" --body "..."
+     cd .worktrees/mggarofalo-mgg-83-replace-viewmodels
+     git push -u origin mggarofalo/mgg-83-replace-viewmodels
+     gh pr create --title "Replace ViewModels with spec-generated DTOs" --body "..."
      ```
    - The PR triggers CI (build + test) — this is the checkpoint that surfaces issues
    - After CI passes and the PR is approved, merge into `master`
    - Clean up worktree and branches:
      ```bash
      cd <repo-root>
-     git worktree remove .worktrees/milestone-phase-0
-     git branch -d milestone/phase-0
-     git push origin --delete milestone/phase-0
+     git worktree remove .worktrees/mggarofalo-mgg-83-replace-viewmodels
+     git branch -d mggarofalo/mgg-83-replace-viewmodels
+     git push origin --delete mggarofalo/mgg-83-replace-viewmodels
      git pull   # update master with the merged PR
      ```
 
@@ -230,21 +241,20 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
 - **Presentation**
   - **API** - ASP.NET Core Web API with SignalR hub for real-time updates
     - `Controllers/Core/` and `Controllers/Aggregates/` - REST endpoints
-    - `Mapping/` - Mapperly mappers (Domain <-> ViewModel)
+    - `Mapping/` - Mapperly mappers (Domain <-> generated DTOs)
+    - `Generated/` - NSwag-generated Request/Response DTOs from OpenAPI spec
+    - `Validators/` - FluentValidation validators (business rules only; spec-expressible constraints use DataAnnotations)
     - `Configuration/` - Service registration extension methods
     - `Hubs/ReceiptsHub.cs` - SignalR hub
   - **Client** - ~~Removed~~ (was Blazor WebAssembly; removed in MGG-90; being replaced by React/Vite SPA in MGG-32)
-  - **Shared** - ViewModels and HTTP clients shared between API and Client (**will be replaced** by spec-generated DTOs in MGG-83/MGG-88)
-    - `ViewModels/` - DTOs for API communication
-    - `HttpClientApiExtensions/` - Typed HTTP clients
-    - `Validators/` - FluentValidation validators
+  - **Shared** - HTTP clients shared between API and Client (ViewModels removed in MGG-88, replaced by generated DTOs in API layer)
 
 ### Key Patterns
 
 - **CQRS**: Commands and Queries are separate with dedicated handlers
 - **Mediator Pattern**: MediatR dispatches commands/queries to handlers
 - **Repository Pattern**: Infrastructure repositories abstract EF Core
-- **Mapping**: Mapperly handles Domain <-> Entity (Infrastructure) and Domain <-> ViewModel (API)
+- **Mapping**: Mapperly handles Domain <-> Entity (Infrastructure) and Domain <-> generated DTOs (API)
 - **Service Registration**: Each layer has a static extension method (`RegisterApplicationServices`, `RegisterInfrastructureServices`) for DI setup
 
 ### Database
@@ -303,13 +313,23 @@ This project uses [Mapperly](https://github.com/riok/mapperly) for compile-time 
 
 ### Mapperly Patterns
 
-**Basic Mapper Structure:**
+**Basic Mapper Structure (Domain <-> generated DTOs):**
 ```csharp
 [Mapper]
 public partial class AccountMapper
 {
-    public partial AccountVM ToViewModel(Account source);
-    public partial Account ToDomain(AccountVM source);
+    [MapperIgnoreTarget(nameof(AccountResponse.AdditionalProperties))]
+    public partial AccountResponse ToResponse(Account source);
+
+    public Account ToDomain(CreateAccountRequest source)
+    {
+        return new Account(Guid.Empty, source.AccountCode, source.Name, source.IsActive);
+    }
+
+    public Account ToDomain(UpdateAccountRequest source)
+    {
+        return new Account(source.Id, source.AccountCode, source.Name, source.IsActive);
+    }
 }
 ```
 
@@ -348,12 +368,12 @@ public partial class ReceiptWithItemsMapper
     private readonly ReceiptMapper _receiptMapper = new();
     private readonly ReceiptItemMapper _receiptItemMapper = new();
 
-    public ReceiptWithItemsVM ToViewModel(ReceiptWithItems source)
+    public ReceiptWithItemsResponse ToResponse(ReceiptWithItems source)
     {
-        return new ReceiptWithItemsVM
+        return new ReceiptWithItemsResponse
         {
-            Receipt = _receiptMapper.ToViewModel(source.Receipt),
-            Items = source.Items.Select(_receiptItemMapper.ToViewModel).ToList()
+            Receipt = _receiptMapper.ToResponse(source.Receipt),
+            Items = source.Items.Select(_receiptItemMapper.ToResponse).ToList()
         };
     }
 }

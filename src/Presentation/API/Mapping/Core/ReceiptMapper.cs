@@ -1,19 +1,39 @@
+using API.Generated.Dtos;
 using Common;
 using Domain;
 using Domain.Core;
 using Riok.Mapperly.Abstractions;
-using Shared.ViewModels.Core;
 
 namespace API.Mapping.Core;
 
 [Mapper]
 public partial class ReceiptMapper
 {
-	[MapProperty(nameof(Receipt.TaxAmount.Amount), nameof(ReceiptVM.TaxAmount))]
-	public partial ReceiptVM ToViewModel(Receipt source);
+	[MapProperty(nameof(Receipt.TaxAmount.Amount), nameof(ReceiptResponse.TaxAmount))]
+	[MapperIgnoreTarget(nameof(ReceiptResponse.AdditionalProperties))]
+	public partial ReceiptResponse ToResponse(Receipt source);
 
-	private Money MapTaxAmount(decimal? taxAmount) => new(taxAmount ?? 0, Currency.USD);
-	private Guid MapId(Guid? id) => id ?? Guid.Empty;
+	public Receipt ToDomain(CreateReceiptRequest source)
+	{
+		return new Receipt(
+			Guid.Empty,
+			source.Location,
+			source.Date,
+			new Money((decimal)source.TaxAmount, Currency.USD),
+			source.Description
+		);
+	}
 
-	public partial Receipt ToDomain(ReceiptVM source);
+	public Receipt ToDomain(UpdateReceiptRequest source)
+	{
+		return new Receipt(
+			source.Id,
+			source.Location,
+			source.Date,
+			new Money((decimal)source.TaxAmount, Currency.USD),
+			source.Description
+		);
+	}
+
+	private double MapDecimalToDouble(decimal value) => (double)value;
 }

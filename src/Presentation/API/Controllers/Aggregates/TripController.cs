@@ -1,14 +1,14 @@
+using API.Generated.Dtos;
 using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.Trips;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Shared.ViewModels.Aggregates;
 
 namespace API.Controllers.Aggregates;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/trips")]
 [Produces("application/json")]
 public class TripController(IMediator mediator, TripMapper mapper, ILogger<TripController> logger) : ControllerBase
 {
@@ -19,10 +19,10 @@ public class TripController(IMediator mediator, TripMapper mapper, ILogger<TripC
 	[HttpGet(RouteByReceiptId)]
 	[EndpointSummary("Get a trip by receipt ID")]
 	[EndpointDescription("Returns the full trip aggregate for a receipt, including the receipt, its items, transactions, and associated accounts.")]
-	[ProducesResponseType<TripVM>(StatusCodes.Status200OK)]
+	[ProducesResponseType<TripResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<TripVM>> GetTripByReceiptId([FromRoute] Guid receiptId)
+	public async Task<ActionResult<TripResponse>> GetTripByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{
@@ -36,7 +36,7 @@ public class TripController(IMediator mediator, TripMapper mapper, ILogger<TripC
 				return NotFound();
 			}
 
-			TripVM model = mapper.ToViewModel(result);
+			TripResponse model = mapper.ToResponse(result);
 			logger.LogDebug("GetTripById called with receiptId: {receiptId} found", receiptId);
 			return Ok(model);
 		}

@@ -1,6 +1,6 @@
+using API.Generated.Dtos;
 using Domain.Aggregates;
 using Riok.Mapperly.Abstractions;
-using Shared.ViewModels.Aggregates;
 
 namespace API.Mapping.Aggregates;
 
@@ -10,21 +10,12 @@ public partial class TripMapper
 	private readonly ReceiptWithItemsMapper _receiptWithItemsMapper = new();
 	private readonly TransactionAccountMapper _transactionAccountMapper = new();
 
-	public TripVM ToViewModel(Trip source)
+	public TripResponse ToResponse(Trip source)
 	{
-		return new TripVM
+		return new TripResponse
 		{
-			Receipt = _receiptWithItemsMapper.ToViewModel(source.Receipt),
-			Transactions = source.Transactions.Select(_transactionAccountMapper.ToViewModel).ToList()
-		};
-	}
-
-	public Trip ToDomain(TripVM source)
-	{
-		return new Trip
-		{
-			Receipt = _receiptWithItemsMapper.ToDomain(source.Receipt!),
-			Transactions = source.Transactions!.Select(_transactionAccountMapper.ToDomain).ToList()
+			Receipt = _receiptWithItemsMapper.ToResponse(source.Receipt),
+			Transactions = source.Transactions.Select(_transactionAccountMapper.ToResponse).ToList()
 		};
 	}
 }

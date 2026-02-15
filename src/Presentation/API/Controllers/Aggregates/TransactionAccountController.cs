@@ -1,14 +1,14 @@
+using API.Generated.Dtos;
 using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Shared.ViewModels.Aggregates;
 
 namespace API.Controllers.Aggregates;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/transaction-accounts")]
 [Produces("application/json")]
 public class TransactionAccountController(IMediator mediator, TransactionAccountMapper mapper, ILogger<TransactionAccountController> logger) : ControllerBase
 {
@@ -20,10 +20,10 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 	[HttpGet(RouteByTransactionId)]
 	[EndpointSummary("Get a transaction with its account")]
 	[EndpointDescription("Returns a transaction joined with its associated account, looked up by transaction ID.")]
-	[ProducesResponseType<TransactionAccountVM>(StatusCodes.Status200OK)]
+	[ProducesResponseType<TransactionAccountResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<TransactionAccountVM>> GetTransactionAccountByTransactionId([FromRoute] Guid transactionId)
+	public async Task<ActionResult<TransactionAccountResponse>> GetTransactionAccountByTransactionId([FromRoute] Guid transactionId)
 	{
 		try
 		{
@@ -37,7 +37,7 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 				return NotFound();
 			}
 
-			TransactionAccountVM model = mapper.ToViewModel(result);
+			TransactionAccountResponse model = mapper.ToResponse(result);
 			logger.LogDebug("GetTransactionAccountByTransactionId called with transactionId: {transactionId} found", transactionId);
 			return Ok(model);
 		}
@@ -51,10 +51,10 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 	[HttpGet(RouteByReceiptId)]
 	[EndpointSummary("Get transaction accounts by receipt ID")]
 	[EndpointDescription("Returns all transactions joined with their associated accounts for the specified receipt.")]
-	[ProducesResponseType<List<TransactionAccountVM>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<TransactionAccountResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<TransactionAccountVM>>> GetTransactionAccountsByReceiptId([FromRoute] Guid receiptId)
+	public async Task<ActionResult<List<TransactionAccountResponse>>> GetTransactionAccountsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{
@@ -68,7 +68,7 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 				return NotFound();
 			}
 
-			List<TransactionAccountVM> model = result.Select(mapper.ToViewModel).ToList();
+			List<TransactionAccountResponse> model = result.Select(mapper.ToResponse).ToList();
 			logger.LogDebug("GetTransactionAccountsByReceiptId called with receiptId: {receiptId} found", receiptId);
 			return Ok(model);
 		}

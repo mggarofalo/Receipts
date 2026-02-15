@@ -1,4 +1,5 @@
 using API.Controllers.Aggregates;
+using API.Generated.Dtos;
 using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Queries.Aggregates.Trips;
@@ -9,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
-using Shared.ViewModels.Aggregates;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 
@@ -33,7 +33,7 @@ public class TripControllerTests
 	{
 		// Arrange
 		Trip trip = TripGenerator.Generate();
-		TripVM expectedReturn = _mapper.ToViewModel(trip);
+		TripResponse expectedReturn = _mapper.ToResponse(trip);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTripByReceiptIdQuery>(q => q.ReceiptId == trip.Receipt.Receipt.Id),
@@ -41,11 +41,11 @@ public class TripControllerTests
 			.ReturnsAsync(trip);
 
 		// Act
-		ActionResult<TripVM> result = await _controller.GetTripByReceiptId(trip.Receipt.Receipt.Id);
+		ActionResult<TripResponse> result = await _controller.GetTripByReceiptId(trip.Receipt.Receipt.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TripVM actualReturn = Assert.IsType<TripVM>(okResult.Value);
+		TripResponse actualReturn = Assert.IsType<TripResponse>(okResult.Value);
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -62,7 +62,7 @@ public class TripControllerTests
 			.ReturnsAsync((Trip?)null);
 
 		// Act
-		ActionResult<TripVM> result = await _controller.GetTripByReceiptId(missingReceiptId);
+		ActionResult<TripResponse> result = await _controller.GetTripByReceiptId(missingReceiptId);
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
@@ -80,7 +80,7 @@ public class TripControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TripVM> result = await _controller.GetTripByReceiptId(receiptId);
+		ActionResult<TripResponse> result = await _controller.GetTripByReceiptId(receiptId);
 
 		// Assert
 		Assert.IsType<ObjectResult>(result.Result);

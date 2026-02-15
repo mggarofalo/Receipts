@@ -1,3 +1,4 @@
+using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
@@ -6,12 +7,11 @@ using Application.Queries.Core.Receipt;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Shared.ViewModels.Core;
 
 namespace API.Controllers.Core;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/receipts")]
 [Produces("application/json")]
 public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogger<ReceiptsController> logger) : ControllerBase
 {
@@ -21,16 +21,18 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "";
-	public const string RouteUpdate = "";
+	public const string RouteCreateBatch = "batch";
+	public const string RouteUpdate = "{id}";
+	public const string RouteUpdateBatch = "batch";
 	public const string RouteDelete = "";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a receipt by ID")]
 	[EndpointDescription("Returns a single receipt matching the provided GUID.")]
-	[ProducesResponseType<ReceiptVM>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ReceiptResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<ReceiptVM>> GetReceiptById([FromRoute] Guid id)
+	public async Task<ActionResult<ReceiptResponse>> GetReceiptById([FromRoute] Guid id)
 	{
 		try
 		{
@@ -44,7 +46,7 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 				return NotFound();
 			}
 
-			ReceiptVM model = mapper.ToViewModel(result);
+			ReceiptResponse model = mapper.ToResponse(result);
 			logger.LogDebug("GetReceiptById called with id: {Id} found", id);
 			return Ok(model);
 		}
@@ -57,9 +59,9 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipts")]
-	[ProducesResponseType<List<ReceiptVM>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<ReceiptResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<ReceiptVM>>> GetAllReceipts()
+	public async Task<ActionResult<List<ReceiptResponse>>> GetAllReceipts()
 	{
 		try
 		{
@@ -68,7 +70,7 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			List<Receipt> result = await mediator.Send(query);
 			logger.LogDebug("GetAllReceipts called with {Count} receipts", result.Count);
 
-			List<ReceiptVM> model = result.Select(mapper.ToViewModel).ToList();
+			List<ReceiptResponse> model = result.Select(mapper.ToResponse).ToList();
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -79,19 +81,37 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 	}
 
 	[HttpPost(RouteCreate)]
-	[EndpointSummary("Create receipts")]
-	[EndpointDescription("Creates one or more receipts from the provided list and returns the created receipts with their assigned IDs.")]
-	[ProducesResponseType<List<ReceiptVM>>(StatusCodes.Status200OK)]
+	[EndpointSummary("Create a single receipt")]
+	[ProducesResponseType<ReceiptResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<ReceiptVM>>> CreateReceipts([FromBody] List<ReceiptVM> models)
+	public async Task<ActionResult<ReceiptResponse>> CreateReceipt([FromBody] CreateReceiptRequest model)
 	{
 		try
 		{
-			logger.LogDebug("CreateReceipt called with {Count} receipts", models.Count);
+			logger.LogDebug("CreateReceipt called");
+			CreateReceiptCommand command = new([mapper.ToDomain(model)]);
+			List<Receipt> receipts = await mediator.Send(command);
+			return Ok(mapper.ToResponse(receipts[0]));
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithoutId, nameof(CreateReceipt));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpPost(RouteCreateBatch)]
+	[EndpointSummary("Create receipts in batch")]
+	[ProducesResponseType<List<ReceiptResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<List<ReceiptResponse>>> CreateReceipts([FromBody] List<CreateReceiptRequest> models)
+	{
+		try
+		{
+			logger.LogDebug("CreateReceipts called with {Count} receipts", models.Count);
 			CreateReceiptCommand command = new(models.Select(mapper.ToDomain).ToList());
 			List<Receipt> receipts = await mediator.Send(command);
-			logger.LogDebug("CreateReceipt called with {Count} receipts, and created", models.Count);
-			return Ok(receipts.Select(mapper.ToViewModel).ToList());
+			return Ok(receipts.Select(mapper.ToResponse).ToList());
 		}
 		catch (Exception ex)
 		{
@@ -101,12 +121,39 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 	}
 
 	[HttpPut(RouteUpdate)]
-	[EndpointSummary("Update receipts")]
-	[EndpointDescription("Updates one or more existing receipts. Returns 404 if any receipt in the list is not found.")]
+	[EndpointSummary("Update a single receipt")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<bool>> UpdateReceipts([FromBody] List<ReceiptVM> models)
+	public async Task<ActionResult<bool>> UpdateReceipt([FromRoute] Guid id, [FromBody] UpdateReceiptRequest model)
+	{
+		try
+		{
+			logger.LogDebug("UpdateReceipt called for id: {Id}", id);
+			UpdateReceiptCommand command = new([mapper.ToDomain(model)]);
+			bool result = await mediator.Send(command);
+
+			if (!result)
+			{
+				logger.LogWarning("UpdateReceipt called for id: {Id}, but not found", id);
+				return NotFound();
+			}
+
+			return NoContent();
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithId, nameof(UpdateReceipt), id);
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpPut(RouteUpdateBatch)]
+	[EndpointSummary("Update receipts in batch")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<bool>> UpdateReceipts([FromBody] List<UpdateReceiptRequest> models)
 	{
 		try
 		{
