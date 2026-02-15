@@ -180,15 +180,19 @@ The canonical API contract lives in `openapi/spec.yaml` (OpenAPI 3.1.0). All API
 
 The pre-commit pipeline runs all of these automatically. If the spec and generated output diverge structurally, the drift check fails and the commit is blocked. Cosmetic differences (path casing, type array ordering, extra content types from ASP.NET) are intentionally ignored.
 
+**Breaking change detection** runs in CI on pull requests. It compares the PR's `openapi/spec.yaml` against the base branch to catch backwards-incompatible changes (removed endpoints, removed properties, type changes, new required request fields, nullability narrowing). To allow intentional breaking changes, add the `breaking-changes-allowed` label to the PR.
+
 **Key files:**
 - `openapi/spec.yaml` — hand-authored canonical spec (checked in)
 - `openapi/generated/API.json` — build-time export from the API (gitignored)
 - `.spectral.yaml` — Spectral linting rules
 - `scripts/check-drift.mjs` — semantic drift detection script
+- `scripts/check-breaking.mjs` — breaking change detection script (CI only)
 
 **npm scripts:**
 - `npm run lint:spec` — lint the OpenAPI spec
 - `npm run check:drift` — semantic drift check between spec and generated output
+- `npm run check:breaking -- origin/master` — check for breaking API changes vs a base ref
 
 ## Validation and Code Quality
 

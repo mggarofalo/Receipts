@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "lint:spec": "spectral lint openapi/spec.yaml --fail-severity warn",
-    "check:drift": "node scripts/check-drift.mjs"
+    "check:drift": "node scripts/check-drift.mjs",
+    "check:breaking": "node scripts/check-breaking.mjs"
   },
   "devDependencies": {
     "@stoplight/spectral-cli": "^6.15.0",
