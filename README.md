@@ -47,14 +47,12 @@ src/
       Generated/       NSwag-generated Request/Response DTOs from OpenAPI spec
       Validators/      FluentValidation validators (business rules only)
       Hubs/            SignalR hub for real-time updates
-    Shared/            HTTP clients (ViewModels removed; replaced by generated DTOs)
 tests/
   Common.Tests/
   Domain.Tests/
   Application.Tests/
   Infrastructure.Tests/
   Presentation.API.Tests/
-  Presentation.Shared.Tests/
   SampleData/          Shared test fixtures across all test projects
 ```
 
@@ -201,18 +199,6 @@ Tests mirror the source project structure with one test project per source layer
 - **In-memory EF Core** for Infrastructure tests (`Microsoft.EntityFrameworkCore.InMemory`)
 - **SampleData project** provides shared test fixtures so entity construction is consistent across all test projects
 - **No testing of implementation details** - tests verify behavior, not internal mechanics
-
-### Test Counts (as of last run)
-
-| Project | Tests |
-|---|---|
-| Common.Tests | 15 |
-| Domain.Tests | 49 |
-| Application.Tests | 115 |
-| Presentation.Shared.Tests | 135 |
-| Presentation.API.Tests | 81 |
-| Infrastructure.Tests | 89 |
-| **Total** | **484** |
 
 ## API Endpoints
 
