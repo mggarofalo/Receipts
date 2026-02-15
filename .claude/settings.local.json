@@ -55,7 +55,9 @@
       "WebFetch(domain:github.com)",
       "WebSearch",
       "Bash(test:*)",
-      "mcp__plugin_linear_linear__create_comment"
+      "mcp__plugin_linear_linear__create_comment",
+      "mcp__plugin_linear_linear__list_issue_statuses",
+      "mcp__plugin_linear_linear__get_project"
     ]
   },
   "enableAllProjectMcpServers": true,
