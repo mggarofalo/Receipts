@@ -1,36 +1,56 @@
+using API.Generated.Dtos;
 using Common;
 using Domain;
 using Domain.Core;
 using Riok.Mapperly.Abstractions;
-using Shared.ViewModels.Core;
 
 namespace API.Mapping.Core;
 
 [Mapper]
 public partial class ReceiptItemMapper
 {
-	[MapProperty(nameof(ReceiptItem.UnitPrice.Amount), nameof(ReceiptItemVM.UnitPrice))]
+	[MapProperty(nameof(ReceiptItem.UnitPrice.Amount), nameof(ReceiptItemResponse.UnitPrice))]
 	[MapperIgnoreSource(nameof(ReceiptItem.TotalAmount))]
-	public partial ReceiptItemVM ToViewModel(ReceiptItem source);
+	[MapperIgnoreTarget(nameof(ReceiptItemResponse.AdditionalProperties))]
+	public partial ReceiptItemResponse ToResponse(ReceiptItem source);
 
-	private Guid MapId(Guid? id) => id ?? Guid.Empty;
-
-	public ReceiptItem ToDomain(ReceiptItemVM source)
+	public ReceiptItem ToDomain(CreateReceiptItemRequest source)
 	{
-		decimal quantity = source.Quantity ?? 0;
-		decimal unitPrice = source.UnitPrice ?? 0;
+		decimal quantity = (decimal)source.Quantity;
+		decimal unitPrice = (decimal)source.UnitPrice;
 		Money unitPriceMoney = new(unitPrice, Currency.USD);
 		Money totalAmount = new(Math.Floor(quantity * unitPrice * 100) / 100, Currency.USD);
 
 		return new ReceiptItem(
-			source.Id ?? Guid.Empty,
-			source.ReceiptItemCode ?? string.Empty,
-			source.Description ?? string.Empty,
+			Guid.Empty,
+			source.ReceiptItemCode,
+			source.Description,
 			quantity,
 			unitPriceMoney,
 			totalAmount,
-			source.Category ?? string.Empty,
-			source.Subcategory ?? string.Empty
+			source.Category,
+			source.Subcategory
 		);
 	}
+
+	public ReceiptItem ToDomain(UpdateReceiptItemRequest source)
+	{
+		decimal quantity = (decimal)source.Quantity;
+		decimal unitPrice = (decimal)source.UnitPrice;
+		Money unitPriceMoney = new(unitPrice, Currency.USD);
+		Money totalAmount = new(Math.Floor(quantity * unitPrice * 100) / 100, Currency.USD);
+
+		return new ReceiptItem(
+			source.Id,
+			source.ReceiptItemCode,
+			source.Description,
+			quantity,
+			unitPriceMoney,
+			totalAmount,
+			source.Category,
+			source.Subcategory
+		);
+	}
+
+	private double MapDecimalToDouble(decimal value) => (double)value;
 }

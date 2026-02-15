@@ -12,7 +12,6 @@
     <ProjectReference Include="..\..\src\Domain\Domain.csproj" />
     <ProjectReference Include="..\..\src\Application\Application.csproj" />
     <ProjectReference Include="..\..\src\Infrastructure\Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Presentation\Shared\Shared.csproj" />
     <ProjectReference Include="..\..\src\Presentation\API\API.csproj" />
   </ItemGroup>
   

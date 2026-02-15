@@ -20,6 +20,12 @@
          "args": ["build", "Receipts.slnx", "-p:TreatWarningsAsErrors=true", "--no-restore"]
       },
       {
+         "name": "dto-staleness-check",
+         "group": "pre-commit",
+         "command": "git",
+         "args": ["diff", "--exit-code", "--", "src/Presentation/API/Generated/"]
+      },
+      {
          "name": "drift-check",
          "group": "pre-commit",
          "command": "node",

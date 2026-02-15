@@ -1,14 +1,14 @@
+using API.Generated.Dtos;
 using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.ReceiptsWithItems;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Shared.ViewModels.Aggregates;
 
 namespace API.Controllers.Aggregates;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/receipts-with-items")]
 [Produces("application/json")]
 public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapper mapper, ILogger<ReceiptWithItemsController> logger) : ControllerBase
 {
@@ -19,10 +19,10 @@ public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapp
 	[HttpGet(RouteByReceiptId)]
 	[EndpointSummary("Get a receipt with its items")]
 	[EndpointDescription("Returns a receipt and all its associated line items as a single aggregate, looked up by receipt ID.")]
-	[ProducesResponseType<ReceiptWithItemsVM>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ReceiptWithItemsResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<ReceiptWithItemsVM>> GetReceiptWithItemsByReceiptId([FromRoute] Guid receiptId)
+	public async Task<ActionResult<ReceiptWithItemsResponse>> GetReceiptWithItemsByReceiptId([FromRoute] Guid receiptId)
 	{
 		try
 		{
@@ -36,7 +36,7 @@ public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapp
 				return NotFound();
 			}
 
-			ReceiptWithItemsVM model = mapper.ToViewModel(result);
+			ReceiptWithItemsResponse model = mapper.ToResponse(result);
 			logger.LogDebug("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId} found", receiptId);
 			return Ok(model);
 		}

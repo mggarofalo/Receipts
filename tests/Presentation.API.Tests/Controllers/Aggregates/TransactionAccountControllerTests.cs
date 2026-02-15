@@ -1,4 +1,5 @@
 using API.Controllers.Aggregates;
+using API.Generated.Dtos;
 using API.Mapping.Aggregates;
 using API.Mapping.Core;
 using Application.Queries.Aggregates.TransactionAccounts;
@@ -10,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
 using SampleData.Domain.Core;
-using Shared.ViewModels.Aggregates;
 
 namespace Presentation.API.Tests.Controllers.Aggregates;
 
@@ -34,7 +34,7 @@ public class TransactionAccountControllerTests
 	{
 		// Arrange
 		TransactionAccount transactionAccount = TransactionAccountGenerator.Generate();
-		TransactionAccountVM expectedReturn = _mapper.ToViewModel(transactionAccount);
+		TransactionAccountResponse expectedReturn = _mapper.ToResponse(transactionAccount);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionAccountByTransactionIdQuery>(q => q.TransactionId == transactionAccount.Transaction.Id),
@@ -42,11 +42,11 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync(transactionAccount);
 
 		// Act
-		ActionResult<TransactionAccountVM> result = await _controller.GetTransactionAccountByTransactionId(transactionAccount.Transaction.Id);
+		ActionResult<TransactionAccountResponse> result = await _controller.GetTransactionAccountByTransactionId(transactionAccount.Transaction.Id);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TransactionAccountVM actualReturn = Assert.IsType<TransactionAccountVM>(okResult.Value);
+		TransactionAccountResponse actualReturn = Assert.IsType<TransactionAccountResponse>(okResult.Value);
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -63,7 +63,7 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync((TransactionAccount?)null);
 
 		// Act
-		ActionResult<TransactionAccountVM> result = await _controller.GetTransactionAccountByTransactionId(missingTransactionId);
+		ActionResult<TransactionAccountResponse> result = await _controller.GetTransactionAccountByTransactionId(missingTransactionId);
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
@@ -81,7 +81,7 @@ public class TransactionAccountControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TransactionAccountVM> result = await _controller.GetTransactionAccountByTransactionId(transactionId);
+		ActionResult<TransactionAccountResponse> result = await _controller.GetTransactionAccountByTransactionId(transactionId);
 
 		// Assert
 		Assert.IsType<ObjectResult>(result.Result);
@@ -95,7 +95,7 @@ public class TransactionAccountControllerTests
 		// Arrange
 		Guid receiptId = ReceiptGenerator.Generate().Id;
 		TransactionAccount transactionAccount = TransactionAccountGenerator.Generate();
-		TransactionAccountVM expectedReturn = _mapper.ToViewModel(transactionAccount);
+		TransactionAccountResponse expectedReturn = _mapper.ToResponse(transactionAccount);
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetTransactionAccountsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
@@ -103,11 +103,11 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync([transactionAccount]);
 
 		// Act
-		ActionResult<List<TransactionAccountVM>> result = await _controller.GetTransactionAccountsByReceiptId(receiptId);
+		ActionResult<List<TransactionAccountResponse>> result = await _controller.GetTransactionAccountsByReceiptId(receiptId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionAccountVM> actualReturn = Assert.IsType<List<TransactionAccountVM>>(okResult.Value);
+		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
 
 		actualReturn[0].Should().BeEquivalentTo(expectedReturn);
 	}
@@ -124,7 +124,7 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync((List<TransactionAccount>?)null);
 
 		// Act
-		ActionResult<List<TransactionAccountVM>> result = await _controller.GetTransactionAccountsByReceiptId(missingReceiptId);
+		ActionResult<List<TransactionAccountResponse>> result = await _controller.GetTransactionAccountsByReceiptId(missingReceiptId);
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
@@ -142,7 +142,7 @@ public class TransactionAccountControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<TransactionAccountVM>> result = await _controller.GetTransactionAccountsByReceiptId(receiptId);
+		ActionResult<List<TransactionAccountResponse>> result = await _controller.GetTransactionAccountsByReceiptId(receiptId);
 
 		// Assert
 		Assert.IsType<ObjectResult>(result.Result);

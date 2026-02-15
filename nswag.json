@@ -1,0 +1,23 @@
+{
+  "runtime": "Net100",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "openapi/spec.yaml"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "generateClientClasses": false,
+      "generateClientInterfaces": false,
+      "generateDtoTypes": true,
+      "namespace": "API.Generated.Dtos",
+      "output": "src/Presentation/API/Generated/Dtos.g.cs",
+      "dateType": "System.DateOnly",
+      "dateTimeType": "System.DateTimeOffset",
+      "generateNullableReferenceTypes": true,
+      "generateDataAnnotations": true,
+      "classStyle": "Poco",
+      "jsonLibrary": "SystemTextJson"
+    }
+  }
+}

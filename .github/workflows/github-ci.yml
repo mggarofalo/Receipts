@@ -80,3 +80,24 @@ jobs:
             echo "::error::Vulnerable packages detected!"
             exit 1
           fi
+
+  api-compat:
+    name: API Breaking Changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'breaking-changes-allowed')
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for breaking API changes
+        run: node scripts/check-breaking.mjs origin/${{ github.base_ref }}

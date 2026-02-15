@@ -43,9 +43,11 @@ src/
     API/
       Controllers/     REST endpoints (Core/ and Aggregates/)
       Configuration/   Service registration extensions
-      Mapping/         Mapperly mappers (Domain <-> ViewModel)
+      Mapping/         Mapperly mappers (Domain <-> generated DTOs)
+      Generated/       NSwag-generated Request/Response DTOs from OpenAPI spec
+      Validators/      FluentValidation validators (business rules only)
       Hubs/            SignalR hub for real-time updates
-    Shared/            ViewModels, HTTP clients, FluentValidation validators
+    Shared/            HTTP clients (ViewModels removed; replaced by generated DTOs)
 tests/
   Common.Tests/
   Domain.Tests/

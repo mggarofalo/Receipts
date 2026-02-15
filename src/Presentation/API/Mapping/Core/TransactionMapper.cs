@@ -1,19 +1,35 @@
+using API.Generated.Dtos;
 using Common;
 using Domain;
 using Domain.Core;
 using Riok.Mapperly.Abstractions;
-using Shared.ViewModels.Core;
 
 namespace API.Mapping.Core;
 
 [Mapper]
 public partial class TransactionMapper
 {
-	[MapProperty(nameof(Transaction.Amount.Amount), nameof(TransactionVM.Amount))]
-	public partial TransactionVM ToViewModel(Transaction source);
+	[MapProperty(nameof(Transaction.Amount.Amount), nameof(TransactionResponse.Amount))]
+	[MapperIgnoreTarget(nameof(TransactionResponse.AdditionalProperties))]
+	public partial TransactionResponse ToResponse(Transaction source);
 
-	private Money MapAmount(decimal? amount) => new(amount ?? 0, Currency.USD);
-	private Guid MapId(Guid? id) => id ?? Guid.Empty;
+	public Transaction ToDomain(CreateTransactionRequest source)
+	{
+		return new Transaction(
+			Guid.Empty,
+			new Money((decimal)source.Amount, Currency.USD),
+			source.Date
+		);
+	}
 
-	public partial Transaction ToDomain(TransactionVM source);
+	public Transaction ToDomain(UpdateTransactionRequest source)
+	{
+		return new Transaction(
+			source.Id,
+			new Money((decimal)source.Amount, Currency.USD),
+			source.Date
+		);
+	}
+
+	private double MapDecimalToDouble(decimal value) => (double)value;
 }

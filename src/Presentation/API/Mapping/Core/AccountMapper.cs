@@ -1,14 +1,22 @@
+using API.Generated.Dtos;
 using Domain.Core;
 using Riok.Mapperly.Abstractions;
-using Shared.ViewModels.Core;
 
 namespace API.Mapping.Core;
 
 [Mapper]
 public partial class AccountMapper
 {
-	public partial AccountVM ToViewModel(Account source);
-	public partial Account ToDomain(AccountVM source);
+	[MapperIgnoreTarget(nameof(AccountResponse.AdditionalProperties))]
+	public partial AccountResponse ToResponse(Account source);
 
-	private Guid MapId(Guid? id) => id ?? Guid.Empty;
+	public Account ToDomain(CreateAccountRequest source)
+	{
+		return new Account(Guid.Empty, source.AccountCode, source.Name, source.IsActive);
+	}
+
+	public Account ToDomain(UpdateAccountRequest source)
+	{
+		return new Account(source.Id, source.AccountCode, source.Name, source.IsActive);
+	}
 }
