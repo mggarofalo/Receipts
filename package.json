@@ -6,6 +6,7 @@
     "check:breaking": "node scripts/check-breaking.mjs"
   },
   "devDependencies": {
+    "@linear/sdk": "^75.0.0",
     "@stoplight/spectral-cli": "^6.15.0",
     "js-yaml": "^4.1.0"
   }

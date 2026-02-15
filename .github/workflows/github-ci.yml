@@ -60,6 +60,8 @@ jobs:
   security:
     name: Vulnerability Scan
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
 
     steps:
       - uses: actions/checkout@v4
@@ -81,13 +83,23 @@ jobs:
             exit 1
           fi
 
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/dotnet@master
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run Snyk Code analysis
+        uses: snyk/actions/node@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=medium --sarif-file-output=snyk.sarif --json-file-output=snyk-results.json
+          command: code test
+          args: --severity-threshold=medium --sarif-file-output=snyk.sarif
 
       - name: Upload Snyk results to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
@@ -96,13 +108,11 @@ jobs:
           sarif_file: snyk.sarif
         continue-on-error: true
 
-      - name: Create Linear issues for vulnerabilities
-        if: env.LINEAR_API_KEY != ''
-        run: node scripts/create-linear-issues.mjs snyk-results.json
+      - name: Sync Snyk findings to Linear
+        if: always()
+        run: node scripts/create-linear-issues.mjs snyk.sarif
         env:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-          LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
-          LINEAR_PROJECT_ID: ${{ secrets.LINEAR_PROJECT_ID }}
         continue-on-error: true
 
   api-compat:
