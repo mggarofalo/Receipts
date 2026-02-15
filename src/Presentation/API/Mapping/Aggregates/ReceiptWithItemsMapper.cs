@@ -16,7 +16,7 @@ public partial class ReceiptWithItemsMapper
 		return new ReceiptWithItemsResponse
 		{
 			Receipt = _receiptMapper.ToResponse(source.Receipt),
-			Items = source.Items.Select(_receiptItemMapper.ToResponse).ToList()
+			Items = [.. source.Items.Select(_receiptItemMapper.ToResponse)]
 		};
 	}
 }

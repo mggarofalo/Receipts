@@ -16,8 +16,6 @@ public static class TransactionGenerator
 
 	public static List<Transaction> GenerateList(int count)
 	{
-		return Enumerable.Range(0, count)
-			.Select(_ => Generate())
-			.ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => Generate())];
 	}
 }

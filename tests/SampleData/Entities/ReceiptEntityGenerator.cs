@@ -20,8 +20,6 @@ public static class ReceiptEntityGenerator
 
 	public static List<ReceiptEntity> GenerateList(int count)
 	{
-		return Enumerable.Range(0, count)
-			.Select(_ => Generate())
-			.ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => Generate())];
 	}
 }

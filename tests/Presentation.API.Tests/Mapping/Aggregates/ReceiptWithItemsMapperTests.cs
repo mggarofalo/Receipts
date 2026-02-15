@@ -67,7 +67,7 @@ public class ReceiptWithItemsMapperTests
 
 		// Assert — Items
 		Assert.Equal(2, actual.Items.Count);
-		List<ReceiptItemResponse> items = actual.Items.ToList();
+		List<ReceiptItemResponse> items = [.. actual.Items];
 
 		Assert.Equal(item1Id, items[0].Id);
 		Assert.Equal("ITEM-A", items[0].ReceiptItemCode);

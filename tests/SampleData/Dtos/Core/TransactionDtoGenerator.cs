@@ -15,7 +15,7 @@ public static class TransactionDtoGenerator
 
 	public static List<CreateTransactionRequest> GenerateCreateRequestList(int count)
 	{
-		return Enumerable.Range(0, count).Select(_ => GenerateCreateRequest()).ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => GenerateCreateRequest())];
 	}
 
 	public static UpdateTransactionRequest GenerateUpdateRequest()
@@ -30,6 +30,6 @@ public static class TransactionDtoGenerator
 
 	public static List<UpdateTransactionRequest> GenerateUpdateRequestList(int count)
 	{
-		return Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest()).ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest())];
 	}
 }

@@ -175,7 +175,7 @@ public class ReceiptItemRepositoryTests
 		await context.ReceiptItems.AddRangeAsync(entities);
 		await context.SaveChangesAsync(CancellationToken.None);
 
-		List<Guid> idsToDelete = entities.Take(itemsToDeleteCount).Select(e => e.Id).ToList();
+		List<Guid> idsToDelete = [.. entities.Take(itemsToDeleteCount).Select(e => e.Id)];
 		ReceiptItemRepository repository = new(_contextFactory);
 
 		// Act

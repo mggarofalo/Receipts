@@ -68,7 +68,7 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 				return NotFound();
 			}
 
-			List<TransactionAccountResponse> model = result.Select(mapper.ToResponse).ToList();
+			List<TransactionAccountResponse> model = [.. result.Select(mapper.ToResponse)];
 			logger.LogDebug("GetTransactionAccountsByReceiptId called with receiptId: {receiptId} found", receiptId);
 			return Ok(model);
 		}

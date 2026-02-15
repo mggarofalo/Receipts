@@ -162,7 +162,7 @@ public class TripMapperTests
 		Assert.Empty(actual.Receipt.Items);
 		Assert.Equal(2, actual.Transactions.Count);
 
-		List<TransactionAccountResponse> txns = actual.Transactions.ToList();
+		List<TransactionAccountResponse> txns = [.. actual.Transactions];
 		Assert.Equal(txn1Id, txns[0].Transaction.Id);
 		Assert.Equal((double)30.00m, txns[0].Transaction.Amount);
 		Assert.Equal("CASH-001", txns[0].Account.AccountCode);

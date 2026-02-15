@@ -17,7 +17,7 @@ public static class ReceiptDtoGenerator
 
 	public static List<CreateReceiptRequest> GenerateCreateRequestList(int count)
 	{
-		return Enumerable.Range(0, count).Select(_ => GenerateCreateRequest()).ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => GenerateCreateRequest())];
 	}
 
 	public static UpdateReceiptRequest GenerateUpdateRequest()
@@ -34,6 +34,6 @@ public static class ReceiptDtoGenerator
 
 	public static List<UpdateReceiptRequest> GenerateUpdateRequestList(int count)
 	{
-		return Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest()).ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest())];
 	}
 }

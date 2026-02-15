@@ -25,8 +25,6 @@ public static class ReceiptItemEntityGenerator
 
 	public static List<ReceiptItemEntity> GenerateList(int count, Guid? receiptId = null)
 	{
-		return Enumerable.Range(0, count)
-			.Select(_ => Generate(receiptId))
-			.ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => Generate(receiptId))];
 	}
 }

@@ -70,7 +70,7 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			List<Receipt> result = await mediator.Send(query);
 			logger.LogDebug("GetAllReceipts called with {Count} receipts", result.Count);
 
-			List<ReceiptResponse> model = result.Select(mapper.ToResponse).ToList();
+			List<ReceiptResponse> model = [.. result.Select(mapper.ToResponse)];
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -109,7 +109,7 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 		try
 		{
 			logger.LogDebug("CreateReceipts called with {Count} receipts", models.Count);
-			CreateReceiptCommand command = new(models.Select(mapper.ToDomain).ToList());
+			CreateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
 			List<Receipt> receipts = await mediator.Send(command);
 			return Ok(receipts.Select(mapper.ToResponse).ToList());
 		}
@@ -158,7 +158,7 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 		try
 		{
 			logger.LogDebug("UpdateReceipts called with {Count} receipts", models.Count);
-			UpdateReceiptCommand command = new(models.Select(mapper.ToDomain).ToList());
+			UpdateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
 			bool result = await mediator.Send(command);
 
 			if (!result)

@@ -13,7 +13,7 @@ public class DeleteReceiptCommandHandlerTests
 		Mock<IReceiptService> mockService = new();
 		DeleteReceiptCommandHandler handler = new(mockService.Object);
 
-		List<Guid> input = ReceiptGenerator.GenerateList(2).Select(r => r.Id).ToList();
+		List<Guid> input = [.. ReceiptGenerator.GenerateList(2).Select(r => r.Id)];
 
 		DeleteReceiptCommand command = new(input);
 		bool result = await handler.Handle(command, CancellationToken.None);

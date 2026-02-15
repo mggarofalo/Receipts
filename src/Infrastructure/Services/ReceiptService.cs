@@ -10,9 +10,9 @@ public class ReceiptService(IReceiptRepository repository, ReceiptMapper mapper)
 {
 	public async Task<List<Receipt>> CreateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> receiptEntities = models.Select(mapper.ToEntity).ToList();
+		List<ReceiptEntity> receiptEntities = [.. models.Select(mapper.ToEntity)];
 		List<ReceiptEntity> createdReceiptEntities = await repository.CreateAsync(receiptEntities, cancellationToken);
-		return createdReceiptEntities.Select(mapper.ToDomain).ToList();
+		return [.. createdReceiptEntities.Select(mapper.ToDomain)];
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
@@ -28,7 +28,7 @@ public class ReceiptService(IReceiptRepository repository, ReceiptMapper mapper)
 	public async Task<List<Receipt>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<ReceiptEntity> receiptEntities = await repository.GetAllAsync(cancellationToken);
-		return receiptEntities.Select(mapper.ToDomain).ToList();
+		return [.. receiptEntities.Select(mapper.ToDomain)];
 	}
 
 	public async Task<Receipt?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -44,7 +44,7 @@ public class ReceiptService(IReceiptRepository repository, ReceiptMapper mapper)
 
 	public async Task UpdateAsync(List<Receipt> models, CancellationToken cancellationToken)
 	{
-		List<ReceiptEntity> receiptEntities = models.Select(mapper.ToEntity).ToList();
+		List<ReceiptEntity> receiptEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(receiptEntities, cancellationToken);
 	}
 }

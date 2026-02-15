@@ -69,7 +69,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			List<Account> result = await mediator.Send(query);
 			logger.LogDebug("GetAllAccounts called with {Count} accounts", result.Count);
 
-			List<AccountResponse> model = result.Select(mapper.ToResponse).ToList();
+			List<AccountResponse> model = [.. result.Select(mapper.ToResponse)];
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -108,7 +108,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		try
 		{
 			logger.LogDebug("CreateAccounts called with {Count} accounts", models.Count);
-			CreateAccountCommand command = new(models.Select(mapper.ToDomain).ToList());
+			CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
 			List<Account> accounts = await mediator.Send(command);
 			return Ok(accounts.Select(mapper.ToResponse).ToList());
 		}
@@ -157,7 +157,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		try
 		{
 			logger.LogDebug("UpdateAccounts called with {Count} accounts", models.Count);
-			UpdateAccountCommand command = new(models.Select(mapper.ToDomain).ToList());
+			UpdateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
 			bool result = await mediator.Send(command);
 
 			if (!result)

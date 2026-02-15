@@ -165,7 +165,7 @@ public class AccountRepositoryTests
 		await context.Accounts.AddRangeAsync(entities);
 		await context.SaveChangesAsync(CancellationToken.None);
 
-		List<Guid> idsToDelete = entities.Take(2).Select(e => e.Id).ToList();
+		List<Guid> idsToDelete = [.. entities.Take(2).Select(e => e.Id)];
 		AccountRepository repository = new(_contextFactory);
 
 		// Act

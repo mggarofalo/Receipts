@@ -20,8 +20,6 @@ public static class TransactionEntityGenerator
 
 	public static List<TransactionEntity> GenerateList(int count, Guid? receiptId = null, Guid? accountId = null)
 	{
-		return Enumerable.Range(0, count)
-			.Select(_ => Generate(receiptId, accountId))
-			.ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => Generate(receiptId, accountId))];
 	}
 }

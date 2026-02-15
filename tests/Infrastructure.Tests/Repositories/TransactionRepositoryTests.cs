@@ -185,7 +185,7 @@ public class TransactionRepositoryTests
 		await context.SaveChangesAsync(CancellationToken.None);
 		(await context.Transactions.CountAsync()).Should().Be(initialTransactionCount);
 
-		List<Guid> idsToDelete = entities.Take(transactionsToDeleteCount).Select(e => e.Id).ToList();
+		List<Guid> idsToDelete = [.. entities.Take(transactionsToDeleteCount).Select(e => e.Id)];
 		TransactionRepository repository = new(_contextFactory);
 
 		// Act

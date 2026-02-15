@@ -15,7 +15,7 @@ public partial class TripMapper
 		return new TripResponse
 		{
 			Receipt = _receiptWithItemsMapper.ToResponse(source.Receipt),
-			Transactions = source.Transactions.Select(_transactionAccountMapper.ToResponse).ToList()
+			Transactions = [.. source.Transactions.Select(_transactionAccountMapper.ToResponse)]
 		};
 	}
 }

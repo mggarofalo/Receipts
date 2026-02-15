@@ -27,7 +27,7 @@ public class DeleteReceiptCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
-		List<Guid> items = ReceiptGenerator.GenerateList(2).Select(r => r.Id).ToList();
+		List<Guid> items = [.. ReceiptGenerator.GenerateList(2).Select(r => r.Id)];
 		DeleteReceiptCommand command = new(items);
 		command.Ids.Should().BeEquivalentTo(items);
 	}
@@ -35,7 +35,7 @@ public class DeleteReceiptCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Items_ShouldBeImmutable()
 	{
-		List<Guid> items = ReceiptGenerator.GenerateList(2).Select(r => r.Id).ToList();
+		List<Guid> items = [.. ReceiptGenerator.GenerateList(2).Select(r => r.Id)];
 		DeleteReceiptCommand command = new(items);
 		Assert.IsAssignableFrom<IReadOnlyList<Guid>>(command.Ids);
 		Assert.NotSame(items, command.Ids);

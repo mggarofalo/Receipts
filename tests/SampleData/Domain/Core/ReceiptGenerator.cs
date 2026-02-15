@@ -18,8 +18,6 @@ public static class ReceiptGenerator
 
 	public static List<Receipt> GenerateList(int count)
 	{
-		return Enumerable.Range(0, count)
-			.Select(_ => Generate())
-			.ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => Generate())];
 	}
 }

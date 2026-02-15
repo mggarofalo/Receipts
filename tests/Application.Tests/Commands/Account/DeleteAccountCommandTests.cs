@@ -27,7 +27,7 @@ public class DeleteAccountCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
-		List<Guid> items = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> items = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
 		DeleteAccountCommand command = new(items);
 		command.Ids.Should().BeEquivalentTo(items);
 	}
@@ -35,7 +35,7 @@ public class DeleteAccountCommandTests : ICommandTests<Guid>
 	[Fact]
 	public void Items_ShouldBeImmutable()
 	{
-		List<Guid> items = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> items = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
 		DeleteAccountCommand command = new(items);
 		Assert.IsAssignableFrom<IReadOnlyList<Guid>>(command.Ids);
 		Assert.NotSame(items, command.Ids);

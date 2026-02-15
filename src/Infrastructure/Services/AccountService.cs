@@ -10,9 +10,9 @@ public class AccountService(IAccountRepository repository, AccountMapper mapper)
 {
 	public async Task<List<Account>> CreateAsync(List<Account> models, CancellationToken cancellationToken)
 	{
-		List<AccountEntity> accountEntities = models.Select(mapper.ToEntity).ToList();
+		List<AccountEntity> accountEntities = [.. models.Select(mapper.ToEntity)];
 		List<AccountEntity> createdAccountEntities = await repository.CreateAsync(accountEntities, cancellationToken);
-		return createdAccountEntities.Select(mapper.ToDomain).ToList();
+		return [.. createdAccountEntities.Select(mapper.ToDomain)];
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
@@ -28,7 +28,7 @@ public class AccountService(IAccountRepository repository, AccountMapper mapper)
 	public async Task<List<Account>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<AccountEntity> accountEntities = await repository.GetAllAsync(cancellationToken);
-		return accountEntities.Select(mapper.ToDomain).ToList();
+		return [.. accountEntities.Select(mapper.ToDomain)];
 	}
 
 	public async Task<Account?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -50,7 +50,7 @@ public class AccountService(IAccountRepository repository, AccountMapper mapper)
 
 	public async Task UpdateAsync(List<Account> models, CancellationToken cancellationToken)
 	{
-		List<AccountEntity> accountEntities = models.Select(mapper.ToEntity).ToList();
+		List<AccountEntity> accountEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(accountEntities, cancellationToken);
 	}
 }

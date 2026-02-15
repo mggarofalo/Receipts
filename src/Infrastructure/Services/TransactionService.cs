@@ -10,7 +10,7 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 {
 	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> transactionEntities = models.Select(mapper.ToEntity).ToList();
+		List<TransactionEntity> transactionEntities = [.. models.Select(mapper.ToEntity)];
 
 		foreach (TransactionEntity entity in transactionEntities)
 		{
@@ -19,7 +19,7 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 		}
 
 		List<TransactionEntity> createdTransactionEntities = await repository.CreateAsync(transactionEntities, cancellationToken);
-		return createdTransactionEntities.Select(mapper.ToDomain).ToList();
+		return [.. createdTransactionEntities.Select(mapper.ToDomain)];
 	}
 
 
@@ -36,7 +36,7 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 	public async Task<List<Transaction>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> transactionEntities = await repository.GetAllAsync(cancellationToken);
-		return transactionEntities.Select(mapper.ToDomain).ToList();
+		return [.. transactionEntities.Select(mapper.ToDomain)];
 	}
 
 	public async Task<Transaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -58,7 +58,7 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 
 	public async Task UpdateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
 	{
-		List<TransactionEntity> transactionEntities = models.Select(mapper.ToEntity).ToList();
+		List<TransactionEntity> transactionEntities = [.. models.Select(mapper.ToEntity)];
 
 		foreach (TransactionEntity entity in transactionEntities)
 		{

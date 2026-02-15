@@ -94,7 +94,7 @@ public class ReceiptItemsControllerTests
 	{
 		// Arrange
 		List<ReceiptItem> mediatorReturn = ReceiptItemGenerator.GenerateList(2);
-		List<ReceiptItemResponse> expectedControllerReturn = mediatorReturn.Select(_mapper.ToResponse).ToList();
+		List<ReceiptItemResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<GetAllReceiptItemsQuery>(),
@@ -134,7 +134,7 @@ public class ReceiptItemsControllerTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		List<ReceiptItem> mediatorReturn = ReceiptItemGenerator.GenerateList(2);
-		List<ReceiptItemResponse> expectedControllerReturn = mediatorReturn.Select(_mapper.ToResponse).ToList();
+		List<ReceiptItemResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
@@ -263,7 +263,7 @@ public class ReceiptItemsControllerTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		List<ReceiptItem> mediatorReturn = ReceiptItemGenerator.GenerateList(2);
-		List<ReceiptItemResponse> expectedControllerReturn = mediatorReturn.Select(_mapper.ToResponse).ToList();
+		List<ReceiptItemResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateReceiptItemCommand>(c => c.ReceiptItems.Count == mediatorReturn.Count && c.ReceiptId == receiptId),
@@ -425,7 +425,7 @@ public class ReceiptItemsControllerTests
 	public async Task DeleteReceiptItems_ReturnsNoContent_WhenDeleteSucceeds()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptItemGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> controllerInput = [.. ReceiptItemGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptItemCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -443,7 +443,7 @@ public class ReceiptItemsControllerTests
 	public async Task DeleteReceiptItems_ReturnsNotFound_WhenDeleteFails()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptItemGenerator.GenerateList(2).Select(ri => ri.Id).ToList();
+		List<Guid> controllerInput = [.. ReceiptItemGenerator.GenerateList(2).Select(ri => ri.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptItemCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -461,7 +461,7 @@ public class ReceiptItemsControllerTests
 	public async Task DeleteReceiptItems_ReturnsNotFound_WhenMultipleReceiptItemsDeleteFails()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptItemGenerator.GenerateList(2).Select(ri => ri.Id).ToList();
+		List<Guid> controllerInput = [.. ReceiptItemGenerator.GenerateList(2).Select(ri => ri.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptItemCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -479,7 +479,7 @@ public class ReceiptItemsControllerTests
 	public async Task DeleteReceiptItems_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptItemGenerator.GenerateList(2).Select(ri => ri.Id).ToList();
+		List<Guid> controllerInput = [.. ReceiptItemGenerator.GenerateList(2).Select(ri => ri.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptItemCommand>(c => c.Ids.SequenceEqual(controllerInput)),

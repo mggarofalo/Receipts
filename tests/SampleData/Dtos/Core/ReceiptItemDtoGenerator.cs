@@ -19,7 +19,7 @@ public static class ReceiptItemDtoGenerator
 
 	public static List<CreateReceiptItemRequest> GenerateCreateRequestList(int count)
 	{
-		return Enumerable.Range(0, count).Select(_ => GenerateCreateRequest()).ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => GenerateCreateRequest())];
 	}
 
 	public static UpdateReceiptItemRequest GenerateUpdateRequest()
@@ -38,6 +38,6 @@ public static class ReceiptItemDtoGenerator
 
 	public static List<UpdateReceiptItemRequest> GenerateUpdateRequestList(int count)
 	{
-		return Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest()).ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest())];
 	}
 }

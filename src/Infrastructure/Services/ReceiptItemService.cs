@@ -10,7 +10,7 @@ public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMa
 {
 	public async Task<List<ReceiptItem>> CreateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> receiptItemEntities = models.Select(mapper.ToEntity).ToList();
+		List<ReceiptItemEntity> receiptItemEntities = [.. models.Select(mapper.ToEntity)];
 
 		foreach (ReceiptItemEntity entity in receiptItemEntities)
 		{
@@ -18,7 +18,7 @@ public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMa
 		}
 
 		List<ReceiptItemEntity> createdReceiptItemEntities = await repository.CreateAsync(receiptItemEntities, cancellationToken);
-		return createdReceiptItemEntities.Select(mapper.ToDomain).ToList();
+		return [.. createdReceiptItemEntities.Select(mapper.ToDomain)];
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
@@ -34,7 +34,7 @@ public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMa
 	public async Task<List<ReceiptItem>> GetAllAsync(CancellationToken cancellationToken)
 	{
 		List<ReceiptItemEntity> receiptItemEntities = await repository.GetAllAsync(cancellationToken);
-		return receiptItemEntities.Select(mapper.ToDomain).ToList();
+		return [.. receiptItemEntities.Select(mapper.ToDomain)];
 	}
 
 	public async Task<ReceiptItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -56,7 +56,7 @@ public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMa
 
 	public async Task UpdateAsync(List<ReceiptItem> models, Guid receiptId, CancellationToken cancellationToken)
 	{
-		List<ReceiptItemEntity> receiptItemEntities = models.Select(mapper.ToEntity).ToList();
+		List<ReceiptItemEntity> receiptItemEntities = [.. models.Select(mapper.ToEntity)];
 
 		foreach (ReceiptItemEntity entity in receiptItemEntities)
 		{

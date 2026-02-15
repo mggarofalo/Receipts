@@ -95,7 +95,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<Account> accounts = AccountGenerator.GenerateList(2);
-		List<AccountResponse> expectedReturn = accounts.Select(_mapper.ToResponse).ToList();
+		List<AccountResponse> expectedReturn = [.. accounts.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetAllAccountsQuery>(q => true),
@@ -179,7 +179,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<Account> accounts = AccountGenerator.GenerateList(2);
-		List<AccountResponse> expectedReturn = accounts.Select(_mapper.ToResponse).ToList();
+		List<AccountResponse> expectedReturn = [.. accounts.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == accounts.Count),
@@ -336,7 +336,7 @@ public class AccountsControllerTests
 	public async Task DeleteAccounts_ReturnsNoContent_WhenDeleteSucceeds()
 	{
 		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
@@ -374,7 +374,7 @@ public class AccountsControllerTests
 	public async Task DeleteAccounts_ReturnsNotFound_WhenMultipleAccountsDeleteFails()
 	{
 		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<DeleteAccountCommand>(),
@@ -393,7 +393,7 @@ public class AccountsControllerTests
 	public async Task DeleteAccounts_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		List<Guid> ids = AccountGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<DeleteAccountCommand>(),

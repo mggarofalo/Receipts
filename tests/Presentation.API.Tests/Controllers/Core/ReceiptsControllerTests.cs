@@ -95,7 +95,7 @@ public class ReceiptsControllerTests
 	{
 		// Arrange
 		List<Receipt> mediatorReturn = ReceiptGenerator.GenerateList(2);
-		List<ReceiptResponse> expectedControllerReturn = mediatorReturn.Select(_mapper.ToResponse).ToList();
+		List<ReceiptResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<GetAllReceiptsQuery>(),
@@ -179,7 +179,7 @@ public class ReceiptsControllerTests
 	{
 		// Arrange
 		List<Receipt> mediatorReturn = ReceiptGenerator.GenerateList(2);
-		List<ReceiptResponse> expectedControllerReturn = mediatorReturn.Select(_mapper.ToResponse).ToList();
+		List<ReceiptResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateReceiptCommand>(c => c.Receipts.Count == mediatorReturn.Count),
@@ -334,7 +334,7 @@ public class ReceiptsControllerTests
 	public async Task DeleteReceipts_ReturnsNoContent_WhenDeleteSucceeds()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> controllerInput = [.. ReceiptGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -352,7 +352,7 @@ public class ReceiptsControllerTests
 	public async Task DeleteReceipts_ReturnsNotFound_WhenDeleteFails()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> controllerInput = [.. ReceiptGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(controllerInput)),
@@ -370,7 +370,7 @@ public class ReceiptsControllerTests
 	public async Task DeleteReceipts_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
-		List<Guid> controllerInput = ReceiptGenerator.GenerateList(2).Select(a => a.Id).ToList();
+		List<Guid> controllerInput = [.. ReceiptGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(controllerInput)),

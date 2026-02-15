@@ -16,7 +16,7 @@ public static class AccountDtoGenerator
 
 	public static List<CreateAccountRequest> GenerateCreateRequestList(int count)
 	{
-		return Enumerable.Range(0, count).Select(_ => GenerateCreateRequest()).ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => GenerateCreateRequest())];
 	}
 
 	public static UpdateAccountRequest GenerateUpdateRequest()
@@ -32,6 +32,6 @@ public static class AccountDtoGenerator
 
 	public static List<UpdateAccountRequest> GenerateUpdateRequestList(int count)
 	{
-		return Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest()).ToList();
+		return [.. Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest())];
 	}
 }

@@ -71,7 +71,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			List<Transaction> result = await mediator.Send(query);
 			logger.LogDebug("GetAllTransactions called with {Count} transactions", result.Count);
 
-			List<TransactionResponse> model = result.Select(mapper.ToResponse).ToList();
+			List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -101,7 +101,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 				return NotFound();
 			}
 
-			List<TransactionResponse> model = result.Select(mapper.ToResponse).ToList();
+			List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
 			logger.LogDebug("GetTransactionsByReceiptId called with receiptId: {ReceiptId} found", receiptId);
 			return Ok(model);
 		}
@@ -141,7 +141,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		try
 		{
 			logger.LogDebug("CreateTransactions called with {Count} transactions", models.Count);
-			CreateTransactionCommand command = new(models.Select(mapper.ToDomain).ToList(), receiptId, accountId);
+			CreateTransactionCommand command = new([.. models.Select(mapper.ToDomain)], receiptId, accountId);
 			List<Transaction> transactions = await mediator.Send(command);
 			return Ok(transactions.Select(mapper.ToResponse).ToList());
 		}
@@ -190,7 +190,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		try
 		{
 			logger.LogDebug("UpdateTransactions called with {Count} transactions", models.Count);
-			UpdateTransactionCommand command = new(models.Select(mapper.ToDomain).ToList(), receiptId, accountId);
+			UpdateTransactionCommand command = new([.. models.Select(mapper.ToDomain)], receiptId, accountId);
 			bool result = await mediator.Send(command);
 
 			if (!result)

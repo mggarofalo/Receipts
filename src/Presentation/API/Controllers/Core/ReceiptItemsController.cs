@@ -71,7 +71,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			List<ReceiptItem> result = await mediator.Send(query);
 			logger.LogDebug("GetAllReceiptItems called with {Count} receipt items", result.Count);
 
-			List<ReceiptItemResponse> model = result.Select(mapper.ToResponse).ToList();
+			List<ReceiptItemResponse> model = [.. result.Select(mapper.ToResponse)];
 			return Ok(model);
 		}
 		catch (Exception ex)
@@ -101,7 +101,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 				return NotFound();
 			}
 
-			List<ReceiptItemResponse> model = result.Select(mapper.ToResponse).ToList();
+			List<ReceiptItemResponse> model = [.. result.Select(mapper.ToResponse)];
 			logger.LogDebug("GetReceiptItemsByReceiptId called with receiptId: {ReceiptId} found", receiptId);
 			return Ok(model);
 		}
@@ -141,7 +141,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		try
 		{
 			logger.LogDebug("CreateReceiptItems called with {Count} receipt items", models.Count);
-			CreateReceiptItemCommand command = new(models.Select(mapper.ToDomain).ToList(), receiptId);
+			CreateReceiptItemCommand command = new([.. models.Select(mapper.ToDomain)], receiptId);
 			List<ReceiptItem> receiptItems = await mediator.Send(command);
 			return Ok(receiptItems.Select(mapper.ToResponse).ToList());
 		}
@@ -190,7 +190,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		try
 		{
 			logger.LogDebug("UpdateReceiptItems called with {Count} receipt items", models.Count);
-			UpdateReceiptItemCommand command = new(models.Select(mapper.ToDomain).ToList(), receiptId);
+			UpdateReceiptItemCommand command = new([.. models.Select(mapper.ToDomain)], receiptId);
 			bool result = await mediator.Send(command);
 
 			if (!result)
