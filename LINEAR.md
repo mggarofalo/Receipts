@@ -49,13 +49,14 @@ All active issues are assigned to a milestone. Milestones are ordered and repres
 
 | Milestone | Description | Can Start When |
 |-----------|-------------|----------------|
-| **Phase 0: Housekeeping** | Standalone cleanup (remove Blazor, fix CI) | Immediately |
-| **Phase 1: OpenAPI Spec-First** | Establish API contract as source of truth | Immediately |
-| **Phase 2: Backend DTO Generation** | Replace ViewModels with spec-generated DTOs | Phase 1 done |
-| **Phase 3: Aspire Developer Experience** | Local dev orchestration with .NET Aspire | Mostly immediate (MGG-75 needs Phase 4 started) |
-| **Phase 4: React Frontend** | Build React/Vite SPA | Phase 0 done (for setup), Phase 1 done (for codegen) |
-| **Phase 5: Docker Deployment** | Containerize and deploy to Raspberry Pi | Phase 4 done |
-| **Phase 6: Correctness Hardening** | Business invariants, receipt coherence validation, reconciliation | Phase 2 done (stable API model) |
+| **Phase 0: Housekeeping** | Standalone cleanup (remove Blazor, fix CI) | **COMPLETE** |
+| **Phase 1: OpenAPI Spec-First** | Establish API contract as source of truth | **COMPLETE** |
+| **Phase 2: Backend DTO Generation** | Replace ViewModels with spec-generated DTOs | **COMPLETE** |
+| **Phase 3: Aspire Developer Experience** | Local dev orchestration with .NET Aspire | Immediately |
+| **Phase 4: React Frontend** | Build React/Vite SPA | Phase 0 done (setup), Phase 1 done (codegen) |
+| **Phase 5: Docker Deployment** | Containerize and deploy to Raspberry Pi | Phase 4 MVP done |
+| **Phase 6: Correctness Hardening** | Business invariants, receipt coherence validation | Phase 2 done (stable API model) |
+| **Phase 7: Security Automation** | Snyk-to-Linear integration | Phase 2 done |
 
 ## Priority Semantics
 
@@ -81,35 +82,68 @@ Priority reflects **execution readiness**, not importance:
 
 ## Epics (Parent Issues)
 
-Epics are parent issues that group related work. Key epics:
+Epics are parent issues that group related work.
 
-| Epic | Milestone | Children |
-|------|-----------|----------|
-| **MGG-89** OpenAPI Spec-First API Contract | Phase 1 | MGG-21, MGG-14 |
-| **MGG-83** Replace ViewModels with DTOs | Phase 2 | MGG-88, MGG-87 |
-| **MGG-71** .NET Aspire AppHost | Phase 3 | MGG-72–80 |
-| **MGG-32** React/Vite Frontend | Phase 4 | MGG-33–50, MGG-66–69 |
-| **MGG-51** Docker Deployment | Phase 5 | MGG-52–65, MGG-70 |
+### Completed Phases
 
-Standalone issues (no parent): **MGG-90** (Remove Blazor), **MGG-82** (CI/.NET 10), **MGG-94** (Receipt coherence validation — Phase 6)
+| Epic | Milestone | Status |
+|------|-----------|--------|
+| **MGG-89** OpenAPI Spec-First API Contract | Phase 1 | Done |
+| **MGG-83** Replace ViewModels with DTOs | Phase 2 | Done |
+
+### Phase 3: Aspire Developer Experience
+
+| Epic | Children | MVP? |
+|------|----------|------|
+| **MGG-109** Core Aspire Orchestration | MGG-72, 73, 74, 76, 77, 80 | Yes |
+| **MGG-110** AI-Powered Dev Tooling | MGG-78, 79 | No — follow-up |
+
+### Phase 4: React Frontend
+
+| Epic | Children | MVP? |
+|------|----------|------|
+| **MGG-111** Frontend Bootstrap & Codegen | MGG-33, 36, 75, 48 | Yes |
+| **MGG-112** Authentication System | MGG-34, 35 | Yes |
+| **MGG-113** Core CRUD Modules | MGG-38, 39, 40, 41, 42, 43 | Yes |
+| **MGG-114** Data Safety & Audit Trail | MGG-66, 67, 68, 69 | No — follow-up |
+| **MGG-115** UX Polish & Enhancements | MGG-37, 44, 45, 46, 47 | No — follow-up |
+| **MGG-116** Frontend Quality & Documentation | MGG-49, 50 | No — follow-up |
+
+### Phase 5: Docker Deployment
+
+| Epic | Children | MVP? |
+|------|----------|------|
+| **MGG-117** Container Architecture & CI | MGG-52, 53, 54, 55, 57 | Yes |
+| **MGG-118** Production Operations | MGG-58, 59, 61, 62, 63, 64 | Mixed (58, 59 MVP) |
+| **MGG-119** Deployment Security & Documentation | MGG-56, 60, 65, 70 | No — follow-up |
+
+### Retired Epics
+
+These monolithic epics were replaced by the focused epics above:
+
+| Old Epic | Replaced By | Status |
+|----------|-------------|--------|
+| **MGG-71** .NET Aspire AppHost | MGG-109, MGG-110 | Canceled |
+| **MGG-32** React/Vite Frontend | MGG-111–116 | Canceled |
+| **MGG-51** Docker Deployment | MGG-117–119 | Canceled |
 
 ## Key Cross-Epic Dependencies
 
-These are the dependencies that span across epics and phases:
-
 ```
-MGG-90 (Remove Blazor) ──blocks──> MGG-32 (React Frontend epic)
-                                    └──> MGG-33 (React project setup)
+Phase 4 entry points (no blockers):
+  MGG-33 (React setup) — MGG-90 is Done
+  MGG-34 (Backend auth) — no blockers
 
-MGG-21 (Establish OpenAPI spec) ──blocks──> MGG-14 (Verify spec output)
-                                ──blocks──> MGG-83 (DTO replacement epic)
-                                ──blocks──> MGG-36 (TypeScript codegen)
-                                ──blocks──> MGG-88 (Generate .NET DTOs)
+Phase 4 critical path:
+  MGG-33 ──> MGG-36 (TS codegen) ──> MGG-38–43 (CRUD modules)
+  MGG-33 ──> MGG-75 (Vite in Aspire)
+  MGG-34 ──> MGG-35 (Frontend auth UI)
+  MGG-34 ──> MGG-66, 67, 68 (Data safety)
 
-MGG-33 (React project setup) ──blocks──> MGG-36 (TypeScript codegen)
-                              ──blocks──> MGG-75 (Vite in Aspire)
-
-MGG-32 (React Frontend epic) ──blocks──> MGG-51 (Docker epic)
+Phase 5 gate:
+  MGG-111 + MGG-112 + MGG-113 (Phase 4 MVP) ──blocks──> MGG-117 (Containers)
+  MGG-117 ──blocks──> MGG-118 (Operations)
+  MGG-117 ──blocks──> MGG-119 (Security & Docs)
 ```
 
 ## Working with Linear Issues
