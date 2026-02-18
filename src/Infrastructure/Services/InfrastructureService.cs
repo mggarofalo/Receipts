@@ -14,11 +14,40 @@ public static class InfrastructureService
 {
 	public static bool IsDatabaseConfigured(IConfiguration configuration)
 	{
+		// Aspire-injected connection string takes precedence
+		if (!string.IsNullOrEmpty(configuration.GetConnectionString(ConfigurationVariables.AspireConnectionStringName)))
+		{
+			return true;
+		}
+
+		// Fall back to individual POSTGRES_* environment variables (non-Aspire deployments)
 		return !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresHost])
 			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresPort])
 			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresUser])
 			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresPassword])
 			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresDb]);
+	}
+
+	private static string GetConnectionString(IConfiguration configuration)
+	{
+		// Aspire-injected connection string (set by WithReference(db) in AppHost)
+		string? aspireConnectionString = configuration.GetConnectionString(ConfigurationVariables.AspireConnectionStringName);
+		if (!string.IsNullOrEmpty(aspireConnectionString))
+		{
+			return aspireConnectionString;
+		}
+
+		// Build from individual POSTGRES_* environment variables
+		Npgsql.NpgsqlConnectionStringBuilder builder = new()
+		{
+			Host = configuration[ConfigurationVariables.PostgresHost]!,
+			Port = int.Parse(configuration[ConfigurationVariables.PostgresPort]!),
+			Username = configuration[ConfigurationVariables.PostgresUser]!,
+			Password = configuration[ConfigurationVariables.PostgresPassword]!,
+			Database = configuration[ConfigurationVariables.PostgresDb]!
+		};
+
+		return builder.ConnectionString;
 	}
 
 	public static IServiceCollection RegisterInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
@@ -27,16 +56,7 @@ public static class InfrastructureService
 		{
 			services.AddDbContextFactory<ApplicationDbContext>(options =>
 			{
-				Npgsql.NpgsqlConnectionStringBuilder builder = new()
-				{
-					Host = configuration[ConfigurationVariables.PostgresHost]!,
-					Port = int.Parse(configuration[ConfigurationVariables.PostgresPort]!),
-					Username = configuration[ConfigurationVariables.PostgresUser]!,
-					Password = configuration[ConfigurationVariables.PostgresPassword]!,
-					Database = configuration[ConfigurationVariables.PostgresDb]!
-				};
-
-				options.UseNpgsql(builder.ConnectionString, b =>
+				options.UseNpgsql(GetConnectionString(configuration), b =>
 				{
 					string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
 					b.MigrationsAssembly(assemblyName);
