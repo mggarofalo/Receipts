@@ -15,7 +15,7 @@ public static class InfrastructureService
 	public static bool IsDatabaseConfigured(IConfiguration configuration)
 	{
 		// Aspire-injected connection string takes precedence
-		if (!string.IsNullOrEmpty(configuration.GetConnectionString(ConfigurationVariables.AspireConnectionStringName)))
+		if (!string.IsNullOrEmpty(configuration[$"ConnectionStrings:{ConfigurationVariables.AspireConnectionStringName}"]))
 		{
 			return true;
 		}
@@ -31,7 +31,7 @@ public static class InfrastructureService
 	private static string GetConnectionString(IConfiguration configuration)
 	{
 		// Aspire-injected connection string (set by WithReference(db) in AppHost)
-		string? aspireConnectionString = configuration.GetConnectionString(ConfigurationVariables.AspireConnectionStringName);
+		string? aspireConnectionString = configuration[$"ConnectionStrings:{ConfigurationVariables.AspireConnectionStringName}"];
 		if (!string.IsNullOrEmpty(aspireConnectionString))
 		{
 			return aspireConnectionString;
