@@ -4,6 +4,8 @@
     <Project Path="src/Common/Common.csproj" />
     <Project Path="src/Domain/Domain.csproj" />
     <Project Path="src/Infrastructure/Infrastructure.csproj" />
+    <Project Path="src/Receipts.AppHost/Receipts.AppHost.csproj" />
+    <Project Path="src/Receipts.ServiceDefaults/Receipts.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/src/Presentation/">
     <Project Path="src/Presentation/API/API.csproj" />

@@ -48,8 +48,10 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
-# VS Code
-.vscode/
+# VS Code (track shared dev config, ignore user-specific settings)
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
 
 *_i.c
 *_p.c

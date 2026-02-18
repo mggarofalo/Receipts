@@ -7,6 +7,7 @@ using Infrastructure.Services;
 
 // Create builder
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 builder.AddApplicationConfiguration();
 
 // Register services
@@ -32,6 +33,9 @@ if (Infrastructure.Services.InfrastructureService.IsDatabaseConfigured(builder.C
 	using IServiceScope scope = app.Services.CreateScope();
 	await scope.ServiceProvider.GetRequiredService<IDatabaseMigratorService>().MigrateAsync();
 }
+
+// Map Aspire health check endpoints (/health, /alive)
+app.MapDefaultEndpoints();
 
 // Map controllers
 app.MapControllers();
