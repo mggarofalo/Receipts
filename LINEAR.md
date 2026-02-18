@@ -57,6 +57,7 @@ All active issues are assigned to a milestone. Milestones are ordered and repres
 | **Phase 5: Docker Deployment** | Containerize and deploy to Raspberry Pi | Phase 4 MVP done |
 | **Phase 6: Correctness Hardening** | Business invariants, receipt coherence validation | Phase 2 done (stable API model) |
 | **Phase 7: Security Automation** | Snyk-to-Linear integration | Phase 2 done |
+| **Phase 8: Test Coverage** | Code coverage collection, CI reporting, enforcement gate, agent test-writing loop | Phase 3 MVP done |
 
 ## Priority Semantics
 
@@ -116,6 +117,23 @@ Epics are parent issues that group related work.
 | **MGG-117** Container Architecture & CI | MGG-52, 53, 54, 55, 57 | Yes |
 | **MGG-118** Production Operations | MGG-58, 59, 61, 62, 63, 64 | Mixed (58, 59 MVP) |
 | **MGG-119** Deployment Security & Documentation | MGG-56, 60, 65, 70 | No — follow-up |
+
+### Phase 8: Test Coverage
+
+| Epic | Children | MVP? |
+|------|----------|------|
+| **MGG-121** Test Coverage Pipeline | MGG-122, 123, 124, 125, 126, 127 | All MVP |
+
+Dependency chain:
+```
+MGG-122 (coverlet/.NET) ──┐
+                           ├──> MGG-123 (CI report, both stacks) ──> MGG-124 (enforcement gate)
+MGG-126 (Vitest/React) ───┘
+MGG-33  (React app) ──────> MGG-126
+
+MGG-122 ──> MGG-125 (agent loop: .NET)
+MGG-126 ──> MGG-127 (agent loop: React)
+```
 
 ### Retired Epics
 

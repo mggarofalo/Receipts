@@ -13,7 +13,7 @@
 				"POSTGRES_PORT": "5432",
 				"POSTGRES_USER": "postgres",
 				"POSTGRES_PASSWORD": "admin",
-				"POSTGRES_DB": "receipts",
+				"POSTGRES_DB": "receipts"
 			}
 		}
 	}
