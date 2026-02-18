@@ -14,9 +14,10 @@ A receipt management API built with .NET 10 and Clean Architecture. Tracks accou
 | CQRS | MediatR 14 |
 | Mapping | Mapperly (compile-time, zero-reflection) |
 | Validation | FluentValidation |
-| Logging | Serilog |
+| Logging | Serilog + OpenTelemetry |
 | Real-time | SignalR |
 | API Docs | Microsoft.AspNetCore.OpenApi + Scalar |
+| Local Dev | .NET Aspire (orchestration + observability) |
 | Testing | xUnit + FluentAssertions + Moq |
 
 ## Architecture
@@ -67,39 +68,24 @@ tests/
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [PostgreSQL](https://www.postgresql.org/download/) (any recent version)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for local dev — Aspire provisions PostgreSQL as a container)
+- [Node.js 18+](https://nodejs.org) (for OpenAPI tooling)
 
 ## Getting Started
 
-1. **Clone and restore**
+See **[DEVELOPMENT.md](DEVELOPMENT.md)** for the full local development guide including F5 debugging with Aspire, the Aspire Dashboard, and troubleshooting.
 
-   ```bash
-   git clone https://github.com/mggarofalo/Receipts.git
-   cd Receipts
-   dotnet restore Receipts.slnx
-   ```
+**Quick start:**
 
-2. **Configure the database**
+```bash
+git clone https://github.com/mggarofalo/Receipts.git
+cd Receipts
+dotnet restore Receipts.slnx
+npm install
+# Then press F5 in VS Code
+```
 
-   Set the following environment variables (or edit `src/Presentation/API/appsettings.Development.json`):
-
-   | Variable | Default |
-   |---|---|
-   | `POSTGRES_HOST` | `localhost` |
-   | `POSTGRES_PORT` | `5432` |
-   | `POSTGRES_USER` | `postgres` |
-   | `POSTGRES_PASSWORD` | `postgres` |
-   | `POSTGRES_DB` | `receipts` |
-
-3. **Run the API**
-
-   ```bash
-   dotnet run --project src/Presentation/API/API.csproj
-   ```
-
-   The API starts at `https://localhost:5001` with Swagger UI at `/swagger`.
-
-   EF Core migrations run automatically on startup.
+Aspire orchestrates the entire stack (API + PostgreSQL + Dashboard) automatically. No manual database setup needed.
 
 ## Development
 
