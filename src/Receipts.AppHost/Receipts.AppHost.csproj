@@ -8,4 +8,8 @@
     <UserSecretsId>b5ec2e0d-4615-427e-9fdc-7c109cb3902a</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Presentation\API\API.csproj" />
+  </ItemGroup>
+
 </Project>
