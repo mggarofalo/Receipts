@@ -3,6 +3,13 @@
     "linear-server": {
       "type": "http",
       "url": "https://mcp.linear.app/mcp"
+    },
+    "aspire": {
+      "command": "npx",
+      "args": ["-y", "@microsoft/aspire-mcp"],
+      "env": {
+        "ASPIRE_DASHBOARD_URL": "http://localhost:15082"
+      }
     }
   }
 }
