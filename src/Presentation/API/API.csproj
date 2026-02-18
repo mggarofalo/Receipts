@@ -24,6 +24,7 @@
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.OpenTelemetry" />
     <ProjectReference Include="..\..\Common\Common.csproj" />
     <ProjectReference Include="..\..\Domain\Domain.csproj" />
     <ProjectReference Include="..\..\Application\Application.csproj" />
@@ -31,9 +32,7 @@
     <ProjectReference Include="..\..\Receipts.ServiceDefaults\Receipts.ServiceDefaults.csproj" />
   </ItemGroup>
 
-  <Target Name="NSwag" BeforeTargets="CoreCompile"
-          Inputs="$(MSBuildProjectDirectory)\..\..\..\openapi\spec.yaml"
-          Outputs="$(MSBuildProjectDirectory)\Generated\Dtos.g.cs">
+  <Target Name="NSwag" BeforeTargets="CoreCompile" Inputs="$(MSBuildProjectDirectory)\..\..\..\openapi\spec.yaml" Outputs="$(MSBuildProjectDirectory)\Generated\Dtos.g.cs">
     <Message Text="Regenerating DTOs from OpenAPI spec..." Importance="high" />
     <Exec Command="$(NSwagExe_Net90) run $(MSBuildProjectDirectory)\..\..\..\nswag.json" EnvironmentVariables="DOTNET_ROLL_FORWARD=Major" />
   </Target>
