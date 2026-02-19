@@ -1,9 +1,11 @@
 using Application.Interfaces;
 using Application.Interfaces.Services;
 using Common;
+using Infrastructure.Entities;
 using Infrastructure.Interfaces.Repositories;
 using Infrastructure.Mapping;
 using Infrastructure.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,6 +74,11 @@ public static class InfrastructureService
 		}
 
 		services
+			.AddIdentityCore<ApplicationUser>()
+			.AddRoles<IdentityRole>()
+			.AddEntityFrameworkStores<ApplicationDbContext>();
+
+		services
 			.AddScoped<IReceiptService, ReceiptService>()
 			.AddScoped<IAccountService, AccountService>()
 			.AddScoped<ITransactionService, TransactionService>()
@@ -80,7 +87,9 @@ public static class InfrastructureService
 			.AddScoped<IAccountRepository, AccountRepository>()
 			.AddScoped<ITransactionRepository, TransactionRepository>()
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
-			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>();
+			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>()
+			.AddScoped<ITokenService, TokenService>()
+			.AddScoped<IApiKeyService, ApiKeyService>();
 
 		services
 			.AddSingleton<AccountMapper>()

@@ -37,10 +37,6 @@ public static class ApplicationConfiguration
 		app.UseHttpsRedirection();
 		app.UseRouting();
 
-		// Map controllers and SignalR hubs
-		app.MapControllers();
-		app.MapHub<ReceiptsHub>("/receipts");
-
 		return app;
 	}
 }

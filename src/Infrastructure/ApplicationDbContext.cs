@@ -1,11 +1,13 @@
-﻿using Infrastructure.Entities.Core;
+using Infrastructure.Entities;
+using Infrastructure.Entities.Core;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
 {
 	private const string PostgreSQL = "Npgsql.EntityFrameworkCore.PostgreSQL";
 	private const string InMemory = "Microsoft.EntityFrameworkCore.InMemory";
@@ -15,6 +17,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public virtual DbSet<ReceiptEntity> Receipts { get; set; } = null!;
 	public virtual DbSet<TransactionEntity> Transactions { get; set; } = null!;
 	public virtual DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
+	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -34,10 +37,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		{
 			{ typeof(decimal), GetMoneyType(providerName) },
 			{ typeof(DateTime), GetDateTimeType(providerName) },
+			{ typeof(DateTimeOffset), GetDateOffsetType(providerName) },
 			{ typeof(DateOnly), GetDateOnlyType(providerName) },
 			{ typeof(bool), GetBoolType(providerName) },
 			{ typeof(string), GetStringType(providerName) },
-			{ typeof(Guid), GetGuidType(providerName) }
+			{ typeof(Guid), GetGuidType(providerName) },
+			{ typeof(int), GetIntType(providerName) },
+			{ typeof(long), GetBigIntType(providerName) },
 		};
 
 		foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
@@ -50,26 +56,33 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	{
 		foreach (IMutableProperty property in entityType.GetProperties())
 		{
-			string columnType = GetColumnType(property, columnTypes);
-			property.SetColumnType(columnType);
+			string? columnType = GetColumnType(property, columnTypes);
+			if (columnType is not null)
+			{
+				property.SetColumnType(columnType);
+			}
 		}
 	}
 
-	private static string GetColumnType(IMutableProperty property, Dictionary<Type, string> columnTypes)
+	private static string? GetColumnType(IMutableProperty property, Dictionary<Type, string> columnTypes)
 	{
 		Type clrType = property.ClrType;
 
-		if (columnTypes.TryGetValue(clrType, out string? columnType))
+		// Unwrap nullable types (e.g. DateTimeOffset? -> DateTimeOffset)
+		Type baseType = Nullable.GetUnderlyingType(clrType) ?? clrType;
+
+		if (columnTypes.TryGetValue(baseType, out string? columnType))
 		{
 			return columnType;
 		}
 
-		if (clrType.IsEnum)
+		if (baseType.IsEnum)
 		{
 			return SetEnumPropertyColumnType(property, columnTypes[typeof(string)]);
 		}
 
-		return columnTypes[typeof(string)];
+		// Skip unknown types (e.g. byte[]) — let EF/provider handle them
+		return null;
 	}
 
 	private static string SetEnumPropertyColumnType(IMutableProperty property, string stringType)
@@ -91,6 +104,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	}
 
 	private static string GetDateTimeType(string? providerName)
+	{
+		return providerName switch
+		{
+			PostgreSQL => "timestamptz",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
+	private static string GetDateOffsetType(string? providerName)
 	{
 		return providerName switch
 		{
@@ -135,12 +157,31 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		};
 	}
 
+	private static string GetIntType(string? providerName)
+	{
+		return providerName switch
+		{
+			PostgreSQL => "integer",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
+	private static string GetBigIntType(string? providerName)
+	{
+		return providerName switch
+		{
+			PostgreSQL => "bigint",
+			_ => throw new NotImplementedException(string.Format(DatabaseProviderNotSupported, providerName))
+		};
+	}
+
 	private static void CreateEntities(ModelBuilder modelBuilder)
 	{
 		CreateAccountEntity(modelBuilder);
 		CreateReceiptEntity(modelBuilder);
 		CreateTransactionEntity(modelBuilder);
 		CreateReceiptItemEntity(modelBuilder);
+		CreateApiKeyEntity(modelBuilder);
 	}
 
 	private static void CreateAccountEntity(ModelBuilder modelBuilder)
@@ -197,6 +238,26 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
 			entity.Navigation(e => e.Receipt)
 				.AutoInclude();
+		});
+	}
+
+	private static void CreateApiKeyEntity(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<ApiKeyEntity>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedNever();
+
+			entity.HasIndex(e => e.KeyHash)
+				.IsUnique();
+
+			entity.HasOne(e => e.User)
+				.WithMany(u => u.ApiKeys)
+				.HasForeignKey(e => e.UserId)
+				.OnDelete(DeleteBehavior.Cascade);
 		});
 	}
 }
