@@ -1,5 +1,7 @@
 using Application.Interfaces.Services;
+using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
@@ -18,7 +20,8 @@ public class ApiKeyAuthenticationHandler(
 	IOptionsMonitor<ApiKeyAuthenticationOptions> options,
 	ILoggerFactory logger,
 	UrlEncoder encoder,
-	IApiKeyService apiKeyService)
+	IApiKeyService apiKeyService,
+	UserManager<ApplicationUser> userManager)
 	: AuthenticationHandler<ApiKeyAuthenticationOptions>(options, logger, encoder)
 {
 	private const string ApiKeyHeader = "X-API-Key";
@@ -42,7 +45,23 @@ public class ApiKeyAuthenticationHandler(
 			return AuthenticateResult.Fail("Invalid API key.");
 		}
 
-		Claim[] claims = [new Claim(ClaimTypes.NameIdentifier, userId)];
+		List<Claim> claims = [new Claim(ClaimTypes.NameIdentifier, userId)];
+
+		ApplicationUser? user = await userManager.FindByIdAsync(userId);
+		if (user is not null)
+		{
+			if (user.Email is not null)
+			{
+				claims.Add(new Claim(ClaimTypes.Email, user.Email));
+			}
+
+			IList<string> roles = await userManager.GetRolesAsync(user);
+			foreach (string role in roles)
+			{
+				claims.Add(new Claim(ClaimTypes.Role, role));
+			}
+		}
+
 		ClaimsIdentity identity = new(claims, Scheme.Name);
 		ClaimsPrincipal principal = new(identity);
 		AuthenticationTicket ticket = new(principal, Scheme.Name);

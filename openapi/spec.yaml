@@ -1353,6 +1353,116 @@ paths:
               schema:
                 type: string
 
+  # ──────────────────────────────────────────────
+  # User Roles (admin-only)
+  # ──────────────────────────────────────────────
+
+  /api/users/{userId}/roles:
+    get:
+      operationId: GetUserRoles
+      tags: [UserRoles]
+      summary: List roles for a user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRolesResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/users/{userId}/roles/{role}:
+    post:
+      operationId: AssignUserRole
+      tags: [UserRoles]
+      summary: Assign role to user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: RemoveUserRole
+      tags: [UserRoles]
+      summary: Remove role from user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
 components:
   schemas:
     # ── Account ──────────────────────────────────
@@ -1722,6 +1832,15 @@ components:
             - string
             - "null"
           format: date-time
+
+    UserRolesResponse:
+      type: object
+      required: [roles]
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
 
   securitySchemes:
     BearerAuth:

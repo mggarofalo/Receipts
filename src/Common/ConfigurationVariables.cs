@@ -14,5 +14,10 @@ public static class ConfigurationVariables
 	public const string JwtKey = "Jwt:Key";
 	public const string JwtIssuer = "Jwt:Issuer";
 	public const string JwtAudience = "Jwt:Audience";
+
+	public const string AdminSeedEmail = "AdminSeed:Email";
+	public const string AdminSeedPassword = "AdminSeed:Password";
+	public const string AdminSeedFirstName = "AdminSeed:FirstName";
+	public const string AdminSeedLastName = "AdminSeed:LastName";
 }
 

@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Common;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -39,6 +40,8 @@ public class AuthController(
 			{
 				return BadRequest(result.Errors.Select(e => e.Description));
 			}
+
+			await userManager.AddToRoleAsync(user, AppRoles.User);
 
 			IList<string> roles = await userManager.GetRolesAsync(user);
 			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
