@@ -6,6 +6,7 @@ using Application.Commands.Transaction.Update;
 using Application.Queries.Core.Transaction;
 using Domain.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
@@ -13,6 +14,8 @@ namespace API.Controllers.Core;
 [ApiController]
 [Route("api/transactions")]
 [Produces("application/json")]
+[Authorize]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";

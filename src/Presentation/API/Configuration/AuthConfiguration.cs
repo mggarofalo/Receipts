@@ -43,6 +43,8 @@ public static class AuthConfiguration
 					ApiKeyAuthenticationDefaults.AuthenticationScheme);
 				policy.RequireAuthenticatedUser();
 			});
+
+			options.DefaultPolicy = options.GetPolicy("ApiOrJwt")!;
 		});
 
 		return services;

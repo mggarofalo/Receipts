@@ -6,6 +6,7 @@ using Application.Commands.Account.Update;
 using Application.Queries.Core.Account;
 using Domain.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
@@ -13,6 +14,8 @@ namespace API.Controllers.Core;
 [ApiController]
 [Route("api/accounts")]
 [Produces("application/json")]
+[Authorize]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";

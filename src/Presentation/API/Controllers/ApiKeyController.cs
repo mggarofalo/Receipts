@@ -9,7 +9,7 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/apikeys")]
 [Produces("application/json")]
-[Authorize(Policy = "ApiOrJwt")]
+[Authorize]
 public class ApiKeyController(
 	IApiKeyService apiKeyService,
 	ILogger<ApiKeyController> logger) : ControllerBase

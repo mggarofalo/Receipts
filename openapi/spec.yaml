@@ -29,6 +29,9 @@ paths:
       operationId: GetAccountById
       tags: [Accounts]
       summary: Get an account by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -43,6 +46,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -55,6 +60,9 @@ paths:
       operationId: UpdateAccount
       tags: [Accounts]
       summary: Update a single account
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -71,6 +79,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -85,6 +95,9 @@ paths:
       operationId: GetAllAccounts
       tags: [Accounts]
       summary: Get all accounts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       responses:
         "200":
           description: OK
@@ -94,6 +107,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -104,6 +119,9 @@ paths:
       operationId: CreateAccount
       tags: [Accounts]
       summary: Create a single account
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -117,6 +135,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -127,6 +147,9 @@ paths:
       operationId: DeleteAccounts
       tags: [Accounts]
       summary: Delete accounts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -139,6 +162,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -153,6 +178,9 @@ paths:
       operationId: CreateAccounts
       tags: [Accounts]
       summary: Create accounts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -170,6 +198,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -180,6 +210,9 @@ paths:
       operationId: UpdateAccounts
       tags: [Accounts]
       summary: Update accounts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -191,6 +224,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -209,6 +244,9 @@ paths:
       operationId: GetReceiptById
       tags: [Receipts]
       summary: Get a receipt by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -223,6 +261,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -235,6 +275,9 @@ paths:
       operationId: UpdateReceipt
       tags: [Receipts]
       summary: Update a single receipt
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -251,6 +294,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -265,6 +310,9 @@ paths:
       operationId: GetAllReceipts
       tags: [Receipts]
       summary: Get all receipts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       responses:
         "200":
           description: OK
@@ -274,6 +322,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -284,6 +334,9 @@ paths:
       operationId: CreateReceipt
       tags: [Receipts]
       summary: Create a single receipt
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -297,6 +350,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -307,6 +362,9 @@ paths:
       operationId: DeleteReceipts
       tags: [Receipts]
       summary: Delete receipts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -319,6 +377,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -333,6 +393,9 @@ paths:
       operationId: CreateReceipts
       tags: [Receipts]
       summary: Create receipts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -350,6 +413,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -360,6 +425,9 @@ paths:
       operationId: UpdateReceipts
       tags: [Receipts]
       summary: Update receipts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -371,6 +439,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -389,6 +459,9 @@ paths:
       operationId: GetReceiptItemById
       tags: [ReceiptItems]
       summary: Get a receipt item by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -404,6 +477,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -416,6 +491,9 @@ paths:
       operationId: CreateReceiptItem
       tags: [ReceiptItems]
       summary: Create a single receipt item
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -437,6 +515,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -447,6 +527,9 @@ paths:
       operationId: UpdateReceiptItem
       tags: [ReceiptItems]
       summary: Update a single receipt item
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -464,6 +547,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -478,6 +563,9 @@ paths:
       operationId: GetAllReceiptItems
       tags: [ReceiptItems]
       summary: Get all receipt items
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       responses:
         "200":
           description: OK
@@ -487,6 +575,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -497,6 +587,9 @@ paths:
       operationId: DeleteReceiptItems
       tags: [ReceiptItems]
       summary: Delete receipt items
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -509,6 +602,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -523,6 +618,9 @@ paths:
       operationId: GetReceiptItemsByReceiptId
       tags: [ReceiptItems]
       summary: Get receipt items by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -539,6 +637,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -553,6 +653,9 @@ paths:
       operationId: CreateReceiptItems
       tags: [ReceiptItems]
       summary: Create receipt items in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -578,6 +681,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -588,6 +693,9 @@ paths:
       operationId: UpdateReceiptItems
       tags: [ReceiptItems]
       summary: Update receipt items in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -607,6 +715,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -625,6 +735,9 @@ paths:
       operationId: GetTransactionById
       tags: [Transactions]
       summary: Get a transaction by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -639,6 +752,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -653,6 +768,9 @@ paths:
       operationId: GetAllTransactions
       tags: [Transactions]
       summary: Get all transactions
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       responses:
         "200":
           description: OK
@@ -662,6 +780,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -672,6 +792,9 @@ paths:
       operationId: DeleteTransactions
       tags: [Transactions]
       summary: Delete transactions
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -684,6 +807,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -698,6 +823,9 @@ paths:
       operationId: GetTransactionsByReceiptId
       tags: [Transactions]
       summary: Get transactions by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -714,6 +842,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -728,6 +858,9 @@ paths:
       operationId: CreateTransaction
       tags: [Transactions]
       summary: Create a single transaction
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -754,6 +887,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -764,6 +899,9 @@ paths:
       operationId: UpdateTransaction
       tags: [Transactions]
       summary: Update a single transaction
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -786,6 +924,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -800,6 +940,9 @@ paths:
       operationId: CreateTransactions
       tags: [Transactions]
       summary: Create transactions in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -830,6 +973,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -840,6 +985,9 @@ paths:
       operationId: UpdateTransactions
       tags: [Transactions]
       summary: Update transactions in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -864,6 +1012,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -882,6 +1032,9 @@ paths:
       operationId: GetReceiptWithItemsByReceiptId
       tags: [ReceiptWithItems]
       summary: Get receipt with items by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -896,6 +1049,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptWithItemsResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -910,6 +1065,9 @@ paths:
       operationId: GetTransactionAccountByTransactionId
       tags: [TransactionAccount]
       summary: Get transaction account by transaction ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: transactionId
           in: path
@@ -924,6 +1082,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionAccountResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -938,6 +1098,9 @@ paths:
       operationId: GetTransactionAccountsByReceiptId
       tags: [TransactionAccount]
       summary: Get transaction accounts by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -954,6 +1117,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionAccountResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -968,6 +1133,9 @@ paths:
       operationId: GetTripByReceiptId
       tags: [Trip]
       summary: Get trip by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -982,6 +1150,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TripResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":

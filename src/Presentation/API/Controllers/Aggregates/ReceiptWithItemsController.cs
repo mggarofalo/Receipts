@@ -3,6 +3,7 @@ using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.ReceiptsWithItems;
 using Domain.Aggregates;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Aggregates;
@@ -10,6 +11,8 @@ namespace API.Controllers.Aggregates;
 [ApiController]
 [Route("api/receipts-with-items")]
 [Produces("application/json")]
+[Authorize]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapper mapper, ILogger<ReceiptWithItemsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for receiptId: {receiptId}";

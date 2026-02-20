@@ -143,7 +143,7 @@ public class AuthController(
 	}
 
 	[HttpPost("logout")]
-	[Authorize(Policy = "ApiOrJwt")]
+	[Authorize]
 	[EndpointSummary("Logout and invalidate refresh token")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]

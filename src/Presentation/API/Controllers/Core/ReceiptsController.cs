@@ -6,6 +6,7 @@ using Application.Commands.Receipt.Update;
 using Application.Queries.Core.Receipt;
 using Domain.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
@@ -13,6 +14,8 @@ namespace API.Controllers.Core;
 [ApiController]
 [Route("api/receipts")]
 [Produces("application/json")]
+[Authorize]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogger<ReceiptsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
