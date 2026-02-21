@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 import { Layout } from "@/components/Layout";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
@@ -14,6 +15,7 @@ import Transactions from "@/pages/Transactions";
 import Trips from "@/pages/Trips";
 import ReceiptDetail from "@/pages/ReceiptDetail";
 import TransactionDetail from "@/pages/TransactionDetail";
+import AdminUsers from "@/pages/AdminUsers";
 import NotFound from "@/pages/NotFound";
 
 function App() {
@@ -41,6 +43,14 @@ function App() {
           <Route path="/receipt-detail" element={<ReceiptDetail />} />
           <Route path="/transaction-detail" element={<TransactionDetail />} />
           <Route path="/api-keys" element={<ApiKeys />} />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <AdminUsers />
+              </AdminRoute>
+            }
+          />
         </Route>
 
         <Route path="*" element={<NotFound />} />

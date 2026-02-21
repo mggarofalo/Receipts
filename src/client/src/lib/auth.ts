@@ -1,6 +1,17 @@
 const ACCESS_TOKEN_KEY = "receipts_access_token";
 const REFRESH_TOKEN_KEY = "receipts_refresh_token";
 
+type TokenRefreshListener = () => void;
+let tokenRefreshListener: TokenRefreshListener | null = null;
+
+export function setTokenRefreshListener(cb: TokenRefreshListener): void {
+  tokenRefreshListener = cb;
+}
+
+export function notifyTokenRefresh(): void {
+  tokenRefreshListener?.();
+}
+
 export function getAccessToken(): string | null {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
