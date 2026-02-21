@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Infrastructure.Entities.Audit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -12,6 +13,7 @@ namespace API.Controllers;
 [Authorize]
 public class ApiKeyController(
 	IApiKeyService apiKeyService,
+	IAuthAuditService authAuditService,
 	ILogger<ApiKeyController> logger) : ControllerBase
 {
 	[HttpGet]
@@ -69,6 +71,8 @@ public class ApiKeyController(
 			IReadOnlyList<ApiKeyInfo> keys = await apiKeyService.GetApiKeysForUserAsync(userId);
 			ApiKeyInfo? created = keys.OrderByDescending(k => k.CreatedAt).FirstOrDefault(k => k.Name == request.Name);
 
+			await LogAuthEventAsync(nameof(AuthEventType.ApiKeyCreated), userId, null, true, null, created?.Id);
+
 			return Ok(new CreateApiKeyResponse
 			{
 				Id = created?.Id ?? Guid.Empty,
@@ -102,6 +106,7 @@ public class ApiKeyController(
 			}
 
 			await apiKeyService.RevokeApiKeyAsync(id, userId);
+			await LogAuthEventAsync(nameof(AuthEventType.ApiKeyRevoked), userId, null, true, null, id);
 			return NoContent();
 		}
 		catch (KeyNotFoundException)
@@ -112,6 +117,29 @@ public class ApiKeyController(
 		{
 			logger.LogError(ex, "Error occurred in {Method} for id: {Id}", nameof(RevokeApiKey), id);
 			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	private async Task LogAuthEventAsync(string eventType, string? userId, string? username, bool success, string? failureReason = null, Guid? apiKeyId = null)
+	{
+		try
+		{
+			await authAuditService.LogAsync(new AuthAuditEntryDto(
+				Guid.NewGuid(),
+				eventType,
+				userId,
+				apiKeyId,
+				username,
+				success,
+				failureReason,
+				HttpContext.Connection.RemoteIpAddress?.ToString(),
+				Request.Headers.UserAgent.ToString(),
+				DateTimeOffset.UtcNow,
+				null));
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "Failed to log auth audit event {EventType}", eventType);
 		}
 	}
 }

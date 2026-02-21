@@ -95,7 +95,10 @@ public static class InfrastructureService
 			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>()
 			.AddScoped<ITokenService, TokenService>()
 			.AddScoped<IApiKeyService, ApiKeyService>()
-			.AddScoped<IAuditService, AuditService>();
+			.AddScoped<IAuditService, AuditService>()
+			.AddScoped<IAuthAuditService, AuthAuditService>();
+
+		services.AddHostedService<AuthAuditCleanupService>();
 
 		services
 			.AddSingleton<AccountMapper>()

@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Infrastructure.Entities;
+using Infrastructure.Entities.Audit;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,7 @@ public class ApiKeyAuthenticationHandler(
 	ILoggerFactory logger,
 	UrlEncoder encoder,
 	IApiKeyService apiKeyService,
+	IAuthAuditService authAuditService,
 	UserManager<ApplicationUser> userManager)
 	: AuthenticationHandler<ApiKeyAuthenticationOptions>(options, logger, encoder)
 {
@@ -65,6 +67,26 @@ public class ApiKeyAuthenticationHandler(
 		ClaimsIdentity identity = new(claims, Scheme.Name);
 		ClaimsPrincipal principal = new(identity);
 		AuthenticationTicket ticket = new(principal, Scheme.Name);
+
+		try
+		{
+			await authAuditService.LogAsync(new AuthAuditEntryDto(
+				Guid.NewGuid(),
+				nameof(AuthEventType.ApiKeyUsed),
+				userId,
+				null,
+				user?.Email,
+				true,
+				null,
+				Context.Connection.RemoteIpAddress?.ToString(),
+				Request.Headers.UserAgent.ToString(),
+				DateTimeOffset.UtcNow,
+				null));
+		}
+		catch (Exception ex)
+		{
+			Logger.LogError(ex, "Failed to log API key usage audit event");
+		}
 
 		return AuthenticateResult.Success(ticket);
 	}

@@ -2,10 +2,12 @@ using API.Generated.Dtos;
 using Application.Interfaces.Services;
 using Common;
 using Infrastructure.Entities;
+using Infrastructure.Entities.Audit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace API.Controllers;
 
@@ -15,6 +17,7 @@ namespace API.Controllers;
 public class AuthController(
 	UserManager<ApplicationUser> userManager,
 	ITokenService tokenService,
+	IAuthAuditService authAuditService,
 	ILogger<AuthController> logger) : ControllerBase
 {
 	[HttpPost("register")]
@@ -51,6 +54,8 @@ public class AuthController(
 			user.RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(30);
 			await userManager.UpdateAsync(user);
 
+			await LogAuthEventAsync(nameof(AuthEventType.UserRegistered), user.Id, user.Email, true);
+
 			return Ok(new TokenResponse
 			{
 				AccessToken = accessToken,
@@ -78,6 +83,7 @@ public class AuthController(
 			ApplicationUser? user = await userManager.FindByEmailAsync(request.Email);
 			if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
 			{
+				await LogAuthEventAsync(nameof(AuthEventType.LoginFailed), user?.Id, request.Email, false, "Invalid credentials");
 				return Unauthorized();
 			}
 
@@ -88,6 +94,8 @@ public class AuthController(
 			user.RefreshToken = refreshToken;
 			user.RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(30);
 			await userManager.UpdateAsync(user);
+
+			await LogAuthEventAsync(nameof(AuthEventType.Login), user.Id, user.Email, true);
 
 			return Ok(new TokenResponse
 			{
@@ -155,7 +163,7 @@ public class AuthController(
 	{
 		try
 		{
-			string? userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+			string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 			if (userId is null)
 			{
 				return Unauthorized();
@@ -169,12 +177,37 @@ public class AuthController(
 				await userManager.UpdateAsync(user);
 			}
 
+			await LogAuthEventAsync(nameof(AuthEventType.Logout), userId, user?.Email, true);
+
 			return NoContent();
 		}
 		catch (Exception ex)
 		{
 			logger.LogError(ex, "Error occurred in {Method}", nameof(Logout));
 			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	private async Task LogAuthEventAsync(string eventType, string? userId, string? username, bool success, string? failureReason = null)
+	{
+		try
+		{
+			await authAuditService.LogAsync(new AuthAuditEntryDto(
+				Guid.NewGuid(),
+				eventType,
+				userId,
+				null,
+				username,
+				success,
+				failureReason,
+				HttpContext.Connection.RemoteIpAddress?.ToString(),
+				Request.Headers.UserAgent.ToString(),
+				DateTimeOffset.UtcNow,
+				null));
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "Failed to log auth audit event {EventType}", eventType);
 		}
 	}
 }

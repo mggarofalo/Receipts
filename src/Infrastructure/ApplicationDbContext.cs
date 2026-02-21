@@ -39,6 +39,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public virtual DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
 	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
 	public virtual DbSet<AuditLogEntity> AuditLogs { get; set; } = null!;
+	public virtual DbSet<AuthAuditLogEntity> AuthAuditLogs { get; set; } = null!;
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -139,7 +140,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 	private List<AuditEntry> CollectAuditEntries()
 	{
-		HashSet<Type> excludedTypes = [typeof(AuditLogEntity)];
+		HashSet<Type> excludedTypes = [typeof(AuditLogEntity), typeof(AuthAuditLogEntity)];
 		List<AuditEntry> auditEntries = [];
 		DateTimeOffset now = DateTimeOffset.UtcNow;
 
@@ -440,6 +441,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		CreateReceiptItemEntity(modelBuilder);
 		CreateApiKeyEntity(modelBuilder);
 		CreateAuditLogEntity(modelBuilder);
+		CreateAuthAuditLogEntity(modelBuilder);
 	}
 
 	private static void CreateAccountEntity(ModelBuilder modelBuilder)
@@ -533,6 +535,23 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			entity.HasIndex(e => e.ChangedAt);
 			entity.HasIndex(e => e.ChangedByUserId);
 			entity.HasIndex(e => e.ChangedByApiKeyId);
+		});
+	}
+
+	private static void CreateAuthAuditLogEntity(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<AuthAuditLogEntity>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
+
+			entity.HasIndex(e => new { e.UserId, e.Timestamp });
+			entity.HasIndex(e => new { e.EventType, e.Timestamp });
+			entity.HasIndex(e => e.Timestamp);
+			entity.HasIndex(e => e.IpAddress);
 		});
 	}
 }
