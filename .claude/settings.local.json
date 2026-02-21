@@ -26,7 +26,7 @@
       "Bash(dotnet clean:*)",
       "Bash(dotnet ef:*)",
       "Bash(dotnet format:*)",
-      "Bash(dotnet husky:*)",
+
       "Bash(dotnet list:*)",
       "Bash(dotnet new:*)",
       "Bash(dotnet package search:*)",
@@ -36,7 +36,6 @@
       "Bash(dotnet test:*)",
       "Bash(dotnet tool:*)",
       "Bash(dotnet workload:*)",
-      "Bash(HUSKY=0 dotnet build:*)",
       "Bash(dir:*)",
       "Bash(findstr:*)",
       "Bash(grep:*)",
