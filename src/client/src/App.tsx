@@ -7,6 +7,13 @@ import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ApiKeys from "@/pages/ApiKeys";
+import Accounts from "@/pages/Accounts";
+import Receipts from "@/pages/Receipts";
+import ReceiptItems from "@/pages/ReceiptItems";
+import Transactions from "@/pages/Transactions";
+import Trips from "@/pages/Trips";
+import ReceiptDetail from "@/pages/ReceiptDetail";
+import TransactionDetail from "@/pages/TransactionDetail";
 import NotFound from "@/pages/NotFound";
 
 function App() {
@@ -26,6 +33,13 @@ function App() {
           }
         >
           <Route path="/" element={<Home />} />
+          <Route path="/accounts" element={<Accounts />} />
+          <Route path="/receipts" element={<Receipts />} />
+          <Route path="/receipt-items" element={<ReceiptItems />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/trips" element={<Trips />} />
+          <Route path="/receipt-detail" element={<ReceiptDetail />} />
+          <Route path="/transaction-detail" element={<TransactionDetail />} />
           <Route path="/api-keys" element={<ApiKeys />} />
         </Route>
 
