@@ -32,9 +32,36 @@
     <ProjectReference Include="..\..\Receipts.ServiceDefaults\Receipts.ServiceDefaults.csproj" />
   </ItemGroup>
 
-  <Target Name="NSwag" BeforeTargets="CoreCompile" Inputs="$(MSBuildProjectDirectory)\..\..\..\openapi\spec.yaml" Outputs="$(MSBuildProjectDirectory)\Generated\Dtos.g.cs">
-    <Message Text="Regenerating DTOs from OpenAPI spec..." Importance="high" />
-    <Exec Command="$(NSwagExe_Net90) run $(MSBuildProjectDirectory)\..\..\..\nswag.json" EnvironmentVariables="DOTNET_ROLL_FORWARD=Major" />
+  <PropertyGroup>
+    <_DtoSplitterProject>$(MSBuildProjectDirectory)\..\..\..\tools\DtoSplitter\DtoSplitter.csproj</_DtoSplitterProject>
+    <_DtoSplitterExe>$(MSBuildProjectDirectory)\..\..\..\tools\DtoSplitter\bin\Release\net10.0\DtoSplitter</_DtoSplitterExe>
+    <_SpecPath>$(MSBuildProjectDirectory)\..\..\..\openapi\spec.yaml</_SpecPath>
+    <_GeneratedDir>$(MSBuildProjectDirectory)\Generated</_GeneratedDir>
+  </PropertyGroup>
+
+  <!-- 1. Build tool + check hash -->
+  <Target Name="CheckDtoFreshness">
+    <MSBuild Projects="$(_DtoSplitterProject)" Targets="Build" Properties="Configuration=Release" />
+    <Exec Command="&quot;$(_DtoSplitterExe)&quot; check &quot;$(_SpecPath)&quot; &quot;$(_GeneratedDir)&quot;"
+          IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="_DtoCheckResult" />
+    </Exec>
   </Target>
+
+  <!-- 2. Run NSwag (only if stale) -->
+  <Target Name="NSwagGenerate" Condition="'$(_DtoCheckResult)' != '0'">
+    <Message Text="Regenerating DTOs from OpenAPI spec..." Importance="high" />
+    <Exec Command="$(NSwagExe_Net90) run $(MSBuildProjectDirectory)\..\..\..\nswag.json"
+          EnvironmentVariables="DOTNET_ROLL_FORWARD=Major" />
+  </Target>
+
+  <!-- 3. Split into individual files (only if stale) -->
+  <Target Name="SplitDtos" Condition="'$(_DtoCheckResult)' != '0'">
+    <Exec Command="&quot;$(_DtoSplitterExe)&quot; split &quot;$(_SpecPath)&quot; &quot;$(_GeneratedDir)\Dtos.g.cs&quot; &quot;$(_GeneratedDir)&quot;" />
+  </Target>
+
+  <!-- Orchestrator: runs before compile, chains the 3 targets via DependsOnTargets -->
+  <Target Name="GenerateDtos" BeforeTargets="CoreCompile"
+          DependsOnTargets="CheckDtoFreshness;NSwagGenerate;SplitDtos" />
 
 </Project>
