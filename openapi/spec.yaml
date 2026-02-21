@@ -1278,6 +1278,145 @@ paths:
                 type: string
 
   # ──────────────────────────────────────────────
+  # Audit
+  # ──────────────────────────────────────────────
+
+  /api/audit/entity/{entityType}/{entityId}:
+    get:
+      operationId: GetEntityAuditHistory
+      tags: [Audit]
+      summary: Get audit history for a specific entity
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: entityType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/audit/recent:
+    get:
+      operationId: GetRecentAuditLogs
+      tags: [Audit]
+      summary: Get recent audit log entries
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/audit/user/{userId}:
+    get:
+      operationId: GetAuditLogsByUser
+      tags: [Audit]
+      summary: Get audit logs by user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/audit/apikey/{apiKeyId}:
+    get:
+      operationId: GetAuditLogsByApiKey
+      tags: [Audit]
+      summary: Get audit logs by API key
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: apiKeyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
   # Auth
   # ──────────────────────────────────────────────
 
@@ -1841,6 +1980,40 @@ components:
             - string
             - "null"
         instance:
+          type:
+            - string
+            - "null"
+
+    # ── Audit ───────────────────────────────────────
+
+    AuditLogResponse:
+      type: object
+      required: [id, entityType, entityId, action, changesJson, changedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        entityType:
+          type: string
+        entityId:
+          type: string
+        action:
+          type: string
+        changesJson:
+          type: string
+        changedByUserId:
+          type:
+            - string
+            - "null"
+        changedByApiKeyId:
+          type:
+            - string
+            - "null"
+          format: uuid
+        changedAt:
+          type: string
+          format: date-time
+        ipAddress:
           type:
             - string
             - "null"

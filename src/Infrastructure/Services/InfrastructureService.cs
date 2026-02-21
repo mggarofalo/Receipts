@@ -84,11 +84,6 @@ public static class InfrastructureService
 			.AddEntityFrameworkStores<ApplicationDbContext>();
 
 		services
-			.AddIdentityCore<ApplicationUser>()
-			.AddRoles<IdentityRole>()
-			.AddEntityFrameworkStores<ApplicationDbContext>();
-
-		services
 			.AddScoped<IReceiptService, ReceiptService>()
 			.AddScoped<IAccountService, AccountService>()
 			.AddScoped<ITransactionService, TransactionService>()
@@ -99,7 +94,8 @@ public static class InfrastructureService
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
 			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>()
 			.AddScoped<ITokenService, TokenService>()
-			.AddScoped<IApiKeyService, ApiKeyService>();
+			.AddScoped<IApiKeyService, ApiKeyService>()
+			.AddScoped<IAuditService, AuditService>();
 
 		services
 			.AddSingleton<AccountMapper>()

@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Infrastructure.Entities;
+using Infrastructure.Entities.Audit;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
 
 namespace Infrastructure;
 
@@ -36,6 +38,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public virtual DbSet<TransactionEntity> Transactions { get; set; } = null!;
 	public virtual DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
 	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
+	public virtual DbSet<AuditLogEntity> AuditLogs { get; set; } = null!;
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -48,7 +51,37 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
 	{
 		HandleSoftDelete();
-		return await base.SaveChangesAsync(cancellationToken);
+
+		List<AuditEntry> auditEntries = CollectAuditEntries();
+
+		int result = await base.SaveChangesAsync(cancellationToken);
+
+		if (auditEntries.Count > 0)
+		{
+			foreach (AuditEntry entry in auditEntries)
+			{
+				// For Created entities, fill in the generated ID after save
+				if (entry.AuditLog.Action == AuditAction.Create && entry.TrackedEntry is not null)
+				{
+					object? idValue = entry.TrackedEntry.Property("Id").CurrentValue;
+					if (idValue is not null)
+					{
+						entry.AuditLog.EntityId = idValue.ToString()!;
+					}
+				}
+			}
+
+			AuditLogs.AddRange(auditEntries.Select(e => e.AuditLog));
+			await base.SaveChangesAsync(cancellationToken);
+		}
+
+		return result;
+	}
+
+	private sealed class AuditEntry(AuditLogEntity auditLog, EntityEntry? trackedEntry = null)
+	{
+		public AuditLogEntity AuditLog { get; } = auditLog;
+		public EntityEntry? TrackedEntry { get; } = trackedEntry;
 	}
 
 	private void HandleSoftDelete()
@@ -102,6 +135,144 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			.Select(e => e.Entity);
 
 		targets.AddRange(trackedTransactions);
+	}
+
+	private List<AuditEntry> CollectAuditEntries()
+	{
+		HashSet<Type> excludedTypes = [typeof(AuditLogEntity)];
+		List<AuditEntry> auditEntries = [];
+		DateTimeOffset now = DateTimeOffset.UtcNow;
+
+		foreach (EntityEntry entry in ChangeTracker.Entries())
+		{
+			if (excludedTypes.Contains(entry.Entity.GetType()))
+			{
+				continue;
+			}
+
+			if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
+			{
+				continue;
+			}
+
+			string entityType = entry.Entity.GetType().Name.Replace("Entity", "");
+			AuditAction action = GetAuditAction(entry);
+			List<FieldChange> changes = GetFieldChanges(entry, action);
+
+			if (action == AuditAction.Update && changes.Count == 0)
+			{
+				continue;
+			}
+
+			object? entityId = entry.Property("Id").CurrentValue;
+			AuditLogEntity auditLog = new()
+			{
+				Id = Guid.NewGuid(),
+				EntityType = entityType,
+				EntityId = action == AuditAction.Create ? "" : entityId?.ToString() ?? "",
+				Action = action,
+				ChangedByUserId = _currentUserAccessor?.UserId,
+				ChangedByApiKeyId = _currentUserAccessor?.ApiKeyId,
+				ChangedAt = now,
+				IpAddress = _currentUserAccessor?.IpAddress,
+			};
+			auditLog.SetChanges(changes);
+
+			auditEntries.Add(new AuditEntry(
+				auditLog,
+				action == AuditAction.Create ? entry : null));
+		}
+
+		return auditEntries;
+	}
+
+	private static AuditAction GetAuditAction(EntityEntry entry)
+	{
+		if (entry.State == EntityState.Added)
+		{
+			return AuditAction.Create;
+		}
+
+		if (entry.State == EntityState.Deleted)
+		{
+			return AuditAction.Delete;
+		}
+
+		// Modified — check for soft delete / restore
+		if (entry.Entity is ISoftDeletable)
+		{
+			PropertyEntry deletedAtProp = entry.Property(nameof(ISoftDeletable.DeletedAt));
+			object? originalValue = deletedAtProp.OriginalValue;
+			object? currentValue = deletedAtProp.CurrentValue;
+
+			if (originalValue is null && currentValue is not null)
+			{
+				return AuditAction.Delete;
+			}
+
+			if (originalValue is not null && currentValue is null)
+			{
+				return AuditAction.Restore;
+			}
+		}
+
+		return AuditAction.Update;
+	}
+
+	private static List<FieldChange> GetFieldChanges(EntityEntry entry, AuditAction action)
+	{
+		List<FieldChange> changes = [];
+
+		foreach (PropertyEntry property in entry.Properties)
+		{
+			string propertyName = property.Metadata.Name;
+
+			if (action == AuditAction.Create)
+			{
+				changes.Add(new FieldChange
+				{
+					FieldName = propertyName,
+					OldValue = null,
+					NewValue = SerializeValue(property.CurrentValue),
+				});
+			}
+			else if (entry.State == EntityState.Modified && property.IsModified)
+			{
+				string? oldValue = SerializeValue(property.OriginalValue);
+				string? newValue = SerializeValue(property.CurrentValue);
+
+				if (oldValue != newValue)
+				{
+					changes.Add(new FieldChange
+					{
+						FieldName = propertyName,
+						OldValue = oldValue,
+						NewValue = newValue,
+					});
+				}
+			}
+		}
+
+		return changes;
+	}
+
+	private static string? SerializeValue(object? value)
+	{
+		if (value is null)
+		{
+			return null;
+		}
+
+		return value switch
+		{
+			string s => s,
+			DateTime dt => dt.ToString("O"),
+			DateTimeOffset dto => dto.ToString("O"),
+			DateOnly d => d.ToString("O"),
+			Guid g => g.ToString(),
+			bool b => b.ToString(),
+			_ => JsonSerializer.Serialize(value),
+		};
 	}
 
 	private static void ConfigureSoftDeleteFilters(ModelBuilder modelBuilder)
@@ -268,6 +439,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		CreateTransactionEntity(modelBuilder);
 		CreateReceiptItemEntity(modelBuilder);
 		CreateApiKeyEntity(modelBuilder);
+		CreateAuditLogEntity(modelBuilder);
 	}
 
 	private static void CreateAccountEntity(ModelBuilder modelBuilder)
@@ -344,6 +516,23 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 				.WithMany(u => u.ApiKeys)
 				.HasForeignKey(e => e.UserId)
 				.OnDelete(DeleteBehavior.Cascade);
+		});
+	}
+
+	private static void CreateAuditLogEntity(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<AuditLogEntity>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
+
+			entity.HasIndex(e => new { e.EntityType, e.EntityId });
+			entity.HasIndex(e => e.ChangedAt);
+			entity.HasIndex(e => e.ChangedByUserId);
+			entity.HasIndex(e => e.ChangedByApiKeyId);
 		});
 	}
 }
