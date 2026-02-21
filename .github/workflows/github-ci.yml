@@ -16,6 +16,8 @@ jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +42,27 @@ jobs:
         run: dotnet build Receipts.slnx --no-restore -p:TreatWarningsAsErrors=true
 
       - name: Test
-        run: dotnet test Receipts.slnx --no-build --verbosity normal
+        run: >-
+          dotnet test Receipts.slnx
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --settings scripts/tests/coverlet.runsettings
+          --results-directory TestResults
+
+      - name: Merge coverage reports
+        if: always()
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: TestResults/**/coverage.cobertura.xml
+          targetdir: TestResults/merged
+          reporttypes: Cobertura;MarkdownSummaryGithub
+
+      - name: Post coverage to PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: TestResults/merged/SummaryGithub.md
 
   lint:
     name: Code Formatting
