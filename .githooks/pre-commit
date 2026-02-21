@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -e
+
+echo "=== Pre-commit hook ==="
+
+echo "[1/6] Linting OpenAPI spec..."
+npx spectral lint openapi/spec.yaml --fail-severity warn
+
+echo "[2/6] Checking code formatting..."
+dotnet format Receipts.slnx --verify-no-changes
+
+echo "[3/6] Building with warnings-as-errors..."
+dotnet build Receipts.slnx -p:TreatWarningsAsErrors=true --no-restore
+
+echo "[4/6] Checking DTO staleness..."
+git diff --exit-code -- src/Presentation/API/Generated/
+
+echo "[5/6] Checking spec drift..."
+node scripts/check-drift.mjs
+
+echo "[6/6] Running tests..."
+dotnet test Receipts.slnx --no-build --verbosity normal
+
+echo "=== All checks passed ==="

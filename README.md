@@ -136,22 +136,19 @@ The OpenAPI spec is generated at build time to `openapi/generated/API.json`. Thi
 
 ## Pre-commit Hooks
 
-[Husky.NET](https://alirezanet.github.io/Husky.Net/) runs a three-stage pipeline on every `git commit`:
+Native Git hooks (`.githooks/`) run a six-stage pipeline on every `git commit`:
 
-1. **Format check** - `dotnet format --verify-no-changes`
-2. **Build** - `dotnet build -p:TreatWarningsAsErrors=true`
-3. **Test** - `dotnet test --no-build`
+1. **OpenAPI spec lint** - `npx spectral lint openapi/spec.yaml`
+2. **Format check** - `dotnet format --verify-no-changes`
+3. **Build** - `dotnet build -p:TreatWarningsAsErrors=true`
+4. **DTO staleness check** - `git diff --exit-code -- src/Presentation/API/Generated/`
+5. **Spec drift check** - `node scripts/check-drift.mjs`
+6. **Test** - `dotnet test --no-build`
 
 Hooks install automatically on `dotnet restore`. To skip temporarily:
 
 ```bash
 git commit --no-verify -m "message"
-```
-
-To disable for a session (e.g., CI):
-
-```bash
-export HUSKY=0
 ```
 
 ## CI/CD

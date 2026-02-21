@@ -142,31 +142,26 @@ dotnet run --project src/Presentation/API/API.csproj
 dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructure.csproj --startup-project src/Presentation/API/API.csproj
 ```
 
-## Pre-commit Hooks (Husky.NET)
+## Pre-commit Hooks (Native Git Hooks)
 
-This repo uses [Husky.NET](https://alirezanet.github.io/Husky.Net/) for pre-commit hooks. Hooks install automatically on `dotnet restore` or `dotnet build`.
+This repo uses native Git hooks via `core.hooksPath`. Hooks install automatically on `dotnet restore` or `dotnet build` (via an MSBuild target in `Directory.Build.targets`).
 
 **Pre-commit pipeline (runs on every `git commit`):**
 1. `npx spectral lint openapi/spec.yaml` — OpenAPI spec linting
 2. `dotnet format --verify-no-changes` — code formatting check
 3. `dotnet build -p:TreatWarningsAsErrors=true` — build with warnings-as-errors (also generates `openapi/generated/API.json`)
-4. `node scripts/check-drift.mjs` — semantic drift detection (compares schema properties, types, formats, $refs, required fields, and operation structures between spec and generated output)
-5. `dotnet test --no-build` — run all tests
+4. `git diff --exit-code -- src/Presentation/API/Generated/` — DTO staleness check
+5. `node scripts/check-drift.mjs` — semantic drift detection (compares schema properties, types, formats, $refs, required fields, and operation structures between spec and generated output)
+6. `dotnet test --no-build` — run all tests
 
 **Skipping hooks** (use sparingly):
 ```bash
 git commit --no-verify -m "message"
 ```
 
-**Disabling hooks for a session** (e.g., CI):
-```bash
-export HUSKY=0
-```
-
 **Manual setup** (if hooks aren't installed):
 ```bash
-dotnet tool restore
-dotnet husky install
+bash .githooks/setup.sh
 ```
 
 ## OpenAPI Spec-First Workflow

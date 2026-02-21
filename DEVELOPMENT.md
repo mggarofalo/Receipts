@@ -21,7 +21,7 @@ Local development uses **.NET Aspire** to orchestrate all services — API, Post
 git clone https://github.com/mggarofalo/Receipts.git
 cd Receipts
 
-# Restore .NET packages and install tools (also installs Husky pre-commit hooks)
+# Restore .NET packages and install tools (also configures native Git hooks)
 dotnet restore Receipts.slnx
 
 # Install Node dependencies (OpenAPI linting tools)
