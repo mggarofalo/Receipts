@@ -2125,7 +2125,7 @@ components:
 
     AuthAuditLogResponse:
       type: object
-      required: [id, eventType, success, timestamp]
+      required: [id, eventType, timestamp]
       properties:
         id:
           type: string

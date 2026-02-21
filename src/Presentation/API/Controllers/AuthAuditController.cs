@@ -1,3 +1,4 @@
+using API.Generated.Dtos;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +16,7 @@ public class AuthAuditController(IAuthAuditService authAuditService, ILogger<Aut
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
 	[HttpGet("me")]
-	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<AuthAuditLogResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> GetMyAuditLog([FromQuery] int count = 50, CancellationToken cancellationToken = default)
 	{
@@ -38,7 +39,7 @@ public class AuthAuditController(IAuthAuditService authAuditService, ILogger<Aut
 	}
 
 	[HttpGet("recent")]
-	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<AuthAuditLogResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> GetRecent([FromQuery] int count = 50, CancellationToken cancellationToken = default)
 	{
@@ -55,7 +56,7 @@ public class AuthAuditController(IAuthAuditService authAuditService, ILogger<Aut
 	}
 
 	[HttpGet("failed")]
-	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<AuthAuditLogResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> GetFailed([FromQuery] int count = 50, CancellationToken cancellationToken = default)
 	{

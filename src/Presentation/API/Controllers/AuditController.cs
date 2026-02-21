@@ -1,3 +1,4 @@
+using API.Generated.Dtos;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ public class AuditController(IAuditService auditService, ILogger<AuditController
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
 	[HttpGet("entity/{entityType}/{entityId}")]
-	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<AuditLogResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> GetEntityHistory(string entityType, string entityId, CancellationToken cancellationToken)
 	{
@@ -31,7 +32,7 @@ public class AuditController(IAuditService auditService, ILogger<AuditController
 	}
 
 	[HttpGet("recent")]
-	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<AuditLogResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> GetRecent([FromQuery] int count = 50, CancellationToken cancellationToken = default)
 	{
@@ -48,7 +49,7 @@ public class AuditController(IAuditService auditService, ILogger<AuditController
 	}
 
 	[HttpGet("user/{userId}")]
-	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<AuditLogResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> GetByUser(string userId, CancellationToken cancellationToken)
 	{
@@ -65,7 +66,7 @@ public class AuditController(IAuditService auditService, ILogger<AuditController
 	}
 
 	[HttpGet("apikey/{apiKeyId}")]
-	[ProducesResponseType(StatusCodes.Status200OK)]
+	[ProducesResponseType<List<AuditLogResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> GetByApiKey(Guid apiKeyId, CancellationToken cancellationToken)
 	{
