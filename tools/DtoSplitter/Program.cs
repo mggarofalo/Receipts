@@ -27,8 +27,8 @@ static int Check(string[] args)
 		return 1;
 	}
 
-	string specPath = args[1];
-	string generatedDir = args[2];
+	string specPath = Path.GetFullPath(args[1]);
+	string generatedDir = Path.GetFullPath(args[2]);
 
 	string specHash = ComputeHash(specPath);
 
@@ -62,9 +62,9 @@ static int Split(string[] args)
 		return 1;
 	}
 
-	string specPath = args[1];
-	string monolithicFile = args[2];
-	string generatedDir = args[3];
+	string specPath = Path.GetFullPath(args[1]);
+	string monolithicFile = Path.GetFullPath(args[2]);
+	string generatedDir = Path.GetFullPath(args[3]);
 
 	if (!File.Exists(monolithicFile))
 	{
