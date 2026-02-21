@@ -9,7 +9,7 @@ import {
 
 function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex items-center justify-center py-12">
       <Card className="w-[400px]">
         <CardHeader>
           <CardTitle>Receipts</CardTitle>

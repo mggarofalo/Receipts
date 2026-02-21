@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { clearTokens } from "@/lib/auth";
 
 export function showSuccess(message: string) {
   toast.success(message);
@@ -12,7 +13,8 @@ export function showApiError(status: number, message?: string) {
   switch (status) {
     case 401:
       toast.error("Session expired. Please log in again.");
-      // TODO: redirect to login when MGG-35 implements auth
+      clearTokens();
+      window.location.href = "/login";
       break;
     case 403:
       toast.error("You do not have permission to perform this action.");

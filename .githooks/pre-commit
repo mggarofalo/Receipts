@@ -4,7 +4,7 @@ set -e
 echo "=== Pre-commit hook ==="
 
 echo "[1/6] Linting OpenAPI spec..."
-npx spectral lint openapi/spec.yaml --fail-severity warn
+NODE_OPTIONS="--no-deprecation" npx spectral lint openapi/spec.yaml --fail-severity warn
 
 echo "[2/6] Checking code formatting..."
 dotnet format Receipts.slnx --verify-no-changes
