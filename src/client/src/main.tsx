@@ -1,9 +1,32 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import { showApiError, showNetworkError } from "@/lib/toast";
 import "./index.css";
 import App from "./App.tsx";
+
+function handleGlobalError(error: unknown) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "status" in error &&
+    typeof (error as Record<string, unknown>).status === "number"
+  ) {
+    showApiError((error as Record<string, unknown>).status as number);
+    return;
+  }
+
+  if (error instanceof TypeError && error.message === "Failed to fetch") {
+    showNetworkError();
+    return;
+  }
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -12,6 +35,12 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
+  queryCache: new QueryCache({
+    onError: handleGlobalError,
+  }),
+  mutationCache: new MutationCache({
+    onError: handleGlobalError,
+  }),
 });
 
 createRoot(document.getElementById("root")!).render(
