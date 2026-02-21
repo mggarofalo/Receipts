@@ -34,6 +34,36 @@ export function Layout() {
             >
               Home
             </Link>
+            <Link
+              to="/accounts"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Accounts
+            </Link>
+            <Link
+              to="/receipts"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Receipts
+            </Link>
+            <Link
+              to="/receipt-items"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Items
+            </Link>
+            <Link
+              to="/transactions"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Transactions
+            </Link>
+            <Link
+              to="/trips"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Trips
+            </Link>
           </nav>
 
           {user && (
