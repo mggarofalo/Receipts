@@ -41,7 +41,7 @@
 
   <!-- 1. Build tool + check hash -->
   <Target Name="CheckDtoFreshness">
-    <MSBuild Projects="$(_DtoSplitterProject)" Targets="Build" Properties="Configuration=Release" />
+    <MSBuild Projects="$(_DtoSplitterProject)" Targets="Restore;Build" Properties="Configuration=Release" />
     <Exec Command="&quot;$(_DtoSplitterExe)&quot; check &quot;$(_SpecPath)&quot; &quot;$(_GeneratedDir)&quot;"
           IgnoreExitCode="true">
       <Output TaskParameter="ExitCode" PropertyName="_DtoCheckResult" />
