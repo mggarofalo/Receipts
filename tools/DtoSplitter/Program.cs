@@ -27,14 +27,18 @@ static int Check(string[] args)
 		return 1;
 	}
 
-	string specPath = Path.GetFullPath(args[1]);
-	string generatedDir = Path.GetFullPath(args[2]);
+	string specPath = ValidateFilePath(args[1]);
+	string generatedDir = ResolvePath(args[2]);
 
 	string specHash = ComputeHash(specPath);
 
-	string[] existingFiles = Directory.Exists(generatedDir)
-		? Directory.GetFiles(generatedDir, "*.g.cs")
-		: [];
+	if (!Directory.Exists(generatedDir))
+	{
+		Console.WriteLine("No generated files found. Regeneration needed.");
+		return 1;
+	}
+
+	string[] existingFiles = Directory.GetFiles(generatedDir, "*.g.cs");
 
 	if (existingFiles.Length == 0)
 	{
@@ -62,15 +66,9 @@ static int Split(string[] args)
 		return 1;
 	}
 
-	string specPath = Path.GetFullPath(args[1]);
-	string monolithicFile = Path.GetFullPath(args[2]);
-	string generatedDir = Path.GetFullPath(args[3]);
-
-	if (!File.Exists(monolithicFile))
-	{
-		Console.Error.WriteLine($"Monolithic file not found: {monolithicFile}");
-		return 1;
-	}
+	string specPath = ValidateFilePath(args[1]);
+	string monolithicFile = ValidateFilePath(args[2]);
+	string generatedDir = ResolvePath(args[3]);
 
 	string specHash = ComputeHash(specPath);
 	string sourceText = File.ReadAllText(monolithicFile);
@@ -263,6 +261,28 @@ static string NormalizeToCrlf(string text)
 	text = text.Replace("\r", "\n");
 	text = text.Replace("\n", "\r\n");
 	return text;
+}
+
+static string ResolvePath(string path)
+{
+	string resolved = Path.GetFullPath(path);
+	if (resolved.Contains("..", StringComparison.Ordinal) || resolved.Contains('\0'))
+	{
+		throw new ArgumentException($"Invalid path: {path}");
+	}
+
+	return resolved;
+}
+
+static string ValidateFilePath(string path)
+{
+	string resolved = ResolvePath(path);
+	if (!File.Exists(resolved))
+	{
+		throw new FileNotFoundException($"File not found: {resolved}");
+	}
+
+	return resolved;
 }
 
 static int Error(string message)
