@@ -1,4 +1,5 @@
 using API.Mapping.Aggregates;
+using Application.Interfaces.Services;
 
 namespace API.Services;
 
@@ -7,6 +8,8 @@ public static class ProgramService
 	public static IServiceCollection RegisterProgramServices(this IServiceCollection services)
 	{
 		services.AddControllers();
+		services.AddHttpContextAccessor();
+		services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 
 		services
 			.AddSingleton<API.Mapping.Core.AccountMapper>()

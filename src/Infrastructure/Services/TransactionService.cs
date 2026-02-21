@@ -68,5 +68,10 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 
 		await repository.UpdateAsync(transactionEntities, cancellationToken);
 	}
+
+	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
+	{
+		return await repository.RestoreAsync(id, cancellationToken);
+	}
 }
 

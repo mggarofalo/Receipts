@@ -12,4 +12,5 @@ public interface ITransactionRepository
 	Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken);
 	Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken);
 	Task<int> GetCountAsync(CancellationToken cancellationToken);
+	Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken);
 }

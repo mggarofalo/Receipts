@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Infrastructure.Services;
 
@@ -72,6 +73,15 @@ public static class InfrastructureService
 				options.UseNpgsql();
 			});
 		}
+
+		// Fallback ICurrentUserAccessor for when no HTTP context is available (tests, background services).
+		// The API layer registers the real implementation before this, so TryAdd is a no-op in production.
+		services.TryAddScoped<ICurrentUserAccessor, NullCurrentUserAccessor>();
+
+		services
+			.AddIdentityCore<ApplicationUser>()
+			.AddRoles<IdentityRole>()
+			.AddEntityFrameworkStores<ApplicationDbContext>();
 
 		services
 			.AddIdentityCore<ApplicationUser>()

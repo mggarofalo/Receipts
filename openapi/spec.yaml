@@ -173,6 +173,35 @@ paths:
               schema:
                 type: string
 
+  /api/accounts/{id}/restore:
+    post:
+      operationId: RestoreAccount
+      tags: [Accounts]
+      summary: Restore a soft-deleted account
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
   /api/accounts/batch:
     post:
       operationId: CreateAccounts
@@ -374,6 +403,35 @@ paths:
               items:
                 type: string
                 format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/receipts/{id}/restore:
+    post:
+      operationId: RestoreReceipt
+      tags: [Receipts]
+      summary: Restore a soft-deleted receipt
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         "204":
           description: No Content
@@ -613,6 +671,35 @@ paths:
               schema:
                 type: string
 
+  /api/receipt-items/{id}/restore:
+    post:
+      operationId: RestoreReceiptItem
+      tags: [ReceiptItems]
+      summary: Restore a soft-deleted receipt item
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
   /api/receipt-items/by-receipt-id/{receiptId}:
     get:
       operationId: GetReceiptItemsByReceiptId
@@ -804,6 +891,35 @@ paths:
               items:
                 type: string
                 format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/transactions/{id}/restore:
+    post:
+      operationId: RestoreTransaction
+      tags: [Transactions]
+      summary: Restore a soft-deleted transaction
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         "204":
           description: No Content

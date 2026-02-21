@@ -1,17 +1,35 @@
+using Application.Interfaces.Services;
 using Infrastructure.Entities;
 using Infrastructure.Entities.Core;
+using Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
 	private const string PostgreSQL = "Npgsql.EntityFrameworkCore.PostgreSQL";
 	private const string InMemory = "Microsoft.EntityFrameworkCore.InMemory";
 	private const string DatabaseProviderNotSupported = "Database provider {0} not supported";
+
+	private readonly ICurrentUserAccessor? _currentUserAccessor;
+
+	[ActivatorUtilitiesConstructor]
+	public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserAccessor currentUserAccessor)
+		: base(options)
+	{
+		_currentUserAccessor = currentUserAccessor;
+	}
+
+	public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+		: base(options)
+	{
+	}
 
 	public virtual DbSet<AccountEntity> Accounts { get; set; } = null!;
 	public virtual DbSet<ReceiptEntity> Receipts { get; set; } = null!;
@@ -24,6 +42,74 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 		base.OnModelCreating(modelBuilder);
 		PrepareEntityTypesInModelBuilder(modelBuilder, Database.ProviderName);
 		CreateEntities(modelBuilder);
+		ConfigureSoftDeleteFilters(modelBuilder);
+	}
+
+	public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+	{
+		HandleSoftDelete();
+		return await base.SaveChangesAsync(cancellationToken);
+	}
+
+	private void HandleSoftDelete()
+	{
+		IEnumerable<EntityEntry<ISoftDeletable>> entries = ChangeTracker
+			.Entries<ISoftDeletable>()
+			.Where(e => e.State == EntityState.Deleted);
+
+		List<ISoftDeletable> cascadeTargets = [];
+
+		foreach (EntityEntry<ISoftDeletable> entry in entries)
+		{
+			entry.State = EntityState.Modified;
+			entry.Entity.DeletedAt = DateTimeOffset.UtcNow;
+			entry.Entity.DeletedByUserId = _currentUserAccessor?.UserId;
+			entry.Entity.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
+
+			// Cascade soft delete for Receipt children
+			if (entry.Entity is ReceiptEntity receipt)
+			{
+				CollectReceiptChildren(receipt.Id, cascadeTargets);
+			}
+		}
+
+		foreach (ISoftDeletable target in cascadeTargets)
+		{
+			if (target.DeletedAt is null)
+			{
+				target.DeletedAt = DateTimeOffset.UtcNow;
+				target.DeletedByUserId = _currentUserAccessor?.UserId;
+				target.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
+				Entry(target).State = EntityState.Modified;
+			}
+		}
+	}
+
+	private void CollectReceiptChildren(Guid receiptId, List<ISoftDeletable> targets)
+	{
+		// Find tracked ReceiptItems for this receipt
+		IEnumerable<ReceiptItemEntity> trackedItems = ChangeTracker
+			.Entries<ReceiptItemEntity>()
+			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
+			.Select(e => e.Entity);
+
+		targets.AddRange(trackedItems);
+
+		// Find tracked Transactions for this receipt
+		IEnumerable<TransactionEntity> trackedTransactions = ChangeTracker
+			.Entries<TransactionEntity>()
+			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
+			.Select(e => e.Entity);
+
+		targets.AddRange(trackedTransactions);
+	}
+
+	private static void ConfigureSoftDeleteFilters(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<AccountEntity>().HasQueryFilter(e => e.DeletedAt == null);
+		modelBuilder.Entity<ReceiptEntity>().HasQueryFilter(e => e.DeletedAt == null);
+		modelBuilder.Entity<ReceiptItemEntity>().HasQueryFilter(e => e.DeletedAt == null);
+		modelBuilder.Entity<TransactionEntity>().HasQueryFilter(e => e.DeletedAt == null);
 	}
 
 	private static void PrepareEntityTypesInModelBuilder(ModelBuilder modelBuilder, string? providerName)

@@ -15,6 +15,9 @@ public partial class TransactionMapper
 	[MapperIgnoreTarget(nameof(TransactionEntity.ReceiptId))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.Account))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.AccountId))]
+	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedAt))]
+	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedByUserId))]
+	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedByApiKeyId))]
 	public partial TransactionEntity ToEntity(Transaction source);
 
 	private Money MapAmount(decimal amount, Currency currency) => new(amount, currency);
@@ -24,5 +27,8 @@ public partial class TransactionMapper
 	[MapperIgnoreSource(nameof(TransactionEntity.Account))]
 	[MapperIgnoreSource(nameof(TransactionEntity.AccountId))]
 	[MapperIgnoreSource(nameof(TransactionEntity.AmountCurrency))]
+	[MapperIgnoreSource(nameof(TransactionEntity.DeletedAt))]
+	[MapperIgnoreSource(nameof(TransactionEntity.DeletedByUserId))]
+	[MapperIgnoreSource(nameof(TransactionEntity.DeletedByApiKeyId))]
 	public partial Transaction ToDomain(TransactionEntity source);
 }

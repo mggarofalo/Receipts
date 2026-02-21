@@ -53,4 +53,9 @@ public class AccountService(IAccountRepository repository, AccountMapper mapper)
 		List<AccountEntity> accountEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(accountEntities, cancellationToken);
 	}
+
+	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
+	{
+		return await repository.RestoreAsync(id, cancellationToken);
+	}
 }

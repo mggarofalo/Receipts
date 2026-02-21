@@ -15,6 +15,9 @@ public partial class ReceiptItemMapper
 	[MapProperty(nameof(ReceiptItem.TotalAmount.Currency), nameof(ReceiptItemEntity.TotalAmountCurrency))]
 	[MapperIgnoreTarget(nameof(ReceiptItemEntity.Receipt))]
 	[MapperIgnoreTarget(nameof(ReceiptItemEntity.ReceiptId))]
+	[MapperIgnoreTarget(nameof(ReceiptItemEntity.DeletedAt))]
+	[MapperIgnoreTarget(nameof(ReceiptItemEntity.DeletedByUserId))]
+	[MapperIgnoreTarget(nameof(ReceiptItemEntity.DeletedByApiKeyId))]
 	public partial ReceiptItemEntity ToEntity(ReceiptItem source);
 
 	private Money MapUnitPrice(decimal amount, Currency currency) => new(amount, currency);
@@ -24,5 +27,8 @@ public partial class ReceiptItemMapper
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.ReceiptId))]
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.UnitPriceCurrency))]
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.TotalAmountCurrency))]
+	[MapperIgnoreSource(nameof(ReceiptItemEntity.DeletedAt))]
+	[MapperIgnoreSource(nameof(ReceiptItemEntity.DeletedByUserId))]
+	[MapperIgnoreSource(nameof(ReceiptItemEntity.DeletedByApiKeyId))]
 	public partial ReceiptItem ToDomain(ReceiptItemEntity source);
 }

@@ -2,6 +2,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.ReceiptItem.Create;
 using Application.Commands.ReceiptItem.Delete;
+using Application.Commands.ReceiptItem.Restore;
 using Application.Commands.ReceiptItem.Update;
 using Application.Queries.Core.ReceiptItem;
 using Domain.Core;
@@ -29,6 +30,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	public const string RouteUpdate = "{receiptId}";
 	public const string RouteUpdateBatch = "{receiptId}/batch";
 	public const string RouteDelete = "";
+	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a receipt item by ID")]
@@ -240,6 +242,35 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		catch (Exception ex)
 		{
 			logger.LogError(ex, MessageWithoutId, nameof(DeleteReceiptItems));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpPost(RouteRestore)]
+	[EndpointSummary("Restore a soft-deleted receipt item")]
+	[EndpointDescription("Restores a previously soft-deleted receipt item by clearing its DeletedAt timestamp.")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<IActionResult> RestoreReceiptItem([FromRoute] Guid id)
+	{
+		try
+		{
+			logger.LogDebug("RestoreReceiptItem called with id: {Id}", id);
+			RestoreReceiptItemCommand command = new(id);
+			bool result = await mediator.Send(command);
+
+			if (!result)
+			{
+				logger.LogWarning("RestoreReceiptItem called with id: {Id}, but not found or not deleted", id);
+				return NotFound();
+			}
+
+			return NoContent();
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithId, nameof(RestoreReceiptItem), id);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

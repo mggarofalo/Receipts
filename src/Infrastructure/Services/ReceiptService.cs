@@ -47,4 +47,9 @@ public class ReceiptService(IReceiptRepository repository, ReceiptMapper mapper)
 		List<ReceiptEntity> receiptEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(receiptEntities, cancellationToken);
 	}
+
+	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
+	{
+		return await repository.RestoreAsync(id, cancellationToken);
+	}
 }

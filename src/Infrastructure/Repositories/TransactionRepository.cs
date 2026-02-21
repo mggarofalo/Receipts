@@ -1,4 +1,5 @@
 using Infrastructure.Entities.Core;
+using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -84,5 +85,24 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions.CountAsync(cancellationToken);
+	}
+
+	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		TransactionEntity? entity = await context.Transactions
+			.IncludeDeleted()
+			.FirstOrDefaultAsync(e => e.Id == id && e.DeletedAt != null, cancellationToken);
+
+		if (entity is null)
+		{
+			return false;
+		}
+
+		entity.DeletedAt = null;
+		entity.DeletedByUserId = null;
+		entity.DeletedByApiKeyId = null;
+		await context.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 }
