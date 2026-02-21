@@ -833,7 +833,7 @@ export interface components {
             /** Format: uuid */
             apiKeyId?: string | null;
             username?: string | null;
-            success: boolean;
+            success?: boolean;
             failureReason?: string | null;
             ipAddress?: string | null;
             userAgent?: string | null;
