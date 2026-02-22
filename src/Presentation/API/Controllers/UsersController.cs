@@ -1,4 +1,5 @@
 using API.Generated.Dtos;
+using Infrastructure;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -14,7 +15,7 @@ namespace API.Controllers;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(StatusCodes.Status403Forbidden)]
 public class UsersController(
-	UserManager<ApplicationUser> userManager,
+	ApplicationDbContext dbContext,
 	ILogger<UsersController> logger) : ControllerBase
 {
 	[HttpGet]
@@ -30,25 +31,34 @@ public class UsersController(
 			page = Math.Max(1, page);
 			pageSize = Math.Clamp(pageSize, 1, 100);
 
-			int totalCount = await userManager.Users.CountAsync();
+			int totalCount = await dbContext.Users.CountAsync();
 
-			List<ApplicationUser> users = await userManager.Users
+			List<ApplicationUser> users = await dbContext.Users
 				.OrderBy(u => u.Email)
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
 				.ToListAsync();
 
-			List<UserSummaryResponse> items = [];
-			foreach (ApplicationUser user in users)
+			List<string> userIds = users.Select(u => u.Id).ToList();
+
+			Dictionary<string, List<string>> rolesByUserId = await dbContext.UserRoles
+				.Where(ur => userIds.Contains(ur.UserId))
+				.Join(
+					dbContext.Roles,
+					ur => ur.RoleId,
+					r => r.Id,
+					(ur, r) => new { ur.UserId, RoleName = r.Name! })
+				.GroupBy(x => x.UserId)
+				.ToDictionaryAsync(
+					g => g.Key,
+					g => g.Select(x => x.RoleName).ToList());
+
+			List<UserSummaryResponse> items = users.Select(user => new UserSummaryResponse
 			{
-				IList<string> roles = await userManager.GetRolesAsync(user);
-				items.Add(new UserSummaryResponse
-				{
-					Id = user.Id,
-					Email = user.Email ?? "",
-					Roles = [.. roles],
-				});
-			}
+				Id = user.Id,
+				Email = user.Email ?? "",
+				Roles = [.. rolesByUserId.GetValueOrDefault(user.Id, [])],
+			}).ToList();
 
 			return Ok(new UserListResponse
 			{
