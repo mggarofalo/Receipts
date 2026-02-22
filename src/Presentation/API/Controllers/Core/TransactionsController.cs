@@ -1,4 +1,5 @@
 using API.Generated.Dtos;
+using API.Hubs;
 using API.Mapping.Core;
 using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Delete;
@@ -9,6 +10,7 @@ using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace API.Controllers.Core;
 
@@ -17,7 +19,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
+public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger, IHubContext<ReceiptsHub> hub) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -153,6 +155,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			logger.LogDebug("CreateTransaction called");
 			CreateTransactionCommand command = new([mapper.ToDomain(model)], receiptId, accountId);
 			List<Transaction> transactions = await mediator.Send(command);
+			await hub.Clients.All.SendAsync(ReceiptsHub.TransactionCreated, CancellationToken.None);
 			return Ok(mapper.ToResponse(transactions[0]));
 		}
 		catch (Exception ex)
@@ -173,6 +176,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			logger.LogDebug("CreateTransactions called with {Count} transactions", models.Count);
 			CreateTransactionCommand command = new([.. models.Select(mapper.ToDomain)], receiptId, accountId);
 			List<Transaction> transactions = await mediator.Send(command);
+			await hub.Clients.All.SendAsync(ReceiptsHub.TransactionCreated, CancellationToken.None);
 			return Ok(transactions.Select(mapper.ToResponse).ToList());
 		}
 		catch (Exception ex)
@@ -201,6 +205,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 				return NotFound();
 			}
 
+			await hub.Clients.All.SendAsync(ReceiptsHub.TransactionUpdated, CancellationToken.None);
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -230,7 +235,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			}
 
 			logger.LogDebug("UpdateTransactions called with {Count} transactions, and found", models.Count);
-
+			await hub.Clients.All.SendAsync(ReceiptsHub.TransactionUpdated, CancellationToken.None);
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -261,7 +266,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			}
 
 			logger.LogDebug("DeleteTransactions called with {Count} transaction ids, and found", ids.Count);
-
+			await hub.Clients.All.SendAsync(ReceiptsHub.TransactionDeleted, CancellationToken.None);
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -291,6 +296,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 				return NotFound();
 			}
 
+			await hub.Clients.All.SendAsync(ReceiptsHub.TransactionCreated, CancellationToken.None);
 			return NoContent();
 		}
 		catch (Exception ex)

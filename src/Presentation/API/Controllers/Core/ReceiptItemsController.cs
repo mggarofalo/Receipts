@@ -1,4 +1,5 @@
 using API.Generated.Dtos;
+using API.Hubs;
 using API.Mapping.Core;
 using Application.Commands.ReceiptItem.Create;
 using Application.Commands.ReceiptItem.Delete;
@@ -9,6 +10,7 @@ using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace API.Controllers.Core;
 
@@ -17,7 +19,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper, ILogger<ReceiptItemsController> logger) : ControllerBase
+public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper, ILogger<ReceiptItemsController> logger, IHubContext<ReceiptsHub> hub) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -153,6 +155,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			logger.LogDebug("CreateReceiptItem called");
 			CreateReceiptItemCommand command = new([mapper.ToDomain(model)], receiptId);
 			List<ReceiptItem> receiptItems = await mediator.Send(command);
+			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptItemCreated, CancellationToken.None);
 			return Ok(mapper.ToResponse(receiptItems[0]));
 		}
 		catch (Exception ex)
@@ -173,6 +176,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			logger.LogDebug("CreateReceiptItems called with {Count} receipt items", models.Count);
 			CreateReceiptItemCommand command = new([.. models.Select(mapper.ToDomain)], receiptId);
 			List<ReceiptItem> receiptItems = await mediator.Send(command);
+			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptItemCreated, CancellationToken.None);
 			return Ok(receiptItems.Select(mapper.ToResponse).ToList());
 		}
 		catch (Exception ex)
@@ -201,6 +205,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 				return NotFound();
 			}
 
+			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptItemUpdated, CancellationToken.None);
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -230,7 +235,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			}
 
 			logger.LogDebug("UpdateReceiptItems called with {Count} receipt items, and updated", models.Count);
-
+			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptItemUpdated, CancellationToken.None);
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -261,7 +266,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			}
 
 			logger.LogDebug("DeleteReceiptItems called with {Count} receipt item ids, and deleted", ids.Count);
-
+			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptItemDeleted, CancellationToken.None);
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -291,6 +296,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 				return NotFound();
 			}
 
+			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptItemCreated, CancellationToken.None);
 			return NoContent();
 		}
 		catch (Exception ex)

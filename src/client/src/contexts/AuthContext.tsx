@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import type { JwtPayload } from "@/lib/auth";
 import { AuthContext } from "@/contexts/auth-context";
+import { useSignalR } from "@/hooks/useSignalR";
 
 function getInitialUser(): JwtPayload | null {
   if (!checkAuth()) return null;
@@ -20,6 +21,7 @@ function getInitialUser(): JwtPayload | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<JwtPayload | null>(getInitialUser);
+  const { start: startSignalR, stop: stopSignalR } = useSignalR();
 
   useEffect(() => {
     return addTokenRefreshListener(() => {
@@ -27,6 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(token ? parseJwtPayload(token) : null);
     });
   }, []);
+
+  // Connect SignalR when user is authenticated
+  useEffect(() => {
+    if (user) {
+      void startSignalR();
+    } else {
+      void stopSignalR();
+    }
+  }, [user, startSignalR, stopSignalR]);
 
   const login = useCallback(async (email: string, password: string) => {
     const { data, error } = await client.POST("/api/auth/login", {
