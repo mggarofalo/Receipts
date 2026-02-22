@@ -6,6 +6,7 @@ import {
   getRefreshToken,
   setTokens,
   clearTokens,
+  notifyTokenRefresh,
 } from "@/lib/auth";
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "";
@@ -28,6 +29,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
 
     const data = await res.json();
     setTokens(data.accessToken, data.refreshToken);
+    notifyTokenRefresh();
     return true;
   } catch {
     return false;

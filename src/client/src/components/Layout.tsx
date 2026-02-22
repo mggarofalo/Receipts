@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from "react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermission";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 
 export function Layout() {
   const { user, logout } = useAuth();
+  const { isAdmin } = usePermission();
   const navigate = useNavigate();
 
   async function handleLogout() {
@@ -64,6 +66,14 @@ export function Layout() {
             >
               Trips
             </Link>
+            {isAdmin() && (
+              <Link
+                to="/admin/users"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Users
+              </Link>
+            )}
           </nav>
 
           {user && (

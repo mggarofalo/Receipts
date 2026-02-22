@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import client from "@/lib/api-client";
 import {
@@ -7,6 +7,7 @@ import {
   isAuthenticated as checkAuth,
   parseJwtPayload,
   setTokens,
+  addTokenRefreshListener,
 } from "@/lib/auth";
 import type { JwtPayload } from "@/lib/auth";
 import { AuthContext } from "@/contexts/auth-context";
@@ -19,6 +20,13 @@ function getInitialUser(): JwtPayload | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<JwtPayload | null>(getInitialUser);
+
+  useEffect(() => {
+    return addTokenRefreshListener(() => {
+      const token = getAccessToken();
+      setUser(token ? parseJwtPayload(token) : null);
+    });
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const { data, error } = await client.POST("/api/auth/login", {
