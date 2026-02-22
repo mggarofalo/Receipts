@@ -96,7 +96,8 @@ public static class InfrastructureService
 			.AddScoped<ITokenService, TokenService>()
 			.AddScoped<IApiKeyService, ApiKeyService>()
 			.AddScoped<IAuditService, AuditService>()
-			.AddScoped<IAuthAuditService, AuthAuditService>();
+			.AddScoped<IAuthAuditService, AuthAuditService>()
+			.AddScoped<IUserService, UserService>();
 
 		services.AddHostedService<AuthAuditCleanupService>();
 

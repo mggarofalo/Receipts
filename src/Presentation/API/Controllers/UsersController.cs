@@ -1,10 +1,7 @@
 using API.Generated.Dtos;
-using Infrastructure;
-using Infrastructure.Entities;
+using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
@@ -15,7 +12,7 @@ namespace API.Controllers;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(StatusCodes.Status403Forbidden)]
 public class UsersController(
-	ApplicationDbContext dbContext,
+	IUserService userService,
 	ILogger<UsersController> logger) : ControllerBase
 {
 	[HttpGet]
@@ -28,44 +25,21 @@ public class UsersController(
 	{
 		try
 		{
-			page = Math.Max(1, page);
-			pageSize = Math.Clamp(pageSize, 1, 100);
+			PagedUserList result = await userService.ListUsersAsync(page, pageSize);
 
-			int totalCount = await dbContext.Users.CountAsync();
-
-			List<ApplicationUser> users = await dbContext.Users
-				.OrderBy(u => u.Email)
-				.Skip((page - 1) * pageSize)
-				.Take(pageSize)
-				.ToListAsync();
-
-			List<string> userIds = users.Select(u => u.Id).ToList();
-
-			Dictionary<string, List<string>> rolesByUserId = await dbContext.UserRoles
-				.Where(ur => userIds.Contains(ur.UserId))
-				.Join(
-					dbContext.Roles,
-					ur => ur.RoleId,
-					r => r.Id,
-					(ur, r) => new { ur.UserId, RoleName = r.Name! })
-				.GroupBy(x => x.UserId)
-				.ToDictionaryAsync(
-					g => g.Key,
-					g => g.Select(x => x.RoleName).ToList());
-
-			List<UserSummaryResponse> items = users.Select(user => new UserSummaryResponse
+			List<UserSummaryResponse> items = result.Items.Select(user => new UserSummaryResponse
 			{
 				Id = user.Id,
-				Email = user.Email ?? "",
-				Roles = [.. rolesByUserId.GetValueOrDefault(user.Id, [])],
+				Email = user.Email,
+				Roles = [.. user.Roles],
 			}).ToList();
 
 			return Ok(new UserListResponse
 			{
 				Items = items,
-				Page = page,
-				PageSize = pageSize,
-				TotalCount = totalCount,
+				Page = result.Page,
+				PageSize = result.PageSize,
+				TotalCount = result.TotalCount,
 			});
 		}
 		catch (Exception ex)
