@@ -31,6 +31,15 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 			.ToListAsync(cancellationToken);
 	}
 
+	public async Task<List<TransactionEntity>> GetDeletedAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Transactions
+			.OnlyDeleted()
+			.AsNoTracking()
+			.ToListAsync(cancellationToken);
+	}
+
 	public async Task<List<TransactionEntity>> CreateAsync(List<TransactionEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();

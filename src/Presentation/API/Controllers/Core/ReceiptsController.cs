@@ -29,6 +29,7 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
 	public const string RouteDelete = "";
+	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
@@ -81,6 +82,30 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 		catch (Exception ex)
 		{
 			logger.LogError(ex, MessageWithoutId, nameof(GetAllReceipts));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpGet(RouteGetDeleted)]
+	[EndpointSummary("Get all soft-deleted receipts")]
+	[EndpointDescription("Returns all receipts that have been soft-deleted.")]
+	[ProducesResponseType<List<ReceiptResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<List<ReceiptResponse>>> GetDeletedReceipts()
+	{
+		try
+		{
+			logger.LogDebug("GetDeletedReceipts called");
+			GetDeletedReceiptsQuery query = new();
+			List<Receipt> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedReceipts called with {Count} receipts", result.Count);
+
+			List<ReceiptResponse> model = [.. result.Select(mapper.ToResponse)];
+			return Ok(model);
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedReceipts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

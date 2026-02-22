@@ -30,6 +30,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	public const string RouteUpdate = "{receiptId}/{accountId}";
 	public const string RouteUpdateBatch = "{receiptId}/{accountId}/batch";
 	public const string RouteDelete = "";
+	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
@@ -82,6 +83,30 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		catch (Exception ex)
 		{
 			logger.LogError(ex, MessageWithoutId, nameof(GetAllTransactions));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpGet(RouteGetDeleted)]
+	[EndpointSummary("Get all soft-deleted transactions")]
+	[EndpointDescription("Returns all transactions that have been soft-deleted.")]
+	[ProducesResponseType<List<TransactionResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<List<TransactionResponse>>> GetDeletedTransactions()
+	{
+		try
+		{
+			logger.LogDebug("GetDeletedTransactions called");
+			GetDeletedTransactionsQuery query = new();
+			List<Transaction> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedTransactions called with {Count} transactions", result.Count);
+
+			List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
+			return Ok(model);
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedTransactions));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

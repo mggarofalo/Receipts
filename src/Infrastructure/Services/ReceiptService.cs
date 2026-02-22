@@ -31,6 +31,12 @@ public class ReceiptService(IReceiptRepository repository, ReceiptMapper mapper)
 		return [.. receiptEntities.Select(mapper.ToDomain)];
 	}
 
+	public async Task<List<Receipt>> GetDeletedAsync(CancellationToken cancellationToken)
+	{
+		List<ReceiptEntity> receiptEntities = await repository.GetDeletedAsync(cancellationToken);
+		return [.. receiptEntities.Select(mapper.ToDomain)];
+	}
+
 	public async Task<Receipt?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		ReceiptEntity? receiptEntity = await repository.GetByIdAsync(id, cancellationToken);

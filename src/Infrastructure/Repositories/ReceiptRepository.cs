@@ -22,6 +22,15 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.ToListAsync(cancellationToken);
 	}
 
+	public async Task<List<ReceiptEntity>> GetDeletedAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Receipts
+			.OnlyDeleted()
+			.AsNoTracking()
+			.ToListAsync(cancellationToken);
+	}
+
 	public async Task<List<ReceiptEntity>> CreateAsync(List<ReceiptEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();

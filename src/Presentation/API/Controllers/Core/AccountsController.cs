@@ -28,6 +28,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
 	public const string RouteDelete = "";
+	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
@@ -80,6 +81,30 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		catch (Exception ex)
 		{
 			logger.LogError(ex, MessageWithoutId, nameof(GetAllAccounts));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpGet(RouteGetDeleted)]
+	[EndpointSummary("Get all soft-deleted accounts")]
+	[EndpointDescription("Returns all accounts that have been soft-deleted.")]
+	[ProducesResponseType<List<AccountResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<List<AccountResponse>>> GetDeletedAccounts()
+	{
+		try
+		{
+			logger.LogDebug("GetDeletedAccounts called");
+			GetDeletedAccountsQuery query = new();
+			List<Account> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedAccounts called with {Count} accounts", result.Count);
+
+			List<AccountResponse> model = [.. result.Select(mapper.ToResponse)];
+			return Ok(model);
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedAccounts));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

@@ -39,6 +39,12 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 		return [.. transactionEntities.Select(mapper.ToDomain)];
 	}
 
+	public async Task<List<Transaction>> GetDeletedAsync(CancellationToken cancellationToken)
+	{
+		List<TransactionEntity> transactionEntities = await repository.GetDeletedAsync(cancellationToken);
+		return [.. transactionEntities.Select(mapper.ToDomain)];
+	}
+
 	public async Task<Transaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		TransactionEntity? transactionEntity = await repository.GetByIdAsync(id, cancellationToken);

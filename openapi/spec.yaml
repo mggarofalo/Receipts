@@ -173,6 +173,32 @@ paths:
               schema:
                 type: string
 
+  /api/accounts/deleted:
+    get:
+      operationId: GetDeletedAccounts
+      tags: [Accounts]
+      summary: Get all soft-deleted accounts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
   /api/accounts/{id}/restore:
     post:
       operationId: RestoreAccount
@@ -410,6 +436,32 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/receipts/deleted:
+    get:
+      operationId: GetDeletedReceipts
+      tags: [Receipts]
+      summary: Get all soft-deleted receipts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -671,6 +723,32 @@ paths:
               schema:
                 type: string
 
+  /api/receipt-items/deleted:
+    get:
+      operationId: GetDeletedReceiptItems
+      tags: [ReceiptItems]
+      summary: Get all soft-deleted receipt items
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
   /api/receipt-items/{id}/restore:
     post:
       operationId: RestoreReceiptItem
@@ -898,6 +976,32 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/transactions/deleted:
+    get:
+      operationId: GetDeletedTransactions
+      tags: [Transactions]
+      summary: Get all soft-deleted transactions
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:

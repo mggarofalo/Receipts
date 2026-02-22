@@ -31,6 +31,12 @@ public class AccountService(IAccountRepository repository, AccountMapper mapper)
 		return [.. accountEntities.Select(mapper.ToDomain)];
 	}
 
+	public async Task<List<Account>> GetDeletedAsync(CancellationToken cancellationToken)
+	{
+		List<AccountEntity> accountEntities = await repository.GetDeletedAsync(cancellationToken);
+		return [.. accountEntities.Select(mapper.ToDomain)];
+	}
+
 	public async Task<Account?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		AccountEntity? accountEntity = await repository.GetByIdAsync(id, cancellationToken);
