@@ -1,4 +1,3 @@
-using API.Hubs;
 using API.Services;
 
 namespace API.Configuration;
@@ -29,6 +28,8 @@ public static class ApplicationConfiguration
 				options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
 			});
 
+		services.AddAuthorization();
+
 		return services;
 	}
 
@@ -36,10 +37,8 @@ public static class ApplicationConfiguration
 	{
 		app.UseHttpsRedirection();
 		app.UseRouting();
-
-		// Map controllers and SignalR hubs
-		app.MapControllers();
-		app.MapHub<ReceiptsHub>("/receipts");
+		app.UseAuthentication();
+		app.UseAuthorization();
 
 		return app;
 	}

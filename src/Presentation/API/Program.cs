@@ -14,7 +14,8 @@ builder.AddApplicationConfiguration();
 builder.Services
 	.AddOpenApiServices()
 	.AddApplicationServices()
-	.AddCorsServices()
+	.AddAuthServices(builder.Configuration)
+	.AddCorsServices(builder.Configuration, builder.Environment)
 	.RegisterProgramServices()
 	.RegisterApplicationServices(builder.Configuration)
 	.RegisterInfrastructureServices(builder.Configuration);
@@ -23,7 +24,8 @@ builder.Services
 WebApplication app = builder.Build();
 
 // Configure middleware
-app.UseOpenApiServices()
+app.UseAuthServices()
+   .UseOpenApiServices()
    .UseApplicationServices()
    .UseCorsServices();
 
@@ -41,7 +43,7 @@ app.MapDefaultEndpoints();
 app.MapControllers();
 
 // Map SignalR hubs
-app.MapHub<ReceiptsHub>("/receipts");
+app.MapHub<ReceiptsHub>("/hubs/receipts").RequireAuthorization();
 
 // Run application
 await app.RunAsync();

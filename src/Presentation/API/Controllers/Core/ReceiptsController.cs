@@ -9,6 +9,7 @@ using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 
 namespace API.Controllers.Core;
 
@@ -98,7 +99,12 @@ public class ReceiptsController(
 			CreateReceiptCommand command = new([mapper.ToDomain(model)]);
 			List<Receipt> receipts = await mediator.Send(command);
 			ReceiptResponse response = mapper.ToResponse(receipts[0]);
-			await hubContext.Clients.All.ReceiptCreated(response);
+			string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userId != null)
+			{
+				await hubContext.Clients.Group(userId).ReceiptCreated(response);
+			}
+
 			return Ok(response);
 		}
 		catch (Exception ex)
@@ -120,10 +126,15 @@ public class ReceiptsController(
 			CreateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
 			List<Receipt> receipts = await mediator.Send(command);
 			List<ReceiptResponse> responses = receipts.Select(mapper.ToResponse).ToList();
+			string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			foreach (ReceiptResponse response in responses)
 			{
-				await hubContext.Clients.All.ReceiptCreated(response);
+				if (userId != null)
+				{
+					await hubContext.Clients.Group(userId).ReceiptCreated(response);
+				}
 			}
+
 			return Ok(responses);
 		}
 		catch (Exception ex)
@@ -154,9 +165,14 @@ public class ReceiptsController(
 
 			GetReceiptByIdQuery fetchQuery = new(id);
 			Receipt? updatedReceipt = await mediator.Send(fetchQuery);
-			if (updatedReceipt != null)
+			string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (updatedReceipt != null && userId != null)
 			{
-				await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
+				await hubContext.Clients.Group(userId).ReceiptUpdated(mapper.ToResponse(updatedReceipt));
+			}
+			else if (updatedReceipt == null)
+			{
+				logger.LogWarning("UpdateReceipt: receipt {Id} was confirmed updated but could not be fetched for broadcast", id);
 			}
 
 			return NoContent();
@@ -168,6 +184,10 @@ public class ReceiptsController(
 		}
 	}
 
+	// NOTE: Batch update semantics — UpdateReceiptCommand returns false only when ALL records
+	// fail (e.g. none found). A partially-successful batch returns true, so some records may
+	// be updated without a corresponding ReceiptUpdated broadcast if their post-update fetch
+	// returns null. This is a known observable failure mode via the hub (see MGG-37 review).
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update receipts in batch")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -189,13 +209,18 @@ public class ReceiptsController(
 
 			logger.LogDebug("UpdateReceipts called with {Count} receipts, and found", models.Count);
 
+			string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			foreach (UpdateReceiptRequest model in models)
 			{
 				GetReceiptByIdQuery fetchQuery = new(model.Id);
 				Receipt? updatedReceipt = await mediator.Send(fetchQuery);
-				if (updatedReceipt != null)
+				if (updatedReceipt != null && userId != null)
 				{
-					await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
+					await hubContext.Clients.Group(userId).ReceiptUpdated(mapper.ToResponse(updatedReceipt));
+				}
+				else if (updatedReceipt == null)
+				{
+					logger.LogWarning("UpdateReceipts: receipt {Id} was confirmed updated but could not be fetched for broadcast", model.Id);
 				}
 			}
 
@@ -230,9 +255,13 @@ public class ReceiptsController(
 
 			logger.LogDebug("DeleteReceipts called with {Count} receipt ids, and found", ids.Count);
 
+			string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 			foreach (Guid id in ids)
 			{
-				await hubContext.Clients.All.ReceiptDeleted(id);
+				if (userId != null)
+				{
+					await hubContext.Clients.Group(userId).ReceiptDeleted(id);
+				}
 			}
 
 			return NoContent();

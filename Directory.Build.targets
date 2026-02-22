@@ -1,7 +1,19 @@
 <Project>
   <Target Name="ConfigureGitHooks" BeforeTargets="Restore;CollectPackageReferences">
+    <!--
+      Only write git config when the hooks path is not already configured.
+      The read (git config get) is lock free, so parallel MSBuild nodes
+      do not contend on .git/config. The write only runs once per clone.
+    -->
+    <Exec Command="git config --get core.hooksPath"
+          StandardOutputImportance="Low" StandardErrorImportance="Low"
+          IgnoreExitCode="true"
+          WorkingDirectory="$(MSBuildThisFileDirectory)">
+      <Output TaskParameter="ExitCode" PropertyName="_HooksPathExitCode" />
+    </Exec>
     <Exec Command="git config core.hooksPath .githooks"
           StandardOutputImportance="Low" StandardErrorImportance="High"
-          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          Condition="'$(_HooksPathExitCode)' != '0'" />
   </Target>
 </Project>

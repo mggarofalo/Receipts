@@ -9,12 +9,14 @@ using Application.Queries.Core.Receipt;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
 using SampleData.Dtos.Core;
+using System.Security.Claims;
 
 namespace Presentation.API.Tests.Controllers.Core;
 
@@ -36,6 +38,7 @@ public class ReceiptsControllerTests
 		_hubClientMock = new Mock<IReceiptsHubClient>();
 		Mock<IHubClients<IReceiptsHubClient>> hubClientsMock = new();
 		hubClientsMock.Setup(c => c.All).Returns(_hubClientMock.Object);
+		hubClientsMock.Setup(c => c.Group(It.IsAny<string>())).Returns(_hubClientMock.Object);
 		_hubContextMock = new Mock<IHubContext<ReceiptsHub, IReceiptsHubClient>>();
 		_hubContextMock.Setup(h => h.Clients).Returns(hubClientsMock.Object);
 
@@ -44,6 +47,14 @@ public class ReceiptsControllerTests
 			.ReturnsAsync((Receipt?)null);
 
 		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _hubContextMock.Object);
+
+		// Provide an authenticated HTTP context so User.FindFirstValue resolves the caller's user ID
+		ClaimsPrincipal user = new(new ClaimsIdentity(
+			[new Claim(ClaimTypes.NameIdentifier, "test-user-id")], "test"));
+		_controller.ControllerContext = new ControllerContext
+		{
+			HttpContext = new DefaultHttpContext { User = user }
+		};
 	}
 
 	[Fact]
