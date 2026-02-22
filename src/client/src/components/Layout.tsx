@@ -1,6 +1,8 @@
 import { Link, Outlet, useNavigate } from "react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
+import { useSignalR } from "@/hooks/useSignalR";
+import type { SignalRConnectionState } from "@/hooks/useSignalR";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,10 +13,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 
+const connectionStateColors: Record<SignalRConnectionState, string> = {
+  connected: "bg-green-500",
+  reconnecting: "bg-yellow-500 animate-pulse",
+  disconnected: "bg-red-500",
+};
+
+const connectionStateLabels: Record<SignalRConnectionState, string> = {
+  connected: "Live",
+  reconnecting: "Reconnecting",
+  disconnected: "Offline",
+};
+
 export function Layout() {
   const { user, logout } = useAuth();
   const { isAdmin } = usePermission();
   const navigate = useNavigate();
+  const { connectionState } = useSignalR(!!user);
 
   async function handleLogout() {
     await logout();
@@ -96,24 +111,38 @@ export function Layout() {
             )}
           </nav>
 
-          {user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  {user.email}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate("/api-keys")}>
-                  API Keys
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-1.5"
+              title={`SignalR: ${connectionStateLabels[connectionState]}`}
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${connectionStateColors[connectionState]}`}
+              />
+              <span className="text-xs text-muted-foreground">
+                {connectionStateLabels[connectionState]}
+              </span>
+            </div>
+
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    {user.email}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate("/api-keys")}>
+                    API Keys
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </header>
 
