@@ -31,6 +31,24 @@ public static class AuthConfiguration
 					ValidateLifetime = true,
 					ClockSkew = TimeSpan.Zero,
 				};
+
+				// Support JWT via query string for SignalR WebSocket connections.
+				// HTTP headers are unavailable on the WebSocket upgrade request, so the
+				// SignalR client passes the token as ?access_token=… instead.
+				options.Events = new JwtBearerEvents
+				{
+					OnMessageReceived = context =>
+					{
+						string? token = context.Request.Query["access_token"];
+						if (!string.IsNullOrEmpty(token) &&
+							context.HttpContext.Request.Path.StartsWithSegments("/receipts"))
+						{
+							context.Token = token;
+						}
+
+						return Task.CompletedTask;
+					},
+				};
 			})
 			.AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
 				ApiKeyAuthenticationDefaults.AuthenticationScheme,
