@@ -2,14 +2,15 @@ const ACCESS_TOKEN_KEY = "receipts_access_token";
 const REFRESH_TOKEN_KEY = "receipts_refresh_token";
 
 type TokenRefreshListener = () => void;
-let tokenRefreshListener: TokenRefreshListener | null = null;
+const tokenRefreshListeners = new Set<TokenRefreshListener>();
 
-export function setTokenRefreshListener(cb: TokenRefreshListener): void {
-  tokenRefreshListener = cb;
+export function addTokenRefreshListener(cb: TokenRefreshListener): () => void {
+  tokenRefreshListeners.add(cb);
+  return () => tokenRefreshListeners.delete(cb);
 }
 
 export function notifyTokenRefresh(): void {
-  tokenRefreshListener?.();
+  tokenRefreshListeners.forEach((cb) => cb());
 }
 
 export function getAccessToken(): string | null {

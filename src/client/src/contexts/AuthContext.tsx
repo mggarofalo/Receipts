@@ -7,7 +7,7 @@ import {
   isAuthenticated as checkAuth,
   parseJwtPayload,
   setTokens,
-  setTokenRefreshListener,
+  addTokenRefreshListener,
 } from "@/lib/auth";
 import type { JwtPayload } from "@/lib/auth";
 import { AuthContext } from "@/contexts/auth-context";
@@ -22,11 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<JwtPayload | null>(getInitialUser);
 
   useEffect(() => {
-    setTokenRefreshListener(() => {
+    return addTokenRefreshListener(() => {
       const token = getAccessToken();
       setUser(token ? parseJwtPayload(token) : null);
     });
-    return () => setTokenRefreshListener(() => {});
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

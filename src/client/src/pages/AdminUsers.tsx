@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Must match AppRoles.All on the backend (src/Common/AppRoles.cs)
 const AVAILABLE_ROLES = ["Admin", "User"];
 
 function AdminUsers() {
