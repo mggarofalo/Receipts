@@ -1,8 +1,4 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
@@ -133,14 +129,24 @@ export function useDeleteReceiptItems() {
   });
 }
 
+export function useDeletedReceiptItems() {
+  return useQuery({
+    queryKey: ["receipt-items", "deleted"],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/receipt-items/deleted");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useRestoreReceiptItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await client.POST(
-        "/api/receipt-items/{id}/restore",
-        { params: { path: { id } } },
-      );
+      const { error } = await client.POST("/api/receipt-items/{id}/restore", {
+        params: { path: { id } },
+      });
       if (error) throw error;
     },
     onSuccess: () => {

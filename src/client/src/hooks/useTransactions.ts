@@ -1,8 +1,4 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
@@ -122,14 +118,24 @@ export function useDeleteTransactions() {
   });
 }
 
+export function useDeletedTransactions() {
+  return useQuery({
+    queryKey: ["transactions", "deleted"],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/transactions/deleted");
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useRestoreTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await client.POST(
-        "/api/transactions/{id}/restore",
-        { params: { path: { id } } },
-      );
+      const { error } = await client.POST("/api/transactions/{id}/restore", {
+        params: { path: { id } },
+      });
       if (error) throw error;
     },
     onSuccess: () => {

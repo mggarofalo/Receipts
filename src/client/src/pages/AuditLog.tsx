@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { format } from "date-fns";
 import { useRecentAuditLogs } from "@/hooks/useAudit";
 import type { AuditLog as AuditLogEntry } from "@/lib/audit-utils";
 import {
@@ -9,6 +10,12 @@ import {
 import { AuditLogTable } from "@/components/AuditLogTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -16,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 const COUNT_OPTIONS = [50, 100, 200] as const;
 
@@ -52,11 +60,87 @@ function exportToCsv(logs: AuditLogEntry[]) {
   URL.revokeObjectURL(url);
 }
 
+function DateRangePicker({
+  from,
+  to,
+  onFromChange,
+  onToChange,
+}: {
+  from: Date | undefined;
+  to: Date | undefined;
+  onFromChange: (d: Date | undefined) => void;
+  onToChange: (d: Date | undefined) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              "w-[120px] justify-start text-left font-normal",
+              !from && "text-muted-foreground",
+            )}
+          >
+            {from ? format(from, "MMM d, yyyy") : "From"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={from}
+            onSelect={onFromChange}
+            disabled={(d) => (to ? d > to : false)}
+          />
+        </PopoverContent>
+      </Popover>
+      <span className="text-muted-foreground text-xs">—</span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              "w-[120px] justify-start text-left font-normal",
+              !to && "text-muted-foreground",
+            )}
+          >
+            {to ? format(to, "MMM d, yyyy") : "To"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={to}
+            onSelect={onToChange}
+            disabled={(d) => (from ? d < from : false)}
+          />
+        </PopoverContent>
+      </Popover>
+      {(from || to) && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            onFromChange(undefined);
+            onToChange(undefined);
+          }}
+        >
+          Clear
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function AuditLog() {
   const [count, setCount] = useState<number>(50);
   const [search, setSearch] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
 
   const { data, isLoading } = useRecentAuditLogs(count);
 
@@ -68,9 +152,19 @@ function AuditLog() {
       if (entityTypeFilter !== "all" && log.entityType !== entityTypeFilter)
         return false;
       if (actionFilter !== "all" && log.action !== actionFilter) return false;
+      if (dateFrom) {
+        const logDate = new Date(log.changedAt);
+        if (logDate < dateFrom) return false;
+      }
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        const logDate = new Date(log.changedAt);
+        if (logDate > end) return false;
+      }
       return true;
     });
-  }, [data, search, entityTypeFilter, actionFilter]);
+  }, [data, search, entityTypeFilter, actionFilter, dateFrom, dateTo]);
 
   return (
     <div className="space-y-4">
@@ -134,6 +228,12 @@ function AuditLog() {
             ))}
           </SelectContent>
         </Select>
+        <DateRangePicker
+          from={dateFrom}
+          to={dateTo}
+          onFromChange={setDateFrom}
+          onToChange={setDateTo}
+        />
       </div>
 
       <AuditLogTable logs={filtered} isLoading={isLoading} />

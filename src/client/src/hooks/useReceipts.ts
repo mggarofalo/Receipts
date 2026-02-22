@@ -1,8 +1,4 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
@@ -93,6 +89,17 @@ export function useDeleteReceipts() {
     },
     onError: () => {
       toast.error("Failed to delete receipt(s)");
+    },
+  });
+}
+
+export function useDeletedReceipts() {
+  return useQuery({
+    queryKey: ["receipts", "deleted"],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/receipts/deleted");
+      if (error) throw error;
+      return data;
     },
   });
 }
