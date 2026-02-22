@@ -66,13 +66,33 @@ export function Layout() {
             >
               Trips
             </Link>
+            <Link
+              to="/security"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Security
+            </Link>
             {isAdmin() && (
-              <Link
-                to="/admin/users"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Users
-              </Link>
+              <>
+                <Link
+                  to="/admin/users"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Users
+                </Link>
+                <Link
+                  to="/audit"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Audit
+                </Link>
+                <Link
+                  to="/trash"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Trash
+                </Link>
+              </>
             )}
           </nav>
 

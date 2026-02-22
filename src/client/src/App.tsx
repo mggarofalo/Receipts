@@ -16,6 +16,9 @@ import Trips from "@/pages/Trips";
 import ReceiptDetail from "@/pages/ReceiptDetail";
 import TransactionDetail from "@/pages/TransactionDetail";
 import AdminUsers from "@/pages/AdminUsers";
+import AuditLog from "@/pages/AuditLog";
+import SecurityLog from "@/pages/SecurityLog";
+import RecycleBin from "@/pages/RecycleBin";
 import NotFound from "@/pages/NotFound";
 
 function App() {
@@ -43,6 +46,23 @@ function App() {
           <Route path="/receipt-detail" element={<ReceiptDetail />} />
           <Route path="/transaction-detail" element={<TransactionDetail />} />
           <Route path="/api-keys" element={<ApiKeys />} />
+          <Route path="/security" element={<SecurityLog />} />
+          <Route
+            path="/audit"
+            element={
+              <AdminRoute>
+                <AuditLog />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/trash"
+            element={
+              <AdminRoute>
+                <RecycleBin />
+              </AdminRoute>
+            }
+          />
           <Route
             path="/admin/users"
             element={

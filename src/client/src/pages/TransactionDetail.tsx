@@ -9,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ChangeHistory } from "@/components/ChangeHistory";
 import {
   Table,
   TableBody,
@@ -54,13 +56,33 @@ function TransactionDetail() {
   }
 
   const isLoading = byReceipt.isLoading || byTransaction.isLoading;
-  const isError = (receiptId && byReceipt.isError) || (transactionId && byTransaction.isError);
+  const isError =
+    (receiptId && byReceipt.isError) ||
+    (transactionId && byTransaction.isError);
 
   const items =
     mode === "receipt" && byReceipt.data
-      ? (byReceipt.data as { transaction: { id: string; amount: number; date: string }; account: { id: string; accountCode: string; name: string; isActive: boolean } }[])
+      ? (byReceipt.data as {
+          transaction: { id: string; amount: number; date: string };
+          account: {
+            id: string;
+            accountCode: string;
+            name: string;
+            isActive: boolean;
+          };
+        }[])
       : mode === "transaction" && byTransaction.data
-        ? [byTransaction.data as { transaction: { id: string; amount: number; date: string }; account: { id: string; accountCode: string; name: string; isActive: boolean } }]
+        ? [
+            byTransaction.data as {
+              transaction: { id: string; amount: number; date: string };
+              account: {
+                id: string;
+                accountCode: string;
+                name: string;
+                isActive: boolean;
+              };
+            },
+          ]
         : [];
 
   const total = items.reduce((sum, ta) => sum + ta.transaction.amount, 0);
@@ -150,9 +172,7 @@ function TransactionDetail() {
                     <TableCell>{ta.account.name}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          ta.account.isActive ? "default" : "secondary"
-                        }
+                        variant={ta.account.isActive ? "default" : "secondary"}
                       >
                         {ta.account.isActive ? "Active" : "Inactive"}
                       </Badge>
@@ -170,6 +190,20 @@ function TransactionDetail() {
               </TableFooter>
             </Table>
           </div>
+
+          {mode === "transaction" && transactionId && byTransaction.data && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Change History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChangeHistory
+                  entityType="Transaction"
+                  entityId={transactionId}
+                />
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>

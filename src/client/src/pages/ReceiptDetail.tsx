@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ChangeHistory } from "@/components/ChangeHistory";
 import {
   Table,
   TableBody,
@@ -110,9 +111,7 @@ function ReceiptDetail() {
                         <TableHead>Code</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="text-right">Qty</TableHead>
-                        <TableHead className="text-right">
-                          Unit Price
-                        </TableHead>
+                        <TableHead className="text-right">Unit Price</TableHead>
                         <TableHead className="text-right">Total</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Subcategory</TableHead>
@@ -156,6 +155,15 @@ function ReceiptDetail() {
                   </Table>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Change History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChangeHistory entityType="Receipt" entityId={receiptId!} />
             </CardContent>
           </Card>
         </>
