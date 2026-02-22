@@ -1,4 +1,5 @@
 using API.Generated.Dtos;
+using API.Hubs;
 using API.Mapping.Core;
 using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
@@ -7,13 +8,18 @@ using Application.Queries.Core.Receipt;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace API.Controllers.Core;
 
 [ApiController]
 [Route("api/receipts")]
 [Produces("application/json")]
-public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogger<ReceiptsController> logger) : ControllerBase
+public class ReceiptsController(
+	IMediator mediator,
+	ReceiptMapper mapper,
+	ILogger<ReceiptsController> logger,
+	IHubContext<ReceiptsHub, IReceiptsHubClient> hubContext) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -91,7 +97,9 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			logger.LogDebug("CreateReceipt called");
 			CreateReceiptCommand command = new([mapper.ToDomain(model)]);
 			List<Receipt> receipts = await mediator.Send(command);
-			return Ok(mapper.ToResponse(receipts[0]));
+			ReceiptResponse response = mapper.ToResponse(receipts[0]);
+			await hubContext.Clients.All.ReceiptCreated(response);
+			return Ok(response);
 		}
 		catch (Exception ex)
 		{
@@ -111,7 +119,12 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			logger.LogDebug("CreateReceipts called with {Count} receipts", models.Count);
 			CreateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
 			List<Receipt> receipts = await mediator.Send(command);
-			return Ok(receipts.Select(mapper.ToResponse).ToList());
+			List<ReceiptResponse> responses = receipts.Select(mapper.ToResponse).ToList();
+			foreach (ReceiptResponse response in responses)
+			{
+				await hubContext.Clients.All.ReceiptCreated(response);
+			}
+			return Ok(responses);
 		}
 		catch (Exception ex)
 		{
@@ -137,6 +150,13 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			{
 				logger.LogWarning("UpdateReceipt called for id: {Id}, but not found", id);
 				return NotFound();
+			}
+
+			GetReceiptByIdQuery fetchQuery = new(id);
+			Receipt? updatedReceipt = await mediator.Send(fetchQuery);
+			if (updatedReceipt != null)
+			{
+				await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
 			}
 
 			return NoContent();
@@ -169,6 +189,16 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 
 			logger.LogDebug("UpdateReceipts called with {Count} receipts, and found", models.Count);
 
+			foreach (UpdateReceiptRequest model in models)
+			{
+				GetReceiptByIdQuery fetchQuery = new(model.Id);
+				Receipt? updatedReceipt = await mediator.Send(fetchQuery);
+				if (updatedReceipt != null)
+				{
+					await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
+				}
+			}
+
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -199,6 +229,11 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			}
 
 			logger.LogDebug("DeleteReceipts called with {Count} receipt ids, and found", ids.Count);
+
+			foreach (Guid id in ids)
+			{
+				await hubContext.Clients.All.ReceiptDeleted(id);
+			}
 
 			return NoContent();
 		}
