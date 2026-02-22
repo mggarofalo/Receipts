@@ -6,11 +6,13 @@ using Application.Commands.Account.Update;
 using Application.Queries.Core.Account;
 using Domain.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
 
 [ApiController]
+[Authorize]
 [Route("api/accounts")]
 [Produces("application/json")]
 public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger) : ControllerBase

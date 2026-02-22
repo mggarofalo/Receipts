@@ -3,11 +3,13 @@ using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.ReceiptsWithItems;
 using Domain.Aggregates;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Aggregates;
 
 [ApiController]
+[Authorize]
 [Route("api/receipts-with-items")]
 [Produces("application/json")]
 public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapper mapper, ILogger<ReceiptWithItemsController> logger) : ControllerBase

@@ -1,10 +1,8 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace API.Hubs;
 
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+// Authorization is enforced at the endpoint level via .RequireAuthorization() in Program.cs.
 public class ReceiptsHub : Hub<IReceiptsHubClient>
 {
 	public override async Task OnConnectedAsync()
@@ -16,16 +14,5 @@ public class ReceiptsHub : Hub<IReceiptsHubClient>
 		}
 
 		await base.OnConnectedAsync();
-	}
-
-	public override async Task OnDisconnectedAsync(Exception? exception)
-	{
-		string? userId = Context.UserIdentifier;
-		if (userId != null)
-		{
-			await Groups.RemoveFromGroupAsync(Context.ConnectionId, userId);
-		}
-
-		await base.OnDisconnectedAsync(exception);
 	}
 }

@@ -21,7 +21,7 @@ export function useSignalR(enabled: boolean) {
     }
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("/receipts", {
+      .withUrl("/hubs/receipts", {
         accessTokenFactory: () => getAccessToken() ?? "",
       })
       .withAutomaticReconnect()
@@ -56,7 +56,7 @@ export function useSignalR(enabled: boolean) {
         console.debug("[SignalR] ReceiptCreated", receipt);
       }
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
-      toast.info("A receipt was created by another user");
+      toast.info("A receipt was created");
     });
 
     connection.on("ReceiptUpdated", (receipt) => {
@@ -64,7 +64,7 @@ export function useSignalR(enabled: boolean) {
         console.debug("[SignalR] ReceiptUpdated", receipt);
       }
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
-      toast.info("A receipt was updated by another user");
+      toast.info("A receipt was updated");
     });
 
     connection.on("ReceiptDeleted", (id: string) => {
@@ -72,7 +72,7 @@ export function useSignalR(enabled: boolean) {
         console.debug("[SignalR] ReceiptDeleted", id);
       }
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
-      toast.info("A receipt was deleted by another user");
+      toast.info("A receipt was deleted");
     });
 
     connectionRef.current = connection;
@@ -82,7 +82,7 @@ export function useSignalR(enabled: boolean) {
       .then(() => {
         setConnectionState("connected");
         if (import.meta.env.DEV) {
-          console.debug("[SignalR] Connected to /receipts hub.");
+          console.debug("[SignalR] Connected to /hubs/receipts hub.");
         }
       })
       .catch((err: unknown) => {

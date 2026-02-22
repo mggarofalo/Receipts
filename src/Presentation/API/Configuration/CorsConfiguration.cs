@@ -16,11 +16,13 @@ public static class CorsConfiguration
 				{
 					builder.WithOrigins(allowedOrigins);
 				}
-				else if (environment.IsDevelopment())
+				else if (environment.IsDevelopment() && configuration.GetValue<bool>("Cors:AllowAnyOriginInDev"))
 				{
 					// No origins configured — allow any origin per-request (dev fallback).
 					// AllowAnyOrigin() is intentionally avoided: it sets Access-Control-Allow-Origin: *
 					// which is incompatible with AllowCredentials(), required by SignalR.
+					// Requires Cors:AllowAnyOriginInDev=true to prevent accidental activation
+					// if ASPNETCORE_ENVIRONMENT is mistakenly set to Development in a deployed env.
 					builder.SetIsOriginAllowed(_ => true);
 				}
 				// Non-development with no configured origins: no origins are added to the policy,

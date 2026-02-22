@@ -26,6 +26,7 @@ public class ReceiptsControllerTests
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<ReceiptsController>> _loggerMock;
 	private readonly Mock<IHubContext<ReceiptsHub, IReceiptsHubClient>> _hubContextMock;
+	private readonly Mock<IHubClients<IReceiptsHubClient>> _hubClientsMock;
 	private readonly Mock<IReceiptsHubClient> _hubClientMock;
 	private readonly ReceiptsController _controller;
 
@@ -36,11 +37,11 @@ public class ReceiptsControllerTests
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<ReceiptsController>();
 
 		_hubClientMock = new Mock<IReceiptsHubClient>();
-		Mock<IHubClients<IReceiptsHubClient>> hubClientsMock = new();
-		hubClientsMock.Setup(c => c.All).Returns(_hubClientMock.Object);
-		hubClientsMock.Setup(c => c.Group(It.IsAny<string>())).Returns(_hubClientMock.Object);
+		_hubClientsMock = new Mock<IHubClients<IReceiptsHubClient>>();
+		_hubClientsMock.Setup(c => c.All).Returns(_hubClientMock.Object);
+		_hubClientsMock.Setup(c => c.Group(It.IsAny<string>())).Returns(_hubClientMock.Object);
 		_hubContextMock = new Mock<IHubContext<ReceiptsHub, IReceiptsHubClient>>();
-		_hubContextMock.Setup(h => h.Clients).Returns(hubClientsMock.Object);
+		_hubContextMock.Setup(h => h.Clients).Returns(_hubClientsMock.Object);
 
 		// Default: GetReceiptByIdQuery returns null (broadcast skipped for update operations)
 		_mediatorMock.Setup(m => m.Send(It.IsAny<GetReceiptByIdQuery>(), It.IsAny<CancellationToken>()))
@@ -410,5 +411,177 @@ public class ReceiptsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+	}
+
+	// ── SignalR broadcast tests ──────────────────────────────────────────────
+
+	[Fact]
+	public async Task CreateReceipt_BroadcastsReceiptCreatedEvent_WhenUserIsAuthenticated()
+	{
+		// Arrange
+		Receipt receipt = ReceiptGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateReceiptCommand>(c => c.Receipts.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync([receipt]);
+
+		CreateReceiptRequest controllerInput = ReceiptDtoGenerator.GenerateCreateRequest();
+
+		// Act
+		await _controller.CreateReceipt(controllerInput);
+
+		// Assert
+		_hubClientsMock.Verify(c => c.Group("test-user-id"), Times.Once);
+		_hubClientMock.Verify(
+			h => h.ReceiptCreated(It.Is<ReceiptResponse>(r => r.Id == receipt.Id)),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task CreateReceipt_DoesNotBroadcast_WhenUserIsNotAuthenticated()
+	{
+		// Arrange
+		Receipt receipt = ReceiptGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateReceiptCommand>(c => c.Receipts.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync([receipt]);
+
+		// Swap to an unauthenticated context (no claims identity)
+		_controller.ControllerContext = new ControllerContext
+		{
+			HttpContext = new DefaultHttpContext()
+		};
+
+		CreateReceiptRequest controllerInput = ReceiptDtoGenerator.GenerateCreateRequest();
+
+		// Act
+		await _controller.CreateReceipt(controllerInput);
+
+		// Assert
+		_hubClientMock.Verify(
+			h => h.ReceiptCreated(It.IsAny<ReceiptResponse>()),
+			Times.Never);
+	}
+
+	[Fact]
+	public async Task CreateReceipts_BroadcastsReceiptCreatedEventForEachReceipt_WhenUserIsAuthenticated()
+	{
+		// Arrange
+		List<Receipt> mediatorReturn = ReceiptGenerator.GenerateList(3);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateReceiptCommand>(c => c.Receipts.Count == mediatorReturn.Count),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(mediatorReturn);
+
+		List<CreateReceiptRequest> controllerInput = ReceiptDtoGenerator.GenerateCreateRequestList(3);
+
+		// Act
+		await _controller.CreateReceipts(controllerInput);
+
+		// Assert
+		_hubClientsMock.Verify(c => c.Group("test-user-id"), Times.Exactly(mediatorReturn.Count));
+		_hubClientMock.Verify(
+			h => h.ReceiptCreated(It.IsAny<ReceiptResponse>()),
+			Times.Exactly(mediatorReturn.Count));
+	}
+
+	[Fact]
+	public async Task UpdateReceipt_BroadcastsReceiptUpdatedEvent_WhenUpdateSucceedsAndReceiptCanBeFetched()
+	{
+		// Arrange
+		Receipt updatedReceipt = ReceiptGenerator.Generate();
+		UpdateReceiptRequest controllerInput = ReceiptDtoGenerator.GenerateUpdateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateReceiptCommand>(c => c.Receipts.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetReceiptByIdQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(updatedReceipt);
+
+		// Act
+		await _controller.UpdateReceipt(controllerInput.Id, controllerInput);
+
+		// Assert
+		_hubClientsMock.Verify(c => c.Group("test-user-id"), Times.Once);
+		_hubClientMock.Verify(
+			h => h.ReceiptUpdated(It.Is<ReceiptResponse>(r => r.Id == updatedReceipt.Id)),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task UpdateReceipt_DoesNotBroadcastReceiptUpdatedEvent_WhenReceiptCannotBeFetchedAfterUpdate()
+	{
+		// Arrange – GetReceiptByIdQuery returns null (already the default in constructor)
+		UpdateReceiptRequest controllerInput = ReceiptDtoGenerator.GenerateUpdateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateReceiptCommand>(c => c.Receipts.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		await _controller.UpdateReceipt(controllerInput.Id, controllerInput);
+
+		// Assert
+		_hubClientMock.Verify(
+			h => h.ReceiptUpdated(It.IsAny<ReceiptResponse>()),
+			Times.Never);
+	}
+
+	[Fact]
+	public async Task DeleteReceipts_BroadcastsReceiptDeletedEventForEachId_WhenDeleteSucceeds()
+	{
+		// Arrange
+		List<Guid> controllerInput = [.. ReceiptGenerator.GenerateList(2).Select(a => a.Id)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(controllerInput)),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		await _controller.DeleteReceipts(controllerInput);
+
+		// Assert – one ReceiptDeleted event per ID, each targeting the user's group
+		_hubClientsMock.Verify(c => c.Group("test-user-id"), Times.Exactly(controllerInput.Count));
+		foreach (Guid id in controllerInput)
+		{
+			_hubClientMock.Verify(
+				h => h.ReceiptDeleted(id),
+				Times.Once);
+		}
+	}
+
+	[Fact]
+	public async Task DeleteReceipts_DoesNotBroadcast_WhenUserIsNotAuthenticated()
+	{
+		// Arrange
+		List<Guid> controllerInput = [.. ReceiptGenerator.GenerateList(2).Select(a => a.Id)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteReceiptCommand>(c => c.Ids.SequenceEqual(controllerInput)),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_controller.ControllerContext = new ControllerContext
+		{
+			HttpContext = new DefaultHttpContext()
+		};
+
+		// Act
+		await _controller.DeleteReceipts(controllerInput);
+
+		// Assert
+		_hubClientMock.Verify(
+			h => h.ReceiptDeleted(It.IsAny<Guid>()),
+			Times.Never);
 	}
 }

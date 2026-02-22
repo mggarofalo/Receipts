@@ -7,6 +7,7 @@ using Application.Commands.Receipt.Update;
 using Application.Queries.Core.Receipt;
 using Domain.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
@@ -14,6 +15,7 @@ using System.Security.Claims;
 namespace API.Controllers.Core;
 
 [ApiController]
+[Authorize]
 [Route("api/receipts")]
 [Produces("application/json")]
 public class ReceiptsController(

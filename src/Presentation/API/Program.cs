@@ -26,8 +26,7 @@ WebApplication app = builder.Build();
 // Configure middleware
 app.UseAuthServices()
    .UseOpenApiServices()
-   .UseApplicationServices()
-   .UseCorsServices();
+   .UseApplicationServices();
 
 // Run database migrations (skipped when DB is not configured, e.g. build-time OpenAPI generation)
 if (Infrastructure.Services.InfrastructureService.IsDatabaseConfigured(builder.Configuration))

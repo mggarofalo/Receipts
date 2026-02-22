@@ -37,6 +37,9 @@ public static class ApplicationConfiguration
 	{
 		app.UseHttpsRedirection();
 		app.UseRouting();
+		// CORS must be placed after UseRouting and before UseAuthentication/UseAuthorization
+		// so that browser preflight (OPTIONS) requests are processed before auth middleware runs.
+		app.UseCorsServices();
 		app.UseAuthentication();
 		app.UseAuthorization();
 

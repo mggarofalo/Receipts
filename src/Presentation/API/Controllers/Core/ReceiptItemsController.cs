@@ -6,11 +6,13 @@ using Application.Commands.ReceiptItem.Update;
 using Application.Queries.Core.ReceiptItem;
 using Domain.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
 
 [ApiController]
+[Authorize]
 [Route("api/receipt-items")]
 [Produces("application/json")]
 public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper, ILogger<ReceiptItemsController> logger) : ControllerBase

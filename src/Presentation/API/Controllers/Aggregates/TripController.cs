@@ -3,11 +3,13 @@ using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.Trips;
 using Domain.Aggregates;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Aggregates;
 
 [ApiController]
+[Authorize]
 [Route("api/trips")]
 [Produces("application/json")]
 public class TripController(IMediator mediator, TripMapper mapper, ILogger<TripController> logger) : ControllerBase

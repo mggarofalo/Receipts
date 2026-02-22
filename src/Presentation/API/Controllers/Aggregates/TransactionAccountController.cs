@@ -3,11 +3,13 @@ using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Domain.Aggregates;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Aggregates;
 
 [ApiController]
+[Authorize]
 [Route("api/transaction-accounts")]
 [Produces("application/json")]
 public class TransactionAccountController(IMediator mediator, TransactionAccountMapper mapper, ILogger<TransactionAccountController> logger) : ControllerBase

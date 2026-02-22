@@ -6,11 +6,13 @@ using Application.Commands.Transaction.Update;
 using Application.Queries.Core.Transaction;
 using Domain.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
 
 [ApiController]
+[Authorize]
 [Route("api/transactions")]
 [Produces("application/json")]
 public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
