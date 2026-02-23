@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Transition } from "framer-motion";
 import type { ReactNode } from "react";
 import { useLocation } from "react-router";
 
@@ -8,7 +8,7 @@ const pageVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-const pageTransition = {
+const pageTransition: Transition = {
   type: "tween",
   ease: "easeInOut",
   duration: 0.18,

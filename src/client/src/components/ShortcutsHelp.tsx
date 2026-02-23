@@ -35,14 +35,10 @@ const grouped = SHORTCUTS.reduce<Record<string, typeof SHORTCUTS>>(
 export function ShortcutsHelp() {
   const [open, setOpen] = useState(false);
 
-  useHotkeys(
-    "shift+slash",
-    (e) => {
-      e.preventDefault();
-      setOpen((prev) => !prev);
-    },
-    { enableOnFormElements: false },
-  );
+  useHotkeys("shift+slash", (e) => {
+    e.preventDefault();
+    setOpen((prev) => !prev);
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -30,30 +30,18 @@ export function useKeyboardShortcuts({
   onNew,
   onHelp,
 }: UseKeyboardShortcutOptions = {}) {
-  useHotkeys(
-    "ctrl+k,meta+k",
-    (e) => {
-      e.preventDefault();
-      onSearch?.();
-    },
-    { enableOnFormElements: false },
-  );
+  useHotkeys("ctrl+k,meta+k", (e) => {
+    e.preventDefault();
+    onSearch?.();
+  });
 
-  useHotkeys(
-    "ctrl+n,meta+n",
-    (e) => {
-      e.preventDefault();
-      onNew?.();
-    },
-    { enableOnFormElements: false },
-  );
+  useHotkeys("ctrl+n,meta+n", (e) => {
+    e.preventDefault();
+    onNew?.();
+  });
 
-  useHotkeys(
-    "shift+slash",
-    (e) => {
-      e.preventDefault();
-      onHelp?.();
-    },
-    { enableOnFormElements: false },
-  );
+  useHotkeys("shift+slash", (e) => {
+    e.preventDefault();
+    onHelp?.();
+  });
 }
