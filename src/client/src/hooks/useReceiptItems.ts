@@ -119,12 +119,25 @@ export function useDeleteReceiptItems() {
       });
       if (error) throw error;
     },
+    onMutate: async (ids: string[]) => {
+      await queryClient.cancelQueries({ queryKey: ["receipt-items"] });
+      const previous = queryClient.getQueryData(["receipt-items"]);
+      queryClient.setQueryData(["receipt-items"], (old: Array<{ id: string }> | undefined) =>
+        old?.filter((item) => !ids.includes(item.id)),
+      );
+      return { previous };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["receipt-items"] });
       toast.success("Receipt item(s) deleted");
     },
-    onError: () => {
+    onError: (_err: unknown, _ids: string[], context: { previous: unknown } | undefined) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(["receipt-items"], context.previous);
+      }
       toast.error("Failed to delete receipt item(s)");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["receipt-items"] });
     },
   });
 }
