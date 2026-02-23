@@ -4,7 +4,9 @@ using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace API.Configuration;
 
@@ -76,6 +78,22 @@ public static class AuthConfiguration
 
 	public static IApplicationBuilder UseAuthServices(this IApplicationBuilder app)
 	{
+		app.UseSerilogRequestLogging(opts =>
+		{
+			opts.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+			{
+				string queryString = httpContext.Request.QueryString.Value ?? string.Empty;
+				if (queryString.Contains("access_token=", StringComparison.OrdinalIgnoreCase))
+				{
+					queryString = Regex.Replace(
+						queryString,
+						@"(?i)access_token=[^&]*",
+						"access_token=[REDACTED]");
+					diagnosticContext.Set("QueryString", queryString);
+				}
+			};
+		});
+
 		app.UseAuthentication();
 		app.UseAuthorization();
 		return app;

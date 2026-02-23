@@ -56,14 +56,17 @@ export function useSignalR() {
   const connectionRef = useRef<HubConnection | null>(null);
 
   const handleEvent = useCallback(
-    (event: string) => {
+    (event: string, data: unknown) => {
       const queryKeys = EVENT_QUERY_MAP[event];
       if (queryKeys) {
         queryKeys.forEach((key) => {
           queryClient.invalidateQueries({ queryKey: [key] });
         });
         if (import.meta.env.DEV) {
-          console.debug(`[SignalR] Invalidated queries for event: ${event}`);
+          console.debug(
+            `[SignalR] Invalidated queries for event: ${event}`,
+            data,
+          );
         }
       }
     },
@@ -94,9 +97,10 @@ export function useSignalR() {
       .configureLogging(import.meta.env.DEV ? LogLevel.Debug : LogLevel.Error)
       .build();
 
-    // Register event handlers
+    // Register event handlers — each typed hub method sends a data payload
+    // (response object for Created, Guid for Updated/Deleted)
     Object.keys(EVENT_QUERY_MAP).forEach((event) => {
-      connection.on(event, () => handleEvent(event));
+      connection.on(event, (data: unknown) => handleEvent(event, data));
     });
 
     connection.onreconnecting(() => {

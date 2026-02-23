@@ -19,7 +19,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger, IHubContext<ReceiptsHub> hub) : ControllerBase
+public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger, IHubContext<ReceiptsHub, IReceiptsHubClient> hub) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -122,8 +122,9 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			logger.LogDebug("CreateAccount called");
 			CreateAccountCommand command = new([mapper.ToDomain(model)]);
 			List<Account> accounts = await mediator.Send(command);
-			await hub.Clients.All.SendAsync(ReceiptsHub.AccountCreated, CancellationToken.None);
-			return Ok(mapper.ToResponse(accounts[0]));
+			AccountResponse response = mapper.ToResponse(accounts[0]);
+			_ = hub.Clients.All.AccountCreated(response);
+			return Ok(response);
 		}
 		catch (Exception ex)
 		{
@@ -143,8 +144,12 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			logger.LogDebug("CreateAccounts called with {Count} accounts", models.Count);
 			CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
 			List<Account> accounts = await mediator.Send(command);
-			await hub.Clients.All.SendAsync(ReceiptsHub.AccountCreated, CancellationToken.None);
-			return Ok(accounts.Select(mapper.ToResponse).ToList());
+			List<AccountResponse> responses = accounts.Select(mapper.ToResponse).ToList();
+			foreach (AccountResponse response in responses)
+			{
+				_ = hub.Clients.All.AccountCreated(response);
+			}
+			return Ok(responses);
 		}
 		catch (Exception ex)
 		{
@@ -172,7 +177,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 				return NotFound();
 			}
 
-			await hub.Clients.All.SendAsync(ReceiptsHub.AccountUpdated, CancellationToken.None);
+			await hub.Clients.All.AccountUpdated(id);
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -202,7 +207,10 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			}
 
 			logger.LogDebug("UpdateAccounts called with {Count} accounts, and found", models.Count);
-			await hub.Clients.All.SendAsync(ReceiptsHub.AccountUpdated, CancellationToken.None);
+			foreach (UpdateAccountRequest m in models)
+			{
+				await hub.Clients.All.AccountUpdated(m.Id);
+			}
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -233,7 +241,10 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			}
 
 			logger.LogDebug("DeleteAccounts called with {Count} ids, and found", ids.Count);
-			await hub.Clients.All.SendAsync(ReceiptsHub.AccountDeleted, CancellationToken.None);
+			foreach (Guid id in ids)
+			{
+				await hub.Clients.All.AccountDeleted(id);
+			}
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -263,7 +274,12 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 				return NotFound();
 			}
 
-			await hub.Clients.All.SendAsync(ReceiptsHub.AccountCreated, CancellationToken.None);
+			GetAccountByIdQuery fetchQuery = new(id);
+			Account? restored = await mediator.Send(fetchQuery);
+			if (restored != null)
+			{
+				await hub.Clients.All.AccountCreated(mapper.ToResponse(restored));
+			}
 			return NoContent();
 		}
 		catch (Exception ex)

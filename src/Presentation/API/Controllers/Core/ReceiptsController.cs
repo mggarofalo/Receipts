@@ -19,7 +19,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogger<ReceiptsController> logger, IHubContext<ReceiptsHub> hub) : ControllerBase
+public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogger<ReceiptsController> logger, IHubContext<ReceiptsHub, IReceiptsHubClient> hub) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
@@ -123,8 +123,9 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			logger.LogDebug("CreateReceipt called");
 			CreateReceiptCommand command = new([mapper.ToDomain(model)]);
 			List<Receipt> receipts = await mediator.Send(command);
-			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptCreated, CancellationToken.None);
-			return Ok(mapper.ToResponse(receipts[0]));
+			ReceiptResponse response = mapper.ToResponse(receipts[0]);
+			await hub.Clients.All.ReceiptCreated(response);
+			return Ok(response);
 		}
 		catch (Exception ex)
 		{
@@ -144,8 +145,12 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			logger.LogDebug("CreateReceipts called with {Count} receipts", models.Count);
 			CreateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
 			List<Receipt> receipts = await mediator.Send(command);
-			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptCreated, CancellationToken.None);
-			return Ok(receipts.Select(mapper.ToResponse).ToList());
+			List<ReceiptResponse> responses = receipts.Select(mapper.ToResponse).ToList();
+			foreach (ReceiptResponse response in responses)
+			{
+				await hub.Clients.All.ReceiptCreated(response);
+			}
+			return Ok(responses);
 		}
 		catch (Exception ex)
 		{
@@ -173,7 +178,7 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 				return NotFound();
 			}
 
-			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptUpdated, CancellationToken.None);
+			await hub.Clients.All.ReceiptUpdated(id);
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -203,7 +208,10 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			}
 
 			logger.LogDebug("UpdateReceipts called with {Count} receipts, and found", models.Count);
-			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptUpdated, CancellationToken.None);
+			foreach (UpdateReceiptRequest m in models)
+			{
+				await hub.Clients.All.ReceiptUpdated(m.Id);
+			}
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -234,7 +242,10 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 			}
 
 			logger.LogDebug("DeleteReceipts called with {Count} receipt ids, and found", ids.Count);
-			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptDeleted, CancellationToken.None);
+			foreach (Guid id in ids)
+			{
+				await hub.Clients.All.ReceiptDeleted(id);
+			}
 			return NoContent();
 		}
 		catch (Exception ex)
@@ -264,7 +275,12 @@ public class ReceiptsController(IMediator mediator, ReceiptMapper mapper, ILogge
 				return NotFound();
 			}
 
-			await hub.Clients.All.SendAsync(ReceiptsHub.ReceiptCreated, CancellationToken.None);
+			GetReceiptByIdQuery fetchQuery = new(id);
+			Receipt? restored = await mediator.Send(fetchQuery);
+			if (restored != null)
+			{
+				await hub.Clients.All.ReceiptCreated(mapper.ToResponse(restored));
+			}
 			return NoContent();
 		}
 		catch (Exception ex)

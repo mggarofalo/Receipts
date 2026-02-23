@@ -6,79 +6,84 @@ namespace Presentation.API.Tests.Hubs;
 
 public class ReceiptsHubTests
 {
-	private readonly Mock<IHubCallerClients> _mockClients;
-	private readonly Mock<IClientProxy> _mockClientProxy;
-	private readonly ReceiptsHub _hub;
-
-	public ReceiptsHubTests()
+	[Fact]
+	public async Task OnConnectedAsync_AddsConnectionToUserGroup_WhenUserIdentifierExists()
 	{
-		_mockClients = new Mock<IHubCallerClients>();
-		_mockClientProxy = new Mock<IClientProxy>();
-		_mockClients.Setup(clients => clients.All).Returns(_mockClientProxy.Object);
+		// Arrange
+		Mock<IHubCallerClients<IReceiptsHubClient>> mockClients = new();
+		Mock<HubCallerContext> mockContext = new();
+		Mock<IGroupManager> mockGroups = new();
 
-		_hub = new ReceiptsHub
+		mockContext.Setup(c => c.UserIdentifier).Returns("user-123");
+		mockContext.Setup(c => c.ConnectionId).Returns("conn-abc");
+
+		ReceiptsHub hub = new()
 		{
-			Clients = _mockClients.Object,
-			Context = new Mock<HubCallerContext>().Object
+			Clients = mockClients.Object,
+			Context = mockContext.Object,
+			Groups = mockGroups.Object,
 		};
-	}
-
-	[Fact]
-	public async Task SendMessage_ShouldSendToAllClients()
-	{
-		// Arrange
-		string user = "testUser";
-		string message = "testMessage";
 
 		// Act
-		await _hub.SendMessage(user, message);
+		await hub.OnConnectedAsync();
 
 		// Assert
-		_mockClientProxy.Verify(
-			x => x.SendCoreAsync(
-				"ReceiveMessage",
-				It.Is<object[]>(o => o != null && o.Length == 2 && (string)o[0] == user && (string)o[1] == message),
-				default),
+		mockGroups.Verify(
+			g => g.AddToGroupAsync("conn-abc", "user-123", default),
 			Times.Once);
 	}
 
 	[Fact]
-	public async Task OnConnectedAsync_ShouldNotifyAllClients()
+	public async Task OnConnectedAsync_DoesNotAddGroup_WhenUserIdentifierIsNull()
 	{
 		// Arrange
+		Mock<IHubCallerClients<IReceiptsHubClient>> mockClients = new();
 		Mock<HubCallerContext> mockContext = new();
-		mockContext.Setup(m => m.ConnectionId).Returns("testConnectionId");
-		_hub.Context = mockContext.Object;
+		Mock<IGroupManager> mockGroups = new();
+
+		mockContext.Setup(c => c.UserIdentifier).Returns((string?)null);
+		mockContext.Setup(c => c.ConnectionId).Returns("conn-abc");
+
+		ReceiptsHub hub = new()
+		{
+			Clients = mockClients.Object,
+			Context = mockContext.Object,
+			Groups = mockGroups.Object,
+		};
 
 		// Act
-		await _hub.OnConnectedAsync();
+		await hub.OnConnectedAsync();
 
 		// Assert
-		_mockClientProxy.Verify(
-			x => x.SendCoreAsync(
-				"UserConnected",
-				It.Is<object[]>(o => o != null && o.Length == 1 && (string)o[0] == "testConnectionId"),
-				default),
-			Times.Once);
+		mockGroups.Verify(
+			g => g.AddToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), default),
+			Times.Never);
 	}
 
 	[Fact]
-	public async Task OnDisconnectedAsync_ShouldNotifyAllClients()
+	public async Task OnDisconnectedAsync_RemovesConnectionFromUserGroup_WhenUserIdentifierExists()
 	{
 		// Arrange
+		Mock<IHubCallerClients<IReceiptsHubClient>> mockClients = new();
 		Mock<HubCallerContext> mockContext = new();
-		mockContext.Setup(m => m.ConnectionId).Returns("testConnectionId");
-		_hub.Context = mockContext.Object;
+		Mock<IGroupManager> mockGroups = new();
+
+		mockContext.Setup(c => c.UserIdentifier).Returns("user-123");
+		mockContext.Setup(c => c.ConnectionId).Returns("conn-abc");
+
+		ReceiptsHub hub = new()
+		{
+			Clients = mockClients.Object,
+			Context = mockContext.Object,
+			Groups = mockGroups.Object,
+		};
 
 		// Act
-		await _hub.OnDisconnectedAsync(null);
+		await hub.OnDisconnectedAsync(null);
 
 		// Assert
-		_mockClientProxy.Verify(
-			x => x.SendCoreAsync(
-				"UserDisconnected",
-				It.Is<object[]>(o => o != null && o.Length == 1 && (string)o[0] == "testConnectionId"),
-				default),
+		mockGroups.Verify(
+			g => g.RemoveFromGroupAsync("conn-abc", "user-123", default),
 			Times.Once);
 	}
 }

@@ -1,5 +1,6 @@
 using API.Controllers.Core;
 using API.Generated.Dtos;
+using API.Hubs;
 using API.Mapping.Core;
 using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Delete;
@@ -10,6 +11,7 @@ using Domain.Core;
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
@@ -29,7 +31,9 @@ public class TransactionsControllerTests
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new TransactionMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<TransactionsController>();
-		_controller = new TransactionsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
+		Mock<IHubContext<ReceiptsHub, IReceiptsHubClient>> hubMock = new();
+		hubMock.Setup(h => h.Clients.All).Returns(new Mock<IReceiptsHubClient>().Object);
+		_controller = new TransactionsController(_mediatorMock.Object, _mapper, _loggerMock.Object, hubMock.Object);
 	}
 
 	[Fact]
