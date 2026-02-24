@@ -46,9 +46,12 @@ export function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-6" aria-label="Main navigation">
             <Link to="/" className="font-semibold text-lg">
               Receipts
             </Link>
@@ -166,7 +169,7 @@ export function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-6">
+      <main id="main-content" tabIndex={-1} className="flex-1 container mx-auto px-4 py-6">
         <Breadcrumbs />
         <Outlet />
       </main>
