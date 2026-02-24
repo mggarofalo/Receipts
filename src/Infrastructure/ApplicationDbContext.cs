@@ -146,7 +146,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 		foreach (EntityEntry entry in ChangeTracker.Entries())
 		{
-			if (excludedTypes.Contains(entry.Entity.GetType()))
+			Type entryType = entry.Entity.GetType();
+
+			if (excludedTypes.Contains(entryType))
+			{
+				continue;
+			}
+
+			// Skip ASP.NET Identity internal entities (IdentityRole, IdentityUserRole, etc.)
+			// — they use composite keys and are not part of our domain audit trail.
+			if (entryType.Namespace?.StartsWith("Microsoft.AspNetCore.Identity", StringComparison.Ordinal) == true)
 			{
 				continue;
 			}
