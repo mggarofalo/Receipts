@@ -164,6 +164,7 @@ function Accounts() {
 
   return (
     <div className="space-y-4">
+      <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
       <div className="flex items-center justify-between">
         <FuzzySearchInput
           value={search}

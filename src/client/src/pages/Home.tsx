@@ -12,7 +12,9 @@ function Home() {
     <div className="flex items-center justify-center py-12">
       <Card className="w-[400px]">
         <CardHeader>
-          <CardTitle>Receipts</CardTitle>
+          <CardTitle>
+            <h1>Receipts</h1>
+          </CardTitle>
           <CardDescription>Receipt management application</CardDescription>
         </CardHeader>
         <CardContent>

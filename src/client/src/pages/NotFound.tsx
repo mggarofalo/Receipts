@@ -15,7 +15,9 @@ function NotFound() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
-          <CardTitle className="text-6xl font-bold">404</CardTitle>
+          <CardTitle className="text-6xl font-bold">
+            <h1>404</h1>
+          </CardTitle>
           <CardDescription className="text-lg">Page not found</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
