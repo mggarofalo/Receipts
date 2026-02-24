@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Outlet, useNavigate, useLocation } from "react-router";
+import { Link, Outlet, useNavigate, useNavigation, useLocation } from "react-router";
 import { Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
@@ -35,6 +35,7 @@ export function Layout() {
   const { user, logout } = useAuth();
   const { isAdmin } = usePermission();
   const navigate = useNavigate();
+  const navigation = useNavigation();
   const location = useLocation();
   const { connectionState } = useSignalR(!!user);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -133,9 +134,17 @@ export function Layout() {
         </div>
       </header>
 
+      {navigation.state === "loading" && (
+        <div className="h-0.5 w-full overflow-hidden bg-muted">
+          <div className="h-full w-1/3 animate-pulse bg-primary" />
+        </div>
+      )}
+
       <main id="main-content" tabIndex={-1} className="flex-1 container mx-auto px-4 py-6">
         <Breadcrumbs />
-        <Outlet />
+        <div key={location.pathname} className="animate-in fade-in duration-200">
+          <Outlet />
+        </div>
       </main>
 
       <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
