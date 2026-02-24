@@ -83,12 +83,27 @@ export function useDeleteReceipts() {
       const { error } = await client.DELETE("/api/receipts", { body: ids });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["receipts"] });
-      toast.success("Receipt(s) deleted");
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: ["receipts"] });
+      const previous = queryClient.getQueryData(["receipts"]);
+      queryClient.setQueryData(
+        ["receipts"],
+        (old: { id: string }[] | undefined) =>
+          old?.filter((item) => !ids.includes(item.id)),
+      );
+      return { previous };
     },
-    onError: () => {
+    onError: (_err, _ids, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["receipts"], context.previous);
+      }
       toast.error("Failed to delete receipt(s)");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
+    },
+    onSuccess: () => {
+      toast.success("Receipt(s) deleted");
     },
   });
 }

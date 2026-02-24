@@ -108,12 +108,27 @@ export function useDeleteTransactions() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      toast.success("Transaction(s) deleted");
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: ["transactions"] });
+      const previous = queryClient.getQueryData(["transactions"]);
+      queryClient.setQueryData(
+        ["transactions"],
+        (old: { id: string }[] | undefined) =>
+          old?.filter((item) => !ids.includes(item.id)),
+      );
+      return { previous };
     },
-    onError: () => {
+    onError: (_err, _ids, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["transactions"], context.previous);
+      }
       toast.error("Failed to delete transaction(s)");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    },
+    onSuccess: () => {
+      toast.success("Transaction(s) deleted");
     },
   });
 }

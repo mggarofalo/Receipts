@@ -81,12 +81,27 @@ export function useDeleteAccounts() {
       const { error } = await client.DELETE("/api/accounts", { body: ids });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      toast.success("Account(s) deleted");
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: ["accounts"] });
+      const previous = queryClient.getQueryData(["accounts"]);
+      queryClient.setQueryData(
+        ["accounts"],
+        (old: { id: string }[] | undefined) =>
+          old?.filter((item) => !ids.includes(item.id)),
+      );
+      return { previous };
     },
-    onError: () => {
+    onError: (_err, _ids, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["accounts"], context.previous);
+      }
       toast.error("Failed to delete account(s)");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    },
+    onSuccess: () => {
+      toast.success("Account(s) deleted");
     },
   });
 }
