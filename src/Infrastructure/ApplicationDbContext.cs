@@ -21,13 +21,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 	private readonly ICurrentUserAccessor? _currentUserAccessor;
 
-	[ActivatorUtilitiesConstructor]
 	public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserAccessor currentUserAccessor)
 		: base(options)
 	{
 		_currentUserAccessor = currentUserAccessor;
 	}
 
+	[ActivatorUtilitiesConstructor]
 	public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
 		: base(options)
 	{

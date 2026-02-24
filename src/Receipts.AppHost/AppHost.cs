@@ -12,7 +12,7 @@ IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")
 
 builder.AddViteApp("frontend", "../Presentation/client")
 	.WithReference(api)
-	.WithHttpEndpoint(port: 5173, env: "PORT")
+	.WithHttpEndpoint(port: 5173, name: "vite", env: "PORT")
 	.WithExternalHttpEndpoints();
 
 await builder.Build().RunAsync();

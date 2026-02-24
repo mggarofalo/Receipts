@@ -7,9 +7,11 @@ using Infrastructure.Mapping;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 
@@ -64,6 +66,8 @@ public static class InfrastructureService
 					string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
 					b.MigrationsAssembly(assemblyName);
 				});
+				options.ConfigureWarnings(w => w.Log(
+					(RelationalEventId.PendingModelChangesWarning, LogLevel.Warning)));
 			});
 		}
 		else
@@ -71,8 +75,22 @@ public static class InfrastructureService
 			services.AddDbContextFactory<ApplicationDbContext>(options =>
 			{
 				options.UseNpgsql();
+				options.ConfigureWarnings(w => w.Log(
+					(RelationalEventId.PendingModelChangesWarning, LogLevel.Warning)));
 			});
 		}
+
+		// Override the factory's scoped ApplicationDbContext registration to use 2-param constructor.
+		// AddDbContextFactory auto-registers a scoped context that delegates to the singleton factory,
+		// which uses root provider and can't resolve scoped ICurrentUserAccessor. This override
+		// directly constructs with ICurrentUserAccessor from the current scope.
+		services.AddScoped(sp =>
+		{
+			DbContextOptions<ApplicationDbContext> options =
+				sp.GetRequiredService<DbContextOptions<ApplicationDbContext>>();
+			ICurrentUserAccessor accessor = sp.GetRequiredService<ICurrentUserAccessor>();
+			return new ApplicationDbContext(options, accessor);
+		});
 
 		// Fallback ICurrentUserAccessor for when no HTTP context is available (tests, background services).
 		// The API layer registers the real implementation before this, so TryAdd is a no-op in production.
