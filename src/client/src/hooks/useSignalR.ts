@@ -21,7 +21,7 @@ export function useSignalR(enabled: boolean) {
     }
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("/receipts", {
+      .withUrl("/hubs/receipts", {
         accessTokenFactory: () => getAccessToken() ?? "",
       })
       .withAutomaticReconnect()

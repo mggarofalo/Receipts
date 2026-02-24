@@ -5,9 +5,21 @@ import {
   useUpdateAccount,
   useDeleteAccounts,
 } from "@/hooks/useAccounts";
+import { useFuzzySearch } from "@/hooks/useFuzzySearch";
+import { useSavedFilters } from "@/hooks/useSavedFilters";
+import { usePagination } from "@/hooks/usePagination";
+import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
+import { applyFilters } from "@/lib/search";
+import type { FilterValues } from "@/components/FilterPanel";
 import { AccountForm } from "@/components/AccountForm";
+import { FuzzySearchInput } from "@/components/FuzzySearchInput";
+import { FilterPanel } from "@/components/FilterPanel";
+import type { FilterField } from "@/components/FilterPanel";
+import { SearchHighlight } from "@/components/SearchHighlight";
+import { getMatchIndices } from "@/lib/search-highlight";
+import { NoResults } from "@/components/NoResults";
+import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -31,27 +43,67 @@ interface AccountResponse {
   isActive: boolean;
 }
 
+const SEARCH_CONFIG: FuseSearchConfig<AccountResponse> = {
+  keys: [
+    { name: "name", weight: 2 },
+    { name: "accountCode", weight: 1 },
+  ],
+};
+
+const FILTER_FIELDS: FilterField[] = [
+  { type: "boolean", key: "isActive", label: "Active" },
+];
+
+const FILTER_DEFS: FilterDefinition[] = [
+  { key: "isActive", type: "boolean", field: "isActive" },
+];
+
 function Accounts() {
   const { data: accounts, isLoading } = useAccounts();
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccounts = useDeleteAccounts();
 
-  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [editAccount, setEditAccount] = useState<AccountResponse | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [filterValues, setFilterValues] = useState<FilterValues>({
+    isActive: "all",
+  });
 
-  const filtered = useMemo(() => {
-    if (!accounts) return [];
-    const term = search.toLowerCase();
-    return (accounts as AccountResponse[]).filter(
-      (a) =>
-        a.name.toLowerCase().includes(term) ||
-        a.accountCode.toLowerCase().includes(term),
-    );
-  }, [accounts, search]);
+  const data = (accounts as AccountResponse[] | undefined) ?? [];
+  const {
+    filters: savedFilters,
+    save: saveFilter,
+    remove: removeFilter,
+  } = useSavedFilters("accounts");
+
+  const { search, setSearch, results, totalCount, clearSearch } =
+    useFuzzySearch({ data, config: SEARCH_CONFIG });
+
+  const filteredResults = useMemo(() => {
+    const items = results.map((r) => r.item);
+    return applyFilters(items, FILTER_DEFS, filterValues);
+  }, [results, filterValues]);
+
+  const matchMap = useMemo(() => {
+    const map = new Map<string, (typeof results)[number]>();
+    for (const r of results) {
+      map.set(r.item.id, r);
+    }
+    return map;
+  }, [results]);
+
+  const {
+    paginatedItems,
+    currentPage,
+    pageSize,
+    totalItems,
+    totalPages,
+    setPage,
+    setPageSize,
+  } = usePagination({ items: filteredResults });
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -63,10 +115,10 @@ function Accounts() {
   }
 
   function toggleAll() {
-    if (selected.size === filtered.length) {
+    if (selected.size === paginatedItems.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(filtered.map((a) => a.id)));
+      setSelected(new Set(paginatedItems.map((a) => a.id)));
     }
   }
 
@@ -89,18 +141,17 @@ function Accounts() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Input
-          placeholder="Search accounts..."
+        <FuzzySearchInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={setSearch}
+          placeholder="Search accounts..."
+          resultCount={filteredResults.length}
+          totalCount={totalCount}
           className="max-w-sm"
         />
         <div className="flex gap-2">
           {selected.size > 0 && (
-            <Button
-              variant="destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
               Delete ({selected.size})
             </Button>
           )}
@@ -108,63 +159,119 @@ function Accounts() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground">
-          {search ? "No accounts match your search." : "No accounts yet. Create one to get started."}
-        </div>
+      <FilterPanel
+        fields={FILTER_FIELDS}
+        values={filterValues}
+        onChange={setFilterValues}
+        savedFilters={savedFilters}
+        onSaveFilter={(name) =>
+          saveFilter({
+            id: crypto.randomUUID(),
+            name,
+            entityType: "accounts",
+            values: filterValues,
+            createdAt: new Date().toISOString(),
+          })
+        }
+        onDeleteFilter={removeFilter}
+        onLoadFilter={(preset) =>
+          setFilterValues(preset.values as FilterValues)
+        }
+      />
+
+      {filteredResults.length === 0 ? (
+        search ? (
+          <NoResults
+            searchTerm={search}
+            onClearSearch={clearSearch}
+            onSelectSuggestion={setSearch}
+            entityName="accounts"
+          />
+        ) : (
+          <div className="py-12 text-center text-muted-foreground">
+            No accounts yet. Create one to get started.
+          </div>
+        )
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <input
-                    type="checkbox"
-                    checked={selected.size === filtered.length && filtered.length > 0}
-                    onChange={toggleAll}
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                </TableHead>
-                <TableHead>Account Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((account) => (
-                <TableRow key={account.id}>
-                  <TableCell>
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
                     <input
                       type="checkbox"
-                      checked={selected.has(account.id)}
-                      onChange={() => toggleSelect(account.id)}
+                      checked={
+                        selected.size === paginatedItems.length &&
+                        paginatedItems.length > 0
+                      }
+                      onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                  </TableCell>
-                  <TableCell className="font-mono">
-                    {account.accountCode}
-                  </TableCell>
-                  <TableCell>{account.name}</TableCell>
-                  <TableCell>
-                    <Badge variant={account.isActive ? "default" : "secondary"}>
-                      {account.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditAccount(account)}
-                    >
-                      Edit
-                    </Button>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead>Account Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((account) => {
+                  const result = matchMap.get(account.id);
+                  const matches = result?.matches;
+                  return (
+                    <TableRow key={account.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(account.id)}
+                          onChange={() => toggleSelect(account.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        <SearchHighlight
+                          text={account.accountCode}
+                          indices={getMatchIndices(matches, "accountCode")}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <SearchHighlight
+                          text={account.name}
+                          indices={getMatchIndices(matches, "name")}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={account.isActive ? "default" : "secondary"}
+                        >
+                          {account.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditAccount(account)}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </>
       )}
 
       {/* Create Dialog */}

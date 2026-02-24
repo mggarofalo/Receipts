@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router";
+import { Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
 import { useSignalR } from "@/hooks/useSignalR";
@@ -12,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
 
 const connectionStateColors: Record<SignalRConnectionState, string> = {
   connected: "bg-green-500",
@@ -30,6 +33,7 @@ export function Layout() {
   const { isAdmin } = usePermission();
   const navigate = useNavigate();
   const { connectionState } = useSignalR(!!user);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   async function handleLogout() {
     await logout();
@@ -112,6 +116,18 @@ export function Layout() {
           </nav>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-muted-foreground"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search className="h-3.5 w-3.5" />
+              Search
+              <kbd className="pointer-events-none select-none rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+                Ctrl+K
+              </kbd>
+            </Button>
             <div
               className="flex items-center gap-1.5"
               title={`SignalR: ${connectionStateLabels[connectionState]}`}
@@ -149,6 +165,8 @@ export function Layout() {
       <main className="flex-1 container mx-auto px-4 py-6">
         <Outlet />
       </main>
+
+      <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 }

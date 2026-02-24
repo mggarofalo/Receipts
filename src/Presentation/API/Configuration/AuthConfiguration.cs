@@ -41,7 +41,7 @@ public static class AuthConfiguration
 					{
 						string? token = context.Request.Query["access_token"];
 						if (!string.IsNullOrEmpty(token) &&
-							context.HttpContext.Request.Path.StartsWithSegments("/receipts"))
+							context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
 						{
 							context.Token = token;
 						}

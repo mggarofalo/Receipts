@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 const transactionSchema = z.object({
   receiptId: z.string().min(1, "Receipt ID is required"),
   accountId: z.string().min(1, "Account ID is required"),
-  amount: z.coerce.number(),
+  amount: z.number(),
   date: z.string().min(1, "Date is required"),
 });
 
@@ -82,7 +82,7 @@ export function TransactionForm({
           id="amount"
           type="number"
           step="0.01"
-          {...register("amount")}
+          {...register("amount", { valueAsNumber: true })}
         />
         {errors.amount && (
           <p className="text-sm text-destructive">{errors.amount.message}</p>

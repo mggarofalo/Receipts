@@ -5,9 +5,21 @@ import {
   useUpdateReceipt,
   useDeleteReceipts,
 } from "@/hooks/useReceipts";
+import { useFuzzySearch } from "@/hooks/useFuzzySearch";
+import { useSavedFilters } from "@/hooks/useSavedFilters";
+import { usePagination } from "@/hooks/usePagination";
+import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
+import { applyFilters } from "@/lib/search";
+import type { FilterValues } from "@/components/FilterPanel";
 import { ReceiptForm } from "@/components/ReceiptForm";
+import { FuzzySearchInput } from "@/components/FuzzySearchInput";
+import { FilterPanel } from "@/components/FilterPanel";
+import type { FilterField } from "@/components/FilterPanel";
+import { SearchHighlight } from "@/components/SearchHighlight";
+import { getMatchIndices } from "@/lib/search-highlight";
+import { NoResults } from "@/components/NoResults";
+import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -38,30 +50,75 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+const SEARCH_CONFIG: FuseSearchConfig<ReceiptResponse> = {
+  keys: [
+    { name: "description", weight: 2 },
+    { name: "location", weight: 1.5 },
+  ],
+};
+
+const FILTER_FIELDS: FilterField[] = [
+  { type: "dateRange", key: "date", label: "Date" },
+  { type: "numberRange", key: "taxAmount", label: "Tax Amount" },
+];
+
+const FILTER_DEFS: FilterDefinition[] = [
+  { key: "date", type: "dateRange", field: "date" },
+  { key: "taxAmount", type: "numberRange", field: "taxAmount" },
+];
+
 function Receipts() {
   const { data: receipts, isLoading } = useReceipts();
   const createReceipt = useCreateReceipt();
   const updateReceipt = useUpdateReceipt();
   const deleteReceipts = useDeleteReceipts();
 
-  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [editReceipt, setEditReceipt] = useState<ReceiptResponse | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [filterValues, setFilterValues] = useState<FilterValues>({});
 
-  const filtered = useMemo(() => {
-    if (!receipts) return [];
-    const term = search.toLowerCase();
-    const list = (receipts as ReceiptResponse[]).filter(
-      (r) =>
-        (r.description?.toLowerCase().includes(term) ?? false) ||
-        r.location.toLowerCase().includes(term),
-    );
-    return list.sort(
+  const data = useMemo(() => {
+    const list = (receipts as ReceiptResponse[] | undefined) ?? [];
+    return [...list].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-  }, [receipts, search]);
+  }, [receipts]);
+
+  const {
+    filters: savedFilters,
+    save: saveFilter,
+    remove: removeFilter,
+  } = useSavedFilters("receipts");
+
+  const { search, setSearch, results, totalCount, clearSearch } =
+    useFuzzySearch({ data, config: SEARCH_CONFIG });
+
+  const filteredResults = useMemo(() => {
+    const items = search.trim()
+      ? results.map((r) => r.item)
+      : results.map((r) => r.item);
+    return applyFilters(items, FILTER_DEFS, filterValues);
+  }, [results, filterValues, search]);
+
+  const matchMap = useMemo(() => {
+    const map = new Map<string, (typeof results)[number]>();
+    for (const r of results) {
+      map.set(r.item.id, r);
+    }
+    return map;
+  }, [results]);
+
+  const {
+    paginatedItems,
+    currentPage,
+    pageSize,
+    totalItems,
+    totalPages,
+    setPage,
+    setPageSize,
+  } = usePagination({ items: filteredResults });
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -73,10 +130,10 @@ function Receipts() {
   }
 
   function toggleAll() {
-    if (selected.size === filtered.length) {
+    if (selected.size === paginatedItems.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(filtered.map((r) => r.id)));
+      setSelected(new Set(paginatedItems.map((r) => r.id)));
     }
   }
 
@@ -99,18 +156,17 @@ function Receipts() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Input
-          placeholder="Search receipts..."
+        <FuzzySearchInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={setSearch}
+          placeholder="Search receipts..."
+          resultCount={filteredResults.length}
+          totalCount={totalCount}
           className="max-w-sm"
         />
         <div className="flex gap-2">
           {selected.size > 0 && (
-            <Button
-              variant="destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
               Delete ({selected.size})
             </Button>
           )}
@@ -118,71 +174,123 @@ function Receipts() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground">
-          {search
-            ? "No receipts match your search."
-            : "No receipts yet. Create one to get started."}
-        </div>
+      <FilterPanel
+        fields={FILTER_FIELDS}
+        values={filterValues}
+        onChange={setFilterValues}
+        savedFilters={savedFilters}
+        onSaveFilter={(name) =>
+          saveFilter({
+            id: crypto.randomUUID(),
+            name,
+            entityType: "receipts",
+            values: filterValues,
+            createdAt: new Date().toISOString(),
+          })
+        }
+        onDeleteFilter={removeFilter}
+        onLoadFilter={(preset) =>
+          setFilterValues(preset.values as FilterValues)
+        }
+      />
+
+      {filteredResults.length === 0 ? (
+        search ? (
+          <NoResults
+            searchTerm={search}
+            onClearSearch={clearSearch}
+            onSelectSuggestion={setSearch}
+            entityName="receipts"
+          />
+        ) : (
+          <div className="py-12 text-center text-muted-foreground">
+            No receipts yet. Create one to get started.
+          </div>
+        )
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selected.size === filtered.length && filtered.length > 0
-                    }
-                    onChange={toggleAll}
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                </TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Tax Amount</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((receipt) => (
-                <TableRow key={receipt.id}>
-                  <TableCell>
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
                     <input
                       type="checkbox"
-                      checked={selected.has(receipt.id)}
-                      onChange={() => toggleSelect(receipt.id)}
+                      checked={
+                        selected.size === paginatedItems.length &&
+                        paginatedItems.length > 0
+                      }
+                      onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                  </TableCell>
-                  <TableCell>
-                    {receipt.description || (
-                      <span className="text-muted-foreground italic">
-                        No description
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>{receipt.location}</TableCell>
-                  <TableCell>{receipt.date}</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(receipt.taxAmount)}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditReceipt(receipt)}
-                    >
-                      Edit
-                    </Button>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Tax Amount</TableHead>
+                  <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((receipt) => {
+                  const result = matchMap.get(receipt.id);
+                  const matches = result?.matches;
+                  return (
+                    <TableRow key={receipt.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(receipt.id)}
+                          onChange={() => toggleSelect(receipt.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {receipt.description ? (
+                          <SearchHighlight
+                            text={receipt.description}
+                            indices={getMatchIndices(matches, "description")}
+                          />
+                        ) : (
+                          <span className="text-muted-foreground italic">
+                            No description
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <SearchHighlight
+                          text={receipt.location}
+                          indices={getMatchIndices(matches, "location")}
+                        />
+                      </TableCell>
+                      <TableCell>{receipt.date}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(receipt.taxAmount)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditReceipt(receipt)}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </>
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
