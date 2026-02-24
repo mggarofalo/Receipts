@@ -80,18 +80,6 @@ public static class InfrastructureService
 			});
 		}
 
-		// Override the factory's scoped ApplicationDbContext registration to use 2-param constructor.
-		// AddDbContextFactory auto-registers a scoped context that delegates to the singleton factory,
-		// which uses root provider and can't resolve scoped ICurrentUserAccessor. This override
-		// directly constructs with ICurrentUserAccessor from the current scope.
-		services.AddScoped(sp =>
-		{
-			DbContextOptions<ApplicationDbContext> options =
-				sp.GetRequiredService<DbContextOptions<ApplicationDbContext>>();
-			ICurrentUserAccessor accessor = sp.GetRequiredService<ICurrentUserAccessor>();
-			return new ApplicationDbContext(options, accessor);
-		});
-
 		// Fallback ICurrentUserAccessor for when no HTTP context is available (tests, background services).
 		// The API layer registers the real implementation before this, so TryAdd is a no-op in production.
 		services.TryAddScoped<ICurrentUserAccessor, NullCurrentUserAccessor>();
@@ -100,6 +88,18 @@ public static class InfrastructureService
 			.AddIdentityCore<ApplicationUser>()
 			.AddRoles<IdentityRole>()
 			.AddEntityFrameworkStores<ApplicationDbContext>();
+
+		// Override the factory's scoped ApplicationDbContext registration to use 2-param constructor.
+		// AddDbContextFactory auto-registers a scoped context that delegates to the singleton factory,
+		// which uses root provider and can't resolve scoped ICurrentUserAccessor.
+		// AddEntityFrameworkStores also re-registers the scoped context, so this MUST come after it.
+		services.AddScoped(sp =>
+		{
+			DbContextOptions<ApplicationDbContext> options =
+				sp.GetRequiredService<DbContextOptions<ApplicationDbContext>>();
+			ICurrentUserAccessor accessor = sp.GetRequiredService<ICurrentUserAccessor>();
+			return new ApplicationDbContext(options, accessor);
+		});
 
 		services
 			.AddScoped<IReceiptService, ReceiptService>()
