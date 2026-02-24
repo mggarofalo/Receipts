@@ -9,8 +9,8 @@ const receiptItemSchema = z.object({
   receiptId: z.string().min(1, "Receipt ID is required"),
   receiptItemCode: z.string().min(1, "Item code is required"),
   description: z.string().min(1, "Description is required"),
-  quantity: z.coerce.number().positive("Quantity must be positive"),
-  unitPrice: z.coerce.number().min(0, "Unit price must be non-negative"),
+  quantity: z.number().positive("Quantity must be positive"),
+  unitPrice: z.number().min(0, "Unit price must be non-negative"),
   category: z.string().min(1, "Category is required"),
   subcategory: z.string().min(1, "Subcategory is required"),
 });
@@ -94,7 +94,7 @@ export function ReceiptItemForm({
             id="quantity"
             type="number"
             step="1"
-            {...register("quantity")}
+            {...register("quantity", { valueAsNumber: true })}
           />
           {errors.quantity && (
             <p className="text-sm text-destructive">
@@ -109,7 +109,7 @@ export function ReceiptItemForm({
             id="unitPrice"
             type="number"
             step="0.01"
-            {...register("unitPrice")}
+            {...register("unitPrice", { valueAsNumber: true })}
           />
           {errors.unitPrice && (
             <p className="text-sm text-destructive">

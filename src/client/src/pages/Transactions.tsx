@@ -5,9 +5,21 @@ import {
   useUpdateTransaction,
   useDeleteTransactions,
 } from "@/hooks/useTransactions";
+import { useFuzzySearch } from "@/hooks/useFuzzySearch";
+import { useSavedFilters } from "@/hooks/useSavedFilters";
+import { usePagination } from "@/hooks/usePagination";
+import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
+import { applyFilters } from "@/lib/search";
+import type { FilterValues } from "@/components/FilterPanel";
 import { TransactionForm } from "@/components/TransactionForm";
+import { FuzzySearchInput } from "@/components/FuzzySearchInput";
+import { FilterPanel } from "@/components/FilterPanel";
+import type { FilterField } from "@/components/FilterPanel";
+import { SearchHighlight } from "@/components/SearchHighlight";
+import { getMatchIndices } from "@/lib/search-highlight";
+import { NoResults } from "@/components/NoResults";
+import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -36,13 +48,26 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+const SEARCH_CONFIG: FuseSearchConfig<TransactionResponse> = {
+  keys: [{ name: "date", weight: 1 }],
+};
+
+const FILTER_FIELDS: FilterField[] = [
+  { type: "dateRange", key: "date", label: "Date" },
+  { type: "numberRange", key: "amount", label: "Amount" },
+];
+
+const FILTER_DEFS: FilterDefinition[] = [
+  { key: "date", type: "dateRange", field: "date" },
+  { key: "amount", type: "numberRange", field: "amount" },
+];
+
 function Transactions() {
   const { data: transactions, isLoading } = useTransactions();
   const createTransaction = useCreateTransaction();
   const updateTransaction = useUpdateTransaction();
   const deleteTransactions = useDeleteTransactions();
 
-  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [editTransaction, setEditTransaction] =
@@ -50,19 +75,46 @@ function Transactions() {
   const [editReceiptId, setEditReceiptId] = useState("");
   const [editAccountId, setEditAccountId] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [filterValues, setFilterValues] = useState<FilterValues>({});
 
-  const filtered = useMemo(() => {
-    if (!transactions) return [];
-    const term = search.toLowerCase();
-    const list = (transactions as TransactionResponse[]).filter(
-      (t) =>
-        t.date.includes(term) ||
-        t.amount.toString().includes(term),
-    );
-    return list.sort(
+  const data = useMemo(() => {
+    const list = (transactions as TransactionResponse[] | undefined) ?? [];
+    return [...list].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-  }, [transactions, search]);
+  }, [transactions]);
+
+  const {
+    filters: savedFilters,
+    save: saveFilter,
+    remove: removeFilter,
+  } = useSavedFilters("transactions");
+
+  const { search, setSearch, results, totalCount, clearSearch } =
+    useFuzzySearch({ data, config: SEARCH_CONFIG });
+
+  const filteredResults = useMemo(() => {
+    const list = results.map((r) => r.item);
+    return applyFilters(list, FILTER_DEFS, filterValues);
+  }, [results, filterValues]);
+
+  const matchMap = useMemo(() => {
+    const map = new Map<string, (typeof results)[number]>();
+    for (const r of results) {
+      map.set(r.item.id, r);
+    }
+    return map;
+  }, [results]);
+
+  const {
+    paginatedItems,
+    currentPage,
+    pageSize,
+    totalItems,
+    totalPages,
+    setPage,
+    setPageSize,
+  } = usePagination({ items: filteredResults });
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -74,10 +126,10 @@ function Transactions() {
   }
 
   function toggleAll() {
-    if (selected.size === filtered.length) {
+    if (selected.size === paginatedItems.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(filtered.map((t) => t.id)));
+      setSelected(new Set(paginatedItems.map((t) => t.id)));
     }
   }
 
@@ -100,82 +152,126 @@ function Transactions() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Input
-          placeholder="Search transactions..."
+        <FuzzySearchInput
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={setSearch}
+          placeholder="Search transactions..."
+          resultCount={filteredResults.length}
+          totalCount={totalCount}
           className="max-w-sm"
         />
         <div className="flex gap-2">
           {selected.size > 0 && (
-            <Button
-              variant="destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
               Delete ({selected.size})
             </Button>
           )}
-          <Button onClick={() => setCreateOpen(true)}>
-            New Transaction
-          </Button>
+          <Button onClick={() => setCreateOpen(true)}>New Transaction</Button>
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground">
-          {search
-            ? "No transactions match your search."
-            : "No transactions yet. Create one to get started."}
-        </div>
+      <FilterPanel
+        fields={FILTER_FIELDS}
+        values={filterValues}
+        onChange={setFilterValues}
+        savedFilters={savedFilters}
+        onSaveFilter={(name) =>
+          saveFilter({
+            id: crypto.randomUUID(),
+            name,
+            entityType: "transactions",
+            values: filterValues,
+            createdAt: new Date().toISOString(),
+          })
+        }
+        onDeleteFilter={removeFilter}
+        onLoadFilter={(preset) =>
+          setFilterValues(preset.values as FilterValues)
+        }
+      />
+
+      {filteredResults.length === 0 ? (
+        search ? (
+          <NoResults
+            searchTerm={search}
+            onClearSearch={clearSearch}
+            onSelectSuggestion={setSearch}
+            entityName="transactions"
+          />
+        ) : (
+          <div className="py-12 text-center text-muted-foreground">
+            No transactions yet. Create one to get started.
+          </div>
+        )
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selected.size === filtered.length && filtered.length > 0
-                    }
-                    onChange={toggleAll}
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                </TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((txn) => (
-                <TableRow key={txn.id}>
-                  <TableCell>
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
                     <input
                       type="checkbox"
-                      checked={selected.has(txn.id)}
-                      onChange={() => toggleSelect(txn.id)}
+                      checked={
+                        selected.size === paginatedItems.length &&
+                        paginatedItems.length > 0
+                      }
+                      onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(txn.amount)}
-                  </TableCell>
-                  <TableCell>{txn.date}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditTransaction(txn)}
-                    >
-                      Edit
-                    </Button>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((txn) => {
+                  const result = matchMap.get(txn.id);
+                  const matches = result?.matches;
+                  return (
+                    <TableRow key={txn.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(txn.id)}
+                          onChange={() => toggleSelect(txn.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(txn.amount)}
+                      </TableCell>
+                      <TableCell>
+                        <SearchHighlight
+                          text={txn.date}
+                          indices={getMatchIndices(matches, "date")}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditTransaction(txn)}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </>
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -261,8 +357,8 @@ function Transactions() {
             <DialogTitle>Delete Transactions</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} transaction(s)?
-            This action can be undone by restoring.
+            Are you sure you want to delete {selected.size} transaction(s)? This
+            action can be undone by restoring.
           </p>
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
