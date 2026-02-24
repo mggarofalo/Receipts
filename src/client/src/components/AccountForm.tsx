@@ -13,6 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Spinner } from "@/components/ui/spinner";
 
 const accountSchema = z.object({
   accountCode: z.string().min(1, "Account code is required"),
@@ -106,6 +107,7 @@ export function AccountForm({
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Spinner size="sm" />}
             {isSubmitting
               ? "Saving..."
               : mode === "create"
