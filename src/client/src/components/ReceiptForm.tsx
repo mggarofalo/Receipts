@@ -9,7 +9,7 @@ const receiptSchema = z.object({
   description: z.string().optional(),
   location: z.string().min(1, "Location is required"),
   date: z.string().min(1, "Date is required"),
-  taxAmount: z.coerce.number().min(0, "Tax amount must be non-negative"),
+  taxAmount: z.number().min(0, "Tax amount must be non-negative"),
 });
 
 type ReceiptFormValues = z.infer<typeof receiptSchema>;
@@ -74,7 +74,7 @@ export function ReceiptForm({
           id="taxAmount"
           type="number"
           step="0.01"
-          {...register("taxAmount")}
+          {...register("taxAmount", { valueAsNumber: true })}
         />
         {errors.taxAmount && (
           <p className="text-sm text-destructive">
