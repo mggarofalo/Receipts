@@ -167,6 +167,7 @@ function Accounts() {
       <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
       <div className="flex items-center justify-between">
         <FuzzySearchInput
+          aria-label="Search accounts"
           value={search}
           onChange={setSearch}
           placeholder="Search accounts..."
@@ -226,6 +227,7 @@ function Accounts() {
                   <TableHead className="w-12">
                     <input
                       type="checkbox"
+                      aria-label="Select all rows"
                       checked={
                         selected.size === paginatedItems.length &&
                         paginatedItems.length > 0
@@ -252,6 +254,7 @@ function Accounts() {
                       <TableCell>
                         <input
                           type="checkbox"
+                          aria-label={`Select ${account.name}`}
                           checked={selected.has(account.id)}
                           onChange={() => toggleSelect(account.id)}
                           className="h-4 w-4 rounded border-gray-300"

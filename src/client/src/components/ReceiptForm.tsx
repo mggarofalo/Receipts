@@ -5,7 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const receiptSchema = z.object({
   description: z.string().optional(),
@@ -14,7 +21,7 @@ const receiptSchema = z.object({
   taxAmount: z.number().min(0, "Tax amount must be non-negative"),
 });
 
-type ReceiptFormValues = z.infer<typeof receiptSchema>;
+type ReceiptFormValues = z.output<typeof receiptSchema>;
 
 interface ReceiptFormProps {
   mode: "create" | "edit";
@@ -34,12 +41,9 @@ export function ReceiptForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ReceiptFormValues>({
-    resolver: zodResolver(receiptSchema),
+  const form = useForm<ReceiptFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(receiptSchema) as any,
     defaultValues: defaultValues ?? {
       description: "",
       location: "",
@@ -49,57 +53,77 @@ export function ReceiptForm({
   });
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
-        <Input id="location" {...register("location")} />
-        {errors.location && (
-          <p className="text-sm text-destructive">
-            {errors.location.message}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description (optional)</Label>
-        <Input id="description" {...register("description")} />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="date">Date</Label>
-        <Input id="date" type="date" {...register("date")} />
-        {errors.date && (
-          <p className="text-sm text-destructive">{errors.date.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="taxAmount">Tax Amount</Label>
-        <Input
-          id="taxAmount"
-          type="number"
-          step="0.01"
-          {...register("taxAmount", { valueAsNumber: true })}
+    <Form {...form}>
+      <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Location</FormLabel>
+              <FormControl>
+                <Input aria-required="true" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {errors.taxAmount && (
-          <p className="text-sm text-destructive">
-            {errors.taxAmount.message}
-          </p>
-        )}
-      </div>
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting
-            ? "Saving..."
-            : mode === "create"
-              ? "Create Receipt"
-              : "Update Receipt"}
-        </Button>
-      </div>
-    </form>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description (optional)</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <FormControl>
+                <Input type="date" aria-required="true" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="taxAmount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tax Amount</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? "Saving..."
+              : mode === "create"
+                ? "Create Receipt"
+                : "Update Receipt"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

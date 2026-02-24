@@ -5,7 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const accountSchema = z.object({
   accountCode: z.string().min(1, "Account code is required"),
@@ -33,11 +40,7 @@ export function AccountForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<AccountFormValues>({
+  const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
     defaultValues: defaultValues ?? {
       accountCode: "",
@@ -47,47 +50,70 @@ export function AccountForm({
   });
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="accountCode">Account Code</Label>
-        <Input id="accountCode" {...register("accountCode")} />
-        {errors.accountCode && (
-          <p className="text-sm text-destructive">
-            {errors.accountCode.message}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        <Input id="name" {...register("name")} />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name.message}</p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="isActive"
-          {...register("isActive")}
-          className="h-4 w-4 rounded border-gray-300"
+    <Form {...form}>
+      <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="accountCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Account Code</FormLabel>
+              <FormControl>
+                <Input aria-required="true" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <Label htmlFor="isActive">Active</Label>
-      </div>
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting
-            ? "Saving..."
-            : mode === "create"
-              ? "Create Account"
-              : "Update Account"}
-        </Button>
-      </div>
-    </form>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input aria-required="true" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                </FormControl>
+                <FormLabel>Active</FormLabel>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? "Saving..."
+              : mode === "create"
+                ? "Create Account"
+                : "Update Account"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }
