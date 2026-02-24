@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTripByReceiptId } from "@/hooks/useTrips";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,6 +48,13 @@ function Trips() {
   const transactionsTotal =
     trip?.transactions?.reduce((sum, ta) => sum + ta.transaction.amount, 0) ??
     0;
+
+  const tripItems = trip?.receipt?.items ?? [];
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: tripItems,
+    getId: (item) => item.id,
+    enabled: tripItems.length > 0,
+  });
 
   return (
     <div className="space-y-6">
@@ -137,7 +145,7 @@ function Trips() {
                   No items for this receipt.
                 </p>
               ) : (
-                <div className="rounded-md border">
+                <div className="rounded-md border" ref={tableRef}>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -154,7 +162,10 @@ function Trips() {
                     </TableHeader>
                     <TableBody>
                       {trip.receipt.items.map((item) => (
-                        <TableRow key={item.id}>
+                        <TableRow
+                          key={item.id}
+                          className={focusedId === item.id ? "bg-accent" : ""}
+                        >
                           <TableCell className="font-mono">
                             {item.receiptItemCode}
                           </TableCell>

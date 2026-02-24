@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import {
   Table,
   TableBody,
@@ -79,6 +80,16 @@ function ApiKeys() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [revokeId, setRevokeId] = useState<string | null>(null);
+
+  const anyDialogOpen = createOpen || createdKey !== null || revokeId !== null;
+
+  useEffect(() => {
+    function onNewItem() {
+      handleCreateOpen();
+    }
+    window.addEventListener("shortcut:new-item", onNewItem);
+    return () => window.removeEventListener("shortcut:new-item", onNewItem);
+  }, []);
 
   const { data: apiKeys = [], isLoading } = useQuery({
     queryKey: ["apiKeys"],
@@ -153,6 +164,12 @@ function ApiKeys() {
     }
   }
 
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: apiKeys as { id: string }[],
+    getId: (k) => k.id,
+    enabled: !anyDialogOpen && apiKeys.length > 0,
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -181,6 +198,7 @@ function ApiKeys() {
               No API keys yet. Create one to get started.
             </p>
           ) : (
+            <div ref={tableRef}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -196,7 +214,10 @@ function ApiKeys() {
                 {apiKeys.map((key) => {
                   const status = getKeyStatus(key);
                   return (
-                    <TableRow key={key.id}>
+                    <TableRow
+                      key={key.id}
+                      className={focusedId === key.id ? "bg-accent" : ""}
+                    >
                       <TableCell className="font-medium">{key.name}</TableCell>
                       <TableCell>{formatDate(key.createdAt)}</TableCell>
                       <TableCell>{formatDate(key.lastUsedAt)}</TableCell>
@@ -222,6 +243,7 @@ function ApiKeys() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

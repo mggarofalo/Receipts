@@ -1,6 +1,8 @@
+import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +31,9 @@ export function ReceiptForm({
   onCancel,
   isSubmitting,
 }: ReceiptFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  useFormShortcuts({ formRef });
+
   const {
     register,
     handleSubmit,
@@ -44,7 +49,7 @@ export function ReceiptForm({
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="location">Location</Label>
         <Input id="location" {...register("location")} />
