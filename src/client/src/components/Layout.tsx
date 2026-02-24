@@ -137,10 +137,12 @@ export function Layout() {
             </Button>
             <div
               className="flex items-center gap-1.5"
-              title={`SignalR: ${connectionStateLabels[connectionState]}`}
+              role="status"
+              aria-live="polite"
             >
               <span
                 className={`h-2 w-2 rounded-full ${connectionStateColors[connectionState]}`}
+                aria-hidden="true"
               />
               <span className="text-xs text-muted-foreground">
                 {connectionStateLabels[connectionState]}
