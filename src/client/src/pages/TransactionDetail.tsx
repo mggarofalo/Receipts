@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ChangeHistory } from "@/components/ChangeHistory";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 import {
   Table,
   TableBody,
@@ -136,8 +137,8 @@ function TransactionDetail() {
 
       {isLoading && (
         <div className="space-y-4">
-          <div className="h-24 animate-pulse rounded bg-muted" />
-          <div className="h-48 animate-pulse rounded bg-muted" />
+          <CardSkeleton lines={1} />
+          <CardSkeleton lines={4} />
         </div>
       )}
 

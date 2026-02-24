@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 
 // Must match AppRoles.All on the backend (src/Common/AppRoles.cs)
 const AVAILABLE_ROLES = ["Admin", "User"];
@@ -68,11 +69,7 @@ function AdminUsers() {
         </Button>
       </div>
 
-      {isLoading && (
-        <div className="space-y-4">
-          <div className="h-48 animate-pulse rounded bg-muted" />
-        </div>
-      )}
+      {isLoading && <CardSkeleton lines={4} />}
 
       {isError && userId && (
         <div className="py-12 text-center text-muted-foreground">

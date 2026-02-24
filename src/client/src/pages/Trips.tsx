@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -77,9 +78,9 @@ function Trips() {
 
       {isLoading && (
         <div className="space-y-4">
-          <div className="h-32 animate-pulse rounded bg-muted" />
-          <div className="h-48 animate-pulse rounded bg-muted" />
-          <div className="h-48 animate-pulse rounded bg-muted" />
+          <CardSkeleton lines={1} />
+          <CardSkeleton lines={3} />
+          <CardSkeleton lines={3} />
         </div>
       )}
 
