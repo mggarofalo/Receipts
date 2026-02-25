@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const connectionStateColors: Record<SignalRConnectionState, string> = {
   connected: "bg-green-500",
@@ -111,6 +112,8 @@ export function Layout() {
                 {connectionStateLabels[connectionState]}
               </span>
             </div>
+
+            <ThemeToggle />
 
             {user && (
               <DropdownMenu>
