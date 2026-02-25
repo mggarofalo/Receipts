@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useReceiptWithItems } from "@/hooks/useAggregates";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,13 @@ function ReceiptDetail() {
       (sum, item) => sum + item.quantity * item.unitPrice,
       0,
     ) ?? 0;
+
+  const itemsList = data?.items ?? [];
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: itemsList,
+    getId: (item) => item.id,
+    enabled: itemsList.length > 0,
+  });
 
   return (
     <div className="space-y-6">
@@ -104,7 +112,7 @@ function ReceiptDetail() {
                   No items for this receipt.
                 </p>
               ) : (
-                <div className="rounded-md border">
+                <div className="rounded-md border" ref={tableRef}>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -119,7 +127,10 @@ function ReceiptDetail() {
                     </TableHeader>
                     <TableBody>
                       {data.items.map((item) => (
-                        <TableRow key={item.id}>
+                        <TableRow
+                          key={item.id}
+                          className={focusedId === item.id ? "bg-accent" : ""}
+                        >
                           <TableCell className="font-mono">
                             {item.receiptItemCode}
                           </TableCell>

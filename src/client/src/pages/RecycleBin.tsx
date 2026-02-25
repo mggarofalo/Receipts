@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { useDeletedAccounts, useRestoreAccount } from "@/hooks/useAccounts";
 import { useDeletedReceipts, useRestoreReceipt } from "@/hooks/useReceipts";
 import {
@@ -71,7 +72,15 @@ function RestoreButton({
   );
 }
 
-function DeletedItemsTable({ items }: { items: DeletedItem[] }) {
+function DeletedItemsTable({
+  items,
+  focusedKey,
+  tableRef,
+}: {
+  items: DeletedItem[];
+  focusedKey?: string | null;
+  tableRef?: React.RefObject<HTMLDivElement | null>;
+}) {
   if (items.length === 0) {
     return (
       <div className="py-12 text-center text-muted-foreground">
@@ -81,7 +90,7 @@ function DeletedItemsTable({ items }: { items: DeletedItem[] }) {
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border" ref={tableRef}>
       <Table>
         <TableHeader>
           <TableRow>
@@ -93,7 +102,14 @@ function DeletedItemsTable({ items }: { items: DeletedItem[] }) {
         </TableHeader>
         <TableBody>
           {items.map((item) => (
-            <TableRow key={`${item.entityType}:${item.id}`}>
+            <TableRow
+              key={`${item.entityType}:${item.id}`}
+              className={
+                focusedKey === `${item.entityType}:${item.id}`
+                  ? "bg-accent"
+                  : ""
+              }
+            >
               <TableCell>{item.entityTypeLabel}</TableCell>
               <TableCell>
                 <Tooltip>
@@ -173,6 +189,12 @@ function RecycleBin() {
     return items;
   }, [accounts.data, receipts.data, receiptItems.data, transactions.data]);
 
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: allItems,
+    getId: (item) => `${item.entityType}:${item.id}`,
+    enabled: !isLoading,
+  });
+
   const byType = useMemo(() => {
     const map: Record<string, DeletedItem[]> = {};
     for (const item of allItems) {
@@ -209,7 +231,11 @@ function RecycleBin() {
         </TabsList>
 
         <TabsContent value="all">
-          <DeletedItemsTable items={allItems} />
+          <DeletedItemsTable
+            items={allItems}
+            focusedKey={focusedId}
+            tableRef={tableRef}
+          />
         </TabsContent>
 
         {Object.entries(byType).map(([type, items]) => (

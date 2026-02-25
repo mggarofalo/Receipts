@@ -10,6 +10,7 @@ import {
 import { showApiError, showNetworkError } from "@/lib/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ShortcutsProvider } from "@/contexts/ShortcutsContext";
 import "./index.css";
 import App from "./App.tsx";
 
@@ -50,9 +51,11 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <TooltipProvider>
-            <App />
-          </TooltipProvider>
+          <ShortcutsProvider>
+            <TooltipProvider>
+              <App />
+            </TooltipProvider>
+          </ShortcutsProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

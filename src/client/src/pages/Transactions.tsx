@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useTransactions,
   useCreateTransaction,
@@ -8,6 +8,7 @@ import {
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
@@ -77,6 +78,16 @@ function Transactions() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
+  const anyDialogOpen = createOpen || editTransaction !== null || deleteOpen;
+
+  useEffect(() => {
+    function onNewItem() {
+      setCreateOpen(true);
+    }
+    window.addEventListener("shortcut:new-item", onNewItem);
+    return () => window.removeEventListener("shortcut:new-item", onNewItem);
+  }, []);
+
   const data = useMemo(() => {
     const list = (transactions as TransactionResponse[] | undefined) ?? [];
     return [...list].sort(
@@ -132,6 +143,19 @@ function Transactions() {
       setSelected(new Set(paginatedItems.map((t) => t.id)));
     }
   }
+
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: paginatedItems,
+    getId: (t) => t.id,
+    enabled: !anyDialogOpen,
+    onOpen: (t) => setEditTransaction(t),
+    onDelete: () => setDeleteOpen(true),
+    onSelectAll: () =>
+      setSelected(new Set(paginatedItems.map((t) => t.id))),
+    onDeselectAll: () => setSelected(new Set()),
+    onToggleSelect: (t) => toggleSelect(t.id),
+    selected,
+  });
 
   if (isLoading) {
     return (
@@ -205,7 +229,7 @@ function Transactions() {
         )
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="rounded-md border" ref={tableRef}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -230,7 +254,10 @@ function Transactions() {
                   const result = matchMap.get(txn.id);
                   const matches = result?.matches;
                   return (
-                    <TableRow key={txn.id}>
+                    <TableRow
+                      key={txn.id}
+                      className={focusedId === txn.id ? "bg-accent" : ""}
+                    >
                       <TableCell>
                         <input
                           type="checkbox"
