@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router";
+import { RouterProvider } from "react-router";
 import {
   MutationCache,
   QueryCache,
@@ -12,8 +12,8 @@ import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ShortcutsProvider } from "@/contexts/ShortcutsContext";
+import { router } from "./App.tsx";
 import "./index.css";
-import App from "./App.tsx";
 
 function handleGlobalError(error: unknown) {
   if (
@@ -51,15 +51,13 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AuthProvider>
-            <ShortcutsProvider>
-              <TooltipProvider>
-                <App />
-              </TooltipProvider>
-            </ShortcutsProvider>
-          </AuthProvider>
-        </BrowserRouter>
+        <AuthProvider>
+          <ShortcutsProvider>
+            <TooltipProvider>
+              <RouterProvider router={router} />
+            </TooltipProvider>
+          </ShortcutsProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,
