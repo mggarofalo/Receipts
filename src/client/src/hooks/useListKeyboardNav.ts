@@ -65,12 +65,16 @@ export function useListKeyboardNav<T>({
     [items.length, scrollToRow],
   );
 
-  // Enter — open focused item
+  // Enter — open focused item (deferred so the keydown event doesn't
+  // propagate into the newly-mounted dialog and trigger an immediate submit)
   useHotkeys(
     "Enter",
-    () => {
+    (e) => {
       if (focusedIndex >= 0 && focusedIndex < items.length && onOpen) {
-        onOpen(items[focusedIndex]);
+        e.preventDefault();
+        e.stopPropagation();
+        const item = items[focusedIndex];
+        setTimeout(() => onOpen(item), 0);
       }
     },
     {
