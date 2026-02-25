@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 
 interface DeletedItem {
   entityType: string;
@@ -67,6 +68,7 @@ function RestoreButton({
       disabled={mutation.isPending}
       onClick={() => mutation.mutate(entityId)}
     >
+      {mutation.isPending && <Spinner size="sm" />}
       {mutation.isPending ? "Restoring..." : "Restore"}
     </Button>
   );

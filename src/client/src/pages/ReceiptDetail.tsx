@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ChangeHistory } from "@/components/ChangeHistory";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 import {
   Table,
   TableBody,
@@ -73,8 +74,8 @@ function ReceiptDetail() {
 
       {isLoading && (
         <div className="space-y-4">
-          <div className="h-32 animate-pulse rounded bg-muted" />
-          <div className="h-48 animate-pulse rounded bg-muted" />
+          <CardSkeleton lines={2} />
+          <CardSkeleton lines={4} />
         </div>
       )}
 

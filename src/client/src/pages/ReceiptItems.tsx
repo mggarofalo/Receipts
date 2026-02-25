@@ -36,6 +36,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ReceiptItemResponse {
   id: string;
@@ -188,19 +190,7 @@ function ReceiptItems() {
   });
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="h-10 w-64 animate-pulse rounded bg-muted" />
-          <div className="h-10 w-32 animate-pulse rounded bg-muted" />
-        </div>
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-12 animate-pulse rounded bg-muted" />
-          ))}
-        </div>
-      </div>
-    );
+    return <TableSkeleton columns={8} />;
   }
 
   return (
@@ -457,14 +447,13 @@ function ReceiptItems() {
               variant="destructive"
               disabled={deleteItems.isPending}
               onClick={() => {
-                deleteItems.mutate([...selected], {
-                  onSuccess: () => {
-                    setSelected(new Set());
-                    setDeleteOpen(false);
-                  },
-                });
+                const ids = [...selected];
+                setSelected(new Set());
+                setDeleteOpen(false);
+                deleteItems.mutate(ids);
               }}
             >
+              {deleteItems.isPending && <Spinner size="sm" />}
               {deleteItems.isPending ? "Deleting..." : "Delete"}
             </Button>
           </div>

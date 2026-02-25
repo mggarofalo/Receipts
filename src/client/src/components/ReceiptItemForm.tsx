@@ -13,6 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Spinner } from "@/components/ui/spinner";
 
 const receiptItemSchema = z.object({
   receiptId: z.string().min(1, "Receipt ID is required"),
@@ -179,6 +180,7 @@ export function ReceiptItemForm({
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Spinner size="sm" />}
             {isSubmitting
               ? "Saving..."
               : mode === "create"

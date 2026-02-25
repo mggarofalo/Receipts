@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Card,
   CardContent,
@@ -114,6 +115,7 @@ function Login() {
                 className="w-full"
                 disabled={form.formState.isSubmitting}
               >
+                {form.formState.isSubmitting && <Spinner size="sm" />}
                 {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
               </Button>
             </form>
