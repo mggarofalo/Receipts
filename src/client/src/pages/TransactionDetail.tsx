@@ -3,6 +3,7 @@ import {
   useTransactionAccount,
   useTransactionAccountsByReceiptId,
 } from "@/hooks/useAggregates";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ function formatCurrency(amount: number): string {
 type LookupMode = "receipt" | "transaction";
 
 function TransactionDetail() {
+  usePageTitle("Transaction Detail");
   const [mode, setMode] = useState<LookupMode>("receipt");
   const [inputId, setInputId] = useState("");
   const [receiptId, setReceiptId] = useState<string | null>(null);

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useDeletedAccounts, useRestoreAccount } from "@/hooks/useAccounts";
 import { useDeletedReceipts, useRestoreReceipt } from "@/hooks/useReceipts";
 import {
@@ -141,6 +142,7 @@ function DeletedItemsTable({
 }
 
 function RecycleBin() {
+  usePageTitle("Recycle Bin");
   const accounts = useDeletedAccounts();
   const receipts = useDeletedReceipts();
   const receiptItems = useDeletedReceiptItems();

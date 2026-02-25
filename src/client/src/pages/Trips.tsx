@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTripByReceiptId } from "@/hooks/useTrips";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ function formatCurrency(amount: number): string {
 }
 
 function Trips() {
+  usePageTitle("Trips");
   const [inputId, setInputId] = useState("");
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const { data: trip, isLoading, isError } = useTripByReceiptId(receiptId);

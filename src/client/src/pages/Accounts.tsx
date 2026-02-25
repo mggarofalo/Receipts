@@ -5,6 +5,7 @@ import {
   useUpdateAccount,
   useDeleteAccounts,
 } from "@/hooks/useAccounts";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
@@ -62,6 +63,7 @@ const FILTER_DEFS: FilterDefinition[] = [
 ];
 
 function Accounts() {
+  usePageTitle("Accounts");
   const { data: accounts, isLoading } = useAccounts();
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();

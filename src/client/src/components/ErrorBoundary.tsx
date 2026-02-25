@@ -6,7 +6,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
 interface Props {
@@ -44,10 +43,10 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex min-h-screen items-center justify-center p-4" role="alert">
+        <main className="flex min-h-screen items-center justify-center p-4" role="alert">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Something went wrong</CardTitle>
+              <h1 className="text-lg font-semibold leading-none tracking-tight">Something went wrong</h1>
               <CardDescription>
                 An unexpected error occurred. Please try again.
               </CardDescription>
@@ -69,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </main>
       );
     }
 

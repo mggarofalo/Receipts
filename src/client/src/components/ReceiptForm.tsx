@@ -105,7 +105,12 @@ export function ReceiptForm({
             <FormItem>
               <FormLabel>Tax Amount</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" {...field} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...field}
+                  onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

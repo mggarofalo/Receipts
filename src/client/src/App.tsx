@@ -4,6 +4,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { Layout } from "@/components/Layout";
+import { PublicLayout } from "@/components/PublicLayout";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -26,8 +27,10 @@ function App() {
     <ErrorBoundary>
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route element={<PublicLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
 
         {/* Protected routes with layout */}
         <Route

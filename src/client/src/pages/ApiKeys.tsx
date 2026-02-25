@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -78,6 +79,7 @@ function formatDate(dateStr: string | null | undefined): string {
 }
 
 function ApiKeys() {
+  usePageTitle("API Keys");
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [createdKey, setCreatedKey] = useState<string | null>(null);

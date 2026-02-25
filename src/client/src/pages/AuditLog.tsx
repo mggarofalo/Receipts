@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useRecentAuditLogs } from "@/hooks/useAudit";
 import type { AuditLog as AuditLogEntry } from "@/lib/audit-utils";
 import {
@@ -135,6 +136,7 @@ function DateRangePicker({
 }
 
 function AuditLog() {
+  usePageTitle("Audit Log");
   const [count, setCount] = useState<number>(50);
   const [search, setSearch] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState("all");

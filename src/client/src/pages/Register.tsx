@@ -4,13 +4,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Form,
@@ -33,6 +33,7 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 function Register() {
+  usePageTitle("Create Account");
   const { user, register: registerUser } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -62,12 +63,9 @@ function Register() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">
-            <h1>Create Account</h1>
-          </CardTitle>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">Create Account</h1>
           <CardDescription>
             Register for a new account to get started
           </CardDescription>
@@ -171,7 +169,6 @@ function Register() {
           </p>
         </CardContent>
       </Card>
-    </div>
   );
 }
 
