@@ -16,7 +16,7 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
   return (
     <Loader2Icon
       className={cn("animate-spin", sizeMap[size], className)}
-      aria-label="Loading"
+      aria-hidden="true"
     />
   );
 }

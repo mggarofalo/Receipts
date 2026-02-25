@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
+import { Spinner } from "@/components/ui/spinner";
 
 // Must match AppRoles.All on the backend (src/Common/AppRoles.cs)
 const AVAILABLE_ROLES = ["Admin", "User"];
@@ -119,7 +120,8 @@ function AdminUsers() {
                                 removeRole.mutate({ userId, role })
                               }
                             >
-                              Remove
+                              {removeRole.isPending && <Spinner size="sm" />}
+                              {removeRole.isPending ? "Removing..." : "Remove"}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -148,7 +150,8 @@ function AdminUsers() {
                       disabled={assignRole.isPending}
                       onClick={() => assignRole.mutate({ userId, role })}
                     >
-                      Assign {role}
+                      {assignRole.isPending && <Spinner size="sm" />}
+                      {assignRole.isPending ? "Assigning..." : `Assign ${role}`}
                     </Button>
                   ))}
                 </div>

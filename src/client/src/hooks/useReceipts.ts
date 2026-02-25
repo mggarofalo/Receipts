@@ -101,6 +101,7 @@ export function useDeleteReceipts() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["receipts", "deleted"] });
     },
     onSuccess: () => {
       toast.success("Receipt(s) deleted");
@@ -130,6 +131,7 @@ export function useRestoreReceipt() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["receipts", "deleted"] });
       toast.success("Receipt restored");
     },
     onError: () => {

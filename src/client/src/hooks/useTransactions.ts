@@ -126,6 +126,7 @@ export function useDeleteTransactions() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions", "deleted"] });
     },
     onSuccess: () => {
       toast.success("Transaction(s) deleted");
@@ -155,6 +156,7 @@ export function useRestoreTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions", "deleted"] });
       toast.success("Transaction restored");
     },
     onError: () => {

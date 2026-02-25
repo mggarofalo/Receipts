@@ -99,6 +99,7 @@ export function useDeleteAccounts() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts", "deleted"] });
     },
     onSuccess: () => {
       toast.success("Account(s) deleted");
@@ -128,6 +129,7 @@ export function useRestoreAccount() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts", "deleted"] });
       toast.success("Account restored");
     },
     onError: () => {
