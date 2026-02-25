@@ -11,7 +11,7 @@ export const shortcuts: ShortcutDefinition[] = [
   { keys: "?", label: "Show keyboard shortcuts", category: "Global" },
   { keys: "Ctrl+K", label: "Open command palette", category: "Global" },
   {
-    keys: "Ctrl+Shift+N",
+    keys: "Shift+N",
     label: "Create new item (context-aware)",
     category: "Global",
   },

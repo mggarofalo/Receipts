@@ -15,9 +15,9 @@ export function useGlobalShortcuts() {
 
   // Ctrl+K is handled by GlobalSearchDialog via useKeyboardShortcut
 
-  // Ctrl+Shift+N — Dispatch new-item event
+  // Shift+N — Dispatch new-item event
   useHotkeys(
-    "mod+shift+n",
+    "shift+n",
     () => {
       window.dispatchEvent(new CustomEvent("shortcut:new-item"));
     },
