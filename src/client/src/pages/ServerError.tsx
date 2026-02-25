@@ -1,21 +1,20 @@
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
 function ServerError() {
+  usePageTitle("Server Error");
+
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
-          <CardTitle className="text-6xl font-bold">
-            <h1>500</h1>
-          </CardTitle>
-          <CardDescription className="text-lg">Server error</CardDescription>
+          <p className="text-6xl font-bold" aria-hidden="true">500</p>
+          <h1 className="text-lg font-semibold">Server Error</h1>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="text-muted-foreground">
@@ -24,7 +23,7 @@ function ServerError() {
           <Button onClick={() => window.location.assign("/")}>Reload</Button>
         </CardContent>
       </Card>
-    </div>
+    </main>
   );
 }
 

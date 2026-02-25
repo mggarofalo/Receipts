@@ -5,6 +5,7 @@ import {
   useUpdateReceipt,
   useDeleteReceipts,
 } from "@/hooks/useReceipts";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
@@ -71,6 +72,7 @@ const FILTER_DEFS: FilterDefinition[] = [
 ];
 
 function Receipts() {
+  usePageTitle("Receipts");
   const { data: receipts, isLoading } = useReceipts();
   const createReceipt = useCreateReceipt();
   const updateReceipt = useUpdateReceipt();

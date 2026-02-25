@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useRoles";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import { Spinner } from "@/components/ui/spinner";
 const AVAILABLE_ROLES = ["Admin", "User"];
 
 function AdminUsers() {
+  usePageTitle("User Management");
   const [inputId, setInputId] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const { data: rolesData, isLoading, isError } = useUserRoles(userId);

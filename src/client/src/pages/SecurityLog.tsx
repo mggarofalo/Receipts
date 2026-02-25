@@ -3,12 +3,14 @@ import {
   useRecentAuthAuditLogs,
   useFailedAuthAttempts,
 } from "@/hooks/useAuthAudit";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { usePermission } from "@/hooks/usePermission";
 import type { AuthAuditLog } from "@/lib/audit-utils";
 import { AuthAuditTable } from "@/components/AuthAuditTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function SecurityLog() {
+  usePageTitle("Security Log");
   const { isAdmin } = usePermission();
   const myLogs = useMyAuthAuditLog(100);
   const recentLogs = useRecentAuthAuditLogs(100);

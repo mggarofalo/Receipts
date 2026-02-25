@@ -5,6 +5,7 @@ import {
   useUpdateTransaction,
   useDeleteTransactions,
 } from "@/hooks/useTransactions";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
@@ -66,6 +67,7 @@ const FILTER_DEFS: FilterDefinition[] = [
 ];
 
 function Transactions() {
+  usePageTitle("Transactions");
   const { data: transactions, isLoading } = useTransactions();
   const createTransaction = useCreateTransaction();
   const updateTransaction = useUpdateTransaction();
