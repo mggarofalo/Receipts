@@ -25,6 +25,16 @@ import {
 } from "@/components/ui/sheet";
 import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 
 const connectionStateColors: Record<SignalRConnectionState, string> = {
   connected: "bg-green-500",
@@ -38,6 +48,45 @@ const connectionStateLabels: Record<SignalRConnectionState, string> = {
   disconnected: "Offline",
 };
 
+interface NavGroupItem {
+  to: string;
+  label: string;
+  description: string;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavGroupItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Data",
+    items: [
+      { to: "/receipts", label: "Receipts", description: "View and manage receipts" },
+      { to: "/receipt-items", label: "Items", description: "Browse receipt line items" },
+      { to: "/transactions", label: "Transactions", description: "Track transactions" },
+      { to: "/trips", label: "Trips", description: "Organize receipts by trip" },
+    ],
+  },
+  {
+    label: "Manage",
+    items: [
+      { to: "/accounts", label: "Accounts", description: "Manage financial accounts" },
+      { to: "/security", label: "Security", description: "Security settings and sessions" },
+    ],
+  },
+];
+
+const adminNavGroup: NavGroup = {
+  label: "Admin",
+  items: [
+    { to: "/admin/users", label: "Users", description: "Manage user accounts" },
+    { to: "/audit", label: "Audit", description: "View audit logs" },
+    { to: "/trash", label: "Trash", description: "Recover deleted items" },
+  ],
+};
+
 export function Layout() {
   const { user, logout } = useAuth();
   const { isAdmin } = usePermission();
@@ -49,32 +98,55 @@ export function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   useGlobalShortcuts();
 
-  function navLinkClass(to: string) {
-    const isActive =
-      to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
-    return {
-      className:
-        "text-sm text-muted-foreground hover:text-foreground transition-colors",
-      ...(isActive ? { "aria-current": "page" as const } : {}),
-    };
+  function isLinkActive(to: string) {
+    return to === "/"
+      ? location.pathname === "/"
+      : location.pathname.startsWith(to);
   }
 
   function mobileNavLink(to: string, label: string) {
-    const isActive =
-      to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
     return (
       <Link
         key={to}
         to={to}
         onClick={() => setMobileOpen(false)}
         className={`block rounded-md px-3 py-2 text-sm transition-colors ${
-          isActive
+          isLinkActive(to)
             ? "bg-accent text-accent-foreground font-medium"
             : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         }`}
       >
         {label}
       </Link>
+    );
+  }
+
+  function renderNavGroup(group: NavGroup) {
+    const groupActive = group.items.some(({ to }) => isLinkActive(to));
+    return (
+      <NavigationMenuItem key={group.label}>
+        <NavigationMenuTrigger
+          className={cn(groupActive && "text-accent-foreground")}
+        >
+          {group.label}
+        </NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <ul className="grid w-[250px] gap-1 p-2">
+            {group.items.map(({ to, label, description }) => (
+              <li key={to}>
+                <NavigationMenuLink asChild active={isLinkActive(to)}>
+                  <Link to={to}>
+                    <span className="font-medium leading-none">{label}</span>
+                    <span className="text-muted-foreground text-xs leading-snug">
+                      {description}
+                    </span>
+                  </Link>
+                </NavigationMenuLink>
+              </li>
+            ))}
+          </ul>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
     );
   }
 
@@ -124,24 +196,32 @@ export function Layout() {
 
           {/* Desktop: full nav */}
           <nav
-            className="hidden lg:flex items-center gap-6"
+            className="hidden lg:flex items-center gap-2"
             aria-label="Main navigation"
           >
-            <Link to="/" className="font-semibold text-lg">
+            <Link to="/" className="font-semibold text-lg mr-2">
               Receipts
             </Link>
             <Separator orientation="vertical" className="h-6" />
-            {navLinks.map(({ to, label }) => (
-              <Link key={to} to={to} {...navLinkClass(to)}>
-                {label}
-              </Link>
-            ))}
-            {isAdmin() &&
-              adminLinks.map(({ to, label }) => (
-                <Link key={to} to={to} {...navLinkClass(to)}>
-                  {label}
-                </Link>
-              ))}
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      to="/"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        isLinkActive("/") && "bg-accent/50 text-accent-foreground"
+                      )}
+                    >
+                      Home
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                {navGroups.map(renderNavGroup)}
+                {isAdmin() && renderNavGroup(adminNavGroup)}
+              </NavigationMenuList>
+            </NavigationMenu>
           </nav>
 
           {/* Desktop: right-side actions */}
