@@ -3,6 +3,7 @@ import {
   useTransactionAccount,
   useTransactionAccountsByReceiptId,
 } from "@/hooks/useAggregates";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,6 +88,12 @@ function TransactionDetail() {
 
   const total = items.reduce((sum, ta) => sum + ta.transaction.amount, 0);
 
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items,
+    getId: (ta) => ta.transaction.id,
+    enabled: items.length > 0,
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-end gap-4">
@@ -148,7 +155,7 @@ function TransactionDetail() {
             </CardHeader>
           </Card>
 
-          <div className="rounded-md border">
+          <div className="rounded-md border" ref={tableRef}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -161,7 +168,12 @@ function TransactionDetail() {
               </TableHeader>
               <TableBody>
                 {items.map((ta) => (
-                  <TableRow key={ta.transaction.id}>
+                  <TableRow
+                    key={ta.transaction.id}
+                    className={
+                      focusedId === ta.transaction.id ? "bg-accent" : ""
+                    }
+                  >
                     <TableCell className="text-right">
                       {formatCurrency(ta.transaction.amount)}
                     </TableCell>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useReceiptItems,
   useCreateReceiptItem,
@@ -8,6 +8,7 @@ import {
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
@@ -81,6 +82,16 @@ function ReceiptItems() {
   const [filterValues, setFilterValues] = useState<FilterValues>({
     category: "all",
   });
+
+  const anyDialogOpen = createOpen || editItem !== null || deleteOpen;
+
+  useEffect(() => {
+    function onNewItem() {
+      setCreateOpen(true);
+    }
+    window.addEventListener("shortcut:new-item", onNewItem);
+    return () => window.removeEventListener("shortcut:new-item", onNewItem);
+  }, []);
 
   const data = useMemo(
     () => (items as ReceiptItemResponse[] | undefined) ?? [],
@@ -163,6 +174,19 @@ function ReceiptItems() {
     }
   }
 
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: paginatedItems,
+    getId: (item) => item.id,
+    enabled: !anyDialogOpen,
+    onOpen: (item) => setEditItem(item),
+    onDelete: () => setDeleteOpen(true),
+    onSelectAll: () =>
+      setSelected(new Set(paginatedItems.map((item) => item.id))),
+    onDeselectAll: () => setSelected(new Set()),
+    onToggleSelect: (item) => toggleSelect(item.id),
+    selected,
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -235,7 +259,7 @@ function ReceiptItems() {
         )
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="rounded-md border" ref={tableRef}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -265,7 +289,10 @@ function ReceiptItems() {
                   const result = matchMap.get(item.id);
                   const matches = result?.matches;
                   return (
-                    <TableRow key={item.id}>
+                    <TableRow
+                      key={item.id}
+                      className={focusedId === item.id ? "bg-accent" : ""}
+                    >
                       <TableCell>
                         <input
                           type="checkbox"

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useRoles";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,13 @@ function AdminUsers() {
   const unassignedRoles = AVAILABLE_ROLES.filter(
     (r) => !currentRoles.includes(r),
   );
+
+  const roleItems = currentRoles.map((r) => ({ id: r, role: r }));
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: roleItems,
+    getId: (r) => r.id,
+    enabled: roleItems.length > 0,
+  });
 
   return (
     <div className="space-y-6">
@@ -88,7 +96,7 @@ function AdminUsers() {
                   No roles assigned.
                 </p>
               ) : (
-                <div className="rounded-md border">
+                <div className="rounded-md border" ref={tableRef}>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -98,7 +106,10 @@ function AdminUsers() {
                     </TableHeader>
                     <TableBody>
                       {currentRoles.map((role) => (
-                        <TableRow key={role}>
+                        <TableRow
+                          key={role}
+                          className={focusedId === role ? "bg-accent" : ""}
+                        >
                           <TableCell>
                             <Badge variant="default">{role}</Badge>
                           </TableCell>

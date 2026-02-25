@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useAccounts,
   useCreateAccount,
@@ -8,6 +8,7 @@ import {
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
@@ -72,6 +73,16 @@ function Accounts() {
     isActive: "all",
   });
 
+  const anyDialogOpen = createOpen || editAccount !== null || deleteOpen;
+
+  useEffect(() => {
+    function onNewItem() {
+      setCreateOpen(true);
+    }
+    window.addEventListener("shortcut:new-item", onNewItem);
+    return () => window.removeEventListener("shortcut:new-item", onNewItem);
+  }, []);
+
   const data = (accounts as AccountResponse[] | undefined) ?? [];
   const {
     filters: savedFilters,
@@ -121,6 +132,19 @@ function Accounts() {
       setSelected(new Set(paginatedItems.map((a) => a.id)));
     }
   }
+
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: paginatedItems,
+    getId: (a) => a.id,
+    enabled: !anyDialogOpen,
+    onOpen: (a) => setEditAccount(a),
+    onDelete: () => setDeleteOpen(true),
+    onSelectAll: () =>
+      setSelected(new Set(paginatedItems.map((a) => a.id))),
+    onDeselectAll: () => setSelected(new Set()),
+    onToggleSelect: (a) => toggleSelect(a.id),
+    selected,
+  });
 
   if (isLoading) {
     return (
@@ -194,7 +218,7 @@ function Accounts() {
         )
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="rounded-md border" ref={tableRef}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -220,7 +244,10 @@ function Accounts() {
                   const result = matchMap.get(account.id);
                   const matches = result?.matches;
                   return (
-                    <TableRow key={account.id}>
+                    <TableRow
+                      key={account.id}
+                      className={focusedId === account.id ? "bg-accent" : ""}
+                    >
                       <TableCell>
                         <input
                           type="checkbox"

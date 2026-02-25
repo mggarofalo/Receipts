@@ -5,6 +5,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
 import { useSignalR } from "@/hooks/useSignalR";
 import type { SignalRConnectionState } from "@/hooks/useSignalR";
+import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
+import { ShortcutsHelp } from "@/components/ShortcutsHelp";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,6 +37,7 @@ export function Layout() {
   const navigate = useNavigate();
   const { connectionState } = useSignalR(!!user);
   const [searchOpen, setSearchOpen] = useState(false);
+  useGlobalShortcuts();
 
   async function handleLogout() {
     await logout();
@@ -163,10 +167,12 @@ export function Layout() {
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-6">
+        <Breadcrumbs />
         <Outlet />
       </main>
 
       <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+      <ShortcutsHelp />
     </div>
   );
 }

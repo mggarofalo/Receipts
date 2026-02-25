@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useReceipts,
   useCreateReceipt,
@@ -8,6 +8,7 @@ import {
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
@@ -79,6 +80,16 @@ function Receipts() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
+  const anyDialogOpen = createOpen || editReceipt !== null || deleteOpen;
+
+  useEffect(() => {
+    function onNewItem() {
+      setCreateOpen(true);
+    }
+    window.addEventListener("shortcut:new-item", onNewItem);
+    return () => window.removeEventListener("shortcut:new-item", onNewItem);
+  }, []);
+
   const data = useMemo(() => {
     const list = (receipts as ReceiptResponse[] | undefined) ?? [];
     return [...list].sort(
@@ -136,6 +147,19 @@ function Receipts() {
       setSelected(new Set(paginatedItems.map((r) => r.id)));
     }
   }
+
+  const { focusedId, tableRef } = useListKeyboardNav({
+    items: paginatedItems,
+    getId: (r) => r.id,
+    enabled: !anyDialogOpen,
+    onOpen: (r) => setEditReceipt(r),
+    onDelete: () => setDeleteOpen(true),
+    onSelectAll: () =>
+      setSelected(new Set(paginatedItems.map((r) => r.id))),
+    onDeselectAll: () => setSelected(new Set()),
+    onToggleSelect: (r) => toggleSelect(r.id),
+    selected,
+  });
 
   if (isLoading) {
     return (
@@ -209,7 +233,7 @@ function Receipts() {
         )
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="rounded-md border" ref={tableRef}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -236,7 +260,10 @@ function Receipts() {
                   const result = matchMap.get(receipt.id);
                   const matches = result?.matches;
                   return (
-                    <TableRow key={receipt.id}>
+                    <TableRow
+                      key={receipt.id}
+                      className={focusedId === receipt.id ? "bg-accent" : ""}
+                    >
                       <TableCell>
                         <input
                           type="checkbox"
