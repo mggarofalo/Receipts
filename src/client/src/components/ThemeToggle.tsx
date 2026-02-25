@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 function ThemeIcon() {
-  const { theme, resolvedTheme } = useTheme();
+  const { theme } = useTheme();
 
   if (theme === "system") {
     return <SunMoon className="h-4 w-4" />;

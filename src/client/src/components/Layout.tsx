@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate, useNavigation, useLocation } from "react-router";
-import { Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
 import { useSignalR } from "@/hooks/useSignalR";
@@ -17,6 +17,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -40,23 +46,58 @@ export function Layout() {
   const location = useLocation();
   const { connectionState } = useSignalR(!!user);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   useGlobalShortcuts();
 
-  function navLinkProps(to: string) {
+  function navLinkClass(to: string) {
     const isActive =
       to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
     return {
-      to,
       className:
         "text-sm text-muted-foreground hover:text-foreground transition-colors",
       ...(isActive ? { "aria-current": "page" as const } : {}),
     };
   }
 
+  function mobileNavLink(to: string, label: string) {
+    const isActive =
+      to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+    return (
+      <Link
+        key={to}
+        to={to}
+        onClick={() => setMobileOpen(false)}
+        className={`block rounded-md px-3 py-2 text-sm transition-colors ${
+          isActive
+            ? "bg-accent text-accent-foreground font-medium"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        }`}
+      >
+        {label}
+      </Link>
+    );
+  }
+
   async function handleLogout() {
     await logout();
     navigate("/login");
   }
+
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/accounts", label: "Accounts" },
+    { to: "/receipts", label: "Receipts" },
+    { to: "/receipt-items", label: "Items" },
+    { to: "/transactions", label: "Transactions" },
+    { to: "/trips", label: "Trips" },
+    { to: "/security", label: "Security" },
+  ];
+
+  const adminLinks = [
+    { to: "/admin/users", label: "Users" },
+    { to: "/audit", label: "Audit" },
+    { to: "/trash", label: "Trash" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -65,28 +106,46 @@ export function Layout() {
       </a>
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <nav className="flex items-center gap-6" aria-label="Main navigation">
+          {/* Mobile: hamburger + brand */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <Link to="/" className="font-semibold text-lg">
+              Receipts
+            </Link>
+          </div>
+
+          {/* Desktop: full nav */}
+          <nav
+            className="hidden lg:flex items-center gap-6"
+            aria-label="Main navigation"
+          >
             <Link to="/" className="font-semibold text-lg">
               Receipts
             </Link>
             <Separator orientation="vertical" className="h-6" />
-            <Link {...navLinkProps("/")}>Home</Link>
-            <Link {...navLinkProps("/accounts")}>Accounts</Link>
-            <Link {...navLinkProps("/receipts")}>Receipts</Link>
-            <Link {...navLinkProps("/receipt-items")}>Items</Link>
-            <Link {...navLinkProps("/transactions")}>Transactions</Link>
-            <Link {...navLinkProps("/trips")}>Trips</Link>
-            <Link {...navLinkProps("/security")}>Security</Link>
-            {isAdmin() && (
-              <>
-                <Link {...navLinkProps("/admin/users")}>Users</Link>
-                <Link {...navLinkProps("/audit")}>Audit</Link>
-                <Link {...navLinkProps("/trash")}>Trash</Link>
-              </>
-            )}
+            {navLinks.map(({ to, label }) => (
+              <Link key={to} to={to} {...navLinkClass(to)}>
+                {label}
+              </Link>
+            ))}
+            {isAdmin() &&
+              adminLinks.map(({ to, label }) => (
+                <Link key={to} to={to} {...navLinkClass(to)}>
+                  {label}
+                </Link>
+              ))}
           </nav>
 
-          <div className="flex items-center gap-3">
+          {/* Desktop: right-side actions */}
+          <div className="hidden lg:flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -134,6 +193,20 @@ export function Layout() {
               </DropdownMenu>
             )}
           </div>
+
+          {/* Mobile: compact actions */}
+          <div className="flex items-center gap-1 lg:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -143,12 +216,73 @@ export function Layout() {
         </div>
       )}
 
-      <main id="main-content" tabIndex={-1} className="flex-1 container mx-auto px-4 py-6">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 container mx-auto px-4 py-6"
+      >
         <Breadcrumbs />
         <div key={location.pathname} className="animate-in fade-in duration-200">
           <Outlet />
         </div>
       </main>
+
+      {/* Mobile navigation drawer */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-72">
+          <SheetHeader>
+            <SheetTitle>Receipts</SheetTitle>
+          </SheetHeader>
+          <nav className="flex flex-col gap-1 px-4" aria-label="Mobile navigation">
+            {navLinks.map(({ to, label }) => mobileNavLink(to, label))}
+            {isAdmin() && (
+              <>
+                <Separator className="my-2" />
+                <span className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Admin
+                </span>
+                {adminLinks.map(({ to, label }) => mobileNavLink(to, label))}
+              </>
+            )}
+          </nav>
+          <Separator className="mx-4" />
+          <div className="flex flex-col gap-2 px-4">
+            <div
+              className="flex items-center gap-1.5 px-3 py-1"
+              role="status"
+              aria-live="polite"
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${connectionStateColors[connectionState]}`}
+                aria-hidden="true"
+              />
+              <span className="text-xs text-muted-foreground">
+                {connectionStateLabels[connectionState]}
+              </span>
+            </div>
+            {user && (
+              <>
+                <Link
+                  to="/api-keys"
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  API Keys
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    handleLogout();
+                  }}
+                  className="rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
       <ShortcutsHelp />
