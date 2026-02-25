@@ -1,5 +1,5 @@
 import { useTheme } from "next-themes";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,6 +8,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+function ThemeIcon() {
+  const { theme, resolvedTheme } = useTheme();
+
+  if (theme === "system") {
+    const isDark = resolvedTheme === "dark";
+    return (
+      <>
+        <Sun
+          className={`h-4 w-4 transition-opacity ${isDark ? "opacity-40" : "opacity-100"}`}
+        />
+        <Moon
+          className={`absolute h-4 w-4 transition-opacity ${isDark ? "opacity-100" : "opacity-40"}`}
+        />
+      </>
+    );
+  }
+
+  if (theme === "dark") {
+    return <Moon className="h-4 w-4" />;
+  }
+
+  return <Sun className="h-4 w-4" />;
+}
+
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
@@ -15,8 +39,7 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Sun className="h-4 w-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-          <Moon className="absolute h-4 w-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+          <ThemeIcon />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
@@ -39,7 +62,8 @@ export function ThemeToggle() {
           onClick={() => setTheme("system")}
           className={theme === "system" ? "font-semibold" : ""}
         >
-          <Monitor className="mr-2 h-4 w-4" />
+          <Sun className="mr-2 h-4 w-4" />
+          <Moon className="-ml-4 h-4 w-4 opacity-60" />
           System
         </DropdownMenuItem>
       </DropdownMenuContent>
