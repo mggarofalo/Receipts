@@ -7,7 +7,7 @@ export function useGlobalShortcuts() {
 
   // ? — Toggle help modal
   useHotkeys(
-    "shift+/",
+    "?",
     () => ctx?.setHelpOpen(!ctx.helpOpen),
     { enableOnFormTags: false, preventDefault: true },
     [ctx?.helpOpen],
