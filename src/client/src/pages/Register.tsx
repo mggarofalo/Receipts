@@ -65,7 +65,9 @@ function Register() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardTitle className="text-2xl">
+            <h1>Create Account</h1>
+          </CardTitle>
           <CardDescription>
             Register for a new account to get started
           </CardDescription>

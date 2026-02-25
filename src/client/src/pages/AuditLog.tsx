@@ -183,6 +183,7 @@ function AuditLog() {
       <div className="flex items-center gap-3 flex-wrap">
         <Input
           placeholder="Search by entity ID..."
+          aria-label="Search audit log by entity ID"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"

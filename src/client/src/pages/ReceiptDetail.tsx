@@ -54,6 +54,7 @@ function ReceiptDetail() {
 
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Receipt Details</h1>
       <div className="flex items-end gap-4">
         <div className="flex-1 max-w-md space-y-2">
           <Label htmlFor="receiptId">Receipt ID</Label>

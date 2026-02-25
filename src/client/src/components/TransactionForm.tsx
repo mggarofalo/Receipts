@@ -5,7 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const transactionSchema = z.object({
   receiptId: z.string().min(1, "Receipt ID is required"),
@@ -14,7 +21,7 @@ const transactionSchema = z.object({
   date: z.string().min(1, "Date is required"),
 });
 
-type TransactionFormValues = z.infer<typeof transactionSchema>;
+type TransactionFormValues = z.output<typeof transactionSchema>;
 
 interface TransactionFormProps {
   mode: "create" | "edit";
@@ -34,12 +41,9 @@ export function TransactionForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<TransactionFormValues>({
-    resolver: zodResolver(transactionSchema),
+  const form = useForm<TransactionFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(transactionSchema) as any,
     defaultValues: {
       receiptId: "",
       accountId: "",
@@ -50,70 +54,87 @@ export function TransactionForm({
   });
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="receiptId">Receipt ID</Label>
-        <Input
-          id="receiptId"
-          {...register("receiptId")}
-          disabled={mode === "edit"}
-          placeholder="UUID of receipt"
+    <Form {...form}>
+      <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="receiptId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Receipt ID</FormLabel>
+              <FormControl>
+                <Input
+                  aria-required="true"
+                  disabled={mode === "edit"}
+                  placeholder="UUID of receipt"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {errors.receiptId && (
-          <p className="text-sm text-destructive">
-            {errors.receiptId.message}
-          </p>
-        )}
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="accountId">Account ID</Label>
-        <Input
-          id="accountId"
-          {...register("accountId")}
-          disabled={mode === "edit"}
-          placeholder="UUID of account"
+        <FormField
+          control={form.control}
+          name="accountId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Account ID</FormLabel>
+              <FormControl>
+                <Input
+                  aria-required="true"
+                  disabled={mode === "edit"}
+                  placeholder="UUID of account"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {errors.accountId && (
-          <p className="text-sm text-destructive">
-            {errors.accountId.message}
-          </p>
-        )}
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="amount">Amount</Label>
-        <Input
-          id="amount"
-          type="number"
-          step="0.01"
-          {...register("amount", { valueAsNumber: true })}
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {errors.amount && (
-          <p className="text-sm text-destructive">{errors.amount.message}</p>
-        )}
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="date">Date</Label>
-        <Input id="date" type="date" {...register("date")} />
-        {errors.date && (
-          <p className="text-sm text-destructive">{errors.date.message}</p>
-        )}
-      </div>
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <FormControl>
+                <Input type="date" aria-required="true" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting
-            ? "Saving..."
-            : mode === "create"
-              ? "Create Transaction"
-              : "Update Transaction"}
-        </Button>
-      </div>
-    </form>
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? "Saving..."
+              : mode === "create"
+                ? "Create Transaction"
+                : "Update Transaction"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

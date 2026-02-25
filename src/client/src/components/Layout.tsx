@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Outlet, useNavigate } from "react-router";
+import { Link, Outlet, useNavigate, useLocation } from "react-router";
 import { Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
@@ -35,9 +35,21 @@ export function Layout() {
   const { user, logout } = useAuth();
   const { isAdmin } = usePermission();
   const navigate = useNavigate();
+  const location = useLocation();
   const { connectionState } = useSignalR(!!user);
   const [searchOpen, setSearchOpen] = useState(false);
   useGlobalShortcuts();
+
+  function navLinkProps(to: string) {
+    const isActive =
+      to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+    return {
+      to,
+      className:
+        "text-sm text-muted-foreground hover:text-foreground transition-colors",
+      ...(isActive ? { "aria-current": "page" as const } : {}),
+    };
+  }
 
   async function handleLogout() {
     await logout();
@@ -46,75 +58,28 @@ export function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-6" aria-label="Main navigation">
             <Link to="/" className="font-semibold text-lg">
               Receipts
             </Link>
             <Separator orientation="vertical" className="h-6" />
-            <Link
-              to="/"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              to="/accounts"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Accounts
-            </Link>
-            <Link
-              to="/receipts"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Receipts
-            </Link>
-            <Link
-              to="/receipt-items"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Items
-            </Link>
-            <Link
-              to="/transactions"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Transactions
-            </Link>
-            <Link
-              to="/trips"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Trips
-            </Link>
-            <Link
-              to="/security"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Security
-            </Link>
+            <Link {...navLinkProps("/")}>Home</Link>
+            <Link {...navLinkProps("/accounts")}>Accounts</Link>
+            <Link {...navLinkProps("/receipts")}>Receipts</Link>
+            <Link {...navLinkProps("/receipt-items")}>Items</Link>
+            <Link {...navLinkProps("/transactions")}>Transactions</Link>
+            <Link {...navLinkProps("/trips")}>Trips</Link>
+            <Link {...navLinkProps("/security")}>Security</Link>
             {isAdmin() && (
               <>
-                <Link
-                  to="/admin/users"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Users
-                </Link>
-                <Link
-                  to="/audit"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Audit
-                </Link>
-                <Link
-                  to="/trash"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Trash
-                </Link>
+                <Link {...navLinkProps("/admin/users")}>Users</Link>
+                <Link {...navLinkProps("/audit")}>Audit</Link>
+                <Link {...navLinkProps("/trash")}>Trash</Link>
               </>
             )}
           </nav>
@@ -134,10 +99,12 @@ export function Layout() {
             </Button>
             <div
               className="flex items-center gap-1.5"
-              title={`SignalR: ${connectionStateLabels[connectionState]}`}
+              role="status"
+              aria-live="polite"
             >
               <span
                 className={`h-2 w-2 rounded-full ${connectionStateColors[connectionState]}`}
+                aria-hidden="true"
               />
               <span className="text-xs text-muted-foreground">
                 {connectionStateLabels[connectionState]}
@@ -166,7 +133,7 @@ export function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-6">
+      <main id="main-content" tabIndex={-1} className="flex-1 container mx-auto px-4 py-6">
         <Breadcrumbs />
         <Outlet />
       </main>

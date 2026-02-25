@@ -83,14 +83,6 @@ function ApiKeys() {
 
   const anyDialogOpen = createOpen || createdKey !== null || revokeId !== null;
 
-  useEffect(() => {
-    function onNewItem() {
-      handleCreateOpen();
-    }
-    window.addEventListener("shortcut:new-item", onNewItem);
-    return () => window.removeEventListener("shortcut:new-item", onNewItem);
-  }, []);
-
   const { data: apiKeys = [], isLoading } = useQuery({
     queryKey: ["apiKeys"],
     queryFn: async () => {
@@ -149,6 +141,14 @@ function ApiKeys() {
     createForm.reset();
     setCreateOpen(true);
   }
+
+  useEffect(() => {
+    function onNewItem() {
+      handleCreateOpen();
+    }
+    window.addEventListener("shortcut:new-item", onNewItem);
+    return () => window.removeEventListener("shortcut:new-item", onNewItem);
+  });
 
   function handleCreateSubmit(values: CreateKeyFormValues) {
     createMutation.mutate(values);
