@@ -205,8 +205,10 @@ function ReceiptItems() {
 
   return (
     <div className="space-y-4">
+      <h1 className="text-2xl font-semibold tracking-tight">Receipt Items</h1>
       <div className="flex items-center justify-between">
         <FuzzySearchInput
+          aria-label="Search receipt items"
           value={search}
           onChange={setSearch}
           placeholder="Search items..."
@@ -266,6 +268,7 @@ function ReceiptItems() {
                   <TableHead className="w-12">
                     <input
                       type="checkbox"
+                      aria-label="Select all rows"
                       checked={
                         selected.size === paginatedItems.length &&
                         paginatedItems.length > 0
@@ -296,6 +299,7 @@ function ReceiptItems() {
                       <TableCell>
                         <input
                           type="checkbox"
+                          aria-label={`Select ${item.description}`}
                           checked={selected.has(item.id)}
                           onChange={() => toggleSelect(item.id)}
                           className="h-4 w-4 rounded border-gray-300"

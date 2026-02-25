@@ -96,6 +96,7 @@ function TransactionDetail() {
 
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-semibold tracking-tight">Transaction Details</h1>
       <div className="flex items-end gap-4">
         <div className="space-y-2">
           <Label>Lookup By</Label>

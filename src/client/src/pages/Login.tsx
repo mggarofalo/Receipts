@@ -58,7 +58,9 @@ function Login() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardTitle className="text-2xl">
+            <h1>Sign In</h1>
+          </CardTitle>
           <CardDescription>
             Enter your credentials to access your account
           </CardDescription>
