@@ -40,6 +40,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Spinner } from "@/components/ui/spinner";
 
 const createKeySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -192,7 +194,7 @@ function ApiKeys() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-muted-foreground">Loading...</p>
+            <TableSkeleton columns={5} rows={3} showToolbar={false} />
           ) : apiKeys.length === 0 ? (
             <p className="text-muted-foreground">
               No API keys yet. Create one to get started.
@@ -296,6 +298,7 @@ function ApiKeys() {
                 className="w-full"
                 disabled={createMutation.isPending}
               >
+                {createMutation.isPending && <Spinner size="sm" />}
                 {createMutation.isPending ? "Creating..." : "Create Key"}
               </Button>
             </form>
@@ -357,6 +360,7 @@ function ApiKeys() {
                 if (revokeId) revokeMutation.mutate(revokeId);
               }}
             >
+              {revokeMutation.isPending && <Spinner size="sm" />}
               {revokeMutation.isPending ? "Revoking..." : "Revoke"}
             </Button>
           </div>
