@@ -1,5 +1,5 @@
 import { useTheme } from "next-themes";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, SunMoon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,17 +12,7 @@ function ThemeIcon() {
   const { theme, resolvedTheme } = useTheme();
 
   if (theme === "system") {
-    const isDark = resolvedTheme === "dark";
-    return (
-      <>
-        <Sun
-          className={`h-4 w-4 transition-opacity ${isDark ? "opacity-40" : "opacity-100"}`}
-        />
-        <Moon
-          className={`absolute h-4 w-4 transition-opacity ${isDark ? "opacity-100" : "opacity-40"}`}
-        />
-      </>
-    );
+    return <SunMoon className="h-4 w-4" />;
   }
 
   if (theme === "dark") {
@@ -62,8 +52,7 @@ export function ThemeToggle() {
           onClick={() => setTheme("system")}
           className={theme === "system" ? "font-semibold" : ""}
         >
-          <Sun className="mr-2 h-4 w-4" />
-          <Moon className="-ml-4 h-4 w-4 opacity-60" />
+          <SunMoon className="mr-2 h-4 w-4" />
           System
         </DropdownMenuItem>
       </DropdownMenuContent>
