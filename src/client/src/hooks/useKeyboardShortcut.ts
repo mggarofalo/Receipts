@@ -17,6 +17,7 @@ export function useKeyboardShortcut({
     if (!enabled) return;
 
     function onKeyDown(e: KeyboardEvent) {
+      if (document.querySelector("[role=dialog]")) return;
       const modifierOk = ctrlOrMeta ? e.metaKey || e.ctrlKey : true;
       if (modifierOk && e.key.toLowerCase() === key.toLowerCase()) {
         e.preventDefault();
