@@ -168,7 +168,7 @@ function ApiKeys() {
     }
   }
 
-  const { focusedId, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: apiKeys as { id: string }[],
     getId: (k) => k.id,
     enabled: !anyDialogOpen && apiKeys.length > 0,
@@ -215,12 +215,16 @@ function ApiKeys() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {apiKeys.map((key) => {
+                {apiKeys.map((key, index) => {
                   const status = getKeyStatus(key);
                   return (
                     <TableRow
                       key={key.id}
-                      className={focusedId === key.id ? "bg-accent" : ""}
+                      className={`cursor-pointer ${focusedId === key.id ? "bg-accent" : ""}`}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                        setFocusedIndex(index);
+                      }}
                     >
                       <TableCell className="font-medium">{key.name}</TableCell>
                       <TableCell>{formatDate(key.createdAt)}</TableCell>

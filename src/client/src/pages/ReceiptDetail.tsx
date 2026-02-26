@@ -49,7 +49,7 @@ function ReceiptDetail() {
     ) ?? 0;
 
   const itemsList = data?.items ?? [];
-  const { focusedId, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: itemsList,
     getId: (item) => item.id,
     enabled: itemsList.length > 0,
@@ -130,10 +130,14 @@ function ReceiptDetail() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.items.map((item) => (
+                      {data.items.map((item, index) => (
                         <TableRow
                           key={item.id}
-                          className={focusedId === item.id ? "bg-accent" : ""}
+                          className={`cursor-pointer ${focusedId === item.id ? "bg-accent" : ""}`}
+                          onClick={(e) => {
+                            if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                            setFocusedIndex(index);
+                          }}
                         >
                           <TableCell className="font-mono">
                             {item.receiptItemCode}

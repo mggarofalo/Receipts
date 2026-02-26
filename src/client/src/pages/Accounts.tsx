@@ -137,7 +137,7 @@ function Accounts() {
     }
   }
 
-  const { focusedId, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: paginatedItems,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
@@ -235,13 +235,17 @@ function Accounts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((account) => {
+                {paginatedItems.map((account, index) => {
                   const result = matchMap.get(account.id);
                   const matches = result?.matches;
                   return (
                     <TableRow
                       key={account.id}
-                      className={focusedId === account.id ? "bg-accent" : ""}
+                      className={`cursor-pointer ${focusedId === account.id ? "bg-accent" : ""}`}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                        setFocusedIndex(index);
+                      }}
                     >
                       <TableCell>
                         <input

@@ -91,7 +91,7 @@ function TransactionDetail() {
 
   const total = items.reduce((sum, ta) => sum + ta.transaction.amount, 0);
 
-  const { focusedId, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items,
     getId: (ta) => ta.transaction.id,
     enabled: items.length > 0,
@@ -171,12 +171,16 @@ function TransactionDetail() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((ta) => (
+                {items.map((ta, index) => (
                   <TableRow
                     key={ta.transaction.id}
-                    className={
+                    className={`cursor-pointer ${
                       focusedId === ta.transaction.id ? "bg-accent" : ""
-                    }
+                    }`}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                      setFocusedIndex(index);
+                    }}
                   >
                     <TableCell className="text-right">
                       {formatCurrency(ta.transaction.amount)}

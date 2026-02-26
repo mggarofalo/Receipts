@@ -46,7 +46,7 @@ function AdminUsers() {
   );
 
   const roleItems = currentRoles.map((r) => ({ id: r, role: r }));
-  const { focusedId, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: roleItems,
     getId: (r) => r.id,
     enabled: roleItems.length > 0,
@@ -105,10 +105,14 @@ function AdminUsers() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {currentRoles.map((role) => (
+                      {currentRoles.map((role, index) => (
                         <TableRow
                           key={role}
-                          className={focusedId === role ? "bg-accent" : ""}
+                          className={`cursor-pointer ${focusedId === role ? "bg-accent" : ""}`}
+                          onClick={(e) => {
+                            if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                            setFocusedIndex(index);
+                          }}
                         >
                           <TableCell>
                             <Badge variant="default">{role}</Badge>

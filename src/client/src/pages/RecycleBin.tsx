@@ -79,10 +79,12 @@ function DeletedItemsTable({
   items,
   focusedKey,
   tableRef,
+  onRowClick,
 }: {
   items: DeletedItem[];
   focusedKey?: string | null;
   tableRef?: React.RefObject<HTMLDivElement | null>;
+  onRowClick?: (index: number) => void;
 }) {
   if (items.length === 0) {
     return (
@@ -104,14 +106,19 @@ function DeletedItemsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item) => (
+          {items.map((item, index) => (
             <TableRow
               key={`${item.entityType}:${item.id}`}
-              className={
+              className={`${onRowClick ? "cursor-pointer" : ""} ${
                 focusedKey === `${item.entityType}:${item.id}`
                   ? "bg-accent"
                   : ""
-              }
+              }`}
+              onClick={(e) => {
+                if (!onRowClick) return;
+                if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                onRowClick(index);
+              }}
             >
               <TableCell>{item.entityTypeLabel}</TableCell>
               <TableCell>
@@ -193,7 +200,7 @@ function RecycleBin() {
     return items;
   }, [accounts.data, receipts.data, receiptItems.data, transactions.data]);
 
-  const { focusedId, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: allItems,
     getId: (item) => `${item.entityType}:${item.id}`,
     enabled: !isLoading,
@@ -239,6 +246,7 @@ function RecycleBin() {
             items={allItems}
             focusedKey={focusedId}
             tableRef={tableRef}
+            onRowClick={setFocusedIndex}
           />
         </TabsContent>
 

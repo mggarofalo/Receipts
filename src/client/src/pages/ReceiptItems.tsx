@@ -178,7 +178,7 @@ function ReceiptItems() {
     }
   }
 
-  const { focusedId, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: paginatedItems,
     getId: (item) => item.id,
     enabled: !anyDialogOpen,
@@ -280,13 +280,17 @@ function ReceiptItems() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((item) => {
+                {paginatedItems.map((item, index) => {
                   const result = matchMap.get(item.id);
                   const matches = result?.matches;
                   return (
                     <TableRow
                       key={item.id}
-                      className={focusedId === item.id ? "bg-accent" : ""}
+                      className={`cursor-pointer ${focusedId === item.id ? "bg-accent" : ""}`}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                        setFocusedIndex(index);
+                      }}
                     >
                       <TableCell>
                         <input

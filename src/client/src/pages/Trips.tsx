@@ -53,7 +53,7 @@ function Trips() {
     0;
 
   const tripItems = trip?.receipt?.items ?? [];
-  const { focusedId, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: tripItems,
     getId: (item) => item.id,
     enabled: tripItems.length > 0,
@@ -165,10 +165,14 @@ function Trips() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {trip.receipt.items.map((item) => (
+                      {trip.receipt.items.map((item, index) => (
                         <TableRow
                           key={item.id}
-                          className={focusedId === item.id ? "bg-accent" : ""}
+                          className={`cursor-pointer ${focusedId === item.id ? "bg-accent" : ""}`}
+                          onClick={(e) => {
+                            if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                            setFocusedIndex(index);
+                          }}
                         >
                           <TableCell className="font-mono">
                             {item.receiptItemCode}
