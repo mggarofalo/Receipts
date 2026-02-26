@@ -1,10 +1,13 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useReceipts } from "@/hooks/useReceipts";
+import { receiptToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Form,
   FormControl,
@@ -16,7 +19,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 
 const receiptItemSchema = z.object({
-  receiptId: z.string().min(1, "Receipt ID is required"),
+  receiptId: z.string().min(1, "Receipt is required"),
   receiptItemCode: z.string().min(1, "Item code is required"),
   description: z.string().min(1, "Description is required"),
   quantity: z.number().positive("Quantity must be positive"),
@@ -45,6 +48,14 @@ export function ReceiptItemForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
+  const { data: receipts, isLoading: receiptsLoading } = useReceipts();
+
+  const receiptOptions = useMemo(
+    () =>
+      ((receipts as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
+    [receipts],
+  );
+
   const form = useForm<ReceiptItemFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(receiptItemSchema) as any,
@@ -68,13 +79,18 @@ export function ReceiptItemForm({
           name="receiptId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Receipt ID</FormLabel>
+              <FormLabel>Receipt</FormLabel>
               <FormControl>
-                <Input
-                  aria-required="true"
+                <Combobox
+                  options={receiptOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select a receipt..."
+                  searchPlaceholder="Search receipts..."
+                  emptyMessage="No receipts found."
                   disabled={mode === "edit"}
-                  placeholder="UUID of parent receipt"
-                  {...field}
+                  loading={receiptsLoading}
+                  aria-required="true"
                 />
               </FormControl>
               <FormMessage />

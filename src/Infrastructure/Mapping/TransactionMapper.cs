@@ -11,6 +11,8 @@ public partial class TransactionMapper
 {
 	[MapProperty(nameof(Transaction.Amount.Amount), nameof(TransactionEntity.Amount))]
 	[MapProperty(nameof(Transaction.Amount.Currency), nameof(TransactionEntity.AmountCurrency))]
+	[MapperIgnoreSource(nameof(Transaction.ReceiptId))]
+	[MapperIgnoreSource(nameof(Transaction.AccountId))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.Receipt))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.ReceiptId))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.Account))]
@@ -23,9 +25,7 @@ public partial class TransactionMapper
 	private Money MapAmount(decimal amount, Currency currency) => new(amount, currency);
 
 	[MapperIgnoreSource(nameof(TransactionEntity.Receipt))]
-	[MapperIgnoreSource(nameof(TransactionEntity.ReceiptId))]
 	[MapperIgnoreSource(nameof(TransactionEntity.Account))]
-	[MapperIgnoreSource(nameof(TransactionEntity.AccountId))]
 	[MapperIgnoreSource(nameof(TransactionEntity.AmountCurrency))]
 	[MapperIgnoreSource(nameof(TransactionEntity.DeletedAt))]
 	[MapperIgnoreSource(nameof(TransactionEntity.DeletedByUserId))]

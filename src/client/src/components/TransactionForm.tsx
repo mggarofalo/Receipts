@@ -1,10 +1,14 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useReceipts } from "@/hooks/useReceipts";
+import { useAccounts } from "@/hooks/useAccounts";
+import { receiptToOption, accountToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Form,
   FormControl,
@@ -16,8 +20,8 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 
 const transactionSchema = z.object({
-  receiptId: z.string().min(1, "Receipt ID is required"),
-  accountId: z.string().min(1, "Account ID is required"),
+  receiptId: z.string().min(1, "Receipt is required"),
+  accountId: z.string().min(1, "Account is required"),
   amount: z.number(),
   date: z.string().min(1, "Date is required"),
 });
@@ -42,6 +46,21 @@ export function TransactionForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
+  const { data: receipts, isLoading: receiptsLoading } = useReceipts();
+  const { data: accounts, isLoading: accountsLoading } = useAccounts();
+
+  const receiptOptions = useMemo(
+    () =>
+      ((receipts as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
+    [receipts],
+  );
+
+  const accountOptions = useMemo(
+    () =>
+      ((accounts as { id: string; name: string; accountCode: string }[] | undefined) ?? []).map(accountToOption),
+    [accounts],
+  );
+
   const form = useForm<TransactionFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(transactionSchema) as any,
@@ -62,13 +81,18 @@ export function TransactionForm({
           name="receiptId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Receipt ID</FormLabel>
+              <FormLabel>Receipt</FormLabel>
               <FormControl>
-                <Input
-                  aria-required="true"
+                <Combobox
+                  options={receiptOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select a receipt..."
+                  searchPlaceholder="Search receipts..."
+                  emptyMessage="No receipts found."
                   disabled={mode === "edit"}
-                  placeholder="UUID of receipt"
-                  {...field}
+                  loading={receiptsLoading}
+                  aria-required="true"
                 />
               </FormControl>
               <FormMessage />
@@ -81,13 +105,18 @@ export function TransactionForm({
           name="accountId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Account ID</FormLabel>
+              <FormLabel>Account</FormLabel>
               <FormControl>
-                <Input
-                  aria-required="true"
+                <Combobox
+                  options={accountOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select an account..."
+                  searchPlaceholder="Search accounts..."
+                  emptyMessage="No accounts found."
                   disabled={mode === "edit"}
-                  placeholder="UUID of account"
-                  {...field}
+                  loading={accountsLoading}
+                  aria-required="true"
                 />
               </FormControl>
               <FormMessage />
