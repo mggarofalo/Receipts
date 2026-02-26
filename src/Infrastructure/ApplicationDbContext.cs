@@ -34,6 +34,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	}
 
 	public virtual DbSet<AccountEntity> Accounts { get; set; } = null!;
+	public virtual DbSet<CategoryEntity> Categories { get; set; } = null!;
+	public virtual DbSet<SubcategoryEntity> Subcategories { get; set; } = null!;
 	public virtual DbSet<ReceiptEntity> Receipts { get; set; } = null!;
 	public virtual DbSet<TransactionEntity> Transactions { get; set; } = null!;
 	public virtual DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
@@ -288,6 +290,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	private static void ConfigureSoftDeleteFilters(ModelBuilder modelBuilder)
 	{
 		modelBuilder.Entity<AccountEntity>().HasQueryFilter(e => e.DeletedAt == null);
+		modelBuilder.Entity<CategoryEntity>().HasQueryFilter(e => e.DeletedAt == null);
+		modelBuilder.Entity<SubcategoryEntity>().HasQueryFilter(e => e.DeletedAt == null);
 		modelBuilder.Entity<ReceiptEntity>().HasQueryFilter(e => e.DeletedAt == null);
 		modelBuilder.Entity<ReceiptItemEntity>().HasQueryFilter(e => e.DeletedAt == null);
 		modelBuilder.Entity<TransactionEntity>().HasQueryFilter(e => e.DeletedAt == null);
@@ -445,6 +449,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	private static void CreateEntities(ModelBuilder modelBuilder)
 	{
 		CreateAccountEntity(modelBuilder);
+		CreateCategoryEntity(modelBuilder);
+		CreateSubcategoryEntity(modelBuilder);
 		CreateReceiptEntity(modelBuilder);
 		CreateTransactionEntity(modelBuilder);
 		CreateReceiptItemEntity(modelBuilder);
@@ -462,6 +468,41 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			entity.Property(e => e.Id)
 				.IsRequired()
 				.ValueGeneratedOnAdd();
+		});
+	}
+
+	private static void CreateCategoryEntity(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<CategoryEntity>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
+
+			entity.HasIndex(e => e.Name)
+				.IsUnique()
+				.HasFilter("\"DeletedAt\" IS NULL");
+		});
+	}
+
+	private static void CreateSubcategoryEntity(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<SubcategoryEntity>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
+
+			entity.HasIndex(e => new { e.CategoryId, e.Name })
+				.IsUnique()
+				.HasFilter("\"DeletedAt\" IS NULL");
+
+			entity.Navigation(e => e.Category)
+				.AutoInclude();
 		});
 	}
 

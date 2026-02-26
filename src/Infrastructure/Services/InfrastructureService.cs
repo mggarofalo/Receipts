@@ -104,10 +104,14 @@ public static class InfrastructureService
 		services
 			.AddScoped<IReceiptService, ReceiptService>()
 			.AddScoped<IAccountService, AccountService>()
+			.AddScoped<ICategoryService, CategoryService>()
+			.AddScoped<ISubcategoryService, SubcategoryService>()
 			.AddScoped<ITransactionService, TransactionService>()
 			.AddScoped<IReceiptItemService, ReceiptItemService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
 			.AddScoped<IAccountRepository, AccountRepository>()
+			.AddScoped<ICategoryRepository, CategoryRepository>()
+			.AddScoped<ISubcategoryRepository, SubcategoryRepository>()
 			.AddScoped<ITransactionRepository, TransactionRepository>()
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
 			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>()
@@ -122,6 +126,8 @@ public static class InfrastructureService
 
 		services
 			.AddSingleton<AccountMapper>()
+			.AddSingleton<CategoryMapper>()
+			.AddSingleton<SubcategoryMapper>()
 			.AddSingleton<ReceiptMapper>()
 			.AddSingleton<ReceiptItemMapper>()
 			.AddSingleton<TransactionMapper>();

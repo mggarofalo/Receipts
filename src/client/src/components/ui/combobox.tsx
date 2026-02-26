@@ -32,6 +32,7 @@ interface ComboboxProps
   emptyMessage?: string;
   disabled?: boolean;
   loading?: boolean;
+  allowCustom?: boolean;
   className?: string;
 }
 
@@ -46,12 +47,14 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
       emptyMessage = "No results found.",
       disabled = false,
       loading = false,
+      allowCustom = false,
       className,
       ...rest
     },
     ref,
   ) {
     const [open, setOpen] = React.useState(false);
+    const [search, setSearch] = React.useState("");
 
     const selected = options.find((o) => o.value === value);
 
@@ -66,7 +69,7 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
             disabled={disabled}
             className={cn(
               "h-9 w-full justify-between font-normal",
-              !selected && "text-muted-foreground",
+              !selected && !value && "text-muted-foreground",
               className,
             )}
             {...rest}
@@ -76,7 +79,9 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
                 ? "Loading..."
                 : selected
                   ? selected.label
-                  : placeholder}
+                  : value
+                    ? value
+                    : placeholder}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -86,19 +91,44 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
           align="start"
         >
           <Command>
-            <CommandInput placeholder={searchPlaceholder} />
+            <CommandInput
+              placeholder={searchPlaceholder}
+              value={search}
+              onValueChange={setSearch}
+            />
             <CommandList>
               <CommandEmpty>
-                {loading ? "Loading..." : emptyMessage}
+                {allowCustom && search ? (
+                  <button
+                    type="button"
+                    className="w-full px-2 py-1.5 text-left text-sm"
+                    onClick={() => {
+                      onValueChange(search);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    Use &quot;{search}&quot;
+                  </button>
+                ) : loading ? (
+                  "Loading..."
+                ) : (
+                  emptyMessage
+                )}
               </CommandEmpty>
               <CommandGroup>
                 {options.slice(0, 50).map((option) => (
                   <CommandItem
                     key={option.value}
-                    value={option.sublabel ? `${option.label} ${option.sublabel}` : option.label}
+                    value={
+                      option.sublabel
+                        ? `${option.label} ${option.sublabel}`
+                        : option.label
+                    }
                     onSelect={() => {
                       onValueChange(option.value);
                       setOpen(false);
+                      setSearch("");
                     }}
                   >
                     <Check
