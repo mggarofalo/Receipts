@@ -18,6 +18,7 @@ public static class ProgramService
 			.AddSingleton<API.Mapping.Core.ReceiptMapper>()
 			.AddSingleton<API.Mapping.Core.ReceiptItemMapper>()
 			.AddSingleton<API.Mapping.Core.TransactionMapper>()
+			.AddSingleton<API.Mapping.Core.ItemTemplateMapper>()
 			.AddSingleton<ReceiptWithItemsMapper>()
 			.AddSingleton<TransactionAccountMapper>()
 			.AddSingleton<TripMapper>();

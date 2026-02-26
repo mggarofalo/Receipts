@@ -305,6 +305,55 @@ namespace Infrastructure.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.Core.ItemTemplateEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DefaultCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefaultItemCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefaultPricingMode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefaultSubcategory")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("DefaultUnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("DefaultUnitPriceCurrency")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("DeletedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("ItemTemplates");
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.ReceiptEntity", b =>
                 {
                     b.Property<Guid>("Id")

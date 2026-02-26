@@ -41,6 +41,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public virtual DbSet<TransactionEntity> Transactions { get; set; } = null!;
 	public virtual DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
 	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
+	public virtual DbSet<ItemTemplateEntity> ItemTemplates { get; set; } = null!;
 	public virtual DbSet<AuditLogEntity> AuditLogs { get; set; } = null!;
 	public virtual DbSet<AuthAuditLogEntity> AuthAuditLogs { get; set; } = null!;
 
@@ -312,6 +313,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		modelBuilder.Entity<ReceiptEntity>().HasQueryFilter(e => e.DeletedAt == null);
 		modelBuilder.Entity<ReceiptItemEntity>().HasQueryFilter(e => e.DeletedAt == null);
 		modelBuilder.Entity<TransactionEntity>().HasQueryFilter(e => e.DeletedAt == null);
+		modelBuilder.Entity<ItemTemplateEntity>().HasQueryFilter(e => e.DeletedAt == null);
 	}
 
 	private static void PrepareEntityTypesInModelBuilder(ModelBuilder modelBuilder, string? providerName)
@@ -376,7 +378,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	private static string SetEnumPropertyColumnType(IMutableProperty property, string stringType)
 	{
 		property.SetColumnType(stringType);
-		Type converterType = typeof(EnumToStringConverter<>).MakeGenericType(property.ClrType);
+		Type enumType = Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType;
+		Type converterType = typeof(EnumToStringConverter<>).MakeGenericType(enumType);
 		ValueConverter converter = (ValueConverter)Activator.CreateInstance(converterType)!;
 		property.SetValueConverter(converter);
 		return stringType;
@@ -471,6 +474,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		CreateReceiptEntity(modelBuilder);
 		CreateTransactionEntity(modelBuilder);
 		CreateReceiptItemEntity(modelBuilder);
+		CreateItemTemplateEntity(modelBuilder);
 		CreateApiKeyEntity(modelBuilder);
 		CreateAuditLogEntity(modelBuilder);
 		CreateAuthAuditLogEntity(modelBuilder);
@@ -572,6 +576,22 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 			entity.Navigation(e => e.Receipt)
 				.AutoInclude();
+		});
+	}
+
+	private static void CreateItemTemplateEntity(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<ItemTemplateEntity>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
+
+			entity.HasIndex(e => e.Name)
+				.IsUnique()
+				.HasFilter("\"DeletedAt\" IS NULL");
 		});
 	}
 

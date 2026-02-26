@@ -20,6 +20,10 @@ import {
   useDeletedTransactions,
   useRestoreTransaction,
 } from "@/hooks/useTransactions";
+import {
+  useDeletedItemTemplates,
+  useRestoreItemTemplate,
+} from "@/hooks/useItemTemplates";
 import { usePurgeTrash } from "@/hooks/useTrash";
 import { truncateId } from "@/lib/audit-utils";
 import { Button } from "@/components/ui/button";
@@ -71,6 +75,7 @@ function RestoreButton({
   const restoreReceipt = useRestoreReceipt();
   const restoreReceiptItem = useRestoreReceiptItem();
   const restoreTransaction = useRestoreTransaction();
+  const restoreItemTemplate = useRestoreItemTemplate();
 
   const mutations: Record<
     string,
@@ -82,6 +87,7 @@ function RestoreButton({
     Receipt: restoreReceipt,
     ReceiptItem: restoreReceiptItem,
     Transaction: restoreTransaction,
+    ItemTemplate: restoreItemTemplate,
   };
 
   const mutation = mutations[entityType];
@@ -141,7 +147,12 @@ function DeletedItemsTable({
               }`}
               onClick={(e) => {
                 if (!onRowClick) return;
-                if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                if (
+                  (e.target as HTMLElement).closest(
+                    "button, input, a, [role='button']",
+                  )
+                )
+                  return;
                 onRowClick(index);
               }}
             >
@@ -181,6 +192,7 @@ function RecycleBin() {
   const receipts = useDeletedReceipts();
   const receiptItems = useDeletedReceiptItems();
   const transactions = useDeletedTransactions();
+  const itemTemplates = useDeletedItemTemplates();
   const purgeTrash = usePurgeTrash();
 
   const isLoading =
@@ -189,7 +201,8 @@ function RecycleBin() {
     subcategories.isLoading ||
     receipts.isLoading ||
     receiptItems.isLoading ||
-    transactions.isLoading;
+    transactions.isLoading ||
+    itemTemplates.isLoading;
 
   const allItems = useMemo(() => {
     const items: DeletedItem[] = [];
@@ -242,9 +255,25 @@ function RecycleBin() {
         label: `$${t.amount.toFixed(2)} - ${t.date}`,
       });
     }
+    for (const it of itemTemplates.data ?? []) {
+      items.push({
+        entityType: "ItemTemplate",
+        entityTypeLabel: "Item Template",
+        id: it.id,
+        label: it.name,
+      });
+    }
 
     return items;
-  }, [accounts.data, categories.data, subcategories.data, receipts.data, receiptItems.data, transactions.data]);
+  }, [
+    accounts.data,
+    categories.data,
+    subcategories.data,
+    receipts.data,
+    receiptItems.data,
+    transactions.data,
+    itemTemplates.data,
+  ]);
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: allItems,

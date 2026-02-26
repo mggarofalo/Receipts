@@ -888,6 +888,214 @@ paths:
                 type: string
 
   # ──────────────────────────────────────────────
+  # Item Templates
+  # ──────────────────────────────────────────────
+
+  /api/item-templates/{id}:
+    get:
+      operationId: GetItemTemplateById
+      tags: [ItemTemplates]
+      summary: Get an item template by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemTemplateResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateItemTemplate
+      tags: [ItemTemplates]
+      summary: Update a single item template
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItemTemplateRequest"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/item-templates:
+    get:
+      operationId: GetAllItemTemplates
+      tags: [ItemTemplates]
+      summary: Get all item templates
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemTemplateResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateItemTemplate
+      tags: [ItemTemplates]
+      summary: Create a single item template
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItemTemplateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemTemplateResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeleteItemTemplates
+      tags: [ItemTemplates]
+      summary: Delete item templates
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/item-templates/deleted:
+    get:
+      operationId: GetDeletedItemTemplates
+      tags: [ItemTemplates]
+      summary: Get all soft-deleted item templates
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemTemplateResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/item-templates/{id}/restore:
+    post:
+      operationId: RestoreItemTemplate
+      tags: [ItemTemplates]
+      summary: Restore a soft-deleted item template
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
   # Receipts
   # ──────────────────────────────────────────────
 
@@ -2896,6 +3104,110 @@ components:
           type: string
           format: uuid
         description:
+          type:
+            - string
+            - "null"
+
+    # ── Item Template ──────────────────────────────
+
+    CreateItemTemplateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        defaultCategory:
+          type:
+            - string
+            - "null"
+        defaultSubcategory:
+          type:
+            - string
+            - "null"
+        defaultUnitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        defaultPricingMode:
+          type:
+            - string
+            - "null"
+        defaultItemCode:
+          type:
+            - string
+            - "null"
+
+    UpdateItemTemplateRequest:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        defaultCategory:
+          type:
+            - string
+            - "null"
+        defaultSubcategory:
+          type:
+            - string
+            - "null"
+        defaultUnitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        defaultPricingMode:
+          type:
+            - string
+            - "null"
+        defaultItemCode:
+          type:
+            - string
+            - "null"
+
+    ItemTemplateResponse:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        defaultCategory:
+          type:
+            - string
+            - "null"
+        defaultSubcategory:
+          type:
+            - string
+            - "null"
+        defaultUnitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        defaultPricingMode:
+          type:
+            - string
+            - "null"
+        defaultItemCode:
           type:
             - string
             - "null"

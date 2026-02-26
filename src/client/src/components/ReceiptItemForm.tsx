@@ -1,16 +1,30 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Fuse from "fuse.js";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useCategories } from "@/hooks/useCategories";
 import { useSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
+import { useItemTemplates } from "@/hooks/useItemTemplates";
 import { receiptToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverAnchor,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Select,
   SelectContent,
@@ -28,6 +42,17 @@ import {
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
+
+interface ItemTemplate {
+  id: string;
+  name: string;
+  description?: string | null;
+  defaultCategory?: string | null;
+  defaultSubcategory?: string | null;
+  defaultUnitPrice?: number | null;
+  defaultPricingMode?: string | null;
+  defaultItemCode?: string | null;
+}
 
 const receiptItemSchema = z.object({
   receiptId: z.string().min(1, "Receipt is required"),
@@ -65,6 +90,11 @@ export function ReceiptItemForm({
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
   const { data: categories } = useCategories();
+  const { data: itemTemplatesData } = useItemTemplates();
+  const templates = useMemo(
+    () => (itemTemplatesData as ItemTemplate[] | undefined) ?? [],
+    [itemTemplatesData],
+  );
 
   const receiptOptions = useMemo(
     () =>
@@ -157,6 +187,45 @@ export function ReceiptItemForm({
 
   const computedTotal = (watchedQuantity ?? 0) * (watchedUnitPrice ?? 0);
 
+  // Fuse.js autocomplete for description
+  const fuse = useMemo(
+    () =>
+      new Fuse(templates, {
+        keys: ["name", "description", "defaultItemCode"],
+        threshold: 0.4,
+        includeScore: true,
+      }),
+    [templates],
+  );
+
+  const [descriptionInput, setDescriptionInput] = useState(
+    defaultValues?.description ?? "",
+  );
+  const [autocompleteOpen, setAutocompleteOpen] = useState(false);
+
+  const suggestions = useMemo(() => {
+    if (!descriptionInput || descriptionInput.length < 2) return [];
+    return fuse.search(descriptionInput, { limit: 5 }).map((r) => r.item);
+  }, [fuse, descriptionInput]);
+
+  function applyTemplate(template: ItemTemplate) {
+    form.setValue("description", template.name);
+    setDescriptionInput(template.name);
+    if (template.defaultCategory) {
+      form.setValue("category", template.defaultCategory);
+    }
+    if (template.defaultSubcategory) {
+      form.setValue("subcategory", template.defaultSubcategory);
+    }
+    if (template.defaultUnitPrice != null) {
+      form.setValue("unitPrice", template.defaultUnitPrice);
+    }
+    if (template.defaultItemCode) {
+      form.setValue("receiptItemCode", template.defaultItemCode);
+    }
+    setAutocompleteOpen(false);
+  }
+
   return (
     <Form {...form}>
       <form
@@ -208,9 +277,67 @@ export function ReceiptItemForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Input aria-required="true" {...field} />
-              </FormControl>
+              <Popover
+                open={autocompleteOpen && suggestions.length > 0}
+                onOpenChange={setAutocompleteOpen}
+              >
+                <PopoverAnchor asChild>
+                  <FormControl>
+                    <Input
+                      aria-required="true"
+                      {...field}
+                      value={descriptionInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDescriptionInput(val);
+                        field.onChange(val);
+                        setAutocompleteOpen(val.length >= 2);
+                      }}
+                      onFocus={() => {
+                        if (descriptionInput.length >= 2) {
+                          setAutocompleteOpen(true);
+                        }
+                      }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                </PopoverAnchor>
+                <PopoverContent
+                  className="w-[--radix-popover-trigger-width] p-0"
+                  align="start"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                  onInteractOutside={() => setAutocompleteOpen(false)}
+                >
+                  <Command>
+                    <CommandList>
+                      <CommandEmpty>No templates found.</CommandEmpty>
+                      <CommandGroup heading="Item Templates">
+                        {suggestions.map((template) => (
+                          <CommandItem
+                            key={template.id}
+                            value={template.name}
+                            onSelect={() => applyTemplate(template)}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {template.name}
+                              </span>
+                              {template.defaultCategory && (
+                                <span className="text-xs text-muted-foreground">
+                                  {template.defaultCategory}
+                                  {template.defaultSubcategory
+                                    ? ` / ${template.defaultSubcategory}`
+                                    : ""}
+                                </span>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}
