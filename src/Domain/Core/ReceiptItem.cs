@@ -3,6 +3,7 @@ namespace Domain.Core;
 public class ReceiptItem
 {
 	public Guid Id { get; set; }
+	public Guid ReceiptId { get; set; }
 	public string ReceiptItemCode { get; set; }
 	public string Description { get; set; }
 	public decimal Quantity { get; set; }

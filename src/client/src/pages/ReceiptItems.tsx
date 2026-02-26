@@ -42,6 +42,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 interface ReceiptItemResponse {
   id: string;
+  receiptId: string;
   receiptItemCode: string;
   description: string;
   quantity: number;
@@ -81,7 +82,6 @@ function ReceiptItems() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [editItem, setEditItem] = useState<ReceiptItemResponse | null>(null);
-  const [editReceiptId, setEditReceiptId] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({
     category: "all",
@@ -389,10 +389,7 @@ function ReceiptItems() {
       <Dialog
         open={editItem !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setEditItem(null);
-            setEditReceiptId("");
-          }
+          if (!open) setEditItem(null);
         }}
       >
         <DialogContent>
@@ -403,7 +400,7 @@ function ReceiptItems() {
             <ReceiptItemForm
               mode="edit"
               defaultValues={{
-                receiptId: editReceiptId,
+                receiptId: editItem.receiptId,
                 receiptItemCode: editItem.receiptItemCode,
                 description: editItem.description,
                 quantity: editItem.quantity,
@@ -412,10 +409,7 @@ function ReceiptItems() {
                 subcategory: editItem.subcategory,
               }}
               isSubmitting={updateItem.isPending}
-              onCancel={() => {
-                setEditItem(null);
-                setEditReceiptId("");
-              }}
+              onCancel={() => setEditItem(null)}
               onSubmit={(values) => {
                 const { receiptId, ...rest } = values;
                 updateItem.mutate(
@@ -423,12 +417,7 @@ function ReceiptItems() {
                     receiptId,
                     body: { id: editItem.id, ...rest },
                   },
-                  {
-                    onSuccess: () => {
-                      setEditItem(null);
-                      setEditReceiptId("");
-                    },
-                  },
+                  { onSuccess: () => setEditItem(null) },
                 );
               }}
             />

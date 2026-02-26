@@ -41,6 +41,8 @@ import { Spinner } from "@/components/ui/spinner";
 
 interface TransactionResponse {
   id: string;
+  receiptId: string;
+  accountId: string;
   amount: number;
   date: string;
 }
@@ -77,8 +79,6 @@ function Transactions() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTransaction, setEditTransaction] =
     useState<TransactionResponse | null>(null);
-  const [editReceiptId, setEditReceiptId] = useState("");
-  const [editAccountId, setEditAccountId] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
@@ -327,11 +327,7 @@ function Transactions() {
       <Dialog
         open={editTransaction !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setEditTransaction(null);
-            setEditReceiptId("");
-            setEditAccountId("");
-          }
+          if (!open) setEditTransaction(null);
         }}
       >
         <DialogContent>
@@ -342,17 +338,13 @@ function Transactions() {
             <TransactionForm
               mode="edit"
               defaultValues={{
-                receiptId: editReceiptId,
-                accountId: editAccountId,
+                receiptId: editTransaction.receiptId,
+                accountId: editTransaction.accountId,
                 amount: editTransaction.amount,
                 date: editTransaction.date,
               }}
               isSubmitting={updateTransaction.isPending}
-              onCancel={() => {
-                setEditTransaction(null);
-                setEditReceiptId("");
-                setEditAccountId("");
-              }}
+              onCancel={() => setEditTransaction(null)}
               onSubmit={(values) => {
                 updateTransaction.mutate(
                   {
@@ -364,13 +356,7 @@ function Transactions() {
                       date: values.date,
                     },
                   },
-                  {
-                    onSuccess: () => {
-                      setEditTransaction(null);
-                      setEditReceiptId("");
-                      setEditAccountId("");
-                    },
-                  },
+                  { onSuccess: () => setEditTransaction(null) },
                 );
               }}
             />

@@ -2173,9 +2173,12 @@ components:
 
     ReceiptItemResponse:
       type: object
-      required: [id, receiptItemCode, description, quantity, unitPrice, category, subcategory]
+      required: [id, receiptId, receiptItemCode, description, quantity, unitPrice, category, subcategory]
       properties:
         id:
+          type: string
+          format: uuid
+        receiptId:
           type: string
           format: uuid
         receiptItemCode:
@@ -2222,9 +2225,15 @@ components:
 
     TransactionResponse:
       type: object
-      required: [id, amount, date]
+      required: [id, receiptId, accountId, amount, date]
       properties:
         id:
+          type: string
+          format: uuid
+        receiptId:
+          type: string
+          format: uuid
+        accountId:
           type: string
           format: uuid
         amount:
