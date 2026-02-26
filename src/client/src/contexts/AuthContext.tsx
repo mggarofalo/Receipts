@@ -43,28 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(
-    async (
-      email: string,
-      password: string,
-      firstName?: string,
-      lastName?: string,
-    ) => {
-      const { data, error } = await client.POST("/api/auth/register", {
-        body: { email, password, firstName, lastName },
-      });
-      if (error) {
-        throw error;
-      }
-      if (data) {
-        setTokens(data.accessToken, data.refreshToken);
-        setUser(parseJwtPayload(data.accessToken));
-        setMustResetPassword(data.mustResetPassword);
-      }
-    },
-    [],
-  );
-
   const logout = useCallback(async () => {
     try {
       await client.POST("/api/auth/logout");
@@ -102,11 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: false,
       mustResetPassword,
       login,
-      register,
       logout,
       changePassword,
     }),
-    [user, mustResetPassword, login, register, logout, changePassword],
+    [user, mustResetPassword, login, logout, changePassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

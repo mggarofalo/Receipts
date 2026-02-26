@@ -6,12 +6,6 @@ export interface AuthContextValue {
   isLoading: boolean;
   mustResetPassword: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (
-    email: string,
-    password: string,
-    firstName?: string,
-    lastName?: string,
-  ) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (
     currentPassword: string,
