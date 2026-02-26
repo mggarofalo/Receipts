@@ -48,7 +48,7 @@ public class AuthController(
 			await userManager.AddToRoleAsync(user, AppRoles.User);
 
 			IList<string> roles = await userManager.GetRolesAsync(user);
-			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
+			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles, true);
 			string refreshToken = tokenService.GenerateRefreshToken();
 
 			user.RefreshToken = refreshToken;
@@ -90,7 +90,7 @@ public class AuthController(
 			}
 
 			IList<string> roles = await userManager.GetRolesAsync(user);
-			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
+			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles, user.MustResetPassword);
 			string refreshToken = tokenService.GenerateRefreshToken();
 
 			user.RefreshToken = refreshToken;
@@ -135,7 +135,7 @@ public class AuthController(
 			}
 
 			IList<string> roles = await userManager.GetRolesAsync(user);
-			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
+			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles, user.MustResetPassword);
 			string newRefreshToken = tokenService.GenerateRefreshToken();
 
 			user.RefreshToken = newRefreshToken;
@@ -224,7 +224,7 @@ public class AuthController(
 			user.MustResetPassword = false;
 
 			IList<string> roles = await userManager.GetRolesAsync(user);
-			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
+			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles, false);
 			string refreshToken = tokenService.GenerateRefreshToken();
 
 			user.RefreshToken = refreshToken;

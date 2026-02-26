@@ -1,4 +1,5 @@
 using API.Authentication;
+using API.Middleware;
 using Common;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -82,6 +83,7 @@ public static class AuthConfiguration
 	public static IApplicationBuilder UseAuthServices(this IApplicationBuilder app)
 	{
 		app.UseAuthentication();
+		app.UseMiddleware<MustResetPasswordMiddleware>();
 		app.UseAuthorization();
 		return app;
 	}
