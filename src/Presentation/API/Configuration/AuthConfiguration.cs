@@ -121,6 +121,7 @@ public static class AuthConfiguration
 			Email = adminEmail,
 			FirstName = configuration[ConfigurationVariables.AdminSeedFirstName],
 			LastName = configuration[ConfigurationVariables.AdminSeedLastName],
+			MustResetPassword = true,
 		};
 
 		IdentityResult result = await userManager.CreateAsync(adminUser, adminPassword);

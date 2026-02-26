@@ -20,6 +20,7 @@ function getInitialUser(): JwtPayload | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<JwtPayload | null>(getInitialUser);
+  const [mustResetPassword, setMustResetPassword] = useState(false);
 
   useEffect(() => {
     return addTokenRefreshListener(() => {
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) {
       setTokens(data.accessToken, data.refreshToken);
       setUser(parseJwtPayload(data.accessToken));
+      setMustResetPassword(data.mustResetPassword);
     }
   }, []);
 
@@ -57,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data) {
         setTokens(data.accessToken, data.refreshToken);
         setUser(parseJwtPayload(data.accessToken));
+        setMustResetPassword(data.mustResetPassword);
       }
     },
     [],
@@ -70,11 +73,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     clearTokens();
     setUser(null);
+    setMustResetPassword(false);
   }, []);
 
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      const { data, error } = await client.POST(
+        "/api/auth/change-password",
+        {
+          body: { currentPassword, newPassword },
+        },
+      );
+      if (error) {
+        throw error;
+      }
+      if (data) {
+        setTokens(data.accessToken, data.refreshToken);
+        setUser(parseJwtPayload(data.accessToken));
+        setMustResetPassword(false);
+      }
+    },
+    [],
+  );
+
   const value = useMemo(
-    () => ({ user, isLoading: false, login, register, logout }),
-    [user, login, register, logout],
+    () => ({
+      user,
+      isLoading: false,
+      mustResetPassword,
+      login,
+      register,
+      logout,
+      changePassword,
+    }),
+    [user, mustResetPassword, login, register, logout, changePassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

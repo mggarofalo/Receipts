@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router";
+import { Link, Navigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,14 +33,17 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 function Login() {
   usePageTitle("Sign In");
-  const { user, login } = useAuth();
-  const navigate = useNavigate();
+  const { user, mustResetPassword, login } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
+
+  if (user && mustResetPassword) {
+    return <Navigate to="/change-password" replace />;
+  }
 
   if (user) {
     return <Navigate to="/" replace />;
@@ -50,7 +53,6 @@ function Login() {
     setError(null);
     try {
       await login(values.email, values.password);
-      navigate("/");
     } catch {
       setError("Invalid email or password. Please try again.");
     }

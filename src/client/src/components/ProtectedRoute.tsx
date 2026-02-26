@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, mustResetPassword } = useAuth();
 
   if (isLoading) {
     return (
@@ -15,6 +15,10 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (mustResetPassword) {
+    return <Navigate to="/change-password" replace />;
   }
 
   return children;

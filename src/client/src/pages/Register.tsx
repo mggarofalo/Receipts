@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router";
+import { Link, Navigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,14 +34,17 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 function Register() {
   usePageTitle("Create Account");
-  const { user, register: registerUser } = useAuth();
-  const navigate = useNavigate();
+  const { user, mustResetPassword, register: registerUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { email: "", password: "", firstName: "", lastName: "" },
   });
+
+  if (user && mustResetPassword) {
+    return <Navigate to="/change-password" replace />;
+  }
 
   if (user) {
     return <Navigate to="/" replace />;
@@ -56,7 +59,6 @@ function Register() {
         values.firstName || undefined,
         values.lastName || undefined,
       );
-      navigate("/");
     } catch {
       setError("Registration failed. The email may already be in use.");
     }

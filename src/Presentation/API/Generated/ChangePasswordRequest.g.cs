@@ -27,11 +27,16 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Response
+    public partial class ChangePasswordRequest
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public string Status { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("currentPassword")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string CurrentPassword { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("newPassword")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string NewPassword { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

@@ -36,6 +36,7 @@ public class AuthController(
 				Email = request.Email,
 				FirstName = request.FirstName,
 				LastName = request.LastName,
+				MustResetPassword = true,
 			};
 
 			IdentityResult result = await userManager.CreateAsync(user, request.Password);
@@ -61,6 +62,7 @@ public class AuthController(
 				AccessToken = accessToken,
 				RefreshToken = refreshToken,
 				ExpiresIn = 3600,
+				MustResetPassword = true,
 			});
 		}
 		catch (Exception ex)
@@ -102,6 +104,7 @@ public class AuthController(
 				AccessToken = accessToken,
 				RefreshToken = refreshToken,
 				ExpiresIn = 3600,
+				MustResetPassword = user.MustResetPassword,
 			});
 		}
 		catch (Exception ex)
@@ -144,6 +147,7 @@ public class AuthController(
 				AccessToken = accessToken,
 				RefreshToken = newRefreshToken,
 				ExpiresIn = 3600,
+				MustResetPassword = user.MustResetPassword,
 			});
 		}
 		catch (Exception ex)
@@ -184,6 +188,62 @@ public class AuthController(
 		catch (Exception ex)
 		{
 			logger.LogError(ex, "Error occurred in {Method}", nameof(Logout));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpPost("change-password")]
+	[Authorize]
+	[EndpointSummary("Change password (required on first login)")]
+	[ProducesResponseType<TokenResponse>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<TokenResponse>> ChangePassword([FromBody] ChangePasswordRequest request)
+	{
+		try
+		{
+			string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (userId is null)
+			{
+				return Unauthorized();
+			}
+
+			ApplicationUser? user = await userManager.FindByIdAsync(userId);
+			if (user is null)
+			{
+				return Unauthorized();
+			}
+
+			IdentityResult result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+			if (!result.Succeeded)
+			{
+				return BadRequest(result.Errors.Select(e => e.Description));
+			}
+
+			user.MustResetPassword = false;
+
+			IList<string> roles = await userManager.GetRolesAsync(user);
+			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
+			string refreshToken = tokenService.GenerateRefreshToken();
+
+			user.RefreshToken = refreshToken;
+			user.RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(30);
+			await userManager.UpdateAsync(user);
+
+			await LogAuthEventAsync(nameof(AuthEventType.PasswordChanged), user.Id, user.Email, true);
+
+			return Ok(new TokenResponse
+			{
+				AccessToken = accessToken,
+				RefreshToken = refreshToken,
+				ExpiresIn = 3600,
+				MustResetPassword = false,
+			});
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, "Error occurred in {Method}", nameof(ChangePassword));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
