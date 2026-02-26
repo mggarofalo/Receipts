@@ -14,14 +14,16 @@ public class ReceiptItem
 	// while the Category/Subcategory tables serve as suggestion lists for the UI.
 	public string Category { get; set; }
 	public string Subcategory { get; set; }
+	public string PricingMode { get; set; }
 
 	public const string ReceiptItemCodeCannotBeEmpty = "Receipt item code cannot be empty";
 	public const string DescriptionCannotBeEmpty = "Description cannot be empty";
 	public const string QuantityMustBePositive = "Quantity must be positive";
 	public const string CategoryCannotBeEmpty = "Category cannot be empty";
 	public const string SubcategoryCannotBeEmpty = "Subcategory cannot be empty";
+	public const string PricingModeInvalid = "Pricing mode must be 'quantity' or 'flat'";
 
-	public ReceiptItem(Guid id, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory)
+	public ReceiptItem(Guid id, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory, string pricingMode = "quantity")
 	{
 		if (string.IsNullOrWhiteSpace(receiptItemCode))
 		{
@@ -48,6 +50,11 @@ public class ReceiptItem
 			throw new ArgumentException(SubcategoryCannotBeEmpty, nameof(subcategory));
 		}
 
+		if (pricingMode is not "quantity" and not "flat")
+		{
+			throw new ArgumentException(PricingModeInvalid, nameof(pricingMode));
+		}
+
 		Id = id;
 		ReceiptItemCode = receiptItemCode;
 		Description = description;
@@ -56,5 +63,6 @@ public class ReceiptItem
 		TotalAmount = totalAmount;
 		Category = category;
 		Subcategory = subcategory;
+		PricingMode = pricingMode;
 	}
 }

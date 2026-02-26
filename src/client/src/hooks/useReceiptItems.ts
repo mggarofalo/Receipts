@@ -57,6 +57,7 @@ export function useCreateReceiptItem() {
         unitPrice: number;
         category: string;
         subcategory: string;
+        pricingMode: string;
       };
     }) => {
       const { data, error } = await client.POST("/api/receipt-items/{id}", {
@@ -92,6 +93,7 @@ export function useUpdateReceiptItem() {
         unitPrice: number;
         category: string;
         subcategory: string;
+        pricingMode: string;
       };
     }) => {
       const { error } = await client.PUT("/api/receipt-items/{id}", {

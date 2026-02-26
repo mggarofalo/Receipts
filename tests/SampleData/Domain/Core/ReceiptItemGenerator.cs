@@ -5,7 +5,7 @@ namespace SampleData.Domain.Core;
 
 public static class ReceiptItemGenerator
 {
-	public static ReceiptItem Generate()
+	public static ReceiptItem Generate(string pricingMode = "quantity")
 	{
 		return new ReceiptItem(
 			Guid.NewGuid(),
@@ -15,7 +15,8 @@ public static class ReceiptItemGenerator
 			new Money(5),
 			new Money(5),
 			"Test Category",
-			"Test Subcategory"
+			"Test Subcategory",
+			pricingMode
 		);
 	}
 

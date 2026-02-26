@@ -562,6 +562,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 				.IsRequired()
 				.ValueGeneratedOnAdd();
 
+			entity.Property(e => e.PricingMode)
+				.HasMaxLength(10)
+				.HasDefaultValue("quantity");
+
 			entity.Navigation(e => e.Receipt)
 				.AutoInclude();
 		});

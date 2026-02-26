@@ -148,4 +148,66 @@ public class ReceiptItemTests
 		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, invalidSubcategory));
 		Assert.StartsWith(ReceiptItem.SubcategoryCannotBeEmpty, exception.Message);
 	}
+
+	[Fact]
+	public void Constructor_DefaultPricingMode_IsQuantity()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string receiptItemCode = "ITEM001";
+		string description = "Test Item";
+		decimal quantity = 2;
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
+		string category = "Test Category";
+		string subcategory = "Test Subcategory";
+
+		// Act
+		ReceiptItem receiptItem = new(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
+
+		// Assert
+		Assert.Equal("quantity", receiptItem.PricingMode);
+	}
+
+	[Fact]
+	public void Constructor_FlatPricingMode_CreatesReceiptItem()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string receiptItemCode = "ITEM001";
+		string description = "Test Item";
+		decimal quantity = 1;
+		Money unitPrice = new(15.00m);
+		Money totalAmount = new(15.00m);
+		string category = "Test Category";
+		string subcategory = "Test Subcategory";
+
+		// Act
+		ReceiptItem receiptItem = new(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory, "flat");
+
+		// Assert
+		Assert.Equal("flat", receiptItem.PricingMode);
+	}
+
+	[Theory]
+	[InlineData("invalid")]
+	[InlineData("QUANTITY")]
+	[InlineData("FLAT")]
+	[InlineData("")]
+	public void Constructor_InvalidPricingMode_ThrowsArgumentException(string invalidPricingMode)
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string receiptItemCode = "ITEM001";
+		string description = "Test Item";
+		decimal quantity = 1;
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(10.00m);
+		string category = "Test Category";
+		string subcategory = "Test Subcategory";
+
+		// Act & Assert
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory, invalidPricingMode));
+		Assert.StartsWith(ReceiptItem.PricingModeInvalid, exception.Message);
+	}
 }

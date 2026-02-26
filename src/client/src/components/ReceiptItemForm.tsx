@@ -12,6 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormControl,
   FormField,
@@ -20,16 +27,21 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
+import { formatCurrency } from "@/lib/format";
 
 const receiptItemSchema = z.object({
   receiptId: z.string().min(1, "Receipt is required"),
   receiptItemCode: z.string().min(1, "Item code is required"),
   description: z.string().min(1, "Description is required"),
+  pricingMode: z.enum(["quantity", "flat"]),
   quantity: z.number().positive("Quantity must be positive"),
   unitPrice: z.number().min(0, "Unit price must be non-negative"),
   category: z.string().min(1, "Category is required"),
   subcategory: z.string().min(1, "Subcategory is required"),
-});
+}).refine(
+  (data) => data.pricingMode !== "flat" || data.quantity === 1,
+  { message: "Quantity must be 1 for flat pricing", path: ["quantity"] }
+);
 
 type ReceiptItemFormValues = z.output<typeof receiptItemSchema>;
 
@@ -87,6 +99,7 @@ export function ReceiptItemForm({
       receiptId: "",
       receiptItemCode: "",
       description: "",
+      pricingMode: "quantity",
       quantity: 1,
       unitPrice: 0,
       category: "",
@@ -125,6 +138,24 @@ export function ReceiptItemForm({
       form.setValue("subcategory", "");
     }
   }, [watchedCategory, form]);
+
+  const watchedPricingMode = form.watch("pricingMode");
+  const watchedQuantity = form.watch("quantity");
+  const watchedUnitPrice = form.watch("unitPrice");
+  const isFlat = watchedPricingMode === "flat";
+
+  // Auto-set quantity to 1 when switching to flat mode
+  const prevPricingModeRef = useRef(watchedPricingMode);
+  useEffect(() => {
+    if (prevPricingModeRef.current !== watchedPricingMode) {
+      prevPricingModeRef.current = watchedPricingMode;
+      if (watchedPricingMode === "flat") {
+        form.setValue("quantity", 1);
+      }
+    }
+  }, [watchedPricingMode, form]);
+
+  const computedTotal = (watchedQuantity ?? 0) * (watchedUnitPrice ?? 0);
 
   return (
     <Form {...form}>
@@ -185,33 +216,57 @@ export function ReceiptItemForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="pricingMode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pricing Mode</FormLabel>
+              <FormControl>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select pricing mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="quantity">Qty x Unit Price</SelectItem>
+                    <SelectItem value="flat">Flat Price</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="quantity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantity</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="1"
-                    aria-required="true"
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {!isFlat && (
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantity</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="1"
+                      aria-required="true"
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}
             name="unitPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Unit Price</FormLabel>
+                <FormLabel>{isFlat ? "Price" : "Unit Price"}</FormLabel>
                 <FormControl>
                   <CurrencyInput {...field} />
                 </FormControl>
@@ -219,6 +274,10 @@ export function ReceiptItemForm({
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          Total: {formatCurrency(computedTotal)}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

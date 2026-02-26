@@ -50,6 +50,7 @@ interface ReceiptItemResponse {
   unitPrice: number;
   category: string;
   subcategory: string;
+  pricingMode: "quantity" | "flat";
 }
 
 const SEARCH_CONFIG: FuseSearchConfig<ReceiptItemResponse> = {
@@ -189,7 +190,7 @@ function ReceiptItems() {
   });
 
   if (isLoading) {
-    return <TableSkeleton columns={8} />;
+    return <TableSkeleton columns={9} />;
   }
 
   return (
@@ -268,6 +269,7 @@ function ReceiptItems() {
                   </TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Mode</TableHead>
                   <TableHead className="text-right">Qty</TableHead>
                   <TableHead className="text-right">Unit Price</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -310,6 +312,11 @@ function ReceiptItems() {
                           indices={getMatchIndices(matches, "description")}
                         />
                       </TableCell>
+                      <TableCell>
+                        <span className="text-xs text-muted-foreground">
+                          {item.pricingMode === "flat" ? "Flat" : "Qty"}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-right">
                         {item.quantity}
                       </TableCell>
@@ -344,7 +351,7 @@ function ReceiptItems() {
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-right font-medium">
+                  <TableCell colSpan={6} className="text-right font-medium">
                     Grand Total
                   </TableCell>
                   <TableCell className="text-right font-bold">
@@ -403,6 +410,7 @@ function ReceiptItems() {
                 receiptId: editItem.receiptId,
                 receiptItemCode: editItem.receiptItemCode,
                 description: editItem.description,
+                pricingMode: editItem.pricingMode ?? "quantity",
                 quantity: editItem.quantity,
                 unitPrice: editItem.unitPrice,
                 category: editItem.category,

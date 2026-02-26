@@ -29,7 +29,8 @@ public partial class ReceiptItemMapper
 			unitPriceMoney,
 			totalAmount,
 			source.Category,
-			source.Subcategory
+			source.Subcategory,
+			source.PricingMode ?? "quantity"
 		);
 	}
 
@@ -48,7 +49,8 @@ public partial class ReceiptItemMapper
 			unitPriceMoney,
 			totalAmount,
 			source.Category,
-			source.Subcategory
+			source.Subcategory,
+			source.PricingMode ?? "quantity"
 		);
 	}
 
