@@ -299,7 +299,7 @@ export function Layout() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 container mx-auto px-4 py-6"
+        className="flex-1 container mx-auto px-4 py-6 focus:outline-none"
       >
         <Breadcrumbs />
         <div key={location.pathname} className="animate-in fade-in duration-200">
