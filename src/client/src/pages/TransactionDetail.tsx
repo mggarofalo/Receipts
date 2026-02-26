@@ -27,13 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
+import { formatCurrency } from "@/lib/format";
 
 type LookupMode = "receipt" | "transaction";
 

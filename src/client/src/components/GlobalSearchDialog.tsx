@@ -18,6 +18,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
+import { formatCurrency } from "@/lib/format";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useReceiptItems } from "@/hooks/useReceiptItems";
@@ -46,13 +47,6 @@ interface TransactionResponse {
   id: string;
   amount: number;
   date: string;
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
 }
 
 interface GlobalSearchDialogProps {

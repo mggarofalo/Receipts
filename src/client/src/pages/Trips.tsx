@@ -24,13 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
+import { formatCurrency } from "@/lib/format";
 
 function Trips() {
   usePageTitle("Trips");
