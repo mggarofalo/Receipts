@@ -73,7 +73,8 @@
       "WebFetch(domain:github.com)",
       "WebSearch",
       "Bash(aspire run:*)",
-      "Bash(agent-browser:*)"
+      "Bash(agent-browser:*)",
+      "Bash(npx openapi-typescript:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
