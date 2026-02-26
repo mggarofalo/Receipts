@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Trash2 } from "lucide-react";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useDeletedAccounts, useRestoreAccount } from "@/hooks/useAccounts";
@@ -11,6 +12,7 @@ import {
   useDeletedTransactions,
   useRestoreTransaction,
 } from "@/hooks/useTransactions";
+import { usePurgeTrash } from "@/hooks/useTrash";
 import { truncateId } from "@/lib/audit-utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +29,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -154,6 +167,7 @@ function RecycleBin() {
   const receipts = useDeletedReceipts();
   const receiptItems = useDeletedReceiptItems();
   const transactions = useDeletedTransactions();
+  const purgeTrash = usePurgeTrash();
 
   const isLoading =
     accounts.isLoading ||
@@ -229,7 +243,46 @@ function RecycleBin() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Recycle Bin</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Recycle Bin</h1>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={allItems.length === 0 || purgeTrash.isPending}
+            >
+              {purgeTrash.isPending ? (
+                <Spinner size="sm" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              {purgeTrash.isPending ? "Emptying..." : "Empty Trash"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Empty Trash?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete{" "}
+                <strong>
+                  {allItems.length} {allItems.length === 1 ? "item" : "items"}
+                </strong>
+                . This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => purgeTrash.mutate()}
+              >
+                Empty Trash
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
 
       <Tabs defaultValue="all">
         <TabsList>

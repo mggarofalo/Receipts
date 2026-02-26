@@ -115,7 +115,8 @@ public static class InfrastructureService
 			.AddScoped<IApiKeyService, ApiKeyService>()
 			.AddScoped<IAuditService, AuditService>()
 			.AddScoped<IAuthAuditService, AuthAuditService>()
-			.AddScoped<IUserService, UserService>();
+			.AddScoped<IUserService, UserService>()
+			.AddScoped<ITrashService, TrashService>();
 
 		services.AddHostedService<AuthAuditCleanupService>();
 
