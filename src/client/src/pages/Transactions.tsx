@@ -152,7 +152,11 @@ function Transactions() {
     items: paginatedItems,
     getId: (t) => t.id,
     enabled: !anyDialogOpen,
-    onOpen: (t) => setEditTransaction(t),
+    onOpen: (t) => {
+      setEditTransaction(t);
+      setEditReceiptId(t.receiptId);
+      setEditAccountId(t.accountId);
+    },
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
       setSelected(new Set(paginatedItems.map((t) => t.id))),
@@ -279,7 +283,11 @@ function Transactions() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setEditTransaction(txn)}
+                          onClick={() => {
+                            setEditTransaction(txn);
+                            setEditReceiptId(txn.receiptId);
+                            setEditAccountId(txn.accountId);
+                          }}
                         >
                           Edit
                         </Button>

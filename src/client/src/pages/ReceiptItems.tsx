@@ -182,7 +182,10 @@ function ReceiptItems() {
     items: paginatedItems,
     getId: (item) => item.id,
     enabled: !anyDialogOpen,
-    onOpen: (item) => setEditItem(item),
+    onOpen: (item) => {
+      setEditItem(item);
+      setEditReceiptId(item.receiptId);
+    },
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
       setSelected(new Set(paginatedItems.map((item) => item.id))),
@@ -333,7 +336,10 @@ function ReceiptItems() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setEditItem(item)}
+                          onClick={() => {
+                            setEditItem(item);
+                            setEditReceiptId(item.receiptId);
+                          }}
                         >
                           Edit
                         </Button>
