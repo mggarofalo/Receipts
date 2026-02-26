@@ -298,5 +298,5 @@ openapi/generated/
 # Client generated types (regenerated from openapi/spec.yaml on dev/build)
 src/client/src/generated/
 
-# Git worktrees
-.worktrees/
+# Local clones for branch isolation
+.clones/

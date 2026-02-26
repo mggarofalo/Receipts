@@ -6,7 +6,6 @@
       "Bash(gh pr edit:*)",
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
-
       "Bash(git add:*)",
       "Bash(git branch:*)",
       "Bash(git checkout:*)",
@@ -21,8 +20,7 @@
       "Bash(git status:*)",
       "Bash(git switch:*)",
       "Bash(git tag:*)",
-      "Bash(git worktree:*)",
-
+      "Bash(git clone:*)",
       "Bash(dotnet add:*)",
       "Bash(dotnet build:*)",
       "Bash(dotnet clean:*)",
@@ -37,16 +35,13 @@
       "Bash(dotnet test:*)",
       "Bash(dotnet tool:*)",
       "Bash(dotnet workload:*)",
-
       "Bash(npm run:*)",
       "Bash(npx eslint:*)",
       "Bash(npx tsc:*)",
-
       "Bash(dir:*)",
       "Bash(findstr:*)",
       "Bash(grep:*)",
       "Bash(test:*)",
-
       "mcp__aspire__execute_resource_command",
       "mcp__aspire__list_apphosts",
       "mcp__aspire__list_console_logs",
@@ -54,7 +49,6 @@
       "mcp__aspire__list_structured_logs",
       "mcp__aspire__list_traces",
       "mcp__aspire__select_apphost",
-
       "mcp__plugin_linear_linear__get_document",
       "mcp__plugin_linear_linear__get_issue",
       "mcp__plugin_linear_linear__get_project",
@@ -68,7 +62,6 @@
       "mcp__plugin_linear_linear__list_teams",
       "mcp__plugin_linear_linear__list_users",
       "mcp__plugin_linear_linear__search_documentation",
-
       "mcp__plugin_linear_linear__create_comment",
       "mcp__plugin_linear_linear__create_document",
       "mcp__plugin_linear_linear__create_issue_label",
@@ -76,10 +69,11 @@
       "mcp__plugin_linear_linear__save_milestone",
       "mcp__plugin_linear_linear__save_project",
       "mcp__plugin_linear_linear__update_document",
-
-      "Skill(worktree)",
+      "Skill(clone)",
       "WebFetch(domain:github.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(aspire run:*)",
+      "Bash(agent-browser:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

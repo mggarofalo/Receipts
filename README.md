@@ -236,7 +236,7 @@ This project uses a two-tier branching model:
 - **Milestone branches** (`milestone/phase-N`) collect issue work for a phase, then PR into `master` with CI gating
 - **Issue branches** branch off the milestone branch and squash-merge locally back into it
 - The `master` branch is always deployable
-- Git worktrees (`.worktrees/`) are used for all branch work to keep the main repo on `master`
+- Local clones (`.clones/`) via `git clone --local` are used for isolated branch work
 
 ## License
 
