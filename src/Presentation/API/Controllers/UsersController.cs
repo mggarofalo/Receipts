@@ -111,7 +111,11 @@ public class UsersController(
 				return BadRequest(result.Errors.Select(e => e.Description));
 			}
 
-			await userManager.AddToRoleAsync(user, request.Role);
+			IdentityResult roleResult = await userManager.AddToRoleAsync(user, request.Role);
+			if (!roleResult.Succeeded)
+			{
+				return BadRequest(roleResult.Errors.Select(e => e.Description));
+			}
 
 			await LogAuthEventAsync(nameof(AuthEventType.UserRegistered), user.Id, user.Email);
 
@@ -178,17 +182,27 @@ public class UsersController(
 			}
 			else
 			{
+				user.LockoutEnabled = false;
 				user.LockoutEnd = null;
 			}
 
-			await userManager.UpdateAsync(user);
+			IdentityResult updateResult = await userManager.UpdateAsync(user);
+			if (!updateResult.Succeeded)
+			{
+				return BadRequest(updateResult.Errors.Select(e => e.Description));
+			}
 
 			IList<string> roles = await userManager.GetRolesAsync(user);
 			if (roles.Count > 0)
 			{
 				await userManager.RemoveFromRolesAsync(user, roles);
 			}
-			await userManager.AddToRoleAsync(user, request.Role);
+
+			IdentityResult roleResult = await userManager.AddToRoleAsync(user, request.Role);
+			if (!roleResult.Succeeded)
+			{
+				return BadRequest(roleResult.Errors.Select(e => e.Description));
+			}
 
 			return NoContent();
 		}
