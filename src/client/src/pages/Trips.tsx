@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTripByReceiptId } from "@/hooks/useTrips";
+import { useReceipts } from "@/hooks/useReceipts";
+import { receiptToOption } from "@/lib/combobox-options";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,49 +34,47 @@ function formatCurrency(amount: number): string {
 
 function Trips() {
   usePageTitle("Trips");
-  const [inputId, setInputId] = useState("");
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const { data: trip, isLoading, isError } = useTripByReceiptId(receiptId);
+  const { data: receipts, isLoading: receiptsLoading } = useReceipts();
 
-  function handleLookup() {
-    const trimmed = inputId.trim();
-    if (trimmed) setReceiptId(trimmed);
-  }
+  const receiptOptions = useMemo(
+    () =>
+      ((receipts as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
+    [receipts],
+  );
 
   const itemsTotal =
     trip?.receipt?.items?.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
+      (sum: number, item: { quantity: number; unitPrice: number }) => sum + item.quantity * item.unitPrice,
       0,
     ) ?? 0;
 
   const transactionsTotal =
-    trip?.transactions?.reduce((sum, ta) => sum + ta.transaction.amount, 0) ??
+    trip?.transactions?.reduce((sum: number, ta: { transaction: { amount: number } }) => sum + ta.transaction.amount, 0) ??
     0;
 
   const tripItems = trip?.receipt?.items ?? [];
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: tripItems,
-    getId: (item) => item.id,
+    items: tripItems as { id: string }[],
+    getId: (item: { id: string }) => item.id,
     enabled: tripItems.length > 0,
   });
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Trips</h1>
-      <div className="flex items-end gap-4">
-        <div className="flex-1 max-w-md space-y-2">
-          <Label htmlFor="receiptId">Receipt ID</Label>
-          <Input
-            id="receiptId"
-            placeholder="Enter receipt UUID..."
-            value={inputId}
-            onChange={(e) => setInputId(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-          />
-        </div>
-        <Button onClick={handleLookup} disabled={!inputId.trim()}>
-          Look Up Trip
-        </Button>
+      <div className="max-w-md space-y-2">
+        <Label>Select a Receipt</Label>
+        <Combobox
+          options={receiptOptions}
+          value={receiptId ?? ""}
+          onValueChange={(value) => setReceiptId(value || null)}
+          placeholder="Search for a receipt..."
+          searchPlaceholder="Search receipts..."
+          emptyMessage="No receipts found."
+          loading={receiptsLoading}
+        />
       </div>
 
       {isLoading && (
@@ -88,7 +87,7 @@ function Trips() {
 
       {isError && receiptId && (
         <div className="py-12 text-center text-muted-foreground">
-          No trip found for this receipt ID.
+          No trip found for this receipt.
         </div>
       )}
 
@@ -165,7 +164,7 @@ function Trips() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {trip.receipt.items.map((item, index) => (
+                      {trip.receipt.items.map((item: { id: string; receiptItemCode: string; description: string; quantity: number; unitPrice: number; category: string; subcategory: string }, index: number) => (
                         <TableRow
                           key={item.id}
                           className={`cursor-pointer ${focusedId === item.id ? "bg-accent" : ""}`}
@@ -234,7 +233,7 @@ function Trips() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {trip.transactions.map((ta) => (
+                      {trip.transactions.map((ta: { transaction: { id: string; amount: number; date: string }; account: { accountCode: string; name: string; isActive: boolean } }) => (
                         <TableRow key={ta.transaction.id}>
                           <TableCell className="text-right">
                             {formatCurrency(ta.transaction.amount)}
