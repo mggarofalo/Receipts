@@ -9,5 +9,7 @@ public class ApplicationUser : IdentityUser
 	public string? RefreshToken { get; set; }
 	public DateTimeOffset? RefreshTokenExpiresAt { get; set; }
 	public bool MustResetPassword { get; set; }
+	public DateTimeOffset CreatedAt { get; set; }
+	public DateTimeOffset? LastLoginAt { get; set; }
 	public virtual ICollection<ApiKeyEntity> ApiKeys { get; set; } = [];
 }

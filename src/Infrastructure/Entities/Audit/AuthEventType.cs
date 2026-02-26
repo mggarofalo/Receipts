@@ -10,4 +10,5 @@ public enum AuthEventType
 	ApiKeyRevoked,
 	PasswordChanged,
 	UserRegistered,
+	AccountDisabled,
 }

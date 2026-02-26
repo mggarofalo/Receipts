@@ -1548,33 +1548,6 @@ paths:
   # Auth
   # ──────────────────────────────────────────────
 
-  /api/auth/register:
-    post:
-      operationId: Register
-      tags: [Auth]
-      summary: Register a new user
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegisterRequest"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TokenResponse"
-        "400":
-          description: Bad Request
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
-
   /api/auth/login:
     post:
       operationId: Login
@@ -1909,6 +1882,176 @@ paths:
           description: Unauthorized
         "403":
           description: Forbidden
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateUser
+      tags: [Users]
+      summary: Create a new user (admin only)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummaryResponse"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/users/{userId}:
+    get:
+      operationId: GetUser
+      tags: [Users]
+      summary: Get a user by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummaryResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateUser
+      tags: [Users]
+      summary: Update a user (admin only)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeactivateUser
+      tags: [Users]
+      summary: Deactivate a user (admin only)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/users/{userId}/reset-password:
+    post:
+      operationId: AdminResetPassword
+      tags: [Users]
+      summary: Reset a user's password (admin only)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminResetPasswordRequest"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
         "500":
           description: Internal Server Error
           content:
@@ -2383,23 +2526,6 @@ components:
 
     # ── Auth ──────────────────────────────────────
 
-    RegisterRequest:
-      type: object
-      required: [email, password]
-      properties:
-        email:
-          type: string
-        password:
-          type: string
-        firstName:
-          type:
-            - string
-            - "null"
-        lastName:
-          type:
-            - string
-            - "null"
-
     LoginRequest:
       type: object
       required: [email, password]
@@ -2498,16 +2624,34 @@ components:
 
     UserSummaryResponse:
       type: object
-      required: [id, email, roles]
+      required: [id, email, roles, isDisabled, createdAt]
       properties:
         id:
           type: string
         email:
           type: string
+        firstName:
+          type:
+            - string
+            - "null"
+        lastName:
+          type:
+            - string
+            - "null"
         roles:
           type: array
           items:
             type: string
+        isDisabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type:
+            - string
+            - "null"
+          format: date-time
 
     UserListResponse:
       type: object
@@ -2535,6 +2679,51 @@ components:
           type: array
           items:
             type: string
+
+    CreateUserRequest:
+      type: object
+      required: [email, password, role]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+        firstName:
+          type:
+            - string
+            - "null"
+        lastName:
+          type:
+            - string
+            - "null"
+
+    UpdateUserRequest:
+      type: object
+      required: [email, role, isDisabled]
+      properties:
+        email:
+          type: string
+        role:
+          type: string
+        isDisabled:
+          type: boolean
+        firstName:
+          type:
+            - string
+            - "null"
+        lastName:
+          type:
+            - string
+            - "null"
+
+    AdminResetPasswordRequest:
+      type: object
+      required: [newPassword]
+      properties:
+        newPassword:
+          type: string
 
   securitySchemes:
     BearerAuth:

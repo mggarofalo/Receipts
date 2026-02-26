@@ -1,24 +1,21 @@
-import { useState, useMemo } from "react";
-import { useUsers } from "@/hooks/useUsers";
-import { useUserRoles, useAssignRole, useRemoveRole } from "@/hooks/useRoles";
-import { usePageTitle } from "@/hooks/usePageTitle";
-import { useFuzzySearch } from "@/hooks/useFuzzySearch";
-import { usePagination } from "@/hooks/usePagination";
-import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
-import type { FuseSearchConfig } from "@/lib/search";
-import { FuzzySearchInput } from "@/components/FuzzySearchInput";
-import { SearchHighlight } from "@/components/SearchHighlight";
-import { getMatchIndices } from "@/lib/search-highlight";
-import { NoResults } from "@/components/NoResults";
-import { Pagination } from "@/components/Pagination";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  useUsers,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+  useResetUserPassword,
+} from "@/hooks/useUsers";
+import { useAuth } from "@/hooks/useAuth";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -28,170 +25,294 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 
-// Must match AppRoles.All on the backend (src/Common/AppRoles.cs)
 const AVAILABLE_ROLES = ["Admin", "User"];
 
-interface UserSummary {
-  id: string;
-  email: string;
-  roles: string[];
-  isDisabled: boolean;
-  createdAt: string;
-}
+const createUserSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.string().min(1, "Role is required"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+});
 
-const SEARCH_CONFIG: FuseSearchConfig<UserSummary> = {
-  keys: [
-    { name: "email", weight: 2 },
-    { name: "roles", weight: 1 },
-  ],
-};
+type CreateUserFormValues = z.infer<typeof createUserSchema>;
+
+const editUserSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  role: z.string().min(1, "Role is required"),
+  isDisabled: z.boolean(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+});
+
+type EditUserFormValues = z.infer<typeof editUserSchema>;
+
+const resetPasswordSchema = z.object({
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 function AdminUsers() {
   usePageTitle("User Management");
-  const { data: usersData, isLoading } = useUsers();
-  const [manageUser, setManageUser] = useState<UserSummary | null>(null);
-  const assignRole = useAssignRole();
-  const removeRole = useRemoveRole();
+  const { user: currentUser } = useAuth();
 
-  // Fetch roles for the selected user (for real-time updates in dialog)
-  const { data: rolesData } = useUserRoles(manageUser?.id ?? null);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+  const { data, isLoading } = useUsers(page, pageSize);
 
-  const anyDialogOpen = manageUser !== null;
+  const createUser = useCreateUser();
+  const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
+  const resetPassword = useResetUserPassword();
 
-  const data = useMemo(() => {
-    const items = (usersData as { items?: UserSummary[] } | undefined)?.items ?? [];
-    return [...items].sort((a, b) => a.email.localeCompare(b.email));
-  }, [usersData]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editUser, setEditUser] = useState<{
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    role: string;
+    isDisabled: boolean;
+  } | null>(null);
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [deactivateUser, setDeactivateUser] = useState<{
+    id: string;
+    email: string;
+  } | null>(null);
 
-  const { search, setSearch, results, totalCount, clearSearch } =
-    useFuzzySearch({ data, config: SEARCH_CONFIG });
+  const items = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  const matchMap = useMemo(() => {
-    const map = new Map<string, (typeof results)[number]>();
-    for (const r of results) {
-      map.set(r.item.id, r);
-    }
-    return map;
-  }, [results]);
-
-  const filteredResults = useMemo(
-    () => results.map((r) => r.item),
-    [results],
-  );
-
-  const {
-    paginatedItems,
-    currentPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  } = usePagination({ items: filteredResults });
-
+  const listItems = items.map((u) => ({ id: u.id }));
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: paginatedItems,
+    items: listItems,
     getId: (u) => u.id,
-    enabled: !anyDialogOpen,
-    onOpen: (u) => setManageUser(u),
+    enabled: listItems.length > 0,
   });
 
-  // Use live roles from the query if available, otherwise fall back to the snapshot
-  const currentRoles = rolesData?.roles ?? manageUser?.roles ?? [];
-  const unassignedRoles = AVAILABLE_ROLES.filter(
-    (r) => !currentRoles.includes(r),
-  );
+  const createForm = useForm<CreateUserFormValues>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      role: "User",
+      firstName: "",
+      lastName: "",
+    },
+  });
 
-  if (isLoading) {
-    return <TableSkeleton columns={4} />;
+  const editForm = useForm<EditUserFormValues>({
+    resolver: zodResolver(editUserSchema),
+  });
+
+  const resetForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { newPassword: "" },
+  });
+
+  async function onCreateSubmit(values: CreateUserFormValues) {
+    await createUser.mutateAsync({
+      email: values.email,
+      password: values.password,
+      role: values.role,
+      firstName: values.firstName || null,
+      lastName: values.lastName || null,
+    });
+    setCreateOpen(false);
+    createForm.reset();
+  }
+
+  async function onEditSubmit(values: EditUserFormValues) {
+    if (!editUser) return;
+    await updateUser.mutateAsync({
+      userId: editUser.id,
+      body: {
+        email: values.email,
+        role: values.role,
+        isDisabled: values.isDisabled,
+        firstName: values.firstName || null,
+        lastName: values.lastName || null,
+      },
+    });
+    setEditUser(null);
+  }
+
+  async function onResetSubmit(values: ResetPasswordFormValues) {
+    if (!resetUserId) return;
+    await resetPassword.mutateAsync({
+      userId: resetUserId,
+      newPassword: values.newPassword,
+    });
+    setResetUserId(null);
+    resetForm.reset();
+  }
+
+  function openEdit(user: (typeof items)[0]) {
+    const primaryRole = user.roles[0] ?? "User";
+    setEditUser({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: primaryRole,
+      isDisabled: user.isDisabled,
+    });
+    editForm.reset({
+      email: user.email,
+      role: primaryRole,
+      isDisabled: user.isDisabled,
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+    });
+  }
+
+  function formatDate(dateStr: string | null | undefined) {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString();
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">User Management</h1>
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <FuzzySearchInput
-          aria-label="Search users"
-          value={search}
-          onChange={setSearch}
-          placeholder="Search users..."
-          resultCount={filteredResults.length}
-          totalCount={totalCount}
-          className="max-w-sm"
-        />
+        <h1 className="text-2xl font-bold">User Management</h1>
+        <Button onClick={() => setCreateOpen(true)}>Create User</Button>
       </div>
 
-      {filteredResults.length === 0 ? (
-        search ? (
-          <NoResults
-            searchTerm={search}
-            onClearSearch={clearSearch}
-            onSelectSuggestion={setSearch}
-            entityName="users"
-          />
-        ) : (
-          <div className="py-12 text-center text-muted-foreground">
-            No users found.
-          </div>
-        )
-      ) : (
+      {isLoading && <TableSkeleton rows={5} columns={7} />}
+
+      {!isLoading && items.length === 0 && (
+        <div className="py-12 text-center text-muted-foreground">
+          No users found.
+        </div>
+      )}
+
+      {!isLoading && items.length > 0 && (
         <>
           <div className="rounded-md border" ref={tableRef}>
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Roles</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-32">Actions</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Last Login</TableHead>
+                  <TableHead className="w-[200px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((user, index) => {
-                  const result = matchMap.get(user.id);
-                  const matches = result?.matches;
+                {items.map((user, index) => {
+                  const isSelf = currentUser?.email === user.email;
+                  const name =
+                    [user.firstName, user.lastName]
+                      .filter(Boolean)
+                      .join(" ") || "-";
                   return (
                     <TableRow
                       key={user.id}
                       className={`cursor-pointer ${focusedId === user.id ? "bg-accent" : ""}`}
                       onClick={(e) => {
-                        if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                        if (
+                          (e.target as HTMLElement).closest(
+                            "button, input, a, [role='button']",
+                          )
+                        )
+                          return;
                         setFocusedIndex(index);
                       }}
                     >
+                      <TableCell className="font-medium">{name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
                       <TableCell>
-                        <SearchHighlight
-                          text={user.email}
-                          indices={getMatchIndices(matches, "email")}
-                        />
+                        {user.roles.map((role) => (
+                          <Badge
+                            key={role}
+                            variant={
+                              role === "Admin" ? "default" : "secondary"
+                            }
+                            className="mr-1"
+                          >
+                            {role}
+                          </Badge>
+                        ))}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {user.roles.map((role) => (
-                            <Badge key={role} variant="default">
-                              {role}
-                            </Badge>
-                          ))}
-                          {user.roles.length === 0 && (
-                            <span className="text-sm text-muted-foreground">None</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.isDisabled ? "destructive" : "secondary"}>
+                        <Badge
+                          variant={user.isDisabled ? "destructive" : "outline"}
+                        >
                           {user.isDisabled ? "Disabled" : "Active"}
                         </Badge>
                       </TableCell>
+                      <TableCell>{formatDate(user.createdAt)}</TableCell>
+                      <TableCell>{formatDate(user.lastLoginAt)}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setManageUser(user)}
-                        >
-                          Manage Roles
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEdit(user)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setResetUserId(user.id)}
+                          >
+                            Reset PW
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={isSelf || user.isDisabled}
+                            onClick={() =>
+                              setDeactivateUser({
+                                id: user.id,
+                                email: user.email,
+                              })
+                            }
+                          >
+                            Disable
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -199,88 +320,359 @@ function AdminUsers() {
               </TableBody>
             </Table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Page {page} of {totalPages} ({totalCount} users)
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
+      {/* Create User Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create User</DialogTitle>
+            <DialogDescription>
+              Create a new user account. They will be required to change their
+              password on first login.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...createForm}>
+            <form
+              onSubmit={createForm.handleSubmit(onCreateSubmit)}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={createForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={createForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="name@example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="At least 8 characters"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {AVAILABLE_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  disabled={createForm.formState.isSubmitting}
+                >
+                  {createForm.formState.isSubmitting && <Spinner size="sm" />}
+                  {createForm.formState.isSubmitting
+                    ? "Creating..."
+                    : "Create User"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user details, role, and account status.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit(onEditSubmit)}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {AVAILABLE_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="isDisabled"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-3">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="h-4 w-4 rounded border-gray-300"
+                          aria-label="Disable account"
+                        />
+                      </FormControl>
+                      <Label>Account Disabled</Label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  disabled={editForm.formState.isSubmitting}
+                >
+                  {editForm.formState.isSubmitting && <Spinner size="sm" />}
+                  {editForm.formState.isSubmitting
+                    ? "Saving..."
+                    : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
       <Dialog
-        open={manageUser !== null}
-        onOpenChange={(open) => {
-          if (!open) setManageUser(null);
+        open={!!resetUserId}
+        onOpenChange={() => {
+          setResetUserId(null);
+          resetForm.reset();
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Manage Roles</DialogTitle>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for this user. They will be required to change
+              it on their next login.
+            </DialogDescription>
           </DialogHeader>
-          {manageUser && (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {manageUser.email}
-              </p>
-
-              <div>
-                <h4 className="text-sm font-medium mb-2">Current Roles</h4>
-                {currentRoles.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No roles assigned.</p>
-                ) : (
-                  <div className="flex gap-2 flex-wrap">
-                    {currentRoles.map((role: string) => (
-                      <div key={role} className="flex items-center gap-1">
-                        <Badge variant="default">{role}</Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-destructive hover:text-destructive"
-                          disabled={removeRole.isPending}
-                          onClick={() =>
-                            removeRole.mutate({ userId: manageUser.id, role })
-                          }
-                        >
-                          {removeRole.isPending ? (
-                            <Spinner size="sm" />
-                          ) : (
-                            "Remove"
-                          )}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+          <Form {...resetForm}>
+            <form
+              onSubmit={resetForm.handleSubmit(onResetSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={resetForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="At least 8 characters"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
-
-              {unassignedRoles.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Assign Role</h4>
-                  <div className="flex gap-2">
-                    {unassignedRoles.map((role) => (
-                      <Button
-                        key={role}
-                        variant="outline"
-                        size="sm"
-                        disabled={assignRole.isPending}
-                        onClick={() =>
-                          assignRole.mutate({ userId: manageUser.id, role })
-                        }
-                      >
-                        {assignRole.isPending && <Spinner size="sm" />}
-                        {assignRole.isPending ? "Assigning..." : `Assign ${role}`}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+              />
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  disabled={resetForm.formState.isSubmitting}
+                >
+                  {resetForm.formState.isSubmitting && <Spinner size="sm" />}
+                  {resetForm.formState.isSubmitting
+                    ? "Resetting..."
+                    : "Reset Password"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Deactivate Confirmation */}
+      <AlertDialog
+        open={!!deactivateUser}
+        onOpenChange={() => setDeactivateUser(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to deactivate{" "}
+              <span className="font-semibold">{deactivateUser?.email}</span>?
+              They will no longer be able to log in.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={async () => {
+                if (deactivateUser) {
+                  await deleteUser.mutateAsync(deactivateUser.id);
+                  setDeactivateUser(null);
+                }
+              }}
+            >
+              {deleteUser.isPending && <Spinner size="sm" />}
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

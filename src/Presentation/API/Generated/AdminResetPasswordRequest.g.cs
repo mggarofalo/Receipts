@@ -27,36 +27,12 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class UserSummaryResponse
+    public partial class AdminResetPasswordRequest
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        [System.Text.Json.Serialization.JsonPropertyName("newPassword")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("email")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Email { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("firstName")]
-        public string? FirstName { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("lastName")]
-        public string? LastName { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("roles")]
-        [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<string> Roles { get; set; } = new System.Collections.ObjectModel.Collection<string>();
-
-        [System.Text.Json.Serialization.JsonPropertyName("isDisabled")]
-        public bool IsDisabled { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.DateTimeOffset CreatedAt { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("lastLoginAt")]
-        public System.DateTimeOffset? LastLoginAt { get; set; } = default!;
+        public string NewPassword { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

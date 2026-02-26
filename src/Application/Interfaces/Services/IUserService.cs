@@ -1,6 +1,14 @@
 namespace Application.Interfaces.Services;
 
-public record UserSummary(string Id, string Email, IReadOnlyList<string> Roles);
+public record UserSummary(
+	string Id,
+	string Email,
+	string? FirstName,
+	string? LastName,
+	IReadOnlyList<string> Roles,
+	bool IsDisabled,
+	DateTimeOffset CreatedAt,
+	DateTimeOffset? LastLoginAt);
 
 public record PagedUserList(
 	IReadOnlyList<UserSummary> Items,

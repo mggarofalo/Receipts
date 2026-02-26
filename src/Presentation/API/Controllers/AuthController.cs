@@ -1,6 +1,5 @@
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
-using Common;
 using Infrastructure.Entities;
 using Infrastructure.Entities.Audit;
 using Microsoft.AspNetCore.Authorization;
@@ -20,58 +19,6 @@ public class AuthController(
 	IAuthAuditService authAuditService,
 	ILogger<AuthController> logger) : ControllerBase
 {
-	[HttpPost("register")]
-	[AllowAnonymous]
-	[EndpointSummary("Register a new user")]
-	[ProducesResponseType<TokenResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<TokenResponse>> Register([FromBody] RegisterRequest request)
-	{
-		try
-		{
-			ApplicationUser user = new()
-			{
-				UserName = request.Email,
-				Email = request.Email,
-				FirstName = request.FirstName,
-				LastName = request.LastName,
-				MustResetPassword = true,
-			};
-
-			IdentityResult result = await userManager.CreateAsync(user, request.Password);
-			if (!result.Succeeded)
-			{
-				return BadRequest(result.Errors.Select(e => e.Description));
-			}
-
-			await userManager.AddToRoleAsync(user, AppRoles.User);
-
-			IList<string> roles = await userManager.GetRolesAsync(user);
-			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles, true);
-			string refreshToken = tokenService.GenerateRefreshToken();
-
-			user.RefreshToken = refreshToken;
-			user.RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(30);
-			await userManager.UpdateAsync(user);
-
-			await LogAuthEventAsync(nameof(AuthEventType.UserRegistered), user.Id, user.Email, true);
-
-			return Ok(new TokenResponse
-			{
-				AccessToken = accessToken,
-				RefreshToken = refreshToken,
-				ExpiresIn = 3600,
-				MustResetPassword = true,
-			});
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, "Error occurred in {Method}", nameof(Register));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
-	}
-
 	[HttpPost("login")]
 	[AllowAnonymous]
 	[EndpointSummary("Login with email and password")]
@@ -89,12 +36,19 @@ public class AuthController(
 				return Unauthorized();
 			}
 
+			if (await userManager.IsLockedOutAsync(user))
+			{
+				await LogAuthEventAsync(nameof(AuthEventType.LoginFailed), user.Id, request.Email, false, "Account disabled");
+				return Unauthorized();
+			}
+
 			IList<string> roles = await userManager.GetRolesAsync(user);
 			string accessToken = tokenService.GenerateAccessToken(user.Id, user.Email!, roles, user.MustResetPassword);
 			string refreshToken = tokenService.GenerateRefreshToken();
 
 			user.RefreshToken = refreshToken;
 			user.RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(30);
+			user.LastLoginAt = DateTimeOffset.UtcNow;
 			await userManager.UpdateAsync(user);
 
 			await LogAuthEventAsync(nameof(AuthEventType.Login), user.Id, user.Email, true);

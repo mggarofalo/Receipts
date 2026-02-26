@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router";
+import { Navigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -120,12 +120,6 @@ function Login() {
               </Button>
             </form>
           </Form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline">
-              Register
-            </Link>
-          </p>
         </CardContent>
       </Card>
   );

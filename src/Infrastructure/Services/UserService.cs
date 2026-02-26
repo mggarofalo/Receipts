@@ -38,7 +38,12 @@ public class UserService(ApplicationDbContext dbContext) : IUserService
 		List<UserSummary> items = users.Select(user => new UserSummary(
 			user.Id,
 			user.Email ?? "",
-			rolesByUserId.GetValueOrDefault(user.Id, [])
+			user.FirstName,
+			user.LastName,
+			rolesByUserId.GetValueOrDefault(user.Id, []),
+			user.LockoutEnabled && user.LockoutEnd > DateTimeOffset.UtcNow,
+			user.CreatedAt,
+			user.LastLoginAt
 		)).ToList();
 
 		return new PagedUserList(items, page, pageSize, totalCount);

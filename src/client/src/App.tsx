@@ -6,7 +6,6 @@ import { PublicLayout } from "@/components/PublicLayout";
 import { RootLayout } from "@/components/RootLayout";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
-import Register from "@/pages/Register";
 import ChangePassword from "@/pages/ChangePassword";
 import ApiKeys from "@/pages/ApiKeys";
 import Accounts from "@/pages/Accounts";
@@ -30,7 +29,6 @@ export const router = createBrowserRouter([
         element: <PublicLayout />,
         children: [
           { path: "/login", element: <Login /> },
-          { path: "/register", element: <Register /> },
           { path: "/change-password", element: <ChangePassword /> },
         ],
       },
