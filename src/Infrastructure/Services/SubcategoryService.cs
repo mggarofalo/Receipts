@@ -1,8 +1,10 @@
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
 using Infrastructure.Mapping;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
 
@@ -10,9 +12,16 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 {
 	public async Task<List<Subcategory>> CreateAsync(List<Subcategory> models, CancellationToken cancellationToken)
 	{
-		List<SubcategoryEntity> subcategoryEntities = [.. models.Select(mapper.ToEntity)];
-		List<SubcategoryEntity> createdSubcategoryEntities = await repository.CreateAsync(subcategoryEntities, cancellationToken);
-		return [.. createdSubcategoryEntities.Select(mapper.ToDomain)];
+		try
+		{
+			List<SubcategoryEntity> subcategoryEntities = [.. models.Select(mapper.ToEntity)];
+			List<SubcategoryEntity> createdSubcategoryEntities = await repository.CreateAsync(subcategoryEntities, cancellationToken);
+			return [.. createdSubcategoryEntities.Select(mapper.ToDomain)];
+		}
+		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			throw new DuplicateEntityException("A subcategory with this name already exists in this category.", ex);
+		}
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)

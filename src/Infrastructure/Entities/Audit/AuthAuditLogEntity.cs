@@ -1,3 +1,5 @@
+using Common;
+
 namespace Infrastructure.Entities.Audit;
 
 public class AuthAuditLogEntity

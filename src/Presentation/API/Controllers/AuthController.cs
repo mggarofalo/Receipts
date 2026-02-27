@@ -1,11 +1,10 @@
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Common;
 using Infrastructure.Entities;
-using Infrastructure.Entities.Audit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace API.Controllers;
@@ -16,6 +15,7 @@ namespace API.Controllers;
 public class AuthController(
 	UserManager<ApplicationUser> userManager,
 	ITokenService tokenService,
+	IUserService userService,
 	IAuthAuditService authAuditService,
 	ILogger<AuthController> logger) : ControllerBase
 {
@@ -78,8 +78,8 @@ public class AuthController(
 	{
 		try
 		{
-			ApplicationUser? user = await userManager.Users
-				.FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
+			string? userId = await userService.FindUserIdByRefreshTokenAsync(request.RefreshToken);
+			ApplicationUser? user = userId is not null ? await userManager.FindByIdAsync(userId) : null;
 
 			if (user is null
 				|| user.RefreshTokenExpiresAt is null

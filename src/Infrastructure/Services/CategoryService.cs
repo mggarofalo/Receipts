@@ -1,8 +1,10 @@
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
 using Infrastructure.Mapping;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
 
@@ -10,9 +12,16 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 {
 	public async Task<List<Category>> CreateAsync(List<Category> models, CancellationToken cancellationToken)
 	{
-		List<CategoryEntity> categoryEntities = [.. models.Select(mapper.ToEntity)];
-		List<CategoryEntity> createdCategoryEntities = await repository.CreateAsync(categoryEntities, cancellationToken);
-		return [.. createdCategoryEntities.Select(mapper.ToDomain)];
+		try
+		{
+			List<CategoryEntity> categoryEntities = [.. models.Select(mapper.ToEntity)];
+			List<CategoryEntity> createdCategoryEntities = await repository.CreateAsync(categoryEntities, cancellationToken);
+			return [.. createdCategoryEntities.Select(mapper.ToDomain)];
+		}
+		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			throw new DuplicateEntityException("A category with this name already exists.", ex);
+		}
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
