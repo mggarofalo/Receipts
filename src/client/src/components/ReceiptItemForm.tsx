@@ -50,6 +50,7 @@ interface ItemTemplate {
   defaultCategory?: string | null;
   defaultSubcategory?: string | null;
   defaultUnitPrice?: number | null;
+  defaultUnitPriceCurrency?: string | null;
   defaultPricingMode?: string | null;
   defaultItemCode?: string | null;
 }
