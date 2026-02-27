@@ -163,7 +163,7 @@ git commit --no-verify -m "message"
 
 ## CI/CD
 
-GitHub Actions runs three parallel jobs on every push to `master` and every PR:
+GitHub Actions runs three parallel jobs on every push to `main` and every PR:
 
 | Job | What it does |
 |---|---|

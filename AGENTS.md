@@ -38,7 +38,7 @@ The canonical API contract lives in `openapi/spec.yaml` (OpenAPI 3.1.0). All API
 
 **Key files:** `openapi/spec.yaml` (canonical spec), `.spectral.yaml` (lint rules), `scripts/check-drift.mjs` (drift detection), `scripts/check-breaking.mjs` (breaking change detection, CI only)
 
-**npm scripts:** `npm run lint:spec`, `npm run check:drift`, `npm run check:breaking -- origin/master`
+**npm scripts:** `npm run lint:spec`, `npm run check:drift`, `npm run check:breaking -- origin/main`
 
 ## Build and Test Commands
 

@@ -6,7 +6,7 @@
  *
  * Usage:
  *   node scripts/check-breaking.mjs <git-ref>
- *   node scripts/check-breaking.mjs origin/master
+ *   node scripts/check-breaking.mjs origin/main
  *
  * The script reads the base spec via `git show <ref>:openapi/spec.yaml`
  * and compares it against the current working copy.
@@ -42,7 +42,7 @@ function flag(msg) {
 function usage() {
   console.error(
     "Usage: node scripts/check-breaking.mjs <git-ref>\n" +
-      "Example: node scripts/check-breaking.mjs origin/master",
+      "Example: node scripts/check-breaking.mjs origin/main",
   );
   process.exit(2);
 }

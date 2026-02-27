@@ -13,7 +13,7 @@ Create a local clone (`git clone --local`) for isolated, parallel development on
 
 - **ALWAYS** create clones inside `.clones/` at the repository root
 - Clone path format: `.clones/<branch-name>`
-- Issue branches MUST branch off the **milestone branch**, not `master`
+- Issue branches MUST branch off the **milestone branch**, not `main`
 - If no argument is provided, ask the user which issue they want to work on
 
 ## Steps
@@ -26,9 +26,9 @@ Create a local clone (`git clone --local`) for isolated, parallel development on
 
 3. **Ensure the milestone branch exists**:
    - The milestone branch is named `milestone/phase-N` (e.g., `milestone/phase-0`)
-   - If it doesn't exist yet, create it from `master`:
+   - If it doesn't exist yet, create it from `main`:
      ```bash
-     git branch milestone/phase-0 master
+     git branch milestone/phase-0 main
      ```
 
 4. **Create the local clone**:
@@ -62,7 +62,7 @@ Create a local clone (`git clone --local`) for isolated, parallel development on
    - The clone path (`.clones/<branch-name>`)
    - The branch name and its base (`milestone/phase-N`)
    - How to work in it: `cd .clones/<branch-name>`
-   - Remind: when done, squash-merge into the milestone branch (not master)
+   - Remind: when done, squash-merge into the milestone branch (not main)
 
 ## Cleanup (when user asks to remove a clone)
 
