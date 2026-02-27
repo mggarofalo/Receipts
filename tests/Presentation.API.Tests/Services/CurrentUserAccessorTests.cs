@@ -125,4 +125,24 @@ public class CurrentUserAccessorTests
 		// Act & Assert
 		Assert.Equal("TestBrowser/1.0", accessor.UserAgent);
 	}
+
+	[Fact]
+	public void IpAddress_ReturnsNullWhenNoHttpContext()
+	{
+		// Arrange
+		CurrentUserAccessor accessor = CreateAccessor();
+
+		// Act & Assert
+		Assert.Null(accessor.IpAddress);
+	}
+
+	[Fact]
+	public void UserAgent_ReturnsNullWhenNoHttpContext()
+	{
+		// Arrange
+		CurrentUserAccessor accessor = CreateAccessor();
+
+		// Act & Assert
+		Assert.Null(accessor.UserAgent);
+	}
 }

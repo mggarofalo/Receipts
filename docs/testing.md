@@ -112,6 +112,6 @@ Both stacks enforce minimum coverage as CI required status checks on `main`. PRs
 | Stack | Line % | Branch % | Configured In |
 |-------|--------|----------|---------------|
 | Backend (.NET) | 70% | 65% | `irongut/CodeCoverageSummary` in `build` job |
-| Frontend (React) | 50% | 50% | `irongut/CodeCoverageSummary` in `frontend-test` job |
+| Frontend (React) | 80% | 80% | `irongut/CodeCoverageSummary` in `frontend-test` job |
 
 Thresholds are set slightly below measured coverage to allow minor fluctuations. Raise them incrementally as test coverage improves.

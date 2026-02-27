@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using API.Validators;
+using FluentValidation.Results;
 
 namespace Presentation.API.Tests.Validators;
 
@@ -14,7 +15,7 @@ public class AdminResetPasswordRequestValidatorTests
 		AdminResetPasswordRequest request = new() { NewPassword = "ValidPass1" };
 
 		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
+		ValidationResult result = _validator.Validate(request);
 
 		// Assert
 		Assert.True(result.IsValid);
@@ -27,7 +28,7 @@ public class AdminResetPasswordRequestValidatorTests
 		AdminResetPasswordRequest request = new() { NewPassword = "" };
 
 		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
+		ValidationResult result = _validator.Validate(request);
 
 		// Assert
 		Assert.False(result.IsValid);
@@ -40,7 +41,7 @@ public class AdminResetPasswordRequestValidatorTests
 		AdminResetPasswordRequest request = new() { NewPassword = "short" };
 
 		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
+		ValidationResult result = _validator.Validate(request);
 
 		// Assert
 		Assert.False(result.IsValid);
@@ -53,7 +54,7 @@ public class AdminResetPasswordRequestValidatorTests
 		AdminResetPasswordRequest request = new() { NewPassword = "12345678" };
 
 		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
+		ValidationResult result = _validator.Validate(request);
 
 		// Assert
 		Assert.True(result.IsValid);
