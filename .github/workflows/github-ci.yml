@@ -1,4 +1,4 @@
-name: .NET CI
+name: CI
 
 on:
   push:
@@ -10,6 +10,7 @@ env:
   DOTNET_VERSION: "10.0.x"
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NODE_VERSION: "20"
 
 jobs:
   build:
@@ -39,8 +40,6 @@ jobs:
 
       - name: Build with warnings-as-errors
         run: dotnet build Receipts.slnx --no-restore -p:TreatWarningsAsErrors=true
-        env:
-          Jwt__Key: ${{ secrets.JWT_KEY }}
 
       - name: Test
         run: >-
@@ -63,7 +62,50 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
+          header: coverage-backend
           path: TestResults/merged/SummaryGithub.md
+
+  frontend-test:
+    name: Frontend Test & Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: src/client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: src/client
+
+      - name: Run tests with coverage
+        run: npm run coverage
+        working-directory: src/client
+
+      - name: Generate coverage summary
+        if: always()
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: src/client/coverage/cobertura-coverage.xml
+          format: markdown
+          output: both
+          badge: false
+          thresholds: '0 0'
+          fail_below_min: false
+
+      - name: Post coverage to PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage-frontend
+          path: code-coverage-results.md
 
   lint:
     name: Code Formatting
@@ -120,7 +162,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install npm dependencies
@@ -162,7 +204,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
         run: npm ci
