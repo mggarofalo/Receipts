@@ -1,0 +1,29 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Infrastructure.Migrations;
+
+/// <inheritdoc />
+public partial class AddReceiptItemPricingMode : Migration
+{
+	/// <inheritdoc />
+	protected override void Up(MigrationBuilder migrationBuilder)
+	{
+		migrationBuilder.AddColumn<string>(
+			name: "PricingMode",
+			table: "ReceiptItems",
+			type: "text",
+			maxLength: 8,
+			nullable: false,
+			defaultValueSql: "'quantity'");
+	}
+
+	/// <inheritdoc />
+	protected override void Down(MigrationBuilder migrationBuilder)
+	{
+		migrationBuilder.DropColumn(
+			name: "PricingMode",
+			table: "ReceiptItems");
+	}
+}

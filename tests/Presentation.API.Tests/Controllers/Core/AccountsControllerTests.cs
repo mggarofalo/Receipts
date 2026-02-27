@@ -3,6 +3,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Account.Create;
 using Application.Commands.Account.Delete;
+using Application.Commands.Account.Restore;
 using Application.Commands.Account.Update;
 using Application.Queries.Core.Account;
 using Domain.Core;
@@ -407,5 +408,57 @@ public class AccountsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+	}
+
+	[Fact]
+	public async Task RestoreAccount_ReturnsNoContent_WhenSuccessful()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreAccountCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		IActionResult result = await _controller.RestoreAccount(id);
+
+		// Assert
+		Assert.IsType<NoContentResult>(result);
+	}
+
+	[Fact]
+	public async Task RestoreAccount_ReturnsNotFound_WhenEntityDoesNotExist()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreAccountCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		IActionResult result = await _controller.RestoreAccount(id);
+
+		// Assert
+		Assert.IsType<NotFoundResult>(result);
+	}
+
+	[Fact]
+	public async Task RestoreAccount_ReturnsInternalServerError_WhenExceptionThrown()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreAccountCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		IActionResult result = await _controller.RestoreAccount(id);
+
+		// Assert
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+		Assert.Equal(500, objectResult.StatusCode);
 	}
 }

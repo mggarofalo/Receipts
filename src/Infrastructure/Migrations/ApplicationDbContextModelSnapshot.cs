@@ -17,10 +17,231 @@ namespace Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Infrastructure.Entities.ApiKeyEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ApiKeys");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.ApplicationUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("text");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("LastLoginAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<bool>("MustResetPassword")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("text");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("RefreshTokenExpiresAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex");
+
+                    b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Audit.AuditLogEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("ChangedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ChangesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedAt");
+
+                    b.HasIndex("ChangedByApiKeyId");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Audit.AuthAuditLogEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("Timestamp")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Username")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IpAddress");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("EventType", "Timestamp");
+
+                    b.HasIndex("UserId", "Timestamp");
+
+                    b.ToTable("AuthAuditLogs");
+                });
 
             modelBuilder.Entity("Infrastructure.Entities.Core.AccountEntity", b =>
                 {
@@ -30,6 +251,15 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("AccountCode")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("DeletedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedByUserId")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
@@ -44,6 +274,89 @@ namespace Infrastructure.Migrations
                     b.ToTable("Accounts");
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.Core.CategoryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("DeletedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Core.ItemTemplateEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DefaultCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefaultItemCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefaultPricingMode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefaultSubcategory")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("DefaultUnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("DefaultUnitPriceCurrency")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("DeletedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("ItemTemplates", t =>
+                        {
+                            t.HasCheckConstraint("CK_ItemTemplates_Money_Consistency", "((\"DefaultUnitPrice\" IS NULL AND \"DefaultUnitPriceCurrency\" IS NULL) OR (\"DefaultUnitPrice\" IS NOT NULL AND \"DefaultUnitPriceCurrency\" IS NOT NULL))");
+                        });
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.ReceiptEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -52,6 +365,15 @@ namespace Infrastructure.Migrations
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("DeletedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -82,9 +404,25 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("DeletedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("PricingMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("text")
+                        .HasDefaultValueSql("'quantity'");
 
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,2)");
@@ -121,6 +459,40 @@ namespace Infrastructure.Migrations
                     b.ToTable("ReceiptItems");
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.Core.SubcategoryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("DeletedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId", "Name")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("Subcategories");
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.TransactionEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -140,6 +512,15 @@ namespace Infrastructure.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Guid?>("DeletedByApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedByUserId")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("ReceiptId")
                         .HasColumnType("uuid");
 
@@ -152,6 +533,149 @@ namespace Infrastructure.Migrations
                     b.ToTable("Transactions");
                 });
 
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("text");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderDisplayName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("LoginProvider", "ProviderKey");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AspNetUserLogins", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetUserRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LoginProvider")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId", "LoginProvider", "Name");
+
+                    b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.ApiKeyEntity", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.ApplicationUser", "User")
+                        .WithMany("ApiKeys")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.ReceiptItemEntity", b =>
                 {
                     b.HasOne("Infrastructure.Entities.Core.ReceiptEntity", "Receipt")
@@ -161,6 +685,17 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Receipt");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Core.SubcategoryEntity", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.Core.CategoryEntity", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.Core.TransactionEntity", b =>
@@ -180,6 +715,62 @@ namespace Infrastructure.Migrations
                     b.Navigation("Account");
 
                     b.Navigation("Receipt");
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Infrastructure.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.ApplicationUser", b =>
+                {
+                    b.Navigation("ApiKeys");
                 });
 #pragma warning restore 612, 618
         }

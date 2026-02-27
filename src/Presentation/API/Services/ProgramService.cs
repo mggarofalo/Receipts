@@ -1,4 +1,5 @@
 using API.Mapping.Aggregates;
+using Application.Interfaces.Services;
 
 namespace API.Services;
 
@@ -7,12 +8,17 @@ public static class ProgramService
 	public static IServiceCollection RegisterProgramServices(this IServiceCollection services)
 	{
 		services.AddControllers();
+		services.AddHttpContextAccessor();
+		services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 
 		services
 			.AddSingleton<API.Mapping.Core.AccountMapper>()
+			.AddSingleton<API.Mapping.Core.CategoryMapper>()
+			.AddSingleton<API.Mapping.Core.SubcategoryMapper>()
 			.AddSingleton<API.Mapping.Core.ReceiptMapper>()
 			.AddSingleton<API.Mapping.Core.ReceiptItemMapper>()
 			.AddSingleton<API.Mapping.Core.TransactionMapper>()
+			.AddSingleton<API.Mapping.Core.ItemTemplateMapper>()
 			.AddSingleton<ReceiptWithItemsMapper>()
 			.AddSingleton<TransactionAccountMapper>()
 			.AddSingleton<TripMapper>();

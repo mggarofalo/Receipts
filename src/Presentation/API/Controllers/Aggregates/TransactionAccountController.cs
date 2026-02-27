@@ -3,6 +3,7 @@ using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Domain.Aggregates;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Aggregates;
@@ -10,6 +11,8 @@ namespace API.Controllers.Aggregates;
 [ApiController]
 [Route("api/transaction-accounts")]
 [Produces("application/json")]
+[Authorize]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class TransactionAccountController(IMediator mediator, TransactionAccountMapper mapper, ILogger<TransactionAccountController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";

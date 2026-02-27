@@ -15,6 +15,7 @@ builder.Services
 	.AddOpenApiServices()
 	.AddApplicationServices()
 	.AddCorsServices()
+	.AddAuthServices(builder.Configuration)
 	.RegisterProgramServices()
 	.RegisterApplicationServices(builder.Configuration)
 	.RegisterInfrastructureServices(builder.Configuration);
@@ -25,13 +26,15 @@ WebApplication app = builder.Build();
 // Configure middleware
 app.UseOpenApiServices()
    .UseApplicationServices()
-   .UseCorsServices();
+   .UseCorsServices()
+   .UseAuthServices();
 
 // Run database migrations (skipped when DB is not configured, e.g. build-time OpenAPI generation)
 if (Infrastructure.Services.InfrastructureService.IsDatabaseConfigured(builder.Configuration))
 {
 	using IServiceScope scope = app.Services.CreateScope();
 	await scope.ServiceProvider.GetRequiredService<IDatabaseMigratorService>().MigrateAsync();
+	await app.Services.SeedRolesAndAdminAsync();
 }
 
 // Map Aspire health check endpoints (/health, /alive)
@@ -41,7 +44,7 @@ app.MapDefaultEndpoints();
 app.MapControllers();
 
 // Map SignalR hubs
-app.MapHub<ReceiptsHub>("/receipts");
+app.MapHub<ReceiptsHub>("/hubs/receipts");
 
 // Run application
 await app.RunAsync();

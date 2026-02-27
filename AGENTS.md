@@ -71,42 +71,39 @@ When working on tasks that are expected to result in code changes, follow this s
            └── mggarofalo/mgg-87-update-docs            (squash-merge into parent)
    ```
 
-   **Worktrees (mandatory for all branch work):**
-   - **ALWAYS** use worktrees for issue and milestone branches — do NOT checkout branches in the main repo
-   - The main repo at `Source/Receipts` must **always stay on `master`** and never be switched to another branch
-   - Use `/worktree <issue-id>` to create an isolated working directory in `.worktrees/`
-   - **ALWAYS** create worktrees in `.worktrees/` at the repo root — NEVER as sibling directories
-   - This gives agents full filesystem control in their worktree without affecting the main repo
+   **Directory isolation (for parallel or isolated work):**
+   - When you need to work on an issue branch without affecting the main repo, use `git clone --local` to create a lightweight local clone:
+     ```bash
+     git clone --local . .clones/<branch-name>
+     ```
+   - The clone hardlinks objects (fast, no network), and is a fully independent git repo — `cd`, `git commit`, etc. all work normally
+   - Clones live in `.clones/` at the repo root (gitignored)
+   - Use `/clone <issue-id>` to create an isolated clone for an issue
+   - For simple/small changes, it's fine to work directly on the milestone branch without isolation
 
 3. **Merging Issue Work into Parent/Milestone Branch**
-   - All merges happen inside worktrees — never checkout branches in the main repo
-   - Remove the issue worktree, then merge from the parent (or milestone) worktree:
+   - From the main repo (or the parent/milestone clone), squash-merge the issue branch:
      ```bash
-     git worktree remove .worktrees/mggarofalo-mgg-88-generate-dtos
-     cd .worktrees/mggarofalo-mgg-83-replace-viewmodels
+     git checkout milestone/phase-0
      git merge --squash mggarofalo/mgg-88-generate-dtos
      git commit -m "feat(api): generate DTOs from OpenAPI spec (MGG-88)"
      git branch -D mggarofalo/mgg-88-generate-dtos
      ```
-   - If no parent/milestone worktree exists yet, create one:
+   - If using a clone for the issue, delete it after merge:
      ```bash
-     git branch mggarofalo/mgg-83-replace-viewmodels master
-     git worktree add .worktrees/mggarofalo-mgg-83-replace-viewmodels mggarofalo/mgg-83-replace-viewmodels
+     rm -rf .clones/<branch-name>
      ```
 
 4. **PR: Parent/Milestone → Master**
    - When all issues are complete, push the branch and open a PR:
      ```bash
-     cd .worktrees/mggarofalo-mgg-83-replace-viewmodels
      git push -u origin mggarofalo/mgg-83-replace-viewmodels
      gh pr create --title "Replace ViewModels with spec-generated DTOs" --body "..."
      ```
    - The PR triggers CI (build + test) — this is the checkpoint that surfaces issues
    - After CI passes and the PR is approved, merge into `master`
-   - Clean up worktree and branches:
+   - Clean up branches:
      ```bash
-     cd <repo-root>
-     git worktree remove .worktrees/mggarofalo-mgg-83-replace-viewmodels
      git branch -d mggarofalo/mgg-83-replace-viewmodels
      git push origin --delete mggarofalo/mgg-83-replace-viewmodels
      git pull   # update master with the merged PR

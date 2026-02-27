@@ -10,4 +10,9 @@ IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")
 	.WithReference(db)
 	.WaitFor(db);
 
+builder.AddViteApp("frontend", "../client")
+	.WithReference(api)
+	.WithHttpEndpoint(port: 5173, name: "vite", env: "PORT")
+	.WithExternalHttpEndpoints();
+
 await builder.Build().RunAsync();

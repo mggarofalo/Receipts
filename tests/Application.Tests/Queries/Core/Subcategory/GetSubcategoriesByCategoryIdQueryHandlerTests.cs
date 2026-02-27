@@ -1,0 +1,43 @@
+using Application.Interfaces.Services;
+using Application.Queries.Core.Subcategory;
+using FluentAssertions;
+using Moq;
+using SampleData.Domain.Core;
+
+namespace Application.Tests.Queries.Core.Subcategory;
+
+public class GetSubcategoriesByCategoryIdQueryHandlerTests
+{
+	[Fact]
+	public async Task Handle_ShouldReturnSubcategories_WhenCategoryHasSubcategories()
+	{
+		List<Domain.Core.Subcategory> expected = SubcategoryGenerator.GenerateList(2);
+		Guid categoryId = Guid.NewGuid();
+
+		Mock<ISubcategoryService> mockService = new();
+		mockService.Setup(r => r.GetByCategoryIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+
+		GetSubcategoriesByCategoryIdQueryHandler handler = new(mockService.Object);
+		GetSubcategoriesByCategoryIdQuery query = new(categoryId);
+
+		List<Domain.Core.Subcategory> result = await handler.Handle(query, CancellationToken.None);
+
+		result.Should().BeSameAs(expected);
+	}
+
+	[Fact]
+	public async Task Handle_ShouldReturnEmptyList_WhenCategoryHasNoSubcategories()
+	{
+		Guid categoryId = Guid.NewGuid();
+
+		Mock<ISubcategoryService> mockService = new();
+		mockService.Setup(r => r.GetByCategoryIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+		GetSubcategoriesByCategoryIdQueryHandler handler = new(mockService.Object);
+		GetSubcategoriesByCategoryIdQuery query = new(categoryId);
+
+		List<Domain.Core.Subcategory> result = await handler.Handle(query, CancellationToken.None);
+
+		result.Should().BeEmpty();
+	}
+}

@@ -1,0 +1,20 @@
+using Common;
+using Infrastructure.Interfaces;
+
+namespace Infrastructure.Entities.Core;
+
+public class ItemTemplateEntity : ISoftDeletable
+{
+	public Guid Id { get; set; }
+	public string Name { get; set; } = string.Empty;
+	public string? DefaultCategory { get; set; }
+	public string? DefaultSubcategory { get; set; }
+	public decimal? DefaultUnitPrice { get; set; }
+	public Currency? DefaultUnitPriceCurrency { get; set; }
+	public string? DefaultPricingMode { get; set; }
+	public string? DefaultItemCode { get; set; }
+	public string? Description { get; set; }
+	public DateTimeOffset? DeletedAt { get; set; }
+	public string? DeletedByUserId { get; set; }
+	public Guid? DeletedByApiKeyId { get; set; }
+}

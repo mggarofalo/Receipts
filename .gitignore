@@ -295,5 +295,8 @@ __pycache__/
 openapi/generated/
 !openapi/generated/.gitkeep
 
-# Git worktrees
-.worktrees/
+# Client generated types (regenerated from openapi/spec.yaml on dev/build)
+src/client/src/generated/
+
+# Local clones for branch isolation
+.clones/

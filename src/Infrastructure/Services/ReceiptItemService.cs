@@ -37,6 +37,12 @@ public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMa
 		return [.. receiptItemEntities.Select(mapper.ToDomain)];
 	}
 
+	public async Task<List<ReceiptItem>> GetDeletedAsync(CancellationToken cancellationToken)
+	{
+		List<ReceiptItemEntity> receiptItemEntities = await repository.GetDeletedAsync(cancellationToken);
+		return [.. receiptItemEntities.Select(mapper.ToDomain)];
+	}
+
 	public async Task<ReceiptItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		ReceiptItemEntity? receiptItemEntity = await repository.GetByIdAsync(id, cancellationToken);
@@ -64,5 +70,10 @@ public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMa
 		}
 
 		await repository.UpdateAsync(receiptItemEntities, cancellationToken);
+	}
+
+	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
+	{
+		return await repository.RestoreAsync(id, cancellationToken);
 	}
 }

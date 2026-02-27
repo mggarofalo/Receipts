@@ -1,4 +1,5 @@
 using Infrastructure.Entities.Core;
+using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -26,6 +27,15 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts
+			.AsNoTracking()
+			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<List<AccountEntity>> GetDeletedAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Accounts
+			.OnlyDeleted()
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
 	}
@@ -84,5 +94,24 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts.CountAsync(cancellationToken);
+	}
+
+	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		AccountEntity? entity = await context.Accounts
+			.IncludeDeleted()
+			.FirstOrDefaultAsync(e => e.Id == id && e.DeletedAt != null, cancellationToken);
+
+		if (entity is null)
+		{
+			return false;
+		}
+
+		entity.DeletedAt = null;
+		entity.DeletedByUserId = null;
+		entity.DeletedByApiKeyId = null;
+		await context.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 }

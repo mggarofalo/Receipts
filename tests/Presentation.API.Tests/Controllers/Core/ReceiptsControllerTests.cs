@@ -1,14 +1,17 @@
 using API.Controllers.Core;
 using API.Generated.Dtos;
+using API.Hubs;
 using API.Mapping.Core;
 using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
+using Application.Commands.Receipt.Restore;
 using Application.Commands.Receipt.Update;
 using Application.Queries.Core.Receipt;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
@@ -21,6 +24,8 @@ public class ReceiptsControllerTests
 	private readonly ReceiptMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<ReceiptsController>> _loggerMock;
+	private readonly Mock<IHubContext<ReceiptsHub, IReceiptsHubClient>> _hubContextMock;
+	private readonly Mock<IReceiptsHubClient> _hubClientMock;
 	private readonly ReceiptsController _controller;
 
 	public ReceiptsControllerTests()
@@ -28,7 +33,18 @@ public class ReceiptsControllerTests
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new ReceiptMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<ReceiptsController>();
-		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
+
+		_hubClientMock = new Mock<IReceiptsHubClient>();
+		Mock<IHubClients<IReceiptsHubClient>> hubClientsMock = new();
+		hubClientsMock.Setup(c => c.All).Returns(_hubClientMock.Object);
+		_hubContextMock = new Mock<IHubContext<ReceiptsHub, IReceiptsHubClient>>();
+		_hubContextMock.Setup(h => h.Clients).Returns(hubClientsMock.Object);
+
+		// Default: GetReceiptByIdQuery returns null (broadcast skipped for update operations)
+		_mediatorMock.Setup(m => m.Send(It.IsAny<GetReceiptByIdQuery>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync((Receipt?)null);
+
+		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _hubContextMock.Object);
 	}
 
 	[Fact]
@@ -384,5 +400,57 @@ public class ReceiptsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+	}
+
+	[Fact]
+	public async Task RestoreReceipt_ReturnsNoContent_WhenSuccessful()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreReceiptCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		IActionResult result = await _controller.RestoreReceipt(id);
+
+		// Assert
+		Assert.IsType<NoContentResult>(result);
+	}
+
+	[Fact]
+	public async Task RestoreReceipt_ReturnsNotFound_WhenEntityDoesNotExist()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreReceiptCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		IActionResult result = await _controller.RestoreReceipt(id);
+
+		// Assert
+		Assert.IsType<NotFoundResult>(result);
+	}
+
+	[Fact]
+	public async Task RestoreReceipt_ReturnsInternalServerError_WhenExceptionThrown()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreReceiptCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		IActionResult result = await _controller.RestoreReceipt(id);
+
+		// Assert
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+		Assert.Equal(500, objectResult.StatusCode);
 	}
 }

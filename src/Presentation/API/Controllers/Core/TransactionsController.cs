@@ -2,10 +2,12 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Delete;
+using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
 using Application.Queries.Core.Transaction;
 using Domain.Core;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
@@ -13,6 +15,8 @@ namespace API.Controllers.Core;
 [ApiController]
 [Route("api/transactions")]
 [Produces("application/json")]
+[Authorize]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
 {
 	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
@@ -26,6 +30,8 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	public const string RouteUpdate = "{receiptId}/{accountId}";
 	public const string RouteUpdateBatch = "{receiptId}/{accountId}/batch";
 	public const string RouteDelete = "";
+	public const string RouteGetDeleted = "deleted";
+	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a transaction by ID")]
@@ -77,6 +83,30 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		catch (Exception ex)
 		{
 			logger.LogError(ex, MessageWithoutId, nameof(GetAllTransactions));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpGet(RouteGetDeleted)]
+	[EndpointSummary("Get all soft-deleted transactions")]
+	[EndpointDescription("Returns all transactions that have been soft-deleted.")]
+	[ProducesResponseType<List<TransactionResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<ActionResult<List<TransactionResponse>>> GetDeletedTransactions()
+	{
+		try
+		{
+			logger.LogDebug("GetDeletedTransactions called");
+			GetDeletedTransactionsQuery query = new();
+			List<Transaction> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedTransactions called with {Count} transactions", result.Count);
+
+			List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
+			return Ok(model);
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedTransactions));
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}
@@ -237,6 +267,35 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		catch (Exception ex)
 		{
 			logger.LogError(ex, MessageWithoutId, nameof(DeleteTransactions));
+			return StatusCode(500, "An error occurred while processing your request.");
+		}
+	}
+
+	[HttpPost(RouteRestore)]
+	[EndpointSummary("Restore a soft-deleted transaction")]
+	[EndpointDescription("Restores a previously soft-deleted transaction by clearing its DeletedAt timestamp.")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+	public async Task<IActionResult> RestoreTransaction([FromRoute] Guid id)
+	{
+		try
+		{
+			logger.LogDebug("RestoreTransaction called with id: {Id}", id);
+			RestoreTransactionCommand command = new(id);
+			bool result = await mediator.Send(command);
+
+			if (!result)
+			{
+				logger.LogWarning("RestoreTransaction called with id: {Id}, but not found or not deleted", id);
+				return NotFound();
+			}
+
+			return NoContent();
+		}
+		catch (Exception ex)
+		{
+			logger.LogError(ex, MessageWithId, nameof(RestoreTransaction), id);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

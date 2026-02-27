@@ -4,12 +4,15 @@ set -e
 echo "=== Pre-commit hook ==="
 
 echo "[1/6] Linting OpenAPI spec..."
-npx spectral lint openapi/spec.yaml --fail-severity warn
+NODE_OPTIONS="--no-deprecation" npx spectral lint openapi/spec.yaml --fail-severity warn
 
 echo "[2/6] Checking code formatting..."
 dotnet format Receipts.slnx --verify-no-changes
 
 echo "[3/6] Building with warnings-as-errors..."
+# Provide a build-time JWT key so GenerateOpenApiDocuments can start the host.
+# At runtime the real key is required via appsettings/Aspire configuration.
+Jwt__Key=build-time-spec-extraction-only-not-for-runtime \
 dotnet build Receipts.slnx -p:TreatWarningsAsErrors=true --no-restore
 
 echo "[4/6] Checking DTO staleness..."

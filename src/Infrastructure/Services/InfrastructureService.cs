@@ -1,12 +1,17 @@
 using Application.Interfaces;
 using Application.Interfaces.Services;
 using Common;
+using Infrastructure.Entities;
 using Infrastructure.Interfaces.Repositories;
 using Infrastructure.Mapping;
 using Infrastructure.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 
@@ -61,6 +66,8 @@ public static class InfrastructureService
 					string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
 					b.MigrationsAssembly(assemblyName);
 				});
+				options.ConfigureWarnings(w => w.Log(
+					(RelationalEventId.PendingModelChangesWarning, LogLevel.Warning)));
 			});
 		}
 		else
@@ -68,25 +75,65 @@ public static class InfrastructureService
 			services.AddDbContextFactory<ApplicationDbContext>(options =>
 			{
 				options.UseNpgsql();
+				options.ConfigureWarnings(w => w.Log(
+					(RelationalEventId.PendingModelChangesWarning, LogLevel.Warning)));
 			});
 		}
+
+		// Fallback ICurrentUserAccessor for when no HTTP context is available (tests, background services).
+		// The API layer registers the real implementation before this, so TryAdd is a no-op in production.
+		services.TryAddScoped<ICurrentUserAccessor, NullCurrentUserAccessor>();
+
+		services
+			.AddIdentityCore<ApplicationUser>()
+			.AddRoles<IdentityRole>()
+			.AddEntityFrameworkStores<ApplicationDbContext>();
+
+		// Override the factory's scoped ApplicationDbContext registration to use 2-param constructor.
+		// AddDbContextFactory auto-registers a scoped context that delegates to the singleton factory,
+		// which uses root provider and can't resolve scoped ICurrentUserAccessor.
+		// AddEntityFrameworkStores also re-registers the scoped context, so this MUST come after it.
+		services.AddScoped(sp =>
+		{
+			DbContextOptions<ApplicationDbContext> options =
+				sp.GetRequiredService<DbContextOptions<ApplicationDbContext>>();
+			ICurrentUserAccessor accessor = sp.GetRequiredService<ICurrentUserAccessor>();
+			return new ApplicationDbContext(options, accessor);
+		});
 
 		services
 			.AddScoped<IReceiptService, ReceiptService>()
 			.AddScoped<IAccountService, AccountService>()
+			.AddScoped<ICategoryService, CategoryService>()
+			.AddScoped<ISubcategoryService, SubcategoryService>()
 			.AddScoped<ITransactionService, TransactionService>()
 			.AddScoped<IReceiptItemService, ReceiptItemService>()
+			.AddScoped<IItemTemplateService, ItemTemplateService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
 			.AddScoped<IAccountRepository, AccountRepository>()
+			.AddScoped<ICategoryRepository, CategoryRepository>()
+			.AddScoped<ISubcategoryRepository, SubcategoryRepository>()
 			.AddScoped<ITransactionRepository, TransactionRepository>()
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
-			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>();
+			.AddScoped<IItemTemplateRepository, ItemTemplateRepository>()
+			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>()
+			.AddScoped<ITokenService, TokenService>()
+			.AddScoped<IApiKeyService, ApiKeyService>()
+			.AddScoped<IAuditService, AuditService>()
+			.AddScoped<IAuthAuditService, AuthAuditService>()
+			.AddScoped<IUserService, UserService>()
+			.AddScoped<ITrashService, TrashService>();
+
+		services.AddHostedService<AuthAuditCleanupService>();
 
 		services
 			.AddSingleton<AccountMapper>()
+			.AddSingleton<CategoryMapper>()
+			.AddSingleton<SubcategoryMapper>()
 			.AddSingleton<ReceiptMapper>()
 			.AddSingleton<ReceiptItemMapper>()
-			.AddSingleton<TransactionMapper>();
+			.AddSingleton<TransactionMapper>()
+			.AddSingleton<ItemTemplateMapper>();
 
 		return services;
 	}

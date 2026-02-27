@@ -1,8 +1,9 @@
 using Common;
+using Infrastructure.Interfaces;
 
 namespace Infrastructure.Entities.Core;
 
-public class ReceiptItemEntity
+public class ReceiptItemEntity : ISoftDeletable
 {
 	public Guid Id { get; set; }
 	public Guid ReceiptId { get; set; }
@@ -15,5 +16,9 @@ public class ReceiptItemEntity
 	public Currency TotalAmountCurrency { get; set; }
 	public string Category { get; set; } = string.Empty;
 	public string Subcategory { get; set; } = string.Empty;
+	public PricingMode PricingMode { get; set; } = PricingMode.Quantity;
 	public virtual ReceiptEntity? Receipt { get; set; }
+	public DateTimeOffset? DeletedAt { get; set; }
+	public string? DeletedByUserId { get; set; }
+	public Guid? DeletedByApiKeyId { get; set; }
 }

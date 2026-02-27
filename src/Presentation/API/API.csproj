@@ -10,7 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" PrivateAssets="all" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="MediatR" />
@@ -51,8 +56,7 @@
   <!-- 2. Run NSwag (only if stale) -->
   <Target Name="NSwagGenerate" Condition="'$(_DtoCheckResult)' != '0'">
     <Message Text="Regenerating DTOs from OpenAPI spec..." Importance="high" />
-    <Exec Command="$(NSwagExe_Net90) run $(MSBuildProjectDirectory)\..\..\..\nswag.json"
-          EnvironmentVariables="DOTNET_ROLL_FORWARD=Major" />
+    <Exec Command="$(NSwagExe_Net100) run $(MSBuildProjectDirectory)\..\..\..\nswag.json" />
   </Target>
 
   <!-- 3. Split into individual files (only if stale) -->

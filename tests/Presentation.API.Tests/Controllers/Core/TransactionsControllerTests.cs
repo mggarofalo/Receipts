@@ -3,6 +3,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Delete;
+using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
 using Application.Queries.Core.Transaction;
 using Domain.Core;
@@ -501,5 +502,57 @@ public class TransactionsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+	}
+
+	[Fact]
+	public async Task RestoreTransaction_ReturnsNoContent_WhenSuccessful()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreTransactionCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		IActionResult result = await _controller.RestoreTransaction(id);
+
+		// Assert
+		Assert.IsType<NoContentResult>(result);
+	}
+
+	[Fact]
+	public async Task RestoreTransaction_ReturnsNotFound_WhenEntityDoesNotExist()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreTransactionCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		IActionResult result = await _controller.RestoreTransaction(id);
+
+		// Assert
+		Assert.IsType<NotFoundResult>(result);
+	}
+
+	[Fact]
+	public async Task RestoreTransaction_ReturnsInternalServerError_WhenExceptionThrown()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreTransactionCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		IActionResult result = await _controller.RestoreTransaction(id);
+
+		// Assert
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+		Assert.Equal(500, objectResult.StatusCode);
 	}
 }

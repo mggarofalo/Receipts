@@ -3,6 +3,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.ReceiptItem.Create;
 using Application.Commands.ReceiptItem.Delete;
+using Application.Commands.ReceiptItem.Restore;
 using Application.Commands.ReceiptItem.Update;
 using Application.Queries.Core.ReceiptItem;
 using Domain.Core;
@@ -493,5 +494,57 @@ public class ReceiptItemsControllerTests
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
 		Assert.Equal(500, objectResult.StatusCode);
 		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+	}
+
+	[Fact]
+	public async Task RestoreReceiptItem_ReturnsNoContent_WhenSuccessful()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreReceiptItemCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		IActionResult result = await _controller.RestoreReceiptItem(id);
+
+		// Assert
+		Assert.IsType<NoContentResult>(result);
+	}
+
+	[Fact]
+	public async Task RestoreReceiptItem_ReturnsNotFound_WhenEntityDoesNotExist()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreReceiptItemCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		IActionResult result = await _controller.RestoreReceiptItem(id);
+
+		// Assert
+		Assert.IsType<NotFoundResult>(result);
+	}
+
+	[Fact]
+	public async Task RestoreReceiptItem_ReturnsInternalServerError_WhenExceptionThrown()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreReceiptItemCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		IActionResult result = await _controller.RestoreReceiptItem(id);
+
+		// Assert
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
+		Assert.Equal(500, objectResult.StatusCode);
 	}
 }

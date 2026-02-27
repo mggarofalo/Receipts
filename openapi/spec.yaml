@@ -29,6 +29,9 @@ paths:
       operationId: GetAccountById
       tags: [Accounts]
       summary: Get an account by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -43,6 +46,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -55,6 +60,9 @@ paths:
       operationId: UpdateAccount
       tags: [Accounts]
       summary: Update a single account
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -71,6 +79,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -85,6 +95,9 @@ paths:
       operationId: GetAllAccounts
       tags: [Accounts]
       summary: Get all accounts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       responses:
         "200":
           description: OK
@@ -94,6 +107,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -104,6 +119,9 @@ paths:
       operationId: CreateAccount
       tags: [Accounts]
       summary: Create a single account
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -117,6 +135,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -127,6 +147,9 @@ paths:
       operationId: DeleteAccounts
       tags: [Accounts]
       summary: Delete accounts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -139,6 +162,63 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/accounts/deleted:
+    get:
+      operationId: GetDeletedAccounts
+      tags: [Accounts]
+      summary: Get all soft-deleted accounts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/accounts/{id}/restore:
+    post:
+      operationId: RestoreAccount
+      tags: [Accounts]
+      summary: Restore a soft-deleted account
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -153,6 +233,9 @@ paths:
       operationId: CreateAccounts
       tags: [Accounts]
       summary: Create accounts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -170,6 +253,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -180,6 +265,9 @@ paths:
       operationId: UpdateAccounts
       tags: [Accounts]
       summary: Update accounts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -191,6 +279,813 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # Categories
+  # ──────────────────────────────────────────────
+
+  /api/categories/{id}:
+    get:
+      operationId: GetCategoryById
+      tags: [Categories]
+      summary: Get a category by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateCategory
+      tags: [Categories]
+      summary: Update a single category
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/categories:
+    get:
+      operationId: GetAllCategories
+      tags: [Categories]
+      summary: Get all categories
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateCategory
+      tags: [Categories]
+      summary: Create a single category
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponse"
+        "401":
+          description: Unauthorized
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeleteCategories
+      tags: [Categories]
+      summary: Delete categories
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/categories/deleted:
+    get:
+      operationId: GetDeletedCategories
+      tags: [Categories]
+      summary: Get all soft-deleted categories
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/categories/{id}/restore:
+    post:
+      operationId: RestoreCategory
+      tags: [Categories]
+      summary: Restore a soft-deleted category
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/categories/batch:
+    post:
+      operationId: CreateCategories
+      tags: [Categories]
+      summary: Create categories in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryResponse"
+        "401":
+          description: Unauthorized
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateCategories
+      tags: [Categories]
+      summary: Update categories in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/categories/{categoryId}/subcategories:
+    get:
+      operationId: GetSubcategoriesByCategoryId
+      tags: [Subcategories]
+      summary: Get subcategories by category ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubcategoryResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # Subcategories
+  # ──────────────────────────────────────────────
+
+  /api/subcategories/{id}:
+    get:
+      operationId: GetSubcategoryById
+      tags: [Subcategories]
+      summary: Get a subcategory by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubcategoryResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateSubcategory
+      tags: [Subcategories]
+      summary: Update a single subcategory
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubcategoryRequest"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/subcategories:
+    get:
+      operationId: GetAllSubcategories
+      tags: [Subcategories]
+      summary: Get all subcategories
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubcategoryResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateSubcategory
+      tags: [Subcategories]
+      summary: Create a single subcategory
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubcategoryRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubcategoryResponse"
+        "401":
+          description: Unauthorized
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeleteSubcategories
+      tags: [Subcategories]
+      summary: Delete subcategories
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/subcategories/deleted:
+    get:
+      operationId: GetDeletedSubcategories
+      tags: [Subcategories]
+      summary: Get all soft-deleted subcategories
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubcategoryResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/subcategories/{id}/restore:
+    post:
+      operationId: RestoreSubcategory
+      tags: [Subcategories]
+      summary: Restore a soft-deleted subcategory
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/subcategories/batch:
+    post:
+      operationId: CreateSubcategories
+      tags: [Subcategories]
+      summary: Create subcategories in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/CreateSubcategoryRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubcategoryResponse"
+        "401":
+          description: Unauthorized
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateSubcategories
+      tags: [Subcategories]
+      summary: Update subcategories in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/UpdateSubcategoryRequest"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # Item Templates
+  # ──────────────────────────────────────────────
+
+  /api/item-templates/{id}:
+    get:
+      operationId: GetItemTemplateById
+      tags: [ItemTemplates]
+      summary: Get an item template by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemTemplateResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateItemTemplate
+      tags: [ItemTemplates]
+      summary: Update a single item template
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItemTemplateRequest"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/item-templates:
+    get:
+      operationId: GetAllItemTemplates
+      tags: [ItemTemplates]
+      summary: Get all item templates
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemTemplateResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateItemTemplate
+      tags: [ItemTemplates]
+      summary: Create a single item template
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItemTemplateRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemTemplateResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeleteItemTemplates
+      tags: [ItemTemplates]
+      summary: Delete item templates
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/item-templates/deleted:
+    get:
+      operationId: GetDeletedItemTemplates
+      tags: [ItemTemplates]
+      summary: Get all soft-deleted item templates
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemTemplateResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/item-templates/{id}/restore:
+    post:
+      operationId: RestoreItemTemplate
+      tags: [ItemTemplates]
+      summary: Restore a soft-deleted item template
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -209,6 +1104,9 @@ paths:
       operationId: GetReceiptById
       tags: [Receipts]
       summary: Get a receipt by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -223,6 +1121,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -235,6 +1135,9 @@ paths:
       operationId: UpdateReceipt
       tags: [Receipts]
       summary: Update a single receipt
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -251,6 +1154,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -265,6 +1170,9 @@ paths:
       operationId: GetAllReceipts
       tags: [Receipts]
       summary: Get all receipts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       responses:
         "200":
           description: OK
@@ -274,6 +1182,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -284,6 +1194,9 @@ paths:
       operationId: CreateReceipt
       tags: [Receipts]
       summary: Create a single receipt
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -297,6 +1210,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -307,6 +1222,9 @@ paths:
       operationId: DeleteReceipts
       tags: [Receipts]
       summary: Delete receipts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -319,6 +1237,63 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/receipts/deleted:
+    get:
+      operationId: GetDeletedReceipts
+      tags: [Receipts]
+      summary: Get all soft-deleted receipts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/receipts/{id}/restore:
+    post:
+      operationId: RestoreReceipt
+      tags: [Receipts]
+      summary: Restore a soft-deleted receipt
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -333,6 +1308,9 @@ paths:
       operationId: CreateReceipts
       tags: [Receipts]
       summary: Create receipts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -350,6 +1328,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -360,6 +1340,9 @@ paths:
       operationId: UpdateReceipts
       tags: [Receipts]
       summary: Update receipts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -371,6 +1354,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -389,6 +1374,9 @@ paths:
       operationId: GetReceiptItemById
       tags: [ReceiptItems]
       summary: Get a receipt item by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -404,6 +1392,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -416,6 +1406,9 @@ paths:
       operationId: CreateReceiptItem
       tags: [ReceiptItems]
       summary: Create a single receipt item
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -437,6 +1430,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -447,6 +1442,9 @@ paths:
       operationId: UpdateReceiptItem
       tags: [ReceiptItems]
       summary: Update a single receipt item
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -464,6 +1462,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -478,6 +1478,9 @@ paths:
       operationId: GetAllReceiptItems
       tags: [ReceiptItems]
       summary: Get all receipt items
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       responses:
         "200":
           description: OK
@@ -487,6 +1490,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -497,6 +1502,9 @@ paths:
       operationId: DeleteReceiptItems
       tags: [ReceiptItems]
       summary: Delete receipt items
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -509,6 +1517,63 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/receipt-items/deleted:
+    get:
+      operationId: GetDeletedReceiptItems
+      tags: [ReceiptItems]
+      summary: Get all soft-deleted receipt items
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/receipt-items/{id}/restore:
+    post:
+      operationId: RestoreReceiptItem
+      tags: [ReceiptItems]
+      summary: Restore a soft-deleted receipt item
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -523,6 +1588,9 @@ paths:
       operationId: GetReceiptItemsByReceiptId
       tags: [ReceiptItems]
       summary: Get receipt items by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -539,6 +1607,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -553,6 +1623,9 @@ paths:
       operationId: CreateReceiptItems
       tags: [ReceiptItems]
       summary: Create receipt items in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -578,6 +1651,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -588,6 +1663,9 @@ paths:
       operationId: UpdateReceiptItems
       tags: [ReceiptItems]
       summary: Update receipt items in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -607,6 +1685,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -625,6 +1705,9 @@ paths:
       operationId: GetTransactionById
       tags: [Transactions]
       summary: Get a transaction by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: id
           in: path
@@ -639,6 +1722,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -653,6 +1738,9 @@ paths:
       operationId: GetAllTransactions
       tags: [Transactions]
       summary: Get all transactions
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       responses:
         "200":
           description: OK
@@ -662,6 +1750,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -672,6 +1762,9 @@ paths:
       operationId: DeleteTransactions
       tags: [Transactions]
       summary: Delete transactions
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       requestBody:
         required: true
         content:
@@ -684,6 +1777,63 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/transactions/deleted:
+    get:
+      operationId: GetDeletedTransactions
+      tags: [Transactions]
+      summary: Get all soft-deleted transactions
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/transactions/{id}/restore:
+    post:
+      operationId: RestoreTransaction
+      tags: [Transactions]
+      summary: Restore a soft-deleted transaction
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -698,6 +1848,9 @@ paths:
       operationId: GetTransactionsByReceiptId
       tags: [Transactions]
       summary: Get transactions by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -714,6 +1867,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -728,6 +1883,9 @@ paths:
       operationId: CreateTransaction
       tags: [Transactions]
       summary: Create a single transaction
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -754,6 +1912,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -764,6 +1924,9 @@ paths:
       operationId: UpdateTransaction
       tags: [Transactions]
       summary: Update a single transaction
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -786,6 +1949,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -800,6 +1965,9 @@ paths:
       operationId: CreateTransactions
       tags: [Transactions]
       summary: Create transactions in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -830,6 +1998,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -840,6 +2010,9 @@ paths:
       operationId: UpdateTransactions
       tags: [Transactions]
       summary: Update transactions in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -864,8 +2037,34 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # Trash
+  # ──────────────────────────────────────────────
+
+  /api/trash/purge:
+    post:
+      operationId: PurgeTrash
+      tags: [Trash]
+      summary: Permanently delete all soft-deleted items
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
           content:
@@ -882,6 +2081,9 @@ paths:
       operationId: GetReceiptWithItemsByReceiptId
       tags: [ReceiptWithItems]
       summary: Get receipt with items by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -896,6 +2098,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptWithItemsResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -910,6 +2114,9 @@ paths:
       operationId: GetTransactionAccountByTransactionId
       tags: [TransactionAccount]
       summary: Get transaction account by transaction ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: transactionId
           in: path
@@ -924,6 +2131,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionAccountResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -938,6 +2147,9 @@ paths:
       operationId: GetTransactionAccountsByReceiptId
       tags: [TransactionAccount]
       summary: Get transaction accounts by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -954,6 +2166,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionAccountResponse"
+        "401":
+          description: Unauthorized
         "404":
           description: Not Found
         "500":
@@ -968,6 +2182,9 @@ paths:
       operationId: GetTripByReceiptId
       tags: [Trip]
       summary: Get trip by receipt ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
       parameters:
         - name: receiptId
           in: path
@@ -982,6 +2199,772 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TripResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # Audit
+  # ──────────────────────────────────────────────
+
+  /api/audit/entity/{entityType}/{entityId}:
+    get:
+      operationId: GetEntityAuditHistory
+      tags: [Audit]
+      summary: Get audit history for a specific entity
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: entityType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/audit/recent:
+    get:
+      operationId: GetRecentAuditLogs
+      tags: [Audit]
+      summary: Get recent audit log entries
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/audit/user/{userId}:
+    get:
+      operationId: GetAuditLogsByUser
+      tags: [Audit]
+      summary: Get audit logs by user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/audit/apikey/{apiKeyId}:
+    get:
+      operationId: GetAuditLogsByApiKey
+      tags: [Audit]
+      summary: Get audit logs by API key
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: apiKeyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # Auth
+  # ──────────────────────────────────────────────
+
+  /api/auth/login:
+    post:
+      operationId: Login
+      tags: [Auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/auth/refresh:
+    post:
+      operationId: RefreshToken
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/auth/logout:
+    post:
+      operationId: Logout
+      tags: [Auth]
+      summary: Logout and invalidate refresh token
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/auth/change-password:
+    post:
+      operationId: ChangePassword
+      tags: [Auth]
+      summary: Change password (required on first login)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # API Keys
+  # ──────────────────────────────────────────────
+
+  /api/apikeys:
+    get:
+      operationId: GetApiKeys
+      tags: [ApiKeys]
+      summary: Get all API keys for the authenticated user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKeyResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateApiKey
+      tags: [ApiKeys]
+      summary: Create a new API key
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiKeyRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateApiKeyResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/apikeys/{id}:
+    delete:
+      operationId: RevokeApiKey
+      tags: [ApiKeys]
+      summary: Revoke an API key
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # Auth Audit
+  # ──────────────────────────────────────────────
+
+  /api/auth/audit/me:
+    get:
+      operationId: GetMyAuthAuditLog
+      tags: [AuthAudit]
+      summary: Get current user's auth history
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuthAuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/auth/audit/recent:
+    get:
+      operationId: GetRecentAuthAuditLogs
+      tags: [AuthAudit]
+      summary: Get recent auth events (admin)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuthAuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/auth/audit/failed:
+    get:
+      operationId: GetFailedAuthAttempts
+      tags: [AuthAudit]
+      summary: Get failed login attempts (admin)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: count
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuthAuditLogResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # Users (admin-only)
+  # ──────────────────────────────────────────────
+
+  /api/users:
+    get:
+      operationId: ListUsers
+      tags: [Users]
+      summary: List all users with their roles
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateUser
+      tags: [Users]
+      summary: Create a new user (admin only)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummaryResponse"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/users/{userId}:
+    get:
+      operationId: GetUser
+      tags: [Users]
+      summary: Get a user by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummaryResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: UpdateUser
+      tags: [Users]
+      summary: Update a user (admin only)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: DeactivateUser
+      tags: [Users]
+      summary: Deactivate a user (admin only)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/users/{userId}/reset-password:
+    post:
+      operationId: AdminResetPassword
+      tags: [Users]
+      summary: Reset a user's password (admin only)
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminResetPasswordRequest"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+  # User Roles (admin-only)
+  # ──────────────────────────────────────────────
+
+  /api/users/{userId}/roles:
+    get:
+      operationId: GetUserRoles
+      tags: [UserRoles]
+      summary: List roles for a user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRolesResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/users/{userId}/roles/{role}:
+    post:
+      operationId: AssignUserRole
+      tags: [UserRoles]
+      summary: Assign role to user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      operationId: RemoveUserRole
+      tags: [UserRoles]
+      summary: Remove role from user
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
         "404":
           description: Not Found
         "500":
@@ -1033,6 +3016,206 @@ components:
           type: string
         isActive:
           type: boolean
+
+    # ── Category ──────────────────────────────────
+
+    CreateCategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+
+    UpdateCategoryRequest:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+
+    CategoryResponse:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+
+    # ── Subcategory ─────────────────────────────
+
+    CreateSubcategoryRequest:
+      type: object
+      required: [name, categoryId]
+      properties:
+        name:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        description:
+          type:
+            - string
+            - "null"
+
+    UpdateSubcategoryRequest:
+      type: object
+      required: [id, name, categoryId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        description:
+          type:
+            - string
+            - "null"
+
+    SubcategoryResponse:
+      type: object
+      required: [id, name, categoryId]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        description:
+          type:
+            - string
+            - "null"
+
+    # ── Item Template ──────────────────────────────
+
+    CreateItemTemplateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        defaultCategory:
+          type:
+            - string
+            - "null"
+        defaultSubcategory:
+          type:
+            - string
+            - "null"
+        defaultUnitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        defaultPricingMode:
+          type:
+            - string
+            - "null"
+        defaultItemCode:
+          type:
+            - string
+            - "null"
+
+    UpdateItemTemplateRequest:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        defaultCategory:
+          type:
+            - string
+            - "null"
+        defaultSubcategory:
+          type:
+            - string
+            - "null"
+        defaultUnitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        defaultPricingMode:
+          type:
+            - string
+            - "null"
+        defaultItemCode:
+          type:
+            - string
+            - "null"
+
+    ItemTemplateResponse:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        defaultCategory:
+          type:
+            - string
+            - "null"
+        defaultSubcategory:
+          type:
+            - string
+            - "null"
+        defaultUnitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        defaultUnitPriceCurrency:
+          type:
+            - string
+            - "null"
+          description: "Currency code for the default unit price (e.g., 'USD')"
+        defaultPricingMode:
+          type:
+            - string
+            - "null"
+        defaultItemCode:
+          type:
+            - string
+            - "null"
 
     # ── Receipt ──────────────────────────────────
 
@@ -1113,6 +3296,10 @@ components:
           type: string
         subcategory:
           type: string
+        pricingMode:
+          type: string
+          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
+          default: quantity
 
     UpdateReceiptItemRequest:
       type: object
@@ -1135,12 +3322,19 @@ components:
           type: string
         subcategory:
           type: string
+        pricingMode:
+          type: string
+          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
+          default: quantity
 
     ReceiptItemResponse:
       type: object
-      required: [id, receiptItemCode, description, quantity, unitPrice, category, subcategory]
+      required: [id, receiptId, receiptItemCode, description, quantity, unitPrice, category, subcategory, pricingMode]
       properties:
         id:
+          type: string
+          format: uuid
+        receiptId:
           type: string
           format: uuid
         receiptItemCode:
@@ -1157,6 +3351,9 @@ components:
           type: string
         subcategory:
           type: string
+        pricingMode:
+          type: string
+          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
 
     # ── Transaction ──────────────────────────────
 
@@ -1187,9 +3384,15 @@ components:
 
     TransactionResponse:
       type: object
-      required: [id, amount, date]
+      required: [id, receiptId, accountId, amount, date]
       properties:
         id:
+          type: string
+          format: uuid
+        receiptId:
+          type: string
+          format: uuid
+        accountId:
           type: string
           format: uuid
         amount:
@@ -1256,3 +3459,294 @@ components:
           type:
             - string
             - "null"
+
+    # ── Audit ───────────────────────────────────────
+
+    AuditLogResponse:
+      type: object
+      required: [id, entityType, entityId, action, changesJson, changedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        entityType:
+          type: string
+        entityId:
+          type: string
+        action:
+          type: string
+        changesJson:
+          type: string
+        changedByUserId:
+          type:
+            - string
+            - "null"
+        changedByApiKeyId:
+          type:
+            - string
+            - "null"
+          format: uuid
+        changedAt:
+          type: string
+          format: date-time
+        ipAddress:
+          type:
+            - string
+            - "null"
+
+    # ── Auth Audit ────────────────────────────────
+
+    AuthAuditLogResponse:
+      type: object
+      required: [id, eventType, timestamp]
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+        userId:
+          type:
+            - string
+            - "null"
+        apiKeyId:
+          type:
+            - string
+            - "null"
+          format: uuid
+        username:
+          type:
+            - string
+            - "null"
+        success:
+          type: boolean
+        failureReason:
+          type:
+            - string
+            - "null"
+        ipAddress:
+          type:
+            - string
+            - "null"
+        userAgent:
+          type:
+            - string
+            - "null"
+        timestamp:
+          type: string
+          format: date-time
+        metadataJson:
+          type:
+            - string
+            - "null"
+
+    # ── Auth ──────────────────────────────────────
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    TokenResponse:
+      type: object
+      required: [accessToken, refreshToken, expiresIn, mustResetPassword]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          format: int32
+        mustResetPassword:
+          type: boolean
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+
+    CreateApiKeyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        expiresAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    ApiKeyResponse:
+      type: object
+      required: [id, name, createdAt, isRevoked]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        expiresAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        isRevoked:
+          type: boolean
+
+    CreateApiKeyResponse:
+      type: object
+      required: [id, name, rawKey, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        rawKey:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    UserSummaryResponse:
+      type: object
+      required: [id, email, roles, isDisabled, createdAt]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type:
+            - string
+            - "null"
+        lastName:
+          type:
+            - string
+            - "null"
+        roles:
+          type: array
+          items:
+            type: string
+        isDisabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    UserListResponse:
+      type: object
+      required: [items, page, pageSize, totalCount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserSummaryResponse"
+        page:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        totalCount:
+          type: integer
+          format: int32
+
+    UserRolesResponse:
+      type: object
+      required: [roles]
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
+
+    CreateUserRequest:
+      type: object
+      required: [email, password, role]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+        firstName:
+          type:
+            - string
+            - "null"
+        lastName:
+          type:
+            - string
+            - "null"
+
+    UpdateUserRequest:
+      type: object
+      required: [email, role, isDisabled]
+      properties:
+        email:
+          type: string
+        role:
+          type: string
+        isDisabled:
+          type: boolean
+        firstName:
+          type:
+            - string
+            - "null"
+        lastName:
+          type:
+            - string
+            - "null"
+
+    AdminResetPasswordRequest:
+      type: object
+      required: [newPassword]
+      properties:
+        newPassword:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key

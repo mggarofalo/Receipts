@@ -1,7 +1,9 @@
 <Project>
   <Target Name="ConfigureGitHooks" BeforeTargets="Restore;CollectPackageReferences">
-    <Exec Command="git config core.hooksPath .githooks"
-          StandardOutputImportance="Low" StandardErrorImportance="High"
-          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+    <Exec Command="git config core.hooksPath .githooks 2>nul || exit /b 0"
+          StandardOutputImportance="Low" StandardErrorImportance="Low"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          IgnoreExitCode="true"
+          ContinueOnError="true" />
   </Target>
 </Project>
