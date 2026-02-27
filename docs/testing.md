@@ -105,4 +105,13 @@ Both stacks report coverage on every PR via GitHub Actions (`.github/workflows/g
 - **Backend:** `irongut/CodeCoverageSummary` parses merged Cobertura XML, posts as a sticky PR comment (`coverage-backend` header)
 - **Frontend:** Same action parses `coverage/cobertura-coverage.xml`, posts as a separate sticky PR comment (`coverage-frontend` header)
 
-Coverage thresholds are enforced as required status checks on `main`. See the workflow file for current threshold values.
+## Coverage Thresholds
+
+Both stacks enforce minimum coverage as CI required status checks on `main`. PRs that drop coverage below these thresholds will fail CI.
+
+| Stack | Line % | Branch % | Configured In |
+|-------|--------|----------|---------------|
+| Backend (.NET) | 70% | 65% | `irongut/CodeCoverageSummary` in `build` job |
+| Frontend (React) | 50% | 50% | `irongut/CodeCoverageSummary` in `frontend-test` job |
+
+Thresholds are set slightly below measured coverage to allow minor fluctuations. Raise them incrementally as test coverage improves.

@@ -58,6 +58,16 @@ jobs:
           targetdir: TestResults/merged
           reporttypes: Cobertura;MarkdownSummaryGithub
 
+      - name: Enforce backend coverage threshold
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: TestResults/merged/Cobertura.xml
+          format: markdown
+          output: both
+          badge: false
+          thresholds: '70 65'
+          fail_below_min: true
+
       - name: Post coverage to PR
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
@@ -97,8 +107,8 @@ jobs:
           format: markdown
           output: both
           badge: false
-          thresholds: '0 0'
-          fail_below_min: false
+          thresholds: '50 50'
+          fail_below_min: true
 
       - name: Post coverage to PR
         if: github.event_name == 'pull_request'
