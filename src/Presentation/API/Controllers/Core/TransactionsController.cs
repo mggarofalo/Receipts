@@ -5,6 +5,7 @@ using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
 using Application.Queries.Core.Transaction;
+using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/transactions")]
 [Produces("application/json")]

@@ -4,15 +4,17 @@ using Application.Commands.Subcategory.Create;
 using Application.Commands.Subcategory.Delete;
 using Application.Commands.Subcategory.Restore;
 using Application.Commands.Subcategory.Update;
+using Application.Exceptions;
 using Application.Queries.Core.Subcategory;
+using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers.Core;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/subcategories")]
 [Produces("application/json")]
@@ -148,10 +150,10 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			List<Subcategory> subcategories = await mediator.Send(command);
 			return Ok(mapper.ToResponse(subcategories[0]));
 		}
-		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		catch (DuplicateEntityException ex)
 		{
 			logger.LogWarning(ex, "Duplicate subcategory name in {Method}", nameof(CreateSubcategory));
-			return Conflict("A subcategory with this name already exists in this category.");
+			return Conflict(ex.Message);
 		}
 		catch (Exception ex)
 		{
@@ -174,10 +176,10 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			List<Subcategory> subcategories = await mediator.Send(command);
 			return Ok(subcategories.Select(mapper.ToResponse).ToList());
 		}
-		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		catch (DuplicateEntityException ex)
 		{
 			logger.LogWarning(ex, "Duplicate subcategory name in {Method}", nameof(CreateSubcategories));
-			return Conflict("A subcategory with this name already exists in this category.");
+			return Conflict(ex.Message);
 		}
 		catch (Exception ex)
 		{

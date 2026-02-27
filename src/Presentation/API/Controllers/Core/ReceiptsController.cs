@@ -6,6 +6,7 @@ using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
 using Application.Commands.Receipt.Update;
 using Application.Queries.Core.Receipt;
+using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace API.Controllers.Core;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/receipts")]
 [Produces("application/json")]

@@ -13,6 +13,7 @@ builder.AddApplicationConfiguration();
 // Register services
 builder.Services
 	.AddOpenApiServices()
+	.AddVersioningServices()
 	.AddApplicationServices()
 	.AddCorsServices()
 	.AddAuthServices(builder.Configuration)

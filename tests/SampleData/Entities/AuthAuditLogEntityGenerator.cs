@@ -1,3 +1,4 @@
+using Common;
 using Infrastructure.Entities.Audit;
 
 namespace SampleData.Entities;

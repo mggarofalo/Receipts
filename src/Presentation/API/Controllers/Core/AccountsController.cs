@@ -5,6 +5,7 @@ using Application.Commands.Account.Delete;
 using Application.Commands.Account.Restore;
 using Application.Commands.Account.Update;
 using Application.Queries.Core.Account;
+using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/accounts")]
 [Produces("application/json")]

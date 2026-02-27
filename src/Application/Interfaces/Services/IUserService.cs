@@ -19,4 +19,5 @@ public record PagedUserList(
 public interface IUserService
 {
 	Task<PagedUserList> ListUsersAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+	Task<string?> FindUserIdByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
 }

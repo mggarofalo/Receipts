@@ -4,15 +4,17 @@ using Application.Commands.Category.Create;
 using Application.Commands.Category.Delete;
 using Application.Commands.Category.Restore;
 using Application.Commands.Category.Update;
+using Application.Exceptions;
 using Application.Queries.Core.Category;
+using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers.Core;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/categories")]
 [Produces("application/json")]
@@ -124,10 +126,10 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			List<Category> categories = await mediator.Send(command);
 			return Ok(mapper.ToResponse(categories[0]));
 		}
-		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		catch (DuplicateEntityException ex)
 		{
 			logger.LogWarning(ex, "Duplicate category name in {Method}", nameof(CreateCategory));
-			return Conflict("A category with this name already exists.");
+			return Conflict(ex.Message);
 		}
 		catch (Exception ex)
 		{
@@ -150,10 +152,10 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			List<Category> categories = await mediator.Send(command);
 			return Ok(categories.Select(mapper.ToResponse).ToList());
 		}
-		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		catch (DuplicateEntityException ex)
 		{
 			logger.LogWarning(ex, "Duplicate category name in {Method}", nameof(CreateCategories));
-			return Conflict("A category with this name already exists.");
+			return Conflict(ex.Message);
 		}
 		catch (Exception ex)
 		{

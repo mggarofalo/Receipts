@@ -48,4 +48,12 @@ public class UserService(ApplicationDbContext dbContext) : IUserService
 
 		return new PagedUserList(items, page, pageSize, totalCount);
 	}
+
+	public async Task<string?> FindUserIdByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
+	{
+		return await dbContext.Users
+			.Where(u => u.RefreshToken == refreshToken)
+			.Select(u => u.Id)
+			.FirstOrDefaultAsync(cancellationToken);
+	}
 }

@@ -1,10 +1,12 @@
 using Application.Commands.Trash.Purge;
+using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/trash")]
 [Produces("application/json")]

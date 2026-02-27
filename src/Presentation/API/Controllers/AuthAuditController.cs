@@ -1,11 +1,13 @@
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace API.Controllers;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/auth/audit")]
 [Produces("application/json")]

@@ -1,4 +1,5 @@
 using API.Generated.Dtos;
+using Asp.Versioning;
 using Common;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/users/{userId}/roles")]
 [Produces("application/json")]

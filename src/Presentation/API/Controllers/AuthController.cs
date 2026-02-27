@@ -1,21 +1,23 @@
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Asp.Versioning;
+using Common;
 using Infrastructure.Entities;
-using Infrastructure.Entities.Audit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace API.Controllers;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/auth")]
 [Produces("application/json")]
 public class AuthController(
 	UserManager<ApplicationUser> userManager,
 	ITokenService tokenService,
+	IUserService userService,
 	IAuthAuditService authAuditService,
 	ILogger<AuthController> logger) : ControllerBase
 {
@@ -74,12 +76,12 @@ public class AuthController(
 	[ProducesResponseType<TokenResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<TokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request)
+	public async Task<ActionResult<TokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
 		try
 		{
-			ApplicationUser? user = await userManager.Users
-				.FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
+			string? userId = await userService.FindUserIdByRefreshTokenAsync(request.RefreshToken, cancellationToken);
+			ApplicationUser? user = userId is not null ? await userManager.FindByIdAsync(userId) : null;
 
 			if (user is null
 				|| user.RefreshTokenExpiresAt is null
