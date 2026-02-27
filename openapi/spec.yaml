@@ -2979,6 +2979,10 @@ components:
           type: string
         subcategory:
           type: string
+        pricingMode:
+          type: string
+          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
+          default: quantity
 
     UpdateReceiptItemRequest:
       type: object
@@ -3001,10 +3005,14 @@ components:
           type: string
         subcategory:
           type: string
+        pricingMode:
+          type: string
+          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
+          default: quantity
 
     ReceiptItemResponse:
       type: object
-      required: [id, receiptId, receiptItemCode, description, quantity, unitPrice, category, subcategory]
+      required: [id, receiptId, receiptItemCode, description, quantity, unitPrice, category, subcategory, pricingMode]
       properties:
         id:
           type: string
@@ -3026,6 +3034,9 @@ components:
           type: string
         subcategory:
           type: string
+        pricingMode:
+          type: string
+          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
 
     # ── Transaction ──────────────────────────────
 
