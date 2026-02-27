@@ -76,11 +76,11 @@ public class AuthController(
 	[ProducesResponseType<TokenResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<TokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request)
+	public async Task<ActionResult<TokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
 		try
 		{
-			string? userId = await userService.FindUserIdByRefreshTokenAsync(request.RefreshToken);
+			string? userId = await userService.FindUserIdByRefreshTokenAsync(request.RefreshToken, cancellationToken);
 			ApplicationUser? user = userId is not null ? await userManager.FindByIdAsync(userId) : null;
 
 			if (user is null

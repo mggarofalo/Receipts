@@ -1,4 +1,5 @@
 using NJsonSchema;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 
@@ -14,7 +15,7 @@ public class OpenApiResponseValidationMiddleware
 	private readonly RequestDelegate _next;
 	private readonly ILogger<OpenApiResponseValidationMiddleware> _logger;
 	private readonly bool _throwOnFailure;
-	private readonly Dictionary<string, JsonSchema> _schemaCache = [];
+	private readonly ConcurrentDictionary<string, JsonSchema> _schemaCache = new();
 	private readonly JsonDocument? _specDocument;
 
 	public OpenApiResponseValidationMiddleware(
@@ -78,7 +79,8 @@ public class OpenApiResponseValidationMiddleware
 				&& context.Response.StatusCode < 300)
 			{
 				bufferedBody.Seek(0, SeekOrigin.Begin);
-				string responseJson = await new StreamReader(bufferedBody, Encoding.UTF8).ReadToEndAsync();
+				using StreamReader reader = new(bufferedBody, Encoding.UTF8, leaveOpen: true);
+				string responseJson = await reader.ReadToEndAsync();
 
 				if (!string.IsNullOrWhiteSpace(responseJson))
 				{
@@ -218,73 +220,73 @@ public class OpenApiResponseValidationMiddleware
 		// Resolve $ref and build a self-contained JSON Schema string
 		string schemaJson = BuildResolvedSchemaJson(schemaElement);
 		JsonSchema schema = await JsonSchema.FromJsonAsync(schemaJson);
-		_schemaCache[cacheKey] = schema;
-		return schema;
+		return _schemaCache.GetOrAdd(cacheKey, schema);
 	}
 
 	private string BuildResolvedSchemaJson(JsonElement element)
 	{
-		JsonElement resolved = ResolveRefs(element, []);
-		return resolved.GetRawText();
+		using MemoryStream ms = new();
+		using (Utf8JsonWriter writer = new(ms))
+		{
+			WriteResolved(element, writer, []);
+		}
+
+		return Encoding.UTF8.GetString(ms.ToArray());
 	}
 
-	private JsonElement ResolveRefs(JsonElement element, HashSet<string> visited)
+	/// <summary>
+	/// Writes the resolved JSON schema directly to a Utf8JsonWriter, avoiding
+	/// intermediate JsonDocument allocations. The <paramref name="resolutionStack"/>
+	/// tracks only the current ancestor chain so the same $ref can appear in
+	/// sibling branches without being incorrectly treated as circular.
+	/// </summary>
+	private void WriteResolved(JsonElement element, Utf8JsonWriter writer, HashSet<string> resolutionStack)
 	{
 		if (element.ValueKind == JsonValueKind.Object)
 		{
-			// Check for $ref
 			if (element.TryGetProperty("$ref", out JsonElement refElement))
 			{
 				string refPath = refElement.GetString() ?? "";
-				if (refPath.StartsWith("#/") && !visited.Contains(refPath))
+				if (refPath.StartsWith("#/") && !resolutionStack.Contains(refPath))
 				{
-					visited.Add(refPath);
 					JsonElement? resolved = NavigateJsonPointer(refPath);
 					if (resolved.HasValue)
 					{
-						return ResolveRefs(resolved.Value, visited);
+						resolutionStack.Add(refPath);
+						WriteResolved(resolved.Value, writer, resolutionStack);
+						resolutionStack.Remove(refPath);
+						return;
 					}
 				}
 
-				// Circular ref or unresolvable — return empty object
-				return JsonDocument.Parse("{}").RootElement;
-			}
-
-			// Recursively resolve all properties
-			using var memoryStream = new MemoryStream();
-			using (var writer = new Utf8JsonWriter(memoryStream))
-			{
+				// Circular ref or unresolvable — write empty object
 				writer.WriteStartObject();
-				foreach (JsonProperty prop in element.EnumerateObject())
-				{
-					writer.WritePropertyName(prop.Name);
-					JsonElement resolvedValue = ResolveRefs(prop.Value, visited);
-					resolvedValue.WriteTo(writer);
-				}
 				writer.WriteEndObject();
+				return;
 			}
 
-			return JsonDocument.Parse(memoryStream.ToArray()).RootElement;
+			writer.WriteStartObject();
+			foreach (JsonProperty prop in element.EnumerateObject())
+			{
+				writer.WritePropertyName(prop.Name);
+				WriteResolved(prop.Value, writer, resolutionStack);
+			}
+			writer.WriteEndObject();
+			return;
 		}
 
 		if (element.ValueKind == JsonValueKind.Array)
 		{
-			using var memoryStream = new MemoryStream();
-			using (var writer = new Utf8JsonWriter(memoryStream))
+			writer.WriteStartArray();
+			foreach (JsonElement item in element.EnumerateArray())
 			{
-				writer.WriteStartArray();
-				foreach (JsonElement item in element.EnumerateArray())
-				{
-					JsonElement resolvedItem = ResolveRefs(item, visited);
-					resolvedItem.WriteTo(writer);
-				}
-				writer.WriteEndArray();
+				WriteResolved(item, writer, resolutionStack);
 			}
-
-			return JsonDocument.Parse(memoryStream.ToArray()).RootElement;
+			writer.WriteEndArray();
+			return;
 		}
 
-		return element;
+		element.WriteTo(writer);
 	}
 
 	private JsonElement? NavigateJsonPointer(string pointer)

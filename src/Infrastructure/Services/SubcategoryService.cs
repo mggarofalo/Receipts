@@ -5,6 +5,7 @@ using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
 using Infrastructure.Mapping;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Infrastructure.Services;
 
@@ -18,7 +19,7 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 			List<SubcategoryEntity> createdSubcategoryEntities = await repository.CreateAsync(subcategoryEntities, cancellationToken);
 			return [.. createdSubcategoryEntities.Select(mapper.ToDomain)];
 		}
-		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
 		{
 			throw new DuplicateEntityException("A subcategory with this name already exists in this category.", ex);
 		}
