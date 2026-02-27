@@ -73,6 +73,8 @@ const navGroups: NavGroup[] = [
     label: "Manage",
     items: [
       { to: "/accounts", label: "Accounts", description: "Manage financial accounts" },
+      { to: "/categories", label: "Categories", description: "Manage item categories" },
+      { to: "/subcategories", label: "Subcategories", description: "Manage item subcategories" },
       { to: "/security", label: "Security", description: "Security settings and sessions" },
     ],
   },
@@ -158,6 +160,8 @@ export function Layout() {
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/accounts", label: "Accounts" },
+    { to: "/categories", label: "Categories" },
+    { to: "/subcategories", label: "Subcategories" },
     { to: "/receipts", label: "Receipts" },
     { to: "/receipt-items", label: "Items" },
     { to: "/transactions", label: "Transactions" },

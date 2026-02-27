@@ -9,6 +9,9 @@ public class ReceiptItem
 	public decimal Quantity { get; set; }
 	public Money UnitPrice { get; set; }
 	public Money TotalAmount { get; set; }
+	// Category/Subcategory are stored as denormalized strings (not FK references).
+	// This is intentional: values capture the historical categorization at time of entry,
+	// while the Category/Subcategory tables serve as suggestion lists for the UI.
 	public string Category { get; set; }
 	public string Subcategory { get; set; }
 

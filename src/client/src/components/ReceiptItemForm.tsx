@@ -1,9 +1,11 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useReceipts } from "@/hooks/useReceipts";
+import { useCategories } from "@/hooks/useCategories";
+import { useSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
 import { receiptToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,11 +52,32 @@ export function ReceiptItemForm({
   useFormShortcuts({ formRef });
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
+  const { data: categories } = useCategories();
 
   const receiptOptions = useMemo(
     () =>
-      ((receipts as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
+      (
+        (receipts as
+          | {
+              id: string;
+              description?: string | null;
+              location: string;
+              date: string;
+            }[]
+          | undefined) ?? []
+      ).map(receiptToOption),
     [receipts],
+  );
+
+  const categoryOptions = useMemo(
+    () =>
+      (
+        (categories as { id: string; name: string }[] | undefined) ?? []
+      ).map((c) => ({
+        value: c.name,
+        label: c.name,
+      })),
+    [categories],
   );
 
   const form = useForm<ReceiptItemFormValues>({
@@ -72,9 +95,44 @@ export function ReceiptItemForm({
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const watchedCategory = form.watch("category");
+
+  const selectedCategoryId = useMemo(() => {
+    if (!categories || !watchedCategory) return null;
+    return (categories as { id: string; name: string }[])
+      .find((c) => c.name === watchedCategory)?.id ?? null;
+  }, [categories, watchedCategory]);
+
+  const { data: subcategoriesData } =
+    useSubcategoriesByCategoryId(selectedCategoryId);
+
+  const subcategoryOptions = useMemo(
+    () =>
+      (
+        (subcategoriesData as { id: string; name: string }[] | undefined) ?? []
+      ).map((s) => ({
+        value: s.name,
+        label: s.name,
+      })),
+    [subcategoriesData],
+  );
+
+  const prevCategoryRef = useRef(watchedCategory);
+  useEffect(() => {
+    if (prevCategoryRef.current !== watchedCategory) {
+      prevCategoryRef.current = watchedCategory;
+      form.setValue("subcategory", "");
+    }
+  }, [watchedCategory, form]);
+
   return (
     <Form {...form}>
-      <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form
+        ref={formRef}
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-4"
+      >
         <FormField
           control={form.control}
           name="receiptId"
@@ -171,7 +229,14 @@ export function ReceiptItemForm({
               <FormItem>
                 <FormLabel>Category</FormLabel>
                 <FormControl>
-                  <Input aria-required="true" {...field} />
+                  <Combobox
+                    options={categoryOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select category..."
+                    searchPlaceholder="Search categories..."
+                    allowCustom
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -185,7 +250,15 @@ export function ReceiptItemForm({
               <FormItem>
                 <FormLabel>Subcategory</FormLabel>
                 <FormControl>
-                  <Input aria-required="true" {...field} />
+                  <Combobox
+                    options={subcategoryOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select subcategory..."
+                    searchPlaceholder="Search subcategories..."
+                    allowCustom
+                    disabled={!watchedCategory}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -9,6 +9,8 @@ import Login from "@/pages/Login";
 import ChangePassword from "@/pages/ChangePassword";
 import ApiKeys from "@/pages/ApiKeys";
 import Accounts from "@/pages/Accounts";
+import Categories from "@/pages/Categories";
+import Subcategories from "@/pages/Subcategories";
 import Receipts from "@/pages/Receipts";
 import ReceiptItems from "@/pages/ReceiptItems";
 import Transactions from "@/pages/Transactions";
@@ -41,6 +43,8 @@ export const router = createBrowserRouter([
         children: [
           { path: "/", element: <Home /> },
           { path: "/accounts", element: <Accounts /> },
+          { path: "/categories", element: <Categories /> },
+          { path: "/subcategories", element: <Subcategories /> },
           { path: "/receipts", element: <Receipts /> },
           { path: "/receipt-items", element: <ReceiptItems /> },
           { path: "/transactions", element: <Transactions /> },

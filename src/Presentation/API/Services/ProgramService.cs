@@ -13,6 +13,8 @@ public static class ProgramService
 
 		services
 			.AddSingleton<API.Mapping.Core.AccountMapper>()
+			.AddSingleton<API.Mapping.Core.CategoryMapper>()
+			.AddSingleton<API.Mapping.Core.SubcategoryMapper>()
 			.AddSingleton<API.Mapping.Core.ReceiptMapper>()
 			.AddSingleton<API.Mapping.Core.ReceiptItemMapper>()
 			.AddSingleton<API.Mapping.Core.TransactionMapper>()

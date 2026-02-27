@@ -148,6 +148,45 @@ public class SoftDeleteTests
 	}
 
 	[Fact]
+	public async Task SoftDelete_Category_CascadesToSubcategories()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			CategoryEntity category = CategoryEntityGenerator.Generate();
+			await context.Categories.AddAsync(category);
+			SubcategoryEntity sub1 = SubcategoryEntityGenerator.Generate();
+			sub1.CategoryId = category.Id;
+			SubcategoryEntity sub2 = SubcategoryEntityGenerator.Generate();
+			sub2.CategoryId = category.Id;
+			await context.Subcategories.AddRangeAsync(sub1, sub2);
+			await context.SaveChangesAsync();
+		}
+
+		// Act - delete the category (need to load subcategories into context for cascade)
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			CategoryEntity category = await context.Categories.FirstAsync();
+			// Load related subcategories into tracker
+			await context.Subcategories.Where(s => s.CategoryId == category.Id).LoadAsync();
+			context.Categories.Remove(category);
+			await context.SaveChangesAsync();
+		}
+
+		// Assert
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			List<SubcategoryEntity> allSubcategories = await context.Subcategories.IgnoreQueryFilters().ToListAsync();
+			allSubcategories.Should().HaveCount(2);
+			allSubcategories.Should().AllSatisfy(s => s.DeletedAt.Should().NotBeNull());
+		}
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
 	public async Task SoftDelete_Account_DoesNotCascade()
 	{
 		// Arrange
