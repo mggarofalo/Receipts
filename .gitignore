@@ -298,5 +298,8 @@ openapi/generated/
 # Client generated types (regenerated from openapi/spec.yaml on dev/build)
 src/client/src/generated/
 
+# Client test coverage output
+src/client/coverage/
+
 # Local clones for branch isolation
 .clones/
