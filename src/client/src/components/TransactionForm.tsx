@@ -9,6 +9,7 @@ import { receiptToOption, accountToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   Form,
   FormControl,
@@ -131,12 +132,7 @@ export function TransactionForm({
             <FormItem>
               <FormLabel>Amount</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  {...field}
-                  onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                />
+                <CurrencyInput {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { formatCurrency } from "@/lib/format";
 
 interface ReceiptItemResponse {
   id: string;
@@ -49,13 +50,6 @@ interface ReceiptItemResponse {
   unitPrice: number;
   category: string;
   subcategory: string;
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
 }
 
 const SEARCH_CONFIG: FuseSearchConfig<ReceiptItemResponse> = {

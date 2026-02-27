@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { formatCurrency } from "@/lib/format";
 
 interface ReceiptResponse {
   id: string;
@@ -45,13 +46,6 @@ interface ReceiptResponse {
   location: string;
   date: string;
   taxAmount: number;
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
 }
 
 const SEARCH_CONFIG: FuseSearchConfig<ReceiptResponse> = {
