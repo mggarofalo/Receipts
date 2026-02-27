@@ -162,11 +162,16 @@ export function ReceiptItemForm({
     [subcategoriesData],
   );
 
+  // Reset subcategory when category changes (skip when applying a template)
   const prevCategoryRef = useRef(watchedCategory);
+  const applyingTemplateRef = useRef(false);
   useEffect(() => {
     if (prevCategoryRef.current !== watchedCategory) {
       prevCategoryRef.current = watchedCategory;
-      form.setValue("subcategory", "");
+      if (!applyingTemplateRef.current) {
+        form.setValue("subcategory", "");
+      }
+      applyingTemplateRef.current = false;
     }
   }, [watchedCategory, form]);
 
@@ -213,6 +218,7 @@ export function ReceiptItemForm({
     form.setValue("description", template.name);
     setDescriptionInput(template.name);
     if (template.defaultCategory) {
+      applyingTemplateRef.current = true;
       form.setValue("category", template.defaultCategory);
     }
     if (template.defaultSubcategory) {
