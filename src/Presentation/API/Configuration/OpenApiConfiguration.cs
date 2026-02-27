@@ -1,3 +1,4 @@
+using API.Middleware;
 using Scalar.AspNetCore;
 
 namespace API.Configuration;
@@ -16,6 +17,7 @@ public static class OpenApiConfiguration
 		{
 			app.MapOpenApi();
 			app.MapScalarApiReference();
+			app.UseOpenApiResponseValidation();
 		}
 		else
 		{

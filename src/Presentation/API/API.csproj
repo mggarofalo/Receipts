@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" PrivateAssets="all" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="MediatR" />
+    <PackageReference Include="NJsonSchema" />
     <PackageReference Include="NSwag.MSBuild">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
