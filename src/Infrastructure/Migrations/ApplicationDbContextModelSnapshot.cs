@@ -368,7 +368,7 @@ namespace Infrastructure.Migrations
                     b.Property<string>("PricingMode")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
+                        .HasMaxLength(8)
                         .HasColumnType("text")
                         .HasDefaultValue("quantity");
 

@@ -563,7 +563,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 				.ValueGeneratedOnAdd();
 
 			entity.Property(e => e.PricingMode)
-				.HasMaxLength(10)
+				.HasMaxLength(8)
 				.HasDefaultValue("quantity");
 
 			entity.Navigation(e => e.Receipt)

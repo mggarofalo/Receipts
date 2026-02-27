@@ -14,7 +14,7 @@ public partial class AddReceiptItemPricingMode : Migration
 			name: "PricingMode",
 			table: "ReceiptItems",
 			type: "text",
-			maxLength: 10,
+			maxLength: 8,
 			nullable: false,
 			defaultValue: "quantity");
 	}

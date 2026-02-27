@@ -55,6 +55,11 @@ public class ReceiptItem
 			throw new ArgumentException(PricingModeInvalid, nameof(pricingMode));
 		}
 
+		if (pricingMode == "flat" && quantity != 1)
+		{
+			throw new ArgumentException("Quantity must be 1 when pricing mode is flat.", nameof(quantity));
+		}
+
 		Id = id;
 		ReceiptItemCode = receiptItemCode;
 		Description = description;

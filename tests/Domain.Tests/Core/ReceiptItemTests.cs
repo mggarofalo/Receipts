@@ -189,6 +189,25 @@ public class ReceiptItemTests
 		Assert.Equal("flat", receiptItem.PricingMode);
 	}
 
+	[Fact]
+	public void Constructor_FlatPricingModeWithQuantityNotOne_ThrowsArgumentException()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string receiptItemCode = "ITEM001";
+		string description = "Test Item";
+		decimal quantity = 2;
+		Money unitPrice = new(10.00m);
+		Money totalAmount = new(20.00m);
+		string category = "Test Category";
+		string subcategory = "Test Subcategory";
+
+		// Act & Assert
+		ArgumentException exception = Assert.Throws<ArgumentException>(() =>
+			new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory, "flat"));
+		Assert.Contains("Quantity must be 1", exception.Message);
+	}
+
 	[Theory]
 	[InlineData("invalid")]
 	[InlineData("QUANTITY")]
