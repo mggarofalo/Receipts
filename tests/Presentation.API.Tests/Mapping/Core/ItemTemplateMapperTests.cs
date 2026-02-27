@@ -120,6 +120,7 @@ public class ItemTemplateMapperTests
 		Assert.Equal("Groceries", actual.DefaultCategory);
 		Assert.Equal("Produce", actual.DefaultSubcategory);
 		Assert.Equal(9.99, actual.DefaultUnitPrice);
+		Assert.Equal("USD", actual.DefaultUnitPriceCurrency);
 		Assert.Equal("quantity", actual.DefaultPricingMode);
 		Assert.Equal("ITEM-001", actual.DefaultItemCode);
 	}
@@ -138,5 +139,6 @@ public class ItemTemplateMapperTests
 		Assert.Equal(expectedId, actual.Id);
 		Assert.Equal("No Price Template", actual.Name);
 		Assert.Null(actual.DefaultUnitPrice);
+		Assert.Null(actual.DefaultUnitPriceCurrency);
 	}
 }

@@ -583,6 +583,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	{
 		modelBuilder.Entity<ItemTemplateEntity>(entity =>
 		{
+			entity.ToTable("ItemTemplates", t => t.HasCheckConstraint(
+				"CK_ItemTemplates_Money_Consistency",
+				"((\"DefaultUnitPrice\" IS NULL AND \"DefaultUnitPriceCurrency\" IS NULL) OR (\"DefaultUnitPrice\" IS NOT NULL AND \"DefaultUnitPriceCurrency\" IS NOT NULL))"));
+
 			entity.HasKey(e => e.Id);
 
 			entity.Property(e => e.Id)

@@ -12,12 +12,17 @@ public partial class ItemTemplateMapper
 	[MapperIgnoreTarget(nameof(ItemTemplateResponse.AdditionalProperties))]
 	[MapperIgnoreSource(nameof(ItemTemplate.DefaultUnitPrice))]
 	[MapperIgnoreTarget(nameof(ItemTemplateResponse.DefaultUnitPrice))]
+	[MapperIgnoreTarget(nameof(ItemTemplateResponse.DefaultUnitPriceCurrency))]
 	public partial ItemTemplateResponse ToResponsePartial(ItemTemplate source);
 
 	public ItemTemplateResponse ToResponse(ItemTemplate source)
 	{
 		ItemTemplateResponse response = ToResponsePartial(source);
-		response.DefaultUnitPrice = source.DefaultUnitPrice != null ? (double)source.DefaultUnitPrice.Amount : null;
+		if (source.DefaultUnitPrice != null)
+		{
+			response.DefaultUnitPrice = (double)source.DefaultUnitPrice.Amount;
+			response.DefaultUnitPriceCurrency = source.DefaultUnitPrice.Currency.ToString();
+		}
 		return response;
 	}
 

@@ -39,11 +39,20 @@ public partial class AddItemTemplateEntity : Migration
 			column: "Name",
 			unique: true,
 			filter: "\"DeletedAt\" IS NULL");
+
+		migrationBuilder.AddCheckConstraint(
+			name: "CK_ItemTemplates_Money_Consistency",
+			table: "ItemTemplates",
+			sql: "((\"DefaultUnitPrice\" IS NULL AND \"DefaultUnitPriceCurrency\" IS NULL) OR (\"DefaultUnitPrice\" IS NOT NULL AND \"DefaultUnitPriceCurrency\" IS NOT NULL))");
 	}
 
 	/// <inheritdoc />
 	protected override void Down(MigrationBuilder migrationBuilder)
 	{
+		migrationBuilder.DropCheckConstraint(
+			name: "CK_ItemTemplates_Money_Consistency",
+			table: "ItemTemplates");
+
 		migrationBuilder.DropTable(
 			name: "ItemTemplates");
 	}

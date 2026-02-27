@@ -3203,6 +3203,11 @@ components:
             - number
             - "null"
           format: double
+        defaultUnitPriceCurrency:
+          type:
+            - string
+            - "null"
+          description: "Currency code for the default unit price (e.g., 'USD')"
         defaultPricingMode:
           type:
             - string
