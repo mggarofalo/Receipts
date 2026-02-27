@@ -107,6 +107,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			{
 				CollectReceiptChildren(receipt.Id, cascadeTargets);
 			}
+
+			// Cascade soft delete for Category children
+			if (entry.Entity is CategoryEntity category)
+			{
+				CollectCategoryChildren(category.Id, cascadeTargets);
+			}
 		}
 
 		foreach (ISoftDeletable target in cascadeTargets)
@@ -138,6 +144,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			.Select(e => e.Entity);
 
 		targets.AddRange(trackedTransactions);
+	}
+
+	private void CollectCategoryChildren(Guid categoryId, List<ISoftDeletable> targets)
+	{
+		IEnumerable<SubcategoryEntity> trackedSubcategories = ChangeTracker
+			.Entries<SubcategoryEntity>()
+			.Where(e => e.Entity.CategoryId == categoryId && e.State != EntityState.Deleted)
+			.Select(e => e.Entity);
+
+		targets.AddRange(trackedSubcategories);
 	}
 
 	private List<AuditEntry> CollectAuditEntries()

@@ -97,10 +97,11 @@ export function ReceiptItemForm({
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchedCategory = form.watch("category");
 
-  const selectedCategoryId =
-    (categories as { id: string; name: string }[] | undefined)?.find(
-      (c) => c.name === watchedCategory,
-    )?.id ?? null;
+  const selectedCategoryId = useMemo(() => {
+    if (!categories || !watchedCategory) return null;
+    return (categories as { id: string; name: string }[])
+      .find((c) => c.name === watchedCategory)?.id ?? null;
+  }, [categories, watchedCategory]);
 
   const { data: subcategoriesData } =
     useSubcategoriesByCategoryId(selectedCategoryId);
