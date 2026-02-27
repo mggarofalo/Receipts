@@ -124,7 +124,7 @@ All API changes follow a spec-first workflow:
 3. `dotnet build` — regenerates DTOs and the built output
 4. `npm run check:drift` — verify spec and implementation stay in sync
 
-See [AGENTS.md](AGENTS.md) for the full workflow details.
+See [AGENTS.md](../AGENTS.md) for the full workflow details.
 
 ## Troubleshooting
 
