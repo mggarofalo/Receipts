@@ -630,7 +630,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Infrastructure.Entities.Core.CategoryEntity", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Category");
