@@ -9,6 +9,7 @@ using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers.Core;
 
@@ -112,6 +113,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single category")]
 	[ProducesResponseType<CategoryResponse>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status409Conflict)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<CategoryResponse>> CreateCategory([FromBody] CreateCategoryRequest model)
 	{
@@ -121,6 +123,11 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			CreateCategoryCommand command = new([mapper.ToDomain(model)]);
 			List<Category> categories = await mediator.Send(command);
 			return Ok(mapper.ToResponse(categories[0]));
+		}
+		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			logger.LogWarning(ex, "Duplicate category name in {Method}", nameof(CreateCategory));
+			return Conflict("A category with this name already exists.");
 		}
 		catch (Exception ex)
 		{
@@ -132,6 +139,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create categories in batch")]
 	[ProducesResponseType<List<CategoryResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status409Conflict)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<CategoryResponse>>> CreateCategories([FromBody] List<CreateCategoryRequest> models)
 	{
@@ -141,6 +149,11 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			CreateCategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
 			List<Category> categories = await mediator.Send(command);
 			return Ok(categories.Select(mapper.ToResponse).ToList());
+		}
+		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			logger.LogWarning(ex, "Duplicate category name in {Method}", nameof(CreateCategories));
+			return Conflict("A category with this name already exists.");
 		}
 		catch (Exception ex)
 		{

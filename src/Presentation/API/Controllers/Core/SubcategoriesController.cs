@@ -9,6 +9,7 @@ using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers.Core;
 
@@ -136,6 +137,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single subcategory")]
 	[ProducesResponseType<SubcategoryResponse>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status409Conflict)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<SubcategoryResponse>> CreateSubcategory([FromBody] CreateSubcategoryRequest model)
 	{
@@ -145,6 +147,11 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			CreateSubcategoryCommand command = new([mapper.ToDomain(model)]);
 			List<Subcategory> subcategories = await mediator.Send(command);
 			return Ok(mapper.ToResponse(subcategories[0]));
+		}
+		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			logger.LogWarning(ex, "Duplicate subcategory name in {Method}", nameof(CreateSubcategory));
+			return Conflict("A subcategory with this name already exists in this category.");
 		}
 		catch (Exception ex)
 		{
@@ -156,6 +163,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create subcategories in batch")]
 	[ProducesResponseType<List<SubcategoryResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status409Conflict)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<SubcategoryResponse>>> CreateSubcategories([FromBody] List<CreateSubcategoryRequest> models)
 	{
@@ -165,6 +173,11 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			CreateSubcategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
 			List<Subcategory> subcategories = await mediator.Send(command);
 			return Ok(subcategories.Select(mapper.ToResponse).ToList());
+		}
+		catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) == true)
+		{
+			logger.LogWarning(ex, "Duplicate subcategory name in {Method}", nameof(CreateSubcategories));
+			return Conflict("A subcategory with this name already exists in this category.");
 		}
 		catch (Exception ex)
 		{

@@ -68,6 +68,7 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<CategoryEntity> entities = await context.Categories
+			.Include(c => c.Subcategories)
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
 

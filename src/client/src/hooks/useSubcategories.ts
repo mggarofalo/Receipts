@@ -62,8 +62,10 @@ export function useCreateSubcategory() {
       queryClient.invalidateQueries({ queryKey: ["subcategories"] });
       toast.success("Subcategory created");
     },
-    onError: () => {
-      toast.error("Failed to create subcategory");
+    onError: (err) => {
+      toast.error(
+        typeof err === "string" ? err : "Failed to create subcategory",
+      );
     },
   });
 }

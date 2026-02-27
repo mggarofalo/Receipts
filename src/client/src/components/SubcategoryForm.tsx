@@ -93,7 +93,7 @@ export function SubcategoryForm({
                 <Combobox
                   options={categoryOptions}
                   value={field.value}
-                  onChange={field.onChange}
+                  onValueChange={field.onChange}
                   placeholder="Select a category..."
                   searchPlaceholder="Search categories..."
                 />
