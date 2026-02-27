@@ -1,0 +1,401 @@
+import { useState, useMemo, useEffect } from "react";
+import {
+  useItemTemplates,
+  useCreateItemTemplate,
+  useUpdateItemTemplate,
+  useDeleteItemTemplates,
+} from "@/hooks/useItemTemplates";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useFuzzySearch } from "@/hooks/useFuzzySearch";
+import { useSavedFilters } from "@/hooks/useSavedFilters";
+import { usePagination } from "@/hooks/usePagination";
+import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
+import type { FuseSearchConfig } from "@/lib/search";
+import { ItemTemplateForm } from "@/components/ItemTemplateForm";
+import { FuzzySearchInput } from "@/components/FuzzySearchInput";
+import { SearchHighlight } from "@/components/SearchHighlight";
+import { getMatchIndices } from "@/lib/search-highlight";
+import { NoResults } from "@/components/NoResults";
+import { Pagination } from "@/components/Pagination";
+import { formatCurrency } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Spinner } from "@/components/ui/spinner";
+
+interface ItemTemplateResponse {
+  id: string;
+  name: string;
+  description?: string | null;
+  defaultCategory?: string | null;
+  defaultSubcategory?: string | null;
+  defaultUnitPrice?: number | null;
+  defaultUnitPriceCurrency?: string | null;
+  defaultPricingMode?: string | null;
+  defaultItemCode?: string | null;
+}
+
+const SEARCH_CONFIG: FuseSearchConfig<ItemTemplateResponse> = {
+  keys: [
+    { name: "name", weight: 3 },
+    { name: "description", weight: 1 },
+    { name: "defaultCategory", weight: 1 },
+    { name: "defaultItemCode", weight: 1 },
+  ],
+};
+
+function ItemTemplates() {
+  usePageTitle("Item Templates");
+  const { data: itemTemplates, isLoading } = useItemTemplates();
+  const createItemTemplate = useCreateItemTemplate();
+  const updateItemTemplate = useUpdateItemTemplate();
+  const deleteItemTemplates = useDeleteItemTemplates();
+
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editTemplate, setEditTemplate] = useState<ItemTemplateResponse | null>(
+    null,
+  );
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const anyDialogOpen = createOpen || editTemplate !== null || deleteOpen;
+
+  useEffect(() => {
+    function onNewItem() {
+      setCreateOpen(true);
+    }
+    window.addEventListener("shortcut:new-item", onNewItem);
+    return () => window.removeEventListener("shortcut:new-item", onNewItem);
+  }, []);
+
+  const data = (itemTemplates as ItemTemplateResponse[] | undefined) ?? [];
+  useSavedFilters("itemTemplates");
+
+  const { search, setSearch, results, totalCount, clearSearch } =
+    useFuzzySearch({ data, config: SEARCH_CONFIG });
+
+  const filteredResults = useMemo(() => {
+    return results.map((r) => r.item);
+  }, [results]);
+
+  const matchMap = useMemo(() => {
+    const map = new Map<string, (typeof results)[number]>();
+    for (const r of results) {
+      map.set(r.item.id, r);
+    }
+    return map;
+  }, [results]);
+
+  const {
+    paginatedItems,
+    currentPage,
+    pageSize,
+    totalItems,
+    totalPages,
+    setPage,
+    setPageSize,
+  } = usePagination({ items: filteredResults });
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === paginatedItems.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(paginatedItems.map((a) => a.id)));
+    }
+  }
+
+  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+    items: paginatedItems,
+    getId: (a) => a.id,
+    enabled: !anyDialogOpen,
+    onOpen: (a) => setEditTemplate(a),
+    onDelete: () => setDeleteOpen(true),
+    onSelectAll: () => setSelected(new Set(paginatedItems.map((a) => a.id))),
+    onDeselectAll: () => setSelected(new Set()),
+    onToggleSelect: (a) => toggleSelect(a.id),
+    selected,
+  });
+
+  if (isLoading) {
+    return <TableSkeleton columns={6} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-2xl font-semibold tracking-tight">Item Templates</h1>
+      <div className="flex items-center justify-between">
+        <FuzzySearchInput
+          aria-label="Search item templates"
+          value={search}
+          onChange={setSearch}
+          placeholder="Search item templates..."
+          resultCount={filteredResults.length}
+          totalCount={totalCount}
+          className="max-w-sm"
+        />
+        <div className="flex gap-2">
+          {selected.size > 0 && (
+            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+              Delete ({selected.size})
+            </Button>
+          )}
+          <Button onClick={() => setCreateOpen(true)}>New Template</Button>
+        </div>
+      </div>
+
+      {filteredResults.length === 0 ? (
+        search ? (
+          <NoResults
+            searchTerm={search}
+            onClearSearch={clearSearch}
+            onSelectSuggestion={setSearch}
+            entityName="item templates"
+          />
+        ) : (
+          <div className="py-12 text-center text-muted-foreground">
+            No item templates yet. Create one to get started.
+          </div>
+        )
+      ) : (
+        <>
+          <div className="rounded-md border" ref={tableRef}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all rows"
+                      checked={
+                        selected.size === paginatedItems.length &&
+                        paginatedItems.length > 0
+                      }
+                      onChange={toggleAll}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                  </TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Subcategory</TableHead>
+                  <TableHead>Unit Price</TableHead>
+                  <TableHead>Pricing Mode</TableHead>
+                  <TableHead className="w-24">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((template, index) => {
+                  const result = matchMap.get(template.id);
+                  const matches = result?.matches;
+                  return (
+                    <TableRow
+                      key={template.id}
+                      className={`cursor-pointer ${focusedId === template.id ? "bg-accent" : ""}`}
+                      onClick={(e) => {
+                        if (
+                          (e.target as HTMLElement).closest(
+                            "button, input, a, [role='button']",
+                          )
+                        )
+                          return;
+                        setFocusedIndex(index);
+                      }}
+                    >
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${template.name}`}
+                          checked={selected.has(template.id)}
+                          onChange={() => toggleSelect(template.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <SearchHighlight
+                          text={template.name}
+                          indices={getMatchIndices(matches, "name")}
+                        />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {template.defaultCategory ? (
+                          <SearchHighlight
+                            text={template.defaultCategory}
+                            indices={getMatchIndices(
+                              matches,
+                              "defaultCategory",
+                            )}
+                          />
+                        ) : (
+                          <span className="italic">--</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {template.defaultSubcategory ?? (
+                          <span className="italic">--</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {template.defaultUnitPrice != null ? (
+                          formatCurrency(template.defaultUnitPrice)
+                        ) : (
+                          <span className="italic">--</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground capitalize">
+                        {template.defaultPricingMode ?? (
+                          <span className="italic">--</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditTemplate(template)}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </>
+      )}
+
+      {/* Create Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Item Template</DialogTitle>
+          </DialogHeader>
+          <ItemTemplateForm
+            mode="create"
+            isSubmitting={createItemTemplate.isPending}
+            onCancel={() => setCreateOpen(false)}
+            onSubmit={(values) => {
+              createItemTemplate.mutate(
+                {
+                  name: values.name,
+                  description: values.description || null,
+                  defaultCategory: values.defaultCategory || null,
+                  defaultSubcategory: values.defaultSubcategory || null,
+                  defaultUnitPrice: values.defaultUnitPrice ?? null,
+                  defaultPricingMode: values.defaultPricingMode || null,
+                  defaultItemCode: values.defaultItemCode || null,
+                },
+                { onSuccess: () => setCreateOpen(false) },
+              );
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editTemplate !== null}
+        onOpenChange={(open) => !open && setEditTemplate(null)}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Item Template</DialogTitle>
+          </DialogHeader>
+          {editTemplate && (
+            <ItemTemplateForm
+              mode="edit"
+              defaultValues={{
+                name: editTemplate.name,
+                description: editTemplate.description ?? "",
+                defaultCategory: editTemplate.defaultCategory ?? "",
+                defaultSubcategory: editTemplate.defaultSubcategory ?? "",
+                defaultUnitPrice: editTemplate.defaultUnitPrice ?? undefined,
+                defaultPricingMode: editTemplate.defaultPricingMode ?? "",
+                defaultItemCode: editTemplate.defaultItemCode ?? "",
+              }}
+              isSubmitting={updateItemTemplate.isPending}
+              onCancel={() => setEditTemplate(null)}
+              onSubmit={(values) => {
+                updateItemTemplate.mutate(
+                  {
+                    id: editTemplate.id,
+                    name: values.name,
+                    description: values.description || null,
+                    defaultCategory: values.defaultCategory || null,
+                    defaultSubcategory: values.defaultSubcategory || null,
+                    defaultUnitPrice: values.defaultUnitPrice ?? null,
+                    defaultPricingMode: values.defaultPricingMode || null,
+                    defaultItemCode: values.defaultItemCode || null,
+                  },
+                  { onSuccess: () => setEditTemplate(null) },
+                );
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Item Templates</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete {selected.size} item template(s)?
+            This action can be undone by restoring.
+          </p>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteItemTemplates.isPending}
+              onClick={() => {
+                const ids = [...selected];
+                setSelected(new Set());
+                setDeleteOpen(false);
+                deleteItemTemplates.mutate(ids);
+              }}
+            >
+              {deleteItemTemplates.isPending && <Spinner size="sm" />}
+              {deleteItemTemplates.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+export default ItemTemplates;

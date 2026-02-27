@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Link, Outlet, useNavigate, useNavigation, useLocation } from "react-router";
+import {
+  Link,
+  Outlet,
+  useNavigate,
+  useNavigation,
+  useLocation,
+} from "react-router";
 import { Menu, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
@@ -63,19 +69,56 @@ const navGroups: NavGroup[] = [
   {
     label: "Data",
     items: [
-      { to: "/receipts", label: "Receipts", description: "View and manage receipts" },
-      { to: "/receipt-items", label: "Items", description: "Browse receipt line items" },
-      { to: "/transactions", label: "Transactions", description: "Track transactions" },
-      { to: "/trips", label: "Trips", description: "Organize receipts by trip" },
+      {
+        to: "/receipts",
+        label: "Receipts",
+        description: "View and manage receipts",
+      },
+      {
+        to: "/receipt-items",
+        label: "Items",
+        description: "Browse receipt line items",
+      },
+      {
+        to: "/transactions",
+        label: "Transactions",
+        description: "Track transactions",
+      },
+      {
+        to: "/trips",
+        label: "Trips",
+        description: "Organize receipts by trip",
+      },
     ],
   },
   {
     label: "Manage",
     items: [
-      { to: "/accounts", label: "Accounts", description: "Manage financial accounts" },
-      { to: "/categories", label: "Categories", description: "Manage item categories" },
-      { to: "/subcategories", label: "Subcategories", description: "Manage item subcategories" },
-      { to: "/security", label: "Security", description: "Security settings and sessions" },
+      {
+        to: "/accounts",
+        label: "Accounts",
+        description: "Manage financial accounts",
+      },
+      {
+        to: "/categories",
+        label: "Categories",
+        description: "Manage item categories",
+      },
+      {
+        to: "/subcategories",
+        label: "Subcategories",
+        description: "Manage item subcategories",
+      },
+      {
+        to: "/item-templates",
+        label: "Item Templates",
+        description: "Manage item templates for autocomplete",
+      },
+      {
+        to: "/security",
+        label: "Security",
+        description: "Security settings and sessions",
+      },
     ],
   },
 ];
@@ -166,6 +209,7 @@ export function Layout() {
     { to: "/receipt-items", label: "Items" },
     { to: "/transactions", label: "Transactions" },
     { to: "/trips", label: "Trips" },
+    { to: "/item-templates", label: "Item Templates" },
     { to: "/security", label: "Security" },
   ];
 
@@ -215,7 +259,8 @@ export function Layout() {
                       to="/"
                       className={cn(
                         navigationMenuTriggerStyle(),
-                        isLinkActive("/") && "bg-accent/50 text-accent-foreground"
+                        isLinkActive("/") &&
+                          "bg-accent/50 text-accent-foreground",
                       )}
                     >
                       Home
@@ -306,7 +351,10 @@ export function Layout() {
         className="flex-1 container mx-auto px-4 py-6 focus:outline-none"
       >
         <Breadcrumbs />
-        <div key={location.pathname} className="animate-in fade-in duration-200">
+        <div
+          key={location.pathname}
+          className="animate-in fade-in duration-200"
+        >
           <Outlet />
         </div>
       </main>
@@ -317,7 +365,10 @@ export function Layout() {
           <SheetHeader>
             <SheetTitle>Receipts</SheetTitle>
           </SheetHeader>
-          <nav className="flex flex-col gap-1 px-4" aria-label="Mobile navigation">
+          <nav
+            className="flex flex-col gap-1 px-4"
+            aria-label="Mobile navigation"
+          >
             {navLinks.map(({ to, label }) => mobileNavLink(to, label))}
             {isAdmin() && (
               <>

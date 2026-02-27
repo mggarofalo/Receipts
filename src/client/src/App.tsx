@@ -15,6 +15,7 @@ import Receipts from "@/pages/Receipts";
 import ReceiptItems from "@/pages/ReceiptItems";
 import Transactions from "@/pages/Transactions";
 import Trips from "@/pages/Trips";
+import ItemTemplates from "@/pages/ItemTemplates";
 import ReceiptDetail from "@/pages/ReceiptDetail";
 import TransactionDetail from "@/pages/TransactionDetail";
 import AdminUsers from "@/pages/AdminUsers";
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
           { path: "/receipt-items", element: <ReceiptItems /> },
           { path: "/transactions", element: <Transactions /> },
           { path: "/trips", element: <Trips /> },
+          { path: "/item-templates", element: <ItemTemplates /> },
           { path: "/receipt-detail", element: <ReceiptDetail /> },
           { path: "/transaction-detail", element: <TransactionDetail /> },
           { path: "/api-keys", element: <ApiKeys /> },
