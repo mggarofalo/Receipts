@@ -6,6 +6,7 @@ using Application.Commands.Category.Restore;
 using Application.Commands.Category.Update;
 using Application.Exceptions;
 using Application.Queries.Core.Category;
+using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/categories")]
 [Produces("application/json")]

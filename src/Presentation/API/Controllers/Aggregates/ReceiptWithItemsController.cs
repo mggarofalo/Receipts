@@ -1,6 +1,7 @@
 using API.Generated.Dtos;
 using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.ReceiptsWithItems;
+using Asp.Versioning;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Aggregates;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/receipts-with-items")]
 [Produces("application/json")]

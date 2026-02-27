@@ -2,6 +2,10 @@ openapi: 3.1.0
 info:
   title: Receipts API
   version: 1.0.0
+  description: |
+    Receipts management API. Supports header-based versioning via the
+    `api-version` header (e.g. `api-version: 1.0`). When omitted, the
+    default version (currently 1.0) is assumed.
 
 paths:
   /api/health:

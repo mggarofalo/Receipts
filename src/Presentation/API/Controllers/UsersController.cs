@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Asp.Versioning;
 using Common;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -9,6 +10,7 @@ using System.Security.Claims;
 
 namespace API.Controllers;
 
+[ApiVersion("1.0")]
 [ApiController]
 [Route("api/users")]
 [Produces("application/json")]
