@@ -39,6 +39,8 @@ jobs:
 
       - name: Build with warnings-as-errors
         run: dotnet build Receipts.slnx --no-restore -p:TreatWarningsAsErrors=true
+        env:
+          Jwt__Key: ${{ secrets.JWT_KEY }}
 
       - name: Test
         run: >-

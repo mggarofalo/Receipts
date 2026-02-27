@@ -1,5 +1,5 @@
-const ACCESS_TOKEN_KEY = "receipts_access_token";
-const REFRESH_TOKEN_KEY = "receipts_refresh_token";
+const LS_ACCESS_KEY = "receipts_access_token";
+const LS_REFRESH_KEY = "receipts_refresh_token";
 
 type TokenRefreshListener = () => void;
 const tokenRefreshListeners = new Set<TokenRefreshListener>();
@@ -14,21 +14,21 @@ export function notifyTokenRefresh(): void {
 }
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return localStorage.getItem(LS_ACCESS_KEY);
 }
 
 export function getRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
+  return localStorage.getItem(LS_REFRESH_KEY);
 }
 
 export function setTokens(accessToken: string, refreshToken: string): void {
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  localStorage.setItem(LS_ACCESS_KEY, accessToken);
+  localStorage.setItem(LS_REFRESH_KEY, refreshToken);
 }
 
 export function clearTokens(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(LS_ACCESS_KEY);
+  localStorage.removeItem(LS_REFRESH_KEY);
 }
 
 export function isAuthenticated(): boolean {

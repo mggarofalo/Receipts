@@ -56,8 +56,7 @@
   <!-- 2. Run NSwag (only if stale) -->
   <Target Name="NSwagGenerate" Condition="'$(_DtoCheckResult)' != '0'">
     <Message Text="Regenerating DTOs from OpenAPI spec..." Importance="high" />
-    <Exec Command="$(NSwagExe_Net90) run $(MSBuildProjectDirectory)\..\..\..\nswag.json"
-          EnvironmentVariables="DOTNET_ROLL_FORWARD=Major" />
+    <Exec Command="$(NSwagExe_Net100) run $(MSBuildProjectDirectory)\..\..\..\nswag.json" />
   </Target>
 
   <!-- 3. Split into individual files (only if stale) -->

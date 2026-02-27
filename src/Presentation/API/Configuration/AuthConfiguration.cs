@@ -13,7 +13,8 @@ public static class AuthConfiguration
 {
 	public static IServiceCollection AddAuthServices(this IServiceCollection services, IConfiguration configuration)
 	{
-		string jwtKey = configuration[ConfigurationVariables.JwtKey] ?? "build-time-placeholder-key-32-chars!!";
+		string jwtKey = configuration[ConfigurationVariables.JwtKey]
+			?? throw new InvalidOperationException($"Configuration value '{ConfigurationVariables.JwtKey}' is required.");
 		string jwtIssuer = configuration[ConfigurationVariables.JwtIssuer] ?? "receipts-api";
 		string jwtAudience = configuration[ConfigurationVariables.JwtAudience] ?? "receipts-app";
 
