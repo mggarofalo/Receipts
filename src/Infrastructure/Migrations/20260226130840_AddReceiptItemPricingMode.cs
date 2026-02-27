@@ -16,7 +16,7 @@ public partial class AddReceiptItemPricingMode : Migration
 			type: "text",
 			maxLength: 8,
 			nullable: false,
-			defaultValue: "quantity");
+			defaultValueSql: "'quantity'");
 	}
 
 	/// <inheritdoc />

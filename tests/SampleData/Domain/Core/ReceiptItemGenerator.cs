@@ -1,3 +1,4 @@
+using Common;
 using Domain;
 using Domain.Core;
 
@@ -5,7 +6,7 @@ namespace SampleData.Domain.Core;
 
 public static class ReceiptItemGenerator
 {
-	public static ReceiptItem Generate(string pricingMode = "quantity")
+	public static ReceiptItem Generate(PricingMode pricingMode = PricingMode.Quantity)
 	{
 		return new ReceiptItem(
 			Guid.NewGuid(),

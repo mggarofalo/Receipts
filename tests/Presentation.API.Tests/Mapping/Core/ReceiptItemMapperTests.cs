@@ -36,7 +36,7 @@ public class ReceiptItemMapperTests
 		Assert.Equal(Currency.USD, actual.UnitPrice.Currency);
 		Assert.Equal("Groceries", actual.Category);
 		Assert.Equal("Produce", actual.Subcategory);
-		Assert.Equal("quantity", actual.PricingMode);
+		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
 	}
 
 	[Fact]
@@ -112,7 +112,7 @@ public class ReceiptItemMapperTests
 		Assert.Equal(Currency.USD, actual.UnitPrice.Currency);
 		Assert.Equal("Groceries", actual.Category);
 		Assert.Equal("Fruit", actual.Subcategory);
-		Assert.Equal("quantity", actual.PricingMode);
+		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
 	}
 
 	[Fact]
@@ -212,7 +212,7 @@ public class ReceiptItemMapperTests
 		ReceiptItem actual = _mapper.ToDomain(request);
 
 		// Assert
-		Assert.Equal("flat", actual.PricingMode);
+		Assert.Equal(PricingMode.Flat, actual.PricingMode);
 		Assert.Equal(1.0m, actual.Quantity);
 	}
 
@@ -234,7 +234,7 @@ public class ReceiptItemMapperTests
 		ReceiptItem actual = _mapper.ToDomain(request);
 
 		// Assert
-		Assert.Equal("quantity", actual.PricingMode);
+		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
 	}
 
 	[Fact]
@@ -258,7 +258,7 @@ public class ReceiptItemMapperTests
 		ReceiptItem actual = _mapper.ToDomain(request);
 
 		// Assert
-		Assert.Equal("flat", actual.PricingMode);
+		Assert.Equal(PricingMode.Flat, actual.PricingMode);
 		Assert.Equal(expectedId, actual.Id);
 	}
 
@@ -276,7 +276,7 @@ public class ReceiptItemMapperTests
 			new Money(15.00m, Currency.USD),
 			"Test",
 			"Flat",
-			"flat"
+			PricingMode.Flat
 		);
 
 		// Act

@@ -5,7 +5,7 @@ namespace SampleData.Entities;
 
 public static class ReceiptItemEntityGenerator
 {
-	public static ReceiptItemEntity Generate(Guid? receiptId = null, string pricingMode = "quantity")
+	public static ReceiptItemEntity Generate(Guid? receiptId = null, PricingMode pricingMode = PricingMode.Quantity)
 	{
 		return new ReceiptItemEntity
 		{

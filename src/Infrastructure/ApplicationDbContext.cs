@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Common;
 using Infrastructure.Entities;
 using Infrastructure.Entities.Audit;
 using Infrastructure.Entities.Core;
@@ -563,8 +564,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 				.ValueGeneratedOnAdd();
 
 			entity.Property(e => e.PricingMode)
+				.HasConversion(
+					v => v.ToString().ToLowerInvariant(),
+					v => Enum.Parse<PricingMode>(v, ignoreCase: true))
 				.HasMaxLength(8)
-				.HasDefaultValue("quantity");
+				.HasDefaultValueSql("'quantity'");
 
 			entity.Navigation(e => e.Receipt)
 				.AutoInclude();

@@ -370,7 +370,7 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(8)
                         .HasColumnType("text")
-                        .HasDefaultValue("quantity");
+                        .HasDefaultValueSql("'quantity'");
 
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,2)");

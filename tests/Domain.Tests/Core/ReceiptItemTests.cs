@@ -1,3 +1,4 @@
+using Common;
 using Domain.Core;
 
 namespace Domain.Tests.Core;
@@ -166,7 +167,7 @@ public class ReceiptItemTests
 		ReceiptItem receiptItem = new(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory);
 
 		// Assert
-		Assert.Equal("quantity", receiptItem.PricingMode);
+		Assert.Equal(PricingMode.Quantity, receiptItem.PricingMode);
 	}
 
 	[Fact]
@@ -183,10 +184,10 @@ public class ReceiptItemTests
 		string subcategory = "Test Subcategory";
 
 		// Act
-		ReceiptItem receiptItem = new(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory, "flat");
+		ReceiptItem receiptItem = new(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory, PricingMode.Flat);
 
 		// Assert
-		Assert.Equal("flat", receiptItem.PricingMode);
+		Assert.Equal(PricingMode.Flat, receiptItem.PricingMode);
 	}
 
 	[Fact]
@@ -204,29 +205,7 @@ public class ReceiptItemTests
 
 		// Act & Assert
 		ArgumentException exception = Assert.Throws<ArgumentException>(() =>
-			new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory, "flat"));
-		Assert.Contains("Quantity must be 1", exception.Message);
-	}
-
-	[Theory]
-	[InlineData("invalid")]
-	[InlineData("QUANTITY")]
-	[InlineData("FLAT")]
-	[InlineData("")]
-	public void Constructor_InvalidPricingMode_ThrowsArgumentException(string invalidPricingMode)
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		string receiptItemCode = "ITEM001";
-		string description = "Test Item";
-		decimal quantity = 1;
-		Money unitPrice = new(10.00m);
-		Money totalAmount = new(10.00m);
-		string category = "Test Category";
-		string subcategory = "Test Subcategory";
-
-		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory, invalidPricingMode));
-		Assert.StartsWith(ReceiptItem.PricingModeInvalid, exception.Message);
+			new ReceiptItem(id, receiptItemCode, description, quantity, unitPrice, totalAmount, category, subcategory, PricingMode.Flat));
+		Assert.StartsWith(ReceiptItem.FlatPricingModeQuantityMustBeOne, exception.Message);
 	}
 }
