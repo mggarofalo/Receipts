@@ -6,7 +6,8 @@
 				<Configuration>
 					<Format>cobertura</Format>
 					<Exclude>[*]*.Migrations.*</Exclude>
-					<ExcludeByFile>**/Infrastructure/Migrations/*.cs</ExcludeByFile>
+					<ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+					<ExcludeByFile>**/Infrastructure/Migrations/*.cs,**/API/Generated/*.g.cs</ExcludeByFile>
 					<SingleHit>false</SingleHit>
 					<IncludeTestAssembly>false</IncludeTestAssembly>
 					<SkipAutoProps>true</SkipAutoProps>
