@@ -517,6 +517,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 				.IsUnique()
 				.HasFilter("\"DeletedAt\" IS NULL");
 
+			entity.HasOne(e => e.Category)
+				.WithMany()
+				.HasForeignKey(e => e.CategoryId)
+				.OnDelete(DeleteBehavior.Restrict);
+
 			entity.Navigation(e => e.Category)
 				.AutoInclude();
 		});
