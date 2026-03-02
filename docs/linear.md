@@ -54,10 +54,10 @@ All active issues are assigned to a milestone. Milestones are ordered and repres
 | **Phase 2: Backend DTO Generation** | Replace ViewModels with spec-generated DTOs | **COMPLETE** |
 | **Phase 3: Aspire Developer Experience** | Local dev orchestration with .NET Aspire | Immediately |
 | **Phase 4: React Frontend** | Build React/Vite SPA | Phase 0 done (setup), Phase 1 done (codegen) |
-| **Phase 5: Docker Deployment** | Containerize and deploy to Raspberry Pi | Phase 4 MVP done |
-| **Phase 6: Correctness Hardening** | Business invariants, receipt coherence validation | Phase 2 done (stable API model) |
-| **Phase 7: Security Automation** | Snyk-to-Linear integration | Phase 2 done |
-| **Phase 8: Test Coverage** | Code coverage collection, CI reporting, enforcement gate, agent test-writing loop | Phase 3 MVP done |
+| **Phase 5: Test Coverage** | Code coverage collection, CI reporting, enforcement gate, agent test-writing loop | Phase 3 MVP done |
+| **Phase 6: Docker Deployment** | Containerize and deploy to Raspberry Pi | Phase 4 MVP done |
+| **Phase 7: Correctness Hardening** | Business invariants, receipt coherence validation | Phase 2 done (stable API model) |
+| **Phase 8: Security Automation** | Snyk-to-Linear integration | Phase 2 done |
 
 ## Priority Semantics
 
@@ -110,19 +110,19 @@ Epics are parent issues that group related work.
 | **MGG-115** UX Polish & Enhancements | MGG-37, 44, 45, 46, 47 | No — follow-up |
 | **MGG-116** Frontend Quality & Documentation | MGG-49, 50 | No — follow-up |
 
-### Phase 5: Docker Deployment
+### Phase 5: Test Coverage
+
+| Epic | Children | MVP? |
+|------|----------|------|
+| **MGG-121** Test Coverage Pipeline | MGG-122, 123, 124, 125, 126, 127 | All MVP |
+
+### Phase 6: Docker Deployment
 
 | Epic | Children | MVP? |
 |------|----------|------|
 | **MGG-117** Container Architecture & CI | MGG-52, 53, 54, 55, 57 | Yes |
 | **MGG-118** Production Operations | MGG-58, 59, 61, 62, 63, 64 | Mixed (58, 59 MVP) |
 | **MGG-119** Deployment Security & Documentation | MGG-56, 60, 65, 70 | No — follow-up |
-
-### Phase 8: Test Coverage
-
-| Epic | Children | MVP? |
-|------|----------|------|
-| **MGG-121** Test Coverage Pipeline | MGG-122, 123, 124, 125, 126, 127 | All MVP |
 
 Dependency chain:
 ```
@@ -133,6 +133,26 @@ MGG-33  (React app) ──────> MGG-126
 
 MGG-122 ──> MGG-125 (agent loop: .NET)
 MGG-126 ──> MGG-127 (agent loop: React)
+```
+
+### Phase 7: Correctness Hardening
+
+| Epic | Children | MVP? |
+|------|----------|------|
+| **MGG-94** Correctness Hardening | MGG-197, 198, 199, 200, 201, 202, 203 | All MVP |
+
+Dependency chain:
+```
+MGG-197 (validation pipeline) ──┐
+                                 ├──> MGG-199 (hard invariants) ──┐
+MGG-198 (adjustment entity) ────┤                                  ├──> MGG-202 (tests)
+                                 ├──> MGG-200 (soft invariants) ──┤
+                                 │         │                       │
+                                 │         └──> MGG-201 (frontend) ┘
+                                 │              ▲
+                                 └──────────────┘
+
+MGG-203 (docs) — no dependencies, anytime
 ```
 
 ### Retired Epics
@@ -158,7 +178,7 @@ Phase 4 critical path:
   MGG-34 ──> MGG-35 (Frontend auth UI)
   MGG-34 ──> MGG-66, 67, 68 (Data safety)
 
-Phase 5 gate:
+Phase 6 gate:
   MGG-111 + MGG-112 + MGG-113 (Phase 4 MVP) ──blocks──> MGG-117 (Containers)
   MGG-117 ──blocks──> MGG-118 (Operations)
   MGG-117 ──blocks──> MGG-119 (Security & Docs)

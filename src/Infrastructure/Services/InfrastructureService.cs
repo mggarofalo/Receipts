@@ -107,6 +107,7 @@ public static class InfrastructureService
 			.AddScoped<ICategoryService, CategoryService>()
 			.AddScoped<ISubcategoryService, SubcategoryService>()
 			.AddScoped<ITransactionService, TransactionService>()
+			.AddScoped<IAdjustmentService, AdjustmentService>()
 			.AddScoped<IReceiptItemService, ReceiptItemService>()
 			.AddScoped<IItemTemplateService, ItemTemplateService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
@@ -114,6 +115,7 @@ public static class InfrastructureService
 			.AddScoped<ICategoryRepository, CategoryRepository>()
 			.AddScoped<ISubcategoryRepository, SubcategoryRepository>()
 			.AddScoped<ITransactionRepository, TransactionRepository>()
+			.AddScoped<IAdjustmentRepository, AdjustmentRepository>()
 			.AddScoped<IReceiptItemRepository, ReceiptItemRepository>()
 			.AddScoped<IItemTemplateRepository, ItemTemplateRepository>()
 			.AddScoped<IDatabaseMigratorService, DatabaseMigratorService>()
@@ -133,6 +135,7 @@ public static class InfrastructureService
 			.AddSingleton<ReceiptMapper>()
 			.AddSingleton<ReceiptItemMapper>()
 			.AddSingleton<TransactionMapper>()
+			.AddSingleton<AdjustmentMapper>()
 			.AddSingleton<ItemTemplateMapper>();
 
 		return services;
