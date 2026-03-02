@@ -9,6 +9,7 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
   - `Core/` - Entity classes (Account, Receipt, ReceiptItem, Transaction, Category, Subcategory, ItemTemplate)
   - `Aggregates/` - Composite domain objects (ReceiptWithItems, TransactionAccount, Trip)
 - **Application** - Business logic using CQRS pattern with MediatR
+  - `Behaviors/` - MediatR pipeline behaviors (e.g., `ValidationBehavior`)
   - `Commands/{Entity}/Create|Update|Delete/` - Command + Handler pairs for write operations
   - `Queries/Core/{Entity}/` - Query + Handler pairs for read operations
   - `Queries/Aggregates/` - Complex queries joining multiple entities
@@ -33,6 +34,7 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
 
 - **CQRS**: Commands and Queries are separate with dedicated handlers
 - **Mediator Pattern**: MediatR dispatches commands/queries to handlers
+- **Validation Pipeline**: `ValidationBehavior<TRequest, TResponse>` intercepts MediatR requests and runs registered `IValidator<T>` instances before handlers execute. `FluentValidationActionFilter` validates controller DTOs. `ValidationExceptionMiddleware` catches `ValidationException` and returns 400 ProblemDetails.
 - **Repository Pattern**: Infrastructure repositories abstract EF Core
 - **Mapping**: Mapperly handles Domain <-> Entity (Infrastructure) and Domain <-> generated DTOs (API)
 - **Service Registration**: Each layer has a static extension method (`RegisterApplicationServices`, `RegisterInfrastructureServices`) for DI setup
