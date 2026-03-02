@@ -1,5 +1,9 @@
+using API.Filters;
 using API.Hubs;
+using API.Middleware;
 using API.Services;
+using API.Validators;
+using FluentValidation;
 
 namespace API.Configuration;
 
@@ -23,7 +27,12 @@ public static class ApplicationConfiguration
 
 	public static IServiceCollection AddApplicationServices(this IServiceCollection services)
 	{
-		services.AddControllers()
+		services.AddValidatorsFromAssemblyContaining<CreateReceiptRequestValidator>();
+
+		services.AddControllers(options =>
+			{
+				options.Filters.Add<FluentValidationActionFilter>();
+			})
 			.AddJsonOptions(options =>
 			{
 				options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
@@ -34,6 +43,7 @@ public static class ApplicationConfiguration
 
 	public static WebApplication UseApplicationServices(this WebApplication app)
 	{
+		app.UseMiddleware<ValidationExceptionMiddleware>();
 		app.UseHttpsRedirection();
 		app.UseRouting();
 
