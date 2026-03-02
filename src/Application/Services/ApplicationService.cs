@@ -1,3 +1,4 @@
+using Application.Behaviors;
 using Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ public static class ApplicationService
 		{
 			cfg.RegisterServicesFromAssembly(typeof(ICommand<>).Assembly);
 			cfg.RegisterServicesFromAssembly(typeof(IQuery<>).Assembly);
+			cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 		});
 
 		return services;
