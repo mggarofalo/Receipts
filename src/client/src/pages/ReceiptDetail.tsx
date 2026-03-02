@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useReceiptWithItems } from "@/hooks/useAggregates";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
+import { ValidationWarnings } from "@/components/ValidationWarnings";
+import { BalanceSummaryCard } from "@/components/BalanceSummaryCard";
+import { ReceiptItemsCard } from "@/components/ReceiptItemsCard";
+import { AdjustmentsCard } from "@/components/AdjustmentsCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,15 +17,6 @@ import {
 } from "@/components/ui/card";
 import { ChangeHistory } from "@/components/ChangeHistory";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
 
 function ReceiptDetail() {
@@ -35,19 +29,6 @@ function ReceiptDetail() {
     const trimmed = inputId.trim();
     if (trimmed) setReceiptId(trimmed);
   }
-
-  const grandTotal =
-    data?.items?.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
-      0,
-    ) ?? 0;
-
-  const itemsList = data?.items ?? [];
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: itemsList,
-    getId: (item) => item.id,
-    enabled: itemsList.length > 0,
-  });
 
   return (
     <div className="space-y-6">
@@ -83,6 +64,10 @@ function ReceiptDetail() {
 
       {data && (
         <>
+          {data.warnings && data.warnings.length > 0 && (
+            <ValidationWarnings warnings={data.warnings} />
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Receipt</CardTitle>
@@ -100,76 +85,23 @@ function ReceiptDetail() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Items ({data.items.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {data.items.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No items for this receipt.
-                </p>
-              ) : (
-                <div className="rounded-md border" ref={tableRef}>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
-                        <TableHead className="text-right">Unit Price</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Subcategory</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.items.map((item, index) => (
-                        <TableRow
-                          key={item.id}
-                          className={`cursor-pointer ${focusedId === item.id ? "bg-accent" : ""}`}
-                          onClick={(e) => {
-                            if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
-                            setFocusedIndex(index);
-                          }}
-                        >
-                          <TableCell className="font-mono">
-                            {item.receiptItemCode}
-                          </TableCell>
-                          <TableCell>{item.description}</TableCell>
-                          <TableCell className="text-right">
-                            {item.quantity}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(item.unitPrice)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(item.quantity * item.unitPrice)}
-                          </TableCell>
-                          <TableCell>{item.category}</TableCell>
-                          <TableCell>{item.subcategory}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-right font-medium"
-                        >
-                          Grand Total
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {formatCurrency(grandTotal)}
-                        </TableCell>
-                        <TableCell colSpan={2} />
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <BalanceSummaryCard
+            subtotal={data.subtotal}
+            taxAmount={data.receipt.taxAmount}
+            adjustmentTotal={data.adjustmentTotal}
+            expectedTotal={data.expectedTotal}
+          />
+
+          <ReceiptItemsCard
+            items={data.items}
+            subtotal={data.subtotal}
+          />
+
+          <AdjustmentsCard
+            receiptId={receiptId!}
+            adjustments={data.adjustments}
+            adjustmentTotal={data.adjustmentTotal}
+          />
 
           <Card>
             <CardHeader>
