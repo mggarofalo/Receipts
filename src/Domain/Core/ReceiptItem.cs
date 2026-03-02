@@ -24,6 +24,8 @@ public class ReceiptItem
 	public const string CategoryCannotBeEmpty = "Category cannot be empty";
 	public const string SubcategoryCannotBeEmpty = "Subcategory cannot be empty";
 	public const string FlatPricingModeQuantityMustBeOne = "Quantity must be 1 when pricing mode is flat.";
+	public const string UnitPriceMustBePositive = "Unit price must be positive";
+	public const string TotalAmountExceedsTolerance = "Total amount must be within $0.01 of quantity times unit price";
 
 	public ReceiptItem(Guid id, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory, PricingMode pricingMode = PricingMode.Quantity)
 	{
@@ -40,6 +42,17 @@ public class ReceiptItem
 		if (quantity <= 0)
 		{
 			throw new ArgumentException(QuantityMustBePositive, nameof(quantity));
+		}
+
+		if (unitPrice.Amount <= 0)
+		{
+			throw new ArgumentException(UnitPriceMustBePositive, nameof(unitPrice));
+		}
+
+		decimal expectedTotal = Math.Floor(quantity * unitPrice.Amount * 100) / 100;
+		if (Math.Abs(totalAmount.Amount - expectedTotal) > 0.01m)
+		{
+			throw new ArgumentException(TotalAmountExceedsTolerance, nameof(totalAmount));
 		}
 
 		if (string.IsNullOrWhiteSpace(category))
