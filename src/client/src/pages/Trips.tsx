@@ -3,7 +3,9 @@ import { useTripByReceiptId } from "@/hooks/useTrips";
 import { useReceipts } from "@/hooks/useReceipts";
 import { receiptToOption } from "@/lib/combobox-options";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
+import { ValidationWarnings } from "@/components/ValidationWarnings";
+import { BalanceSummaryCard } from "@/components/BalanceSummaryCard";
+import { ReceiptItemsCard } from "@/components/ReceiptItemsCard";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -38,22 +40,21 @@ function Trips() {
     [receipts],
   );
 
-  const itemsTotal =
-    trip?.receipt?.items?.reduce(
-      (sum: number, item: { quantity: number; unitPrice: number }) => sum + item.quantity * item.unitPrice,
-      0,
-    ) ?? 0;
-
   const transactionsTotal =
     trip?.transactions?.reduce((sum: number, ta: { transaction: { amount: number } }) => sum + ta.transaction.amount, 0) ??
     0;
 
-  const tripItems = trip?.receipt?.items ?? [];
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: tripItems as { id: string }[],
-    getId: (item: { id: string }) => item.id,
-    enabled: tripItems.length > 0,
-  });
+  // Balance equation values from the server-computed response
+  const subtotal = trip?.receipt?.subtotal ?? 0;
+  const adjustmentTotal = trip?.receipt?.adjustmentTotal ?? 0;
+  const expectedTotal = trip?.receipt?.expectedTotal ?? 0;
+  const taxAmount = trip?.receipt?.receipt?.taxAmount ?? 0;
+
+  // Combine warnings from both receipt and trip levels
+  const allWarnings = [
+    ...(trip?.receipt?.warnings ?? []),
+    ...(trip?.warnings ?? []),
+  ];
 
   return (
     <div className="space-y-6">
@@ -87,29 +88,18 @@ function Trips() {
 
       {trip && (
         <>
-          {/* Summary Cards */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Items Total</CardDescription>
-                <CardTitle>{formatCurrency(itemsTotal)}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Transactions Total</CardDescription>
-                <CardTitle>{formatCurrency(transactionsTotal)}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Tax Amount</CardDescription>
-                <CardTitle>
-                  {formatCurrency(trip.receipt.receipt.taxAmount)}
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </div>
+          {allWarnings.length > 0 && (
+            <ValidationWarnings warnings={allWarnings} />
+          )}
+
+          <BalanceSummaryCard
+            subtotal={subtotal}
+            taxAmount={taxAmount}
+            adjustmentTotal={adjustmentTotal}
+            expectedTotal={expectedTotal}
+            transactionsTotal={transactionsTotal}
+            showBalance={trip.transactions.length > 0}
+          />
 
           {/* Receipt Info */}
           <Card>
@@ -129,71 +119,56 @@ function Trips() {
             </CardContent>
           </Card>
 
-          {/* Items Table */}
+          <ReceiptItemsCard
+            items={trip.receipt.items}
+            subtotal={subtotal}
+          />
+
+          {/* Adjustments Table (read-only in trip view) */}
           <Card>
             <CardHeader>
               <CardTitle>
-                Items ({trip.receipt.items.length})
+                Adjustments ({trip.receipt.adjustments.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {trip.receipt.items.length === 0 ? (
+              {trip.receipt.adjustments.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No items for this receipt.
+                  No adjustments for this receipt.
                 </p>
               ) : (
-                <div className="rounded-md border" ref={tableRef}>
+                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Code</TableHead>
+                        <TableHead>Type</TableHead>
                         <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
-                        <TableHead className="text-right">
-                          Unit Price
-                        </TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Subcategory</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {trip.receipt.items.map((item: { id: string; receiptItemCode: string; description: string; quantity: number; unitPrice: number; category: string; subcategory: string }, index: number) => (
-                        <TableRow
-                          key={item.id}
-                          className={`cursor-pointer ${focusedId === item.id ? "bg-accent" : ""}`}
-                          onClick={(e) => {
-                            if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
-                            setFocusedIndex(index);
-                          }}
-                        >
-                          <TableCell className="font-mono">
-                            {item.receiptItemCode}
+                      {trip.receipt.adjustments.map((adj: { id: string; type: string; description?: string | null; amount: number }) => (
+                        <TableRow key={adj.id}>
+                          <TableCell>
+                            <Badge variant="outline">{adj.type}</Badge>
                           </TableCell>
-                          <TableCell>{item.description}</TableCell>
-                          <TableCell className="text-right">
-                            {item.quantity}
+                          <TableCell className="text-muted-foreground">
+                            {adj.description ?? "\u2014"}
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(item.unitPrice)}
+                            {formatCurrency(adj.amount)}
                           </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(item.quantity * item.unitPrice)}
-                          </TableCell>
-                          <TableCell>{item.category}</TableCell>
-                          <TableCell>{item.subcategory}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                     <TableFooter>
                       <TableRow>
-                        <TableCell colSpan={4} className="text-right font-medium">
-                          Grand Total
+                        <TableCell colSpan={2} className="text-right font-medium">
+                          Adjustment Total
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          {formatCurrency(itemsTotal)}
+                          {formatCurrency(adjustmentTotal)}
                         </TableCell>
-                        <TableCell colSpan={2} />
                       </TableRow>
                     </TableFooter>
                   </Table>
