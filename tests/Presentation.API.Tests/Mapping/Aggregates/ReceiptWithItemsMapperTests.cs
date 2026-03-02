@@ -52,7 +52,8 @@ public class ReceiptWithItemsMapperTests
 		ReceiptWithItems aggregate = new()
 		{
 			Receipt = receipt,
-			Items = [item1, item2]
+			Items = [item1, item2],
+			Adjustments = []
 		};
 
 		// Act
@@ -101,7 +102,8 @@ public class ReceiptWithItemsMapperTests
 		ReceiptWithItems aggregate = new()
 		{
 			Receipt = receipt,
-			Items = []
+			Items = [],
+			Adjustments = []
 		};
 
 		// Act
@@ -127,7 +129,8 @@ public class ReceiptWithItemsMapperTests
 		ReceiptWithItems aggregate = new()
 		{
 			Receipt = receipt,
-			Items = []
+			Items = [],
+			Adjustments = []
 		};
 
 		// Act

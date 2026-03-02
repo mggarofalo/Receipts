@@ -13,11 +13,13 @@ public class ReceiptWithItemsTests
 		// Arrange
 		Receipt receipt = ReceiptGenerator.Generate();
 		List<ReceiptItem> items = ReceiptItemGenerator.GenerateList(2);
+		List<Adjustment> adjustments = AdjustmentGenerator.GenerateList(1);
 
 		ReceiptWithItems receiptWithItems = new()
 		{
 			Receipt = receipt,
-			Items = items
+			Items = items,
+			Adjustments = adjustments
 		};
 
 		// Assert
@@ -25,5 +27,7 @@ public class ReceiptWithItemsTests
 		receiptWithItems.Receipt.Should().BeSameAs(receipt);
 		Assert.NotNull(receiptWithItems.Items);
 		receiptWithItems.Items.Should().BeSameAs(items);
+		Assert.NotNull(receiptWithItems.Adjustments);
+		receiptWithItems.Adjustments.Should().BeSameAs(adjustments);
 	}
 }

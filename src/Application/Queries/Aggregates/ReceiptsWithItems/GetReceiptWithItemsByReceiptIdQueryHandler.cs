@@ -5,7 +5,8 @@ namespace Application.Queries.Aggregates.ReceiptsWithItems;
 
 public class GetReceiptWithItemsByReceiptIdQueryHandler(
 	IReceiptService receiptService,
-	IReceiptItemService receiptItemService
+	IReceiptItemService receiptItemService,
+	IAdjustmentService adjustmentService
 ) : IRequestHandler<GetReceiptWithItemsByReceiptIdQuery, Domain.Aggregates.ReceiptWithItems?>
 {
 	public async Task<Domain.Aggregates.ReceiptWithItems?> Handle(GetReceiptWithItemsByReceiptIdQuery request, CancellationToken cancellationToken)
@@ -18,11 +19,13 @@ public class GetReceiptWithItemsByReceiptIdQueryHandler(
 		}
 
 		List<Domain.Core.ReceiptItem>? receiptItems = await receiptItemService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
+		List<Domain.Core.Adjustment>? adjustments = await adjustmentService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
 
 		return new Domain.Aggregates.ReceiptWithItems()
 		{
 			Receipt = receipt,
-			Items = receiptItems!
+			Items = receiptItems!,
+			Adjustments = adjustments ?? []
 		};
 	}
 }

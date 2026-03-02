@@ -40,6 +40,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public virtual DbSet<ReceiptEntity> Receipts { get; set; } = null!;
 	public virtual DbSet<TransactionEntity> Transactions { get; set; } = null!;
 	public virtual DbSet<ReceiptItemEntity> ReceiptItems { get; set; } = null!;
+	public virtual DbSet<AdjustmentEntity> Adjustments { get; set; } = null!;
 	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
 	public virtual DbSet<ItemTemplateEntity> ItemTemplates { get; set; } = null!;
 	public virtual DbSet<AuditLogEntity> AuditLogs { get; set; } = null!;
@@ -146,6 +147,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			.Select(e => e.Entity);
 
 		targets.AddRange(trackedTransactions);
+
+		// Find tracked Adjustments for this receipt
+		IEnumerable<AdjustmentEntity> trackedAdjustments = ChangeTracker
+			.Entries<AdjustmentEntity>()
+			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
+			.Select(e => e.Entity);
+
+		targets.AddRange(trackedAdjustments);
 	}
 
 	private void CollectCategoryChildren(Guid categoryId, List<ISoftDeletable> targets)
@@ -313,6 +322,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		modelBuilder.Entity<ReceiptEntity>().HasQueryFilter(e => e.DeletedAt == null);
 		modelBuilder.Entity<ReceiptItemEntity>().HasQueryFilter(e => e.DeletedAt == null);
 		modelBuilder.Entity<TransactionEntity>().HasQueryFilter(e => e.DeletedAt == null);
+		modelBuilder.Entity<AdjustmentEntity>().HasQueryFilter(e => e.DeletedAt == null);
 		modelBuilder.Entity<ItemTemplateEntity>().HasQueryFilter(e => e.DeletedAt == null);
 	}
 
@@ -474,6 +484,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		CreateReceiptEntity(modelBuilder);
 		CreateTransactionEntity(modelBuilder);
 		CreateReceiptItemEntity(modelBuilder);
+		CreateAdjustmentEntity(modelBuilder);
 		CreateItemTemplateEntity(modelBuilder);
 		CreateApiKeyEntity(modelBuilder);
 		CreateAuditLogEntity(modelBuilder);
@@ -573,6 +584,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 					v => Enum.Parse<PricingMode>(v, ignoreCase: true))
 				.HasMaxLength(8)
 				.HasDefaultValueSql("'quantity'");
+
+			entity.Navigation(e => e.Receipt)
+				.AutoInclude();
+		});
+	}
+
+	private static void CreateAdjustmentEntity(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<AdjustmentEntity>(entity =>
+		{
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id)
+				.IsRequired()
+				.ValueGeneratedOnAdd();
 
 			entity.Navigation(e => e.Receipt)
 				.AutoInclude();

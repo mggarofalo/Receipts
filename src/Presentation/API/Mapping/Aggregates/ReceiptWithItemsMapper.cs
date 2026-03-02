@@ -10,13 +10,18 @@ public partial class ReceiptWithItemsMapper
 {
 	private readonly ReceiptMapper _receiptMapper = new();
 	private readonly ReceiptItemMapper _receiptItemMapper = new();
+	private readonly AdjustmentMapper _adjustmentMapper = new();
 
 	public ReceiptWithItemsResponse ToResponse(ReceiptWithItems source)
 	{
 		return new ReceiptWithItemsResponse
 		{
 			Receipt = _receiptMapper.ToResponse(source.Receipt),
-			Items = [.. source.Items.Select(_receiptItemMapper.ToResponse)]
+			Items = [.. source.Items.Select(_receiptItemMapper.ToResponse)],
+			Adjustments = [.. source.Adjustments.Select(_adjustmentMapper.ToResponse)],
+			Subtotal = (double)source.Subtotal.Amount,
+			AdjustmentTotal = (double)source.AdjustmentTotal.Amount,
+			ExpectedTotal = (double)source.ExpectedTotal.Amount
 		};
 	}
 }
