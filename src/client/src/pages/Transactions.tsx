@@ -1,10 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  useTransactions,
-  useCreateTransaction,
-  useUpdateTransaction,
-  useDeleteTransactions,
-} from "@/hooks/useTransactions";
+import { useTransactions } from "@/hooks/useTransactions";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
@@ -13,7 +8,7 @@ import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
-import { TransactionForm } from "@/components/TransactionForm";
+import { TransactionDialogs } from "@/components/TransactionDialogs";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { FilterPanel } from "@/components/FilterPanel";
 import type { FilterField } from "@/components/FilterPanel";
@@ -23,12 +18,6 @@ import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -37,7 +26,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
 
 interface TransactionResponse {
@@ -65,9 +53,6 @@ const FILTER_DEFS: FilterDefinition[] = [
 function Transactions() {
   usePageTitle("Transactions");
   const { data: transactions, isLoading } = useTransactions();
-  const createTransaction = useCreateTransaction();
-  const updateTransaction = useUpdateTransaction();
-  const deleteTransactions = useDeleteTransactions();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -146,11 +131,7 @@ function Transactions() {
     items: paginatedItems,
     getId: (t) => t.id,
     enabled: !anyDialogOpen,
-    onOpen: (t) => {
-      setEditTransaction(t);
-      setEditReceiptId(t.receiptId);
-      setEditAccountId(t.accountId);
-    },
+    onOpen: (t) => setEditTransaction(t),
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
       setSelected(new Set(paginatedItems.map((t) => t.id))),
@@ -277,11 +258,7 @@ function Transactions() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setEditTransaction(txn);
-                            setEditReceiptId(txn.receiptId);
-                            setEditAccountId(txn.accountId);
-                          }}
+                          onClick={() => setEditTransaction(txn)}
                         >
                           Edit
                         </Button>
@@ -303,98 +280,19 @@ function Transactions() {
         </>
       )}
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Transaction</DialogTitle>
-          </DialogHeader>
-          <TransactionForm
-            mode="create"
-            isSubmitting={createTransaction.isPending}
-            onCancel={() => setCreateOpen(false)}
-            onSubmit={(values) => {
-              createTransaction.mutate(
-                {
-                  receiptId: values.receiptId,
-                  accountId: values.accountId,
-                  body: { amount: values.amount, date: values.date },
-                },
-                { onSuccess: () => setCreateOpen(false) },
-              );
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={editTransaction !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditTransaction(null);
+      <TransactionDialogs
+        createOpen={createOpen}
+        onCreateOpenChange={setCreateOpen}
+        editTransaction={editTransaction}
+        onEditClose={() => setEditTransaction(null)}
+        deleteOpen={deleteOpen}
+        onDeleteOpenChange={setDeleteOpen}
+        selectedIds={[...selected]}
+        onDeleteComplete={() => {
+          setSelected(new Set());
+          setDeleteOpen(false);
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Transaction</DialogTitle>
-          </DialogHeader>
-          {editTransaction && (
-            <TransactionForm
-              mode="edit"
-              defaultValues={{
-                receiptId: editTransaction.receiptId,
-                accountId: editTransaction.accountId,
-                amount: editTransaction.amount,
-                date: editTransaction.date,
-              }}
-              isSubmitting={updateTransaction.isPending}
-              onCancel={() => setEditTransaction(null)}
-              onSubmit={(values) => {
-                updateTransaction.mutate(
-                  {
-                    receiptId: values.receiptId,
-                    accountId: values.accountId,
-                    body: {
-                      id: editTransaction.id,
-                      amount: values.amount,
-                      date: values.date,
-                    },
-                  },
-                  { onSuccess: () => setEditTransaction(null) },
-                );
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Transactions</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} transaction(s)? This
-            action can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteTransactions.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteTransactions.mutate(ids);
-              }}
-            >
-              {deleteTransactions.isPending && <Spinner size="sm" />}
-              {deleteTransactions.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      />
     </div>
   );
 }

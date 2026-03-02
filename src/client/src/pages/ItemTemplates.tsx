@@ -1,17 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  useItemTemplates,
-  useCreateItemTemplate,
-  useUpdateItemTemplate,
-  useDeleteItemTemplates,
-} from "@/hooks/useItemTemplates";
+import { useItemTemplates } from "@/hooks/useItemTemplates";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig } from "@/lib/search";
-import { ItemTemplateForm } from "@/components/ItemTemplateForm";
+import { ItemTemplateDialogs } from "@/components/ItemTemplateDialogs";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
@@ -19,12 +14,6 @@ import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -34,7 +23,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 
 interface ItemTemplateResponse {
   id: string;
@@ -60,9 +48,6 @@ const SEARCH_CONFIG: FuseSearchConfig<ItemTemplateResponse> = {
 function ItemTemplates() {
   usePageTitle("Item Templates");
   const { data: itemTemplates, isLoading } = useItemTemplates();
-  const createItemTemplate = useCreateItemTemplate();
-  const updateItemTemplate = useUpdateItemTemplate();
-  const deleteItemTemplates = useDeleteItemTemplates();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -293,107 +278,19 @@ function ItemTemplates() {
         </>
       )}
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create Item Template</DialogTitle>
-          </DialogHeader>
-          <ItemTemplateForm
-            mode="create"
-            isSubmitting={createItemTemplate.isPending}
-            onCancel={() => setCreateOpen(false)}
-            onSubmit={(values) => {
-              createItemTemplate.mutate(
-                {
-                  name: values.name,
-                  description: values.description || null,
-                  defaultCategory: values.defaultCategory || null,
-                  defaultSubcategory: values.defaultSubcategory || null,
-                  defaultUnitPrice: values.defaultUnitPrice ?? null,
-                  defaultPricingMode: values.defaultPricingMode || null,
-                  defaultItemCode: values.defaultItemCode || null,
-                },
-                { onSuccess: () => setCreateOpen(false) },
-              );
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog
-        open={editTemplate !== null}
-        onOpenChange={(open) => !open && setEditTemplate(null)}
-      >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Item Template</DialogTitle>
-          </DialogHeader>
-          {editTemplate && (
-            <ItemTemplateForm
-              mode="edit"
-              defaultValues={{
-                name: editTemplate.name,
-                description: editTemplate.description ?? "",
-                defaultCategory: editTemplate.defaultCategory ?? "",
-                defaultSubcategory: editTemplate.defaultSubcategory ?? "",
-                defaultUnitPrice: editTemplate.defaultUnitPrice ?? undefined,
-                defaultPricingMode: editTemplate.defaultPricingMode ?? "",
-                defaultItemCode: editTemplate.defaultItemCode ?? "",
-              }}
-              isSubmitting={updateItemTemplate.isPending}
-              onCancel={() => setEditTemplate(null)}
-              onSubmit={(values) => {
-                updateItemTemplate.mutate(
-                  {
-                    id: editTemplate.id,
-                    name: values.name,
-                    description: values.description || null,
-                    defaultCategory: values.defaultCategory || null,
-                    defaultSubcategory: values.defaultSubcategory || null,
-                    defaultUnitPrice: values.defaultUnitPrice ?? null,
-                    defaultPricingMode: values.defaultPricingMode || null,
-                    defaultItemCode: values.defaultItemCode || null,
-                  },
-                  { onSuccess: () => setEditTemplate(null) },
-                );
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Item Templates</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} item template(s)?
-            This action can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteItemTemplates.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteItemTemplates.mutate(ids);
-              }}
-            >
-              {deleteItemTemplates.isPending && <Spinner size="sm" />}
-              {deleteItemTemplates.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ItemTemplateDialogs
+        createOpen={createOpen}
+        onCreateOpenChange={setCreateOpen}
+        editTemplate={editTemplate}
+        onEditClose={() => setEditTemplate(null)}
+        deleteOpen={deleteOpen}
+        onDeleteOpenChange={setDeleteOpen}
+        selectedIds={[...selected]}
+        onDeleteComplete={() => {
+          setSelected(new Set());
+          setDeleteOpen(false);
+        }}
+      />
     </div>
   );
 }

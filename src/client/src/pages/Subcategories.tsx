@@ -1,10 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  useSubcategories,
-  useCreateSubcategory,
-  useUpdateSubcategory,
-  useDeleteSubcategories,
-} from "@/hooks/useSubcategories";
+import { useSubcategories } from "@/hooks/useSubcategories";
 import { useCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
@@ -14,7 +9,7 @@ import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
-import { SubcategoryForm } from "@/components/SubcategoryForm";
+import { SubcategoryDialogs } from "@/components/SubcategoryDialogs";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { FilterPanel } from "@/components/FilterPanel";
 import type { FilterField } from "@/components/FilterPanel";
@@ -24,12 +19,6 @@ import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -38,7 +27,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 
 interface SubcategoryResponse {
   id: string;
@@ -64,9 +52,6 @@ function Subcategories() {
   const { data: subcategories, isLoading: subcategoriesLoading } =
     useSubcategories();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
-  const createSubcategory = useCreateSubcategory();
-  const updateSubcategory = useUpdateSubcategory();
-  const deleteSubcategories = useDeleteSubcategories();
 
   const isLoading = subcategoriesLoading || categoriesLoading;
 
@@ -351,85 +336,19 @@ function Subcategories() {
         </>
       )}
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Subcategory</DialogTitle>
-          </DialogHeader>
-          <SubcategoryForm
-            mode="create"
-            isSubmitting={createSubcategory.isPending}
-            onCancel={() => setCreateOpen(false)}
-            onSubmit={(values) => {
-              createSubcategory.mutate(values, {
-                onSuccess: () => setCreateOpen(false),
-              });
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog
-        open={editSubcategory !== null}
-        onOpenChange={(open) => !open && setEditSubcategory(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Subcategory</DialogTitle>
-          </DialogHeader>
-          {editSubcategory && (
-            <SubcategoryForm
-              mode="edit"
-              defaultValues={{
-                name: editSubcategory.name,
-                categoryId: editSubcategory.categoryId,
-                description: editSubcategory.description ?? "",
-              }}
-              isSubmitting={updateSubcategory.isPending}
-              onCancel={() => setEditSubcategory(null)}
-              onSubmit={(values) => {
-                updateSubcategory.mutate(
-                  { id: editSubcategory.id, ...values },
-                  { onSuccess: () => setEditSubcategory(null) },
-                );
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Subcategories</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} subcategory(ies)?
-            This action can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteSubcategories.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteSubcategories.mutate(ids);
-              }}
-            >
-              {deleteSubcategories.isPending && <Spinner size="sm" />}
-              {deleteSubcategories.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SubcategoryDialogs
+        createOpen={createOpen}
+        onCreateOpenChange={setCreateOpen}
+        editSubcategory={editSubcategory}
+        onEditClose={() => setEditSubcategory(null)}
+        deleteOpen={deleteOpen}
+        onDeleteOpenChange={setDeleteOpen}
+        selectedIds={[...selected]}
+        onDeleteComplete={() => {
+          setSelected(new Set());
+          setDeleteOpen(false);
+        }}
+      />
     </div>
   );
 }

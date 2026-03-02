@@ -1,29 +1,18 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  useCategories,
-  useCreateCategory,
-  useUpdateCategory,
-  useDeleteCategories,
-} from "@/hooks/useCategories";
+import { useCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { usePagination } from "@/hooks/usePagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig } from "@/lib/search";
-import { CategoryForm } from "@/components/CategoryForm";
+import { CategoryDialogs } from "@/components/CategoryDialogs";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -33,7 +22,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 
 interface CategoryResponse {
   id: string;
@@ -51,9 +39,6 @@ const SEARCH_CONFIG: FuseSearchConfig<CategoryResponse> = {
 function Categories() {
   usePageTitle("Categories");
   const { data: categories, isLoading } = useCategories();
-  const createCategory = useCreateCategory();
-  const updateCategory = useUpdateCategory();
-  const deleteCategories = useDeleteCategories();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -262,84 +247,19 @@ function Categories() {
         </>
       )}
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Category</DialogTitle>
-          </DialogHeader>
-          <CategoryForm
-            mode="create"
-            isSubmitting={createCategory.isPending}
-            onCancel={() => setCreateOpen(false)}
-            onSubmit={(values) => {
-              createCategory.mutate(values, {
-                onSuccess: () => setCreateOpen(false),
-              });
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog
-        open={editCategory !== null}
-        onOpenChange={(open) => !open && setEditCategory(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-          </DialogHeader>
-          {editCategory && (
-            <CategoryForm
-              mode="edit"
-              defaultValues={{
-                name: editCategory.name,
-                description: editCategory.description ?? "",
-              }}
-              isSubmitting={updateCategory.isPending}
-              onCancel={() => setEditCategory(null)}
-              onSubmit={(values) => {
-                updateCategory.mutate(
-                  { id: editCategory.id, ...values },
-                  { onSuccess: () => setEditCategory(null) },
-                );
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Categories</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} category(ies)? This
-            action can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteCategories.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteCategories.mutate(ids);
-              }}
-            >
-              {deleteCategories.isPending && <Spinner size="sm" />}
-              {deleteCategories.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CategoryDialogs
+        createOpen={createOpen}
+        onCreateOpenChange={setCreateOpen}
+        editCategory={editCategory}
+        onEditClose={() => setEditCategory(null)}
+        deleteOpen={deleteOpen}
+        onDeleteOpenChange={setDeleteOpen}
+        selectedIds={[...selected]}
+        onDeleteComplete={() => {
+          setSelected(new Set());
+          setDeleteOpen(false);
+        }}
+      />
     </div>
   );
 }

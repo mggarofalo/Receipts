@@ -1,10 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  useReceipts,
-  useCreateReceipt,
-  useUpdateReceipt,
-  useDeleteReceipts,
-} from "@/hooks/useReceipts";
+import { useReceipts } from "@/hooks/useReceipts";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
@@ -13,7 +8,7 @@ import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
-import { ReceiptForm } from "@/components/ReceiptForm";
+import { ReceiptDialogs } from "@/components/ReceiptDialogs";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { FilterPanel } from "@/components/FilterPanel";
 import type { FilterField } from "@/components/FilterPanel";
@@ -23,12 +18,6 @@ import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -37,7 +26,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
 
 interface ReceiptResponse {
@@ -68,9 +56,6 @@ const FILTER_DEFS: FilterDefinition[] = [
 function Receipts() {
   usePageTitle("Receipts");
   const { data: receipts, isLoading } = useReceipts();
-  const createReceipt = useCreateReceipt();
-  const updateReceipt = useUpdateReceipt();
-  const deleteReceipts = useDeleteReceipts();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -314,91 +299,19 @@ function Receipts() {
         </>
       )}
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Receipt</DialogTitle>
-          </DialogHeader>
-          <ReceiptForm
-            mode="create"
-            isSubmitting={createReceipt.isPending}
-            onCancel={() => setCreateOpen(false)}
-            onSubmit={(values) => {
-              createReceipt.mutate(
-                {
-                  ...values,
-                  description: values.description || null,
-                },
-                { onSuccess: () => setCreateOpen(false) },
-              );
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={editReceipt !== null}
-        onOpenChange={(open) => !open && setEditReceipt(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Receipt</DialogTitle>
-          </DialogHeader>
-          {editReceipt && (
-            <ReceiptForm
-              mode="edit"
-              defaultValues={{
-                description: editReceipt.description ?? "",
-                location: editReceipt.location,
-                date: editReceipt.date,
-                taxAmount: editReceipt.taxAmount,
-              }}
-              isSubmitting={updateReceipt.isPending}
-              onCancel={() => setEditReceipt(null)}
-              onSubmit={(values) => {
-                updateReceipt.mutate(
-                  {
-                    id: editReceipt.id,
-                    ...values,
-                    description: values.description || null,
-                  },
-                  { onSuccess: () => setEditReceipt(null) },
-                );
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Receipts</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} receipt(s)? This
-            action can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteReceipts.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteReceipts.mutate(ids);
-              }}
-            >
-              {deleteReceipts.isPending && <Spinner size="sm" />}
-              {deleteReceipts.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ReceiptDialogs
+        createOpen={createOpen}
+        onCreateOpenChange={setCreateOpen}
+        editReceipt={editReceipt}
+        onEditClose={() => setEditReceipt(null)}
+        deleteOpen={deleteOpen}
+        onDeleteOpenChange={setDeleteOpen}
+        selectedIds={[...selected]}
+        onDeleteComplete={() => {
+          setSelected(new Set());
+          setDeleteOpen(false);
+        }}
+      />
     </div>
   );
 }

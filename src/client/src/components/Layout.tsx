@@ -38,8 +38,8 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu-trigger-style";
 import { cn } from "@/lib/utils";
 
 const connectionStateColors: Record<SignalRConnectionState, string> = {

@@ -1,10 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  useReceiptItems,
-  useCreateReceiptItem,
-  useUpdateReceiptItem,
-  useDeleteReceiptItems,
-} from "@/hooks/useReceiptItems";
+import { useReceiptItems } from "@/hooks/useReceiptItems";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
@@ -13,7 +8,7 @@ import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
-import { ReceiptItemForm } from "@/components/ReceiptItemForm";
+import { ReceiptItemDialogs } from "@/components/ReceiptItemDialogs";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { FilterPanel } from "@/components/FilterPanel";
 import type { FilterField } from "@/components/FilterPanel";
@@ -22,12 +17,6 @@ import { getMatchIndices } from "@/lib/search-highlight";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -38,7 +27,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
 
 interface ReceiptItemResponse {
@@ -70,9 +58,6 @@ const FILTER_DEFS: FilterDefinition[] = [
 function ReceiptItems() {
   usePageTitle("Receipt Items");
   const { data: items, isLoading } = useReceiptItems();
-  const createItem = useCreateReceiptItem();
-  const updateItem = useUpdateReceiptItem();
-  const deleteItems = useDeleteReceiptItems();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -177,10 +162,7 @@ function ReceiptItems() {
     items: paginatedItems,
     getId: (item) => item.id,
     enabled: !anyDialogOpen,
-    onOpen: (item) => {
-      setEditItem(item);
-      setEditReceiptId(item.receiptId);
-    },
+    onOpen: (item) => setEditItem(item),
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
       setSelected(new Set(paginatedItems.map((item) => item.id))),
@@ -337,10 +319,7 @@ function ReceiptItems() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setEditItem(item);
-                            setEditReceiptId(item.receiptId);
-                          }}
+                          onClick={() => setEditItem(item)}
                         >
                           Edit
                         </Button>
@@ -373,95 +352,19 @@ function ReceiptItems() {
         </>
       )}
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Receipt Item</DialogTitle>
-          </DialogHeader>
-          <ReceiptItemForm
-            mode="create"
-            isSubmitting={createItem.isPending}
-            onCancel={() => setCreateOpen(false)}
-            onSubmit={(values) => {
-              const { receiptId, ...body } = values;
-              createItem.mutate(
-                { receiptId, body },
-                { onSuccess: () => setCreateOpen(false) },
-              );
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={editItem !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditItem(null);
+      <ReceiptItemDialogs
+        createOpen={createOpen}
+        onCreateOpenChange={setCreateOpen}
+        editItem={editItem}
+        onEditClose={() => setEditItem(null)}
+        deleteOpen={deleteOpen}
+        onDeleteOpenChange={setDeleteOpen}
+        selectedIds={[...selected]}
+        onDeleteComplete={() => {
+          setSelected(new Set());
+          setDeleteOpen(false);
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Receipt Item</DialogTitle>
-          </DialogHeader>
-          {editItem && (
-            <ReceiptItemForm
-              mode="edit"
-              defaultValues={{
-                receiptId: editItem.receiptId,
-                receiptItemCode: editItem.receiptItemCode,
-                description: editItem.description,
-                pricingMode: editItem.pricingMode ?? "quantity",
-                quantity: editItem.quantity,
-                unitPrice: editItem.unitPrice,
-                category: editItem.category,
-                subcategory: editItem.subcategory,
-              }}
-              isSubmitting={updateItem.isPending}
-              onCancel={() => setEditItem(null)}
-              onSubmit={(values) => {
-                const { receiptId, ...rest } = values;
-                updateItem.mutate(
-                  {
-                    receiptId,
-                    body: { id: editItem.id, ...rest },
-                  },
-                  { onSuccess: () => setEditItem(null) },
-                );
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Receipt Items</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} item(s)? This action
-            can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteItems.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteItems.mutate(ids);
-              }}
-            >
-              {deleteItems.isPending && <Spinner size="sm" />}
-              {deleteItems.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      />
     </div>
   );
 }
