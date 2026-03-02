@@ -15,7 +15,15 @@ public partial class TripMapper
 		return new TripResponse
 		{
 			Receipt = _receiptWithItemsMapper.ToResponse(source.Receipt),
-			Transactions = [.. source.Transactions.Select(_transactionAccountMapper.ToResponse)]
+			Transactions = [.. source.Transactions.Select(_transactionAccountMapper.ToResponse)],
+			Warnings = [.. source.GetWarnings().Select(MapWarning)]
 		};
 	}
+
+	private static ValidationWarningResponse MapWarning(Domain.ValidationWarning w) => new()
+	{
+		Property = w.Property,
+		Message = w.Message,
+		Severity = (int)w.Severity
+	};
 }
