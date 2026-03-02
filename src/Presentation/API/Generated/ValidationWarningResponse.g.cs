@@ -27,40 +27,28 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ItemTemplateResponse
+    public partial class ValidationWarningResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        /// <summary>
+        /// The property that triggered the warning
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("property")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("defaultCategory")]
-        public string? DefaultCategory { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("defaultSubcategory")]
-        public string? DefaultSubcategory { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("defaultUnitPrice")]
-        public double? DefaultUnitPrice { get; set; } = default!;
+        public string Property { get; set; } = default!;
 
         /// <summary>
-        /// Currency code for the default unit price (e.g., 'USD')
+        /// Human-readable warning message
         /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("defaultUnitPriceCurrency")]
-        public string? DefaultUnitPriceCurrency { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("message")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Message { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("defaultPricingMode")]
-        public string? DefaultPricingMode { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("defaultItemCode")]
-        public string? DefaultItemCode { get; set; } = default!;
+        /// <summary>
+        /// Warning severity level (0=Info, 1=Warning)
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("severity")]
+        public int Severity { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

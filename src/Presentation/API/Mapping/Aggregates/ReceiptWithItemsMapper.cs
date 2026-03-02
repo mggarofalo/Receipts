@@ -21,7 +21,15 @@ public partial class ReceiptWithItemsMapper
 			Adjustments = [.. source.Adjustments.Select(_adjustmentMapper.ToResponse)],
 			Subtotal = (double)source.Subtotal.Amount,
 			AdjustmentTotal = (double)source.AdjustmentTotal.Amount,
-			ExpectedTotal = (double)source.ExpectedTotal.Amount
+			ExpectedTotal = (double)source.ExpectedTotal.Amount,
+			Warnings = [.. source.GetWarnings().Select(MapWarning)]
 		};
 	}
+
+	private static ValidationWarningResponse MapWarning(Domain.ValidationWarning w) => new()
+	{
+		Property = w.Property,
+		Message = w.Message,
+		Severity = (int)w.Severity
+	};
 }

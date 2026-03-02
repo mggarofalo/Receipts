@@ -111,9 +111,9 @@ static int Split(string[] args)
 		}
 	}
 
-	// Extract all type declarations from the namespace
-	List<TypeDeclarationSyntax> types = ns.Members
-		.OfType<TypeDeclarationSyntax>()
+	// Extract all type declarations from the namespace (classes, structs, records, enums)
+	List<BaseTypeDeclarationSyntax> types = ns.Members
+		.OfType<BaseTypeDeclarationSyntax>()
 		.ToList();
 
 	if (types.Count == 0)
@@ -140,15 +140,15 @@ static int Split(string[] args)
 	string postamble = BuildPostamble(pragmaRestores);
 
 	int count = 0;
-	foreach (TypeDeclarationSyntax type in types)
+	foreach (BaseTypeDeclarationSyntax type in types)
 	{
 		string typeName = type.Identifier.Text;
 
 		// Handle generic types: ApiException<TResult> -> ApiException_TResult
 		string fileName = typeName;
-		if (type.TypeParameterList is not null)
+		if (type is TypeDeclarationSyntax typeDecl && typeDecl.TypeParameterList is not null)
 		{
-			string typeParams = string.Join("_", type.TypeParameterList.Parameters.Select(p => p.Identifier.Text));
+			string typeParams = string.Join("_", typeDecl.TypeParameterList.Parameters.Select(p => p.Identifier.Text));
 			fileName = $"{typeName}_{typeParams}";
 		}
 
