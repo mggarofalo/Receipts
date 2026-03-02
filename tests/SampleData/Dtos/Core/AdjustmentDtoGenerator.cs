@@ -14,11 +14,6 @@ public static class AdjustmentDtoGenerator
 		};
 	}
 
-	public static List<CreateAdjustmentRequest> GenerateCreateRequestList(int count)
-	{
-		return [.. Enumerable.Range(0, count).Select(_ => GenerateCreateRequest())];
-	}
-
 	public static UpdateAdjustmentRequest GenerateUpdateRequest()
 	{
 		return new UpdateAdjustmentRequest
@@ -30,8 +25,4 @@ public static class AdjustmentDtoGenerator
 		};
 	}
 
-	public static List<UpdateAdjustmentRequest> GenerateUpdateRequestList(int count)
-	{
-		return [.. Enumerable.Range(0, count).Select(_ => GenerateUpdateRequest())];
-	}
 }
