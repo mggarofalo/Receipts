@@ -3717,9 +3717,24 @@ components:
 
     # ── Aggregates (read-only) ───────────────────
 
+    ValidationWarningResponse:
+      type: object
+      required: [property, message]
+      properties:
+        property:
+          type: string
+          description: "The property that triggered the warning"
+        message:
+          type: string
+          description: "Human-readable warning message"
+        severity:
+          type: integer
+          format: int32
+          description: "Warning severity level (0=Info, 1=Warning)"
+
     ReceiptWithItemsResponse:
       type: object
-      required: [receipt, items, adjustments, subtotal, adjustmentTotal, expectedTotal]
+      required: [receipt, items, adjustments, subtotal, adjustmentTotal, expectedTotal, warnings]
       properties:
         receipt:
           $ref: "#/components/schemas/ReceiptResponse"
@@ -3743,6 +3758,11 @@ components:
           type: number
           format: double
           description: "Subtotal + TaxAmount + AdjustmentTotal"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationWarningResponse"
+          description: "Soft validation warnings (do not block saves)"
 
     TransactionAccountResponse:
       type: object
@@ -3755,7 +3775,7 @@ components:
 
     TripResponse:
       type: object
-      required: [receipt, transactions]
+      required: [receipt, transactions, warnings]
       properties:
         receipt:
           $ref: "#/components/schemas/ReceiptWithItemsResponse"
@@ -3763,6 +3783,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TransactionAccountResponse"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationWarningResponse"
+          description: "Soft validation warnings including date consistency checks"
 
     ProblemDetails:
       type: object
