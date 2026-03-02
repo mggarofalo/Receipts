@@ -42,7 +42,8 @@ public class TripMapperTests
 		ReceiptWithItems receiptWithItems = new()
 		{
 			Receipt = receipt,
-			Items = [item]
+			Items = [item],
+			Adjustments = []
 		};
 
 		Transaction transaction = new(
@@ -125,7 +126,8 @@ public class TripMapperTests
 		ReceiptWithItems receiptWithItems = new()
 		{
 			Receipt = receipt,
-			Items = []
+			Items = [],
+			Adjustments = []
 		};
 
 		Transaction txn1 = new(
@@ -186,7 +188,7 @@ public class TripMapperTests
 
 		Trip trip = new()
 		{
-			Receipt = new ReceiptWithItems { Receipt = receipt, Items = [] },
+			Receipt = new ReceiptWithItems { Receipt = receipt, Items = [], Adjustments = [] },
 			Transactions = []
 		};
 

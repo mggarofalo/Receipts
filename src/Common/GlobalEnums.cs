@@ -11,6 +11,17 @@ public enum PricingMode
 	Flat
 }
 
+public enum AdjustmentType
+{
+	Tip,
+	Discount,
+	Rounding,
+	LoyaltyRedemption,
+	Coupon,
+	StoreCredit,
+	Other
+}
+
 public enum AuthEventType
 {
 	Login,

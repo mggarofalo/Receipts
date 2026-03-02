@@ -10,11 +10,13 @@ public static class ReceiptWithItemsGenerator
 	{
 		Receipt receipt = ReceiptGenerator.Generate();
 		List<ReceiptItem> receiptItems = ReceiptItemGenerator.GenerateList(5);
+		List<Adjustment> adjustments = AdjustmentGenerator.GenerateList(2);
 
 		return new ReceiptWithItems()
 		{
 			Receipt = receipt,
-			Items = receiptItems
+			Items = receiptItems,
+			Adjustments = adjustments
 		};
 	}
 }

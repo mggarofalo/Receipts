@@ -14,6 +14,7 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 		// Arrange
 		Domain.Core.Receipt expectedReceipt = ReceiptGenerator.Generate();
 		List<Domain.Core.ReceiptItem> expectedReceiptItems = ReceiptItemGenerator.GenerateList(3);
+		List<Domain.Core.Adjustment> expectedAdjustments = AdjustmentGenerator.GenerateList(2);
 
 		Mock<IReceiptService> mockReceiptService = new();
 		mockReceiptService.Setup(r => r.GetByIdAsync(expectedReceipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceipt);
@@ -21,7 +22,10 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 		Mock<IReceiptItemService> mockReceiptItemService = new();
 		mockReceiptItemService.Setup(r => r.GetByReceiptIdAsync(expectedReceipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceiptItems);
 
-		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptService.Object, mockReceiptItemService.Object);
+		Mock<IAdjustmentService> mockAdjustmentService = new();
+		mockAdjustmentService.Setup(a => a.GetByReceiptIdAsync(expectedReceipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAdjustments);
+
+		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptService.Object, mockReceiptItemService.Object, mockAdjustmentService.Object);
 		GetReceiptWithItemsByReceiptIdQuery query = new(expectedReceipt.Id);
 
 		// Act
@@ -31,6 +35,7 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 		Assert.NotNull(result);
 		result.Receipt.Should().BeSameAs(expectedReceipt);
 		result.Items.Should().BeSameAs(expectedReceiptItems);
+		result.Adjustments.Should().BeSameAs(expectedAdjustments);
 	}
 
 	[Fact]
@@ -42,8 +47,9 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 		mockReceiptService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Receipt?)null);
 
 		Mock<IReceiptItemService> mockReceiptItemService = new();
+		Mock<IAdjustmentService> mockAdjustmentService = new();
 
-		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptService.Object, mockReceiptItemService.Object);
+		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptService.Object, mockReceiptItemService.Object, mockAdjustmentService.Object);
 		GetReceiptWithItemsByReceiptIdQuery query = new(missingReceiptId);
 
 		// Act
