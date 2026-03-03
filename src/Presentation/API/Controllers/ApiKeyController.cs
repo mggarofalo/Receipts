@@ -1,10 +1,10 @@
+using System.Security.Claims;
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
 using Asp.Versioning;
 using Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace API.Controllers;
 

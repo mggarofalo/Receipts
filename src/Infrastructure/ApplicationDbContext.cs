@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Application.Interfaces.Services;
 using Common;
 using Infrastructure.Entities;
@@ -10,7 +11,6 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
-using System.Text.Json;
 
 namespace Infrastructure;
 

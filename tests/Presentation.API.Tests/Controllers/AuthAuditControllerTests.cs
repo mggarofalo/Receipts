@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using API.Controllers;
 using Application.Interfaces.Services;
 using FluentAssertions;
@@ -5,7 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Security.Claims;
 
 namespace Presentation.API.Tests.Controllers;
 

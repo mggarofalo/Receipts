@@ -1,3 +1,4 @@
+using System.Text;
 using API.Authentication;
 using API.Middleware;
 using Common;
@@ -5,7 +6,6 @@ using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 namespace API.Configuration;
 
