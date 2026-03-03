@@ -14,6 +14,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -416,8 +417,7 @@ function AdminUsers() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
+                      <PasswordInput
                         placeholder="At least 8 characters"
                         {...field}
                       />
@@ -616,8 +616,7 @@ function AdminUsers() {
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
+                      <PasswordInput
                         placeholder="At least 8 characters"
                         {...field}
                       />
