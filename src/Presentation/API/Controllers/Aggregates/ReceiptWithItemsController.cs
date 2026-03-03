@@ -19,7 +19,7 @@ public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapp
 {
 	public const string MessageWithId = "Error occurred in {Method} for receiptId: {receiptId}";
 	public const string MessageWithoutId = "Error occurred in {Method}";
-	public const string RouteByReceiptId = "by-receipt-id/{receiptId}";
+	public const string RouteByReceiptId = "";
 
 	[HttpGet(RouteByReceiptId)]
 	[EndpointSummary("Get a receipt with its items")]
@@ -27,7 +27,7 @@ public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapp
 	[ProducesResponseType<ReceiptWithItemsResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<ReceiptWithItemsResponse>> GetReceiptWithItemsByReceiptId([FromRoute] Guid receiptId)
+	public async Task<ActionResult<ReceiptWithItemsResponse>> GetReceiptWithItemsByReceiptId([FromQuery] Guid receiptId)
 	{
 		try
 		{

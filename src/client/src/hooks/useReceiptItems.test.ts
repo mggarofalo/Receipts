@@ -88,8 +88,8 @@ describe("useReceiptItems", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(items);
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/receipt-items/by-receipt-id/{receiptId}",
-      { params: { path: { receiptId: "r-1" } } },
+      "/api/receipt-items",
+      { params: { query: { receiptId: "r-1" } } },
     );
   });
 
@@ -121,8 +121,8 @@ describe("useReceiptItems", () => {
 
     await result.current.mutateAsync({ receiptId: "r-1", body });
 
-    expect(client.POST).toHaveBeenCalledWith("/api/receipt-items/{id}", {
-      params: { path: { id: "r-1" } },
+    expect(client.POST).toHaveBeenCalledWith("/api/receipts/{receiptId}/receipt-items", {
+      params: { path: { receiptId: "r-1" } },
       body,
     });
     expect(toast.success).toHaveBeenCalledWith("Receipt item created");
@@ -145,10 +145,10 @@ describe("useReceiptItems", () => {
       wrapper: createWrapper(),
     });
 
-    await result.current.mutateAsync({ receiptId: "r-1", body });
+    await result.current.mutateAsync({ body });
 
     expect(client.PUT).toHaveBeenCalledWith("/api/receipt-items/{id}", {
-      params: { path: { id: "r-1" } },
+      params: { path: { id: body.id } },
       body,
     });
     expect(toast.success).toHaveBeenCalledWith("Receipt item updated");

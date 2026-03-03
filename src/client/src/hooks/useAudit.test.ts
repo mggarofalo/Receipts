@@ -48,8 +48,8 @@ describe("useEntityAuditHistory", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/audit/entity/{entityType}/{entityId}",
-      { params: { path: { entityType: "Receipt", entityId: "r1" } } },
+      "/api/audit",
+      { params: { query: { entityType: "Receipt", entityId: "r1" } } },
     );
     expect(result.current.data).toEqual(mockHistory);
   });

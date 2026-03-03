@@ -79,8 +79,8 @@ describe("useTransactions", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(items);
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/transactions/by-receipt-id/{receiptId}",
-      { params: { path: { receiptId: "r-1" } } },
+      "/api/transactions",
+      { params: { query: { receiptId: "r-1" } } },
     );
   });
 
@@ -104,19 +104,18 @@ describe("useTransactions", () => {
 
     await result.current.mutateAsync({
       receiptId: "r-1",
-      accountId: "acc-1",
-      body,
+      body: { ...body, accountId: "acc-1" },
     });
 
     expect(client.POST).toHaveBeenCalledWith(
-      "/api/transactions/{receiptId}/{accountId}",
-      { params: { path: { receiptId: "r-1", accountId: "acc-1" } }, body },
+      "/api/receipts/{receiptId}/transactions",
+      { params: { path: { receiptId: "r-1" } }, body: { ...body, accountId: "acc-1" } },
     );
     expect(toast.success).toHaveBeenCalledWith("Transaction created");
   });
 
   it("update mutation calls PUT and shows toast on success", async () => {
-    const body = { id: "1", amount: 250, date: "2025-03-02" };
+    const body = { id: "1", amount: 250, date: "2025-03-02", accountId: "acc-1" };
     (client.PUT as Mock).mockResolvedValue({ error: undefined });
 
     const { result } = renderHook(() => useUpdateTransaction(), {
@@ -124,14 +123,12 @@ describe("useTransactions", () => {
     });
 
     await result.current.mutateAsync({
-      receiptId: "r-1",
-      accountId: "acc-1",
       body,
     });
 
     expect(client.PUT).toHaveBeenCalledWith(
-      "/api/transactions/{receiptId}/{accountId}",
-      { params: { path: { receiptId: "r-1", accountId: "acc-1" } }, body },
+      "/api/transactions/{id}",
+      { params: { path: { id: "1" } }, body },
     );
     expect(toast.success).toHaveBeenCalledWith("Transaction updated");
   });

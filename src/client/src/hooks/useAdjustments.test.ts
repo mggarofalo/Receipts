@@ -79,8 +79,8 @@ describe("useAdjustments", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(items);
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/adjustments/by-receipt-id/{receiptId}",
-      { params: { path: { receiptId: "r-1" } } },
+      "/api/adjustments",
+      { params: { query: { receiptId: "r-1" } } },
     );
   });
 
@@ -104,7 +104,7 @@ describe("useAdjustments", () => {
 
     await result.current.mutateAsync({ receiptId: "r-1", body });
 
-    expect(client.POST).toHaveBeenCalledWith("/api/adjustments/{receiptId}", {
+    expect(client.POST).toHaveBeenCalledWith("/api/receipts/{receiptId}/adjustments", {
       params: { path: { receiptId: "r-1" } },
       body,
     });
@@ -124,10 +124,10 @@ describe("useAdjustments", () => {
       wrapper: createWrapper(),
     });
 
-    await result.current.mutateAsync({ receiptId: "r-1", body });
+    await result.current.mutateAsync({ body });
 
-    expect(client.PUT).toHaveBeenCalledWith("/api/adjustments/{receiptId}", {
-      params: { path: { receiptId: "r-1" } },
+    expect(client.PUT).toHaveBeenCalledWith("/api/adjustments/{id}", {
+      params: { path: { id: body.id } },
       body,
     });
     expect(toast.success).toHaveBeenCalledWith("Adjustment updated");

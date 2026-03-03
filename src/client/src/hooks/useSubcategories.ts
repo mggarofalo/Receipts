@@ -32,12 +32,9 @@ export function useSubcategoriesByCategoryId(categoryId: string | null) {
     queryKey: ["subcategories", "byCategory", categoryId],
     enabled: !!categoryId,
     queryFn: async () => {
-      const { data, error } = await client.GET(
-        "/api/categories/{categoryId}/subcategories",
-        {
-          params: { path: { categoryId: categoryId! } },
-        },
-      );
+      const { data, error } = await client.GET("/api/subcategories", {
+        params: { query: { categoryId: categoryId! } },
+      });
       if (error) throw error;
       return data;
     },

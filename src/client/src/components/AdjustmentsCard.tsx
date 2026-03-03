@@ -93,7 +93,6 @@ export function AdjustmentsCard({
     setServerErrors({});
     updateAdjustment.mutate(
       {
-        receiptId,
         body: {
           id: editAdj.id,
           type: values.type,

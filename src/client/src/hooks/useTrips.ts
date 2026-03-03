@@ -7,8 +7,8 @@ export function useTripByReceiptId(receiptId: string | null) {
     enabled: !!receiptId,
     queryFn: async () => {
       const { data, error } = await client.GET(
-        "/api/trips/by-receipt-id/{receiptId}",
-        { params: { path: { receiptId: receiptId! } } },
+        "/api/trips",
+        { params: { query: { receiptId: receiptId! } } },
       );
       if (error) throw error;
       return data;

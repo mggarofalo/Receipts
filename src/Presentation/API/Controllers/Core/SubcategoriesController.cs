@@ -69,10 +69,20 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[EndpointSummary("Get all subcategories")]
 	[ProducesResponseType<List<SubcategoryResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<SubcategoryResponse>>> GetAllSubcategories()
+	public async Task<ActionResult<List<SubcategoryResponse>>> GetAllSubcategories([FromQuery] Guid? categoryId = null)
 	{
 		try
 		{
+			if (categoryId.HasValue)
+			{
+				logger.LogDebug("GetAllSubcategories called with categoryId: {CategoryId}", categoryId.Value);
+				GetSubcategoriesByCategoryIdQuery byCategoryQuery = new(categoryId.Value);
+				List<Subcategory> byCategoryResult = await mediator.Send(byCategoryQuery);
+
+				List<SubcategoryResponse> byCategoryModel = [.. byCategoryResult.Select(mapper.ToResponse)];
+				return Ok(byCategoryModel);
+			}
+
 			logger.LogDebug("GetAllSubcategories called");
 			GetAllSubcategoriesQuery query = new();
 			List<Subcategory> result = await mediator.Send(query);
@@ -108,30 +118,6 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		catch (Exception ex)
 		{
 			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedSubcategories));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
-	}
-
-	[HttpGet("~/api/categories/{categoryId}/subcategories")]
-	[EndpointSummary("Get subcategories by category ID")]
-	[EndpointDescription("Returns all subcategories belonging to the specified category.")]
-	[ProducesResponseType<List<SubcategoryResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<SubcategoryResponse>>> GetSubcategoriesByCategoryId([FromRoute] Guid categoryId)
-	{
-		try
-		{
-			logger.LogDebug("GetSubcategoriesByCategoryId called with categoryId: {CategoryId}", categoryId);
-			GetSubcategoriesByCategoryIdQuery query = new(categoryId);
-			List<Subcategory> result = await mediator.Send(query);
-			logger.LogDebug("GetSubcategoriesByCategoryId called with {Count} subcategories", result.Count);
-
-			List<SubcategoryResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithId, nameof(GetSubcategoriesByCategoryId), categoryId);
 			return StatusCode(500, "An error occurred while processing your request.");
 		}
 	}

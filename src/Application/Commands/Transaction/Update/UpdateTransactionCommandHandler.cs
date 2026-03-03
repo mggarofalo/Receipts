@@ -14,10 +14,15 @@ public class UpdateTransactionCommandHandler(
 {
 	public async Task<bool> Handle(UpdateTransactionCommand request, CancellationToken cancellationToken)
 	{
-		Task<Domain.Core.Receipt?> receiptTask = receiptService.GetByIdAsync(request.ReceiptId, cancellationToken);
-		Task<List<Domain.Core.ReceiptItem>?> itemsTask = receiptItemService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
-		Task<List<Domain.Core.Adjustment>?> adjustmentsTask = adjustmentService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
-		Task<List<Domain.Core.Transaction>?> existingTransactionsTask = transactionService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
+		Domain.Core.Transaction existingTransaction = await transactionService.GetByIdAsync(request.Transactions[0].Id, cancellationToken)
+			?? throw new InvalidOperationException("Transaction not found");
+
+		Guid receiptId = existingTransaction.ReceiptId;
+
+		Task<Domain.Core.Receipt?> receiptTask = receiptService.GetByIdAsync(receiptId, cancellationToken);
+		Task<List<Domain.Core.ReceiptItem>?> itemsTask = receiptItemService.GetByReceiptIdAsync(receiptId, cancellationToken);
+		Task<List<Domain.Core.Adjustment>?> adjustmentsTask = adjustmentService.GetByReceiptIdAsync(receiptId, cancellationToken);
+		Task<List<Domain.Core.Transaction>?> existingTransactionsTask = transactionService.GetByReceiptIdAsync(receiptId, cancellationToken);
 
 		await Task.WhenAll(receiptTask, itemsTask, adjustmentsTask, existingTransactionsTask);
 
@@ -48,7 +53,7 @@ public class UpdateTransactionCommandHandler(
 			]);
 		}
 
-		await transactionService.UpdateAsync([.. request.Transactions], request.AccountId, request.ReceiptId, cancellationToken);
+		await transactionService.UpdateAsync([.. request.Transactions], receiptId, request.AccountId, cancellationToken);
 		return true;
 	}
 }

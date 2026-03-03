@@ -19,7 +19,7 @@ public class UpdateTransactionCommandHandlerTests
 		new(_transactionService.Object, _receiptService.Object,
 			_receiptItemService.Object, _adjustmentService.Object);
 
-	private void SetupBalancedData(Guid receiptId, List<Domain.Core.Transaction> existingTransactions)
+	private void SetupBalancedData(Guid receiptId, Guid txId, List<Domain.Core.Transaction> existingTransactions)
 	{
 		// Receipt: TaxAmount = $10
 		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10), "desc");
@@ -28,6 +28,11 @@ public class UpdateTransactionCommandHandlerTests
 		Domain.Core.ReceiptItem item = new(Guid.NewGuid(), "CODE", "Item", 1, new Money(5), new Money(5), "Cat", "Sub", PricingMode.Quantity);
 
 		// ExpectedTotal = Subtotal($5) + TaxAmount($10) + Adjustments($0) = $15
+
+		// The handler calls GetByIdAsync to look up the receiptId from the existing transaction
+		Domain.Core.Transaction existingForLookup = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { ReceiptId = receiptId };
+		_transactionService.Setup(s => s.GetByIdAsync(txId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(existingForLookup);
 
 		_receiptService.Setup(s => s.GetByIdAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(receipt);
@@ -50,13 +55,13 @@ public class UpdateTransactionCommandHandlerTests
 		Guid txId = Guid.NewGuid();
 		// Existing transaction matches what we're updating (same ID)
 		Domain.Core.Transaction existing = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now));
-		SetupBalancedData(receiptId, [existing]);
+		SetupBalancedData(receiptId, txId, [existing]);
 
 		// Update with same amount → still balanced at $15
 		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now))];
 
 		UpdateTransactionCommandHandler handler = CreateHandler();
-		UpdateTransactionCommand command = new(updated, receiptId, Guid.NewGuid());
+		UpdateTransactionCommand command = new(updated, Guid.NewGuid());
 
 		// Act
 		bool result = await handler.Handle(command, CancellationToken.None);
@@ -72,13 +77,13 @@ public class UpdateTransactionCommandHandlerTests
 		Guid receiptId = Guid.NewGuid();
 		Guid txId = Guid.NewGuid();
 		Domain.Core.Transaction existing = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now));
-		SetupBalancedData(receiptId, [existing]);
+		SetupBalancedData(receiptId, txId, [existing]);
 
 		// Update to $100 → unbalanced (ExpectedTotal is $15)
 		List<Domain.Core.Transaction> updated = [new(txId, new Money(100), DateOnly.FromDateTime(DateTime.Now))];
 
 		UpdateTransactionCommandHandler handler = CreateHandler();
-		UpdateTransactionCommand command = new(updated, receiptId, Guid.NewGuid());
+		UpdateTransactionCommand command = new(updated, Guid.NewGuid());
 
 		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
@@ -92,6 +97,13 @@ public class UpdateTransactionCommandHandlerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
+		Guid txId = Guid.NewGuid();
+
+		// The handler calls GetByIdAsync to look up the receiptId
+		Domain.Core.Transaction existingForLookup = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { ReceiptId = receiptId };
+		_transactionService.Setup(s => s.GetByIdAsync(txId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(existingForLookup);
+
 		_receiptService.Setup(s => s.GetByIdAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync((Domain.Core.Receipt?)null);
 		_receiptItemService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
@@ -101,11 +113,10 @@ public class UpdateTransactionCommandHandlerTests
 		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync([]);
 
-		Guid txId = Guid.NewGuid();
 		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now))];
 
 		UpdateTransactionCommandHandler handler = CreateHandler();
-		UpdateTransactionCommand command = new(updated, receiptId, Guid.NewGuid());
+		UpdateTransactionCommand command = new(updated, Guid.NewGuid());
 
 		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);

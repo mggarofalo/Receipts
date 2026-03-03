@@ -97,8 +97,8 @@ describe("useSubcategories", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(items);
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/categories/{categoryId}/subcategories",
-      { params: { path: { categoryId: "cat-1" } } },
+      "/api/subcategories",
+      { params: { query: { categoryId: "cat-1" } } },
     );
   });
 

@@ -13,7 +13,7 @@ public class UpdateReceiptItemCommandTests : ICommandTests<Domain.Core.ReceiptIt
 		List<Domain.Core.ReceiptItem> items = null;
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8604 // Possible null reference argument.
-		Assert.Throws<ArgumentNullException>(() => new UpdateReceiptItemCommand(items, Guid.NewGuid()));
+		Assert.Throws<ArgumentNullException>(() => new UpdateReceiptItemCommand(items));
 #pragma warning restore CS8604 // Possible null reference argument.
 	}
 
@@ -21,14 +21,14 @@ public class UpdateReceiptItemCommandTests : ICommandTests<Domain.Core.ReceiptIt
 	public void Command_WithEmptyItems_ThrowsArgumentException()
 	{
 		List<Domain.Core.ReceiptItem> items = [];
-		Assert.Throws<ArgumentException>(() => new UpdateReceiptItemCommand(items, Guid.NewGuid()));
+		Assert.Throws<ArgumentException>(() => new UpdateReceiptItemCommand(items));
 	}
 
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
 		List<Domain.Core.ReceiptItem> items = ReceiptItemGenerator.GenerateList(2);
-		UpdateReceiptItemCommand command = new(items, Guid.NewGuid());
+		UpdateReceiptItemCommand command = new(items);
 		command.ReceiptItems.Should().BeEquivalentTo(items);
 	}
 
@@ -36,7 +36,7 @@ public class UpdateReceiptItemCommandTests : ICommandTests<Domain.Core.ReceiptIt
 	public void Items_ShouldBeImmutable()
 	{
 		List<Domain.Core.ReceiptItem> items = ReceiptItemGenerator.GenerateList(2);
-		UpdateReceiptItemCommand command = new(items, Guid.NewGuid());
+		UpdateReceiptItemCommand command = new(items);
 		Assert.IsAssignableFrom<IReadOnlyList<Domain.Core.ReceiptItem>>(command.ReceiptItems);
 		Assert.NotSame(items, command.ReceiptItems);
 	}

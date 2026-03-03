@@ -30,7 +30,7 @@ public class TransactionAccountControllerTests
 	}
 
 	[Fact]
-	public async Task GetTransactionAccountByTransactionId_ReturnsOkResult_WhenTransactionExists()
+	public async Task GetTransactionAccounts_ByTransactionId_ReturnsOkResult_WhenTransactionExists()
 	{
 		// Arrange
 		TransactionAccount transactionAccount = TransactionAccountGenerator.Generate();
@@ -42,17 +42,17 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync(transactionAccount);
 
 		// Act
-		ActionResult<TransactionAccountResponse> result = await _controller.GetTransactionAccountByTransactionId(transactionAccount.Transaction.Id);
+		IActionResult result = await _controller.GetTransactionAccounts(transactionId: transactionAccount.Transaction.Id, receiptId: null);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TransactionAccountResponse actualReturn = Assert.IsType<TransactionAccountResponse>(okResult.Value);
+		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
+		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
 
-		actualReturn.Should().BeEquivalentTo(expectedReturn);
+		actualReturn[0].Should().BeEquivalentTo(expectedReturn);
 	}
 
 	[Fact]
-	public async Task GetTransactionAccountByTransactionId_ReturnsNotFound_WhenTransactionDoesNotExist()
+	public async Task GetTransactionAccounts_ByTransactionId_ReturnsEmptyList_WhenTransactionDoesNotExist()
 	{
 		// Arrange
 		Guid missingTransactionId = Guid.NewGuid();
@@ -63,14 +63,16 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync((TransactionAccount?)null);
 
 		// Act
-		ActionResult<TransactionAccountResponse> result = await _controller.GetTransactionAccountByTransactionId(missingTransactionId);
+		IActionResult result = await _controller.GetTransactionAccounts(transactionId: missingTransactionId, receiptId: null);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
+		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
+		actualReturn.Should().BeEmpty();
 	}
 
 	[Fact]
-	public async Task GetTransactionAccountByTransactionId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetTransactionAccounts_ByTransactionId_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
 		Guid transactionId = TransactionAccountGenerator.Generate().Transaction.Id;
@@ -81,16 +83,15 @@ public class TransactionAccountControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TransactionAccountResponse> result = await _controller.GetTransactionAccountByTransactionId(transactionId);
+		IActionResult result = await _controller.GetTransactionAccounts(transactionId: transactionId, receiptId: null);
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
 		Assert.Equal(500, objectResult.StatusCode);
 	}
 
 	[Fact]
-	public async Task GetTransactionAccountsByReceiptId_ReturnsOkResult_WhenReceiptExists()
+	public async Task GetTransactionAccounts_ByReceiptId_ReturnsOkResult_WhenReceiptExists()
 	{
 		// Arrange
 		Guid receiptId = ReceiptGenerator.Generate().Id;
@@ -103,17 +104,17 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync([transactionAccount]);
 
 		// Act
-		ActionResult<List<TransactionAccountResponse>> result = await _controller.GetTransactionAccountsByReceiptId(receiptId);
+		IActionResult result = await _controller.GetTransactionAccounts(transactionId: null, receiptId: receiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
 		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
 
 		actualReturn[0].Should().BeEquivalentTo(expectedReturn);
 	}
 
 	[Fact]
-	public async Task GetTransactionAccountsByReceiptId_ReturnsNotFound_WhenReceiptDoesNotExist()
+	public async Task GetTransactionAccounts_ByReceiptId_ReturnsEmptyList_WhenReceiptDoesNotExist()
 	{
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
@@ -124,14 +125,16 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync((List<TransactionAccount>?)null);
 
 		// Act
-		ActionResult<List<TransactionAccountResponse>> result = await _controller.GetTransactionAccountsByReceiptId(missingReceiptId);
+		IActionResult result = await _controller.GetTransactionAccounts(transactionId: null, receiptId: missingReceiptId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
+		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
+		actualReturn.Should().BeEmpty();
 	}
 
 	[Fact]
-	public async Task GetTransactionAccountsByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetTransactionAccounts_ByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
 		Guid receiptId = ReceiptGenerator.Generate().Id;
@@ -142,11 +145,10 @@ public class TransactionAccountControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<TransactionAccountResponse>> result = await _controller.GetTransactionAccountsByReceiptId(receiptId);
+		IActionResult result = await _controller.GetTransactionAccounts(transactionId: null, receiptId: receiptId);
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
 		Assert.Equal(500, objectResult.StatusCode);
 	}
 }

@@ -32,10 +32,9 @@ export function useTransactionsByReceiptId(receiptId: string | null) {
     queryKey: ["transactions", "by-receipt", receiptId],
     enabled: !!receiptId,
     queryFn: async () => {
-      const { data, error } = await client.GET(
-        "/api/transactions/by-receipt-id/{receiptId}",
-        { params: { path: { receiptId: receiptId! } } },
-      );
+      const { data, error } = await client.GET("/api/transactions", {
+        params: { query: { receiptId: receiptId! } },
+      });
       if (error) throw error;
       return data;
     },
@@ -47,16 +46,14 @@ export function useCreateTransaction() {
   return useMutation({
     mutationFn: async ({
       receiptId,
-      accountId,
       body,
     }: {
       receiptId: string;
-      accountId: string;
-      body: { amount: number; date: string };
+      body: { amount: number; date: string; accountId: string };
     }) => {
       const { data, error } = await client.POST(
-        "/api/transactions/{receiptId}/{accountId}",
-        { params: { path: { receiptId, accountId } }, body },
+        "/api/receipts/{receiptId}/transactions",
+        { params: { path: { receiptId } }, body },
       );
       if (error) throw error;
       return data;
@@ -75,18 +72,14 @@ export function useUpdateTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
-      receiptId,
-      accountId,
       body,
     }: {
-      receiptId: string;
-      accountId: string;
-      body: { id: string; amount: number; date: string };
+      body: { id: string; amount: number; date: string; accountId: string };
     }) => {
-      const { error } = await client.PUT(
-        "/api/transactions/{receiptId}/{accountId}",
-        { params: { path: { receiptId, accountId } }, body },
-      );
+      const { error } = await client.PUT("/api/transactions/{id}", {
+        params: { path: { id: body.id } },
+        body,
+      });
       if (error) throw error;
     },
     onSuccess: () => {

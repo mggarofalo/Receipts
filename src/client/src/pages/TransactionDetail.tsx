@@ -58,29 +58,21 @@ function TransactionDetail() {
     (receiptId && byReceipt.isError) ||
     (transactionId && byTransaction.isError);
 
+  type TransactionAccountItem = {
+    transaction: { id: string; amount: number; date: string };
+    account: {
+      id: string;
+      accountCode: string;
+      name: string;
+      isActive: boolean;
+    };
+  };
+
   const items =
     mode === "receipt" && byReceipt.data
-      ? (byReceipt.data as {
-          transaction: { id: string; amount: number; date: string };
-          account: {
-            id: string;
-            accountCode: string;
-            name: string;
-            isActive: boolean;
-          };
-        }[])
+      ? (byReceipt.data as TransactionAccountItem[])
       : mode === "transaction" && byTransaction.data
-        ? [
-            byTransaction.data as {
-              transaction: { id: string; amount: number; date: string };
-              account: {
-                id: string;
-                accountCode: string;
-                name: string;
-                isActive: boolean;
-              };
-            },
-          ]
+        ? (byTransaction.data as TransactionAccountItem[])
         : [];
 
   const total = items.reduce((sum, ta) => sum + ta.transaction.amount, 0);
