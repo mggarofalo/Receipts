@@ -1,13 +1,14 @@
 {
   "private": true,
   "scripts": {
-    "lint:spec": "spectral lint openapi/spec.yaml --fail-severity warn",
+    "lint:spec": "cross-env NODE_OPTIONS=--disable-warning=DEP0040 spectral lint openapi/spec.yaml --fail-severity warn",
     "check:drift": "node scripts/check-drift.mjs",
     "check:breaking": "node scripts/check-breaking.mjs"
   },
   "devDependencies": {
     "@linear/sdk": "^75.0.0",
     "@stoplight/spectral-cli": "^6.15.0",
+    "cross-env": "^10.1.0",
     "js-yaml": "^4.1.0"
   }
 }
