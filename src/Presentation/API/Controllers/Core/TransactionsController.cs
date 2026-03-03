@@ -21,9 +21,6 @@ namespace API.Controllers.Core;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
 {
-	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
-	public const string MessageWithoutId = "Error occurred in {Method}";
-
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "~/api/receipts/{receiptId}/transactions";
@@ -39,206 +36,130 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[EndpointDescription("Returns a single transaction matching the provided GUID.")]
 	[ProducesResponseType<TransactionResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<TransactionResponse>> GetTransactionById([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("GetTransactionById called with id: {Id}", id);
-			GetTransactionByIdQuery query = new(id);
-			Transaction? result = await mediator.Send(query);
+		GetTransactionByIdQuery query = new(id);
+		Transaction? result = await mediator.Send(query);
 
-			if (result == null)
-			{
-				logger.LogWarning("GetTransactionById called with id: {Id} not found", id);
-				return NotFound();
-			}
-
-			TransactionResponse model = mapper.ToResponse(result);
-			logger.LogDebug("GetTransactionById called with id: {Id} found", id);
-			return Ok(model);
-		}
-		catch (Exception ex)
+		if (result == null)
 		{
-			logger.LogError(ex, MessageWithId, nameof(GetTransactionById), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Transaction {Id} not found", id);
+			return NotFound();
 		}
+
+		TransactionResponse model = mapper.ToResponse(result);
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all transactions")]
 	[ProducesResponseType<List<TransactionResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionResponse>>> GetAllTransactions([FromQuery] Guid? receiptId = null)
 	{
-		try
+		if (receiptId.HasValue)
 		{
-			if (receiptId.HasValue)
-			{
-				logger.LogDebug("GetAllTransactions called with receiptId: {ReceiptId}", receiptId.Value);
-				GetTransactionsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
-				List<Transaction>? byReceiptResult = await mediator.Send(byReceiptQuery);
+			GetTransactionsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
+			List<Transaction>? byReceiptResult = await mediator.Send(byReceiptQuery);
 
-				List<TransactionResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
-				return Ok(byReceiptModel);
-			}
-
-			logger.LogDebug("GetAllTransactions called");
-			GetAllTransactionsQuery query = new();
-			List<Transaction> result = await mediator.Send(query);
-			logger.LogDebug("GetAllTransactions called with {Count} transactions", result.Count);
-
-			List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			List<TransactionResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
+			return Ok(byReceiptModel);
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetAllTransactions));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		GetAllTransactionsQuery query = new();
+		List<Transaction> result = await mediator.Send(query);
+
+		List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted transactions")]
 	[EndpointDescription("Returns all transactions that have been soft-deleted.")]
 	[ProducesResponseType<List<TransactionResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionResponse>>> GetDeletedTransactions()
 	{
-		try
-		{
-			logger.LogDebug("GetDeletedTransactions called");
-			GetDeletedTransactionsQuery query = new();
-			List<Transaction> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedTransactions called with {Count} transactions", result.Count);
+		GetDeletedTransactionsQuery query = new();
+		List<Transaction> result = await mediator.Send(query);
 
-			List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedTransactions));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
+		return Ok(model);
 	}
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single transaction")]
 	[ProducesResponseType<TransactionResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<TransactionResponse>> CreateTransaction([FromBody] CreateTransactionRequest model, [FromRoute] Guid receiptId)
 	{
-		try
-		{
-			logger.LogDebug("CreateTransaction called");
-			CreateTransactionCommand command = new([mapper.ToDomain(model)], receiptId, model.AccountId);
-			List<Transaction> transactions = await mediator.Send(command);
-			return Ok(mapper.ToResponse(transactions[0]));
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateTransaction));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		CreateTransactionCommand command = new([mapper.ToDomain(model)], receiptId, model.AccountId);
+		List<Transaction> transactions = await mediator.Send(command);
+		return Ok(mapper.ToResponse(transactions[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create transactions in batch")]
 	[ProducesResponseType<List<TransactionResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<TransactionResponse>>> CreateTransactions([FromBody] List<CreateTransactionRequest> models, [FromRoute] Guid receiptId)
 	{
-		try
+		IEnumerable<IGrouping<Guid, CreateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
+
+		List<Task<List<Transaction>>> tasks = [.. groups.Select(group =>
 		{
-			logger.LogDebug("CreateTransactions called with {Count} transactions", models.Count);
+			CreateTransactionCommand command = new(
+				[.. group.Select(mapper.ToDomain)],
+				receiptId,
+				group.Key);
+			return mediator.Send(command);
+		})];
 
-			IEnumerable<IGrouping<Guid, CreateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
+		await Task.WhenAll(tasks);
 
-			List<Task<List<Transaction>>> tasks = [.. groups.Select(group =>
-			{
-				CreateTransactionCommand command = new(
-					[.. group.Select(mapper.ToDomain)],
-					receiptId,
-					group.Key);
-				return mediator.Send(command);
-			})];
-
-			await Task.WhenAll(tasks);
-
-			List<TransactionResponse> results = [.. tasks.SelectMany(t => t.Result.Select(mapper.ToResponse))];
-			return Ok(results);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateTransactions));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		List<TransactionResponse> results = [.. tasks.SelectMany(t => t.Result.Select(mapper.ToResponse))];
+		return Ok(results);
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single transaction")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateTransaction([FromBody] UpdateTransactionRequest model, [FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("UpdateTransaction called");
-			UpdateTransactionCommand command = new([mapper.ToDomain(model)], model.AccountId);
-			bool result = await mediator.Send(command);
+		UpdateTransactionCommand command = new([mapper.ToDomain(model)], model.AccountId);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("UpdateTransaction called, but not found");
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(UpdateTransaction));
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Transaction {Id} not found for update", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update transactions in batch")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateTransactions([FromBody] List<UpdateTransactionRequest> models)
 	{
-		try
+		IEnumerable<IGrouping<Guid, UpdateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
+
+		List<Task<bool>> tasks = [.. groups.Select(group =>
 		{
-			logger.LogDebug("UpdateTransactions called with {Count} transactions", models.Count);
+			UpdateTransactionCommand command = new(
+				[.. group.Select(mapper.ToDomain)],
+				group.Key);
+			return mediator.Send(command);
+		})];
 
-			IEnumerable<IGrouping<Guid, UpdateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
+		await Task.WhenAll(tasks);
 
-			List<Task<bool>> tasks = [.. groups.Select(group =>
-			{
-				UpdateTransactionCommand command = new(
-					[.. group.Select(mapper.ToDomain)],
-					group.Key);
-				return mediator.Send(command);
-			})];
-
-			await Task.WhenAll(tasks);
-
-			if (tasks.Any(t => !t.Result))
-			{
-				logger.LogWarning("UpdateTransactions called with {Count} transactions, but some not found", models.Count);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (tasks.Any(t => !t.Result))
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(UpdateTransactions));
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Transactions batch update failed — some not found");
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 
 	[HttpDelete(RouteDelete)]
@@ -246,30 +167,18 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[EndpointDescription("Deletes one or more transactions by their IDs. Returns 404 if any transaction is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> DeleteTransactions([FromBody] List<Guid> ids)
 	{
-		try
+		DeleteTransactionCommand command = new(ids);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("DeleteTransactions called with {Count} transaction ids", ids.Count);
-			DeleteTransactionCommand command = new(ids);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("DeleteTransactions called with {Count} transaction ids, but not found", ids.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("DeleteTransactions called with {Count} transaction ids, and found", ids.Count);
-
-			return NoContent();
+			logger.LogWarning("Transactions delete failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(DeleteTransactions));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		return NoContent();
 	}
 
 	[HttpPost(RouteRestore)]
@@ -277,27 +186,17 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[EndpointDescription("Restores a previously soft-deleted transaction by clearing its DeletedAt timestamp.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> RestoreTransaction([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("RestoreTransaction called with id: {Id}", id);
-			RestoreTransactionCommand command = new(id);
-			bool result = await mediator.Send(command);
+		RestoreTransactionCommand command = new(id);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("RestoreTransaction called with id: {Id}, but not found or not deleted", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(RestoreTransaction), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Transaction {Id} not found or not deleted for restore", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 }

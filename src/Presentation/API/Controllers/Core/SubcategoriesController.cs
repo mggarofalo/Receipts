@@ -4,7 +4,6 @@ using Application.Commands.Subcategory.Create;
 using Application.Commands.Subcategory.Delete;
 using Application.Commands.Subcategory.Restore;
 using Application.Commands.Subcategory.Update;
-using Application.Exceptions;
 using Application.Queries.Core.Subcategory;
 using Asp.Versioning;
 using Domain.Core;
@@ -22,8 +21,6 @@ namespace API.Controllers.Core;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class SubcategoriesController(IMediator mediator, SubcategoryMapper mapper, ILogger<SubcategoriesController> logger) : ControllerBase
 {
-	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
-	public const string MessageWithoutId = "Error occurred in {Method}";
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "";
@@ -39,197 +36,111 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[EndpointDescription("Returns a single subcategory matching the provided GUID.")]
 	[ProducesResponseType<SubcategoryResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<SubcategoryResponse>> GetSubcategoryById([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("GetSubcategoryById called with id: {Id}", id);
-			GetSubcategoryByIdQuery query = new(id);
-			Subcategory? result = await mediator.Send(query);
+		GetSubcategoryByIdQuery query = new(id);
+		Subcategory? result = await mediator.Send(query);
 
-			if (result == null)
-			{
-				logger.LogWarning("GetSubcategoryById called with id: {Id} not found", id);
-				return NotFound();
-			}
-
-			SubcategoryResponse model = mapper.ToResponse(result);
-			logger.LogDebug("GetSubcategoryById called with id: {Id} found", id);
-			return Ok(model);
-		}
-		catch (Exception ex)
+		if (result == null)
 		{
-			logger.LogError(ex, MessageWithId, nameof(GetSubcategoryById), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Subcategory {Id} not found", id);
+			return NotFound();
 		}
+
+		SubcategoryResponse model = mapper.ToResponse(result);
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all subcategories")]
 	[ProducesResponseType<List<SubcategoryResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<SubcategoryResponse>>> GetAllSubcategories([FromQuery] Guid? categoryId = null)
 	{
-		try
+		if (categoryId.HasValue)
 		{
-			if (categoryId.HasValue)
-			{
-				logger.LogDebug("GetAllSubcategories called with categoryId: {CategoryId}", categoryId.Value);
-				GetSubcategoriesByCategoryIdQuery byCategoryQuery = new(categoryId.Value);
-				List<Subcategory> byCategoryResult = await mediator.Send(byCategoryQuery);
+			GetSubcategoriesByCategoryIdQuery byCategoryQuery = new(categoryId.Value);
+			List<Subcategory> byCategoryResult = await mediator.Send(byCategoryQuery);
 
-				List<SubcategoryResponse> byCategoryModel = [.. byCategoryResult.Select(mapper.ToResponse)];
-				return Ok(byCategoryModel);
-			}
-
-			logger.LogDebug("GetAllSubcategories called");
-			GetAllSubcategoriesQuery query = new();
-			List<Subcategory> result = await mediator.Send(query);
-			logger.LogDebug("GetAllSubcategories called with {Count} subcategories", result.Count);
-
-			List<SubcategoryResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			List<SubcategoryResponse> byCategoryModel = [.. byCategoryResult.Select(mapper.ToResponse)];
+			return Ok(byCategoryModel);
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetAllSubcategories));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		GetAllSubcategoriesQuery query = new();
+		List<Subcategory> result = await mediator.Send(query);
+
+		List<SubcategoryResponse> model = [.. result.Select(mapper.ToResponse)];
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted subcategories")]
 	[EndpointDescription("Returns all subcategories that have been soft-deleted.")]
 	[ProducesResponseType<List<SubcategoryResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<SubcategoryResponse>>> GetDeletedSubcategories()
 	{
-		try
-		{
-			logger.LogDebug("GetDeletedSubcategories called");
-			GetDeletedSubcategoriesQuery query = new();
-			List<Subcategory> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedSubcategories called with {Count} subcategories", result.Count);
+		GetDeletedSubcategoriesQuery query = new();
+		List<Subcategory> result = await mediator.Send(query);
 
-			List<SubcategoryResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedSubcategories));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		List<SubcategoryResponse> model = [.. result.Select(mapper.ToResponse)];
+		return Ok(model);
 	}
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single subcategory")]
 	[ProducesResponseType<SubcategoryResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status409Conflict)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<SubcategoryResponse>> CreateSubcategory([FromBody] CreateSubcategoryRequest model)
 	{
-		try
-		{
-			logger.LogDebug("CreateSubcategory called");
-			CreateSubcategoryCommand command = new([mapper.ToDomain(model)]);
-			List<Subcategory> subcategories = await mediator.Send(command);
-			return Ok(mapper.ToResponse(subcategories[0]));
-		}
-		catch (DuplicateEntityException ex)
-		{
-			logger.LogWarning(ex, "Duplicate subcategory name in {Method}", nameof(CreateSubcategory));
-			return Conflict(ex.Message);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateSubcategory));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		CreateSubcategoryCommand command = new([mapper.ToDomain(model)]);
+		List<Subcategory> subcategories = await mediator.Send(command);
+		return Ok(mapper.ToResponse(subcategories[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create subcategories in batch")]
 	[ProducesResponseType<List<SubcategoryResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status409Conflict)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<SubcategoryResponse>>> CreateSubcategories([FromBody] List<CreateSubcategoryRequest> models)
 	{
-		try
-		{
-			logger.LogDebug("CreateSubcategories called with {Count} subcategories", models.Count);
-			CreateSubcategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
-			List<Subcategory> subcategories = await mediator.Send(command);
-			return Ok(subcategories.Select(mapper.ToResponse).ToList());
-		}
-		catch (DuplicateEntityException ex)
-		{
-			logger.LogWarning(ex, "Duplicate subcategory name in {Method}", nameof(CreateSubcategories));
-			return Conflict(ex.Message);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateSubcategories));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		CreateSubcategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
+		List<Subcategory> subcategories = await mediator.Send(command);
+		return Ok(subcategories.Select(mapper.ToResponse).ToList());
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single subcategory")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateSubcategory([FromRoute] Guid id, [FromBody] UpdateSubcategoryRequest model)
 	{
-		try
-		{
-			logger.LogDebug("UpdateSubcategory called for id: {Id}", id);
-			UpdateSubcategoryCommand command = new([mapper.ToDomain(model)]);
-			bool result = await mediator.Send(command);
+		UpdateSubcategoryCommand command = new([mapper.ToDomain(model)]);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("UpdateSubcategory called for id: {Id}, but not found", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(UpdateSubcategory), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Subcategory {Id} not found for update", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update subcategories in batch")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateSubcategories([FromBody] List<UpdateSubcategoryRequest> models)
 	{
-		try
+		UpdateSubcategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("UpdateSubcategories called with {Count} subcategories", models.Count);
-			UpdateSubcategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("UpdateSubcategories called with {Count} subcategories, but not found", models.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("UpdateSubcategories called with {Count} subcategories, and found", models.Count);
-
-			return NoContent();
+			logger.LogWarning("Subcategories batch update failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(UpdateSubcategories));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		return NoContent();
 	}
 
 	[HttpDelete(RouteDelete)]
@@ -237,30 +148,18 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[EndpointDescription("Deletes one or more subcategories by their IDs. Returns 404 if any subcategory is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> DeleteSubcategories([FromBody] List<Guid> ids)
 	{
-		try
+		DeleteSubcategoryCommand command = new(ids);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("DeleteSubcategories called with {Count} ids", ids.Count);
-			DeleteSubcategoryCommand command = new(ids);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("DeleteSubcategories called with {Count} ids, but not found", ids.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("DeleteSubcategories called with {Count} ids, and found", ids.Count);
-
-			return NoContent();
+			logger.LogWarning("Subcategories delete failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(DeleteSubcategories));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		return NoContent();
 	}
 
 	[HttpPost(RouteRestore)]
@@ -268,27 +167,17 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[EndpointDescription("Restores a previously soft-deleted subcategory by clearing its DeletedAt timestamp.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> RestoreSubcategory([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("RestoreSubcategory called with id: {Id}", id);
-			RestoreSubcategoryCommand command = new(id);
-			bool result = await mediator.Send(command);
+		RestoreSubcategoryCommand command = new(id);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("RestoreSubcategory called with id: {Id}, but not found or not deleted", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(RestoreSubcategory), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Subcategory {Id} not found or not deleted for restore", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 }

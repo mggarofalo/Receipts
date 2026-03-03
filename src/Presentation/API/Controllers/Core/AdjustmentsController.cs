@@ -21,9 +21,6 @@ namespace API.Controllers.Core;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, ILogger<AdjustmentsController> logger) : ControllerBase
 {
-	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
-	public const string MessageWithoutId = "Error occurred in {Method}";
-
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "~/api/receipts/{receiptId}/adjustments";
@@ -37,135 +34,81 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[EndpointDescription("Returns a single adjustment matching the provided GUID.")]
 	[ProducesResponseType<AdjustmentResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<AdjustmentResponse>> GetAdjustmentById([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("GetAdjustmentById called with id: {Id}", id);
-			GetAdjustmentByIdQuery query = new(id);
-			Adjustment? result = await mediator.Send(query);
+		GetAdjustmentByIdQuery query = new(id);
+		Adjustment? result = await mediator.Send(query);
 
-			if (result == null)
-			{
-				logger.LogWarning("GetAdjustmentById called with id: {Id} not found", id);
-				return NotFound();
-			}
-
-			AdjustmentResponse model = mapper.ToResponse(result);
-			logger.LogDebug("GetAdjustmentById called with id: {Id} found", id);
-			return Ok(model);
-		}
-		catch (Exception ex)
+		if (result == null)
 		{
-			logger.LogError(ex, MessageWithId, nameof(GetAdjustmentById), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Adjustment {Id} not found", id);
+			return NotFound();
 		}
+
+		AdjustmentResponse model = mapper.ToResponse(result);
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all adjustments")]
 	[ProducesResponseType<List<AdjustmentResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<AdjustmentResponse>>> GetAllAdjustments([FromQuery] Guid? receiptId = null)
 	{
-		try
+		if (receiptId.HasValue)
 		{
-			if (receiptId.HasValue)
-			{
-				logger.LogDebug("GetAllAdjustments called with receiptId: {ReceiptId}", receiptId.Value);
-				GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
-				List<Adjustment>? byReceiptResult = await mediator.Send(byReceiptQuery);
+			GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
+			List<Adjustment>? byReceiptResult = await mediator.Send(byReceiptQuery);
 
-				List<AdjustmentResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
-				return Ok(byReceiptModel);
-			}
-
-			logger.LogDebug("GetAllAdjustments called");
-			GetAllAdjustmentsQuery query = new();
-			List<Adjustment> result = await mediator.Send(query);
-			logger.LogDebug("GetAllAdjustments called with {Count} adjustments", result.Count);
-
-			List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			List<AdjustmentResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
+			return Ok(byReceiptModel);
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetAllAdjustments));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		GetAllAdjustmentsQuery query = new();
+		List<Adjustment> result = await mediator.Send(query);
+
+		List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted adjustments")]
 	[EndpointDescription("Returns all adjustments that have been soft-deleted.")]
 	[ProducesResponseType<List<AdjustmentResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<AdjustmentResponse>>> GetDeletedAdjustments()
 	{
-		try
-		{
-			logger.LogDebug("GetDeletedAdjustments called");
-			GetDeletedAdjustmentsQuery query = new();
-			List<Adjustment> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedAdjustments called with {Count} adjustments", result.Count);
+		GetDeletedAdjustmentsQuery query = new();
+		List<Adjustment> result = await mediator.Send(query);
 
-			List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedAdjustments));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
+		return Ok(model);
 	}
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single adjustment")]
 	[ProducesResponseType<AdjustmentResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<AdjustmentResponse>> CreateAdjustment([FromBody] CreateAdjustmentRequest model, [FromRoute] Guid receiptId)
 	{
-		try
-		{
-			logger.LogDebug("CreateAdjustment called");
-			CreateAdjustmentCommand command = new([mapper.ToDomain(model)], receiptId);
-			List<Adjustment> adjustments = await mediator.Send(command);
-			return Ok(mapper.ToResponse(adjustments[0]));
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateAdjustment));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		CreateAdjustmentCommand command = new([mapper.ToDomain(model)], receiptId);
+		List<Adjustment> adjustments = await mediator.Send(command);
+		return Ok(mapper.ToResponse(adjustments[0]));
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single adjustment")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateAdjustment([FromBody] UpdateAdjustmentRequest model, [FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("UpdateAdjustment called");
-			UpdateAdjustmentCommand command = new([mapper.ToDomain(model)]);
-			bool result = await mediator.Send(command);
+		UpdateAdjustmentCommand command = new([mapper.ToDomain(model)]);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("UpdateAdjustment called, but not found");
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(UpdateAdjustment));
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Adjustment {Id} not found for update", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 
 	[HttpDelete(RouteDelete)]
@@ -173,30 +116,18 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[EndpointDescription("Deletes one or more adjustments by their IDs. Returns 404 if any adjustment is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> DeleteAdjustments([FromBody] List<Guid> ids)
 	{
-		try
+		DeleteAdjustmentCommand command = new(ids);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("DeleteAdjustments called with {Count} adjustment ids", ids.Count);
-			DeleteAdjustmentCommand command = new(ids);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("DeleteAdjustments called with {Count} adjustment ids, but not found", ids.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("DeleteAdjustments called with {Count} adjustment ids, and found", ids.Count);
-
-			return NoContent();
+			logger.LogWarning("Adjustments delete failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(DeleteAdjustments));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		return NoContent();
 	}
 
 	[HttpPost(RouteRestore)]
@@ -204,27 +135,17 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[EndpointDescription("Restores a previously soft-deleted adjustment by clearing its DeletedAt timestamp.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> RestoreAdjustment([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("RestoreAdjustment called with id: {Id}", id);
-			RestoreAdjustmentCommand command = new(id);
-			bool result = await mediator.Send(command);
+		RestoreAdjustmentCommand command = new(id);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("RestoreAdjustment called with id: {Id}, but not found or not deleted", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(RestoreAdjustment), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Adjustment {Id} not found or not deleted for restore", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 }

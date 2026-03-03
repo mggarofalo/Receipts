@@ -72,7 +72,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAccountById_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAccountById_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = AccountGenerator.Generate().Id;
@@ -83,12 +83,10 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AccountResponse> result = await _controller.GetAccountById(id);
+		Func<Task> act = () => _controller.GetAccountById(id);
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -114,7 +112,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllAccounts_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllAccounts_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
@@ -123,12 +121,10 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<AccountResponse>> result = await _controller.GetAllAccounts();
+		Func<Task> act = () => _controller.GetAllAccounts();
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -156,7 +152,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateAccount_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateAccount_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		CreateAccountRequest controllerInput = AccountDtoGenerator.GenerateCreateRequest();
@@ -167,12 +163,10 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AccountResponse> result = await _controller.CreateAccount(controllerInput);
+		Func<Task> act = () => _controller.CreateAccount(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -200,7 +194,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateAccounts_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateAccounts_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<CreateAccountRequest> controllerInput = AccountDtoGenerator.GenerateCreateRequestList(2);
@@ -210,12 +204,10 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<AccountResponse>> result = await _controller.CreateAccounts(controllerInput);
+		Func<Task> act = () => _controller.CreateAccounts(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -257,7 +249,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateAccount_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task UpdateAccount_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		UpdateAccountRequest controllerInput = AccountDtoGenerator.GenerateUpdateRequest();
@@ -268,12 +260,10 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAccount(controllerInput.Id, controllerInput);
+		Func<Task> act = () => _controller.UpdateAccount(controllerInput.Id, controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -315,7 +305,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateAccounts_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task UpdateAccounts_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<UpdateAccountRequest> controllerInput = AccountDtoGenerator.GenerateUpdateRequestList(2);
@@ -325,12 +315,10 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAccounts(controllerInput);
+		Func<Task> act = () => _controller.UpdateAccounts(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -391,7 +379,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task DeleteAccounts_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task DeleteAccounts_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
@@ -402,12 +390,10 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteAccounts(ids);
+		Func<Task> act = () => _controller.DeleteAccounts(ids);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -445,7 +431,7 @@ public class AccountsControllerTests
 	}
 
 	[Fact]
-	public async Task RestoreAccount_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task RestoreAccount_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -455,10 +441,9 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		IActionResult result = await _controller.RestoreAccount(id);
+		Func<Task> act = () => _controller.RestoreAccount(id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }

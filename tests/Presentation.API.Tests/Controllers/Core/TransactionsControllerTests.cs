@@ -72,7 +72,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task GetTransactionById_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetTransactionById_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = TransactionGenerator.Generate().Id;
@@ -83,11 +83,10 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TransactionResponse> result = await _controller.GetTransactionById(id);
+		Func<Task> act = () => _controller.GetTransactionById(id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -113,7 +112,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllTransactions_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
@@ -122,11 +121,10 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions();
+		Func<Task> act = () => _controller.GetAllTransactions();
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -196,7 +194,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllTransactions_WithReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllTransactions_WithReceiptId_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -206,11 +204,10 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(receiptId);
+		Func<Task> act = () => _controller.GetAllTransactions(receiptId);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -238,7 +235,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateTransaction_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateTransaction_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -250,12 +247,10 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TransactionResponse> result = await _controller.CreateTransaction(controllerInput, receiptId);
+		Func<Task> act = () => _controller.CreateTransaction(controllerInput, receiptId);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -327,7 +322,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateTransactions_WithMultipleAccountIds_ReturnsInternalServerError_WhenOneGroupThrows()
+	public async Task CreateTransactions_WithMultipleAccountIds_ThrowsException_WhenOneGroupFails()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -353,16 +348,14 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception("Group 2 failed"));
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
+		Func<Task> act = () => _controller.CreateTransactions(controllerInput, receiptId);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
-	public async Task CreateTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateTransactions_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -375,12 +368,10 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
+		Func<Task> act = () => _controller.CreateTransactions(controllerInput, receiptId);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -422,7 +413,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateTransaction_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task UpdateTransaction_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -434,12 +425,10 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, id);
+		Func<Task> act = () => _controller.UpdateTransaction(controllerInput, id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -542,7 +531,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateTransactions_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task UpdateTransactions_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<UpdateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateUpdateRequestList(2);
@@ -554,12 +543,10 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
+		Func<Task> act = () => _controller.UpdateTransactions(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -617,7 +604,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task DeleteTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task DeleteTransactions_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<Guid> controllerInput = [.. TransactionGenerator.GenerateList(2).Select(t => t.Id)];
@@ -628,12 +615,10 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteTransactions(controllerInput);
+		Func<Task> act = () => _controller.DeleteTransactions(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -671,7 +656,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task RestoreTransaction_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task RestoreTransaction_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -681,10 +666,9 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		IActionResult result = await _controller.RestoreTransaction(id);
+		Func<Task> act = () => _controller.RestoreTransaction(id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }

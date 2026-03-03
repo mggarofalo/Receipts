@@ -69,7 +69,7 @@ public class TripControllerTests
 	}
 
 	[Fact]
-	public async Task GetTripByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetTripByReceiptId_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid receiptId = TripGenerator.Generate().Receipt.Receipt.Id;
@@ -80,11 +80,9 @@ public class TripControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TripResponse> result = await _controller.GetTripByReceiptId(receiptId);
+		Func<Task> act = () => _controller.GetTripByReceiptId(receiptId);
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }
