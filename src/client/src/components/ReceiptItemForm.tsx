@@ -6,7 +6,10 @@ import Fuse from "fuse.js";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useCategories } from "@/hooks/useCategories";
-import { useSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
+import {
+  useSubcategoriesByCategoryId,
+  useCreateSubcategory,
+} from "@/hooks/useSubcategories";
 import { useItemTemplates } from "@/hooks/useItemTemplates";
 import { receiptToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
@@ -150,6 +153,7 @@ export function ReceiptItemForm({
 
   const { data: subcategoriesData } =
     useSubcategoriesByCategoryId(selectedCategoryId);
+  const createSubcategory = useCreateSubcategory();
 
   const subcategoryOptions = useMemo(
     () =>
@@ -190,6 +194,21 @@ export function ReceiptItemForm({
       }
     }
   }, [watchedPricingMode, form]);
+
+  async function handleFormSubmit(values: ReceiptItemFormValues) {
+    const isCustomSubcategory =
+      values.subcategory &&
+      !subcategoryOptions.some((opt) => opt.value === values.subcategory);
+
+    if (isCustomSubcategory && selectedCategoryId) {
+      await createSubcategory.mutateAsync({
+        name: values.subcategory,
+        categoryId: selectedCategoryId,
+      });
+    }
+
+    onSubmit(values);
+  }
 
   const computedTotal = (watchedQuantity ?? 0) * (watchedUnitPrice ?? 0);
 
@@ -237,7 +256,7 @@ export function ReceiptItemForm({
     <Form {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(handleFormSubmit)}
         className="space-y-4"
       >
         <FormField
