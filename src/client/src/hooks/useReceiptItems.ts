@@ -32,10 +32,9 @@ export function useReceiptItemsByReceiptId(receiptId: string | null) {
     queryKey: ["receipt-items", "by-receipt", receiptId],
     enabled: !!receiptId,
     queryFn: async () => {
-      const { data, error } = await client.GET(
-        "/api/receipt-items/by-receipt-id/{receiptId}",
-        { params: { path: { receiptId: receiptId! } } },
-      );
+      const { data, error } = await client.GET("/api/receipt-items", {
+        params: { query: { receiptId: receiptId! } },
+      });
       if (error) throw error;
       return data;
     },
@@ -60,10 +59,10 @@ export function useCreateReceiptItem() {
         pricingMode: "quantity" | "flat";
       };
     }) => {
-      const { data, error } = await client.POST("/api/receipt-items/{id}", {
-        params: { path: { id: receiptId } },
-        body,
-      });
+      const { data, error } = await client.POST(
+        "/api/receipts/{receiptId}/receipt-items",
+        { params: { path: { receiptId } }, body },
+      );
       if (error) throw error;
       return data;
     },
@@ -81,10 +80,8 @@ export function useUpdateReceiptItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
-      receiptId,
       body,
     }: {
-      receiptId: string;
       body: {
         id: string;
         receiptItemCode: string;
@@ -97,7 +94,7 @@ export function useUpdateReceiptItem() {
       };
     }) => {
       const { error } = await client.PUT("/api/receipt-items/{id}", {
-        params: { path: { id: receiptId } },
+        params: { path: { id: body.id } },
         body,
       });
       if (error) throw error;

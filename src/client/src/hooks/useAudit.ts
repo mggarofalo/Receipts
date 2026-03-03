@@ -9,10 +9,9 @@ export function useEntityAuditHistory(
     queryKey: ["audit", "entity", entityType, entityId],
     enabled: !!entityType && !!entityId,
     queryFn: async () => {
-      const { data, error } = await client.GET(
-        "/api/audit/entity/{entityType}/{entityId}",
-        { params: { path: { entityType: entityType!, entityId: entityId! } } },
-      );
+      const { data, error } = await client.GET("/api/audit", {
+        params: { query: { entityType: entityType!, entityId: entityId! } },
+      });
       if (error) throw error;
       return data;
     },
@@ -31,4 +30,3 @@ export function useRecentAuditLogs(count = 50) {
     },
   });
 }
-

@@ -26,9 +26,8 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
-	public const string RouteGetByReceiptId = "by-receipt-id/{receiptId}";
-	public const string RouteCreate = "{receiptId}";
-	public const string RouteUpdate = "{receiptId}";
+	public const string RouteCreate = "~/api/receipts/{receiptId}/adjustments";
+	public const string RouteUpdate = "{id}";
 	public const string RouteDelete = "";
 	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
@@ -68,10 +67,25 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[EndpointSummary("Get all adjustments")]
 	[ProducesResponseType<List<AdjustmentResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<AdjustmentResponse>>> GetAllAdjustments()
+	public async Task<ActionResult<List<AdjustmentResponse>>> GetAllAdjustments([FromQuery] Guid? receiptId = null)
 	{
 		try
 		{
+			if (receiptId.HasValue)
+			{
+				logger.LogDebug("GetAllAdjustments called with receiptId: {ReceiptId}", receiptId.Value);
+				GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
+				List<Adjustment>? byReceiptResult = await mediator.Send(byReceiptQuery);
+
+				if (byReceiptResult == null)
+				{
+					return NotFound();
+				}
+
+				List<AdjustmentResponse> byReceiptModel = [.. byReceiptResult.Select(mapper.ToResponse)];
+				return Ok(byReceiptModel);
+			}
+
 			logger.LogDebug("GetAllAdjustments called");
 			GetAllAdjustmentsQuery query = new();
 			List<Adjustment> result = await mediator.Send(query);
@@ -111,37 +125,6 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 		}
 	}
 
-	[HttpGet(RouteGetByReceiptId)]
-	[EndpointSummary("Get adjustments by receipt ID")]
-	[EndpointDescription("Returns all adjustments associated with the specified receipt.")]
-	[ProducesResponseType<List<AdjustmentResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<AdjustmentResponse>?>> GetAdjustmentsByReceiptId([FromRoute] Guid receiptId)
-	{
-		try
-		{
-			logger.LogDebug("GetAdjustmentsByReceiptId called with receiptId: {ReceiptId}", receiptId);
-			GetAdjustmentsByReceiptIdQuery query = new(receiptId);
-			List<Adjustment>? result = await mediator.Send(query);
-
-			if (result == null)
-			{
-				logger.LogWarning("GetAdjustmentsByReceiptId called with receiptId: {ReceiptId} not found", receiptId);
-				return NotFound();
-			}
-
-			List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
-			logger.LogDebug("GetAdjustmentsByReceiptId called with receiptId: {ReceiptId} found", receiptId);
-			return Ok(model);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithId, nameof(GetAdjustmentsByReceiptId), receiptId);
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
-	}
-
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single adjustment")]
 	[ProducesResponseType<AdjustmentResponse>(StatusCodes.Status200OK)]
@@ -167,12 +150,12 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<bool>> UpdateAdjustment([FromBody] UpdateAdjustmentRequest model, [FromRoute] Guid receiptId)
+	public async Task<ActionResult<bool>> UpdateAdjustment([FromBody] UpdateAdjustmentRequest model, [FromRoute] Guid id)
 	{
 		try
 		{
 			logger.LogDebug("UpdateAdjustment called");
-			UpdateAdjustmentCommand command = new([mapper.ToDomain(model)], receiptId);
+			UpdateAdjustmentCommand command = new([mapper.ToDomain(model)]);
 			bool result = await mediator.Send(command);
 
 			if (!result)

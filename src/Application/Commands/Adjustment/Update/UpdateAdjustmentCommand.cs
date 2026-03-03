@@ -5,11 +5,10 @@ namespace Application.Commands.Adjustment.Update;
 public record UpdateAdjustmentCommand : ICommand<bool>
 {
 	public IReadOnlyList<Domain.Core.Adjustment> Adjustments { get; }
-	public Guid ReceiptId { get; }
 
 	public const string AdjustmentsCannotBeEmptyExceptionMessage = "Adjustments list cannot be empty.";
 
-	public UpdateAdjustmentCommand(List<Domain.Core.Adjustment> adjustments, Guid receiptId)
+	public UpdateAdjustmentCommand(List<Domain.Core.Adjustment> adjustments)
 	{
 		ArgumentNullException.ThrowIfNull(adjustments);
 
@@ -19,6 +18,5 @@ public record UpdateAdjustmentCommand : ICommand<bool>
 		}
 
 		Adjustments = adjustments.AsReadOnly();
-		ReceiptId = receiptId;
 	}
 }

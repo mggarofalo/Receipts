@@ -148,8 +148,6 @@ function Transactions() {
     enabled: !anyDialogOpen,
     onOpen: (t) => {
       setEditTransaction(t);
-      setEditReceiptId(t.receiptId);
-      setEditAccountId(t.accountId);
     },
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
@@ -279,8 +277,6 @@ function Transactions() {
                           size="sm"
                           onClick={() => {
                             setEditTransaction(txn);
-                            setEditReceiptId(txn.receiptId);
-                            setEditAccountId(txn.accountId);
                           }}
                         >
                           Edit
@@ -316,8 +312,7 @@ function Transactions() {
               createTransaction.mutate(
                 {
                   receiptId: values.receiptId,
-                  accountId: values.accountId,
-                  body: { amount: values.amount, date: values.date },
+                  body: { amount: values.amount, date: values.date, accountId: values.accountId },
                 },
                 { onSuccess: () => setCreateOpen(false) },
               );
@@ -350,12 +345,11 @@ function Transactions() {
               onSubmit={(values) => {
                 updateTransaction.mutate(
                   {
-                    receiptId: values.receiptId,
-                    accountId: values.accountId,
                     body: {
                       id: editTransaction.id,
                       amount: values.amount,
                       date: values.date,
+                      accountId: values.accountId,
                     },
                   },
                   { onSuccess: () => setEditTransaction(null) },

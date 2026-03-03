@@ -44,8 +44,8 @@ describe("useTripByReceiptId", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/trips/by-receipt-id/{receiptId}",
-      { params: { path: { receiptId: "r1" } } },
+      "/api/trips",
+      { params: { query: { receiptId: "r1" } } },
     );
     expect(result.current.data).toEqual(mockTrip);
   });

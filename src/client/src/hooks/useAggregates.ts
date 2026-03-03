@@ -7,8 +7,8 @@ export function useReceiptWithItems(receiptId: string | null) {
     enabled: !!receiptId,
     queryFn: async () => {
       const { data, error } = await client.GET(
-        "/api/receipts-with-items/by-receipt-id/{receiptId}",
-        { params: { path: { receiptId: receiptId! } } },
+        "/api/receipts-with-items",
+        { params: { query: { receiptId: receiptId! } } },
       );
       if (error) throw error;
       return data;
@@ -22,8 +22,8 @@ export function useTransactionAccount(transactionId: string | null) {
     enabled: !!transactionId,
     queryFn: async () => {
       const { data, error } = await client.GET(
-        "/api/transaction-accounts/by-transaction-id/{transactionId}",
-        { params: { path: { transactionId: transactionId! } } },
+        "/api/transaction-accounts",
+        { params: { query: { transactionId: transactionId! } } },
       );
       if (error) throw error;
       return data;
@@ -39,8 +39,8 @@ export function useTransactionAccountsByReceiptId(
     enabled: !!receiptId,
     queryFn: async () => {
       const { data, error } = await client.GET(
-        "/api/transaction-accounts/by-receipt-id/{receiptId}",
-        { params: { path: { receiptId: receiptId! } } },
+        "/api/transaction-accounts",
+        { params: { query: { receiptId: receiptId! } } },
       );
       if (error) throw error;
       return data;

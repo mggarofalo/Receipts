@@ -7,6 +7,7 @@ Local development uses **.NET Aspire** to orchestrate all services — API, Post
 | Tool | Version | Purpose |
 |------|---------|---------|
 | [.NET 10 SDK](https://dot.net) | 10.0+ | Build and run the API |
+| [Aspire CLI](https://aspire.dev/get-started/install-cli/) | Any | Orchestrate local dev stack from CLI |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Any | PostgreSQL container (Aspire manages it) |
 | [Node.js](https://nodejs.org) | 18+ | OpenAPI spec linting and drift detection |
 | [VS Code](https://code.visualstudio.com) | Any | Recommended IDE |
@@ -20,6 +21,9 @@ Local development uses **.NET Aspire** to orchestrate all services — API, Post
 # Clone the repository
 git clone https://github.com/mggarofalo/Receipts.git
 cd Receipts
+
+# Install Aspire CLI (if not already installed)
+dotnet tool install --global Aspire.Cli
 
 # Restore .NET packages and install tools (also configures native Git hooks)
 dotnet restore Receipts.slnx

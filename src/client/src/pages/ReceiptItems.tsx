@@ -179,7 +179,6 @@ function ReceiptItems() {
     enabled: !anyDialogOpen,
     onOpen: (item) => {
       setEditItem(item);
-      setEditReceiptId(item.receiptId);
     },
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
@@ -339,7 +338,6 @@ function ReceiptItems() {
                           size="sm"
                           onClick={() => {
                             setEditItem(item);
-                            setEditReceiptId(item.receiptId);
                           }}
                         >
                           Edit
@@ -419,10 +417,9 @@ function ReceiptItems() {
               isSubmitting={updateItem.isPending}
               onCancel={() => setEditItem(null)}
               onSubmit={(values) => {
-                const { receiptId, ...rest } = values;
+                const { receiptId: _receiptId, ...rest } = values;
                 updateItem.mutate(
                   {
-                    receiptId,
                     body: { id: editItem.id, ...rest },
                   },
                   { onSuccess: () => setEditItem(null) },

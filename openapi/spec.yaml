@@ -576,39 +576,6 @@ paths:
               schema:
                 type: string
 
-  /api/categories/{categoryId}/subcategories:
-    get:
-      operationId: GetSubcategoriesByCategoryId
-      tags: [Subcategories]
-      summary: Get subcategories by category ID
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: categoryId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SubcategoryResponse"
-        "401":
-          description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
-
   # ──────────────────────────────────────────────
   # Subcategories
   # ──────────────────────────────────────────────
@@ -687,6 +654,13 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: OK
@@ -1406,42 +1380,6 @@ paths:
             application/json:
               schema:
                 type: string
-    post:
-      operationId: CreateReceiptItem
-      tags: [ReceiptItems]
-      summary: Create a single receipt item
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Receipt ID to create item for
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateReceiptItemRequest"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReceiptItemResponse"
-        "401":
-          description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateReceiptItem
       tags: [ReceiptItems]
@@ -1456,7 +1394,7 @@ paths:
           schema:
             type: string
             format: uuid
-          description: Receipt ID to update item for
+          description: Receipt item ID
       requestBody:
         required: true
         content:
@@ -1485,6 +1423,13 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - name: receiptId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: OK
@@ -1587,30 +1532,25 @@ paths:
               schema:
                 type: string
 
-  /api/receipt-items/by-receipt-id/{receiptId}:
-    get:
-      operationId: GetReceiptItemsByReceiptId
+  /api/receipt-items/batch:
+    put:
+      operationId: UpdateReceiptItems
       tags: [ReceiptItems]
-      summary: Get receipt items by receipt ID
+      summary: Update receipt items in batch
       security:
         - BearerAuth: []
         - ApiKey: []
-      parameters:
-        - name: receiptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/UpdateReceiptItemRequest"
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ReceiptItemResponse"
+        "204":
+          description: No Content
         "401":
           description: Unauthorized
         "404":
@@ -1622,7 +1562,44 @@ paths:
               schema:
                 type: string
 
-  /api/receipt-items/{id}/batch:
+  /api/receipts/{receiptId}/receipt-items:
+    post:
+      operationId: CreateReceiptItem
+      tags: [ReceiptItems]
+      summary: Create a single receipt item
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReceiptItemRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptItemResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/receipts/{receiptId}/receipt-items/batch:
     post:
       operationId: CreateReceiptItems
       tags: [ReceiptItems]
@@ -1631,13 +1608,12 @@ paths:
         - BearerAuth: []
         - ApiKey: []
       parameters:
-        - name: id
+        - name: receiptId
           in: path
           required: true
           schema:
             type: string
             format: uuid
-          description: Receipt ID to create items for
       requestBody:
         required: true
         content:
@@ -1657,42 +1633,6 @@ paths:
                   $ref: "#/components/schemas/ReceiptItemResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
-    put:
-      operationId: UpdateReceiptItems
-      tags: [ReceiptItems]
-      summary: Update receipt items in batch
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Receipt ID to update items for
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/UpdateReceiptItemRequest"
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "404":
-          description: Not Found
         "500":
           description: Internal Server Error
           content:
@@ -1736,6 +1676,40 @@ paths:
             application/json:
               schema:
                 type: string
+    put:
+      operationId: UpdateTransaction
+      tags: [Transactions]
+      summary: Update a single transaction
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Transaction ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTransactionRequest"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/transactions:
     get:
@@ -1745,6 +1719,13 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - name: receiptId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: OK
@@ -1847,30 +1828,25 @@ paths:
               schema:
                 type: string
 
-  /api/transactions/by-receipt-id/{receiptId}:
-    get:
-      operationId: GetTransactionsByReceiptId
+  /api/transactions/batch:
+    put:
+      operationId: UpdateTransactions
       tags: [Transactions]
-      summary: Get transactions by receipt ID
+      summary: Update transactions in batch
       security:
         - BearerAuth: []
         - ApiKey: []
-      parameters:
-        - name: receiptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/UpdateTransactionRequest"
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TransactionResponse"
+        "204":
+          description: No Content
         "401":
           description: Unauthorized
         "404":
@@ -1882,7 +1858,7 @@ paths:
               schema:
                 type: string
 
-  /api/transactions/{receiptId}/{accountId}:
+  /api/receipts/{receiptId}/transactions:
     post:
       operationId: CreateTransaction
       tags: [Transactions]
@@ -1892,12 +1868,6 @@ paths:
         - ApiKey: []
       parameters:
         - name: receiptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: accountId
           in: path
           required: true
           schema:
@@ -1924,47 +1894,8 @@ paths:
             application/json:
               schema:
                 type: string
-    put:
-      operationId: UpdateTransaction
-      tags: [Transactions]
-      summary: Update a single transaction
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: receiptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateTransactionRequest"
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
-  /api/transactions/{receiptId}/{accountId}/batch:
+  /api/receipts/{receiptId}/transactions/batch:
     post:
       operationId: CreateTransactions
       tags: [Transactions]
@@ -1974,12 +1905,6 @@ paths:
         - ApiKey: []
       parameters:
         - name: receiptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: accountId
           in: path
           required: true
           schema:
@@ -2004,47 +1929,6 @@ paths:
                   $ref: "#/components/schemas/TransactionResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
-    put:
-      operationId: UpdateTransactions
-      tags: [Transactions]
-      summary: Update transactions in batch
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: receiptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: accountId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/UpdateTransactionRequest"
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "404":
-          description: Not Found
         "500":
           description: Internal Server Error
           content:
@@ -2088,6 +1972,40 @@ paths:
             application/json:
               schema:
                 type: string
+    put:
+      operationId: UpdateAdjustment
+      tags: [Adjustments]
+      summary: Update a single adjustment
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Adjustment ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAdjustmentRequest"
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/adjustments:
     get:
@@ -2097,6 +2015,13 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - name: receiptId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: OK
@@ -2199,42 +2124,7 @@ paths:
               schema:
                 type: string
 
-  /api/adjustments/by-receipt-id/{receiptId}:
-    get:
-      operationId: GetAdjustmentsByReceiptId
-      tags: [Adjustments]
-      summary: Get adjustments by receipt ID
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: receiptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdjustmentResponse"
-        "401":
-          description: Unauthorized
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
-
-  /api/adjustments/{receiptId}:
+  /api/receipts/{receiptId}/adjustments:
     post:
       operationId: CreateAdjustment
       tags: [Adjustments]
@@ -2270,39 +2160,6 @@ paths:
             application/json:
               schema:
                 type: string
-    put:
-      operationId: UpdateAdjustment
-      tags: [Adjustments]
-      summary: Update a single adjustment
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: receiptId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateAdjustmentRequest"
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Trash
@@ -2332,7 +2189,7 @@ paths:
   # Aggregates (read-only)
   # ──────────────────────────────────────────────
 
-  /api/receipts-with-items/by-receipt-id/{receiptId}:
+  /api/receipts-with-items:
     get:
       operationId: GetReceiptWithItemsByReceiptId
       tags: [ReceiptWithItems]
@@ -2342,7 +2199,7 @@ paths:
         - ApiKey: []
       parameters:
         - name: receiptId
-          in: path
+          in: query
           required: true
           schema:
             type: string
@@ -2365,51 +2222,24 @@ paths:
               schema:
                 type: string
 
-  /api/transaction-accounts/by-transaction-id/{transactionId}:
+  /api/transaction-accounts:
     get:
-      operationId: GetTransactionAccountByTransactionId
+      operationId: GetTransactionAccounts
       tags: [TransactionAccount]
-      summary: Get transaction account by transaction ID
+      summary: Get transaction accounts by transaction ID or receipt ID
       security:
         - BearerAuth: []
         - ApiKey: []
       parameters:
         - name: transactionId
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
             format: uuid
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TransactionAccountResponse"
-        "401":
-          description: Unauthorized
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
-
-  /api/transaction-accounts/by-receipt-id/{receiptId}:
-    get:
-      operationId: GetTransactionAccountsByReceiptId
-      tags: [TransactionAccount]
-      summary: Get transaction accounts by receipt ID
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
         - name: receiptId
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
             format: uuid
@@ -2422,6 +2252,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionAccountResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
         "401":
           description: Unauthorized
         "404":
@@ -2433,7 +2269,7 @@ paths:
               schema:
                 type: string
 
-  /api/trips/by-receipt-id/{receiptId}:
+  /api/trips:
     get:
       operationId: GetTripByReceiptId
       tags: [Trip]
@@ -2443,7 +2279,7 @@ paths:
         - ApiKey: []
       parameters:
         - name: receiptId
-          in: path
+          in: query
           required: true
           schema:
             type: string
@@ -2470,25 +2306,36 @@ paths:
   # Audit
   # ──────────────────────────────────────────────
 
-  /api/audit/entity/{entityType}/{entityId}:
+  /api/audit:
     get:
-      operationId: GetEntityAuditHistory
+      operationId: GetAuditLogs
       tags: [Audit]
-      summary: Get audit history for a specific entity
+      summary: Get audit logs filtered by entity, user, or API key
       security:
         - BearerAuth: []
         - ApiKey: []
       parameters:
         - name: entityType
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
         - name: entityId
-          in: path
-          required: true
+          in: query
+          required: false
           schema:
             type: string
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: apiKeyId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: OK
@@ -2498,6 +2345,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AuditLogResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
         "401":
           description: Unauthorized
         "500":
@@ -2522,71 +2375,6 @@ paths:
           schema:
             type: integer
             default: 50
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuditLogResponse"
-        "401":
-          description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
-
-  /api/audit/user/{userId}:
-    get:
-      operationId: GetAuditLogsByUser
-      tags: [Audit]
-      summary: Get audit logs by user
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuditLogResponse"
-        "401":
-          description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
-
-  /api/audit/apikey/{apiKeyId}:
-    get:
-      operationId: GetAuditLogsByApiKey
-      tags: [Audit]
-      summary: Get audit logs by API key
-      security:
-        - BearerAuth: []
-        - ApiKey: []
-      parameters:
-        - name: apiKeyId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
       responses:
         "200":
           description: OK
@@ -3615,7 +3403,7 @@ components:
 
     CreateTransactionRequest:
       type: object
-      required: [amount, date]
+      required: [amount, date, accountId]
       properties:
         amount:
           type: number
@@ -3623,10 +3411,13 @@ components:
         date:
           type: string
           format: date
+        accountId:
+          type: string
+          format: uuid
 
     UpdateTransactionRequest:
       type: object
-      required: [id, amount, date]
+      required: [id, amount, date, accountId]
       properties:
         id:
           type: string
@@ -3637,6 +3428,9 @@ components:
         date:
           type: string
           format: date
+        accountId:
+          type: string
+          format: uuid
 
     TransactionResponse:
       type: object

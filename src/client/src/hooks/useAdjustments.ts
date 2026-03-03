@@ -32,10 +32,9 @@ export function useAdjustmentsByReceiptId(receiptId: string | null) {
     queryKey: ["adjustments", "by-receipt", receiptId],
     enabled: !!receiptId,
     queryFn: async () => {
-      const { data, error } = await client.GET(
-        "/api/adjustments/by-receipt-id/{receiptId}",
-        { params: { path: { receiptId: receiptId! } } },
-      );
+      const { data, error } = await client.GET("/api/adjustments", {
+        params: { query: { receiptId: receiptId! } },
+      });
       if (error) throw error;
       return data;
     },
@@ -57,7 +56,7 @@ export function useCreateAdjustment() {
       };
     }) => {
       const { data, error } = await client.POST(
-        "/api/adjustments/{receiptId}",
+        "/api/receipts/{receiptId}/adjustments",
         { params: { path: { receiptId } }, body },
       );
       if (error) throw error;
@@ -79,10 +78,8 @@ export function useUpdateAdjustment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
-      receiptId,
       body,
     }: {
-      receiptId: string;
       body: {
         id: string;
         type: string;
@@ -90,8 +87,8 @@ export function useUpdateAdjustment() {
         description?: string | null;
       };
     }) => {
-      const { error } = await client.PUT("/api/adjustments/{receiptId}", {
-        params: { path: { receiptId } },
+      const { error } = await client.PUT("/api/adjustments/{id}", {
+        params: { path: { id: body.id } },
         body,
       });
       if (error) throw error;

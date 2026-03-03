@@ -167,7 +167,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAdjustmentsByReceiptId_ReturnsOkResult_WhenReceiptExists()
+	public async Task GetAllAdjustments_WithReceiptId_ReturnsOkResult_WhenReceiptExists()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -180,7 +180,7 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(adjustments);
 
 		// Act
-		ActionResult<List<AdjustmentResponse>?> result = await _controller.GetAdjustmentsByReceiptId(receiptId);
+		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments(receiptId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -189,7 +189,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAdjustmentsByReceiptId_ReturnsNotFound_WhenReceiptDoesNotExist()
+	public async Task GetAllAdjustments_WithReceiptId_ReturnsNotFound_WhenReceiptDoesNotExist()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -200,14 +200,14 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync((List<Adjustment>?)null);
 
 		// Act
-		ActionResult<List<AdjustmentResponse>?> result = await _controller.GetAdjustmentsByReceiptId(receiptId);
+		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments(receiptId);
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
 	}
 
 	[Fact]
-	public async Task GetAdjustmentsByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllAdjustments_WithReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -218,7 +218,7 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<AdjustmentResponse>?> result = await _controller.GetAdjustmentsByReceiptId(receiptId);
+		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments(receiptId);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -274,16 +274,16 @@ public class AdjustmentsControllerTests
 	public async Task UpdateAdjustment_ReturnsNoContent_WhenUpdateSucceeds()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
+		Guid id = Guid.NewGuid();
 		UpdateAdjustmentRequest controllerInput = AdjustmentDtoGenerator.GenerateUpdateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateAdjustmentCommand>(c => c.Adjustments.Count == 1 && c.ReceiptId == receiptId),
+			It.Is<UpdateAdjustmentCommand>(c => c.Adjustments.Count == 1),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, receiptId);
+		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, id);
 
 		// Assert
 		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
@@ -294,16 +294,16 @@ public class AdjustmentsControllerTests
 	public async Task UpdateAdjustment_ReturnsNotFound_WhenUpdateFails()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
+		Guid id = Guid.NewGuid();
 		UpdateAdjustmentRequest controllerInput = AdjustmentDtoGenerator.GenerateUpdateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateAdjustmentCommand>(c => c.Adjustments.Count == 1 && c.ReceiptId == receiptId),
+			It.Is<UpdateAdjustmentCommand>(c => c.Adjustments.Count == 1),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, receiptId);
+		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, id);
 
 		// Assert
 		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
@@ -314,7 +314,7 @@ public class AdjustmentsControllerTests
 	public async Task UpdateAdjustment_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
+		Guid id = Guid.NewGuid();
 		UpdateAdjustmentRequest controllerInput = AdjustmentDtoGenerator.GenerateUpdateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
@@ -323,7 +323,7 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, receiptId);
+		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, id);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);

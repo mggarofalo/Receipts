@@ -16,19 +16,42 @@ public class AuditController(IAuditService auditService, ILogger<AuditController
 {
 	public const string MessageWithoutId = "Error occurred in {Method}";
 
-	[HttpGet("entity/{entityType}/{entityId}")]
+	[HttpGet("")]
 	[ProducesResponseType<List<AuditLogResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<IActionResult> GetEntityHistory(string entityType, string entityId, CancellationToken cancellationToken)
+	public async Task<IActionResult> GetAuditLogs(
+		[FromQuery] string? entityType = null,
+		[FromQuery] string? entityId = null,
+		[FromQuery] string? userId = null,
+		[FromQuery] Guid? apiKeyId = null,
+		CancellationToken cancellationToken = default)
 	{
 		try
 		{
-			List<AuditLogDto> logs = await auditService.GetByEntityAsync(entityType, entityId, cancellationToken);
-			return Ok(logs);
+			if (entityType != null && entityId != null)
+			{
+				List<AuditLogDto> entityLogs = await auditService.GetByEntityAsync(entityType, entityId, cancellationToken);
+				return Ok(entityLogs);
+			}
+
+			if (userId != null)
+			{
+				List<AuditLogDto> userLogs = await auditService.GetByUserAsync(userId, cancellationToken);
+				return Ok(userLogs);
+			}
+
+			if (apiKeyId.HasValue)
+			{
+				List<AuditLogDto> apiKeyLogs = await auditService.GetByApiKeyAsync(apiKeyId.Value, cancellationToken);
+				return Ok(apiKeyLogs);
+			}
+
+			return BadRequest("At least one filter parameter (entityType+entityId, userId, or apiKeyId) is required.");
 		}
 		catch (Exception ex)
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetEntityHistory));
+			logger.LogError(ex, MessageWithoutId, nameof(GetAuditLogs));
 			return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
 		}
 	}
@@ -46,40 +69,6 @@ public class AuditController(IAuditService auditService, ILogger<AuditController
 		catch (Exception ex)
 		{
 			logger.LogError(ex, MessageWithoutId, nameof(GetRecent));
-			return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-		}
-	}
-
-	[HttpGet("user/{userId}")]
-	[ProducesResponseType<List<AuditLogResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<IActionResult> GetByUser(string userId, CancellationToken cancellationToken)
-	{
-		try
-		{
-			List<AuditLogDto> logs = await auditService.GetByUserAsync(userId, cancellationToken);
-			return Ok(logs);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetByUser));
-			return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-		}
-	}
-
-	[HttpGet("apikey/{apiKeyId}")]
-	[ProducesResponseType<List<AuditLogResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<IActionResult> GetByApiKey(Guid apiKeyId, CancellationToken cancellationToken)
-	{
-		try
-		{
-			List<AuditLogDto> logs = await auditService.GetByApiKeyAsync(apiKeyId, cancellationToken);
-			return Ok(logs);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetByApiKey));
 			return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
 		}
 	}

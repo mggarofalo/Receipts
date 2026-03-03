@@ -48,8 +48,8 @@ describe("useReceiptWithItems", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/receipts-with-items/by-receipt-id/{receiptId}",
-      { params: { path: { receiptId: "r1" } } },
+      "/api/receipts-with-items",
+      { params: { query: { receiptId: "r1" } } },
     );
     expect(result.current.data).toEqual(mockData);
   });
@@ -76,8 +76,8 @@ describe("useTransactionAccount", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/transaction-accounts/by-transaction-id/{transactionId}",
-      { params: { path: { transactionId: "t1" } } },
+      "/api/transaction-accounts",
+      { params: { query: { transactionId: "t1" } } },
     );
     expect(result.current.data).toEqual(mockData);
   });
@@ -105,8 +105,8 @@ describe("useTransactionAccountsByReceiptId", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith(
-      "/api/transaction-accounts/by-receipt-id/{receiptId}",
-      { params: { path: { receiptId: "r1" } } },
+      "/api/transaction-accounts",
+      { params: { query: { receiptId: "r1" } } },
     );
     expect(result.current.data).toEqual(mockData);
   });

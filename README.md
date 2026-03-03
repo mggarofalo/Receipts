@@ -78,6 +78,7 @@ tests/
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Aspire CLI](https://aspire.dev/get-started/install-cli/) — `dotnet tool install --global Aspire.Cli`
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for local dev — Aspire provisions PostgreSQL as a container)
 - [Node.js 18+](https://nodejs.org) (for OpenAPI tooling and React client)
 
@@ -90,9 +91,10 @@ See **[docs/development.md](docs/development.md)** for the full local developmen
 ```bash
 git clone https://github.com/mggarofalo/Receipts.git
 cd Receipts
+dotnet tool install --global Aspire.Cli  # if not already installed
 dotnet restore Receipts.slnx
 npm install
-# Then press F5 in VS Code
+# Then press F5 in VS Code, or: aspire run
 ```
 
 Aspire orchestrates the entire stack (API + PostgreSQL + React dev server + Dashboard) automatically. No manual database setup needed.

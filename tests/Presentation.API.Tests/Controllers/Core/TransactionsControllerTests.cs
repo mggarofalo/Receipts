@@ -130,7 +130,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task GetTransactionsByReceiptId_ReturnsOkResult_WithTransactions()
+	public async Task GetAllTransactions_WithReceiptId_ReturnsOkResult_WithTransactions()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -143,7 +143,7 @@ public class TransactionsControllerTests
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<List<TransactionResponse>?> result = await _controller.GetTransactionsByReceiptId(receiptId);
+		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(receiptId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -153,7 +153,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task GetTransactionsByReceiptId_ReturnsOkResult_WithEmptyList_WhenReceiptFoundButNoItems()
+	public async Task GetAllTransactions_WithReceiptId_ReturnsOkResult_WithEmptyList_WhenReceiptFoundButNoItems()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -166,7 +166,7 @@ public class TransactionsControllerTests
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<List<TransactionResponse>?> result = await _controller.GetTransactionsByReceiptId(receiptId);
+		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(receiptId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -176,7 +176,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task GetTransactionsByReceiptId_ReturnsNotFound_WhenReceiptIdNotFound()
+	public async Task GetAllTransactions_WithReceiptId_ReturnsNotFound_WhenReceiptIdNotFound()
 	{
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
@@ -187,14 +187,14 @@ public class TransactionsControllerTests
 			.ReturnsAsync((List<Transaction>?)null);
 
 		// Act
-		ActionResult<List<TransactionResponse>?> result = await _controller.GetTransactionsByReceiptId(missingReceiptId);
+		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(missingReceiptId);
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
 	}
 
 	[Fact]
-	public async Task GetTransactionsByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllTransactions_WithReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -204,7 +204,7 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<TransactionResponse>?> result = await _controller.GetTransactionsByReceiptId(receiptId);
+		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(receiptId);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -216,19 +216,17 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		Transaction transaction = TransactionGenerator.Generate();
 		TransactionResponse expectedReturn = _mapper.ToResponse(transaction);
+		CreateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateCreateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId && c.AccountId == controllerInput.AccountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync([transaction]);
 
-		CreateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateCreateRequest();
-
 		// Act
-		ActionResult<TransactionResponse> result = await _controller.CreateTransaction(controllerInput, receiptId, accountId);
+		ActionResult<TransactionResponse> result = await _controller.CreateTransaction(controllerInput, receiptId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -242,16 +240,15 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		CreateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateCreateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<TransactionResponse> result = await _controller.CreateTransaction(controllerInput, receiptId, accountId);
+		ActionResult<TransactionResponse> result = await _controller.CreateTransaction(controllerInput, receiptId);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -264,18 +261,17 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		List<CreateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateCreateRequestList(2);
 		List<Transaction> mediatorReturn = TransactionGenerator.GenerateList(2);
 		List<TransactionResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == controllerInput[0].AccountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId, accountId);
+		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -289,16 +285,15 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		List<CreateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateCreateRequestList(2);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId, accountId);
+		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -310,17 +305,16 @@ public class TransactionsControllerTests
 	public async Task UpdateTransaction_ReturnsNoContent_WhenUpdateSucceeds()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
+		Guid id = Guid.NewGuid();
 		UpdateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateUpdateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1 && c.AccountId == controllerInput.AccountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, receiptId, accountId);
+		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, id);
 
 		// Assert
 		Assert.IsType<NoContentResult>(result.Result);
@@ -330,17 +324,16 @@ public class TransactionsControllerTests
 	public async Task UpdateTransaction_ReturnsNotFound_WhenUpdateFails()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
+		Guid id = Guid.NewGuid();
 		UpdateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateUpdateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1 && c.AccountId == controllerInput.AccountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, receiptId, accountId);
+		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, id);
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
@@ -350,17 +343,16 @@ public class TransactionsControllerTests
 	public async Task UpdateTransaction_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
+		Guid id = Guid.NewGuid();
 		UpdateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateUpdateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, receiptId, accountId);
+		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, id);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -372,17 +364,15 @@ public class TransactionsControllerTests
 	public async Task UpdateTransactions_ReturnsNoContent_WhenUpdateSucceeds()
 	{
 		// Arrange
-		Guid accountId = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
 		List<UpdateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateUpdateRequestList(2);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.AccountId == controllerInput[0].AccountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput, receiptId, accountId);
+		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
 
 		// Assert
 		Assert.IsType<NoContentResult>(result.Result);
@@ -392,17 +382,15 @@ public class TransactionsControllerTests
 	public async Task UpdateTransactions_ReturnsNotFound_WhenUpdateFails()
 	{
 		// Arrange
-		Guid accountId = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
 		List<UpdateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateUpdateRequestList(2);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.AccountId == controllerInput[0].AccountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput, receiptId, accountId);
+		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
 
 		// Assert
 		Assert.IsType<NotFoundResult>(result.Result);
@@ -412,17 +400,15 @@ public class TransactionsControllerTests
 	public async Task UpdateTransactions_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		Guid accountId = Guid.NewGuid();
-		Guid receiptId = Guid.NewGuid();
 		List<UpdateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateUpdateRequestList(2);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == accountId),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput, receiptId, accountId);
+		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
