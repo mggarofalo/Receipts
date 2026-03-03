@@ -15,7 +15,7 @@ public class GetSubcategoriesByCategoryIdQueryHandlerTests
 		Guid categoryId = Guid.NewGuid();
 
 		Mock<ISubcategoryService> mockService = new();
-		mockService.Setup(r => r.GetByCategoryIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetSubcategoriesByCategoryIdQueryHandler handler = new(mockService.Object);
 		GetSubcategoriesByCategoryIdQuery query = new(categoryId);
@@ -31,7 +31,7 @@ public class GetSubcategoriesByCategoryIdQueryHandlerTests
 		Guid categoryId = Guid.NewGuid();
 
 		Mock<ISubcategoryService> mockService = new();
-		mockService.Setup(r => r.GetByCategoryIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
 		GetSubcategoriesByCategoryIdQueryHandler handler = new(mockService.Object);
 		GetSubcategoriesByCategoryIdQuery query = new(categoryId);

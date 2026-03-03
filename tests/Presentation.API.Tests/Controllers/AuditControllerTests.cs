@@ -47,11 +47,14 @@ public class AuditControllerTests
 	public async Task GetAuditLogs_WithEntityParams_NoLogs_ReturnsOk_EmptyList()
 	{
 		// Arrange
-		_auditServiceMock.Setup(s => s.GetByEntityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+		string entityType = "Account";
+		string entityId = Guid.NewGuid().ToString();
+
+		_auditServiceMock.Setup(s => s.GetByEntityAsync(entityType, entityId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync([]);
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs("Account", Guid.NewGuid().ToString(), null, null, CancellationToken.None);
+		IActionResult result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
@@ -131,11 +134,14 @@ public class AuditControllerTests
 	public async Task GetAuditLogs_WithEntityParams_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		_auditServiceMock.Setup(s => s.GetByEntityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+		string entityType = "Account";
+		string entityId = Guid.NewGuid().ToString();
+
+		_auditServiceMock.Setup(s => s.GetByEntityAsync(entityType, entityId, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs("Account", Guid.NewGuid().ToString(), null, null, CancellationToken.None);
+		IActionResult result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
@@ -146,7 +152,7 @@ public class AuditControllerTests
 	public async Task GetRecent_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		_auditServiceMock.Setup(s => s.GetRecentAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+		_auditServiceMock.Setup(s => s.GetRecentAsync(50, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
@@ -161,11 +167,12 @@ public class AuditControllerTests
 	public async Task GetAuditLogs_WithUserId_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		_auditServiceMock.Setup(s => s.GetByUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+		string userId = "test-user";
+		_auditServiceMock.Setup(s => s.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(null, null, "test-user", null, CancellationToken.None);
+		IActionResult result = await _controller.GetAuditLogs(null, null, userId, null, CancellationToken.None);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
@@ -176,11 +183,12 @@ public class AuditControllerTests
 	public async Task GetAuditLogs_WithApiKeyId_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		_auditServiceMock.Setup(s => s.GetByApiKeyAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+		Guid apiKeyId = Guid.NewGuid();
+		_auditServiceMock.Setup(s => s.GetByApiKeyAsync(apiKeyId, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(null, null, null, Guid.NewGuid(), CancellationToken.None);
+		IActionResult result = await _controller.GetAuditLogs(null, null, null, apiKeyId, CancellationToken.None);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);

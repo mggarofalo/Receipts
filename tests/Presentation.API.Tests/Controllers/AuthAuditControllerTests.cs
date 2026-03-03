@@ -108,9 +108,10 @@ public class AuthAuditControllerTests
 	public async Task GetMyAuditLog_ReturnsInternalServerError_WhenExceptionThrown()
 	{
 		// Arrange
-		SetupUserClaims("user-123");
+		string userId = "user-123";
+		SetupUserClaims(userId);
 		_authAuditServiceMock
-			.Setup(s => s.GetMyAuditLogAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+			.Setup(s => s.GetMyAuditLogAsync(userId, 50, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
@@ -126,7 +127,7 @@ public class AuthAuditControllerTests
 	{
 		// Arrange
 		_authAuditServiceMock
-			.Setup(s => s.GetRecentAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+			.Setup(s => s.GetRecentAsync(50, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
@@ -142,7 +143,7 @@ public class AuthAuditControllerTests
 	{
 		// Arrange
 		_authAuditServiceMock
-			.Setup(s => s.GetFailedAttemptsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+			.Setup(s => s.GetFailedAttemptsAsync(50, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act

@@ -44,7 +44,7 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
 		Mock<IReceiptService> mockReceiptService = new();
-		mockReceiptService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Receipt?)null);
+		mockReceiptService.Setup(r => r.GetByIdAsync(missingReceiptId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Receipt?)null);
 
 		Mock<IReceiptItemService> mockReceiptItemService = new();
 		Mock<IAdjustmentService> mockAdjustmentService = new();

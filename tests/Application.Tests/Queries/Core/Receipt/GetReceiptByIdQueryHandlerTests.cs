@@ -14,7 +14,7 @@ public class GetReceiptByIdQueryHandlerTests
 		Domain.Core.Receipt expected = ReceiptGenerator.Generate();
 
 		Mock<IReceiptService> mockService = new();
-		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByIdAsync(expected.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetReceiptByIdQueryHandler handler = new(mockService.Object);
 		GetReceiptByIdQuery query = new(expected.Id);
@@ -27,11 +27,12 @@ public class GetReceiptByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnNull_WhenReceiptDoesNotExist()
 	{
+		Guid missingId = Guid.NewGuid();
 		Mock<IReceiptService> mockService = new();
-		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Receipt?)null);
+		mockService.Setup(r => r.GetByIdAsync(missingId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Receipt?)null);
 
 		GetReceiptByIdQueryHandler handler = new(mockService.Object);
-		GetReceiptByIdQuery query = new(Guid.NewGuid());
+		GetReceiptByIdQuery query = new(missingId);
 		Domain.Core.Receipt? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);

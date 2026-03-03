@@ -359,7 +359,7 @@ public class AccountsControllerTests
 		List<Guid> ids = [AccountGenerator.Generate().Id];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<DeleteAccountCommand>(),
+			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
@@ -378,7 +378,7 @@ public class AccountsControllerTests
 		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<DeleteAccountCommand>(),
+			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
@@ -397,7 +397,7 @@ public class AccountsControllerTests
 		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<DeleteAccountCommand>(),
+			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 

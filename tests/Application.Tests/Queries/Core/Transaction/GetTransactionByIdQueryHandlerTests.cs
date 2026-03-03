@@ -14,7 +14,7 @@ public class GetTransactionByIdQueryHandlerTests
 		Domain.Core.Transaction expected = TransactionGenerator.Generate();
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByIdAsync(expected.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetTransactionByIdQueryHandler handler = new(mockService.Object);
 		GetTransactionByIdQuery query = new(expected.Id);
@@ -27,11 +27,12 @@ public class GetTransactionByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnNull_WhenTransactionDoesNotExist()
 	{
+		Guid missingId = Guid.NewGuid();
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Transaction?)null);
+		mockService.Setup(r => r.GetByIdAsync(missingId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Transaction?)null);
 
 		GetTransactionByIdQueryHandler handler = new(mockService.Object);
-		GetTransactionByIdQuery query = new(Guid.NewGuid());
+		GetTransactionByIdQuery query = new(missingId);
 		Domain.Core.Transaction? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);

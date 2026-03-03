@@ -14,7 +14,7 @@ public class GetCategoryByIdQueryHandlerTests
 		Domain.Core.Category expected = CategoryGenerator.Generate();
 
 		Mock<ICategoryService> mockRService = new();
-		mockRService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockRService.Setup(r => r.GetByIdAsync(expected.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetCategoryByIdQueryHandler handler = new(mockRService.Object);
 		GetCategoryByIdQuery query = new(expected.Id);
@@ -27,11 +27,12 @@ public class GetCategoryByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnNull_WhenCategoryDoesNotExist()
 	{
+		Guid missingId = Guid.NewGuid();
 		Mock<ICategoryService> mockRService = new();
-		mockRService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Category?)null);
+		mockRService.Setup(r => r.GetByIdAsync(missingId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Category?)null);
 
 		GetCategoryByIdQueryHandler handler = new(mockRService.Object);
-		GetCategoryByIdQuery query = new(Guid.NewGuid());
+		GetCategoryByIdQuery query = new(missingId);
 		Domain.Core.Category? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);

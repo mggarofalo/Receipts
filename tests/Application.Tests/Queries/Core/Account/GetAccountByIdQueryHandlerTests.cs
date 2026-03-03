@@ -14,7 +14,7 @@ public class GetAccountByIdQueryHandlerTests
 		Domain.Core.Account expected = AccountGenerator.Generate();
 
 		Mock<IAccountService> mockRService = new();
-		mockRService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockRService.Setup(r => r.GetByIdAsync(expected.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetAccountByIdQueryHandler handler = new(mockRService.Object);
 		GetAccountByIdQuery query = new(expected.Id);
@@ -27,11 +27,12 @@ public class GetAccountByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnNull_WhenAccountDoesNotExist()
 	{
+		Guid missingId = Guid.NewGuid();
 		Mock<IAccountService> mockRService = new();
-		mockRService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
+		mockRService.Setup(r => r.GetByIdAsync(missingId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 
 		GetAccountByIdQueryHandler handler = new(mockRService.Object);
-		GetAccountByIdQuery query = new(Guid.NewGuid());
+		GetAccountByIdQuery query = new(missingId);
 		Domain.Core.Account? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);

@@ -14,7 +14,7 @@ public class GetItemTemplateByIdQueryHandlerTests
 		Domain.Core.ItemTemplate expected = ItemTemplateGenerator.Generate();
 
 		Mock<IItemTemplateService> mockService = new();
-		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByIdAsync(expected.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		GetItemTemplateByIdQueryHandler handler = new(mockService.Object);
 		GetItemTemplateByIdQuery query = new(expected.Id);
@@ -27,11 +27,12 @@ public class GetItemTemplateByIdQueryHandlerTests
 	[Fact]
 	public async Task Handle_ShouldReturnNull_WhenItemTemplateDoesNotExist()
 	{
+		Guid missingId = Guid.NewGuid();
 		Mock<IItemTemplateService> mockService = new();
-		mockService.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.ItemTemplate?)null);
+		mockService.Setup(r => r.GetByIdAsync(missingId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.ItemTemplate?)null);
 
 		GetItemTemplateByIdQueryHandler handler = new(mockService.Object);
-		GetItemTemplateByIdQuery query = new(Guid.NewGuid());
+		GetItemTemplateByIdQuery query = new(missingId);
 		Domain.Core.ItemTemplate? result = await handler.Handle(query, CancellationToken.None);
 
 		Assert.Null(result);
