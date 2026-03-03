@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 
 export interface UseListKeyboardNavOptions<T> {
@@ -26,15 +26,13 @@ export function useListKeyboardNav<T>({
 }: UseListKeyboardNavOptions<T>) {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const tableRef = useRef<HTMLDivElement>(null);
-  const prevItemsLengthRef = useRef(items.length);
+  const [prevItemsLength, setPrevItemsLength] = useState(items.length);
 
-  // Reset focus when items change
-  useEffect(() => {
-    if (prevItemsLengthRef.current !== items.length) {
-      prevItemsLengthRef.current = items.length;
-      setFocusedIndex(-1);
-    }
-  }, [items.length]);
+  // Reset focus when items change (adjusting state when a prop changes)
+  if (prevItemsLength !== items.length) {
+    setPrevItemsLength(items.length);
+    setFocusedIndex(-1);
+  }
 
   const scrollToRow = useCallback((index: number) => {
     const row = tableRef.current?.querySelectorAll("tbody tr")[index];

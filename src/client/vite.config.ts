@@ -20,12 +20,22 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "cobertura", "html"],
       reportsDirectory: "./coverage",
+      include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/generated/**",
         "**/*.d.ts",
+        "**/*.test.{ts,tsx}",
         "src/test/**",
         "src/main.tsx",
+        "src/components/ui/!(combobox|currency-input).{ts,tsx}",
+        "src/lib/api-types.ts",
       ],
+      thresholds: {
+        statements: 75,
+        branches: 65,
+        functions: 70,
+        lines: 78,
+      },
     },
   },
   server: {

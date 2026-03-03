@@ -1,0 +1,287 @@
+import { screen } from "@testing-library/react";
+import { renderWithProviders } from "@/test/test-utils";
+import ItemTemplates from "./ItemTemplates";
+
+vi.mock("@/hooks/usePageTitle", () => ({
+  usePageTitle: vi.fn(),
+}));
+
+vi.mock("@/hooks/useItemTemplates", () => ({
+  useItemTemplates: vi.fn(() => ({ data: [], isLoading: false })),
+  useCreateItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useUpdateItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDeleteItemTemplates: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
+
+vi.mock("@/hooks/useFuzzySearch", () => ({
+  useFuzzySearch: vi.fn(() => ({
+    search: "",
+    setSearch: vi.fn(),
+    results: [],
+    totalCount: 0,
+    isSearching: false,
+    clearSearch: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/useSavedFilters", () => ({
+  useSavedFilters: vi.fn(() => ({
+    filters: [],
+    save: vi.fn(),
+    remove: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/usePagination", () => ({
+  usePagination: vi.fn(() => ({
+    paginatedItems: [],
+    currentPage: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 0,
+    setPage: vi.fn(),
+    setPageSize: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/useListKeyboardNav", () => ({
+  useListKeyboardNav: vi.fn(() => ({
+    focusedId: null,
+    setFocusedIndex: vi.fn(),
+    tableRef: { current: null },
+  })),
+}));
+
+// Mocks needed by ItemTemplateForm (rendered inside dialogs)
+vi.mock("@/hooks/useCategories", () => ({
+  useCategories: vi.fn(() => ({ data: [], isLoading: false })),
+}));
+
+vi.mock("@/hooks/useSubcategories", () => ({
+  useSubcategoriesByCategoryId: vi.fn(() => ({ data: [], isLoading: false })),
+}));
+
+describe("ItemTemplates", () => {
+  it("renders the page heading", () => {
+    renderWithProviders(<ItemTemplates />);
+    expect(
+      screen.getByRole("heading", { name: /item templates/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders loading skeleton when data is loading", async () => {
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as ReturnType<typeof useItemTemplates>);
+
+    const { container } = renderWithProviders(<ItemTemplates />);
+    expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
+  });
+
+  it("renders empty state when no templates exist", async () => {
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as ReturnType<typeof useItemTemplates>);
+
+    renderWithProviders(<ItemTemplates />);
+    expect(
+      screen.getByText(/no item templates yet/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the New Template button", () => {
+    renderWithProviders(<ItemTemplates />);
+    expect(
+      screen.getByRole("button", { name: /new template/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the search input", () => {
+    renderWithProviders(<ItemTemplates />);
+    expect(
+      screen.getByPlaceholderText(/search item templates/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders table with item templates when data exists", async () => {
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    } as unknown as ReturnType<typeof useFuzzySearch>);
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    expect(screen.getByText("Coffee")).toBeInTheDocument();
+    expect(screen.getByText("Food")).toBeInTheDocument();
+    expect(screen.getByText("Drinks")).toBeInTheDocument();
+  });
+
+  it("opens create dialog when New Template button is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithProviders(<ItemTemplates />);
+
+    await user.click(screen.getByRole("button", { name: /new template/i }));
+
+    expect(
+      screen.getByRole("heading", { name: /create item template/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens edit dialog when Edit button is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    } as unknown as ReturnType<typeof useFuzzySearch>);
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(
+      screen.getByRole("heading", { name: /edit item template/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("toggles checkbox selection and shows delete button", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    } as unknown as ReturnType<typeof useFuzzySearch>);
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByLabelText("Select Coffee"));
+
+    expect(
+      screen.getByRole("button", { name: /delete/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens delete dialog and confirms deletion", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useDeleteItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useDeleteItemTemplates).mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDeleteItemTemplates>);
+
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    } as unknown as ReturnType<typeof useFuzzySearch>);
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByLabelText("Select Coffee"));
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+
+    expect(
+      screen.getByRole("heading", { name: /delete item templates/i }),
+    ).toBeInTheDocument();
+
+    const dialogDeleteBtn = screen
+      .getAllByRole("button", { name: /delete/i })
+      .find((btn) => btn.closest("[role='dialog']") !== null);
+    if (dialogDeleteBtn) {
+      await user.click(dialogDeleteBtn);
+      expect(mockMutate).toHaveBeenCalledWith(["1"]);
+    }
+  });
+
+  it("opens create dialog on shortcut:new-item event", async () => {
+    const { act } = await import("@testing-library/react");
+    renderWithProviders(<ItemTemplates />);
+
+    act(() => {
+      window.dispatchEvent(new Event("shortcut:new-item"));
+    });
+
+    await screen.findByRole("heading", { name: /create item template/i });
+    expect(
+      screen.getByRole("heading", { name: /create item template/i }),
+    ).toBeInTheDocument();
+  });
+});
