@@ -284,6 +284,84 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
+	public async Task CreateTransactions_WithMultipleAccountIds_ReturnsOkResult_WithAggregatedResults()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		Guid accountId1 = Guid.NewGuid();
+		Guid accountId2 = Guid.NewGuid();
+
+		List<CreateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateCreateRequestList(4);
+		controllerInput[0].AccountId = accountId1;
+		controllerInput[1].AccountId = accountId1;
+		controllerInput[2].AccountId = accountId2;
+		controllerInput[3].AccountId = accountId2;
+
+		List<Transaction> group1Return = TransactionGenerator.GenerateList(2);
+		List<Transaction> group2Return = TransactionGenerator.GenerateList(2);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 2 && c.ReceiptId == receiptId && c.AccountId == accountId1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(group1Return);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 2 && c.ReceiptId == receiptId && c.AccountId == accountId2),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(group2Return);
+
+		List<TransactionResponse> expectedControllerReturn = [
+			.. group1Return.Select(_mapper.ToResponse),
+			.. group2Return.Select(_mapper.ToResponse)
+		];
+
+		// Act
+		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
+
+		// Assert
+		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		List<TransactionResponse> actualControllerReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
+
+		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<CreateTransactionCommand>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+	}
+
+	[Fact]
+	public async Task CreateTransactions_WithMultipleAccountIds_ReturnsInternalServerError_WhenOneGroupThrows()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		Guid accountId1 = Guid.NewGuid();
+		Guid accountId2 = Guid.NewGuid();
+
+		List<CreateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateCreateRequestList(4);
+		controllerInput[0].AccountId = accountId1;
+		controllerInput[1].AccountId = accountId1;
+		controllerInput[2].AccountId = accountId2;
+		controllerInput[3].AccountId = accountId2;
+
+		List<Transaction> group1Return = TransactionGenerator.GenerateList(2);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateTransactionCommand>(c => c.AccountId == accountId1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(group1Return);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateTransactionCommand>(c => c.AccountId == accountId2),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception("Group 2 failed"));
+
+		// Act
+		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
+
+		// Assert
+		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
+		Assert.Equal(500, objectResult.StatusCode);
+		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+	}
+
+	[Fact]
 	public async Task CreateTransactions_ReturnsInternalServerError_WhenExceptionIsThrown()
 	{
 		// Arrange
@@ -381,6 +459,67 @@ public class TransactionsControllerTests
 
 		// Assert
 		Assert.IsType<NoContentResult>(result.Result);
+	}
+
+	[Fact]
+	public async Task UpdateTransactions_WithMultipleAccountIds_ReturnsNoContent_WhenAllGroupsSucceed()
+	{
+		// Arrange
+		Guid accountId1 = Guid.NewGuid();
+		Guid accountId2 = Guid.NewGuid();
+
+		List<UpdateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateUpdateRequestList(4);
+		controllerInput[0].AccountId = accountId1;
+		controllerInput[1].AccountId = accountId1;
+		controllerInput[2].AccountId = accountId2;
+		controllerInput[3].AccountId = accountId2;
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 2 && c.AccountId == accountId1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 2 && c.AccountId == accountId2),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
+
+		// Assert
+		Assert.IsType<NoContentResult>(result.Result);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateTransactionCommand>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+	}
+
+	[Fact]
+	public async Task UpdateTransactions_WithMultipleAccountIds_ReturnsNotFound_WhenOneGroupFails()
+	{
+		// Arrange
+		Guid accountId1 = Guid.NewGuid();
+		Guid accountId2 = Guid.NewGuid();
+
+		List<UpdateTransactionRequest> controllerInput = TransactionDtoGenerator.GenerateUpdateRequestList(4);
+		controllerInput[0].AccountId = accountId1;
+		controllerInput[1].AccountId = accountId1;
+		controllerInput[2].AccountId = accountId2;
+		controllerInput[3].AccountId = accountId2;
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 2 && c.AccountId == accountId1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 2 && c.AccountId == accountId2),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
+
+		// Assert
+		Assert.IsType<NotFoundResult>(result.Result);
 	}
 
 	[Fact]
