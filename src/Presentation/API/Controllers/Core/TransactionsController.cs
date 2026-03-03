@@ -79,12 +79,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 				GetTransactionsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
 				List<Transaction>? byReceiptResult = await mediator.Send(byReceiptQuery);
 
-				if (byReceiptResult == null)
-				{
-					return NotFound();
-				}
-
-				List<TransactionResponse> byReceiptModel = [.. byReceiptResult.Select(mapper.ToResponse)];
+				List<TransactionResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
 				return Ok(byReceiptModel);
 			}
 

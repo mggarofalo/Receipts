@@ -77,12 +77,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 				GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
 				List<Adjustment>? byReceiptResult = await mediator.Send(byReceiptQuery);
 
-				if (byReceiptResult == null)
-				{
-					return NotFound();
-				}
-
-				List<AdjustmentResponse> byReceiptModel = [.. byReceiptResult.Select(mapper.ToResponse)];
+				List<AdjustmentResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
 				return Ok(byReceiptModel);
 			}
 

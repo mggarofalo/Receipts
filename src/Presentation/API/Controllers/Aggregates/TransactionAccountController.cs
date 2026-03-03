@@ -25,7 +25,6 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 	[EndpointDescription("Returns transaction accounts filtered by transaction ID or receipt ID.")]
 	[ProducesResponseType<List<TransactionAccountResponse>>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> GetTransactionAccounts([FromQuery] Guid? transactionId = null, [FromQuery] Guid? receiptId = null)
 	{
@@ -42,13 +41,10 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 				GetTransactionAccountByTransactionIdQuery query = new(transactionId.Value);
 				TransactionAccount? result = await mediator.Send(query);
 
-				if (result == null)
-				{
-					return NotFound();
-				}
-
-				TransactionAccountResponse model = mapper.ToResponse(result);
-				return Ok(new List<TransactionAccountResponse> { model });
+				List<TransactionAccountResponse> model = result != null
+					? [mapper.ToResponse(result)]
+					: [];
+				return Ok(model);
 			}
 
 			if (receiptId.HasValue)
@@ -57,12 +53,7 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 				GetTransactionAccountsByReceiptIdQuery query = new(receiptId.Value);
 				List<TransactionAccount>? result = await mediator.Send(query);
 
-				if (result == null)
-				{
-					return NotFound();
-				}
-
-				List<TransactionAccountResponse> model = [.. result.Select(mapper.ToResponse)];
+				List<TransactionAccountResponse> model = [.. (result ?? []).Select(mapper.ToResponse)];
 				return Ok(model);
 			}
 

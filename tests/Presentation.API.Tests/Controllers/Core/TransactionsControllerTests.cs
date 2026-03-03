@@ -176,7 +176,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllTransactions_WithReceiptId_ReturnsNotFound_WhenReceiptIdNotFound()
+	public async Task GetAllTransactions_WithReceiptId_ReturnsEmptyList_WhenReceiptIdNotFound()
 	{
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
@@ -190,7 +190,9 @@ public class TransactionsControllerTests
 		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(missingReceiptId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		List<TransactionResponse> actualReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
+		actualReturn.Should().BeEmpty();
 	}
 
 	[Fact]

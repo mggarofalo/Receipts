@@ -176,7 +176,7 @@ public class ReceiptItemsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllReceiptItems_WithReceiptId_ReturnsNotFound_WhenReceiptIdNotFound()
+	public async Task GetAllReceiptItems_WithReceiptId_ReturnsEmptyList_WhenReceiptIdNotFound()
 	{
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
@@ -190,7 +190,9 @@ public class ReceiptItemsControllerTests
 		ActionResult<List<ReceiptItemResponse>> result = await _controller.GetAllReceiptItems(missingReceiptId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		List<ReceiptItemResponse> actualReturn = Assert.IsType<List<ReceiptItemResponse>>(okResult.Value);
+		actualReturn.Should().BeEmpty();
 	}
 
 	[Fact]

@@ -79,12 +79,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 				GetReceiptItemsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
 				List<ReceiptItem>? byReceiptResult = await mediator.Send(byReceiptQuery);
 
-				if (byReceiptResult == null)
-				{
-					return NotFound();
-				}
-
-				List<ReceiptItemResponse> byReceiptModel = [.. byReceiptResult.Select(mapper.ToResponse)];
+				List<ReceiptItemResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
 				return Ok(byReceiptModel);
 			}
 

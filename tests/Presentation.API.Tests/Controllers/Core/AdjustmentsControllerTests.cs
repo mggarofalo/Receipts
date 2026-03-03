@@ -189,7 +189,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllAdjustments_WithReceiptId_ReturnsNotFound_WhenReceiptDoesNotExist()
+	public async Task GetAllAdjustments_WithReceiptId_ReturnsEmptyList_WhenReceiptDoesNotExist()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -203,7 +203,9 @@ public class AdjustmentsControllerTests
 		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments(receiptId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		List<AdjustmentResponse> actualReturn = Assert.IsType<List<AdjustmentResponse>>(okResult.Value);
+		actualReturn.Should().BeEmpty();
 	}
 
 	[Fact]

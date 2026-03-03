@@ -45,6 +45,6 @@ public class CreateTransactionCommandHandler(
 			]);
 		}
 
-		return await transactionService.CreateAsync([.. request.Transactions], request.AccountId, request.ReceiptId, cancellationToken);
+		return await transactionService.CreateAsync([.. request.Transactions], request.ReceiptId, request.AccountId, cancellationToken);
 	}
 }
