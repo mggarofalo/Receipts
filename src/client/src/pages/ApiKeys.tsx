@@ -152,7 +152,7 @@ function ApiKeys() {
     }
     window.addEventListener("shortcut:new-item", onNewItem);
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
-  });
+  }, []);
 
   function handleCreateSubmit(values: CreateKeyFormValues) {
     createMutation.mutate(values);

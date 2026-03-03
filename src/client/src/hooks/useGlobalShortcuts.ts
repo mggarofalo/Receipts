@@ -9,7 +9,7 @@ export function useGlobalShortcuts() {
   // ? — Toggle help modal (useKeyboardShortcut because react-hotkeys-hook
   // doesn't match the "?" key)
   const toggleHelp = useCallback(
-    () => ctx?.setHelpOpen(!ctx.helpOpen),
+    () => ctx?.setHelpOpen(!ctx?.helpOpen),
     [ctx],
   );
   useKeyboardShortcut({
