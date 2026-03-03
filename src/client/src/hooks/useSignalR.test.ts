@@ -129,7 +129,7 @@ describe("useSignalR", () => {
 
   describe("hub event handlers", () => {
     it("ReceiptCreated invalidates queries and shows toast", async () => {
-      const mockQueryClient = (useQueryClient as ReturnType<typeof vi.fn>)();
+      const mockQueryClient = vi.mocked(useQueryClient)();
 
       await renderEnabled();
 
@@ -149,7 +149,7 @@ describe("useSignalR", () => {
     });
 
     it("ReceiptUpdated invalidates queries and shows toast", async () => {
-      const mockQueryClient = (useQueryClient as ReturnType<typeof vi.fn>)();
+      const mockQueryClient = vi.mocked(useQueryClient)();
 
       await renderEnabled();
 
@@ -169,7 +169,7 @@ describe("useSignalR", () => {
     });
 
     it("ReceiptDeleted invalidates queries and shows toast", async () => {
-      const mockQueryClient = (useQueryClient as ReturnType<typeof vi.fn>)();
+      const mockQueryClient = vi.mocked(useQueryClient)();
 
       await renderEnabled();
 

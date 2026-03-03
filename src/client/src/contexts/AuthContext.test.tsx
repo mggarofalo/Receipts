@@ -26,8 +26,9 @@ vi.mock("@/lib/auth", () => ({
 
 import client from "@/lib/api-client";
 import * as auth from "@/lib/auth";
+import type { Mock } from "vitest";
 
-const mockedClient = vi.mocked(client);
+const mockedClient = client as unknown as { POST: Mock; GET: Mock };
 const mockedAuth = vi.mocked(auth);
 
 // Helper JWT: header.payload.signature with payload = { email, role }

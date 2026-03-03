@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 import AuditLog from "./AuditLog";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -52,10 +53,10 @@ describe("AuditLog", () => {
 
   it("shows loading state in AuditLogTable when data is loading", async () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
-    vi.mocked(useRecentAuditLogs).mockReturnValue({
+    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useRecentAuditLogs>);
+    }));
 
     renderWithProviders(<AuditLog />);
     expect(screen.getByText("Loading...")).toBeInTheDocument();
@@ -63,7 +64,7 @@ describe("AuditLog", () => {
 
   it("passes filtered logs to AuditLogTable", async () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
-    vi.mocked(useRecentAuditLogs).mockReturnValue({
+    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "1",
@@ -78,7 +79,7 @@ describe("AuditLog", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useRecentAuditLogs>);
+    }));
 
     renderWithProviders(<AuditLog />);
     // The AuditLogTable mock renders "AuditLogTable" when not loading
@@ -88,7 +89,7 @@ describe("AuditLog", () => {
   it("filters logs by entity ID search", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
-    vi.mocked(useRecentAuditLogs).mockReturnValue({
+    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "1",
@@ -103,7 +104,7 @@ describe("AuditLog", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useRecentAuditLogs>);
+    }));
 
     renderWithProviders(<AuditLog />);
     const searchInput = screen.getByLabelText(/search audit log by entity id/i);
@@ -115,7 +116,7 @@ describe("AuditLog", () => {
 
   it("enables Export CSV button when logs exist", async () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
-    vi.mocked(useRecentAuditLogs).mockReturnValue({
+    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "1",
@@ -130,7 +131,7 @@ describe("AuditLog", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useRecentAuditLogs>);
+    }));
 
     renderWithProviders(<AuditLog />);
     expect(

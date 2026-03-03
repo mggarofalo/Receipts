@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 import RecycleBin from "./RecycleBin";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -63,10 +64,10 @@ describe("RecycleBin", () => {
 
   it("renders loading skeleton when data is loading", async () => {
     const { useDeletedAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeletedAccounts).mockReturnValue({
+    vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useDeletedAccounts>);
+    }));
 
     const { container } = renderWithProviders(<RecycleBin />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -74,10 +75,10 @@ describe("RecycleBin", () => {
 
   it("renders the All tab", async () => {
     const { useDeletedAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeletedAccounts).mockReturnValue({
+    vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useDeletedAccounts>);
+    }));
 
     renderWithProviders(<RecycleBin />);
     expect(
@@ -101,20 +102,20 @@ describe("RecycleBin", () => {
 
   it("renders deleted items in the table when data exists", async () => {
     const { useDeletedAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeletedAccounts).mockReturnValue({
+    vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
       data: [
         { id: "a1", name: "Old Account", accountCode: "ACC-OLD" },
       ],
       isLoading: false,
-    } as ReturnType<typeof useDeletedAccounts>);
+    }));
 
     const { useDeletedCategories } = await import("@/hooks/useCategories");
-    vi.mocked(useDeletedCategories).mockReturnValue({
+    vi.mocked(useDeletedCategories).mockReturnValue(mockQueryResult({
       data: [
         { id: "c1", name: "Deleted Category" },
       ],
       isLoading: false,
-    } as ReturnType<typeof useDeletedCategories>);
+    }));
 
     renderWithProviders(<RecycleBin />);
     expect(screen.getByText("Account")).toBeInTheDocument();
@@ -125,12 +126,12 @@ describe("RecycleBin", () => {
 
   it("renders entity type tabs when deleted items exist", async () => {
     const { useDeletedAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeletedAccounts).mockReturnValue({
+    vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
       data: [
         { id: "a1", name: "Old Account", accountCode: "ACC-OLD" },
       ],
       isLoading: false,
-    } as ReturnType<typeof useDeletedAccounts>);
+    }));
 
     renderWithProviders(<RecycleBin />);
     // Should have an "All" tab and an "Account" tab

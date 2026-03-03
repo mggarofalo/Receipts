@@ -90,7 +90,7 @@ describe("CurrencyInput", () => {
     await user.type(input, "25.99");
 
     // Find the call with the final value
-    const calls = onChange.mock.calls.map((c: [number]) => c[0]);
+    const calls = onChange.mock.calls.map((c) => c[0]);
     expect(calls).toContain(25.99);
   });
 

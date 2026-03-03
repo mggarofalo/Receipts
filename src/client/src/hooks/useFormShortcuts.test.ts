@@ -3,7 +3,7 @@ import { useFormShortcuts } from "./useFormShortcuts";
 import type { RefObject } from "react";
 
 vi.mock("react-hotkeys-hook", () => ({
-  useHotkeys: vi.fn((key: string, callback: () => void) => {
+  useHotkeys: vi.fn((_key: string, callback: () => void) => {
     // Simulate the hotkey by storing callback for testing
     document.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {

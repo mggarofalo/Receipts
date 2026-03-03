@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
 import ItemTemplates from "./ItemTemplates";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -71,10 +72,10 @@ describe("ItemTemplates", () => {
 
   it("renders loading skeleton when data is loading", async () => {
     const { useItemTemplates } = await import("@/hooks/useItemTemplates");
-    vi.mocked(useItemTemplates).mockReturnValue({
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useItemTemplates>);
+    }));
 
     const { container } = renderWithProviders(<ItemTemplates />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -82,10 +83,10 @@ describe("ItemTemplates", () => {
 
   it("renders empty state when no templates exist", async () => {
     const { useItemTemplates } = await import("@/hooks/useItemTemplates");
-    vi.mocked(useItemTemplates).mockReturnValue({
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useItemTemplates>);
+    }));
 
     renderWithProviders(<ItemTemplates />);
     expect(
@@ -113,14 +114,14 @@ describe("ItemTemplates", () => {
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue({
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
       search: "",
       setSearch: vi.fn(),
       results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
       totalCount: items.length,
       isSearching: false,
       clearSearch: vi.fn(),
-    } as unknown as ReturnType<typeof useFuzzySearch>);
+    }));
 
     const { usePagination } = await import("@/hooks/usePagination");
     vi.mocked(usePagination).mockReturnValue({
@@ -157,14 +158,14 @@ describe("ItemTemplates", () => {
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue({
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
       search: "",
       setSearch: vi.fn(),
       results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
       totalCount: items.length,
       isSearching: false,
       clearSearch: vi.fn(),
-    } as unknown as ReturnType<typeof useFuzzySearch>);
+    }));
 
     const { usePagination } = await import("@/hooks/usePagination");
     vi.mocked(usePagination).mockReturnValue({
@@ -192,14 +193,14 @@ describe("ItemTemplates", () => {
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue({
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
       search: "",
       setSearch: vi.fn(),
       results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
       totalCount: items.length,
       isSearching: false,
       clearSearch: vi.fn(),
-    } as unknown as ReturnType<typeof useFuzzySearch>);
+    }));
 
     const { usePagination } = await import("@/hooks/usePagination");
     vi.mocked(usePagination).mockReturnValue({
@@ -224,24 +225,24 @@ describe("ItemTemplates", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const mockMutate = vi.fn();
     const { useDeleteItemTemplates } = await import("@/hooks/useItemTemplates");
-    vi.mocked(useDeleteItemTemplates).mockReturnValue({
+    vi.mocked(useDeleteItemTemplates).mockReturnValue(mockMutationResult({
       mutate: mockMutate,
       isPending: false,
-    } as unknown as ReturnType<typeof useDeleteItemTemplates>);
+    }));
 
     const items = [
       { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue({
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
       search: "",
       setSearch: vi.fn(),
       results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
       totalCount: items.length,
       isSearching: false,
       clearSearch: vi.fn(),
-    } as unknown as ReturnType<typeof useFuzzySearch>);
+    }));
 
     const { usePagination } = await import("@/hooks/usePagination");
     vi.mocked(usePagination).mockReturnValue({
