@@ -22,7 +22,7 @@ public class UpdateReceiptItemCommandHandlerTests
 			.ReturnsAsync(existingItem);
 
 		mockService.Setup(r => r
-			.UpdateAsync(It.IsAny<List<Domain.Core.ReceiptItem>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+			.UpdateAsync(It.IsAny<List<Domain.Core.ReceiptItem>>(), existingItem.ReceiptId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
 		UpdateReceiptItemCommand command = new(input);

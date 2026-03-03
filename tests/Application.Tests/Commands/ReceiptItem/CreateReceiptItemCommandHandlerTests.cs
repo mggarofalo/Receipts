@@ -18,7 +18,7 @@ public class CreateReceiptItemCommandHandlerTests
 		List<Domain.Core.ReceiptItem> input = ReceiptItemGenerator.GenerateList(2);
 
 		mockService.Setup(r => r
-			.CreateAsync(It.IsAny<List<Domain.Core.ReceiptItem>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+			.CreateAsync(It.IsAny<List<Domain.Core.ReceiptItem>>(), receipt.Id, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(input);
 
 		CreateReceiptItemCommand command = new(input, receipt.Id);

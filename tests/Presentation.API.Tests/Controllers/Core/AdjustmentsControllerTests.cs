@@ -359,7 +359,7 @@ public class AdjustmentsControllerTests
 		List<Guid> ids = [AdjustmentGenerator.Generate().Id];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<DeleteAdjustmentCommand>(),
+			It.Is<DeleteAdjustmentCommand>(c => c.Ids.SequenceEqual(ids)),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
@@ -378,7 +378,7 @@ public class AdjustmentsControllerTests
 		List<Guid> ids = [.. AdjustmentGenerator.GenerateList(2).Select(a => a.Id)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<DeleteAdjustmentCommand>(),
+			It.Is<DeleteAdjustmentCommand>(c => c.Ids.SequenceEqual(ids)),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
