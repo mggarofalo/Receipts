@@ -1,0 +1,58 @@
+using Application.Interfaces.Services;
+using Domain.Aggregates;
+using FluentValidation;
+using FluentValidation.Results;
+using MediatR;
+
+namespace Application.Commands.Transaction.CreateBatch;
+
+public class CreateTransactionBatchCommandHandler(
+	ITransactionService transactionService,
+	IReceiptService receiptService,
+	IReceiptItemService receiptItemService,
+	IAdjustmentService adjustmentService) : IRequestHandler<CreateTransactionBatchCommand, List<Domain.Core.Transaction>>
+{
+	public async Task<List<Domain.Core.Transaction>> Handle(CreateTransactionBatchCommand request, CancellationToken cancellationToken)
+	{
+		Task<Domain.Core.Receipt?> receiptTask = receiptService.GetByIdAsync(request.ReceiptId, cancellationToken);
+		Task<List<Domain.Core.ReceiptItem>?> itemsTask = receiptItemService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
+		Task<List<Domain.Core.Adjustment>?> adjustmentsTask = adjustmentService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
+		Task<List<Domain.Core.Transaction>?> existingTransactionsTask = transactionService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
+
+		await Task.WhenAll(receiptTask, itemsTask, adjustmentsTask, existingTransactionsTask);
+
+		Domain.Core.Receipt receipt = receiptTask.Result
+			?? throw new InvalidOperationException("Receipt not found");
+
+		ReceiptWithItems receiptWithItems = new()
+		{
+			Receipt = receipt,
+			Items = itemsTask.Result ?? [],
+			Adjustments = adjustmentsTask.Result ?? []
+		};
+
+		decimal existingTotal = existingTransactionsTask.Result?.Sum(t => t.Amount.Amount) ?? 0;
+		decimal newTotal = request.Transactions.Sum(t => t.Amount.Amount);
+		decimal proposedTotal = existingTotal + newTotal;
+
+		if (proposedTotal != receiptWithItems.ExpectedTotal.Amount)
+		{
+			throw new ValidationException(
+			[
+				new ValidationFailure("Transactions",
+					string.Format(Trip.BalanceEquationViolation,
+						receiptWithItems.ExpectedTotal.Amount, proposedTotal))
+			]);
+		}
+
+		List<Domain.Core.Transaction> allCreated = [];
+		foreach (IGrouping<Guid, Domain.Core.Transaction> group in request.Transactions.GroupBy(t => t.AccountId))
+		{
+			List<Domain.Core.Transaction> created = await transactionService.CreateAsync(
+				[.. group], request.ReceiptId, group.Key, cancellationToken);
+			allCreated.AddRange(created);
+		}
+
+		return allCreated;
+	}
+}

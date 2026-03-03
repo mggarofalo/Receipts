@@ -1,9 +1,11 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Transaction.Create;
+using Application.Commands.Transaction.CreateBatch;
 using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
+using Application.Commands.Transaction.UpdateBatch;
 using Application.Queries.Core.Transaction;
 using Asp.Versioning;
 using Domain.Core;
@@ -152,20 +154,17 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		{
 			logger.LogDebug("CreateTransactions called with {Count} transactions", models.Count);
 
-			IEnumerable<IGrouping<Guid, CreateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
-
-			List<Task<List<Transaction>>> tasks = [.. groups.Select(group =>
+			List<Transaction> transactions = [.. models.Select(m =>
 			{
-				CreateTransactionCommand command = new(
-					[.. group.Select(mapper.ToDomain)],
-					receiptId,
-					group.Key);
-				return mediator.Send(command);
+				Transaction t = mapper.ToDomain(m);
+				t.AccountId = m.AccountId;
+				return t;
 			})];
 
-			await Task.WhenAll(tasks);
+			CreateTransactionBatchCommand command = new(transactions, receiptId);
+			List<Transaction> result = await mediator.Send(command);
 
-			List<TransactionResponse> results = [.. tasks.SelectMany(t => t.Result.Select(mapper.ToResponse))];
+			List<TransactionResponse> results = [.. result.Select(mapper.ToResponse)];
 			return Ok(results);
 		}
 		catch (Exception ex)
@@ -214,19 +213,17 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		{
 			logger.LogDebug("UpdateTransactions called with {Count} transactions", models.Count);
 
-			IEnumerable<IGrouping<Guid, UpdateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
-
-			List<Task<bool>> tasks = [.. groups.Select(group =>
+			List<Transaction> transactions = [.. models.Select(m =>
 			{
-				UpdateTransactionCommand command = new(
-					[.. group.Select(mapper.ToDomain)],
-					group.Key);
-				return mediator.Send(command);
+				Transaction t = mapper.ToDomain(m);
+				t.AccountId = m.AccountId;
+				return t;
 			})];
 
-			await Task.WhenAll(tasks);
+			UpdateTransactionBatchCommand command = new(transactions);
+			bool result = await mediator.Send(command);
 
-			if (tasks.Any(t => !t.Result))
+			if (!result)
 			{
 				logger.LogWarning("UpdateTransactions called with {Count} transactions, but some not found", models.Count);
 				return NotFound();

@@ -2,9 +2,11 @@ using API.Controllers.Core;
 using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Transaction.Create;
+using Application.Commands.Transaction.CreateBatch;
 using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
+using Application.Commands.Transaction.UpdateBatch;
 using Application.Queries.Core.Transaction;
 using Domain.Core;
 using FluentAssertions;
@@ -269,7 +271,7 @@ public class TransactionsControllerTests
 		List<TransactionResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == controllerInput[0].AccountId),
+			It.Is<CreateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(mediatorReturn);
 
@@ -297,23 +299,14 @@ public class TransactionsControllerTests
 		controllerInput[2].AccountId = accountId2;
 		controllerInput[3].AccountId = accountId2;
 
-		List<Transaction> group1Return = TransactionGenerator.GenerateList(2);
-		List<Transaction> group2Return = TransactionGenerator.GenerateList(2);
+		List<Transaction> mediatorReturn = TransactionGenerator.GenerateList(4);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 2 && c.ReceiptId == receiptId && c.AccountId == accountId1),
+			It.Is<CreateTransactionBatchCommand>(c => c.Transactions.Count == 4 && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(group1Return);
+			.ReturnsAsync(mediatorReturn);
 
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 2 && c.ReceiptId == receiptId && c.AccountId == accountId2),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(group2Return);
-
-		List<TransactionResponse> expectedControllerReturn = [
-			.. group1Return.Select(_mapper.ToResponse),
-			.. group2Return.Select(_mapper.ToResponse)
-		];
+		List<TransactionResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		// Act
 		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
@@ -323,11 +316,11 @@ public class TransactionsControllerTests
 		List<TransactionResponse> actualControllerReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
 
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
-		_mediatorMock.Verify(m => m.Send(It.IsAny<CreateTransactionCommand>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+		_mediatorMock.Verify(m => m.Send(It.IsAny<CreateTransactionBatchCommand>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
-	public async Task CreateTransactions_WithMultipleAccountIds_ReturnsInternalServerError_WhenOneGroupThrows()
+	public async Task CreateTransactions_WithMultipleAccountIds_ReturnsInternalServerError_WhenBatchCommandThrows()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -340,17 +333,10 @@ public class TransactionsControllerTests
 		controllerInput[2].AccountId = accountId2;
 		controllerInput[3].AccountId = accountId2;
 
-		List<Transaction> group1Return = TransactionGenerator.GenerateList(2);
-
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.AccountId == accountId1),
+			It.Is<CreateTransactionBatchCommand>(c => c.Transactions.Count == 4 && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(group1Return);
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.AccountId == accountId2),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception("Group 2 failed"));
+			.ThrowsAsync(new Exception("Batch failed"));
 
 		// Act
 		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
@@ -370,7 +356,7 @@ public class TransactionsControllerTests
 		controllerInput.ForEach(m => m.AccountId = controllerInput[0].AccountId);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId && c.AccountId == controllerInput[0].AccountId),
+			It.Is<CreateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
@@ -450,7 +436,7 @@ public class TransactionsControllerTests
 		controllerInput.ForEach(m => m.AccountId = controllerInput[0].AccountId);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.AccountId == controllerInput[0].AccountId),
+			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
@@ -462,7 +448,7 @@ public class TransactionsControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateTransactions_WithMultipleAccountIds_ReturnsNoContent_WhenAllGroupsSucceed()
+	public async Task UpdateTransactions_WithMultipleAccountIds_ReturnsNoContent_WhenBatchSucceeds()
 	{
 		// Arrange
 		Guid accountId1 = Guid.NewGuid();
@@ -475,12 +461,7 @@ public class TransactionsControllerTests
 		controllerInput[3].AccountId = accountId2;
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 2 && c.AccountId == accountId1),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 2 && c.AccountId == accountId2),
+			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == 4),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
@@ -489,11 +470,11 @@ public class TransactionsControllerTests
 
 		// Assert
 		Assert.IsType<NoContentResult>(result.Result);
-		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateTransactionCommand>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateTransactionBatchCommand>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
-	public async Task UpdateTransactions_WithMultipleAccountIds_ReturnsNotFound_WhenOneGroupFails()
+	public async Task UpdateTransactions_WithMultipleAccountIds_ReturnsNotFound_WhenBatchReturnsFalse()
 	{
 		// Arrange
 		Guid accountId1 = Guid.NewGuid();
@@ -506,12 +487,7 @@ public class TransactionsControllerTests
 		controllerInput[3].AccountId = accountId2;
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 2 && c.AccountId == accountId1),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 2 && c.AccountId == accountId2),
+			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == 4),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
@@ -530,7 +506,7 @@ public class TransactionsControllerTests
 		controllerInput.ForEach(m => m.AccountId = controllerInput[0].AccountId);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.AccountId == controllerInput[0].AccountId),
+			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
@@ -549,7 +525,7 @@ public class TransactionsControllerTests
 		controllerInput.ForEach(m => m.AccountId = controllerInput[0].AccountId);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.AccountId == controllerInput[0].AccountId),
+			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
