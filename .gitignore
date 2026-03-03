@@ -303,3 +303,6 @@ src/client/coverage/
 
 # Local clones for branch isolation
 .clones/
+
+# Claude Code worktrees
+.claude/worktrees/
