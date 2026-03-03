@@ -94,7 +94,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useQuery>);
+    } as unknown as ReturnType<typeof useQuery>);
 
     renderWithQueryClient(<ApiKeys />);
     expect(screen.getByText("Test Key")).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useQuery>);
+    } as unknown as ReturnType<typeof useQuery>);
 
     renderWithQueryClient(<ApiKeys />);
     expect(screen.getByText("revoked")).toBeInTheDocument();
@@ -155,7 +155,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useQuery>);
+    } as unknown as ReturnType<typeof useQuery>);
 
     renderWithQueryClient(<ApiKeys />);
     expect(screen.getByText("expired")).toBeInTheDocument();
@@ -176,7 +176,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useQuery>);
+    } as unknown as ReturnType<typeof useQuery>);
 
     renderWithQueryClient(<ApiKeys />);
     await user.click(screen.getByRole("button", { name: /revoke/i }));
@@ -205,7 +205,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useQuery>);
+    } as unknown as ReturnType<typeof useQuery>);
     vi.mocked(useMutation).mockImplementation((() => ({
       mutate: mockMutate,
       isPending: false,
@@ -244,7 +244,7 @@ describe("ApiKeys", () => {
     vi.mocked(useQuery).mockReturnValue({
       data: [],
       isLoading: true,
-    } as ReturnType<typeof useQuery>);
+    } as unknown as ReturnType<typeof useQuery>);
 
     const { container } = renderWithQueryClient(<ApiKeys />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -264,7 +264,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useQuery>);
+    } as unknown as ReturnType<typeof useQuery>);
 
     renderWithQueryClient(<ApiKeys />);
     // Dates should be formatted as locale date strings, not raw ISO

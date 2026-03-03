@@ -151,7 +151,7 @@ describe("TransactionDetail", () => {
       ],
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useTransactionAccountsByReceiptId>);
+    } as unknown as ReturnType<typeof useTransactionAccountsByReceiptId>);
 
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithProviders(<TransactionDetail />);
@@ -172,7 +172,7 @@ describe("TransactionDetail", () => {
       data: undefined,
       isLoading: false,
       isError: true,
-    } as ReturnType<typeof useTransactionAccountsByReceiptId>);
+    } as unknown as ReturnType<typeof useTransactionAccountsByReceiptId>);
 
     renderWithProviders(<TransactionDetail />);
 

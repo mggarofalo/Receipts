@@ -79,7 +79,7 @@ describe("ReceiptDetail", () => {
       data: undefined,
       isLoading: true,
       isError: false,
-    } as ReturnType<typeof useReceiptWithItems>);
+    } as unknown as ReturnType<typeof useReceiptWithItems>);
 
     const { container } = renderWithProviders(<ReceiptDetail />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -105,7 +105,7 @@ describe("ReceiptDetail", () => {
       data: undefined,
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useReceiptWithItems>);
+    } as unknown as ReturnType<typeof useReceiptWithItems>);
 
     renderWithProviders(<ReceiptDetail />);
 
@@ -125,7 +125,7 @@ describe("ReceiptDetail", () => {
       data: undefined,
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useReceiptWithItems>);
+    } as unknown as ReturnType<typeof useReceiptWithItems>);
 
     renderWithProviders(<ReceiptDetail />);
 
@@ -155,7 +155,7 @@ describe("ReceiptDetail", () => {
       },
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useReceiptWithItems>);
+    } as unknown as ReturnType<typeof useReceiptWithItems>);
 
     renderWithProviders(<ReceiptDetail />);
     expect(screen.getByText(/walmart/i)).toBeInTheDocument();
@@ -170,7 +170,7 @@ describe("ReceiptDetail", () => {
       data: undefined,
       isLoading: false,
       isError: true,
-    } as ReturnType<typeof useReceiptWithItems>);
+    } as unknown as ReturnType<typeof useReceiptWithItems>);
 
     renderWithProviders(<ReceiptDetail />);
 

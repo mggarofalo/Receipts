@@ -74,7 +74,7 @@ describe("ItemTemplates", () => {
     vi.mocked(useItemTemplates).mockReturnValue({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useItemTemplates>);
+    } as unknown as ReturnType<typeof useItemTemplates>);
 
     const { container } = renderWithProviders(<ItemTemplates />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe("ItemTemplates", () => {
     vi.mocked(useItemTemplates).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useItemTemplates>);
+    } as unknown as ReturnType<typeof useItemTemplates>);
 
     renderWithProviders(<ItemTemplates />);
     expect(

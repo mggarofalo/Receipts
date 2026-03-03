@@ -57,7 +57,7 @@ describe("SecurityLog", () => {
     const { usePermission } = await import("@/hooks/usePermission");
     vi.mocked(usePermission).mockReturnValue({
       isAdmin: () => false,
-    } as ReturnType<typeof usePermission>);
+    } as unknown as ReturnType<typeof usePermission>);
 
     renderWithProviders(<SecurityLog />);
     expect(

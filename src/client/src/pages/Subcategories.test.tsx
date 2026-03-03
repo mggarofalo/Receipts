@@ -69,7 +69,7 @@ describe("Subcategories", () => {
     vi.mocked(useSubcategories).mockReturnValue({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useSubcategories>);
+    } as unknown as ReturnType<typeof useSubcategories>);
 
     const { container } = renderWithProviders(<Subcategories />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe("Subcategories", () => {
     vi.mocked(useSubcategories).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useSubcategories>);
+    } as unknown as ReturnType<typeof useSubcategories>);
 
     renderWithProviders(<Subcategories />);
     expect(

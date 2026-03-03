@@ -102,7 +102,7 @@ describe("AuthProvider", () => {
         mustResetPassword: false,
       },
       error: undefined,
-    });
+    } as any);
     mockedAuth.parseJwtPayload.mockReturnValue({
       email: "a@b.com",
       roles: ["User"],
@@ -136,7 +136,7 @@ describe("AuthProvider", () => {
     mockedClient.POST.mockResolvedValueOnce({
       data: undefined,
       error: undefined,
-    });
+    } as any);
 
     render(
       <AuthProvider>
@@ -163,7 +163,7 @@ describe("AuthProvider", () => {
         mustResetPassword: false,
       },
       error: undefined,
-    });
+    } as any);
     mockedAuth.parseJwtPayload.mockReturnValue({
       email: "a@b.com",
       roles: ["User"],

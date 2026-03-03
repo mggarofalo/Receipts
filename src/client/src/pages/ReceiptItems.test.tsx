@@ -83,7 +83,7 @@ describe("ReceiptItems", () => {
     vi.mocked(useReceiptItems).mockReturnValue({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useReceiptItems>);
+    } as unknown as ReturnType<typeof useReceiptItems>);
 
     const { container } = renderWithProviders(<ReceiptItems />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("ReceiptItems", () => {
     vi.mocked(useReceiptItems).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useReceiptItems>);
+    } as unknown as ReturnType<typeof useReceiptItems>);
 
     renderWithProviders(<ReceiptItems />);
     expect(

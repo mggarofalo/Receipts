@@ -28,7 +28,7 @@ describe("ChangeHistory", () => {
     mockUseEntityAuditHistory.mockReturnValue({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useEntityAuditHistory>);
+    } as unknown as ReturnType<typeof useEntityAuditHistory>);
 
     const { container } = renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
@@ -55,7 +55,7 @@ describe("ChangeHistory", () => {
     mockUseEntityAuditHistory.mockReturnValue({
       data: undefined,
       isLoading: false,
-    } as ReturnType<typeof useEntityAuditHistory>);
+    } as unknown as ReturnType<typeof useEntityAuditHistory>);
 
     renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,

@@ -54,7 +54,7 @@ describe("AdminUsers", () => {
     vi.mocked(useUsers).mockReturnValue({
       data: { items: [], totalCount: 0 },
       isLoading: true,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     const { container } = renderWithProviders(<AdminUsers />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe("AdminUsers", () => {
     vi.mocked(useUsers).mockReturnValue({
       data: { items: [], totalCount: 0 },
       isLoading: false,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByText(/no users found/i)).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByText("test@example.com")).toBeInTheDocument();
@@ -127,7 +127,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     renderWithProviders(<AdminUsers />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
@@ -157,7 +157,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     renderWithProviders(<AdminUsers />);
     await user.click(screen.getByRole("button", { name: /reset pw/i }));
@@ -189,7 +189,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByRole("button", { name: /disable/i })).toBeDisabled();
@@ -214,7 +214,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByRole("button", { name: /disable/i })).toBeDisabled();
@@ -240,7 +240,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByText("John Doe")).toBeInTheDocument();
@@ -265,7 +265,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as ReturnType<typeof useUsers>);
+    } as unknown as ReturnType<typeof useUsers>);
 
     renderWithProviders(<AdminUsers />);
     // The name column should show "-"

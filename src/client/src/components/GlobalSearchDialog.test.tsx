@@ -72,7 +72,7 @@ describe("GlobalSearchDialog", () => {
         { id: "acc-1", accountCode: "ACC001", name: "Checking" },
         { id: "acc-2", accountCode: "ACC002", name: "Savings" },
       ],
-    } as ReturnType<typeof useAccounts>);
+    } as unknown as ReturnType<typeof useAccounts>);
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
@@ -151,7 +151,7 @@ describe("GlobalSearchDialog", () => {
           category: "Food",
         },
       ],
-    } as ReturnType<typeof useReceiptItems>);
+    } as unknown as ReturnType<typeof useReceiptItems>);
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
@@ -168,7 +168,7 @@ describe("GlobalSearchDialog", () => {
       data: [
         { id: "txn-1", amount: 42.5, date: "2024-01-15" },
       ],
-    } as ReturnType<typeof useTransactions>);
+    } as unknown as ReturnType<typeof useTransactions>);
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
@@ -186,7 +186,7 @@ describe("GlobalSearchDialog", () => {
         { id: "r-1", description: "Grocery receipt", location: "Store A" },
         { id: "r-2", description: null, location: "Store B" },
       ],
-    } as ReturnType<typeof useReceipts>);
+    } as unknown as ReturnType<typeof useReceipts>);
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
@@ -201,7 +201,7 @@ describe("GlobalSearchDialog", () => {
       data: [
         { id: "acc-1", accountCode: "ACC001", name: "Checking" },
       ],
-    } as ReturnType<typeof useAccounts>);
+    } as unknown as ReturnType<typeof useAccounts>);
 
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
@@ -218,7 +218,7 @@ describe("GlobalSearchDialog", () => {
       data: [
         { id: "r-1", description: "Test Receipt", location: "Downtown" },
       ],
-    } as ReturnType<typeof useReceipts>);
+    } as unknown as ReturnType<typeof useReceipts>);
 
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
@@ -235,7 +235,7 @@ describe("GlobalSearchDialog", () => {
       data: [
         { id: "txn-1", amount: 100, date: "2024-06-01" },
       ],
-    } as ReturnType<typeof useTransactions>);
+    } as unknown as ReturnType<typeof useTransactions>);
 
     const user = userEvent.setup();
     const onOpenChange = vi.fn();

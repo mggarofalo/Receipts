@@ -143,7 +143,7 @@ export function ItemTemplateForm({
                   <Combobox
                     options={categoryOptions}
                     value={field.value ?? ""}
-                    onChange={field.onChange}
+                    onValueChange={field.onChange}
                     placeholder="Select category..."
                     searchPlaceholder="Search categories..."
                     allowCustom
@@ -164,7 +164,7 @@ export function ItemTemplateForm({
                   <Combobox
                     options={subcategoryOptions}
                     value={field.value ?? ""}
-                    onChange={field.onChange}
+                    onValueChange={field.onChange}
                     placeholder="Select subcategory..."
                     searchPlaceholder="Search subcategories..."
                     allowCustom

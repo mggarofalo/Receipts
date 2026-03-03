@@ -49,7 +49,7 @@ describe("Trips", () => {
       data: undefined,
       isLoading: true,
       isError: false,
-    } as ReturnType<typeof useTripByReceiptId>);
+    } as unknown as ReturnType<typeof useTripByReceiptId>);
 
     const { container } = renderWithProviders(<Trips />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("Trips", () => {
       data: undefined,
       isLoading: false,
       isError: true,
-    } as ReturnType<typeof useTripByReceiptId>);
+    } as unknown as ReturnType<typeof useTripByReceiptId>);
 
     renderWithProviders(<Trips />);
     // Error state shows when receiptId is set and isError is true
@@ -92,7 +92,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useTripByReceiptId>);
+    } as unknown as ReturnType<typeof useTripByReceiptId>);
 
     renderWithProviders(<Trips />);
     expect(screen.getByText(/walmart/i)).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useTripByReceiptId>);
+    } as unknown as ReturnType<typeof useTripByReceiptId>);
 
     renderWithProviders(<Trips />);
     expect(screen.getByText("ACC-001")).toBeInTheDocument();
@@ -161,7 +161,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useTripByReceiptId>);
+    } as unknown as ReturnType<typeof useTripByReceiptId>);
 
     renderWithProviders(<Trips />);
     expect(screen.getByText("Discount")).toBeInTheDocument();
@@ -192,7 +192,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useTripByReceiptId>);
+    } as unknown as ReturnType<typeof useTripByReceiptId>);
 
     renderWithProviders(<Trips />);
     expect(
@@ -224,7 +224,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof useTripByReceiptId>);
+    } as unknown as ReturnType<typeof useTripByReceiptId>);
 
     renderWithProviders(<Trips />);
     expect(

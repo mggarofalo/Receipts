@@ -66,7 +66,7 @@ describe("RecycleBin", () => {
     vi.mocked(useDeletedAccounts).mockReturnValue({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useDeletedAccounts>);
+    } as unknown as ReturnType<typeof useDeletedAccounts>);
 
     const { container } = renderWithProviders(<RecycleBin />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe("RecycleBin", () => {
     vi.mocked(useDeletedAccounts).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useDeletedAccounts>);
+    } as unknown as ReturnType<typeof useDeletedAccounts>);
 
     renderWithProviders(<RecycleBin />);
     expect(
@@ -106,7 +106,7 @@ describe("RecycleBin", () => {
         { id: "a1", name: "Old Account", accountCode: "ACC-OLD" },
       ],
       isLoading: false,
-    } as ReturnType<typeof useDeletedAccounts>);
+    } as unknown as ReturnType<typeof useDeletedAccounts>);
 
     const { useDeletedCategories } = await import("@/hooks/useCategories");
     vi.mocked(useDeletedCategories).mockReturnValue({
@@ -114,7 +114,7 @@ describe("RecycleBin", () => {
         { id: "c1", name: "Deleted Category" },
       ],
       isLoading: false,
-    } as ReturnType<typeof useDeletedCategories>);
+    } as unknown as ReturnType<typeof useDeletedCategories>);
 
     renderWithProviders(<RecycleBin />);
     expect(screen.getByText("Account")).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe("RecycleBin", () => {
         { id: "a1", name: "Old Account", accountCode: "ACC-OLD" },
       ],
       isLoading: false,
-    } as ReturnType<typeof useDeletedAccounts>);
+    } as unknown as ReturnType<typeof useDeletedAccounts>);
 
     renderWithProviders(<RecycleBin />);
     // Should have an "All" tab and an "Account" tab

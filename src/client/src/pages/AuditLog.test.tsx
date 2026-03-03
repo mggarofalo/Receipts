@@ -55,7 +55,7 @@ describe("AuditLog", () => {
     vi.mocked(useRecentAuditLogs).mockReturnValue({
       data: undefined,
       isLoading: true,
-    } as ReturnType<typeof useRecentAuditLogs>);
+    } as unknown as ReturnType<typeof useRecentAuditLogs>);
 
     renderWithProviders(<AuditLog />);
     expect(screen.getByText("Loading...")).toBeInTheDocument();
@@ -78,7 +78,7 @@ describe("AuditLog", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useRecentAuditLogs>);
+    } as unknown as ReturnType<typeof useRecentAuditLogs>);
 
     renderWithProviders(<AuditLog />);
     // The AuditLogTable mock renders "AuditLogTable" when not loading
@@ -103,7 +103,7 @@ describe("AuditLog", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useRecentAuditLogs>);
+    } as unknown as ReturnType<typeof useRecentAuditLogs>);
 
     renderWithProviders(<AuditLog />);
     const searchInput = screen.getByLabelText(/search audit log by entity id/i);
@@ -130,7 +130,7 @@ describe("AuditLog", () => {
         },
       ],
       isLoading: false,
-    } as ReturnType<typeof useRecentAuditLogs>);
+    } as unknown as ReturnType<typeof useRecentAuditLogs>);
 
     renderWithProviders(<AuditLog />);
     expect(
