@@ -271,4 +271,133 @@ describe("ApiKeys", () => {
     // Dates should be formatted as locale date strings, not raw ISO
     expect(screen.queryByText("2024-06-15T00:00:00Z")).not.toBeInTheDocument();
   });
+
+  it("shows created key dialog when create mutation succeeds", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn((values: unknown) => {
+        if (opts?.onSuccess) {
+          opts.onSuccess({ rawKey: "test-secret-key-123" }, values, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+    await user.type(screen.getByPlaceholderText(/paperless integration/i), "My Key");
+    await user.click(screen.getByRole("button", { name: /create key/i }));
+
+    // The created key dialog should appear with the key
+    expect(await screen.findByRole("heading", { name: /api key created/i })).toBeInTheDocument();
+    expect(screen.getByText(/save this key now/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue("test-secret-key-123")).toBeInTheDocument();
+  });
+
+  it("copies key to clipboard when Copy to Clipboard button is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+    const mockWriteText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: mockWriteText },
+      writable: true,
+      configurable: true,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn((values: unknown) => {
+        if (opts?.onSuccess) {
+          opts.onSuccess({ rawKey: "copy-me-key" }, values, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+    await user.type(screen.getByPlaceholderText(/paperless integration/i), "Copy Test");
+    await user.click(screen.getByRole("button", { name: /create key/i }));
+
+    await screen.findByRole("heading", { name: /api key created/i });
+    await user.click(screen.getByRole("button", { name: /copy to clipboard/i }));
+
+    expect(mockWriteText).toHaveBeenCalledWith("copy-me-key");
+  });
+
+  it("cancels revoke dialog when Cancel button is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useQuery } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "key-1",
+          name: "Test Key",
+          createdAt: "2024-01-01T00:00:00Z",
+          lastUsedAt: null,
+          expiresAt: null,
+          isRevoked: false,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /^revoke$/i }));
+
+    // Dialog should be open
+    expect(screen.getByRole("heading", { name: /revoke api key/i })).toBeInTheDocument();
+
+    // Click Cancel
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    // Dialog should close
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /revoke api key/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows create form submission with mutation", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useMutation } = await import("@tanstack/react-query");
+    vi.mocked(useMutation).mockImplementation((() => ({
+      mutate: mockMutate,
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+    await user.type(screen.getByPlaceholderText(/paperless integration/i), "New API Key");
+    await user.click(screen.getByRole("button", { name: /create key/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(expect.objectContaining({ name: "New API Key" }));
+    });
+  });
+
+  it("formats date with null value as dash", async () => {
+    const { useQuery } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "key-1",
+          name: "Test Key",
+          createdAt: "2024-01-01T00:00:00Z",
+          lastUsedAt: null,
+          expiresAt: null,
+          isRevoked: false,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithQueryClient(<ApiKeys />);
+    // lastUsedAt and expiresAt are null — should show "-"
+    const cells = screen.getAllByRole("cell");
+    const dashCells = cells.filter((c) => c.textContent === "-");
+    expect(dashCells.length).toBeGreaterThanOrEqual(2);
+  });
 });

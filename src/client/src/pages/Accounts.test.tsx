@@ -291,6 +291,55 @@ describe("Accounts", () => {
     ).toBeInTheDocument();
   });
 
+  it("closes create dialog when Cancel is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithProviders(<Accounts />);
+    await user.click(screen.getByRole("button", { name: /new account/i }));
+    expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /create account/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes edit dialog when dismissed", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<Accounts />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByRole("heading", { name: /edit account/i })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /edit account/i })).not.toBeInTheDocument();
+    });
+  });
+
   it("opens create dialog on shortcut:new-item event", async () => {
     const { act } = await import("@testing-library/react");
     renderWithProviders(<Accounts />);
@@ -303,6 +352,95 @@ describe("Accounts", () => {
     expect(
       screen.getByRole("heading", { name: /create account/i }),
     ).toBeInTheDocument();
+  });
+
+  it("submits create form and calls createAccount.mutate", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useCreateAccount } = await import("@/hooks/useAccounts");
+    vi.mocked(useCreateAccount).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    renderWithProviders(<Accounts />);
+    await user.click(screen.getByRole("button", { name: /new account/i }));
+
+    await user.type(screen.getByLabelText(/account code/i), "ACC-NEW");
+    await user.type(screen.getByLabelText(/^name$/i), "New Account");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalled();
+    });
+  });
+
+  it("submits edit form and calls updateAccount.mutate", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useUpdateAccount } = await import("@/hooks/useAccounts");
+    vi.mocked(useUpdateAccount).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    const items = [
+      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<Accounts />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const nameInput = screen.getByLabelText(/^name$/i);
+    await user.clear(nameInput);
+    await user.type(nameInput, "Updated Account");
+    await user.click(screen.getByRole("button", { name: /update account/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalled();
+    });
+  });
+
+  it("renders NoResults when search returns no matches", async () => {
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: [{ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }],
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "xyz",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 0,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Accounts />);
+    expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
   });
 
   it("calls deleteAccounts.mutate when delete is confirmed", async () => {

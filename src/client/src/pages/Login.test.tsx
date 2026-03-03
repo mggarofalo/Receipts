@@ -41,4 +41,78 @@ describe("Login", () => {
       screen.getByText(/enter your credentials/i),
     ).toBeInTheDocument();
   });
+
+  it("redirects to / when user is already authenticated", async () => {
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: { email: "test@example.com" } as ReturnType<typeof useAuth>["user"],
+      mustResetPassword: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      changePassword: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<Login />);
+    expect(screen.queryByRole("heading", { name: /sign in/i })).not.toBeInTheDocument();
+  });
+
+  it("redirects to /change-password when mustResetPassword is true", async () => {
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: { email: "test@example.com" } as ReturnType<typeof useAuth>["user"],
+      mustResetPassword: true,
+      login: vi.fn(),
+      logout: vi.fn(),
+      changePassword: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<Login />);
+    expect(screen.queryByRole("heading", { name: /sign in/i })).not.toBeInTheDocument();
+  });
+
+  it("calls login on successful form submission", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockLogin = vi.fn().mockResolvedValue(undefined);
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      mustResetPassword: false,
+      login: mockLogin,
+      logout: vi.fn(),
+      changePassword: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<Login />);
+    await user.type(screen.getByLabelText(/email/i), "test@example.com");
+    await user.type(screen.getByLabelText(/^password$/i), "Password123");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await vi.waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith("test@example.com", "Password123");
+    });
+  });
+
+  it("shows error alert on failed form submission", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockLogin = vi.fn().mockRejectedValue(new Error("fail"));
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      mustResetPassword: false,
+      login: mockLogin,
+      logout: vi.fn(),
+      changePassword: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<Login />);
+    await user.type(screen.getByLabelText(/email/i), "test@example.com");
+    await user.type(screen.getByLabelText(/^password$/i), "Password123");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
+  });
 });
