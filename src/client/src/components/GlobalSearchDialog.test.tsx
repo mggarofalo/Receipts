@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GlobalSearchDialog } from "./GlobalSearchDialog";
 import { renderWithQueryClient } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 
 // cmdk uses ResizeObserver and scrollIntoView which are not available in jsdom
 beforeAll(() => {
@@ -67,12 +68,12 @@ describe("GlobalSearchDialog", () => {
 
   it("renders account items when accounts data is available", async () => {
     const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue({
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
       data: [
         { id: "acc-1", accountCode: "ACC001", name: "Checking" },
         { id: "acc-2", accountCode: "ACC002", name: "Savings" },
       ],
-    } as unknown as ReturnType<typeof useAccounts>);
+    }));
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
@@ -142,7 +143,7 @@ describe("GlobalSearchDialog", () => {
 
   it("renders receipt items when receiptItems data is available", async () => {
     const { useReceiptItems } = await import("@/hooks/useReceiptItems");
-    vi.mocked(useReceiptItems).mockReturnValue({
+    vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "ri-1",
@@ -151,7 +152,7 @@ describe("GlobalSearchDialog", () => {
           category: "Food",
         },
       ],
-    } as unknown as ReturnType<typeof useReceiptItems>);
+    }));
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
@@ -164,11 +165,11 @@ describe("GlobalSearchDialog", () => {
 
   it("renders transaction items when transactions data is available", async () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
-    vi.mocked(useTransactions).mockReturnValue({
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
       data: [
         { id: "txn-1", amount: 42.5, date: "2024-01-15" },
       ],
-    } as unknown as ReturnType<typeof useTransactions>);
+    }));
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
@@ -181,12 +182,12 @@ describe("GlobalSearchDialog", () => {
 
   it("renders receipt items when receipts data is available", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
-    vi.mocked(useReceipts).mockReturnValue({
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
       data: [
         { id: "r-1", description: "Grocery receipt", location: "Store A" },
         { id: "r-2", description: null, location: "Store B" },
       ],
-    } as unknown as ReturnType<typeof useReceipts>);
+    }));
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
@@ -197,11 +198,11 @@ describe("GlobalSearchDialog", () => {
 
   it("selecting an account item closes dialog", async () => {
     const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue({
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
       data: [
         { id: "acc-1", accountCode: "ACC001", name: "Checking" },
       ],
-    } as unknown as ReturnType<typeof useAccounts>);
+    }));
 
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
@@ -214,11 +215,11 @@ describe("GlobalSearchDialog", () => {
 
   it("selecting a receipt item closes dialog", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
-    vi.mocked(useReceipts).mockReturnValue({
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
       data: [
         { id: "r-1", description: "Test Receipt", location: "Downtown" },
       ],
-    } as unknown as ReturnType<typeof useReceipts>);
+    }));
 
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
@@ -231,11 +232,11 @@ describe("GlobalSearchDialog", () => {
 
   it("selecting a transaction item closes dialog", async () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
-    vi.mocked(useTransactions).mockReturnValue({
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
       data: [
         { id: "txn-1", amount: 100, date: "2024-06-01" },
       ],
-    } as unknown as ReturnType<typeof useTransactions>);
+    }));
 
     const user = userEvent.setup();
     const onOpenChange = vi.fn();

@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { ChangeHistory } from "./ChangeHistory";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { mockQueryResult } from "@/test/mock-hooks";
 
 vi.mock("@/hooks/useAudit", () => ({
   useEntityAuditHistory: vi.fn(),
@@ -25,10 +26,10 @@ function renderWithProviders(ui: React.ReactElement) {
 
 describe("ChangeHistory", () => {
   it("renders loading skeletons when data is loading", () => {
-    mockUseEntityAuditHistory.mockReturnValue({
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: true,
-    } as unknown as ReturnType<typeof useEntityAuditHistory>);
+    }));
 
     const { container } = renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
@@ -38,10 +39,10 @@ describe("ChangeHistory", () => {
   });
 
   it("renders empty state when no history is available", () => {
-    mockUseEntityAuditHistory.mockReturnValue({
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: [],
       isLoading: false,
-    } as unknown as ReturnType<typeof useEntityAuditHistory>);
+    }));
 
     renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
@@ -52,10 +53,10 @@ describe("ChangeHistory", () => {
   });
 
   it("renders empty state when data is undefined (null-ish)", () => {
-    mockUseEntityAuditHistory.mockReturnValue({
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: false,
-    } as unknown as ReturnType<typeof useEntityAuditHistory>);
+    }));
 
     renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
@@ -66,7 +67,7 @@ describe("ChangeHistory", () => {
   });
 
   it("renders timeline entries when data is available", () => {
-    mockUseEntityAuditHistory.mockReturnValue({
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: [
         {
           id: "log-1",
@@ -94,7 +95,7 @@ describe("ChangeHistory", () => {
         },
       ],
       isLoading: false,
-    } as unknown as ReturnType<typeof useEntityAuditHistory>);
+    }));
 
     renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
@@ -104,10 +105,10 @@ describe("ChangeHistory", () => {
   });
 
   it("passes correct entityType and entityId to the hook", () => {
-    mockUseEntityAuditHistory.mockReturnValue({
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: [],
       isLoading: false,
-    } as unknown as ReturnType<typeof useEntityAuditHistory>);
+    }));
 
     renderWithProviders(
       <ChangeHistory entityType="Account" entityId="xyz-789" />,

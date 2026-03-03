@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 import Trips from "./Trips";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -45,11 +46,11 @@ describe("Trips", () => {
 
   it("renders loading skeletons when trip is loading", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
-    vi.mocked(useTripByReceiptId).mockReturnValue({
+    vi.mocked(useTripByReceiptId).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: true,
       isError: false,
-    } as unknown as ReturnType<typeof useTripByReceiptId>);
+    }));
 
     const { container } = renderWithProviders(<Trips />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -57,11 +58,11 @@ describe("Trips", () => {
 
   it("renders error state when trip is not found", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
-    vi.mocked(useTripByReceiptId).mockReturnValue({
+    vi.mocked(useTripByReceiptId).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: false,
       isError: true,
-    } as unknown as ReturnType<typeof useTripByReceiptId>);
+    }));
 
     renderWithProviders(<Trips />);
     // Error state shows when receiptId is set and isError is true
@@ -70,7 +71,7 @@ describe("Trips", () => {
 
   it("renders trip data when loaded", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
-    vi.mocked(useTripByReceiptId).mockReturnValue({
+    vi.mocked(useTripByReceiptId).mockReturnValue(mockQueryResult({
       data: {
         receipt: {
           receipt: {
@@ -92,7 +93,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useTripByReceiptId>);
+    }));
 
     renderWithProviders(<Trips />);
     expect(screen.getByText(/walmart/i)).toBeInTheDocument();
@@ -101,7 +102,7 @@ describe("Trips", () => {
 
   it("renders transactions when trip has transactions", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
-    vi.mocked(useTripByReceiptId).mockReturnValue({
+    vi.mocked(useTripByReceiptId).mockReturnValue(mockQueryResult({
       data: {
         receipt: {
           receipt: {
@@ -128,7 +129,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useTripByReceiptId>);
+    }));
 
     renderWithProviders(<Trips />);
     expect(screen.getByText("ACC-001")).toBeInTheDocument();
@@ -137,7 +138,7 @@ describe("Trips", () => {
 
   it("renders adjustments when trip has adjustments", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
-    vi.mocked(useTripByReceiptId).mockReturnValue({
+    vi.mocked(useTripByReceiptId).mockReturnValue(mockQueryResult({
       data: {
         receipt: {
           receipt: {
@@ -161,7 +162,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useTripByReceiptId>);
+    }));
 
     renderWithProviders(<Trips />);
     expect(screen.getByText("Discount")).toBeInTheDocument();
@@ -170,7 +171,7 @@ describe("Trips", () => {
 
   it("shows no transactions message when trip has no transactions", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
-    vi.mocked(useTripByReceiptId).mockReturnValue({
+    vi.mocked(useTripByReceiptId).mockReturnValue(mockQueryResult({
       data: {
         receipt: {
           receipt: {
@@ -192,7 +193,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useTripByReceiptId>);
+    }));
 
     renderWithProviders(<Trips />);
     expect(
@@ -202,7 +203,7 @@ describe("Trips", () => {
 
   it("shows no adjustments message when trip has no adjustments", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
-    vi.mocked(useTripByReceiptId).mockReturnValue({
+    vi.mocked(useTripByReceiptId).mockReturnValue(mockQueryResult({
       data: {
         receipt: {
           receipt: {
@@ -224,7 +225,7 @@ describe("Trips", () => {
       },
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useTripByReceiptId>);
+    }));
 
     renderWithProviders(<Trips />);
     expect(

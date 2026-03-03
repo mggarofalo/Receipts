@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 import ReceiptDetail from "./ReceiptDetail";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -75,11 +76,11 @@ describe("ReceiptDetail", () => {
 
   it("renders loading skeleton when data is loading", async () => {
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
-    vi.mocked(useReceiptWithItems).mockReturnValue({
+    vi.mocked(useReceiptWithItems).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: true,
       isError: false,
-    } as unknown as ReturnType<typeof useReceiptWithItems>);
+    }));
 
     const { container } = renderWithProviders(<ReceiptDetail />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -101,11 +102,11 @@ describe("ReceiptDetail", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
     const mockHook = vi.mocked(useReceiptWithItems);
-    mockHook.mockReturnValue({
+    mockHook.mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useReceiptWithItems>);
+    }));
 
     renderWithProviders(<ReceiptDetail />);
 
@@ -121,11 +122,11 @@ describe("ReceiptDetail", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
     const mockHook = vi.mocked(useReceiptWithItems);
-    mockHook.mockReturnValue({
+    mockHook.mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useReceiptWithItems>);
+    }));
 
     renderWithProviders(<ReceiptDetail />);
 
@@ -137,7 +138,7 @@ describe("ReceiptDetail", () => {
 
   it("renders receipt data when loaded", async () => {
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
-    vi.mocked(useReceiptWithItems).mockReturnValue({
+    vi.mocked(useReceiptWithItems).mockReturnValue(mockQueryResult({
       data: {
         receipt: {
           id: "r1",
@@ -155,7 +156,7 @@ describe("ReceiptDetail", () => {
       },
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useReceiptWithItems>);
+    }));
 
     renderWithProviders(<ReceiptDetail />);
     expect(screen.getByText(/walmart/i)).toBeInTheDocument();
@@ -166,11 +167,11 @@ describe("ReceiptDetail", () => {
   it("renders error state when receipt is not found", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
-    vi.mocked(useReceiptWithItems).mockReturnValue({
+    vi.mocked(useReceiptWithItems).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: false,
       isError: true,
-    } as unknown as ReturnType<typeof useReceiptWithItems>);
+    }));
 
     renderWithProviders(<ReceiptDetail />);
 

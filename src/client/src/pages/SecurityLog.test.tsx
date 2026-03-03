@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 import SecurityLog from "./SecurityLog";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -55,9 +56,9 @@ describe("SecurityLog", () => {
 
   it("hides admin tabs when user is not admin", async () => {
     const { usePermission } = await import("@/hooks/usePermission");
-    vi.mocked(usePermission).mockReturnValue({
+    vi.mocked(usePermission).mockReturnValue(mockQueryResult({
       isAdmin: () => false,
-    } as unknown as ReturnType<typeof usePermission>);
+    }));
 
     renderWithProviders(<SecurityLog />);
     expect(

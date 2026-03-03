@@ -26,8 +26,9 @@ vi.mock("@/lib/auth", () => ({
 
 import client from "@/lib/api-client";
 import * as auth from "@/lib/auth";
+import type { Mock } from "vitest";
 
-const mockedClient = vi.mocked(client);
+const mockedClient = client as unknown as { POST: Mock; GET: Mock };
 const mockedAuth = vi.mocked(auth);
 
 // Helper JWT: header.payload.signature with payload = { email, role }
@@ -102,7 +103,7 @@ describe("AuthProvider", () => {
         mustResetPassword: false,
       },
       error: undefined,
-    } as any);
+    });
     mockedAuth.parseJwtPayload.mockReturnValue({
       email: "a@b.com",
       roles: ["User"],
@@ -136,7 +137,7 @@ describe("AuthProvider", () => {
     mockedClient.POST.mockResolvedValueOnce({
       data: undefined,
       error: undefined,
-    } as any);
+    });
 
     render(
       <AuthProvider>
@@ -163,7 +164,7 @@ describe("AuthProvider", () => {
         mustResetPassword: false,
       },
       error: undefined,
-    } as any);
+    });
     mockedAuth.parseJwtPayload.mockReturnValue({
       email: "a@b.com",
       roles: ["User"],

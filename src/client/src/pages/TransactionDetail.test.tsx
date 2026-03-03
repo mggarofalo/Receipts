@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 import TransactionDetail from "./TransactionDetail";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -142,7 +143,7 @@ describe("TransactionDetail", () => {
 
   it("renders transaction data when loaded via receipt lookup", async () => {
     const { useTransactionAccountsByReceiptId } = await import("@/hooks/useAggregates");
-    vi.mocked(useTransactionAccountsByReceiptId).mockReturnValue({
+    vi.mocked(useTransactionAccountsByReceiptId).mockReturnValue(mockQueryResult({
       data: [
         {
           transaction: { id: "t1", amount: 50.00, date: "2024-01-15" },
@@ -151,7 +152,7 @@ describe("TransactionDetail", () => {
       ],
       isLoading: false,
       isError: false,
-    } as unknown as ReturnType<typeof useTransactionAccountsByReceiptId>);
+    }));
 
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithProviders(<TransactionDetail />);
@@ -168,11 +169,11 @@ describe("TransactionDetail", () => {
   it("renders error state when no data found", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useTransactionAccountsByReceiptId } = await import("@/hooks/useAggregates");
-    vi.mocked(useTransactionAccountsByReceiptId).mockReturnValue({
+    vi.mocked(useTransactionAccountsByReceiptId).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: false,
       isError: true,
-    } as unknown as ReturnType<typeof useTransactionAccountsByReceiptId>);
+    }));
 
     renderWithProviders(<TransactionDetail />);
 

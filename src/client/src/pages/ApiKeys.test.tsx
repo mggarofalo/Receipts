@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithQueryClient } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 import ApiKeys from "./ApiKeys";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -82,7 +83,7 @@ describe("ApiKeys", () => {
 
   it("renders table with API keys when data exists", async () => {
     const { useQuery } = await import("@tanstack/react-query");
-    vi.mocked(useQuery).mockReturnValue({
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "key-1",
@@ -94,7 +95,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>);
+    }));
 
     renderWithQueryClient(<ApiKeys />);
     expect(screen.getByText("Test Key")).toBeInTheDocument();
@@ -122,7 +123,7 @@ describe("ApiKeys", () => {
 
   it("shows revoked badge for revoked keys", async () => {
     const { useQuery } = await import("@tanstack/react-query");
-    vi.mocked(useQuery).mockReturnValue({
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "key-2",
@@ -134,7 +135,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>);
+    }));
 
     renderWithQueryClient(<ApiKeys />);
     expect(screen.getByText("revoked")).toBeInTheDocument();
@@ -143,7 +144,7 @@ describe("ApiKeys", () => {
 
   it("shows expired badge for expired keys", async () => {
     const { useQuery } = await import("@tanstack/react-query");
-    vi.mocked(useQuery).mockReturnValue({
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "key-3",
@@ -155,7 +156,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>);
+    }));
 
     renderWithQueryClient(<ApiKeys />);
     expect(screen.getByText("expired")).toBeInTheDocument();
@@ -164,7 +165,7 @@ describe("ApiKeys", () => {
   it("opens revoke confirmation dialog when Revoke button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useQuery } = await import("@tanstack/react-query");
-    vi.mocked(useQuery).mockReturnValue({
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "key-1",
@@ -176,7 +177,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>);
+    }));
 
     renderWithQueryClient(<ApiKeys />);
     await user.click(screen.getByRole("button", { name: /revoke/i }));
@@ -193,7 +194,7 @@ describe("ApiKeys", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const mockMutate = vi.fn();
     const { useQuery, useMutation } = await import("@tanstack/react-query");
-    vi.mocked(useQuery).mockReturnValue({
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "key-1",
@@ -205,7 +206,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>);
+    }));
     vi.mocked(useMutation).mockImplementation((() => ({
       mutate: mockMutate,
       isPending: false,
@@ -241,10 +242,10 @@ describe("ApiKeys", () => {
 
   it("shows loading skeleton when data is loading", async () => {
     const { useQuery } = await import("@tanstack/react-query");
-    vi.mocked(useQuery).mockReturnValue({
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
       data: [],
       isLoading: true,
-    } as unknown as ReturnType<typeof useQuery>);
+    }));
 
     const { container } = renderWithQueryClient(<ApiKeys />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -252,7 +253,7 @@ describe("ApiKeys", () => {
 
   it("formats dates correctly in the table", async () => {
     const { useQuery } = await import("@tanstack/react-query");
-    vi.mocked(useQuery).mockReturnValue({
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
       data: [
         {
           id: "key-1",
@@ -264,7 +265,7 @@ describe("ApiKeys", () => {
         },
       ],
       isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>);
+    }));
 
     renderWithQueryClient(<ApiKeys />);
     // Dates should be formatted as locale date strings, not raw ISO

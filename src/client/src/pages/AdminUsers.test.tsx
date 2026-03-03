@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
 import AdminUsers from "./AdminUsers";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -51,10 +52,10 @@ describe("AdminUsers", () => {
 
   it("renders loading skeleton when data is loading", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: { items: [], totalCount: 0 },
       isLoading: true,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     const { container } = renderWithProviders(<AdminUsers />);
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
@@ -62,10 +63,10 @@ describe("AdminUsers", () => {
 
   it("renders empty state when no users exist", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: { items: [], totalCount: 0 },
       isLoading: false,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByText(/no users found/i)).toBeInTheDocument();
@@ -73,7 +74,7 @@ describe("AdminUsers", () => {
 
   it("renders user table when users exist", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
         items: [
           {
@@ -90,7 +91,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByText("test@example.com")).toBeInTheDocument();
@@ -110,7 +111,7 @@ describe("AdminUsers", () => {
   it("opens edit user dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
         items: [
           {
@@ -127,7 +128,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     renderWithProviders(<AdminUsers />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
@@ -140,7 +141,7 @@ describe("AdminUsers", () => {
   it("opens reset password dialog when Reset PW button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
         items: [
           {
@@ -157,7 +158,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     renderWithProviders(<AdminUsers />);
     await user.click(screen.getByRole("button", { name: /reset pw/i }));
@@ -172,7 +173,7 @@ describe("AdminUsers", () => {
 
   it("disables Disable button for the current user", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
         items: [
           {
@@ -189,7 +190,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByRole("button", { name: /disable/i })).toBeDisabled();
@@ -197,7 +198,7 @@ describe("AdminUsers", () => {
 
   it("disables Disable button for already disabled users", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
         items: [
           {
@@ -214,7 +215,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByRole("button", { name: /disable/i })).toBeDisabled();
@@ -223,7 +224,7 @@ describe("AdminUsers", () => {
 
   it("shows user name formatted from first and last name", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
         items: [
           {
@@ -240,7 +241,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     renderWithProviders(<AdminUsers />);
     expect(screen.getByText("John Doe")).toBeInTheDocument();
@@ -248,7 +249,7 @@ describe("AdminUsers", () => {
 
   it("shows dash when user has no first or last name", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
-    vi.mocked(useUsers).mockReturnValue({
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
         items: [
           {
@@ -265,7 +266,7 @@ describe("AdminUsers", () => {
         totalCount: 1,
       },
       isLoading: false,
-    } as unknown as ReturnType<typeof useUsers>);
+    }));
 
     renderWithProviders(<AdminUsers />);
     // The name column should show "-"

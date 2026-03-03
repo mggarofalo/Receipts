@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AdjustmentsCard } from "./AdjustmentsCard";
 import { renderWithQueryClient } from "@/test/test-utils";
+import { mockMutationResult } from "@/test/mock-hooks";
 
 vi.mock("@/hooks/useAdjustments", () => ({
   useCreateAdjustment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -166,10 +167,10 @@ describe("AdjustmentsCard", () => {
   it("opens delete confirmation dialog and calls deleteAdjustments.mutate on confirm", async () => {
     const { useDeleteAdjustments } = await import("@/hooks/useAdjustments");
     const mockDeleteMutate = vi.fn();
-    vi.mocked(useDeleteAdjustments).mockReturnValue({
+    vi.mocked(useDeleteAdjustments).mockReturnValue(mockMutationResult({
       mutate: mockDeleteMutate,
       isPending: false,
-    } as unknown as ReturnType<typeof useDeleteAdjustments>);
+    }));
 
     const user = userEvent.setup();
     renderWithQueryClient(
@@ -222,10 +223,10 @@ describe("AdjustmentsCard", () => {
   it("calls createAdjustment.mutate when create form is submitted", async () => {
     const { useCreateAdjustment } = await import("@/hooks/useAdjustments");
     const mockCreateMutate = vi.fn();
-    vi.mocked(useCreateAdjustment).mockReturnValue({
+    vi.mocked(useCreateAdjustment).mockReturnValue(mockMutationResult({
       mutate: mockCreateMutate,
       isPending: false,
-    } as unknown as ReturnType<typeof useCreateAdjustment>);
+    }));
 
     const user = userEvent.setup();
     renderWithQueryClient(
@@ -245,10 +246,10 @@ describe("AdjustmentsCard", () => {
   it("calls updateAdjustment.mutate when edit form is submitted", async () => {
     const { useUpdateAdjustment } = await import("@/hooks/useAdjustments");
     const mockUpdateMutate = vi.fn();
-    vi.mocked(useUpdateAdjustment).mockReturnValue({
+    vi.mocked(useUpdateAdjustment).mockReturnValue(mockMutationResult({
       mutate: mockUpdateMutate,
       isPending: false,
-    } as unknown as ReturnType<typeof useUpdateAdjustment>);
+    }));
 
     const user = userEvent.setup();
     renderWithQueryClient(
@@ -269,10 +270,10 @@ describe("AdjustmentsCard", () => {
   it("cancels delete dialog without deleting", async () => {
     const { useDeleteAdjustments } = await import("@/hooks/useAdjustments");
     const mockDeleteMutate = vi.fn();
-    vi.mocked(useDeleteAdjustments).mockReturnValue({
+    vi.mocked(useDeleteAdjustments).mockReturnValue(mockMutationResult({
       mutate: mockDeleteMutate,
       isPending: false,
-    } as unknown as ReturnType<typeof useDeleteAdjustments>);
+    }));
 
     const user = userEvent.setup();
     renderWithQueryClient(
