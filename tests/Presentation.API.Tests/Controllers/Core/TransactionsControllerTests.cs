@@ -2,11 +2,9 @@ using API.Controllers.Core;
 using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Transaction.Create;
-using Application.Commands.Transaction.CreateBatch;
 using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
-using Application.Commands.Transaction.UpdateBatch;
 using Application.Queries.Core.Transaction;
 using Domain.Core;
 using FluentAssertions;
@@ -225,7 +223,7 @@ public class TransactionsControllerTests
 		CreateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateCreateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId && c.AccountId == controllerInput.AccountId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 1 && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync([transaction]);
 
@@ -271,7 +269,7 @@ public class TransactionsControllerTests
 		List<TransactionResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(mediatorReturn);
 
@@ -302,7 +300,7 @@ public class TransactionsControllerTests
 		List<Transaction> mediatorReturn = TransactionGenerator.GenerateList(4);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionBatchCommand>(c => c.Transactions.Count == 4 && c.ReceiptId == receiptId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 4 && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(mediatorReturn);
 
@@ -316,11 +314,11 @@ public class TransactionsControllerTests
 		List<TransactionResponse> actualControllerReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
 
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
-		_mediatorMock.Verify(m => m.Send(It.IsAny<CreateTransactionBatchCommand>(), It.IsAny<CancellationToken>()), Times.Once);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<CreateTransactionCommand>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
-	public async Task CreateTransactions_WithMultipleAccountIds_ReturnsInternalServerError_WhenBatchCommandThrows()
+	public async Task CreateTransactions_WithMultipleAccountIds_ReturnsInternalServerError_WhenCommandThrows()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -334,7 +332,7 @@ public class TransactionsControllerTests
 		controllerInput[3].AccountId = accountId2;
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionBatchCommand>(c => c.Transactions.Count == 4 && c.ReceiptId == receiptId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == 4 && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Batch failed"));
 
@@ -356,7 +354,7 @@ public class TransactionsControllerTests
 		controllerInput.ForEach(m => m.AccountId = controllerInput[0].AccountId);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<CreateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId),
+			It.Is<CreateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count && c.ReceiptId == receiptId),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
@@ -377,7 +375,7 @@ public class TransactionsControllerTests
 		UpdateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateUpdateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1 && c.AccountId == controllerInput.AccountId),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
@@ -396,7 +394,7 @@ public class TransactionsControllerTests
 		UpdateTransactionRequest controllerInput = TransactionDtoGenerator.GenerateUpdateRequest();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1 && c.AccountId == controllerInput.AccountId),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 1),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
@@ -436,7 +434,7 @@ public class TransactionsControllerTests
 		controllerInput.ForEach(m => m.AccountId = controllerInput[0].AccountId);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
@@ -461,7 +459,7 @@ public class TransactionsControllerTests
 		controllerInput[3].AccountId = accountId2;
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == 4),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 4),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
@@ -470,7 +468,7 @@ public class TransactionsControllerTests
 
 		// Assert
 		Assert.IsType<NoContentResult>(result.Result);
-		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateTransactionBatchCommand>(), It.IsAny<CancellationToken>()), Times.Once);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateTransactionCommand>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -487,7 +485,7 @@ public class TransactionsControllerTests
 		controllerInput[3].AccountId = accountId2;
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == 4),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == 4),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
@@ -506,7 +504,7 @@ public class TransactionsControllerTests
 		controllerInput.ForEach(m => m.AccountId = controllerInput[0].AccountId);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(false);
 
@@ -525,7 +523,7 @@ public class TransactionsControllerTests
 		controllerInput.ForEach(m => m.AccountId = controllerInput[0].AccountId);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<UpdateTransactionBatchCommand>(c => c.Transactions.Count == controllerInput.Count),
+			It.Is<UpdateTransactionCommand>(c => c.Transactions.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 

@@ -1,11 +1,9 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Transaction.Create;
-using Application.Commands.Transaction.CreateBatch;
 using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
-using Application.Commands.Transaction.UpdateBatch;
 using Application.Queries.Core.Transaction;
 using Asp.Versioning;
 using Domain.Core;
@@ -133,7 +131,9 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		try
 		{
 			logger.LogDebug("CreateTransaction called");
-			CreateTransactionCommand command = new([mapper.ToDomain(model)], receiptId, model.AccountId);
+			Transaction transaction = mapper.ToDomain(model);
+			transaction.AccountId = model.AccountId;
+			CreateTransactionCommand command = new([transaction], receiptId);
 			List<Transaction> transactions = await mediator.Send(command);
 			return Ok(mapper.ToResponse(transactions[0]));
 		}
@@ -161,7 +161,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 				return t;
 			})];
 
-			CreateTransactionBatchCommand command = new(transactions, receiptId);
+			CreateTransactionCommand command = new(transactions, receiptId);
 			List<Transaction> result = await mediator.Send(command);
 
 			List<TransactionResponse> results = [.. result.Select(mapper.ToResponse)];
@@ -184,7 +184,9 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		try
 		{
 			logger.LogDebug("UpdateTransaction called");
-			UpdateTransactionCommand command = new([mapper.ToDomain(model)], model.AccountId);
+			Transaction transaction = mapper.ToDomain(model);
+			transaction.AccountId = model.AccountId;
+			UpdateTransactionCommand command = new([transaction]);
 			bool result = await mediator.Send(command);
 
 			if (!result)
@@ -220,7 +222,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 				return t;
 			})];
 
-			UpdateTransactionBatchCommand command = new(transactions);
+			UpdateTransactionCommand command = new(transactions);
 			bool result = await mediator.Send(command);
 
 			if (!result)

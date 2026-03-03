@@ -1,10 +1,10 @@
-using Application.Commands.Transaction.Create;
+using Application.Commands.Transaction.Update;
 using FluentAssertions;
 using SampleData.Domain.Core;
 
-namespace Application.Tests.Commands.Transaction;
+namespace Application.Tests.Commands.Transaction.Update;
 
-public class CreateTransactionCommandTests : ICommandTests<Domain.Core.Transaction>
+public class UpdateTransactionCommandTests : ICommandTests<Domain.Core.Transaction>
 {
 	[Fact]
 	public void Command_WithNullItems_ThrowsArgumentNullException()
@@ -13,7 +13,7 @@ public class CreateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 		List<Domain.Core.Transaction> items = null;
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8604 // Possible null reference argument.
-		Assert.Throws<ArgumentNullException>(() => new CreateTransactionCommand(items, Guid.NewGuid(), Guid.NewGuid()));
+		Assert.Throws<ArgumentNullException>(() => new UpdateTransactionCommand(items));
 #pragma warning restore CS8604 // Possible null reference argument.
 	}
 
@@ -21,14 +21,14 @@ public class CreateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	public void Command_WithEmptyItems_ThrowsArgumentException()
 	{
 		List<Domain.Core.Transaction> items = [];
-		Assert.Throws<ArgumentException>(() => new CreateTransactionCommand(items, Guid.NewGuid(), Guid.NewGuid()));
+		Assert.Throws<ArgumentException>(() => new UpdateTransactionCommand(items));
 	}
 
 	[Fact]
 	public void Command_WithValidItems_ReturnsValidCommand()
 	{
 		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
-		CreateTransactionCommand command = new(items, Guid.NewGuid(), Guid.NewGuid());
+		UpdateTransactionCommand command = new(items);
 		command.Transactions.Should().BeEquivalentTo(items);
 	}
 
@@ -36,7 +36,7 @@ public class CreateTransactionCommandTests : ICommandTests<Domain.Core.Transacti
 	public void Items_ShouldBeImmutable()
 	{
 		List<Domain.Core.Transaction> items = TransactionGenerator.GenerateList(2);
-		CreateTransactionCommand command = new(items, Guid.NewGuid(), Guid.NewGuid());
+		UpdateTransactionCommand command = new(items);
 		Assert.IsAssignableFrom<IReadOnlyList<Domain.Core.Transaction>>(command.Transactions);
 		Assert.NotSame(items, command.Transactions);
 	}

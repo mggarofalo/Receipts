@@ -1,4 +1,4 @@
-using Application.Commands.Transaction.CreateBatch;
+using Application.Commands.Transaction.Create;
 using Application.Interfaces.Services;
 using Common;
 using Domain;
@@ -6,16 +6,16 @@ using FluentAssertions;
 using FluentValidation;
 using Moq;
 
-namespace Application.Tests.Commands.Transaction.CreateBatch;
+namespace Application.Tests.Commands.Transaction.Create;
 
-public class CreateTransactionBatchCommandHandlerTests
+public class CreateTransactionCommandHandlerTests
 {
 	private readonly Mock<ITransactionService> _transactionService = new();
 	private readonly Mock<IReceiptService> _receiptService = new();
 	private readonly Mock<IReceiptItemService> _receiptItemService = new();
 	private readonly Mock<IAdjustmentService> _adjustmentService = new();
 
-	private CreateTransactionBatchCommandHandler CreateHandler() =>
+	private CreateTransactionCommandHandler CreateHandler() =>
 		new(_transactionService.Object, _receiptService.Object,
 			_receiptItemService.Object, _adjustmentService.Object);
 
@@ -55,8 +55,8 @@ public class CreateTransactionBatchCommandHandlerTests
 				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(input);
 
-		CreateTransactionBatchCommandHandler handler = CreateHandler();
-		CreateTransactionBatchCommand command = new(input, receiptId);
+		CreateTransactionCommandHandler handler = CreateHandler();
+		CreateTransactionCommand command = new(input, receiptId);
 
 		// Act
 		List<Domain.Core.Transaction> result = await handler.Handle(command, CancellationToken.None);
@@ -90,8 +90,8 @@ public class CreateTransactionBatchCommandHandlerTests
 				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId2, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(group2Result);
 
-		CreateTransactionBatchCommandHandler handler = CreateHandler();
-		CreateTransactionBatchCommand command = new(input, receiptId);
+		CreateTransactionCommandHandler handler = CreateHandler();
+		CreateTransactionCommand command = new(input, receiptId);
 
 		// Act
 		List<Domain.Core.Transaction> result = await handler.Handle(command, CancellationToken.None);
@@ -121,8 +121,8 @@ public class CreateTransactionBatchCommandHandlerTests
 		];
 		SetupReceiptData(receiptId);
 
-		CreateTransactionBatchCommandHandler handler = CreateHandler();
-		CreateTransactionBatchCommand command = new(input, receiptId);
+		CreateTransactionCommandHandler handler = CreateHandler();
+		CreateTransactionCommand command = new(input, receiptId);
 
 		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
@@ -152,8 +152,8 @@ public class CreateTransactionBatchCommandHandlerTests
 			new(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }
 		];
 
-		CreateTransactionBatchCommandHandler handler = CreateHandler();
-		CreateTransactionBatchCommand command = new(input, receiptId);
+		CreateTransactionCommandHandler handler = CreateHandler();
+		CreateTransactionCommand command = new(input, receiptId);
 
 		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);

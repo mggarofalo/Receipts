@@ -1,4 +1,4 @@
-using Application.Commands.Transaction.UpdateBatch;
+using Application.Commands.Transaction.Update;
 using Application.Interfaces.Services;
 using Common;
 using Domain;
@@ -6,16 +6,16 @@ using FluentAssertions;
 using FluentValidation;
 using Moq;
 
-namespace Application.Tests.Commands.Transaction.UpdateBatch;
+namespace Application.Tests.Commands.Transaction.Update;
 
-public class UpdateTransactionBatchCommandHandlerTests
+public class UpdateTransactionCommandHandlerTests
 {
 	private readonly Mock<ITransactionService> _transactionService = new();
 	private readonly Mock<IReceiptService> _receiptService = new();
 	private readonly Mock<IReceiptItemService> _receiptItemService = new();
 	private readonly Mock<IAdjustmentService> _adjustmentService = new();
 
-	private UpdateTransactionBatchCommandHandler CreateHandler() =>
+	private UpdateTransactionCommandHandler CreateHandler() =>
 		new(_transactionService.Object, _receiptService.Object,
 			_receiptItemService.Object, _adjustmentService.Object);
 
@@ -60,8 +60,8 @@ public class UpdateTransactionBatchCommandHandlerTests
 				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
-		UpdateTransactionBatchCommandHandler handler = CreateHandler();
-		UpdateTransactionBatchCommand command = new(updated);
+		UpdateTransactionCommandHandler handler = CreateHandler();
+		UpdateTransactionCommand command = new(updated);
 
 		// Act
 		bool result = await handler.Handle(command, CancellationToken.None);
@@ -97,8 +97,8 @@ public class UpdateTransactionBatchCommandHandlerTests
 				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId2, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
-		UpdateTransactionBatchCommandHandler handler = CreateHandler();
-		UpdateTransactionBatchCommand command = new(updated);
+		UpdateTransactionCommandHandler handler = CreateHandler();
+		UpdateTransactionCommand command = new(updated);
 
 		// Act
 		bool result = await handler.Handle(command, CancellationToken.None);
@@ -132,8 +132,8 @@ public class UpdateTransactionBatchCommandHandlerTests
 			new(txId2, new Money(50), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 }
 		];
 
-		UpdateTransactionBatchCommandHandler handler = CreateHandler();
-		UpdateTransactionBatchCommand command = new(updated);
+		UpdateTransactionCommandHandler handler = CreateHandler();
+		UpdateTransactionCommand command = new(updated);
 
 		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
@@ -166,8 +166,8 @@ public class UpdateTransactionBatchCommandHandlerTests
 
 		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }];
 
-		UpdateTransactionBatchCommandHandler handler = CreateHandler();
-		UpdateTransactionBatchCommand command = new(updated);
+		UpdateTransactionCommandHandler handler = CreateHandler();
+		UpdateTransactionCommand command = new(updated);
 
 		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
@@ -186,13 +186,43 @@ public class UpdateTransactionBatchCommandHandlerTests
 
 		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }];
 
-		UpdateTransactionBatchCommandHandler handler = CreateHandler();
-		UpdateTransactionBatchCommand command = new(updated);
+		UpdateTransactionCommandHandler handler = CreateHandler();
+		UpdateTransactionCommand command = new(updated);
 
 		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>();
+	}
+
+	[Fact]
+	public async Task Handle_TransactionFromDifferentReceipt_ThrowsInvalidOperationException()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		Guid txId = Guid.NewGuid();
+		Guid foreignTxId = Guid.NewGuid();
+
+		// existing transaction belongs to receiptId
+		Domain.Core.Transaction existing = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now));
+		SetupReceiptData(receiptId, txId, [existing]);
+
+		// batch includes a transaction ID that doesn't exist in the receipt's transaction list
+		List<Domain.Core.Transaction> updated =
+		[
+			new(txId, new Money(10), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() },
+			new(foreignTxId, new Money(5), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }
+		];
+
+		UpdateTransactionCommandHandler handler = CreateHandler();
+		UpdateTransactionCommand command = new(updated);
+
+		// Act
+		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		InvalidOperationException exception = (await act.Should().ThrowAsync<InvalidOperationException>()).Which;
+		exception.Message.Should().Be("All transactions in the batch must belong to the same receipt.");
 	}
 }

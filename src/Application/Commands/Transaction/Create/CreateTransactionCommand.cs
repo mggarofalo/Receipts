@@ -6,11 +6,10 @@ public record CreateTransactionCommand : ICommand<List<Domain.Core.Transaction>>
 {
 	public IReadOnlyList<Domain.Core.Transaction> Transactions { get; }
 	public Guid ReceiptId { get; }
-	public Guid AccountId { get; }
 
 	public const string TransactionsCannotBeEmptyExceptionMessage = "Transactions list cannot be empty.";
 
-	public CreateTransactionCommand(List<Domain.Core.Transaction> transactions, Guid receiptId, Guid accountId)
+	public CreateTransactionCommand(List<Domain.Core.Transaction> transactions, Guid receiptId)
 	{
 		ArgumentNullException.ThrowIfNull(transactions);
 
@@ -21,6 +20,5 @@ public record CreateTransactionCommand : ICommand<List<Domain.Core.Transaction>>
 
 		Transactions = transactions.AsReadOnly();
 		ReceiptId = receiptId;
-		AccountId = accountId;
 	}
 }
