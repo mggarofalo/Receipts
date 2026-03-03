@@ -90,16 +90,21 @@ public class AuthAuditCleanupServiceTests
 	public async Task ExecuteAsync_ContinuesOnException()
 	{
 		// Arrange
+		TaskCompletionSource invoked = new();
 		_auditServiceMock
 			.Setup(s => s.CleanupOldEntriesAsync(180, It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new InvalidOperationException("Database error"));
+			.Returns<int, CancellationToken>((_, _) =>
+			{
+				invoked.TrySetResult();
+				return Task.FromException<int>(new InvalidOperationException("Database error"));
+			});
 
 		AuthAuditCleanupService service = new(_scopeFactoryMock.Object, _loggerMock.Object);
 		using CancellationTokenSource cts = new();
 
 		// Act — should not throw
 		await service.StartAsync(cts.Token);
-		await Task.Delay(100);
+		await invoked.Task.WaitAsync(TimeSpan.FromSeconds(5));
 		cts.Cancel();
 		Func<Task> act = async () => await service.StopAsync(CancellationToken.None);
 
