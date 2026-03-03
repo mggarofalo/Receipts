@@ -1,7 +1,7 @@
+using System.Security.Claims;
 using API.Services;
 using Microsoft.AspNetCore.Http;
 using Moq;
-using System.Security.Claims;
 
 namespace Presentation.API.Tests.Services;
 
