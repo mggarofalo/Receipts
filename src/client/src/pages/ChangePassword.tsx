@@ -21,7 +21,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const changePasswordSchema = z
@@ -91,8 +91,7 @@ function ChangePassword() {
                 <FormItem>
                   <FormLabel>Current Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
+                    <PasswordInput
                       placeholder="Enter your current password"
                       autoComplete="current-password"
                       {...field}
@@ -109,8 +108,7 @@ function ChangePassword() {
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
+                    <PasswordInput
                       placeholder="At least 8 characters"
                       autoComplete="new-password"
                       {...field}
@@ -127,8 +125,7 @@ function ChangePassword() {
                 <FormItem>
                   <FormLabel>Confirm New Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
+                    <PasswordInput
                       placeholder="Re-enter your new password"
                       autoComplete="new-password"
                       {...field}
