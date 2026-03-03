@@ -156,10 +156,22 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		try
 		{
 			logger.LogDebug("CreateTransactions called with {Count} transactions", models.Count);
-			Guid accountId = models[0].AccountId;
-			CreateTransactionCommand command = new([.. models.Select(mapper.ToDomain)], receiptId, accountId);
-			List<Transaction> transactions = await mediator.Send(command);
-			return Ok(transactions.Select(mapper.ToResponse).ToList());
+
+			IEnumerable<IGrouping<Guid, CreateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
+
+			List<Task<List<Transaction>>> tasks = [.. groups.Select(group =>
+			{
+				CreateTransactionCommand command = new(
+					[.. group.Select(mapper.ToDomain)],
+					receiptId,
+					group.Key);
+				return mediator.Send(command);
+			})];
+
+			await Task.WhenAll(tasks);
+
+			List<TransactionResponse> results = [.. tasks.SelectMany(t => t.Result.Select(mapper.ToResponse))];
+			return Ok(results);
 		}
 		catch (Exception ex)
 		{
@@ -206,17 +218,24 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		try
 		{
 			logger.LogDebug("UpdateTransactions called with {Count} transactions", models.Count);
-			Guid accountId = models[0].AccountId;
-			UpdateTransactionCommand command = new([.. models.Select(mapper.ToDomain)], accountId);
-			bool result = await mediator.Send(command);
 
-			if (!result)
+			IEnumerable<IGrouping<Guid, UpdateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
+
+			List<Task<bool>> tasks = [.. groups.Select(group =>
 			{
-				logger.LogWarning("UpdateTransactions called with {Count} transactions, but not found", models.Count);
+				UpdateTransactionCommand command = new(
+					[.. group.Select(mapper.ToDomain)],
+					group.Key);
+				return mediator.Send(command);
+			})];
+
+			await Task.WhenAll(tasks);
+
+			if (tasks.Any(t => !t.Result))
+			{
+				logger.LogWarning("UpdateTransactions called with {Count} transactions, but some not found", models.Count);
 				return NotFound();
 			}
-
-			logger.LogDebug("UpdateTransactions called with {Count} transactions, and found", models.Count);
 
 			return NoContent();
 		}
