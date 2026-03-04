@@ -6,4 +6,5 @@ public interface IEntityChangeNotifier
 	Task NotifyUpdated(string entityType, Guid id);
 	Task NotifyDeleted(string entityType, Guid id);
 	Task NotifyBulkChanged(string entityType, string changeType, IEnumerable<Guid> ids);
+	Task NotifyAllChanged(string entityType, string changeType);
 }

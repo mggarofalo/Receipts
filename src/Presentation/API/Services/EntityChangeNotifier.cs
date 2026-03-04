@@ -27,4 +27,9 @@ public class EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubCo
 			await hubContext.Clients.All.EntityChanged(new EntityChangeNotification(entityType, changeType, id));
 		}
 	}
+
+	public async Task NotifyAllChanged(string entityType, string changeType)
+	{
+		await hubContext.Clients.All.EntityChanged(new EntityChangeNotification(entityType, changeType, null));
+	}
 }

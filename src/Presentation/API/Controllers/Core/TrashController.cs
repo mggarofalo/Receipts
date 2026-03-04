@@ -27,7 +27,7 @@ public class TrashController(IMediator mediator, ILogger<TrashController> logger
 		string[] entityTypes = ["receipt", "receipt-item", "transaction", "adjustment", "account", "category", "subcategory", "item-template"];
 		foreach (string entityType in entityTypes)
 		{
-			await notifier.NotifyBulkChanged(entityType, "deleted", []);
+			await notifier.NotifyAllChanged(entityType, "deleted");
 		}
 
 		return NoContent();
