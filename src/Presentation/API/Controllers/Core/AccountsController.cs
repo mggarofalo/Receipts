@@ -11,6 +11,7 @@ using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
@@ -20,7 +21,6 @@ namespace API.Controllers.Core;
 [Route("api/accounts")]
 [Produces("application/json")]
 [Authorize]
-[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
@@ -36,9 +36,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get an account by ID")]
 	[EndpointDescription("Returns a single account matching the provided GUID.")]
-	[ProducesResponseType<AccountResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<AccountResponse>> GetAccountById([FromRoute] Guid id)
+	public async Task<Results<Ok<AccountResponse>, NotFound>> GetAccountById([FromRoute] Guid id)
 	{
 		GetAccountByIdQuery query = new(id);
 		Account? result = await mediator.Send(query);
@@ -46,22 +44,21 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		if (result == null)
 		{
 			logger.LogWarning("Account {Id} not found", id);
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		AccountResponse model = mapper.ToResponse(result);
-		return Ok(model);
+		return TypedResults.Ok(model);
 	}
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all accounts")]
-	[ProducesResponseType<AccountListResponse>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<AccountListResponse>> GetAllAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Ok<AccountListResponse>> GetAllAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		GetAllAccountsQuery query = new(offset, limit);
 		PagedResult<Account> result = await mediator.Send(query);
 
-		return Ok(new AccountListResponse
+		return TypedResults.Ok(new AccountListResponse
 		{
 			Data = [.. result.Data.Select(mapper.ToResponse)],
 			Total = result.Total,
@@ -73,13 +70,12 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted accounts")]
 	[EndpointDescription("Returns all accounts that have been soft-deleted.")]
-	[ProducesResponseType<AccountListResponse>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<AccountListResponse>> GetDeletedAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Ok<AccountListResponse>> GetDeletedAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		GetDeletedAccountsQuery query = new(offset, limit);
 		PagedResult<Account> result = await mediator.Send(query);
 
-		return Ok(new AccountListResponse
+		return TypedResults.Ok(new AccountListResponse
 		{
 			Data = [.. result.Data.Select(mapper.ToResponse)],
 			Total = result.Total,
@@ -90,31 +86,27 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single account")]
-	[ProducesResponseType<AccountResponse>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<AccountResponse>> CreateAccount([FromBody] CreateAccountRequest model)
+	public async Task<Ok<AccountResponse>> CreateAccount([FromBody] CreateAccountRequest model)
 	{
 		CreateAccountCommand command = new([mapper.ToDomain(model)]);
 		List<Account> accounts = await mediator.Send(command);
 		await notifier.NotifyCreated("account", accounts[0].Id);
-		return Ok(mapper.ToResponse(accounts[0]));
+		return TypedResults.Ok(mapper.ToResponse(accounts[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create accounts in batch")]
-	[ProducesResponseType<List<AccountResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<AccountResponse>>> CreateAccounts([FromBody] List<CreateAccountRequest> models)
+	public async Task<Ok<List<AccountResponse>>> CreateAccounts([FromBody] List<CreateAccountRequest> models)
 	{
 		CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
 		List<Account> accounts = await mediator.Send(command);
 		await notifier.NotifyBulkChanged("account", "created", accounts.Select(a => a.Id));
-		return Ok(accounts.Select(mapper.ToResponse).ToList());
+		return TypedResults.Ok(accounts.Select(mapper.ToResponse).ToList());
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single account")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<bool>> UpdateAccount([FromRoute] Guid id, [FromBody] UpdateAccountRequest model)
+	public async Task<Results<NoContent, NotFound>> UpdateAccount([FromRoute] Guid id, [FromBody] UpdateAccountRequest model)
 	{
 		UpdateAccountCommand command = new([mapper.ToDomain(model)]);
 		bool result = await mediator.Send(command);
@@ -122,18 +114,16 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		if (!result)
 		{
 			logger.LogWarning("Account {Id} not found for update", id);
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		await notifier.NotifyUpdated("account", id);
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update accounts in batch")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<bool>> UpdateAccounts([FromBody] List<UpdateAccountRequest> models)
+	public async Task<Results<NoContent, NotFound>> UpdateAccounts([FromBody] List<UpdateAccountRequest> models)
 	{
 		UpdateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
 		bool result = await mediator.Send(command);
@@ -141,19 +131,17 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		if (!result)
 		{
 			logger.LogWarning("Accounts batch update failed — not found");
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		await notifier.NotifyBulkChanged("account", "updated", models.Select(m => m.Id));
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 
 	[HttpDelete(RouteDelete)]
 	[EndpointSummary("Delete accounts")]
 	[EndpointDescription("Deletes one or more accounts by their IDs. Returns 404 if any account is not found.")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<bool>> DeleteAccounts([FromBody] List<Guid> ids)
+	public async Task<Results<NoContent, NotFound>> DeleteAccounts([FromBody] List<Guid> ids)
 	{
 		DeleteAccountCommand command = new(ids);
 		bool result = await mediator.Send(command);
@@ -161,19 +149,17 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		if (!result)
 		{
 			logger.LogWarning("Accounts delete failed — not found");
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		await notifier.NotifyBulkChanged("account", "deleted", ids);
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 
 	[HttpPost(RouteRestore)]
 	[EndpointSummary("Restore a soft-deleted account")]
 	[EndpointDescription("Restores a previously soft-deleted account by clearing its DeletedAt timestamp.")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> RestoreAccount([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> RestoreAccount([FromRoute] Guid id)
 	{
 		RestoreAccountCommand command = new(id);
 		bool result = await mediator.Send(command);
@@ -181,10 +167,10 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		if (!result)
 		{
 			logger.LogWarning("Account {Id} not found or not deleted for restore", id);
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		await notifier.NotifyUpdated("account", id);
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 }

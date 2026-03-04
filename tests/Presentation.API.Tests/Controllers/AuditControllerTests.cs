@@ -1,7 +1,7 @@
 using API.Controllers;
 using Application.Interfaces.Services;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
 
 namespace Presentation.API.Tests.Controllers;
@@ -32,11 +32,11 @@ public class AuditControllerTests
 			.ReturnsAsync(logs);
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
+		Results<Ok<List<AuditLogDto>>, BadRequest<string>> result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<AuditLogDto> returnedLogs = Assert.IsType<List<AuditLogDto>>(okResult.Value);
+		Ok<List<AuditLogDto>> okResult = Assert.IsType<Ok<List<AuditLogDto>>>(result.Result);
+		List<AuditLogDto> returnedLogs = okResult.Value!;
 		returnedLogs.Should().HaveCount(1);
 	}
 
@@ -51,11 +51,11 @@ public class AuditControllerTests
 			.ReturnsAsync([]);
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
+		Results<Ok<List<AuditLogDto>>, BadRequest<string>> result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<AuditLogDto> returnedLogs = Assert.IsType<List<AuditLogDto>>(okResult.Value);
+		Ok<List<AuditLogDto>> okResult = Assert.IsType<Ok<List<AuditLogDto>>>(result.Result);
+		List<AuditLogDto> returnedLogs = okResult.Value!;
 		returnedLogs.Should().BeEmpty();
 	}
 
@@ -73,11 +73,10 @@ public class AuditControllerTests
 			.ReturnsAsync(logs);
 
 		// Act
-		IActionResult result = await _controller.GetRecent(50, CancellationToken.None);
+		Ok<List<AuditLogDto>> result = await _controller.GetRecent(50, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<AuditLogDto> returnedLogs = Assert.IsType<List<AuditLogDto>>(okResult.Value);
+		List<AuditLogDto> returnedLogs = result.Value!;
 		returnedLogs.Should().HaveCount(2);
 	}
 
@@ -95,11 +94,11 @@ public class AuditControllerTests
 			.ReturnsAsync(logs);
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(null, null, userId, null, CancellationToken.None);
+		Results<Ok<List<AuditLogDto>>, BadRequest<string>> result = await _controller.GetAuditLogs(null, null, userId, null, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<AuditLogDto> returnedLogs = Assert.IsType<List<AuditLogDto>>(okResult.Value);
+		Ok<List<AuditLogDto>> okResult = Assert.IsType<Ok<List<AuditLogDto>>>(result.Result);
+		List<AuditLogDto> returnedLogs = okResult.Value!;
 		returnedLogs.Should().HaveCount(1);
 		returnedLogs[0].ChangedByUserId.Should().Be(userId);
 	}
@@ -118,11 +117,11 @@ public class AuditControllerTests
 			.ReturnsAsync(logs);
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(null, null, null, apiKeyId, CancellationToken.None);
+		Results<Ok<List<AuditLogDto>>, BadRequest<string>> result = await _controller.GetAuditLogs(null, null, null, apiKeyId, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<AuditLogDto> returnedLogs = Assert.IsType<List<AuditLogDto>>(okResult.Value);
+		Ok<List<AuditLogDto>> okResult = Assert.IsType<Ok<List<AuditLogDto>>>(result.Result);
+		List<AuditLogDto> returnedLogs = okResult.Value!;
 		returnedLogs.Should().HaveCount(1);
 		returnedLogs[0].ChangedByApiKeyId.Should().Be(apiKeyId);
 	}

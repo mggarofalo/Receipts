@@ -6,6 +6,7 @@ using Asp.Versioning;
 using Common;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,8 +17,6 @@ namespace API.Controllers;
 [Route("api/users")]
 [Produces("application/json")]
 [Authorize(Policy = "RequireAdmin")]
-[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-[ProducesResponseType(StatusCodes.Status403Forbidden)]
 public class UsersController(
 	IUserService userService,
 	UserManager<ApplicationUser> userManager,
@@ -26,8 +25,7 @@ public class UsersController(
 {
 	[HttpGet]
 	[EndpointSummary("List all users with their roles")]
-	[ProducesResponseType<UserListResponse>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<UserListResponse>> ListUsers(
+	public async Task<Ok<UserListResponse>> ListUsers(
 		[FromQuery] int offset = 0,
 		[FromQuery] int limit = 50)
 	{
@@ -35,7 +33,7 @@ public class UsersController(
 
 		List<UserSummaryResponse> items = result.Data.Select(MapToResponse).ToList();
 
-		return Ok(new UserListResponse
+		return TypedResults.Ok(new UserListResponse
 		{
 			Data = items,
 			Total = result.Total,
@@ -46,19 +44,17 @@ public class UsersController(
 
 	[HttpGet("{userId}")]
 	[EndpointSummary("Get a user by ID")]
-	[ProducesResponseType<UserSummaryResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<UserSummaryResponse>> GetUser(string userId)
+	public async Task<Results<Ok<UserSummaryResponse>, NotFound>> GetUser(string userId)
 	{
 		ApplicationUser? user = await userManager.FindByIdAsync(userId);
 		if (user is null)
 		{
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		IList<string> roles = await userManager.GetRolesAsync(user);
 
-		return Ok(new UserSummaryResponse
+		return TypedResults.Ok(new UserSummaryResponse
 		{
 			Id = user.Id,
 			Email = user.Email ?? "",
@@ -73,9 +69,7 @@ public class UsersController(
 
 	[HttpPost]
 	[EndpointSummary("Create a new user (admin only)")]
-	[ProducesResponseType<UserSummaryResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	public async Task<ActionResult<UserSummaryResponse>> CreateUser([FromBody] CreateUserRequest request)
+	public async Task<Results<Ok<UserSummaryResponse>, BadRequest<IEnumerable<string>>>> CreateUser([FromBody] CreateUserRequest request)
 	{
 		ApplicationUser user = new()
 		{
@@ -90,18 +84,18 @@ public class UsersController(
 		IdentityResult result = await userManager.CreateAsync(user, request.Password);
 		if (!result.Succeeded)
 		{
-			return BadRequest(result.Errors.Select(e => e.Description));
+			return TypedResults.BadRequest(result.Errors.Select(e => e.Description));
 		}
 
 		IdentityResult roleResult = await userManager.AddToRoleAsync(user, request.Role);
 		if (!roleResult.Succeeded)
 		{
-			return BadRequest(roleResult.Errors.Select(e => e.Description));
+			return TypedResults.BadRequest(roleResult.Errors.Select(e => e.Description));
 		}
 
 		await LogAuthEventAsync(nameof(AuthEventType.UserRegistered), user.Id, user.Email);
 
-		return Ok(new UserSummaryResponse
+		return TypedResults.Ok(new UserSummaryResponse
 		{
 			Id = user.Id,
 			Email = user.Email!,
@@ -116,30 +110,27 @@ public class UsersController(
 
 	[HttpPut("{userId}")]
 	[EndpointSummary("Update a user (admin only)")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> UpdateUser(string userId, [FromBody] UpdateUserRequest request)
+	public async Task<Results<NoContent, NotFound, BadRequest<string>, BadRequest<IEnumerable<string>>>> UpdateUser(string userId, [FromBody] UpdateUserRequest request)
 	{
 		string? currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
 		ApplicationUser? user = await userManager.FindByIdAsync(userId);
 		if (user is null)
 		{
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		if (userId == currentUserId)
 		{
 			if (request.IsDisabled)
 			{
-				return BadRequest("Cannot disable your own account.");
+				return TypedResults.BadRequest("Cannot disable your own account.");
 			}
 
 			IList<string> currentRoles = await userManager.GetRolesAsync(user);
 			if (currentRoles.Contains("Admin") && request.Role != "Admin")
 			{
-				return BadRequest("Cannot remove your own Admin role.");
+				return TypedResults.BadRequest("Cannot remove your own Admin role.");
 			}
 		}
 
@@ -162,7 +153,7 @@ public class UsersController(
 		IdentityResult updateResult = await userManager.UpdateAsync(user);
 		if (!updateResult.Succeeded)
 		{
-			return BadRequest(updateResult.Errors.Select(e => e.Description));
+			return TypedResults.BadRequest(updateResult.Errors.Select(e => e.Description));
 		}
 
 		IList<string> roles = await userManager.GetRolesAsync(user);
@@ -174,29 +165,26 @@ public class UsersController(
 		IdentityResult roleResult = await userManager.AddToRoleAsync(user, request.Role);
 		if (!roleResult.Succeeded)
 		{
-			return BadRequest(roleResult.Errors.Select(e => e.Description));
+			return TypedResults.BadRequest(roleResult.Errors.Select(e => e.Description));
 		}
 
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 
 	[HttpDelete("{userId}")]
 	[EndpointSummary("Deactivate a user (admin only)")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> DeactivateUser(string userId)
+	public async Task<Results<NoContent, BadRequest<string>, NotFound>> DeactivateUser(string userId)
 	{
 		string? currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		if (userId == currentUserId)
 		{
-			return BadRequest("Cannot deactivate your own account.");
+			return TypedResults.BadRequest("Cannot deactivate your own account.");
 		}
 
 		ApplicationUser? user = await userManager.FindByIdAsync(userId);
 		if (user is null)
 		{
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		user.LockoutEnabled = true;
@@ -207,27 +195,24 @@ public class UsersController(
 
 		await LogAuthEventAsync(nameof(AuthEventType.AccountDisabled), user.Id, user.Email);
 
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 
 	[HttpPost("{userId}/reset-password")]
 	[EndpointSummary("Reset a user's password (admin only)")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<IActionResult> AdminResetPassword(string userId, [FromBody] AdminResetPasswordRequest request)
+	public async Task<Results<NoContent, NotFound, BadRequest<IEnumerable<string>>>> AdminResetPassword(string userId, [FromBody] AdminResetPasswordRequest request)
 	{
 		ApplicationUser? user = await userManager.FindByIdAsync(userId);
 		if (user is null)
 		{
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		await userManager.RemovePasswordAsync(user);
 		IdentityResult result = await userManager.AddPasswordAsync(user, request.NewPassword);
 		if (!result.Succeeded)
 		{
-			return BadRequest(result.Errors.Select(e => e.Description));
+			return TypedResults.BadRequest(result.Errors.Select(e => e.Description));
 		}
 
 		user.MustResetPassword = true;
@@ -237,7 +222,7 @@ public class UsersController(
 
 		await LogAuthEventAsync(nameof(AuthEventType.PasswordChanged), user.Id, user.Email);
 
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 
 	private static UserSummaryResponse MapToResponse(UserSummary user) => new()
@@ -256,7 +241,7 @@ public class UsersController(
 	{
 		try
 		{
-			await authAuditService.LogAsync(new AuthAuditEntryDto(
+			await authAuditService.LogAsync(new Application.Interfaces.Services.AuthAuditEntryDto(
 				Guid.NewGuid(),
 				eventType,
 				userId,

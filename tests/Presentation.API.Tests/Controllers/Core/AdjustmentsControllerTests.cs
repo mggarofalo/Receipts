@@ -11,6 +11,7 @@ using Application.Queries.Core.Adjustment;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -49,10 +50,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(adjustment);
 
 		// Act
-		ActionResult<AdjustmentResponse> result = await _controller.GetAdjustmentById(adjustment.Id);
+		Results<Ok<AdjustmentResponse>, NotFound> result = await _controller.GetAdjustmentById(adjustment.Id);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		Ok<AdjustmentResponse> okResult = Assert.IsType<Ok<AdjustmentResponse>>(result.Result);
 		AdjustmentResponse actualReturn = Assert.IsType<AdjustmentResponse>(okResult.Value);
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -69,10 +70,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync((Adjustment?)null);
 
 		// Act
-		ActionResult<AdjustmentResponse> result = await _controller.GetAdjustmentById(missingId);
+		Results<Ok<AdjustmentResponse>, NotFound> result = await _controller.GetAdjustmentById(missingId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -106,11 +107,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(null, 0, 50);
+		Ok<AdjustmentListResponse> result = await _controller.GetAllAdjustments(null, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		AdjustmentListResponse actualReturn = Assert.IsType<AdjustmentListResponse>(okResult.Value);
+		AdjustmentListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(adjustments.Count);
 		actualReturn.Offset.Should().Be(0);
@@ -146,11 +146,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		ActionResult<AdjustmentListResponse> result = await _controller.GetDeletedAdjustments(0, 50);
+		Ok<AdjustmentListResponse> result = await _controller.GetDeletedAdjustments(0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		AdjustmentListResponse actualReturn = Assert.IsType<AdjustmentListResponse>(okResult.Value);
+		AdjustmentListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(adjustments.Count);
 		actualReturn.Offset.Should().Be(0);
@@ -187,11 +186,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
+		Ok<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		AdjustmentListResponse actualReturn = Assert.IsType<AdjustmentListResponse>(okResult.Value);
+		AdjustmentListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(adjustments.Count);
 		actualReturn.Offset.Should().Be(0);
@@ -210,11 +208,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(new PagedResult<Adjustment>([], 0, 0, 50));
 
 		// Act
-		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
+		Ok<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		AdjustmentListResponse actualReturn = Assert.IsType<AdjustmentListResponse>(okResult.Value);
+		AdjustmentListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEmpty();
 	}
 
@@ -252,11 +249,10 @@ public class AdjustmentsControllerTests
 		CreateAdjustmentRequest controllerInput = AdjustmentDtoGenerator.GenerateCreateRequest();
 
 		// Act
-		ActionResult<AdjustmentResponse> result = await _controller.CreateAdjustment(controllerInput, receiptId);
+		Ok<AdjustmentResponse> result = await _controller.CreateAdjustment(controllerInput, receiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		AdjustmentResponse actualReturn = Assert.IsType<AdjustmentResponse>(okResult.Value);
+		AdjustmentResponse actualReturn = result.Value!;
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
 
@@ -292,11 +288,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, id);
+		Results<NoContent, NotFound> result = await _controller.UpdateAdjustment(controllerInput, id);
 
 		// Assert
-		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
-		Assert.Equal(204, noContentResult.StatusCode);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -312,11 +307,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, id);
+		Results<NoContent, NotFound> result = await _controller.UpdateAdjustment(controllerInput, id);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -350,11 +344,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteAdjustments(ids);
+		Results<NoContent, NotFound> result = await _controller.DeleteAdjustments(ids);
 
 		// Assert
-		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
-		Assert.Equal(204, noContentResult.StatusCode);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -369,11 +362,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteAdjustments(ids);
+		Results<NoContent, NotFound> result = await _controller.DeleteAdjustments(ids);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -405,10 +397,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		IActionResult result = await _controller.RestoreAdjustment(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreAdjustment(id);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -422,10 +414,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		IActionResult result = await _controller.RestoreAdjustment(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreAdjustment(id);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]

@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Aggregates;
@@ -14,7 +15,6 @@ namespace API.Controllers.Aggregates;
 [Route("api/receipts-with-items")]
 [Produces("application/json")]
 [Authorize]
-[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapper mapper, ILogger<ReceiptWithItemsController> logger) : ControllerBase
 {
 	public const string RouteByReceiptId = "";
@@ -22,9 +22,7 @@ public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapp
 	[HttpGet(RouteByReceiptId)]
 	[EndpointSummary("Get a receipt with its items")]
 	[EndpointDescription("Returns a receipt and all its associated line items as a single aggregate, looked up by receipt ID.")]
-	[ProducesResponseType<ReceiptWithItemsResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	public async Task<ActionResult<ReceiptWithItemsResponse>> GetReceiptWithItemsByReceiptId([FromQuery] Guid receiptId)
+	public async Task<Results<Ok<ReceiptWithItemsResponse>, NotFound>> GetReceiptWithItemsByReceiptId([FromQuery] Guid receiptId)
 	{
 		GetReceiptWithItemsByReceiptIdQuery query = new(receiptId);
 		ReceiptWithItems? result = await mediator.Send(query);
@@ -32,10 +30,10 @@ public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapp
 		if (result == null)
 		{
 			logger.LogWarning("ReceiptWithItems for receipt {ReceiptId} not found", receiptId);
-			return NotFound();
+			return TypedResults.NotFound();
 		}
 
 		ReceiptWithItemsResponse model = mapper.ToResponse(result);
-		return Ok(model);
+		return TypedResults.Ok(model);
 	}
 }

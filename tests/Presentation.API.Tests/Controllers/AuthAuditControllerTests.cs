@@ -3,6 +3,7 @@ using API.Controllers;
 using Application.Interfaces.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -46,11 +47,11 @@ public class AuthAuditControllerTests
 			.ReturnsAsync(logs);
 
 		// Act
-		IActionResult result = await _controller.GetMyAuditLog(50, CancellationToken.None);
+		Results<Ok<List<AuthAuditEntryDto>>, UnauthorizedHttpResult> result = await _controller.GetMyAuditLog(50, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<AuthAuditEntryDto> returnedLogs = Assert.IsType<List<AuthAuditEntryDto>>(okResult.Value);
+		Ok<List<AuthAuditEntryDto>> okResult = Assert.IsType<Ok<List<AuthAuditEntryDto>>>(result.Result);
+		List<AuthAuditEntryDto> returnedLogs = okResult.Value!;
 		returnedLogs.Should().HaveCount(1);
 		returnedLogs[0].UserId.Should().Be(userId);
 	}
@@ -70,11 +71,10 @@ public class AuthAuditControllerTests
 			.ReturnsAsync(logs);
 
 		// Act
-		IActionResult result = await _controller.GetRecent(50, CancellationToken.None);
+		Ok<List<AuthAuditEntryDto>> result = await _controller.GetRecent(50, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<AuthAuditEntryDto> returnedLogs = Assert.IsType<List<AuthAuditEntryDto>>(okResult.Value);
+		List<AuthAuditEntryDto> returnedLogs = result.Value!;
 		returnedLogs.Should().HaveCount(2);
 	}
 
@@ -92,11 +92,10 @@ public class AuthAuditControllerTests
 			.ReturnsAsync(logs);
 
 		// Act
-		IActionResult result = await _controller.GetFailed(50, CancellationToken.None);
+		Ok<List<AuthAuditEntryDto>> result = await _controller.GetFailed(50, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<AuthAuditEntryDto> returnedLogs = Assert.IsType<List<AuthAuditEntryDto>>(okResult.Value);
+		List<AuthAuditEntryDto> returnedLogs = result.Value!;
 		returnedLogs.Should().HaveCount(1);
 		returnedLogs[0].Success.Should().BeFalse();
 	}

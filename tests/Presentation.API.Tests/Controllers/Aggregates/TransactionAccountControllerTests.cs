@@ -6,7 +6,7 @@ using Application.Queries.Aggregates.TransactionAccounts;
 using Domain.Aggregates;
 using FluentAssertions;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
 using SampleData.Domain.Aggregates;
 using SampleData.Domain.Core;
@@ -39,11 +39,11 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync(transactionAccount);
 
 		// Act
-		IActionResult result = await _controller.GetTransactionAccounts(transactionId: transactionAccount.Transaction.Id, receiptId: null);
+		Results<Ok<List<TransactionAccountResponse>>, BadRequest<string>> result = await _controller.GetTransactionAccounts(transactionId: transactionAccount.Transaction.Id, receiptId: null);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
+		Ok<List<TransactionAccountResponse>> okResult = Assert.IsType<Ok<List<TransactionAccountResponse>>>(result.Result);
+		List<TransactionAccountResponse> actualReturn = okResult.Value!;
 
 		actualReturn[0].Should().BeEquivalentTo(expectedReturn);
 	}
@@ -60,11 +60,11 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync((TransactionAccount?)null);
 
 		// Act
-		IActionResult result = await _controller.GetTransactionAccounts(transactionId: missingTransactionId, receiptId: null);
+		Results<Ok<List<TransactionAccountResponse>>, BadRequest<string>> result = await _controller.GetTransactionAccounts(transactionId: missingTransactionId, receiptId: null);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
+		Ok<List<TransactionAccountResponse>> okResult = Assert.IsType<Ok<List<TransactionAccountResponse>>>(result.Result);
+		List<TransactionAccountResponse> actualReturn = okResult.Value!;
 		actualReturn.Should().BeEmpty();
 	}
 
@@ -100,11 +100,11 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync([transactionAccount]);
 
 		// Act
-		IActionResult result = await _controller.GetTransactionAccounts(transactionId: null, receiptId: receiptId);
+		Results<Ok<List<TransactionAccountResponse>>, BadRequest<string>> result = await _controller.GetTransactionAccounts(transactionId: null, receiptId: receiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
+		Ok<List<TransactionAccountResponse>> okResult = Assert.IsType<Ok<List<TransactionAccountResponse>>>(result.Result);
+		List<TransactionAccountResponse> actualReturn = okResult.Value!;
 
 		actualReturn[0].Should().BeEquivalentTo(expectedReturn);
 	}
@@ -121,11 +121,11 @@ public class TransactionAccountControllerTests
 			.ReturnsAsync((List<TransactionAccount>?)null);
 
 		// Act
-		IActionResult result = await _controller.GetTransactionAccounts(transactionId: null, receiptId: missingReceiptId);
+		Results<Ok<List<TransactionAccountResponse>>, BadRequest<string>> result = await _controller.GetTransactionAccounts(transactionId: null, receiptId: missingReceiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
-		List<TransactionAccountResponse> actualReturn = Assert.IsType<List<TransactionAccountResponse>>(okResult.Value);
+		Ok<List<TransactionAccountResponse>> okResult = Assert.IsType<Ok<List<TransactionAccountResponse>>>(result.Result);
+		List<TransactionAccountResponse> actualReturn = okResult.Value!;
 		actualReturn.Should().BeEmpty();
 	}
 

@@ -6,7 +6,7 @@ using Application.Queries.Aggregates.Trips;
 using Domain.Aggregates;
 using FluentAssertions;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
@@ -41,11 +41,11 @@ public class TripControllerTests
 			.ReturnsAsync(trip);
 
 		// Act
-		ActionResult<TripResponse> result = await _controller.GetTripByReceiptId(trip.Receipt.Receipt.Id);
+		Results<Ok<TripResponse>, NotFound> result = await _controller.GetTripByReceiptId(trip.Receipt.Receipt.Id);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TripResponse actualReturn = Assert.IsType<TripResponse>(okResult.Value);
+		Ok<TripResponse> okResult = Assert.IsType<Ok<TripResponse>>(result.Result);
+		TripResponse actualReturn = okResult.Value!;
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -62,10 +62,10 @@ public class TripControllerTests
 			.ReturnsAsync((Trip?)null);
 
 		// Act
-		ActionResult<TripResponse> result = await _controller.GetTripByReceiptId(missingReceiptId);
+		Results<Ok<TripResponse>, NotFound> result = await _controller.GetTripByReceiptId(missingReceiptId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]

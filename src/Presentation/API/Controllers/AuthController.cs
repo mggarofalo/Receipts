@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Common;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,21 +25,19 @@ public class AuthController(
 	[HttpPost("login")]
 	[AllowAnonymous]
 	[EndpointSummary("Login with email and password")]
-	[ProducesResponseType<TokenResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	public async Task<ActionResult<TokenResponse>> Login([FromBody] LoginRequest request)
+	public async Task<Results<Ok<TokenResponse>, UnauthorizedHttpResult>> Login([FromBody] LoginRequest request)
 	{
 		ApplicationUser? user = await userManager.FindByEmailAsync(request.Email);
 		if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
 		{
 			await LogAuthEventAsync(nameof(AuthEventType.LoginFailed), user?.Id, request.Email, false, "Invalid credentials");
-			return Unauthorized();
+			return TypedResults.Unauthorized();
 		}
 
 		if (await userManager.IsLockedOutAsync(user))
 		{
 			await LogAuthEventAsync(nameof(AuthEventType.LoginFailed), user.Id, request.Email, false, "Account disabled");
-			return Unauthorized();
+			return TypedResults.Unauthorized();
 		}
 
 		IList<string> roles = await userManager.GetRolesAsync(user);
@@ -52,7 +51,7 @@ public class AuthController(
 
 		await LogAuthEventAsync(nameof(AuthEventType.Login), user.Id, user.Email, true);
 
-		return Ok(new TokenResponse
+		return TypedResults.Ok(new TokenResponse
 		{
 			AccessToken = accessToken,
 			RefreshToken = refreshToken,
@@ -64,9 +63,7 @@ public class AuthController(
 	[HttpPost("refresh")]
 	[AllowAnonymous]
 	[EndpointSummary("Refresh access token")]
-	[ProducesResponseType<TokenResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	public async Task<ActionResult<TokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+	public async Task<Results<Ok<TokenResponse>, UnauthorizedHttpResult>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
 		string? userId = await userService.FindUserIdByRefreshTokenAsync(request.RefreshToken, cancellationToken);
 		ApplicationUser? user = userId is not null ? await userManager.FindByIdAsync(userId) : null;
@@ -75,7 +72,7 @@ public class AuthController(
 			|| user.RefreshTokenExpiresAt is null
 			|| user.RefreshTokenExpiresAt < DateTimeOffset.UtcNow)
 		{
-			return Unauthorized();
+			return TypedResults.Unauthorized();
 		}
 
 		IList<string> roles = await userManager.GetRolesAsync(user);
@@ -86,7 +83,7 @@ public class AuthController(
 		user.RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(30);
 		await userManager.UpdateAsync(user);
 
-		return Ok(new TokenResponse
+		return TypedResults.Ok(new TokenResponse
 		{
 			AccessToken = accessToken,
 			RefreshToken = newRefreshToken,
@@ -98,14 +95,12 @@ public class AuthController(
 	[HttpPost("logout")]
 	[Authorize]
 	[EndpointSummary("Logout and invalidate refresh token")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	public async Task<IActionResult> Logout()
+	public async Task<Results<NoContent, UnauthorizedHttpResult>> Logout()
 	{
 		string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		if (userId is null)
 		{
-			return Unauthorized();
+			return TypedResults.Unauthorized();
 		}
 
 		ApplicationUser? user = await userManager.FindByIdAsync(userId);
@@ -118,33 +113,30 @@ public class AuthController(
 
 		await LogAuthEventAsync(nameof(AuthEventType.Logout), userId, user?.Email, true);
 
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 
 	[HttpPost("change-password")]
 	[Authorize]
 	[EndpointSummary("Change password (required on first login)")]
-	[ProducesResponseType<TokenResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	public async Task<ActionResult<TokenResponse>> ChangePassword([FromBody] ChangePasswordRequest request)
+	public async Task<Results<Ok<TokenResponse>, BadRequest<IEnumerable<string>>, UnauthorizedHttpResult>> ChangePassword([FromBody] ChangePasswordRequest request)
 	{
 		string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		if (userId is null)
 		{
-			return Unauthorized();
+			return TypedResults.Unauthorized();
 		}
 
 		ApplicationUser? user = await userManager.FindByIdAsync(userId);
 		if (user is null)
 		{
-			return Unauthorized();
+			return TypedResults.Unauthorized();
 		}
 
 		IdentityResult result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
 		if (!result.Succeeded)
 		{
-			return BadRequest(result.Errors.Select(e => e.Description));
+			return TypedResults.BadRequest(result.Errors.Select(e => e.Description));
 		}
 
 		user.MustResetPassword = false;
@@ -159,7 +151,7 @@ public class AuthController(
 
 		await LogAuthEventAsync(nameof(AuthEventType.PasswordChanged), user.Id, user.Email, true);
 
-		return Ok(new TokenResponse
+		return TypedResults.Ok(new TokenResponse
 		{
 			AccessToken = accessToken,
 			RefreshToken = refreshToken,
@@ -172,7 +164,7 @@ public class AuthController(
 	{
 		try
 		{
-			await authAuditService.LogAsync(new AuthAuditEntryDto(
+			await authAuditService.LogAsync(new Application.Interfaces.Services.AuthAuditEntryDto(
 				Guid.NewGuid(),
 				eventType,
 				userId,

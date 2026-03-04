@@ -3,6 +3,7 @@ using Application.Commands.Trash.Purge;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
@@ -12,13 +13,11 @@ namespace API.Controllers.Core;
 [Route("api/trash")]
 [Produces("application/json")]
 [Authorize]
-[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class TrashController(IMediator mediator, ILogger<TrashController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	[HttpPost("purge")]
 	[EndpointSummary("Permanently delete all soft-deleted items")]
-	[ProducesResponseType(StatusCodes.Status204NoContent)]
-	public async Task<ActionResult> PurgeTrash()
+	public async Task<NoContent> PurgeTrash()
 	{
 		logger.LogWarning("PurgeTrash called — permanently deleting all soft-deleted items");
 		PurgeTrashCommand command = new();
@@ -30,6 +29,6 @@ public class TrashController(IMediator mediator, ILogger<TrashController> logger
 			await notifier.NotifyAllChanged(entityType, "deleted");
 		}
 
-		return NoContent();
+		return TypedResults.NoContent();
 	}
 }

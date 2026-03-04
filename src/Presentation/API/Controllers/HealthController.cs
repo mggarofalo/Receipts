@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -12,9 +13,8 @@ public class HealthController : ControllerBase
 {
 	[HttpGet]
 	[EndpointSummary("Check API health")]
-	[ProducesResponseType(StatusCodes.Status200OK)]
-	public IActionResult Get()
+	public Ok<object> Get()
 	{
-		return Ok(new { status = "Healthy" });
+		return TypedResults.Ok<object>(new { status = "Healthy" });
 	}
 }

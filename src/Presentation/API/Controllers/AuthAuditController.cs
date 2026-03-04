@@ -1,8 +1,8 @@
 using System.Security.Claims;
-using API.Generated.Dtos;
 using Application.Interfaces.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -12,36 +12,32 @@ namespace API.Controllers;
 [Route("api/auth/audit")]
 [Produces("application/json")]
 [Authorize]
-[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class AuthAuditController(IAuthAuditService authAuditService) : ControllerBase
 {
 	[HttpGet("me")]
-	[ProducesResponseType<List<AuthAuditLogResponse>>(StatusCodes.Status200OK)]
-	public async Task<IActionResult> GetMyAuditLog([FromQuery] int count = 50, CancellationToken cancellationToken = default)
+	public async Task<Results<Ok<List<AuthAuditEntryDto>>, UnauthorizedHttpResult>> GetMyAuditLog([FromQuery] int count = 50, CancellationToken cancellationToken = default)
 	{
 		string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		if (userId is null)
 		{
-			return Unauthorized();
+			return TypedResults.Unauthorized();
 		}
 
 		List<AuthAuditEntryDto> logs = await authAuditService.GetMyAuditLogAsync(userId, count, cancellationToken);
-		return Ok(logs);
+		return TypedResults.Ok(logs);
 	}
 
 	[HttpGet("recent")]
-	[ProducesResponseType<List<AuthAuditLogResponse>>(StatusCodes.Status200OK)]
-	public async Task<IActionResult> GetRecent([FromQuery] int count = 50, CancellationToken cancellationToken = default)
+	public async Task<Ok<List<AuthAuditEntryDto>>> GetRecent([FromQuery] int count = 50, CancellationToken cancellationToken = default)
 	{
 		List<AuthAuditEntryDto> logs = await authAuditService.GetRecentAsync(count, cancellationToken);
-		return Ok(logs);
+		return TypedResults.Ok(logs);
 	}
 
 	[HttpGet("failed")]
-	[ProducesResponseType<List<AuthAuditLogResponse>>(StatusCodes.Status200OK)]
-	public async Task<IActionResult> GetFailed([FromQuery] int count = 50, CancellationToken cancellationToken = default)
+	public async Task<Ok<List<AuthAuditEntryDto>>> GetFailed([FromQuery] int count = 50, CancellationToken cancellationToken = default)
 	{
 		List<AuthAuditEntryDto> logs = await authAuditService.GetFailedAttemptsAsync(count, cancellationToken);
-		return Ok(logs);
+		return TypedResults.Ok(logs);
 	}
 }
