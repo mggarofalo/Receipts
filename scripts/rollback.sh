@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/../.env" ]; then
+    set -a
+    source "${SCRIPT_DIR}/../.env"
+    set +a
+fi
+
 # Roll back Receipts to a specific image tag.
 # Usage: ./scripts/rollback.sh <image_tag>
 

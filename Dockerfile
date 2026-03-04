@@ -50,6 +50,7 @@ RUN case ${TARGETARCH} in \
       amd64) DOTNET_ARCH=x64 ;; \
       arm64) DOTNET_ARCH=arm64 ;; \
       arm)   DOTNET_ARCH=arm ;; \
+      *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac && \
     dotnet publish src/Presentation/API/API.csproj \
       -c Release -o /app/publish --no-restore \

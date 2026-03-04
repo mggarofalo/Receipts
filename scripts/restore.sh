@@ -43,6 +43,7 @@ echo "Restoring database from ${BACKUP_FILE}..."
 gunzip -c "${BACKUP_FILE}" | docker compose exec -T db psql \
     -U "${POSTGRES_USER:-receipts}" \
     -d "${POSTGRES_DB:-receipts}" \
-    --quiet
+    --quiet \
+    --single-transaction
 
 echo "Restore complete."
