@@ -72,7 +72,7 @@ public class ApiKeyController(
 
 	[HttpDelete("{id}")]
 	[EndpointSummary("Revoke an API key")]
-	public async Task<Results<NoContent, UnauthorizedHttpResult, NotFound>> RevokeApiKey([FromRoute] Guid id)
+	public async Task<Results<NoContent, UnauthorizedHttpResult>> RevokeApiKey([FromRoute] Guid id)
 	{
 		string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		if (userId is null)
