@@ -117,8 +117,8 @@ public static class ApplicationConfiguration
 			app.UseHttpsRedirection();
 		}
 
-		app.UseRateLimiter();
 		app.UseRouting();
+		app.UseRateLimiter();
 
 		return app;
 	}
