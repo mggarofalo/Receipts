@@ -45,7 +45,8 @@ public class ResourceIdResultFilter : IAsyncResultFilter
 	{
 		if (routeData.Values.TryGetValue("id", out object? value) && value is not null)
 		{
-			return value.ToString();
+			string raw = value.ToString()!;
+			return Guid.TryParse(raw, out Guid parsed) ? parsed.ToString() : null;
 		}
 
 		return null;
