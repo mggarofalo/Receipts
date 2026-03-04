@@ -34,6 +34,7 @@ public static class ApplicationConfiguration
 		services.AddControllers(options =>
 			{
 				options.Filters.Add<FluentValidationActionFilter>();
+				options.Filters.Add<ResourceIdResultFilter>();
 			})
 			.AddJsonOptions(options =>
 			{
