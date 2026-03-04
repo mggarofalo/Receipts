@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useAccounts() {
+export function useAccounts(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["accounts"],
+    queryKey: ["accounts", "list", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/accounts");
+      const { data, error } = await client.GET("/api/accounts", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },
@@ -83,17 +85,19 @@ export function useDeleteAccounts() {
     },
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] });
-      const previous = queryClient.getQueryData(["accounts"]);
-      queryClient.setQueryData(
-        ["accounts"],
-        (old: { id: string }[] | undefined) =>
-          old?.filter((item) => !ids.includes(item.id)),
-      );
+      const previous = queryClient.getQueriesData<{ data: { id: string }[]; total: number }>({ queryKey: ["accounts", "list"] });
+      for (const [key] of previous) {
+        queryClient.setQueryData(key, (old: { data: { id: string }[]; total: number; offset: number; limit: number } | undefined) => {
+          if (!old?.data) return old;
+          const filtered = old.data.filter((item) => !ids.includes(item.id));
+          return { ...old, data: filtered, total: old.total - (old.data.length - filtered.length) };
+        });
+      }
       return { previous };
     },
     onError: (_err, _ids, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["accounts"], context.previous);
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
       }
       toast.error("Failed to delete account(s)");
     },
@@ -107,11 +111,13 @@ export function useDeleteAccounts() {
   });
 }
 
-export function useDeletedAccounts() {
+export function useDeletedAccounts(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["accounts", "deleted"],
+    queryKey: ["accounts", "deleted", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/accounts/deleted");
+      const { data, error } = await client.GET("/api/accounts/deleted", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },

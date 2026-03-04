@@ -72,10 +72,9 @@ public class ReceiptItemRepositoryTests
 		ReceiptItemRepository repository = new(_contextFactory);
 
 		// Act
-		List<ReceiptItemEntity>? actual = await repository.GetByReceiptIdAsync(receipt.Id, CancellationToken.None);
+		List<ReceiptItemEntity> actual = await repository.GetByReceiptIdAsync(receipt.Id, 0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.NotNull(actual);
 		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(ReceiptItemEntity.Receipt)));
 
 		_contextFactory.ResetDatabase();
@@ -96,7 +95,7 @@ public class ReceiptItemRepositoryTests
 		ReceiptItemRepository repository = new(_contextFactory);
 
 		// Act
-		List<ReceiptItemEntity> actual = await repository.GetAllAsync(CancellationToken.None);
+		List<ReceiptItemEntity> actual = await repository.GetAllAsync(0, 50, CancellationToken.None);
 
 		// Assert
 		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(ReceiptItemEntity.Receipt)));

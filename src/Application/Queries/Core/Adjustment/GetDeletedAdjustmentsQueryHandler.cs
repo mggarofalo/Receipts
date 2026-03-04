@@ -1,12 +1,13 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using MediatR;
 
 namespace Application.Queries.Core.Adjustment;
 
-public class GetDeletedAdjustmentsQueryHandler(IAdjustmentService adjustmentService) : IRequestHandler<GetDeletedAdjustmentsQuery, List<Domain.Core.Adjustment>>
+public class GetDeletedAdjustmentsQueryHandler(IAdjustmentService adjustmentService) : IRequestHandler<GetDeletedAdjustmentsQuery, PagedResult<Domain.Core.Adjustment>>
 {
-	public async Task<List<Domain.Core.Adjustment>> Handle(GetDeletedAdjustmentsQuery request, CancellationToken cancellationToken)
+	public async Task<PagedResult<Domain.Core.Adjustment>> Handle(GetDeletedAdjustmentsQuery request, CancellationToken cancellationToken)
 	{
-		return await adjustmentService.GetDeletedAsync(cancellationToken);
+		return await adjustmentService.GetDeletedAsync(request.Offset, request.Limit, cancellationToken);
 	}
 }

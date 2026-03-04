@@ -8,7 +8,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useAccounts", () => ({
-  useAccounts: vi.fn(() => ({ data: [], isLoading: false })),
+  useAccounts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useCreateAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteAccounts: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -33,13 +33,13 @@ vi.mock("@/hooks/useSavedFilters", () => ({
   })),
 }));
 
-vi.mock("@/hooks/usePagination", () => ({
-  usePagination: vi.fn(() => ({
-    paginatedItems: [],
+vi.mock("@/hooks/useServerPagination", () => ({
+  useServerPagination: vi.fn(() => ({
+    offset: 0,
+    limit: 25,
     currentPage: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0,
+    pageSize: 25,
+    totalPages: vi.fn(() => 1),
     setPage: vi.fn(),
     setPageSize: vi.fn(),
   })),
@@ -75,7 +75,7 @@ describe("Accounts", () => {
   it("renders empty state when no accounts exist", async () => {
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: [],
+      data: { data: [], total: 0, offset: 0, limit: 50 },
       isLoading: false,
     }));
 
@@ -115,16 +115,11 @@ describe("Accounts", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Accounts />);
     expect(screen.getByText("Checking")).toBeInTheDocument();
@@ -161,16 +156,11 @@ describe("Accounts", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Accounts />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
@@ -196,16 +186,11 @@ describe("Accounts", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Accounts />);
     const checkbox = screen.getByLabelText("Select Checking");
@@ -233,16 +218,11 @@ describe("Accounts", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Accounts />);
     await user.click(screen.getByLabelText("Select Checking"));
@@ -270,16 +250,11 @@ describe("Accounts", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Accounts />);
     const selectAll = screen.getByLabelText("Select all rows");
@@ -328,16 +303,11 @@ describe("Accounts", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Accounts />);
     await user.click(screen.getByLabelText("Select Checking"));

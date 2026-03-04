@@ -6,6 +6,7 @@ using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
 using Application.Commands.Receipt.Update;
+using Application.Models;
 using Application.Queries.Core.Receipt;
 using Domain.Core;
 using FluentAssertions;
@@ -114,18 +115,21 @@ public class ReceiptsControllerTests
 		List<ReceiptResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<GetAllReceiptsQuery>(),
+			It.Is<GetAllReceiptsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(mediatorReturn);
+			.ReturnsAsync(new PagedResult<Receipt>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<List<ReceiptResponse>> result = await _controller.GetAllReceipts();
+		ActionResult<ReceiptListResponse> result = await _controller.GetAllReceipts(0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<ReceiptResponse> actualControllerReturn = Assert.IsType<List<ReceiptResponse>>(okResult.Value);
+		ReceiptListResponse actualControllerReturn = Assert.IsType<ReceiptListResponse>(okResult.Value);
 
-		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
+		actualControllerReturn.Offset.Should().Be(0);
+		actualControllerReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -133,12 +137,12 @@ public class ReceiptsControllerTests
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<GetAllReceiptsQuery>(),
+			It.Is<GetAllReceiptsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<ReceiptResponse>> result = await _controller.GetAllReceipts();
+		ActionResult<ReceiptListResponse> result = await _controller.GetAllReceipts(0, 50);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);

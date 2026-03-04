@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Core.Transaction;
 using FluentAssertions;
 using Moq;
@@ -14,13 +15,13 @@ public class GetAllTransactionsQueryHandlerTests
 		List<Domain.Core.Transaction> expected = TransactionGenerator.GenerateList(2);
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expected, expected.Count, 0, 50));
 
 		GetAllTransactionsQueryHandler handler = new(mockService.Object);
-		GetAllTransactionsQuery query = new();
+		GetAllTransactionsQuery query = new(0, 50);
 
-		List<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 
-		result.Should().BeSameAs(expected);
+		result.Data.Should().BeSameAs(expected);
 	}
 }

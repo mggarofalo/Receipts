@@ -9,7 +9,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
-import { usePagination } from "@/hooks/usePagination";
+import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
@@ -61,9 +61,10 @@ const SEARCH_CONFIG: FuseSearchConfig<SubcategoryResponse> = {
 
 function Subcategories() {
   usePageTitle("Subcategories");
-  const { data: subcategories, isLoading: subcategoriesLoading } =
-    useSubcategories();
-  const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { data: subcategoriesResponse, isLoading: subcategoriesLoading } =
+    useSubcategories(offset, limit);
+  const { data: categoriesResponse, isLoading: categoriesLoading } = useCategories();
   const createSubcategory = useCreateSubcategory();
   const updateSubcategory = useUpdateSubcategory();
   const deleteSubcategories = useDeleteSubcategories();
@@ -89,11 +90,12 @@ function Subcategories() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const data = (subcategories as SubcategoryResponse[] | undefined) ?? [];
+  const data = (subcategoriesResponse?.data as SubcategoryResponse[] | undefined) ?? [];
+  const serverTotal = subcategoriesResponse?.total ?? 0;
 
   const categoryList = useMemo(
-    () => (categories as CategoryResponse[] | undefined) ?? [],
-    [categories],
+    () => (categoriesResponse?.data as CategoryResponse[] | undefined) ?? [],
+    [categoriesResponse?.data],
   );
 
   const categoryMap = useMemo(() => {
@@ -151,16 +153,6 @@ function Subcategories() {
     return map;
   }, [results]);
 
-  const {
-    paginatedItems,
-    currentPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  } = usePagination({ items: filteredResults });
-
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -171,21 +163,21 @@ function Subcategories() {
   }
 
   function toggleAll() {
-    if (selected.size === paginatedItems.length) {
+    if (selected.size === filteredResults.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(paginatedItems.map((a) => a.id)));
+      setSelected(new Set(filteredResults.map((a) => a.id)));
     }
   }
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: paginatedItems,
+    items: filteredResults,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditSubcategory(a),
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
-      setSelected(new Set(paginatedItems.map((a) => a.id))),
+      setSelected(new Set(filteredResults.map((a) => a.id))),
     onDeselectAll: () => setSelected(new Set()),
     onToggleSelect: (a) => toggleSelect(a.id),
     selected,
@@ -262,8 +254,8 @@ function Subcategories() {
                       type="checkbox"
                       aria-label="Select all rows"
                       checked={
-                        selected.size === paginatedItems.length &&
-                        paginatedItems.length > 0
+                        selected.size === filteredResults.length &&
+                        filteredResults.length > 0
                       }
                       onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
@@ -276,7 +268,7 @@ function Subcategories() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((subcategory, index) => {
+                {filteredResults.map((subcategory, index) => {
                   const result = matchMap.get(subcategory.id);
                   const matches = result?.matches;
                   return (
@@ -342,10 +334,10 @@ function Subcategories() {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalItems={totalItems}
+            totalItems={serverTotal}
             pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
         </>

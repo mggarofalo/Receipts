@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Core.Receipt;
 using FluentAssertions;
 using Moq;
@@ -14,13 +15,13 @@ public class GetAllReceiptsQueryHandlerTests
 		List<Domain.Core.Receipt> expected = ReceiptGenerator.GenerateList(2);
 
 		Mock<IReceiptService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Receipt>(expected, expected.Count, 0, 50));
 
 		GetAllReceiptsQueryHandler handler = new(mockService.Object);
-		GetAllReceiptsQuery query = new();
+		GetAllReceiptsQuery query = new(0, 50);
 
-		List<Domain.Core.Receipt> result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Receipt> result = await handler.Handle(query, CancellationToken.None);
 
-		result.Should().BeSameAs(expected);
+		result.Data.Should().BeSameAs(expected);
 	}
 }

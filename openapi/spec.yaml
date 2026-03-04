@@ -102,15 +102,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AccountResponse"
+                $ref: "#/components/schemas/AccountListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -185,15 +186,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AccountResponse"
+                $ref: "#/components/schemas/AccountListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -372,15 +374,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/CategoryResponse"
+                $ref: "#/components/schemas/CategoryListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -461,15 +464,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/CategoryResponse"
+                $ref: "#/components/schemas/CategoryListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -661,15 +665,15 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SubcategoryResponse"
+                $ref: "#/components/schemas/SubcategoryListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -750,15 +754,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SubcategoryResponse"
+                $ref: "#/components/schemas/SubcategoryListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -943,15 +948,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ItemTemplateResponse"
+                $ref: "#/components/schemas/ItemTemplateListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -1026,15 +1032,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ItemTemplateResponse"
+                $ref: "#/components/schemas/ItemTemplateListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -1151,15 +1158,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ReceiptResponse"
+                $ref: "#/components/schemas/ReceiptListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -1234,15 +1242,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ReceiptResponse"
+                $ref: "#/components/schemas/ReceiptListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -1430,15 +1439,15 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ReceiptItemResponse"
+                $ref: "#/components/schemas/ReceiptItemListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -1485,15 +1494,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ReceiptItemResponse"
+                $ref: "#/components/schemas/ReceiptItemListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -1726,15 +1736,15 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TransactionResponse"
+                $ref: "#/components/schemas/TransactionListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -1781,15 +1791,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TransactionResponse"
+                $ref: "#/components/schemas/TransactionListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -2022,15 +2033,15 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdjustmentResponse"
+                $ref: "#/components/schemas/AdjustmentListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -2077,15 +2088,16 @@ paths:
       security:
         - BearerAuth: []
         - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdjustmentResponse"
+                $ref: "#/components/schemas/AdjustmentListResponse"
         "401":
           description: Unauthorized
         "500":
@@ -2703,21 +2715,8 @@ paths:
         - BearerAuth: []
         - ApiKey: []
       parameters:
-        - name: page
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - name: pageSize
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: OK
@@ -3059,6 +3058,24 @@ components:
         isActive:
           type: boolean
 
+    AccountListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+
     # ── Category ──────────────────────────────────
 
     CreateCategoryRequest:
@@ -3099,6 +3116,24 @@ components:
           type:
             - string
             - "null"
+
+    CategoryListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
 
     # ── Subcategory ─────────────────────────────
 
@@ -3149,6 +3184,24 @@ components:
           type:
             - string
             - "null"
+
+    SubcategoryListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubcategoryResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
 
     # ── Item Template ──────────────────────────────
 
@@ -3259,6 +3312,24 @@ components:
             - string
             - "null"
 
+    ItemTemplateListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemTemplateResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+
     # ── Receipt ──────────────────────────────────
 
     CreateReceiptRequest:
@@ -3317,6 +3388,24 @@ components:
         taxAmount:
           type: number
           format: double
+
+    ReceiptListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReceiptResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
 
     # ── Receipt Item ─────────────────────────────
 
@@ -3397,6 +3486,24 @@ components:
           type: string
           description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
 
+    ReceiptItemListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReceiptItemResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+
     # ── Transaction ──────────────────────────────
 
     CreateTransactionRequest:
@@ -3449,6 +3556,24 @@ components:
         date:
           type: string
           format: date
+
+    TransactionListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
 
     # ── Adjustment ──────────────────────────────
 
@@ -3506,6 +3631,24 @@ components:
           type:
             - string
             - "null"
+
+    AdjustmentListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdjustmentResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
 
     # ── Aggregates (read-only) ───────────────────
 
@@ -3817,19 +3960,19 @@ components:
 
     UserListResponse:
       type: object
-      required: [items, page, pageSize, totalCount]
+      required: [data, total, offset, limit]
       properties:
-        items:
+        data:
           type: array
           items:
             $ref: "#/components/schemas/UserSummaryResponse"
-        page:
+        total:
           type: integer
           format: int32
-        pageSize:
+        offset:
           type: integer
           format: int32
-        totalCount:
+        limit:
           type: integer
           format: int32
 
@@ -3886,6 +4029,25 @@ components:
       properties:
         newPassword:
           type: string
+
+  parameters:
+    Offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
 
   securitySchemes:
     BearerAuth:

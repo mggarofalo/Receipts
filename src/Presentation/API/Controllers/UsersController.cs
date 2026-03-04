@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Application.Models;
 using Asp.Versioning;
 using Common;
 using Infrastructure.Entities;
@@ -28,21 +29,21 @@ public class UsersController(
 	[ProducesResponseType<UserListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<UserListResponse>> ListUsers(
-		[FromQuery] int page = 1,
-		[FromQuery] int pageSize = 20)
+		[FromQuery] int offset = 0,
+		[FromQuery] int limit = 50)
 	{
 		try
 		{
-			PagedUserList result = await userService.ListUsersAsync(page, pageSize);
+			PagedResult<UserSummary> result = await userService.ListUsersAsync(offset, limit);
 
-			List<UserSummaryResponse> items = result.Items.Select(MapToResponse).ToList();
+			List<UserSummaryResponse> items = result.Data.Select(MapToResponse).ToList();
 
 			return Ok(new UserListResponse
 			{
-				Items = items,
-				Page = result.Page,
-				PageSize = result.PageSize,
-				TotalCount = result.TotalCount,
+				Data = items,
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
 			});
 		}
 		catch (Exception ex)

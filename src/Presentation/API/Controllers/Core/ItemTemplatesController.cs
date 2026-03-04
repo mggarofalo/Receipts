@@ -4,6 +4,7 @@ using Application.Commands.ItemTemplate.Create;
 using Application.Commands.ItemTemplate.Delete;
 using Application.Commands.ItemTemplate.Restore;
 using Application.Commands.ItemTemplate.Update;
+using Application.Models;
 using Application.Queries.Core.ItemTemplate;
 using Asp.Versioning;
 using Domain.Core;
@@ -64,19 +65,24 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all item templates")]
-	[ProducesResponseType<List<ItemTemplateResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ItemTemplateListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<ItemTemplateResponse>>> GetAllItemTemplates()
+	public async Task<ActionResult<ItemTemplateListResponse>> GetAllItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			logger.LogDebug("GetAllItemTemplates called");
-			GetAllItemTemplatesQuery query = new();
-			List<ItemTemplate> result = await mediator.Send(query);
-			logger.LogDebug("GetAllItemTemplates called with {Count} item templates", result.Count);
+			GetAllItemTemplatesQuery query = new(offset, limit);
+			PagedResult<ItemTemplate> result = await mediator.Send(query);
+			logger.LogDebug("GetAllItemTemplates called with {Count} item templates", result.Data.Count);
 
-			List<ItemTemplateResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new ItemTemplateListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{
@@ -88,19 +94,24 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted item templates")]
 	[EndpointDescription("Returns all item templates that have been soft-deleted.")]
-	[ProducesResponseType<List<ItemTemplateResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ItemTemplateListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<ItemTemplateResponse>>> GetDeletedItemTemplates()
+	public async Task<ActionResult<ItemTemplateListResponse>> GetDeletedItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			logger.LogDebug("GetDeletedItemTemplates called");
-			GetDeletedItemTemplatesQuery query = new();
-			List<ItemTemplate> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedItemTemplates called with {Count} item templates", result.Count);
+			GetDeletedItemTemplatesQuery query = new(offset, limit);
+			PagedResult<ItemTemplate> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedItemTemplates called with {Count} item templates", result.Data.Count);
 
-			List<ItemTemplateResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new ItemTemplateListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{

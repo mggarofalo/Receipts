@@ -11,6 +11,7 @@ import {
 } from "@/hooks/useUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Pagination } from "@/components/Pagination";
 import {
   Dialog,
   DialogContent,
@@ -93,9 +95,8 @@ function AdminUsers() {
   usePageTitle("User Management");
   const { user: currentUser } = useAuth();
 
-  const [page, setPage] = useState(1);
-  const pageSize = 20;
-  const { data, isLoading } = useUsers(page, pageSize);
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination({ defaultPageSize: 20 });
+  const { data: usersResponse, isLoading } = useUsers(offset, limit);
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
@@ -117,9 +118,8 @@ function AdminUsers() {
     email: string;
   } | null>(null);
 
-  const items = data?.items ?? [];
-  const totalCount = data?.totalCount ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const items = usersResponse?.data ?? [];
+  const serverTotal = usersResponse?.total ?? 0;
 
   const listItems = items.map((u) => ({ id: u.id }));
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
@@ -322,31 +322,14 @@ function AdminUsers() {
             </Table>
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Page {page} of {totalPages} ({totalCount} users)
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={serverTotal}
+            pageSize={pageSize}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
+            onPageSizeChange={setPageSize}
+          />
         </>
       )}
 

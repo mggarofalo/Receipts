@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useAdjustments() {
+export function useAdjustments(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["adjustments"],
+    queryKey: ["adjustments", "list", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/adjustments");
+      const { data, error } = await client.GET("/api/adjustments", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },
@@ -27,13 +29,13 @@ export function useAdjustment(id: string | null) {
   });
 }
 
-export function useAdjustmentsByReceiptId(receiptId: string | null) {
+export function useAdjustmentsByReceiptId(receiptId: string | null, offset = 0, limit = 200) {
   return useQuery({
-    queryKey: ["adjustments", "by-receipt", receiptId],
+    queryKey: ["adjustments", "by-receipt", receiptId, offset, limit],
     enabled: !!receiptId,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/adjustments", {
-        params: { query: { receiptId: receiptId! } },
+        params: { query: { receiptId: receiptId!, offset, limit } },
       });
       if (error) throw error;
       return data;
@@ -116,17 +118,19 @@ export function useDeleteAdjustments() {
     },
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: ["adjustments"] });
-      const previous = queryClient.getQueryData(["adjustments"]);
-      queryClient.setQueryData(
-        ["adjustments"],
-        (old: { id: string }[] | undefined) =>
-          old?.filter((item) => !ids.includes(item.id)),
-      );
+      const previous = queryClient.getQueriesData<{ data: { id: string }[]; total: number }>({ queryKey: ["adjustments", "list"] });
+      for (const [key] of previous) {
+        queryClient.setQueryData(key, (old: { data: { id: string }[]; total: number; offset: number; limit: number } | undefined) => {
+          if (!old?.data) return old;
+          const filtered = old.data.filter((item) => !ids.includes(item.id));
+          return { ...old, data: filtered, total: old.total - (old.data.length - filtered.length) };
+        });
+      }
       return { previous };
     },
     onError: (_err, _ids, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["adjustments"], context.previous);
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
       }
       toast.error("Failed to delete adjustment(s)");
     },
@@ -142,11 +146,13 @@ export function useDeleteAdjustments() {
   });
 }
 
-export function useDeletedAdjustments() {
+export function useDeletedAdjustments(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["adjustments", "deleted"],
+    queryKey: ["adjustments", "deleted", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/adjustments/deleted");
+      const { data, error } = await client.GET("/api/adjustments/deleted", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },

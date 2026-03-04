@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useItemTemplates() {
+export function useItemTemplates(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["itemTemplates"],
+    queryKey: ["itemTemplates", "list", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/item-templates");
+      const { data, error } = await client.GET("/api/item-templates", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },
@@ -95,17 +97,19 @@ export function useDeleteItemTemplates() {
     },
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: ["itemTemplates"] });
-      const previous = queryClient.getQueryData(["itemTemplates"]);
-      queryClient.setQueryData(
-        ["itemTemplates"],
-        (old: { id: string }[] | undefined) =>
-          old?.filter((item) => !ids.includes(item.id)),
-      );
+      const previous = queryClient.getQueriesData<{ data: { id: string }[]; total: number }>({ queryKey: ["itemTemplates", "list"] });
+      for (const [key] of previous) {
+        queryClient.setQueryData(key, (old: { data: { id: string }[]; total: number; offset: number; limit: number } | undefined) => {
+          if (!old?.data) return old;
+          const filtered = old.data.filter((item) => !ids.includes(item.id));
+          return { ...old, data: filtered, total: old.total - (old.data.length - filtered.length) };
+        });
+      }
       return { previous };
     },
     onError: (_err, _ids, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["itemTemplates"], context.previous);
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
       }
       toast.error("Failed to delete item template(s)");
     },
@@ -121,11 +125,13 @@ export function useDeleteItemTemplates() {
   });
 }
 
-export function useDeletedItemTemplates() {
+export function useDeletedItemTemplates(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["itemTemplates", "deleted"],
+    queryKey: ["itemTemplates", "deleted", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/item-templates/deleted");
+      const { data, error } = await client.GET("/api/item-templates/deleted", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },

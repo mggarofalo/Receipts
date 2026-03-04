@@ -4,6 +4,7 @@ using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
+using Application.Models;
 using Application.Queries.Core.Transaction;
 using Asp.Versioning;
 using Domain.Core;
@@ -67,29 +68,39 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all transactions")]
-	[ProducesResponseType<List<TransactionResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<TransactionListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<TransactionResponse>>> GetAllTransactions([FromQuery] Guid? receiptId = null)
+	public async Task<ActionResult<TransactionListResponse>> GetAllTransactions([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			if (receiptId.HasValue)
 			{
 				logger.LogDebug("GetAllTransactions called with receiptId: {ReceiptId}", receiptId.Value);
-				GetTransactionsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
-				List<Transaction>? byReceiptResult = await mediator.Send(byReceiptQuery);
+				GetTransactionsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit);
+				PagedResult<Transaction> byReceiptResult = await mediator.Send(byReceiptQuery);
 
-				List<TransactionResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
-				return Ok(byReceiptModel);
+				return Ok(new TransactionListResponse
+				{
+					Data = [.. byReceiptResult.Data.Select(mapper.ToResponse)],
+					Total = byReceiptResult.Total,
+					Offset = byReceiptResult.Offset,
+					Limit = byReceiptResult.Limit,
+				});
 			}
 
 			logger.LogDebug("GetAllTransactions called");
-			GetAllTransactionsQuery query = new();
-			List<Transaction> result = await mediator.Send(query);
-			logger.LogDebug("GetAllTransactions called with {Count} transactions", result.Count);
+			GetAllTransactionsQuery query = new(offset, limit);
+			PagedResult<Transaction> result = await mediator.Send(query);
+			logger.LogDebug("GetAllTransactions called with {Count} transactions", result.Data.Count);
 
-			List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new TransactionListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{
@@ -101,19 +112,24 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted transactions")]
 	[EndpointDescription("Returns all transactions that have been soft-deleted.")]
-	[ProducesResponseType<List<TransactionResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<TransactionListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<TransactionResponse>>> GetDeletedTransactions()
+	public async Task<ActionResult<TransactionListResponse>> GetDeletedTransactions([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			logger.LogDebug("GetDeletedTransactions called");
-			GetDeletedTransactionsQuery query = new();
-			List<Transaction> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedTransactions called with {Count} transactions", result.Count);
+			GetDeletedTransactionsQuery query = new(offset, limit);
+			PagedResult<Transaction> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedTransactions called with {Count} transactions", result.Data.Count);
 
-			List<TransactionResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new TransactionListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{

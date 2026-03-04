@@ -5,6 +5,7 @@ using Application.Commands.ReceiptItem.Create;
 using Application.Commands.ReceiptItem.Delete;
 using Application.Commands.ReceiptItem.Restore;
 using Application.Commands.ReceiptItem.Update;
+using Application.Models;
 using Application.Queries.Core.ReceiptItem;
 using Domain.Core;
 using FluentAssertions;
@@ -98,18 +99,21 @@ public class ReceiptItemsControllerTests
 		List<ReceiptItemResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<GetAllReceiptItemsQuery>(),
+			It.Is<GetAllReceiptItemsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(mediatorReturn);
+			.ReturnsAsync(new PagedResult<ReceiptItem>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<List<ReceiptItemResponse>> result = await _controller.GetAllReceiptItems();
+		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(null, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<ReceiptItemResponse> actualControllerReturn = Assert.IsType<List<ReceiptItemResponse>>(okResult.Value);
+		ReceiptItemListResponse actualControllerReturn = Assert.IsType<ReceiptItemListResponse>(okResult.Value);
 
-		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
+		actualControllerReturn.Offset.Should().Be(0);
+		actualControllerReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -117,12 +121,12 @@ public class ReceiptItemsControllerTests
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<GetAllReceiptItemsQuery>(),
+			It.Is<GetAllReceiptItemsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<ReceiptItemResponse>> result = await _controller.GetAllReceiptItems();
+		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(null, 0, 50);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -138,18 +142,21 @@ public class ReceiptItemsControllerTests
 		List<ReceiptItemResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(mediatorReturn);
+			.ReturnsAsync(new PagedResult<ReceiptItem>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<List<ReceiptItemResponse>> result = await _controller.GetAllReceiptItems(receiptId);
+		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<ReceiptItemResponse> actualControllerReturn = Assert.IsType<List<ReceiptItemResponse>>(okResult.Value);
+		ReceiptItemListResponse actualControllerReturn = Assert.IsType<ReceiptItemListResponse>(okResult.Value);
 
-		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
+		actualControllerReturn.Offset.Should().Be(0);
+		actualControllerReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -157,22 +164,20 @@ public class ReceiptItemsControllerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<ReceiptItem> mediatorReturn = [];
-		List<ReceiptItemResponse> expectedControllerReturn = [];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(mediatorReturn);
+			.ReturnsAsync(new PagedResult<ReceiptItem>([], 0, 0, 50));
 
 		// Act
-		ActionResult<List<ReceiptItemResponse>> result = await _controller.GetAllReceiptItems(receiptId);
+		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<ReceiptItemResponse> actualControllerReturn = Assert.IsType<List<ReceiptItemResponse>>(okResult.Value);
+		ReceiptItemListResponse actualControllerReturn = Assert.IsType<ReceiptItemListResponse>(okResult.Value);
 
-		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Data.Should().BeEmpty();
 	}
 
 	[Fact]
@@ -182,17 +187,17 @@ public class ReceiptItemsControllerTests
 		Guid missingReceiptId = Guid.NewGuid();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == missingReceiptId),
+			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == missingReceiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync((List<ReceiptItem>?)null);
+			.ReturnsAsync(new PagedResult<ReceiptItem>([], 0, 0, 50));
 
 		// Act
-		ActionResult<List<ReceiptItemResponse>> result = await _controller.GetAllReceiptItems(missingReceiptId);
+		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(missingReceiptId, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<ReceiptItemResponse> actualReturn = Assert.IsType<List<ReceiptItemResponse>>(okResult.Value);
-		actualReturn.Should().BeEmpty();
+		ReceiptItemListResponse actualReturn = Assert.IsType<ReceiptItemListResponse>(okResult.Value);
+		actualReturn.Data.Should().BeEmpty();
 	}
 
 	[Fact]
@@ -202,12 +207,12 @@ public class ReceiptItemsControllerTests
 		Guid receiptId = Guid.NewGuid();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetReceiptItemsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<ReceiptItemResponse>> result = await _controller.GetAllReceiptItems(receiptId);
+		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);

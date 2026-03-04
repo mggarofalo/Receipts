@@ -8,7 +8,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useReceiptItems", () => ({
-  useReceiptItems: vi.fn(() => ({ data: [], isLoading: false })),
+  useReceiptItems: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useCreateReceiptItem: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateReceiptItem: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteReceiptItems: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -33,13 +33,13 @@ vi.mock("@/hooks/useSavedFilters", () => ({
   })),
 }));
 
-vi.mock("@/hooks/usePagination", () => ({
-  usePagination: vi.fn(() => ({
-    paginatedItems: [],
+vi.mock("@/hooks/useServerPagination", () => ({
+  useServerPagination: vi.fn(() => ({
+    offset: 0,
+    limit: 25,
     currentPage: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0,
+    pageSize: 25,
+    totalPages: vi.fn(() => 1),
     setPage: vi.fn(),
     setPageSize: vi.fn(),
   })),
@@ -93,7 +93,7 @@ describe("ReceiptItems", () => {
   it("renders empty state when no receipt items exist", async () => {
     const { useReceiptItems } = await import("@/hooks/useReceiptItems");
     vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
-      data: [],
+      data: { data: [], total: 0, offset: 0, limit: 50 },
       isLoading: false,
     }));
 
@@ -132,16 +132,11 @@ describe("ReceiptItems", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useReceiptItems } = await import("@/hooks/useReceiptItems");
+    vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<ReceiptItems />);
     expect(screen.getByText("Milk")).toBeInTheDocument();
@@ -166,16 +161,11 @@ describe("ReceiptItems", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useReceiptItems } = await import("@/hooks/useReceiptItems");
+    vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<ReceiptItems />);
     await user.click(screen.getByLabelText("Select Milk"));
@@ -208,16 +198,11 @@ describe("ReceiptItems", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useReceiptItems } = await import("@/hooks/useReceiptItems");
+    vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<ReceiptItems />);
     await user.click(screen.getByLabelText("Select Milk"));
@@ -253,16 +238,11 @@ describe("ReceiptItems", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useReceiptItems } = await import("@/hooks/useReceiptItems");
+    vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<ReceiptItems />);
     await user.click(screen.getByLabelText("Select all rows"));

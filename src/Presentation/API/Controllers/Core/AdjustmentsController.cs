@@ -4,6 +4,7 @@ using Application.Commands.Adjustment.Create;
 using Application.Commands.Adjustment.Delete;
 using Application.Commands.Adjustment.Restore;
 using Application.Commands.Adjustment.Update;
+using Application.Models;
 using Application.Queries.Core.Adjustment;
 using Asp.Versioning;
 using Domain.Core;
@@ -65,29 +66,39 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all adjustments")]
-	[ProducesResponseType<List<AdjustmentResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<AdjustmentListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<AdjustmentResponse>>> GetAllAdjustments([FromQuery] Guid? receiptId = null)
+	public async Task<ActionResult<AdjustmentListResponse>> GetAllAdjustments([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			if (receiptId.HasValue)
 			{
 				logger.LogDebug("GetAllAdjustments called with receiptId: {ReceiptId}", receiptId.Value);
-				GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
-				List<Adjustment>? byReceiptResult = await mediator.Send(byReceiptQuery);
+				GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit);
+				PagedResult<Adjustment> byReceiptResult = await mediator.Send(byReceiptQuery);
 
-				List<AdjustmentResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
-				return Ok(byReceiptModel);
+				return Ok(new AdjustmentListResponse
+				{
+					Data = [.. byReceiptResult.Data.Select(mapper.ToResponse)],
+					Total = byReceiptResult.Total,
+					Offset = byReceiptResult.Offset,
+					Limit = byReceiptResult.Limit,
+				});
 			}
 
 			logger.LogDebug("GetAllAdjustments called");
-			GetAllAdjustmentsQuery query = new();
-			List<Adjustment> result = await mediator.Send(query);
-			logger.LogDebug("GetAllAdjustments called with {Count} adjustments", result.Count);
+			GetAllAdjustmentsQuery query = new(offset, limit);
+			PagedResult<Adjustment> result = await mediator.Send(query);
+			logger.LogDebug("GetAllAdjustments called with {Count} adjustments", result.Data.Count);
 
-			List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new AdjustmentListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{
@@ -99,19 +110,24 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted adjustments")]
 	[EndpointDescription("Returns all adjustments that have been soft-deleted.")]
-	[ProducesResponseType<List<AdjustmentResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<AdjustmentListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<AdjustmentResponse>>> GetDeletedAdjustments()
+	public async Task<ActionResult<AdjustmentListResponse>> GetDeletedAdjustments([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			logger.LogDebug("GetDeletedAdjustments called");
-			GetDeletedAdjustmentsQuery query = new();
-			List<Adjustment> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedAdjustments called with {Count} adjustments", result.Count);
+			GetDeletedAdjustmentsQuery query = new(offset, limit);
+			PagedResult<Adjustment> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedAdjustments called with {Count} adjustments", result.Data.Count);
 
-			List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new AdjustmentListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{

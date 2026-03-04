@@ -54,7 +54,9 @@ describe("useAccounts", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(accounts);
-    expect(client.GET).toHaveBeenCalledWith("/api/accounts");
+    expect(client.GET).toHaveBeenCalledWith("/api/accounts", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("single query is disabled when id is null", () => {
@@ -136,7 +138,9 @@ describe("useAccounts", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(deleted);
-    expect(client.GET).toHaveBeenCalledWith("/api/accounts/deleted");
+    expect(client.GET).toHaveBeenCalledWith("/api/accounts/deleted", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("restore mutation calls POST and shows toast on success", async () => {

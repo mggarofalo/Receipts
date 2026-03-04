@@ -14,30 +14,55 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 		return await context.Adjustments.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<AdjustmentEntity>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
+	public async Task<List<AdjustmentEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.Where(a => a.ReceiptId == receiptId)
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<AdjustmentEntity>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<int> GetByReceiptIdCountAsync(Guid receiptId, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Adjustments
+			.Where(a => a.ReceiptId == receiptId)
+			.CountAsync(cancellationToken);
+	}
+
+	public async Task<List<AdjustmentEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<AdjustmentEntity>> GetDeletedAsync(CancellationToken cancellationToken)
+	public async Task<List<AdjustmentEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.OnlyDeleted()
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<int> GetDeletedCountAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Adjustments
+			.OnlyDeleted()
+			.CountAsync(cancellationToken);
 	}
 
 	public async Task<List<AdjustmentEntity>> CreateAsync(List<AdjustmentEntity> entities, CancellationToken cancellationToken)

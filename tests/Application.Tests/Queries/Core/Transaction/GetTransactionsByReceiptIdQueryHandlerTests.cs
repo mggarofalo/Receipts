@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Core.Transaction;
 using FluentAssertions;
 using Moq;
@@ -15,15 +16,14 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		List<Domain.Core.Transaction> expected = TransactionGenerator.GenerateList(2);
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expected, expected.Count, 0, 50));
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50);
 
-		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.NotNull(result);
-		result.Should().BeSameAs(expected);
+		result.Data.Should().BeSameAs(expected);
 	}
 
 	[Fact]
@@ -32,30 +32,31 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, 50));
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50);
 
-		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.NotNull(result);
-		Assert.Empty(result);
+		result.Data.Should().BeEmpty();
+		result.Total.Should().Be(0);
 	}
 
 	[Fact]
-	public async Task Handle_ShouldReturnNull_WhenReceiptDoesNotExist()
+	public async Task Handle_ShouldReturnEmpty_WhenReceiptDoesNotExist()
 	{
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>?)null);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, 50));
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50);
 
-		List<Domain.Core.Transaction>? result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.Null(result);
+		result.Data.Should().BeEmpty();
+		result.Total.Should().Be(0);
 	}
 }

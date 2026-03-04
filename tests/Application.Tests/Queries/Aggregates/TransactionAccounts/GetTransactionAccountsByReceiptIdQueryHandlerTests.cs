@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Aggregates.TransactionAccounts;
 using FluentAssertions;
 using Moq;
@@ -17,7 +18,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		List<Domain.Core.Transaction> expectedTransactions = TransactionGenerator.GenerateList(3);
 
 		Mock<ITransactionService> mockTransactionService = new();
-		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
+		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expectedTransactions, expectedTransactions.Count, 0, int.MaxValue));
 
 		Mock<IAccountService> mockAccountService = new();
 		for (int i = 0; i < expectedTransactions.Count; i++)
@@ -48,7 +49,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		Guid missingReceiptId = Guid.NewGuid();
 
 		Mock<ITransactionService> mockTransactionService = new();
-		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(missingReceiptId, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.Transaction>?)null);
+		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(missingReceiptId, 0, int.MaxValue, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, int.MaxValue));
 
 		Mock<IAccountService> mockAccountService = new();
 
@@ -70,7 +71,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		List<Domain.Core.Transaction> expectedTransactions = TransactionGenerator.GenerateList(3);
 
 		Mock<ITransactionService> mockTransactionService = new();
-		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
+		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expectedTransactions, expectedTransactions.Count, 0, int.MaxValue));
 
 		Mock<IAccountService> mockAccountService = new();
 		foreach (Domain.Core.Transaction transaction in expectedTransactions)
@@ -97,7 +98,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		List<Domain.Core.Transaction> expectedTransactions = [];
 
 		Mock<ITransactionService> mockTransactionService = new();
-		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransactions);
+		mockTransactionService.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expectedTransactions, 0, 0, int.MaxValue));
 
 		Mock<IAccountService> mockAccountService = new();
 
@@ -108,7 +109,6 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		List<Domain.Aggregates.TransactionAccount>? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
-		Assert.NotNull(result);
-		Assert.Empty(result);
+		Assert.Null(result);
 	}
 }

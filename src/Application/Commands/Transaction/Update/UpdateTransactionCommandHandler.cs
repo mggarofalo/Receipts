@@ -20,9 +20,9 @@ public class UpdateTransactionCommandHandler(
 		Guid receiptId = existingTransaction.ReceiptId;
 
 		Task<Domain.Core.Receipt?> receiptTask = receiptService.GetByIdAsync(receiptId, cancellationToken);
-		Task<List<Domain.Core.ReceiptItem>?> itemsTask = receiptItemService.GetByReceiptIdAsync(receiptId, cancellationToken);
-		Task<List<Domain.Core.Adjustment>?> adjustmentsTask = adjustmentService.GetByReceiptIdAsync(receiptId, cancellationToken);
-		Task<List<Domain.Core.Transaction>?> existingTransactionsTask = transactionService.GetByReceiptIdAsync(receiptId, cancellationToken);
+		Task<Models.PagedResult<Domain.Core.ReceiptItem>> itemsTask = receiptItemService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, cancellationToken);
+		Task<Models.PagedResult<Domain.Core.Adjustment>> adjustmentsTask = adjustmentService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, cancellationToken);
+		Task<Models.PagedResult<Domain.Core.Transaction>> existingTransactionsTask = transactionService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, cancellationToken);
 
 		await Task.WhenAll(receiptTask, itemsTask, adjustmentsTask, existingTransactionsTask);
 
@@ -32,14 +32,14 @@ public class UpdateTransactionCommandHandler(
 		ReceiptWithItems receiptWithItems = new()
 		{
 			Receipt = receipt,
-			Items = itemsTask.Result ?? [],
-			Adjustments = adjustmentsTask.Result ?? []
+			Items = itemsTask.Result.Data,
+			Adjustments = adjustmentsTask.Result.Data
 		};
 
 		HashSet<Guid> updatedIds = [.. request.Transactions.Select(t => t.Id)];
-		decimal unchangedTotal = existingTransactionsTask.Result?
+		decimal unchangedTotal = existingTransactionsTask.Result.Data
 			.Where(t => !updatedIds.Contains(t.Id))
-			.Sum(t => t.Amount.Amount) ?? 0;
+			.Sum(t => t.Amount.Amount);
 		decimal updatedTotal = request.Transactions.Sum(t => t.Amount.Amount);
 		decimal proposedTotal = unchangedTotal + updatedTotal;
 

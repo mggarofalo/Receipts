@@ -14,30 +14,55 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 		return await context.Subcategories.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<List<SubcategoryEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Subcategories
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetDeletedAsync(CancellationToken cancellationToken)
+	public async Task<List<SubcategoryEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Subcategories
 			.OnlyDeleted()
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken)
+	public async Task<int> GetDeletedCountAsync(CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Subcategories
-			.Where(e => e.CategoryId == categoryId)
+			.OnlyDeleted()
+			.CountAsync(cancellationToken);
+	}
+
+	public async Task<List<SubcategoryEntity>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Subcategories
+			.Where(s => s.CategoryId == categoryId)
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<int> GetByCategoryIdCountAsync(Guid categoryId, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Subcategories
+			.Where(s => s.CategoryId == categoryId)
+			.CountAsync(cancellationToken);
 	}
 
 	public async Task<List<SubcategoryEntity>> CreateAsync(List<SubcategoryEntity> entities, CancellationToken cancellationToken)

@@ -5,6 +5,7 @@ using Application.Commands.Adjustment.Create;
 using Application.Commands.Adjustment.Delete;
 using Application.Commands.Adjustment.Restore;
 using Application.Commands.Adjustment.Update;
+using Application.Models;
 using Application.Queries.Core.Adjustment;
 using Domain.Core;
 using FluentAssertions;
@@ -98,17 +99,20 @@ public class AdjustmentsControllerTests
 		List<AdjustmentResponse> expectedReturn = [.. adjustments.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAllAdjustmentsQuery>(q => true),
+			It.Is<GetAllAdjustmentsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(adjustments);
+			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments();
+		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(null, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<AdjustmentResponse> actualReturn = Assert.IsType<List<AdjustmentResponse>>(okResult.Value);
-		actualReturn.Should().BeEquivalentTo(expectedReturn);
+		AdjustmentListResponse actualReturn = Assert.IsType<AdjustmentListResponse>(okResult.Value);
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(adjustments.Count);
+		actualReturn.Offset.Should().Be(0);
+		actualReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -116,12 +120,12 @@ public class AdjustmentsControllerTests
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAllAdjustmentsQuery>(q => true),
+			It.Is<GetAllAdjustmentsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments();
+		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(null, 0, 50);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -136,17 +140,20 @@ public class AdjustmentsControllerTests
 		List<AdjustmentResponse> expectedReturn = [.. adjustments.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetDeletedAdjustmentsQuery>(q => true),
+			It.Is<GetDeletedAdjustmentsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(adjustments);
+			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		ActionResult<List<AdjustmentResponse>> result = await _controller.GetDeletedAdjustments();
+		ActionResult<AdjustmentListResponse> result = await _controller.GetDeletedAdjustments(0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<AdjustmentResponse> actualReturn = Assert.IsType<List<AdjustmentResponse>>(okResult.Value);
-		actualReturn.Should().BeEquivalentTo(expectedReturn);
+		AdjustmentListResponse actualReturn = Assert.IsType<AdjustmentListResponse>(okResult.Value);
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(adjustments.Count);
+		actualReturn.Offset.Should().Be(0);
+		actualReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -154,12 +161,12 @@ public class AdjustmentsControllerTests
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetDeletedAdjustmentsQuery>(q => true),
+			It.Is<GetDeletedAdjustmentsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<AdjustmentResponse>> result = await _controller.GetDeletedAdjustments();
+		ActionResult<AdjustmentListResponse> result = await _controller.GetDeletedAdjustments(0, 50);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
@@ -175,17 +182,20 @@ public class AdjustmentsControllerTests
 		List<AdjustmentResponse> expectedReturn = [.. adjustments.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAdjustmentsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetAdjustmentsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(adjustments);
+			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments(receiptId);
+		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<AdjustmentResponse> actualReturn = Assert.IsType<List<AdjustmentResponse>>(okResult.Value);
-		actualReturn.Should().BeEquivalentTo(expectedReturn);
+		AdjustmentListResponse actualReturn = Assert.IsType<AdjustmentListResponse>(okResult.Value);
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(adjustments.Count);
+		actualReturn.Offset.Should().Be(0);
+		actualReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -195,17 +205,17 @@ public class AdjustmentsControllerTests
 		Guid receiptId = Guid.NewGuid();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAdjustmentsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetAdjustmentsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync((List<Adjustment>?)null);
+			.ReturnsAsync(new PagedResult<Adjustment>([], 0, 0, 50));
 
 		// Act
-		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments(receiptId);
+		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<AdjustmentResponse> actualReturn = Assert.IsType<List<AdjustmentResponse>>(okResult.Value);
-		actualReturn.Should().BeEmpty();
+		AdjustmentListResponse actualReturn = Assert.IsType<AdjustmentListResponse>(okResult.Value);
+		actualReturn.Data.Should().BeEmpty();
 	}
 
 	[Fact]
@@ -215,12 +225,12 @@ public class AdjustmentsControllerTests
 		Guid receiptId = Guid.NewGuid();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAdjustmentsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetAdjustmentsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<AdjustmentResponse>> result = await _controller.GetAllAdjustments(receiptId);
+		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
 
 		// Assert
 		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);

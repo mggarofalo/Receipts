@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Core.Subcategory;
 using FluentAssertions;
 using Moq;
@@ -15,14 +16,14 @@ public class GetSubcategoriesByCategoryIdQueryHandlerTests
 		Guid categoryId = Guid.NewGuid();
 
 		Mock<ISubcategoryService> mockService = new();
-		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Subcategory>(expected, expected.Count, 0, 50));
 
 		GetSubcategoriesByCategoryIdQueryHandler handler = new(mockService.Object);
-		GetSubcategoriesByCategoryIdQuery query = new(categoryId);
+		GetSubcategoriesByCategoryIdQuery query = new(categoryId, 0, 50);
 
-		List<Domain.Core.Subcategory> result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Subcategory> result = await handler.Handle(query, CancellationToken.None);
 
-		result.Should().BeSameAs(expected);
+		result.Data.Should().BeSameAs(expected);
 	}
 
 	[Fact]
@@ -31,13 +32,13 @@ public class GetSubcategoriesByCategoryIdQueryHandlerTests
 		Guid categoryId = Guid.NewGuid();
 
 		Mock<ISubcategoryService> mockService = new();
-		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Subcategory>([], 0, 0, 50));
 
 		GetSubcategoriesByCategoryIdQueryHandler handler = new(mockService.Object);
-		GetSubcategoriesByCategoryIdQuery query = new(categoryId);
+		GetSubcategoriesByCategoryIdQuery query = new(categoryId, 0, 50);
 
-		List<Domain.Core.Subcategory> result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Subcategory> result = await handler.Handle(query, CancellationToken.None);
 
-		result.Should().BeEmpty();
+		result.Data.Should().BeEmpty();
 	}
 }

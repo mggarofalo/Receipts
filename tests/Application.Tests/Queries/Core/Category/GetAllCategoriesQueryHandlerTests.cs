@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Core.Category;
 using FluentAssertions;
 using Moq;
@@ -14,13 +15,13 @@ public class GetAllCategoriesQueryHandlerTests
 		List<Domain.Core.Category> expected = CategoryGenerator.GenerateList(2);
 
 		Mock<ICategoryService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Category>(expected, expected.Count, 0, 50));
 
 		GetAllCategoriesQueryHandler handler = new(mockService.Object);
-		GetAllCategoriesQuery query = new();
+		GetAllCategoriesQuery query = new(0, 50);
 
-		List<Domain.Core.Category> result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Category> result = await handler.Handle(query, CancellationToken.None);
 
-		result.Should().BeSameAs(expected);
+		result.Data.Should().BeSameAs(expected);
 	}
 }

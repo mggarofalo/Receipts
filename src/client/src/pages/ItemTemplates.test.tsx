@@ -8,7 +8,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useItemTemplates", () => ({
-  useItemTemplates: vi.fn(() => ({ data: [], isLoading: false })),
+  useItemTemplates: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useCreateItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteItemTemplates: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -33,13 +33,13 @@ vi.mock("@/hooks/useSavedFilters", () => ({
   })),
 }));
 
-vi.mock("@/hooks/usePagination", () => ({
-  usePagination: vi.fn(() => ({
-    paginatedItems: [],
+vi.mock("@/hooks/useServerPagination", () => ({
+  useServerPagination: vi.fn(() => ({
+    offset: 0,
+    limit: 25,
     currentPage: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0,
+    pageSize: 25,
+    totalPages: vi.fn(() => 1),
     setPage: vi.fn(),
     setPageSize: vi.fn(),
   })),
@@ -84,7 +84,7 @@ describe("ItemTemplates", () => {
   it("renders empty state when no templates exist", async () => {
     const { useItemTemplates } = await import("@/hooks/useItemTemplates");
     vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
-      data: [],
+      data: { data: [], total: 0, offset: 0, limit: 50 },
       isLoading: false,
     }));
 
@@ -123,16 +123,11 @@ describe("ItemTemplates", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<ItemTemplates />);
     expect(screen.getByText("Coffee")).toBeInTheDocument();
@@ -167,16 +162,11 @@ describe("ItemTemplates", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<ItemTemplates />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
@@ -202,16 +192,11 @@ describe("ItemTemplates", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<ItemTemplates />);
     await user.click(screen.getByLabelText("Select Coffee"));
@@ -244,16 +229,11 @@ describe("ItemTemplates", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<ItemTemplates />);
     await user.click(screen.getByLabelText("Select Coffee"));

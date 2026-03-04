@@ -8,7 +8,7 @@ import {
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
-import { usePagination } from "@/hooks/usePagination";
+import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
@@ -64,7 +64,8 @@ const FILTER_DEFS: FilterDefinition[] = [
 
 function Accounts() {
   usePageTitle("Accounts");
-  const { data: accounts, isLoading } = useAccounts();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { data: accountsResponse, isLoading } = useAccounts(offset, limit);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccounts = useDeleteAccounts();
@@ -87,7 +88,8 @@ function Accounts() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const data = (accounts as AccountResponse[] | undefined) ?? [];
+  const data = (accountsResponse?.data as AccountResponse[] | undefined) ?? [];
+  const serverTotal = accountsResponse?.total ?? 0;
   const {
     filters: savedFilters,
     save: saveFilter,
@@ -110,16 +112,6 @@ function Accounts() {
     return map;
   }, [results]);
 
-  const {
-    paginatedItems,
-    currentPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  } = usePagination({ items: filteredResults });
-
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -130,21 +122,21 @@ function Accounts() {
   }
 
   function toggleAll() {
-    if (selected.size === paginatedItems.length) {
+    if (selected.size === filteredResults.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(paginatedItems.map((a) => a.id)));
+      setSelected(new Set(filteredResults.map((a) => a.id)));
     }
   }
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: paginatedItems,
+    items: filteredResults,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditAccount(a),
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
-      setSelected(new Set(paginatedItems.map((a) => a.id))),
+      setSelected(new Set(filteredResults.map((a) => a.id))),
     onDeselectAll: () => setSelected(new Set()),
     onToggleSelect: (a) => toggleSelect(a.id),
     selected,
@@ -221,8 +213,8 @@ function Accounts() {
                       type="checkbox"
                       aria-label="Select all rows"
                       checked={
-                        selected.size === paginatedItems.length &&
-                        paginatedItems.length > 0
+                        selected.size === filteredResults.length &&
+                        filteredResults.length > 0
                       }
                       onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
@@ -235,7 +227,7 @@ function Accounts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((account, index) => {
+                {filteredResults.map((account, index) => {
                   const result = matchMap.get(account.id);
                   const matches = result?.matches;
                   return (
@@ -292,10 +284,10 @@ function Accounts() {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalItems={totalItems}
+            totalItems={serverTotal}
             pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
         </>

@@ -8,7 +8,7 @@ import {
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
-import { usePagination } from "@/hooks/usePagination";
+import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
@@ -67,7 +67,8 @@ const FILTER_DEFS: FilterDefinition[] = [
 
 function Receipts() {
   usePageTitle("Receipts");
-  const { data: receipts, isLoading } = useReceipts();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { data: receiptsResponse, isLoading } = useReceipts(offset, limit);
   const createReceipt = useCreateReceipt();
   const updateReceipt = useUpdateReceipt();
   const deleteReceipts = useDeleteReceipts();
@@ -89,11 +90,12 @@ function Receipts() {
   }, []);
 
   const data = useMemo(() => {
-    const list = (receipts as ReceiptResponse[] | undefined) ?? [];
+    const list = (receiptsResponse?.data as ReceiptResponse[] | undefined) ?? [];
     return [...list].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-  }, [receipts]);
+  }, [receiptsResponse?.data]);
+  const serverTotal = receiptsResponse?.total ?? 0;
 
   const {
     filters: savedFilters,
@@ -119,16 +121,6 @@ function Receipts() {
     return map;
   }, [results]);
 
-  const {
-    paginatedItems,
-    currentPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  } = usePagination({ items: filteredResults });
-
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -139,21 +131,21 @@ function Receipts() {
   }
 
   function toggleAll() {
-    if (selected.size === paginatedItems.length) {
+    if (selected.size === filteredResults.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(paginatedItems.map((r) => r.id)));
+      setSelected(new Set(filteredResults.map((r) => r.id)));
     }
   }
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: paginatedItems,
+    items: filteredResults,
     getId: (r) => r.id,
     enabled: !anyDialogOpen,
     onOpen: (r) => setEditReceipt(r),
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
-      setSelected(new Set(paginatedItems.map((r) => r.id))),
+      setSelected(new Set(filteredResults.map((r) => r.id))),
     onDeselectAll: () => setSelected(new Set()),
     onToggleSelect: (r) => toggleSelect(r.id),
     selected,
@@ -230,8 +222,8 @@ function Receipts() {
                       type="checkbox"
                       aria-label="Select all rows"
                       checked={
-                        selected.size === paginatedItems.length &&
-                        paginatedItems.length > 0
+                        selected.size === filteredResults.length &&
+                        filteredResults.length > 0
                       }
                       onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
@@ -245,7 +237,7 @@ function Receipts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((receipt, index) => {
+                {filteredResults.map((receipt, index) => {
                   const result = matchMap.get(receipt.id);
                   const matches = result?.matches;
                   return (
@@ -305,10 +297,10 @@ function Receipts() {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalItems={totalItems}
+            totalItems={serverTotal}
             pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
         </>

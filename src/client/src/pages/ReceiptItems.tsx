@@ -8,7 +8,7 @@ import {
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
-import { usePagination } from "@/hooks/usePagination";
+import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
@@ -69,7 +69,8 @@ const FILTER_DEFS: FilterDefinition[] = [
 
 function ReceiptItems() {
   usePageTitle("Receipt Items");
-  const { data: items, isLoading } = useReceiptItems();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { data: itemsResponse, isLoading } = useReceiptItems(offset, limit);
   const createItem = useCreateReceiptItem();
   const updateItem = useUpdateReceiptItem();
   const deleteItems = useDeleteReceiptItems();
@@ -93,9 +94,10 @@ function ReceiptItems() {
   }, []);
 
   const data = useMemo(
-    () => (items as ReceiptItemResponse[] | undefined) ?? [],
-    [items],
+    () => (itemsResponse?.data as ReceiptItemResponse[] | undefined) ?? [],
+    [itemsResponse?.data],
   );
+  const serverTotal = itemsResponse?.total ?? 0;
 
   const categories = useMemo(
     () => [...new Set(data.map((i) => i.category))].sort(),
@@ -137,23 +139,13 @@ function ReceiptItems() {
     return map;
   }, [results]);
 
-  const {
-    paginatedItems,
-    currentPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  } = usePagination({ items: filteredResults });
-
   const grandTotal = useMemo(
     () =>
-      paginatedItems.reduce(
+      filteredResults.reduce(
         (sum, item) => sum + item.quantity * item.unitPrice,
         0,
       ),
-    [paginatedItems],
+    [filteredResults],
   );
 
   function toggleSelect(id: string) {
@@ -166,15 +158,15 @@ function ReceiptItems() {
   }
 
   function toggleAll() {
-    if (selected.size === paginatedItems.length) {
+    if (selected.size === filteredResults.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(paginatedItems.map((item) => item.id)));
+      setSelected(new Set(filteredResults.map((item) => item.id)));
     }
   }
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: paginatedItems,
+    items: filteredResults,
     getId: (item) => item.id,
     enabled: !anyDialogOpen,
     onOpen: (item) => {
@@ -182,7 +174,7 @@ function ReceiptItems() {
     },
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
-      setSelected(new Set(paginatedItems.map((item) => item.id))),
+      setSelected(new Set(filteredResults.map((item) => item.id))),
     onDeselectAll: () => setSelected(new Set()),
     onToggleSelect: (item) => toggleSelect(item.id),
     selected,
@@ -259,8 +251,8 @@ function ReceiptItems() {
                       type="checkbox"
                       aria-label="Select all rows"
                       checked={
-                        selected.size === paginatedItems.length &&
-                        paginatedItems.length > 0
+                        selected.size === filteredResults.length &&
+                        filteredResults.length > 0
                       }
                       onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
@@ -278,7 +270,7 @@ function ReceiptItems() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((item, index) => {
+                {filteredResults.map((item, index) => {
                   const result = matchMap.get(item.id);
                   const matches = result?.matches;
                   return (
@@ -362,10 +354,10 @@ function ReceiptItems() {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalItems={totalItems}
+            totalItems={serverTotal}
             pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
         </>

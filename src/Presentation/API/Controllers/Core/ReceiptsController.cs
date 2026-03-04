@@ -5,6 +5,7 @@ using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
 using Application.Commands.Receipt.Update;
+using Application.Models;
 using Application.Queries.Core.Receipt;
 using Asp.Versioning;
 using Domain.Core;
@@ -73,19 +74,24 @@ public class ReceiptsController(
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipts")]
-	[ProducesResponseType<List<ReceiptResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ReceiptListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<ReceiptResponse>>> GetAllReceipts()
+	public async Task<ActionResult<ReceiptListResponse>> GetAllReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			logger.LogDebug("GetAllReceipts called");
-			GetAllReceiptsQuery query = new();
-			List<Receipt> result = await mediator.Send(query);
-			logger.LogDebug("GetAllReceipts called with {Count} receipts", result.Count);
+			GetAllReceiptsQuery query = new(offset, limit);
+			PagedResult<Receipt> result = await mediator.Send(query);
+			logger.LogDebug("GetAllReceipts called with {Count} receipts", result.Data.Count);
 
-			List<ReceiptResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new ReceiptListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{
@@ -97,19 +103,24 @@ public class ReceiptsController(
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted receipts")]
 	[EndpointDescription("Returns all receipts that have been soft-deleted.")]
-	[ProducesResponseType<List<ReceiptResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ReceiptListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<ReceiptResponse>>> GetDeletedReceipts()
+	public async Task<ActionResult<ReceiptListResponse>> GetDeletedReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			logger.LogDebug("GetDeletedReceipts called");
-			GetDeletedReceiptsQuery query = new();
-			List<Receipt> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedReceipts called with {Count} receipts", result.Count);
+			GetDeletedReceiptsQuery query = new(offset, limit);
+			PagedResult<Receipt> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedReceipts called with {Count} receipts", result.Data.Count);
 
-			List<ReceiptResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new ReceiptListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{

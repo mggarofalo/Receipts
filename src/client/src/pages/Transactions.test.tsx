@@ -8,7 +8,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useTransactions", () => ({
-  useTransactions: vi.fn(() => ({ data: [], isLoading: false })),
+  useTransactions: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useCreateTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteTransactions: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -33,13 +33,13 @@ vi.mock("@/hooks/useSavedFilters", () => ({
   })),
 }));
 
-vi.mock("@/hooks/usePagination", () => ({
-  usePagination: vi.fn(() => ({
-    paginatedItems: [],
+vi.mock("@/hooks/useServerPagination", () => ({
+  useServerPagination: vi.fn(() => ({
+    offset: 0,
+    limit: 25,
     currentPage: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0,
+    pageSize: 25,
+    totalPages: vi.fn(() => 1),
     setPage: vi.fn(),
     setPageSize: vi.fn(),
   })),
@@ -84,7 +84,7 @@ describe("Transactions", () => {
   it("renders empty state when no transactions exist", async () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: [],
+      data: { data: [], total: 0, offset: 0, limit: 50 },
       isLoading: false,
     }));
 
@@ -124,16 +124,11 @@ describe("Transactions", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Transactions />);
     expect(screen.getByText("2024-01-15")).toBeInTheDocument();
@@ -167,16 +162,11 @@ describe("Transactions", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Transactions />);
     await user.click(screen.getByLabelText("Select transaction t1"));
@@ -209,16 +199,11 @@ describe("Transactions", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Transactions />);
     await user.click(screen.getByLabelText("Select transaction t1"));
@@ -254,16 +239,11 @@ describe("Transactions", () => {
       clearSearch: vi.fn(),
     }));
 
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
 
     renderWithProviders(<Transactions />);
     await user.click(screen.getByLabelText("Select all rows"));

@@ -96,7 +96,7 @@ public class AccountRepositoryTests
 		AccountRepository repository = new(_contextFactory);
 
 		// Act
-		List<AccountEntity> actual = await repository.GetAllAsync(CancellationToken.None);
+		List<AccountEntity> actual = await repository.GetAllAsync(0, 50, CancellationToken.None);
 
 		// Assert
 		actual.Should().BeEquivalentTo(entities);

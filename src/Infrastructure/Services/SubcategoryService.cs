@@ -1,5 +1,6 @@
 using Application.Exceptions;
 using Application.Interfaces.Services;
+using Application.Models;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
@@ -35,16 +36,20 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 		return await repository.ExistsAsync(id, cancellationToken);
 	}
 
-	public async Task<List<Subcategory>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<PagedResult<Subcategory>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
-		List<SubcategoryEntity> subcategoryEntities = await repository.GetAllAsync(cancellationToken);
-		return [.. subcategoryEntities.Select(mapper.ToDomain)];
+		int total = await repository.GetCountAsync(cancellationToken);
+		List<SubcategoryEntity> entities = await repository.GetAllAsync(offset, limit, cancellationToken);
+		List<Subcategory> data = [.. entities.Select(mapper.ToDomain)];
+		return new PagedResult<Subcategory>(data, total, offset, limit);
 	}
 
-	public async Task<List<Subcategory>> GetDeletedAsync(CancellationToken cancellationToken)
+	public async Task<PagedResult<Subcategory>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
-		List<SubcategoryEntity> subcategoryEntities = await repository.GetDeletedAsync(cancellationToken);
-		return [.. subcategoryEntities.Select(mapper.ToDomain)];
+		int total = await repository.GetDeletedCountAsync(cancellationToken);
+		List<SubcategoryEntity> entities = await repository.GetDeletedAsync(offset, limit, cancellationToken);
+		List<Subcategory> data = [.. entities.Select(mapper.ToDomain)];
+		return new PagedResult<Subcategory>(data, total, offset, limit);
 	}
 
 	public async Task<Subcategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -53,10 +58,12 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 		return subcategoryEntity == null ? null : mapper.ToDomain(subcategoryEntity);
 	}
 
-	public async Task<List<Subcategory>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken)
+	public async Task<PagedResult<Subcategory>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, CancellationToken cancellationToken)
 	{
-		List<SubcategoryEntity> subcategoryEntities = await repository.GetByCategoryIdAsync(categoryId, cancellationToken);
-		return [.. subcategoryEntities.Select(mapper.ToDomain)];
+		int total = await repository.GetByCategoryIdCountAsync(categoryId, cancellationToken);
+		List<SubcategoryEntity> entities = await repository.GetByCategoryIdAsync(categoryId, offset, limit, cancellationToken);
+		List<Subcategory> data = entities.Select(mapper.ToDomain).ToList();
+		return new PagedResult<Subcategory>(data, total, offset, limit);
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)

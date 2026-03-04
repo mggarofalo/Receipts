@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,17 +8,17 @@ namespace Infrastructure.Services;
 
 public class UserService(ApplicationDbContext dbContext) : IUserService
 {
-	public async Task<PagedUserList> ListUsersAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+	public async Task<PagedResult<UserSummary>> ListUsersAsync(int offset, int limit, CancellationToken cancellationToken = default)
 	{
-		page = Math.Max(1, page);
-		pageSize = Math.Clamp(pageSize, 1, 100);
+		offset = Math.Max(0, offset);
+		limit = Math.Clamp(limit, 1, 200);
 
 		int totalCount = await dbContext.Users.CountAsync(cancellationToken);
 
 		List<ApplicationUser> users = await dbContext.Users
 			.OrderBy(u => u.Email)
-			.Skip((page - 1) * pageSize)
-			.Take(pageSize)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 
 		List<string> userIds = users.Select(u => u.Id).ToList();
@@ -46,7 +47,7 @@ public class UserService(ApplicationDbContext dbContext) : IUserService
 			user.LastLoginAt
 		)).ToList();
 
-		return new PagedUserList(items, page, pageSize, totalCount);
+		return new PagedResult<UserSummary>(items, totalCount, offset, limit);
 	}
 
 	public async Task<string?> FindUserIdByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)

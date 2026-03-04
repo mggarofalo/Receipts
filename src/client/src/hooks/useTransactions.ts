@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useTransactions() {
+export function useTransactions(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["transactions"],
+    queryKey: ["transactions", "list", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/transactions");
+      const { data, error } = await client.GET("/api/transactions", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },
@@ -27,13 +29,13 @@ export function useTransaction(id: string | null) {
   });
 }
 
-export function useTransactionsByReceiptId(receiptId: string | null) {
+export function useTransactionsByReceiptId(receiptId: string | null, offset = 0, limit = 200) {
   return useQuery({
-    queryKey: ["transactions", "by-receipt", receiptId],
+    queryKey: ["transactions", "by-receipt", receiptId, offset, limit],
     enabled: !!receiptId,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/transactions", {
-        params: { query: { receiptId: receiptId! } },
+        params: { query: { receiptId: receiptId!, offset, limit } },
       });
       if (error) throw error;
       return data;
@@ -103,17 +105,19 @@ export function useDeleteTransactions() {
     },
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: ["transactions"] });
-      const previous = queryClient.getQueryData(["transactions"]);
-      queryClient.setQueryData(
-        ["transactions"],
-        (old: { id: string }[] | undefined) =>
-          old?.filter((item) => !ids.includes(item.id)),
-      );
+      const previous = queryClient.getQueriesData<{ data: { id: string }[]; total: number }>({ queryKey: ["transactions", "list"] });
+      for (const [key] of previous) {
+        queryClient.setQueryData(key, (old: { data: { id: string }[]; total: number; offset: number; limit: number } | undefined) => {
+          if (!old?.data) return old;
+          const filtered = old.data.filter((item) => !ids.includes(item.id));
+          return { ...old, data: filtered, total: old.total - (old.data.length - filtered.length) };
+        });
+      }
       return { previous };
     },
     onError: (_err, _ids, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["transactions"], context.previous);
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
       }
       toast.error("Failed to delete transaction(s)");
     },
@@ -127,11 +131,13 @@ export function useDeleteTransactions() {
   });
 }
 
-export function useDeletedTransactions() {
+export function useDeletedTransactions(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["transactions", "deleted"],
+    queryKey: ["transactions", "deleted", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/transactions/deleted");
+      const { data, error } = await client.GET("/api/transactions/deleted", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },

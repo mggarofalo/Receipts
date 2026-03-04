@@ -4,6 +4,7 @@ using Application.Commands.ReceiptItem.Create;
 using Application.Commands.ReceiptItem.Delete;
 using Application.Commands.ReceiptItem.Restore;
 using Application.Commands.ReceiptItem.Update;
+using Application.Models;
 using Application.Queries.Core.ReceiptItem;
 using Asp.Versioning;
 using Domain.Core;
@@ -67,29 +68,39 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipt items")]
-	[ProducesResponseType<List<ReceiptItemResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ReceiptItemListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<ReceiptItemResponse>>> GetAllReceiptItems([FromQuery] Guid? receiptId = null)
+	public async Task<ActionResult<ReceiptItemListResponse>> GetAllReceiptItems([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			if (receiptId.HasValue)
 			{
 				logger.LogDebug("GetAllReceiptItems called with receiptId: {ReceiptId}", receiptId.Value);
-				GetReceiptItemsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
-				List<ReceiptItem>? byReceiptResult = await mediator.Send(byReceiptQuery);
+				GetReceiptItemsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit);
+				PagedResult<ReceiptItem> byReceiptResult = await mediator.Send(byReceiptQuery);
 
-				List<ReceiptItemResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
-				return Ok(byReceiptModel);
+				return Ok(new ReceiptItemListResponse
+				{
+					Data = [.. byReceiptResult.Data.Select(mapper.ToResponse)],
+					Total = byReceiptResult.Total,
+					Offset = byReceiptResult.Offset,
+					Limit = byReceiptResult.Limit,
+				});
 			}
 
 			logger.LogDebug("GetAllReceiptItems called");
-			GetAllReceiptItemsQuery query = new();
-			List<ReceiptItem> result = await mediator.Send(query);
-			logger.LogDebug("GetAllReceiptItems called with {Count} receipt items", result.Count);
+			GetAllReceiptItemsQuery query = new(offset, limit);
+			PagedResult<ReceiptItem> result = await mediator.Send(query);
+			logger.LogDebug("GetAllReceiptItems called with {Count} receipt items", result.Data.Count);
 
-			List<ReceiptItemResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new ReceiptItemListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{
@@ -101,19 +112,24 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted receipt items")]
 	[EndpointDescription("Returns all receipt items that have been soft-deleted.")]
-	[ProducesResponseType<List<ReceiptItemResponse>>(StatusCodes.Status200OK)]
+	[ProducesResponseType<ReceiptItemListResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-	public async Task<ActionResult<List<ReceiptItemResponse>>> GetDeletedReceiptItems()
+	public async Task<ActionResult<ReceiptItemListResponse>> GetDeletedReceiptItems([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		try
 		{
 			logger.LogDebug("GetDeletedReceiptItems called");
-			GetDeletedReceiptItemsQuery query = new();
-			List<ReceiptItem> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedReceiptItems called with {Count} receipt items", result.Count);
+			GetDeletedReceiptItemsQuery query = new(offset, limit);
+			PagedResult<ReceiptItem> result = await mediator.Send(query);
+			logger.LogDebug("GetDeletedReceiptItems called with {Count} receipt items", result.Data.Count);
 
-			List<ReceiptItemResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
+			return Ok(new ReceiptItemListResponse
+			{
+				Data = [.. result.Data.Select(mapper.ToResponse)],
+				Total = result.Total,
+				Offset = result.Offset,
+				Limit = result.Limit,
+			});
 		}
 		catch (Exception ex)
 		{

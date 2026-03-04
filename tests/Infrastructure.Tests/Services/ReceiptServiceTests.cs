@@ -1,3 +1,4 @@
+using Application.Models;
 using Domain.Core;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
@@ -74,13 +75,17 @@ public class ReceiptServiceTests
 		// Arrange
 		List<ReceiptEntity> entities = ReceiptEntityGenerator.GenerateList(3);
 
-		_mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
+		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		List<Receipt> actual = await _service.GetAllAsync(CancellationToken.None);
+		PagedResult<Receipt> actual = await _service.GetAllAsync(0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Data.Count);
+		Assert.Equal(entities.Count, actual.Total);
+		Assert.Equal(0, actual.Offset);
+		Assert.Equal(50, actual.Limit);
 	}
 
 	[Fact]

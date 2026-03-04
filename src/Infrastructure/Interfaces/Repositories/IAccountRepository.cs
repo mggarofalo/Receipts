@@ -6,8 +6,9 @@ public interface IAccountRepository
 {
 	Task<AccountEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 	Task<AccountEntity?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken);
-	Task<List<AccountEntity>> GetAllAsync(CancellationToken cancellationToken);
-	Task<List<AccountEntity>> GetDeletedAsync(CancellationToken cancellationToken);
+	Task<List<AccountEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken);
+	Task<List<AccountEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken);
+	Task<int> GetDeletedCountAsync(CancellationToken cancellationToken);
 	Task<List<AccountEntity>> CreateAsync(List<AccountEntity> entities, CancellationToken cancellationToken);
 	Task UpdateAsync(List<AccountEntity> entities, CancellationToken cancellationToken);
 	Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken);

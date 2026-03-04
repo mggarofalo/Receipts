@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
@@ -25,16 +26,20 @@ public class ItemTemplateService(IItemTemplateRepository repository, ItemTemplat
 		return await repository.ExistsAsync(id, cancellationToken);
 	}
 
-	public async Task<List<ItemTemplate>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<PagedResult<ItemTemplate>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
-		List<ItemTemplateEntity> entities = await repository.GetAllAsync(cancellationToken);
-		return [.. entities.Select(mapper.ToDomain)];
+		int total = await repository.GetCountAsync(cancellationToken);
+		List<ItemTemplateEntity> entities = await repository.GetAllAsync(offset, limit, cancellationToken);
+		List<ItemTemplate> data = [.. entities.Select(mapper.ToDomain)];
+		return new PagedResult<ItemTemplate>(data, total, offset, limit);
 	}
 
-	public async Task<List<ItemTemplate>> GetDeletedAsync(CancellationToken cancellationToken)
+	public async Task<PagedResult<ItemTemplate>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
-		List<ItemTemplateEntity> entities = await repository.GetDeletedAsync(cancellationToken);
-		return [.. entities.Select(mapper.ToDomain)];
+		int total = await repository.GetDeletedCountAsync(cancellationToken);
+		List<ItemTemplateEntity> entities = await repository.GetDeletedAsync(offset, limit, cancellationToken);
+		List<ItemTemplate> data = [.. entities.Select(mapper.ToDomain)];
+		return new PagedResult<ItemTemplate>(data, total, offset, limit);
 	}
 
 	public async Task<ItemTemplate?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

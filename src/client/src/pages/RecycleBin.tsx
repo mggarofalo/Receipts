@@ -207,7 +207,7 @@ function RecycleBin() {
   const allItems = useMemo(() => {
     const items: DeletedItem[] = [];
 
-    for (const a of accounts.data ?? []) {
+    for (const a of accounts.data?.data ?? []) {
       items.push({
         entityType: "Account",
         entityTypeLabel: "Account",
@@ -215,7 +215,7 @@ function RecycleBin() {
         label: `${a.name} (${a.accountCode})`,
       });
     }
-    for (const c of categories.data ?? []) {
+    for (const c of categories.data?.data ?? []) {
       items.push({
         entityType: "Category",
         entityTypeLabel: "Category",
@@ -223,7 +223,7 @@ function RecycleBin() {
         label: c.name,
       });
     }
-    for (const s of subcategories.data ?? []) {
+    for (const s of subcategories.data?.data ?? []) {
       items.push({
         entityType: "Subcategory",
         entityTypeLabel: "Subcategory",
@@ -231,7 +231,7 @@ function RecycleBin() {
         label: s.name,
       });
     }
-    for (const r of receipts.data ?? []) {
+    for (const r of receipts.data?.data ?? []) {
       items.push({
         entityType: "Receipt",
         entityTypeLabel: "Receipt",
@@ -239,7 +239,7 @@ function RecycleBin() {
         label: `${r.location} - ${r.date}`,
       });
     }
-    for (const ri of receiptItems.data ?? []) {
+    for (const ri of receiptItems.data?.data ?? []) {
       items.push({
         entityType: "ReceiptItem",
         entityTypeLabel: "Receipt Item",
@@ -247,7 +247,7 @@ function RecycleBin() {
         label: `${ri.description} (${ri.receiptItemCode})`,
       });
     }
-    for (const t of transactions.data ?? []) {
+    for (const t of transactions.data?.data ?? []) {
       items.push({
         entityType: "Transaction",
         entityTypeLabel: "Transaction",
@@ -255,7 +255,7 @@ function RecycleBin() {
         label: `$${t.amount.toFixed(2)} - ${t.date}`,
       });
     }
-    for (const it of itemTemplates.data ?? []) {
+    for (const it of itemTemplates.data?.data ?? []) {
       items.push({
         entityType: "ItemTemplate",
         entityTypeLabel: "Item Template",

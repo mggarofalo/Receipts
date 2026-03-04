@@ -7,7 +7,7 @@ public class GetAllReceiptsQueryTests : IQueryTests
 	[Fact]
 	public void Query_CanBeCreated()
 	{
-		GetAllReceiptsQuery query = new();
+		GetAllReceiptsQuery query = new(0, 50);
 		Assert.NotNull(query);
 	}
 }
