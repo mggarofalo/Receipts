@@ -306,3 +306,8 @@ src/client/coverage/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Docker deployment environment files
+.env
+.env.production
+.env.local
