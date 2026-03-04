@@ -27,21 +27,29 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class AccountListResponse
+    public partial class TokenIntrospectionResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("data")]
-        [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<AccountResponse> Data { get; set; } = new System.Collections.ObjectModel.Collection<AccountResponse>();
+        [System.Text.Json.Serialization.JsonPropertyName("active")]
+        public bool Active { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("total")]
-        public int Total { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("scope")]
+        public string Scope { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("offset")]
-        public int Offset { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("username")]
+        public string Username { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("limit")]
-        public int Limit { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("tokenType")]
+        public string TokenType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("exp")]
+        public long Exp { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("iat")]
+        public long Iat { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("sub")]
+        public string Sub { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

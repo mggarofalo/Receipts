@@ -27,30 +27,14 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class AccountListResponse
+    public enum TokenIntrospectionRequestTokenTypeHint
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("data")]
-        [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<AccountResponse> Data { get; set; } = new System.Collections.ObjectModel.Collection<AccountResponse>();
+        [System.Runtime.Serialization.EnumMember(Value = @"AccessToken")]
+        AccessToken = 0,
 
-        [System.Text.Json.Serialization.JsonPropertyName("total")]
-        public int Total { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("offset")]
-        public int Offset { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("limit")]
-        public int Limit { get; set; } = default!;
-
-        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
+        [System.Runtime.Serialization.EnumMember(Value = @"RefreshToken")]
+        RefreshToken = 1,
 
     }
 

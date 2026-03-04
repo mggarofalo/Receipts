@@ -27,21 +27,15 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class AccountListResponse
+    public partial class TokenRevocationRequest
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("data")]
-        [System.ComponentModel.DataAnnotations.Required]
-        public System.Collections.Generic.ICollection<AccountResponse> Data { get; set; } = new System.Collections.ObjectModel.Collection<AccountResponse>();
+        [System.Text.Json.Serialization.JsonPropertyName("token")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string Token { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("total")]
-        public int Total { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("offset")]
-        public int Offset { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("limit")]
-        public int Limit { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("tokenTypeHint")]
+        public TokenRevocationRequestTokenTypeHint? TokenTypeHint { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
