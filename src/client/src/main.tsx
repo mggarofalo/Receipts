@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider } from "react-router";
+import { createBrowserRouter, RouterProvider } from "react-router";
 import {
   MutationCache,
   QueryCache,
@@ -12,8 +12,10 @@ import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ShortcutsProvider } from "@/contexts/ShortcutsContext";
-import { router } from "./App.tsx";
+import { routeConfig } from "./App.tsx";
 import "./index.css";
+
+const router = createBrowserRouter(routeConfig);
 
 function handleGlobalError(error: unknown) {
   if (

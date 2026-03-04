@@ -1,4 +1,3 @@
-import { createBrowserRouter } from "react-router";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { Layout } from "@/components/Layout";
@@ -86,4 +85,3 @@ export const routeConfig = [
   },
 ];
 
-export const router = createBrowserRouter(routeConfig);

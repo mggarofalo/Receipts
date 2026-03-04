@@ -324,7 +324,7 @@ describe("AdminUsers", () => {
 
     // After clicking Next, useUsers will be called with page=2
     // We verify by checking the component re-renders (pagination state update)
-    expect(useUsers).toHaveBeenCalled();
+    expect(useUsers).toHaveBeenLastCalledWith(2, 20);
   });
 
   it("closes edit dialog when dialog is dismissed", async () => {
