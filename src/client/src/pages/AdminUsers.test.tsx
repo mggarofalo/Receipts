@@ -273,4 +273,160 @@ describe("AdminUsers", () => {
     const cells = screen.getAllByRole("cell");
     expect(cells[0].textContent).toBe("-");
   });
+
+  it("renders pagination when totalPages > 1", async () => {
+    const { useUsers } = await import("@/hooks/useUsers");
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: {
+        items: Array.from({ length: 20 }, (_, i) => ({
+          id: String(i + 1),
+          email: `user${i + 1}@example.com`,
+          firstName: `User`,
+          lastName: `${i + 1}`,
+          roles: ["User"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: null,
+        })),
+        totalCount: 25,
+      },
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /next/i })).not.toBeDisabled();
+  });
+
+  it("advances page when Next button is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useUsers } = await import("@/hooks/useUsers");
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: {
+        items: Array.from({ length: 20 }, (_, i) => ({
+          id: String(i + 1),
+          email: `user${i + 1}@example.com`,
+          firstName: `User`,
+          lastName: `${i + 1}`,
+          roles: ["User"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: null,
+        })),
+        totalCount: 25,
+      },
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    await user.click(screen.getByRole("button", { name: /next/i }));
+
+    // After clicking Next, useUsers will be called with page=2
+    // We verify by checking the component re-renders (pagination state update)
+    expect(useUsers).toHaveBeenLastCalledWith(2, 20);
+  });
+
+  it("closes edit dialog when dialog is dismissed", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useUsers } = await import("@/hooks/useUsers");
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: {
+        items: [
+          {
+            id: "1",
+            email: "test@example.com",
+            firstName: "John",
+            lastName: "Doe",
+            roles: ["Admin"],
+            isDisabled: false,
+            createdAt: "2024-01-01",
+            lastLoginAt: "2024-01-15",
+          },
+        ],
+        totalCount: 1,
+      },
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByText(/update user details/i)).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.queryByText(/update user details/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes reset password dialog when dismissed", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useUsers } = await import("@/hooks/useUsers");
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: {
+        items: [
+          {
+            id: "1",
+            email: "test@example.com",
+            firstName: "John",
+            lastName: "Doe",
+            roles: ["Admin"],
+            isDisabled: false,
+            createdAt: "2024-01-01",
+            lastLoginAt: "2024-01-15",
+          },
+        ],
+        totalCount: 1,
+      },
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    await user.click(screen.getByRole("button", { name: /reset pw/i }));
+    expect(screen.getByRole("heading", { name: /reset password/i })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /reset password/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("opens deactivate dialog and calls deleteUser on confirm", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutateAsync = vi.fn().mockResolvedValue(undefined);
+    const { useUsers, useDeleteUser } = await import("@/hooks/useUsers");
+    vi.mocked(useDeleteUser).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    } as ReturnType<typeof useDeleteUser>);
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: {
+        items: [
+          {
+            id: "2",
+            email: "other@example.com",
+            firstName: "Other",
+            lastName: "User",
+            roles: ["User"],
+            isDisabled: false,
+            createdAt: "2024-01-01",
+            lastLoginAt: "2024-01-15",
+          },
+        ],
+        totalCount: 1,
+      },
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    await user.click(screen.getByRole("button", { name: /disable/i }));
+
+    expect(screen.getByRole("heading", { name: /deactivate user/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /deactivate/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith("2");
+    });
+  });
 });
