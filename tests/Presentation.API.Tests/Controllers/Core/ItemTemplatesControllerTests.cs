@@ -1,0 +1,333 @@
+using API.Controllers.Core;
+using API.Generated.Dtos;
+using API.Mapping.Core;
+using API.Services;
+using Application.Commands.ItemTemplate.Create;
+using Application.Commands.ItemTemplate.Delete;
+using Application.Commands.ItemTemplate.Restore;
+using Application.Commands.ItemTemplate.Update;
+using Application.Models;
+using Application.Queries.Core.ItemTemplate;
+using Domain.Core;
+using FluentAssertions;
+using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
+using Moq;
+using SampleData.Domain.Core;
+using SampleData.Dtos.Core;
+
+namespace Presentation.API.Tests.Controllers.Core;
+
+public class ItemTemplatesControllerTests
+{
+	private readonly ItemTemplateMapper _mapper;
+	private readonly Mock<IMediator> _mediatorMock;
+	private readonly Mock<ILogger<ItemTemplatesController>> _loggerMock;
+	private readonly Mock<IEntityChangeNotifier> _notifierMock;
+	private readonly ItemTemplatesController _controller;
+
+	public ItemTemplatesControllerTests()
+	{
+		_mediatorMock = new Mock<IMediator>();
+		_mapper = new ItemTemplateMapper();
+		_loggerMock = ControllerTestHelpers.GetLoggerMock<ItemTemplatesController>();
+		_notifierMock = new Mock<IEntityChangeNotifier>();
+		_controller = new ItemTemplatesController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
+	}
+
+	// ── GetItemTemplateById ─────────────────────────────────
+
+	[Fact]
+	public async Task GetItemTemplateById_ReturnsOkResult_WhenItemTemplateExists()
+	{
+		ItemTemplate itemTemplate = ItemTemplateGenerator.Generate();
+		ItemTemplateResponse expectedReturn = _mapper.ToResponse(itemTemplate);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetItemTemplateByIdQuery>(q => q.Id == itemTemplate.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(itemTemplate);
+
+		Results<Ok<ItemTemplateResponse>, NotFound> result = await _controller.GetItemTemplateById(itemTemplate.Id);
+
+		Ok<ItemTemplateResponse> okResult = Assert.IsType<Ok<ItemTemplateResponse>>(result.Result);
+		ItemTemplateResponse actualReturn = Assert.IsType<ItemTemplateResponse>(okResult.Value);
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
+	}
+
+	[Fact]
+	public async Task GetItemTemplateById_ReturnsNotFound_WhenItemTemplateDoesNotExist()
+	{
+		Guid missingId = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetItemTemplateByIdQuery>(q => q.Id == missingId),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync((ItemTemplate?)null);
+
+		Results<Ok<ItemTemplateResponse>, NotFound> result = await _controller.GetItemTemplateById(missingId);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task GetItemTemplateById_ThrowsException_WhenMediatorFails()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetItemTemplateByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.GetItemTemplateById(id);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── GetAllItemTemplates ─────────────────────────────────
+
+	[Fact]
+	public async Task GetAllItemTemplates_ReturnsOkResult_WithListOfItemTemplates()
+	{
+		List<ItemTemplate> itemTemplates = ItemTemplateGenerator.GenerateList(2);
+		List<ItemTemplateResponse> expectedReturn = [.. itemTemplates.Select(_mapper.ToResponse)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllItemTemplatesQuery>(q => q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<ItemTemplate>(itemTemplates, itemTemplates.Count, 0, 50));
+
+		Ok<ItemTemplateListResponse> result = await _controller.GetAllItemTemplates(0, 50);
+
+		ItemTemplateListResponse actualReturn = result.Value!;
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(itemTemplates.Count);
+		actualReturn.Offset.Should().Be(0);
+		actualReturn.Limit.Should().Be(50);
+	}
+
+	[Fact]
+	public async Task GetAllItemTemplates_ThrowsException_WhenMediatorFails()
+	{
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllItemTemplatesQuery>(q => q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.GetAllItemTemplates(0, 50);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── GetDeletedItemTemplates ─────────────────────────────
+
+	[Fact]
+	public async Task GetDeletedItemTemplates_ReturnsOkResult_WithListOfItemTemplates()
+	{
+		List<ItemTemplate> itemTemplates = ItemTemplateGenerator.GenerateList(2);
+		List<ItemTemplateResponse> expectedReturn = [.. itemTemplates.Select(_mapper.ToResponse)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDeletedItemTemplatesQuery>(q => q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<ItemTemplate>(itemTemplates, itemTemplates.Count, 0, 50));
+
+		Ok<ItemTemplateListResponse> result = await _controller.GetDeletedItemTemplates(0, 50);
+
+		ItemTemplateListResponse actualReturn = result.Value!;
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(itemTemplates.Count);
+	}
+
+	[Fact]
+	public async Task GetDeletedItemTemplates_ThrowsException_WhenMediatorFails()
+	{
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDeletedItemTemplatesQuery>(q => q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.GetDeletedItemTemplates(0, 50);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── CreateItemTemplate ──────────────────────────────────
+
+	[Fact]
+	public async Task CreateItemTemplate_ReturnsOkResult_WithCreatedItemTemplate()
+	{
+		ItemTemplate itemTemplate = ItemTemplateGenerator.Generate();
+		ItemTemplateResponse expectedReturn = _mapper.ToResponse(itemTemplate);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateItemTemplateCommand>(c => c.ItemTemplates.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync([itemTemplate]);
+
+		CreateItemTemplateRequest controllerInput = ItemTemplateDtoGenerator.GenerateCreateRequest();
+
+		Ok<ItemTemplateResponse> result = await _controller.CreateItemTemplate(controllerInput);
+
+		ItemTemplateResponse actualReturn = result.Value!;
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
+	}
+
+	[Fact]
+	public async Task CreateItemTemplate_ThrowsException_WhenMediatorFails()
+	{
+		CreateItemTemplateRequest controllerInput = ItemTemplateDtoGenerator.GenerateCreateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateItemTemplateCommand>(c => c.ItemTemplates.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.CreateItemTemplate(controllerInput);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── UpdateItemTemplate ──────────────────────────────────
+
+	[Fact]
+	public async Task UpdateItemTemplate_ReturnsNoContent_WhenUpdateSucceeds()
+	{
+		UpdateItemTemplateRequest controllerInput = ItemTemplateDtoGenerator.GenerateUpdateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateItemTemplateCommand>(c => c.ItemTemplates.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound> result = await _controller.UpdateItemTemplate(controllerInput.Id, controllerInput);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task UpdateItemTemplate_ReturnsNotFound_WhenUpdateFails()
+	{
+		UpdateItemTemplateRequest controllerInput = ItemTemplateDtoGenerator.GenerateUpdateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateItemTemplateCommand>(c => c.ItemTemplates.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		Results<NoContent, NotFound> result = await _controller.UpdateItemTemplate(controllerInput.Id, controllerInput);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task UpdateItemTemplate_ThrowsException_WhenMediatorFails()
+	{
+		UpdateItemTemplateRequest controllerInput = ItemTemplateDtoGenerator.GenerateUpdateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateItemTemplateCommand>(c => c.ItemTemplates.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.UpdateItemTemplate(controllerInput.Id, controllerInput);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── DeleteItemTemplates ─────────────────────────────────
+
+	[Fact]
+	public async Task DeleteItemTemplates_ReturnsNoContent_WhenDeleteSucceeds()
+	{
+		List<Guid> ids = [.. ItemTemplateGenerator.GenerateList(2).Select(t => t.Id)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteItemTemplateCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound> result = await _controller.DeleteItemTemplates(ids);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteItemTemplates_ReturnsNotFound_WhenDeleteFails()
+	{
+		List<Guid> ids = [ItemTemplateGenerator.Generate().Id];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteItemTemplateCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		Results<NoContent, NotFound> result = await _controller.DeleteItemTemplates(ids);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteItemTemplates_ThrowsException_WhenMediatorFails()
+	{
+		List<Guid> ids = [.. ItemTemplateGenerator.GenerateList(2).Select(t => t.Id)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteItemTemplateCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.DeleteItemTemplates(ids);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── RestoreItemTemplate ─────────────────────────────────
+
+	[Fact]
+	public async Task RestoreItemTemplate_ReturnsNoContent_WhenSuccessful()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreItemTemplateCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound> result = await _controller.RestoreItemTemplate(id);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task RestoreItemTemplate_ReturnsNotFound_WhenEntityDoesNotExist()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreItemTemplateCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		Results<NoContent, NotFound> result = await _controller.RestoreItemTemplate(id);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task RestoreItemTemplate_ThrowsException_WhenMediatorFails()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreItemTemplateCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.RestoreItemTemplate(id);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+}

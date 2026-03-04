@@ -1,0 +1,435 @@
+using API.Controllers.Core;
+using API.Generated.Dtos;
+using API.Mapping.Core;
+using API.Services;
+using Application.Commands.Subcategory.Create;
+using Application.Commands.Subcategory.Delete;
+using Application.Commands.Subcategory.Restore;
+using Application.Commands.Subcategory.Update;
+using Application.Models;
+using Application.Queries.Core.Subcategory;
+using Domain.Core;
+using FluentAssertions;
+using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
+using Moq;
+using SampleData.Domain.Core;
+using SampleData.Dtos.Core;
+
+namespace Presentation.API.Tests.Controllers.Core;
+
+public class SubcategoriesControllerTests
+{
+	private readonly SubcategoryMapper _mapper;
+	private readonly Mock<IMediator> _mediatorMock;
+	private readonly Mock<ILogger<SubcategoriesController>> _loggerMock;
+	private readonly Mock<IEntityChangeNotifier> _notifierMock;
+	private readonly SubcategoriesController _controller;
+
+	public SubcategoriesControllerTests()
+	{
+		_mediatorMock = new Mock<IMediator>();
+		_mapper = new SubcategoryMapper();
+		_loggerMock = ControllerTestHelpers.GetLoggerMock<SubcategoriesController>();
+		_notifierMock = new Mock<IEntityChangeNotifier>();
+		_controller = new SubcategoriesController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
+	}
+
+	// ── GetSubcategoryById ──────────────────────────────────
+
+	[Fact]
+	public async Task GetSubcategoryById_ReturnsOkResult_WhenSubcategoryExists()
+	{
+		Subcategory subcategory = SubcategoryGenerator.Generate();
+		SubcategoryResponse expectedReturn = _mapper.ToResponse(subcategory);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoryByIdQuery>(q => q.Id == subcategory.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(subcategory);
+
+		Results<Ok<SubcategoryResponse>, NotFound> result = await _controller.GetSubcategoryById(subcategory.Id);
+
+		Ok<SubcategoryResponse> okResult = Assert.IsType<Ok<SubcategoryResponse>>(result.Result);
+		SubcategoryResponse actualReturn = Assert.IsType<SubcategoryResponse>(okResult.Value);
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
+	}
+
+	[Fact]
+	public async Task GetSubcategoryById_ReturnsNotFound_WhenSubcategoryDoesNotExist()
+	{
+		Guid missingId = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoryByIdQuery>(q => q.Id == missingId),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync((Subcategory?)null);
+
+		Results<Ok<SubcategoryResponse>, NotFound> result = await _controller.GetSubcategoryById(missingId);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task GetSubcategoryById_ThrowsException_WhenMediatorFails()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoryByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.GetSubcategoryById(id);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── GetAllSubcategories ─────────────────────────────────
+
+	[Fact]
+	public async Task GetAllSubcategories_ReturnsOkResult_WithListOfSubcategories()
+	{
+		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(2);
+		List<SubcategoryResponse> expectedReturn = [.. subcategories.Select(_mapper.ToResponse)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllSubcategoriesQuery>(q => q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
+
+		Ok<SubcategoryListResponse> result = await _controller.GetAllSubcategories(null, 0, 50);
+
+		SubcategoryListResponse actualReturn = result.Value!;
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(subcategories.Count);
+		actualReturn.Offset.Should().Be(0);
+		actualReturn.Limit.Should().Be(50);
+	}
+
+	[Fact]
+	public async Task GetAllSubcategories_WithCategoryId_ReturnsFilteredSubcategories()
+	{
+		Guid categoryId = Guid.NewGuid();
+		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(2);
+		List<SubcategoryResponse> expectedReturn = [.. subcategories.Select(_mapper.ToResponse)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoriesByCategoryIdQuery>(q => q.CategoryId == categoryId && q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
+
+		Ok<SubcategoryListResponse> result = await _controller.GetAllSubcategories(categoryId, 0, 50);
+
+		SubcategoryListResponse actualReturn = result.Value!;
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(subcategories.Count);
+	}
+
+	[Fact]
+	public async Task GetAllSubcategories_ThrowsException_WhenMediatorFails()
+	{
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllSubcategoriesQuery>(q => q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.GetAllSubcategories(null, 0, 50);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── GetDeletedSubcategories ─────────────────────────────
+
+	[Fact]
+	public async Task GetDeletedSubcategories_ReturnsOkResult_WithListOfSubcategories()
+	{
+		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(2);
+		List<SubcategoryResponse> expectedReturn = [.. subcategories.Select(_mapper.ToResponse)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDeletedSubcategoriesQuery>(q => q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
+
+		Ok<SubcategoryListResponse> result = await _controller.GetDeletedSubcategories(0, 50);
+
+		SubcategoryListResponse actualReturn = result.Value!;
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(subcategories.Count);
+	}
+
+	[Fact]
+	public async Task GetDeletedSubcategories_ThrowsException_WhenMediatorFails()
+	{
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDeletedSubcategoriesQuery>(q => q.Offset == 0 && q.Limit == 50),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.GetDeletedSubcategories(0, 50);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── CreateSubcategory ───────────────────────────────────
+
+	[Fact]
+	public async Task CreateSubcategory_ReturnsOkResult_WithCreatedSubcategory()
+	{
+		Subcategory subcategory = SubcategoryGenerator.Generate();
+		SubcategoryResponse expectedReturn = _mapper.ToResponse(subcategory);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateSubcategoryCommand>(c => c.Subcategories.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync([subcategory]);
+
+		CreateSubcategoryRequest controllerInput = SubcategoryDtoGenerator.GenerateCreateRequest();
+
+		Ok<SubcategoryResponse> result = await _controller.CreateSubcategory(controllerInput);
+
+		SubcategoryResponse actualReturn = result.Value!;
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
+	}
+
+	[Fact]
+	public async Task CreateSubcategory_ThrowsException_WhenMediatorFails()
+	{
+		CreateSubcategoryRequest controllerInput = SubcategoryDtoGenerator.GenerateCreateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateSubcategoryCommand>(c => c.Subcategories.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.CreateSubcategory(controllerInput);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── CreateSubcategories (batch) ─────────────────────────
+
+	[Fact]
+	public async Task CreateSubcategories_ReturnsOkResult_WithCreatedSubcategories()
+	{
+		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(2);
+		List<SubcategoryResponse> expectedReturn = [.. subcategories.Select(_mapper.ToResponse)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateSubcategoryCommand>(c => c.Subcategories.Count == subcategories.Count),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(subcategories);
+
+		List<CreateSubcategoryRequest> controllerInput = SubcategoryDtoGenerator.GenerateCreateRequestList(2);
+
+		Ok<List<SubcategoryResponse>> result = await _controller.CreateSubcategories(controllerInput);
+
+		List<SubcategoryResponse> actualReturn = result.Value!;
+		actualReturn.Should().BeEquivalentTo(expectedReturn);
+	}
+
+	[Fact]
+	public async Task CreateSubcategories_ThrowsException_WhenMediatorFails()
+	{
+		List<CreateSubcategoryRequest> controllerInput = SubcategoryDtoGenerator.GenerateCreateRequestList(2);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<CreateSubcategoryCommand>(c => c.Subcategories.Count == controllerInput.Count),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.CreateSubcategories(controllerInput);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── UpdateSubcategory ───────────────────────────────────
+
+	[Fact]
+	public async Task UpdateSubcategory_ReturnsNoContent_WhenUpdateSucceeds()
+	{
+		UpdateSubcategoryRequest controllerInput = SubcategoryDtoGenerator.GenerateUpdateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateSubcategoryCommand>(c => c.Subcategories.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound> result = await _controller.UpdateSubcategory(controllerInput.Id, controllerInput);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task UpdateSubcategory_ReturnsNotFound_WhenUpdateFails()
+	{
+		UpdateSubcategoryRequest controllerInput = SubcategoryDtoGenerator.GenerateUpdateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateSubcategoryCommand>(c => c.Subcategories.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		Results<NoContent, NotFound> result = await _controller.UpdateSubcategory(controllerInput.Id, controllerInput);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task UpdateSubcategory_ThrowsException_WhenMediatorFails()
+	{
+		UpdateSubcategoryRequest controllerInput = SubcategoryDtoGenerator.GenerateUpdateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateSubcategoryCommand>(c => c.Subcategories.Count == 1),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.UpdateSubcategory(controllerInput.Id, controllerInput);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── UpdateSubcategories (batch) ─────────────────────────
+
+	[Fact]
+	public async Task UpdateSubcategories_ReturnsNoContent_WhenUpdateSucceeds()
+	{
+		List<UpdateSubcategoryRequest> controllerInput = SubcategoryDtoGenerator.GenerateUpdateRequestList(2);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateSubcategoryCommand>(c => c.Subcategories.Count == controllerInput.Count),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound> result = await _controller.UpdateSubcategories(controllerInput);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task UpdateSubcategories_ReturnsNotFound_WhenUpdateFails()
+	{
+		List<UpdateSubcategoryRequest> controllerInput = SubcategoryDtoGenerator.GenerateUpdateRequestList(2);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateSubcategoryCommand>(c => c.Subcategories.Count == controllerInput.Count),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		Results<NoContent, NotFound> result = await _controller.UpdateSubcategories(controllerInput);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task UpdateSubcategories_ThrowsException_WhenMediatorFails()
+	{
+		List<UpdateSubcategoryRequest> controllerInput = SubcategoryDtoGenerator.GenerateUpdateRequestList(2);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<UpdateSubcategoryCommand>(c => c.Subcategories.Count == controllerInput.Count),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.UpdateSubcategories(controllerInput);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── DeleteSubcategories ─────────────────────────────────
+
+	[Fact]
+	public async Task DeleteSubcategories_ReturnsNoContent_WhenDeleteSucceeds()
+	{
+		List<Guid> ids = [.. SubcategoryGenerator.GenerateList(2).Select(s => s.Id)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteSubcategoryCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound> result = await _controller.DeleteSubcategories(ids);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteSubcategories_ReturnsNotFound_WhenDeleteFails()
+	{
+		List<Guid> ids = [SubcategoryGenerator.Generate().Id];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteSubcategoryCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		Results<NoContent, NotFound> result = await _controller.DeleteSubcategories(ids);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteSubcategories_ThrowsException_WhenMediatorFails()
+	{
+		List<Guid> ids = [.. SubcategoryGenerator.GenerateList(2).Select(s => s.Id)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteSubcategoryCommand>(c => c.Ids.SequenceEqual(ids)),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.DeleteSubcategories(ids);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── RestoreSubcategory ──────────────────────────────────
+
+	[Fact]
+	public async Task RestoreSubcategory_ReturnsNoContent_WhenSuccessful()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreSubcategoryCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound> result = await _controller.RestoreSubcategory(id);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task RestoreSubcategory_ReturnsNotFound_WhenEntityDoesNotExist()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreSubcategoryCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		Results<NoContent, NotFound> result = await _controller.RestoreSubcategory(id);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task RestoreSubcategory_ThrowsException_WhenMediatorFails()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<RestoreSubcategoryCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.RestoreSubcategory(id);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+}

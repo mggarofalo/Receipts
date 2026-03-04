@@ -361,4 +361,33 @@ public class AuthControllerTests
 		// Assert
 		Assert.IsType<Ok>(result);
 	}
+
+	// ── Logout ──────────────────────────────────────────────
+
+	[Fact]
+	public async Task Logout_ReturnsNoContent_AndClearsRefreshToken()
+	{
+		// Arrange
+		ApplicationUser user = CreateTestUser();
+		SetupUserClaims(user.Id);
+		_userManagerMock.Setup(m => m.FindByIdAsync(user.Id)).ReturnsAsync(user);
+
+		// Act
+		Results<NoContent, UnauthorizedHttpResult> result = await _controller.Logout();
+
+		// Assert
+		Assert.IsType<NoContent>(result.Result);
+		user.RefreshToken.Should().BeNull();
+		user.RefreshTokenExpiresAt.Should().BeNull();
+	}
+
+	[Fact]
+	public async Task Logout_ReturnsUnauthorized_WhenNoClaims()
+	{
+		// Act
+		Results<NoContent, UnauthorizedHttpResult> result = await _controller.Logout();
+
+		// Assert
+		Assert.IsType<UnauthorizedHttpResult>(result.Result);
+	}
 }
