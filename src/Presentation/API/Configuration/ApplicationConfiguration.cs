@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 using API.Filters;
 using API.Hubs;
 using API.Middleware;
@@ -39,6 +40,7 @@ public static class ApplicationConfiguration
 			.AddJsonOptions(options =>
 			{
 				options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+				options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 			});
 
 		return services;

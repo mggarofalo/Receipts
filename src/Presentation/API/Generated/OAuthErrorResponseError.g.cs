@@ -27,32 +27,26 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class UpdateSubcategoryRequest
+    public enum OAuthErrorResponseError
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; } = default!;
+        [System.Runtime.Serialization.EnumMember(Value = @"invalid_request")]
+        Invalid_request = 0,
 
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Name { get; set; } = default!;
+        [System.Runtime.Serialization.EnumMember(Value = @"invalid_client")]
+        Invalid_client = 1,
 
-        [System.Text.Json.Serialization.JsonPropertyName("categoryId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid CategoryId { get; set; } = default!;
+        [System.Runtime.Serialization.EnumMember(Value = @"invalid_grant")]
+        Invalid_grant = 2,
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
+        [System.Runtime.Serialization.EnumMember(Value = @"unauthorized_client")]
+        Unauthorized_client = 3,
 
-        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+        [System.Runtime.Serialization.EnumMember(Value = @"unsupported_grant_type")]
+        Unsupported_grant_type = 4,
 
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
+        [System.Runtime.Serialization.EnumMember(Value = @"invalid_scope")]
+        Invalid_scope = 5,
 
     }
 

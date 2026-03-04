@@ -27,23 +27,29 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class UpdateSubcategoryRequest
+    public partial class TokenIntrospectionResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("active")]
+        public bool Active { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Name { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("scope")]
+        public string Scope { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("categoryId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid CategoryId { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("username")]
+        public string Username { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("tokenType")]
+        public string TokenType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("exp")]
+        public long Exp { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("iat")]
+        public long Iat { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("sub")]
+        public string Sub { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

@@ -33,4 +33,5 @@ public enum AuthEventType
 	PasswordChanged,
 	UserRegistered,
 	AccountDisabled,
+	TokenRevoked,
 }

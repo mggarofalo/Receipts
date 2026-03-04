@@ -2079,6 +2079,10 @@ paths:
                 $ref: "#/components/schemas/TokenResponse"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthErrorResponse"
 
   /api/auth/refresh:
     post:
@@ -2100,6 +2104,10 @@ paths:
                 $ref: "#/components/schemas/TokenResponse"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthErrorResponse"
 
   /api/auth/logout:
     post:
@@ -2137,8 +2145,54 @@ paths:
                 $ref: "#/components/schemas/TokenResponse"
         "400":
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthErrorResponse"
         "401":
           description: Unauthorized
+
+  /api/auth/introspect:
+    post:
+      operationId: IntrospectToken
+      tags: [Auth]
+      summary: Introspect a token per RFC 7662
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenIntrospectionRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenIntrospectionResponse"
+        "401":
+          description: Unauthorized
+
+  /api/auth/revoke:
+    post:
+      operationId: RevokeToken
+      tags: [Auth]
+      summary: Revoke a token per RFC 7009
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRevocationRequest"
+      responses:
+        "200":
+          description: OK
 
   # ──────────────────────────────────────────────
   # API Keys
@@ -3380,7 +3434,7 @@ components:
 
     TokenResponse:
       type: object
-      required: [accessToken, refreshToken, expiresIn, mustResetPassword]
+      required: [accessToken, refreshToken, expiresIn, mustResetPassword, tokenType, scope]
       properties:
         accessToken:
           type: string
@@ -3391,6 +3445,10 @@ components:
           format: int32
         mustResetPassword:
           type: boolean
+        tokenType:
+          type: string
+        scope:
+          type: string
 
     RefreshTokenRequest:
       type: object
@@ -3560,6 +3618,78 @@ components:
           type:
             - string
             - "null"
+
+    OAuthErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: "#/components/schemas/OAuthErrorResponseError"
+        error_description:
+          type: string
+        error_uri:
+          type: string
+
+    OAuthErrorResponseError:
+      enum:
+        - invalid_request
+        - invalid_client
+        - invalid_grant
+        - unauthorized_client
+        - unsupported_grant_type
+        - invalid_scope
+
+    TokenIntrospectionRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+        tokenTypeHint:
+          oneOf:
+            - $ref: "#/components/schemas/TokenIntrospectionRequestTokenTypeHint"
+            - type: "null"
+
+    TokenIntrospectionRequestTokenTypeHint:
+      enum:
+        - AccessToken
+        - RefreshToken
+
+    TokenIntrospectionResponse:
+      type: object
+      required: [active]
+      properties:
+        active:
+          type: boolean
+        scope:
+          type: string
+        username:
+          type: string
+        tokenType:
+          type: string
+        exp:
+          type: integer
+          format: int64
+        iat:
+          type: integer
+          format: int64
+        sub:
+          type: string
+
+    TokenRevocationRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+        tokenTypeHint:
+          oneOf:
+            - $ref: "#/components/schemas/TokenRevocationRequestTokenTypeHint"
+            - type: "null"
+
+    TokenRevocationRequestTokenTypeHint:
+      enum:
+        - AccessToken
+        - RefreshToken
 
     AdminResetPasswordRequest:
       type: object
