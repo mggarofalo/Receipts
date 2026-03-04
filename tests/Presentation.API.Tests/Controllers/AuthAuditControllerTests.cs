@@ -4,7 +4,6 @@ using Application.Interfaces.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Presentation.API.Tests.Controllers;
@@ -12,14 +11,12 @@ namespace Presentation.API.Tests.Controllers;
 public class AuthAuditControllerTests
 {
 	private readonly Mock<IAuthAuditService> _authAuditServiceMock;
-	private readonly Mock<ILogger<AuthAuditController>> _loggerMock;
 	private readonly AuthAuditController _controller;
 
 	public AuthAuditControllerTests()
 	{
 		_authAuditServiceMock = new Mock<IAuthAuditService>();
-		_loggerMock = ControllerTestHelpers.GetLoggerMock<AuthAuditController>();
-		_controller = new AuthAuditController(_authAuditServiceMock.Object, _loggerMock.Object);
+		_controller = new AuthAuditController(_authAuditServiceMock.Object);
 	}
 
 	private void SetupUserClaims(string userId)
@@ -105,7 +102,7 @@ public class AuthAuditControllerTests
 	}
 
 	[Fact]
-	public async Task GetMyAuditLog_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task GetMyAuditLog_ThrowsException_WhenServiceFails()
 	{
 		// Arrange
 		string userId = "user-123";
@@ -115,15 +112,14 @@ public class AuthAuditControllerTests
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetMyAuditLog(50, CancellationToken.None);
+		Func<Task> act = () => _controller.GetMyAuditLog(50, CancellationToken.None);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
-	public async Task GetRecent_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task GetRecent_ThrowsException_WhenServiceFails()
 	{
 		// Arrange
 		_authAuditServiceMock
@@ -131,15 +127,14 @@ public class AuthAuditControllerTests
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetRecent(50, CancellationToken.None);
+		Func<Task> act = () => _controller.GetRecent(50, CancellationToken.None);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
-	public async Task GetFailed_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task GetFailed_ThrowsException_WhenServiceFails()
 	{
 		// Arrange
 		_authAuditServiceMock
@@ -147,10 +142,9 @@ public class AuthAuditControllerTests
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetFailed(50, CancellationToken.None);
+		Func<Task> act = () => _controller.GetFailed(50, CancellationToken.None);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }

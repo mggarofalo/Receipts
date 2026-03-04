@@ -7,7 +7,6 @@ using Domain.Aggregates;
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
 using SampleData.Domain.Core;
@@ -18,15 +17,13 @@ public class TransactionAccountControllerTests
 {
 	private readonly TransactionAccountMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
-	private readonly Mock<ILogger<TransactionAccountController>> _loggerMock;
 	private readonly TransactionAccountController _controller;
 
 	public TransactionAccountControllerTests()
 	{
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new TransactionAccountMapper();
-		_loggerMock = ControllerTestHelpers.GetLoggerMock<TransactionAccountController>();
-		_controller = new TransactionAccountController(_mediatorMock.Object, _mapper, _loggerMock.Object);
+		_controller = new TransactionAccountController(_mediatorMock.Object, _mapper);
 	}
 
 	[Fact]
@@ -72,7 +69,7 @@ public class TransactionAccountControllerTests
 	}
 
 	[Fact]
-	public async Task GetTransactionAccounts_ByTransactionId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetTransactionAccounts_ByTransactionId_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid transactionId = TransactionAccountGenerator.Generate().Transaction.Id;
@@ -83,11 +80,10 @@ public class TransactionAccountControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		IActionResult result = await _controller.GetTransactionAccounts(transactionId: transactionId, receiptId: null);
+		Func<Task> act = () => _controller.GetTransactionAccounts(transactionId: transactionId, receiptId: null);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -134,7 +130,7 @@ public class TransactionAccountControllerTests
 	}
 
 	[Fact]
-	public async Task GetTransactionAccounts_ByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetTransactionAccounts_ByReceiptId_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid receiptId = ReceiptGenerator.Generate().Id;
@@ -145,10 +141,9 @@ public class TransactionAccountControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		IActionResult result = await _controller.GetTransactionAccounts(transactionId: null, receiptId: receiptId);
+		Func<Task> act = () => _controller.GetTransactionAccounts(transactionId: null, receiptId: receiptId);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }
