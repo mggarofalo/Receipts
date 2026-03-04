@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -15,6 +16,7 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/auth")]
 [Produces("application/json")]
+[EnableRateLimiting("auth")]
 public class AuthController(
 	UserManager<ApplicationUser> userManager,
 	ITokenService tokenService,
