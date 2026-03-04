@@ -6,7 +6,7 @@ using FluentAssertions;
 using FluentValidation;
 using Moq;
 
-namespace Application.Tests.Commands.Transaction;
+namespace Application.Tests.Commands.Transaction.Create;
 
 public class CreateTransactionCommandHandlerTests
 {
@@ -19,7 +19,7 @@ public class CreateTransactionCommandHandlerTests
 		new(_transactionService.Object, _receiptService.Object,
 			_receiptItemService.Object, _adjustmentService.Object);
 
-	private void SetupBalancedData(Guid receiptId, Guid accountId, List<Domain.Core.Transaction> transactions)
+	private void SetupReceiptData(Guid receiptId, List<Domain.Core.Transaction>? existingTransactions = null)
 	{
 		// Receipt: TaxAmount = $10
 		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10), "desc");
@@ -36,27 +36,27 @@ public class CreateTransactionCommandHandlerTests
 		_adjustmentService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync([]);
 		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([]);
-		_transactionService.Setup(s => s.CreateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(transactions);
+			.ReturnsAsync(existingTransactions ?? []);
 	}
 
 	[Fact]
-	public async Task Handle_BalancedTransactions_ReturnsCreatedTransactions()
+	public async Task Handle_SingleGroupBalanced_ReturnsCreatedTransactions()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
-		// Single transaction matching ExpectedTotal of $15
 		List<Domain.Core.Transaction> input =
 		[
-			new(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now))
+			new(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId }
 		];
-		SetupBalancedData(receiptId, accountId, input);
+		SetupReceiptData(receiptId);
+
+		_transactionService.Setup(s => s.CreateAsync(
+				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(input);
 
 		CreateTransactionCommandHandler handler = CreateHandler();
-		CreateTransactionCommand command = new(input, receiptId, accountId);
+		CreateTransactionCommand command = new(input, receiptId);
 
 		// Act
 		List<Domain.Core.Transaction> result = await handler.Handle(command, CancellationToken.None);
@@ -67,26 +67,62 @@ public class CreateTransactionCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_UnbalancedTransactions_ThrowsValidationException()
+	public async Task Handle_MultipleGroupsBalanced_ReturnsAllCreatedTransactions()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
-		// Transaction $100 does not match ExpectedTotal of $15
-		List<Domain.Core.Transaction> input =
-		[
-			new(Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now))
-		];
-		SetupBalancedData(receiptId, accountId, input);
+		Guid accountId1 = Guid.NewGuid();
+		Guid accountId2 = Guid.NewGuid();
+
+		Domain.Core.Transaction tx1 = new(Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 };
+		Domain.Core.Transaction tx2 = new(Guid.NewGuid(), new Money(5), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 };
+		List<Domain.Core.Transaction> input = [tx1, tx2];
+
+		SetupReceiptData(receiptId);
+
+		_transactionService.Setup(s => s.CreateAsync(
+				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(input);
 
 		CreateTransactionCommandHandler handler = CreateHandler();
-		CreateTransactionCommand command = new(input, receiptId, accountId);
+		CreateTransactionCommand command = new(input, receiptId);
+
+		// Act
+		List<Domain.Core.Transaction> result = await handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		result.Should().HaveCount(2);
+		result.Sum(t => t.Amount.Amount).Should().Be(15);
+		_transactionService.Verify(s => s.CreateAsync(
+			It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_UnbalancedTransactions_ThrowsValidationExceptionAndNeverPersists()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		Guid accountId1 = Guid.NewGuid();
+		Guid accountId2 = Guid.NewGuid();
+
+		// Total = $100 + $50 = $150 ≠ ExpectedTotal of $15
+		List<Domain.Core.Transaction> input =
+		[
+			new(Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 },
+			new(Guid.NewGuid(), new Money(50), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 }
+		];
+		SetupReceiptData(receiptId);
+
+		CreateTransactionCommandHandler handler = CreateHandler();
+		CreateTransactionCommand command = new(input, receiptId);
 
 		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<ValidationException>();
+		_transactionService.Verify(s => s.CreateAsync(
+			It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
@@ -105,13 +141,13 @@ public class CreateTransactionCommandHandlerTests
 
 		List<Domain.Core.Transaction> input =
 		[
-			new(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now))
+			new(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }
 		];
 
 		CreateTransactionCommandHandler handler = CreateHandler();
-		CreateTransactionCommand command = new(input, receiptId, Guid.NewGuid());
+		CreateTransactionCommand command = new(input, receiptId);
 
-		// Act — accountId doesn't matter here since handler throws before reaching CreateAsync
+		// Act
 		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
 
 		// Assert
