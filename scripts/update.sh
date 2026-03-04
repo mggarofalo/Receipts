@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/../.env" ]; then
+    set -a
+    source "${SCRIPT_DIR}/../.env"
+    set +a
+fi
+
 # Update Receipts to a new image version with automatic rollback on failure.
 # Usage: ./scripts/update.sh [image_tag]
 
@@ -8,10 +15,11 @@ NEW_TAG="${1:-latest}"
 HEALTH_URL="http://localhost:${APP_PORT:-8080}/api/health"
 MAX_WAIT=60
 
-# Capture current image for rollback
-CURRENT_IMAGE=$(docker compose images app --format json 2>/dev/null | head -1 | grep -o '"Tag":"[^"]*"' | cut -d'"' -f4 || echo "")
-if [ -z "${CURRENT_IMAGE}" ]; then
-    echo "Warning: Could not determine current image tag for rollback"
+# Capture current image ID for rollback (tags are mutable, IDs are not)
+CURRENT_IMAGE_ID=$(docker compose images app --format json 2>/dev/null | head -1 | grep -o '"ID":"[^"]*"' | cut -d'"' -f4 || echo "")
+CURRENT_IMAGE_TAG=$(docker compose images app --format json 2>/dev/null | head -1 | grep -o '"Tag":"[^"]*"' | cut -d'"' -f4 || echo "")
+if [ -z "${CURRENT_IMAGE_ID}" ] && [ -z "${CURRENT_IMAGE_TAG}" ]; then
+    echo "Warning: Could not determine current image for rollback"
 fi
 
 echo "Updating to tag: ${NEW_TAG}"
@@ -43,10 +51,18 @@ done
 
 # Health check failed — rollback
 echo "Health check failed after ${MAX_WAIT}s. Rolling back..."
-if [ -n "${CURRENT_IMAGE}" ]; then
-    IMAGE_TAG="${CURRENT_IMAGE}" docker compose up -d app
-    echo "Rolled back to ${CURRENT_IMAGE}"
+if [ -n "${CURRENT_IMAGE_ID}" ]; then
+    # Re-tag the previous image by ID so compose resolves it correctly
+    COMPOSE_IMAGE=$(docker compose config --images 2>/dev/null | head -1 || echo "")
+    if [ -n "${COMPOSE_IMAGE}" ] && [ -n "${CURRENT_IMAGE_TAG}" ]; then
+        docker tag "${CURRENT_IMAGE_ID}" "${COMPOSE_IMAGE}:${CURRENT_IMAGE_TAG}"
+    fi
+    IMAGE_TAG="${CURRENT_IMAGE_TAG:-latest}" docker compose up -d app
+    echo "Rolled back to image ID ${CURRENT_IMAGE_ID}"
+elif [ -n "${CURRENT_IMAGE_TAG}" ]; then
+    IMAGE_TAG="${CURRENT_IMAGE_TAG}" docker compose up -d app
+    echo "Rolled back to tag ${CURRENT_IMAGE_TAG} (warning: tag may have been overwritten)"
 else
-    echo "ERROR: No previous image tag available for rollback. Manual intervention required."
+    echo "ERROR: No previous image available for rollback. Manual intervention required."
 fi
 exit 1
