@@ -44,6 +44,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 			.Include(t => t.Account)
 			.Where(t => t.ReceiptId == receiptId)
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
 			.ToListAsync(cancellationToken);
 	}
 
