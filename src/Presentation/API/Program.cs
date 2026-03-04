@@ -41,6 +41,13 @@ if (Infrastructure.Services.InfrastructureService.IsDatabaseConfigured(builder.C
 	await app.Services.SeedRolesAndAdminAsync();
 }
 
+// Serve SPA static files in production (Vite dev server handles this in development)
+if (!app.Environment.IsDevelopment())
+{
+	app.UseDefaultFiles();
+	app.UseStaticFiles();
+}
+
 // Map Aspire health check endpoints (/health, /alive)
 app.MapDefaultEndpoints();
 
@@ -49,6 +56,12 @@ app.MapControllers();
 
 // Map SignalR hubs
 app.MapHub<EntityHub>("/hubs/entities");
+
+// SPA fallback: serve index.html for client-side routes in production
+if (!app.Environment.IsDevelopment())
+{
+	app.MapFallbackToFile("index.html");
+}
 
 // Run application
 await app.RunAsync();
