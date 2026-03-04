@@ -28,6 +28,13 @@ import { cn } from "@/lib/utils";
 
 const COUNT_OPTIONS = [50, 100, 200] as const;
 
+function csvField(value: string): string {
+  if (value.includes(",") || value.includes('"') || value.includes("\n") || value.includes("\r")) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
 function exportToCsv(logs: AuditLogEntry[]) {
   const headers = [
     "Timestamp",
@@ -48,8 +55,10 @@ function exportToCsv(logs: AuditLogEntry[]) {
       log.changedByUserId ?? "",
       log.changedByApiKeyId ?? "",
       log.ipAddress ?? "",
-      `"${log.changesJson.replace(/"/g, '""')}"`,
-    ].join(","),
+      log.changesJson,
+    ]
+      .map(csvField)
+      .join(","),
   );
   const csv = [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
