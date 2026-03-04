@@ -1,5 +1,8 @@
 using API.Mapping.Aggregates;
+using API.Middleware;
 using Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 
 namespace API.Services;
 
@@ -23,6 +26,8 @@ public static class ProgramService
 			.AddSingleton<ReceiptWithItemsMapper>()
 			.AddSingleton<TransactionAccountMapper>()
 			.AddSingleton<TripMapper>();
+
+		services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationLoggingHandler>();
 
 		services.AddSignalR();
 

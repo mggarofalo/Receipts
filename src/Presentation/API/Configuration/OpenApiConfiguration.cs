@@ -21,7 +21,6 @@ public static class OpenApiConfiguration
 		}
 		else
 		{
-			app.UseExceptionHandler("/Error");
 			app.UseHsts();
 		}
 

@@ -1,5 +1,6 @@
 using API.Configuration;
 using API.Hubs;
+using API.Middleware;
 using API.Services;
 using Application.Interfaces;
 using Application.Services;
@@ -25,6 +26,8 @@ builder.Services
 WebApplication app = builder.Build();
 
 // Configure middleware
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseOpenApiServices()
    .UseApplicationServices()
    .UseCorsServices()

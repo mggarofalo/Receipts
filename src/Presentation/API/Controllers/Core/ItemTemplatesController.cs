@@ -21,8 +21,6 @@ namespace API.Controllers.Core;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapper, ILogger<ItemTemplatesController> logger) : ControllerBase
 {
-	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
-	public const string MessageWithoutId = "Error occurred in {Method}";
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "";
@@ -36,125 +34,72 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[EndpointDescription("Returns a single item template matching the provided GUID.")]
 	[ProducesResponseType<ItemTemplateResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ItemTemplateResponse>> GetItemTemplateById([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("GetItemTemplateById called with id: {Id}", id);
-			GetItemTemplateByIdQuery query = new(id);
-			ItemTemplate? result = await mediator.Send(query);
+		GetItemTemplateByIdQuery query = new(id);
+		ItemTemplate? result = await mediator.Send(query);
 
-			if (result == null)
-			{
-				logger.LogWarning("GetItemTemplateById called with id: {Id} not found", id);
-				return NotFound();
-			}
-
-			ItemTemplateResponse model = mapper.ToResponse(result);
-			logger.LogDebug("GetItemTemplateById called with id: {Id} found", id);
-			return Ok(model);
-		}
-		catch (Exception ex)
+		if (result == null)
 		{
-			logger.LogError(ex, MessageWithId, nameof(GetItemTemplateById), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("ItemTemplate {Id} not found", id);
+			return NotFound();
 		}
+
+		ItemTemplateResponse model = mapper.ToResponse(result);
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all item templates")]
 	[ProducesResponseType<List<ItemTemplateResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<ItemTemplateResponse>>> GetAllItemTemplates()
 	{
-		try
-		{
-			logger.LogDebug("GetAllItemTemplates called");
-			GetAllItemTemplatesQuery query = new();
-			List<ItemTemplate> result = await mediator.Send(query);
-			logger.LogDebug("GetAllItemTemplates called with {Count} item templates", result.Count);
+		GetAllItemTemplatesQuery query = new();
+		List<ItemTemplate> result = await mediator.Send(query);
 
-			List<ItemTemplateResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetAllItemTemplates));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		List<ItemTemplateResponse> model = [.. result.Select(mapper.ToResponse)];
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted item templates")]
 	[EndpointDescription("Returns all item templates that have been soft-deleted.")]
 	[ProducesResponseType<List<ItemTemplateResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<ItemTemplateResponse>>> GetDeletedItemTemplates()
 	{
-		try
-		{
-			logger.LogDebug("GetDeletedItemTemplates called");
-			GetDeletedItemTemplatesQuery query = new();
-			List<ItemTemplate> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedItemTemplates called with {Count} item templates", result.Count);
+		GetDeletedItemTemplatesQuery query = new();
+		List<ItemTemplate> result = await mediator.Send(query);
 
-			List<ItemTemplateResponse> model = [.. result.Select(mapper.ToResponse)];
-			return Ok(model);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedItemTemplates));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		List<ItemTemplateResponse> model = [.. result.Select(mapper.ToResponse)];
+		return Ok(model);
 	}
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single item template")]
 	[ProducesResponseType<ItemTemplateResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ItemTemplateResponse>> CreateItemTemplate([FromBody] CreateItemTemplateRequest model)
 	{
-		try
-		{
-			logger.LogDebug("CreateItemTemplate called");
-			CreateItemTemplateCommand command = new([mapper.ToDomain(model)]);
-			List<ItemTemplate> itemTemplates = await mediator.Send(command);
-			return Ok(mapper.ToResponse(itemTemplates[0]));
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateItemTemplate));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		CreateItemTemplateCommand command = new([mapper.ToDomain(model)]);
+		List<ItemTemplate> itemTemplates = await mediator.Send(command);
+		return Ok(mapper.ToResponse(itemTemplates[0]));
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single item template")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateItemTemplate([FromRoute] Guid id, [FromBody] UpdateItemTemplateRequest model)
 	{
-		try
-		{
-			logger.LogDebug("UpdateItemTemplate called for id: {Id}", id);
-			UpdateItemTemplateCommand command = new([mapper.ToDomain(model)]);
-			bool result = await mediator.Send(command);
+		UpdateItemTemplateCommand command = new([mapper.ToDomain(model)]);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("UpdateItemTemplate called for id: {Id}, but not found", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(UpdateItemTemplate), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("ItemTemplate {Id} not found for update", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 
 	[HttpDelete(RouteDelete)]
@@ -162,30 +107,18 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[EndpointDescription("Deletes one or more item templates by their IDs. Returns 404 if any item template is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> DeleteItemTemplates([FromBody] List<Guid> ids)
 	{
-		try
+		DeleteItemTemplateCommand command = new(ids);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("DeleteItemTemplates called with {Count} ids", ids.Count);
-			DeleteItemTemplateCommand command = new(ids);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("DeleteItemTemplates called with {Count} ids, but not found", ids.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("DeleteItemTemplates called with {Count} ids, and found", ids.Count);
-
-			return NoContent();
+			logger.LogWarning("ItemTemplates delete failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(DeleteItemTemplates));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		return NoContent();
 	}
 
 	[HttpPost(RouteRestore)]
@@ -193,27 +126,17 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[EndpointDescription("Restores a previously soft-deleted item template by clearing its DeletedAt timestamp.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> RestoreItemTemplate([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("RestoreItemTemplate called with id: {Id}", id);
-			RestoreItemTemplateCommand command = new(id);
-			bool result = await mediator.Send(command);
+		RestoreItemTemplateCommand command = new(id);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("RestoreItemTemplate called with id: {Id}, but not found or not deleted", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(RestoreItemTemplate), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("ItemTemplate {Id} not found or not deleted for restore", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 }

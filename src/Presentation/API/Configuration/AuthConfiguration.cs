@@ -50,6 +50,29 @@ public static class AuthConfiguration
 
 						return Task.CompletedTask;
 					},
+					OnAuthenticationFailed = context =>
+					{
+						ILoggerFactory loggerFactory = context.HttpContext.RequestServices
+							.GetRequiredService<ILoggerFactory>();
+						ILogger logger = loggerFactory.CreateLogger("API.Configuration.AuthConfiguration");
+						logger.LogWarning(
+							"Authentication failed. Path: {Path}, IP: {IP}, Error: {Error}",
+							context.Request.Path,
+							context.HttpContext.Connection.RemoteIpAddress,
+							context.Exception.Message);
+						return Task.CompletedTask;
+					},
+					OnChallenge = context =>
+					{
+						ILoggerFactory loggerFactory = context.HttpContext.RequestServices
+							.GetRequiredService<ILoggerFactory>();
+						ILogger logger = loggerFactory.CreateLogger("API.Configuration.AuthConfiguration");
+						logger.LogInformation(
+							"Authentication challenge issued. Path: {Path}, IP: {IP}",
+							context.Request.Path,
+							context.HttpContext.Connection.RemoteIpAddress);
+						return Task.CompletedTask;
+					},
 				};
 			})
 			.AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
