@@ -62,7 +62,11 @@ public static class ApplicationConfiguration
 			};
 		});
 		app.UseMiddleware<ValidationExceptionMiddleware>();
-		app.UseHttpsRedirection();
+		if (app.Environment.IsDevelopment())
+		{
+			app.UseHttpsRedirection();
+		}
+
 		app.UseRouting();
 
 		return app;
