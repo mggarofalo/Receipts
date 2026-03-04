@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Account.Create;
 using Application.Commands.Account.Delete;
 using Application.Commands.Account.Restore;
@@ -10,7 +11,6 @@ using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using API.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
