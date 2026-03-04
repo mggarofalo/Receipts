@@ -52,7 +52,7 @@ public class CreateTransactionCommandHandlerTests
 		SetupReceiptData(receiptId);
 
 		_transactionService.Setup(s => s.CreateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId, It.IsAny<CancellationToken>()))
+				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(input);
 
 		CreateTransactionCommandHandler handler = CreateHandler();
@@ -80,15 +80,9 @@ public class CreateTransactionCommandHandlerTests
 
 		SetupReceiptData(receiptId);
 
-		List<Domain.Core.Transaction> group1Result = [tx1];
-		List<Domain.Core.Transaction> group2Result = [tx2];
-
 		_transactionService.Setup(s => s.CreateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId1, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(group1Result);
-		_transactionService.Setup(s => s.CreateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId2, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(group2Result);
+				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(input);
 
 		CreateTransactionCommandHandler handler = CreateHandler();
 		CreateTransactionCommand command = new(input, receiptId);
@@ -100,9 +94,7 @@ public class CreateTransactionCommandHandlerTests
 		result.Should().HaveCount(2);
 		result.Sum(t => t.Amount.Amount).Should().Be(15);
 		_transactionService.Verify(s => s.CreateAsync(
-			It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId1, It.IsAny<CancellationToken>()), Times.Once);
-		_transactionService.Verify(s => s.CreateAsync(
-			It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId2, It.IsAny<CancellationToken>()), Times.Once);
+			It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -130,7 +122,7 @@ public class CreateTransactionCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<ValidationException>();
 		_transactionService.Verify(s => s.CreateAsync(
-			It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+			It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]

@@ -57,7 +57,7 @@ public class UpdateTransactionCommandHandlerTests
 		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId }];
 
 		_transactionService.Setup(s => s.UpdateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId, It.IsAny<CancellationToken>()))
+				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
 		UpdateTransactionCommandHandler handler = CreateHandler();
@@ -91,10 +91,7 @@ public class UpdateTransactionCommandHandlerTests
 		];
 
 		_transactionService.Setup(s => s.UpdateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId1, It.IsAny<CancellationToken>()))
-			.Returns(Task.CompletedTask);
-		_transactionService.Setup(s => s.UpdateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId2, It.IsAny<CancellationToken>()))
+				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
 		UpdateTransactionCommandHandler handler = CreateHandler();
@@ -106,9 +103,7 @@ public class UpdateTransactionCommandHandlerTests
 		// Assert
 		result.Should().BeTrue();
 		_transactionService.Verify(s => s.UpdateAsync(
-			It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId1, It.IsAny<CancellationToken>()), Times.Once);
-		_transactionService.Verify(s => s.UpdateAsync(
-			It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId2, It.IsAny<CancellationToken>()), Times.Once);
+			It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -141,7 +136,7 @@ public class UpdateTransactionCommandHandlerTests
 		// Assert
 		await act.Should().ThrowAsync<ValidationException>();
 		_transactionService.Verify(s => s.UpdateAsync(
-			It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+			It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]

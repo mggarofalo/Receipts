@@ -59,11 +59,7 @@ public class UpdateTransactionCommandHandler(
 			]);
 		}
 
-		foreach (IGrouping<Guid, Domain.Core.Transaction> group in request.Transactions.GroupBy(t => t.AccountId))
-		{
-			await transactionService.UpdateAsync([.. group], receiptId, group.Key, cancellationToken);
-		}
-
+		await transactionService.UpdateAsync([.. request.Transactions], receiptId, cancellationToken);
 		return true;
 	}
 }

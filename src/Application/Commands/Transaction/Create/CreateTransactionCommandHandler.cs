@@ -45,14 +45,6 @@ public class CreateTransactionCommandHandler(
 			]);
 		}
 
-		List<Domain.Core.Transaction> allCreated = [];
-		foreach (IGrouping<Guid, Domain.Core.Transaction> group in request.Transactions.GroupBy(t => t.AccountId))
-		{
-			List<Domain.Core.Transaction> created = await transactionService.CreateAsync(
-				[.. group], request.ReceiptId, group.Key, cancellationToken);
-			allCreated.AddRange(created);
-		}
-
-		return allCreated;
+		return await transactionService.CreateAsync([.. request.Transactions], request.ReceiptId, cancellationToken);
 	}
 }
