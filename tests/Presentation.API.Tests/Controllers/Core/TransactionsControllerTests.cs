@@ -11,6 +11,7 @@ using Application.Queries.Core.Transaction;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -49,10 +50,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<TransactionResponse> result = await _controller.GetTransactionById(mediatorReturn.Id);
+		Results<Ok<TransactionResponse>, NotFound> result = await _controller.GetTransactionById(mediatorReturn.Id);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		Ok<TransactionResponse> okResult = Assert.IsType<Ok<TransactionResponse>>(result.Result);
 		TransactionResponse actualControllerReturn = Assert.IsType<TransactionResponse>(okResult.Value);
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
@@ -69,10 +70,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync((Transaction?)null);
 
 		// Act
-		ActionResult<TransactionResponse> result = await _controller.GetTransactionById(missingTransactionId);
+		Results<Ok<TransactionResponse>, NotFound> result = await _controller.GetTransactionById(missingTransactionId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -106,11 +107,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(new PagedResult<Transaction>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<TransactionListResponse> result = await _controller.GetAllTransactions(null, 0, 50);
+		Ok<TransactionListResponse> result = await _controller.GetAllTransactions(null, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TransactionListResponse actualControllerReturn = Assert.IsType<TransactionListResponse>(okResult.Value);
+		TransactionListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
 		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
@@ -148,11 +148,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(new PagedResult<Transaction>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<TransactionListResponse> result = await _controller.GetAllTransactions(receiptId, 0, 50);
+		Ok<TransactionListResponse> result = await _controller.GetAllTransactions(receiptId, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TransactionListResponse actualControllerReturn = Assert.IsType<TransactionListResponse>(okResult.Value);
+		TransactionListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
 		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
@@ -172,11 +171,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(new PagedResult<Transaction>([], 0, 0, 50));
 
 		// Act
-		ActionResult<TransactionListResponse> result = await _controller.GetAllTransactions(receiptId, 0, 50);
+		Ok<TransactionListResponse> result = await _controller.GetAllTransactions(receiptId, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TransactionListResponse actualControllerReturn = Assert.IsType<TransactionListResponse>(okResult.Value);
+		TransactionListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEmpty();
 	}
@@ -193,11 +191,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(new PagedResult<Transaction>([], 0, 0, 50));
 
 		// Act
-		ActionResult<TransactionListResponse> result = await _controller.GetAllTransactions(missingReceiptId, 0, 50);
+		Ok<TransactionListResponse> result = await _controller.GetAllTransactions(missingReceiptId, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TransactionListResponse actualReturn = Assert.IsType<TransactionListResponse>(okResult.Value);
+		TransactionListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEmpty();
 	}
 
@@ -233,11 +230,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync([transaction]);
 
 		// Act
-		ActionResult<TransactionResponse> result = await _controller.CreateTransaction(controllerInput, receiptId);
+		Ok<TransactionResponse> result = await _controller.CreateTransaction(controllerInput, receiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TransactionResponse actualReturn = Assert.IsType<TransactionResponse>(okResult.Value);
+		TransactionResponse actualReturn = result.Value!;
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -277,11 +273,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
+		Ok<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionResponse> actualControllerReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
+		List<TransactionResponse> actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
@@ -310,11 +305,10 @@ public class TransactionsControllerTests
 		List<TransactionResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
+		Ok<List<TransactionResponse>> result = await _controller.CreateTransactions(controllerInput, receiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionResponse> actualControllerReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
+		List<TransactionResponse> actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 		_mediatorMock.Verify(m => m.Send(It.IsAny<CreateTransactionCommand>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -379,10 +373,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, id);
+		Results<NoContent, NotFound> result = await _controller.UpdateTransaction(controllerInput, id);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -398,10 +392,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransaction(controllerInput, id);
+		Results<NoContent, NotFound> result = await _controller.UpdateTransaction(controllerInput, id);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -436,10 +430,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateTransactions(controllerInput);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -461,10 +455,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateTransactions(controllerInput);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateTransactionCommand>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -487,10 +481,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateTransactions(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -506,10 +500,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateTransactions(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateTransactions(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -543,10 +537,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteTransactions(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.DeleteTransactions(controllerInput);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -561,10 +555,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteTransactions(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.DeleteTransactions(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -579,10 +573,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteTransactions(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.DeleteTransactions(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -614,10 +608,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		IActionResult result = await _controller.RestoreTransaction(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreTransaction(id);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -631,10 +625,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		IActionResult result = await _controller.RestoreTransaction(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreTransaction(id);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]

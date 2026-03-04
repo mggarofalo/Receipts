@@ -6,7 +6,7 @@ using Application.Queries.Aggregates.ReceiptsWithItems;
 using Domain.Aggregates;
 using FluentAssertions;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Aggregates;
@@ -41,11 +41,11 @@ public class ReceiptWithItemsControllerTests
 			.ReturnsAsync(receiptWithItems);
 
 		// Act
-		ActionResult<ReceiptWithItemsResponse> result = await _controller.GetReceiptWithItemsByReceiptId(receiptWithItems.Receipt.Id);
+		Results<Ok<ReceiptWithItemsResponse>, NotFound> result = await _controller.GetReceiptWithItemsByReceiptId(receiptWithItems.Receipt.Id);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptWithItemsResponse actualReturn = Assert.IsType<ReceiptWithItemsResponse>(okResult.Value);
+		Ok<ReceiptWithItemsResponse> okResult = Assert.IsType<Ok<ReceiptWithItemsResponse>>(result.Result);
+		ReceiptWithItemsResponse actualReturn = okResult.Value!;
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -62,10 +62,10 @@ public class ReceiptWithItemsControllerTests
 			.ReturnsAsync((ReceiptWithItems?)null);
 
 		// Act
-		ActionResult<ReceiptWithItemsResponse> result = await _controller.GetReceiptWithItemsByReceiptId(missingReceiptId);
+		Results<Ok<ReceiptWithItemsResponse>, NotFound> result = await _controller.GetReceiptWithItemsByReceiptId(missingReceiptId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]

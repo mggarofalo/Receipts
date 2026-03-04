@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Domain.Aggregates;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Aggregates;
@@ -14,19 +15,16 @@ namespace API.Controllers.Aggregates;
 [Route("api/transaction-accounts")]
 [Produces("application/json")]
 [Authorize]
-[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class TransactionAccountController(IMediator mediator, TransactionAccountMapper mapper) : ControllerBase
 {
 	[HttpGet("")]
 	[EndpointSummary("Get transaction accounts")]
 	[EndpointDescription("Returns transaction accounts filtered by transaction ID or receipt ID.")]
-	[ProducesResponseType<List<TransactionAccountResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status400BadRequest)]
-	public async Task<IActionResult> GetTransactionAccounts([FromQuery] Guid? transactionId = null, [FromQuery] Guid? receiptId = null)
+	public async Task<Results<Ok<List<TransactionAccountResponse>>, BadRequest<string>>> GetTransactionAccounts([FromQuery] Guid? transactionId = null, [FromQuery] Guid? receiptId = null)
 	{
 		if (transactionId.HasValue && receiptId.HasValue)
 		{
-			return BadRequest("Provide either transactionId or receiptId, not both.");
+			return TypedResults.BadRequest("Provide either transactionId or receiptId, not both.");
 		}
 
 		if (transactionId.HasValue)
@@ -37,7 +35,7 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 			List<TransactionAccountResponse> model = result != null
 				? [mapper.ToResponse(result)]
 				: [];
-			return Ok(model);
+			return TypedResults.Ok(model);
 		}
 
 		if (receiptId.HasValue)
@@ -46,9 +44,9 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 			List<TransactionAccount>? result = await mediator.Send(query);
 
 			List<TransactionAccountResponse> model = [.. (result ?? []).Select(mapper.ToResponse)];
-			return Ok(model);
+			return TypedResults.Ok(model);
 		}
 
-		return BadRequest("Either transactionId or receiptId query parameter is required.");
+		return TypedResults.BadRequest("Either transactionId or receiptId query parameter is required.");
 	}
 }

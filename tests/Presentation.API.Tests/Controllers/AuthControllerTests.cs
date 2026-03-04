@@ -5,6 +5,7 @@ using Application.Interfaces.Services;
 using FluentAssertions;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -89,11 +90,11 @@ public class AuthControllerTests
 		_tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("refresh-token");
 
 		// Act
-		ActionResult<TokenResponse> result = await _controller.Login(new LoginRequest { Email = "test@example.com", Password = "password" });
+		Results<Ok<TokenResponse>, JsonHttpResult<OAuthErrorResponse>> result = await _controller.Login(new LoginRequest { Email = "test@example.com", Password = "password" });
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenResponse response = Assert.IsType<TokenResponse>(okResult.Value);
+		Ok<TokenResponse> okResult = Assert.IsType<Ok<TokenResponse>>(result.Result);
+		TokenResponse response = okResult.Value!;
 		response.TokenType.Should().Be("Bearer");
 		response.Scope.Should().Be("Admin User");
 		response.AccessToken.Should().Be("access-token");
@@ -108,13 +109,13 @@ public class AuthControllerTests
 		_userManagerMock.Setup(m => m.FindByEmailAsync("test@example.com")).ReturnsAsync((ApplicationUser?)null);
 
 		// Act
-		ActionResult<TokenResponse> result = await _controller.Login(new LoginRequest { Email = "test@example.com", Password = "wrong" });
+		Results<Ok<TokenResponse>, JsonHttpResult<OAuthErrorResponse>> result = await _controller.Login(new LoginRequest { Email = "test@example.com", Password = "wrong" });
 
 		// Assert
-		UnauthorizedObjectResult unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result.Result);
-		OAuthErrorResponse error = Assert.IsType<OAuthErrorResponse>(unauthorizedResult.Value);
-		error.Error.Should().Be(OAuthErrorResponseError.Invalid_grant);
-		error.Error_description.Should().Be("Invalid email or password");
+		JsonHttpResult<OAuthErrorResponse> errorResult = Assert.IsType<JsonHttpResult<OAuthErrorResponse>>(result.Result);
+		errorResult.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+		errorResult.Value!.Error.Should().Be(OAuthErrorResponseError.Invalid_grant);
+		errorResult.Value!.Error_description.Should().Be("Invalid email or password");
 	}
 
 	[Fact]
@@ -127,13 +128,13 @@ public class AuthControllerTests
 		_userManagerMock.Setup(m => m.IsLockedOutAsync(user)).ReturnsAsync(true);
 
 		// Act
-		ActionResult<TokenResponse> result = await _controller.Login(new LoginRequest { Email = "test@example.com", Password = "password" });
+		Results<Ok<TokenResponse>, JsonHttpResult<OAuthErrorResponse>> result = await _controller.Login(new LoginRequest { Email = "test@example.com", Password = "password" });
 
 		// Assert
-		UnauthorizedObjectResult unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result.Result);
-		OAuthErrorResponse error = Assert.IsType<OAuthErrorResponse>(unauthorizedResult.Value);
-		error.Error.Should().Be(OAuthErrorResponseError.Invalid_grant);
-		error.Error_description.Should().Be("Account is disabled");
+		JsonHttpResult<OAuthErrorResponse> errorResult = Assert.IsType<JsonHttpResult<OAuthErrorResponse>>(result.Result);
+		errorResult.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+		errorResult.Value!.Error.Should().Be(OAuthErrorResponseError.Invalid_grant);
+		errorResult.Value!.Error_description.Should().Be("Account is disabled");
 	}
 
 	// ── Refresh ──────────────────────────────────────────────
@@ -150,11 +151,11 @@ public class AuthControllerTests
 		_tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("new-refresh-token");
 
 		// Act
-		ActionResult<TokenResponse> result = await _controller.RefreshToken(new RefreshTokenRequest { RefreshToken = "valid-refresh-token" }, CancellationToken.None);
+		Results<Ok<TokenResponse>, UnauthorizedHttpResult> result = await _controller.RefreshToken(new RefreshTokenRequest { RefreshToken = "valid-refresh-token" }, CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenResponse response = Assert.IsType<TokenResponse>(okResult.Value);
+		Ok<TokenResponse> okResult = Assert.IsType<Ok<TokenResponse>>(result.Result);
+		TokenResponse response = okResult.Value!;
 		response.TokenType.Should().Be("Bearer");
 		response.Scope.Should().Be("User");
 	}
@@ -174,11 +175,11 @@ public class AuthControllerTests
 		_tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("refresh-token");
 
 		// Act
-		ActionResult<TokenResponse> result = await _controller.ChangePassword(new ChangePasswordRequest { CurrentPassword = "old", NewPassword = "new" });
+		Results<Ok<TokenResponse>, JsonHttpResult<OAuthErrorResponse>, UnauthorizedHttpResult> result = await _controller.ChangePassword(new ChangePasswordRequest { CurrentPassword = "old", NewPassword = "new" });
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenResponse response = Assert.IsType<TokenResponse>(okResult.Value);
+		Ok<TokenResponse> okResult = Assert.IsType<Ok<TokenResponse>>(result.Result);
+		TokenResponse response = okResult.Value!;
 		response.TokenType.Should().Be("Bearer");
 		response.Scope.Should().Be("Admin");
 	}
@@ -194,13 +195,13 @@ public class AuthControllerTests
 			.ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "PasswordTooShort", Description = "Password too short" }));
 
 		// Act
-		ActionResult<TokenResponse> result = await _controller.ChangePassword(new ChangePasswordRequest { CurrentPassword = "old", NewPassword = "bad" });
+		Results<Ok<TokenResponse>, JsonHttpResult<OAuthErrorResponse>, UnauthorizedHttpResult> result = await _controller.ChangePassword(new ChangePasswordRequest { CurrentPassword = "old", NewPassword = "bad" });
 
 		// Assert
-		BadRequestObjectResult badResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-		OAuthErrorResponse error = Assert.IsType<OAuthErrorResponse>(badResult.Value);
-		error.Error.Should().Be(OAuthErrorResponseError.Invalid_request);
-		error.Error_description.Should().Contain("Password too short");
+		JsonHttpResult<OAuthErrorResponse> errorResult = Assert.IsType<JsonHttpResult<OAuthErrorResponse>>(result.Result);
+		errorResult.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+		errorResult.Value!.Error.Should().Be(OAuthErrorResponseError.Invalid_request);
+		errorResult.Value!.Error_description.Should().Contain("Password too short");
 	}
 
 	// ── Introspect ───────────────────────────────────────────
@@ -214,13 +215,12 @@ public class AuthControllerTests
 			.Returns(new TokenIntrospectionResult(true, "Admin", "test@example.com", "Bearer", 1700000000, 1699990000, "user-123"));
 
 		// Act
-		ActionResult<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
+		Ok<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
 			new TokenIntrospectionRequest { Token = "valid-access-token", TokenTypeHint = TokenIntrospectionRequestTokenTypeHint.AccessToken },
 			CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenIntrospectionResponse response = Assert.IsType<TokenIntrospectionResponse>(okResult.Value);
+		TokenIntrospectionResponse response = result.Value!;
 		response.Active.Should().BeTrue();
 		response.Scope.Should().Be("Admin");
 		response.Username.Should().Be("test@example.com");
@@ -237,13 +237,12 @@ public class AuthControllerTests
 			.Returns(new TokenIntrospectionResult(false, null, null, null, null, null, null));
 
 		// Act
-		ActionResult<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
+		Ok<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
 			new TokenIntrospectionRequest { Token = "expired-token", TokenTypeHint = TokenIntrospectionRequestTokenTypeHint.AccessToken },
 			CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenIntrospectionResponse response = Assert.IsType<TokenIntrospectionResponse>(okResult.Value);
+		TokenIntrospectionResponse response = result.Value!;
 		response.Active.Should().BeFalse();
 	}
 
@@ -256,13 +255,12 @@ public class AuthControllerTests
 			.Returns(new TokenIntrospectionResult(false, null, null, null, null, null, null));
 
 		// Act
-		ActionResult<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
+		Ok<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
 			new TokenIntrospectionRequest { Token = "garbage" },
 			CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenIntrospectionResponse response = Assert.IsType<TokenIntrospectionResponse>(okResult.Value);
+		TokenIntrospectionResponse response = result.Value!;
 		response.Active.Should().BeFalse();
 	}
 
@@ -277,13 +275,12 @@ public class AuthControllerTests
 		_userManagerMock.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { "User" });
 
 		// Act
-		ActionResult<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
+		Ok<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
 			new TokenIntrospectionRequest { Token = "valid-refresh", TokenTypeHint = TokenIntrospectionRequestTokenTypeHint.RefreshToken },
 			CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenIntrospectionResponse response = Assert.IsType<TokenIntrospectionResponse>(okResult.Value);
+		TokenIntrospectionResponse response = result.Value!;
 		response.Active.Should().BeTrue();
 		response.TokenType.Should().Be("refresh_token");
 		response.Sub.Should().Be(user.Id);
@@ -301,13 +298,12 @@ public class AuthControllerTests
 		_userManagerMock.Setup(m => m.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
 		// Act
-		ActionResult<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
+		Ok<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
 			new TokenIntrospectionRequest { Token = "expired-refresh", TokenTypeHint = TokenIntrospectionRequestTokenTypeHint.RefreshToken },
 			CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenIntrospectionResponse response = Assert.IsType<TokenIntrospectionResponse>(okResult.Value);
+		TokenIntrospectionResponse response = result.Value!;
 		response.Active.Should().BeFalse();
 	}
 
@@ -319,13 +315,12 @@ public class AuthControllerTests
 		_userServiceMock.Setup(s => s.FindUserIdByRefreshTokenAsync("unknown", It.IsAny<CancellationToken>())).ReturnsAsync((string?)null);
 
 		// Act
-		ActionResult<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
+		Ok<TokenIntrospectionResponse> result = await _controller.IntrospectToken(
 			new TokenIntrospectionRequest { Token = "unknown", TokenTypeHint = TokenIntrospectionRequestTokenTypeHint.RefreshToken },
 			CancellationToken.None);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		TokenIntrospectionResponse response = Assert.IsType<TokenIntrospectionResponse>(okResult.Value);
+		TokenIntrospectionResponse response = result.Value!;
 		response.Active.Should().BeFalse();
 	}
 
@@ -341,12 +336,12 @@ public class AuthControllerTests
 		_userManagerMock.Setup(m => m.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
 		// Act
-		IActionResult result = await _controller.RevokeToken(
+		Ok result = await _controller.RevokeToken(
 			new TokenRevocationRequest { Token = "valid-refresh" },
 			CancellationToken.None);
 
 		// Assert
-		Assert.IsType<OkResult>(result);
+		Assert.IsType<Ok>(result);
 		user.RefreshToken.Should().BeNull();
 		user.RefreshTokenExpiresAt.Should().BeNull();
 	}
@@ -359,11 +354,11 @@ public class AuthControllerTests
 		_userServiceMock.Setup(s => s.FindUserIdByRefreshTokenAsync("invalid", It.IsAny<CancellationToken>())).ReturnsAsync((string?)null);
 
 		// Act
-		IActionResult result = await _controller.RevokeToken(
+		Ok result = await _controller.RevokeToken(
 			new TokenRevocationRequest { Token = "invalid" },
 			CancellationToken.None);
 
 		// Assert
-		Assert.IsType<OkResult>(result);
+		Assert.IsType<Ok>(result);
 	}
 }

@@ -11,6 +11,7 @@ using Application.Queries.Core.Account;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -49,10 +50,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(account);
 
 		// Act
-		ActionResult<AccountResponse> result = await _controller.GetAccountById(account.Id);
+		Results<Ok<AccountResponse>, NotFound> result = await _controller.GetAccountById(account.Id);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		Ok<AccountResponse> okResult = Assert.IsType<Ok<AccountResponse>>(result.Result);
 		AccountResponse actualReturn = Assert.IsType<AccountResponse>(okResult.Value);
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -69,10 +70,10 @@ public class AccountsControllerTests
 			.ReturnsAsync((Account?)null);
 
 		// Act
-		ActionResult<AccountResponse> result = await _controller.GetAccountById(missingAccountId);
+		Results<Ok<AccountResponse>, NotFound> result = await _controller.GetAccountById(missingAccountId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -106,11 +107,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(new PagedResult<Account>(accounts, accounts.Count, 0, 50));
 
 		// Act
-		ActionResult<AccountListResponse> result = await _controller.GetAllAccounts(0, 50);
+		Ok<AccountListResponse> result = await _controller.GetAllAccounts(0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		AccountListResponse actualReturn = Assert.IsType<AccountListResponse>(okResult.Value);
+		AccountListResponse actualReturn = result.Value!;
 
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(accounts.Count);
@@ -149,11 +149,10 @@ public class AccountsControllerTests
 		CreateAccountRequest controllerInput = AccountDtoGenerator.GenerateCreateRequest();
 
 		// Act
-		ActionResult<AccountResponse> result = await _controller.CreateAccount(controllerInput);
+		Ok<AccountResponse> result = await _controller.CreateAccount(controllerInput);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		AccountResponse actualReturn = Assert.IsType<AccountResponse>(okResult.Value);
+		AccountResponse actualReturn = result.Value!;
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -191,11 +190,10 @@ public class AccountsControllerTests
 		List<CreateAccountRequest> controllerInput = AccountDtoGenerator.GenerateCreateRequestList(2);
 
 		// Act
-		ActionResult<List<AccountResponse>> result = await _controller.CreateAccounts(controllerInput);
+		Ok<List<AccountResponse>> result = await _controller.CreateAccounts(controllerInput);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<AccountResponse> actualReturn = Assert.IsType<List<AccountResponse>>(okResult.Value);
+		List<AccountResponse> actualReturn = result.Value!;
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -229,11 +227,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAccount(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateAccount(controllerInput.Id, controllerInput);
 
 		// Assert
-		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
-		Assert.Equal(204, noContentResult.StatusCode);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -248,11 +245,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAccount(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateAccount(controllerInput.Id, controllerInput);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -285,11 +281,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAccounts(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateAccounts(controllerInput);
 
 		// Assert
-		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
-		Assert.Equal(204, noContentResult.StatusCode);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -304,11 +299,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAccounts(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateAccounts(controllerInput);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -340,11 +334,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteAccounts(ids);
+		Results<NoContent, NotFound> result = await _controller.DeleteAccounts(ids);
 
 		// Assert
-		NoContentResult noContentResult = Assert.IsType<NoContentResult>(result.Result);
-		Assert.Equal(204, noContentResult.StatusCode);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -359,11 +352,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteAccounts(ids);
+		Results<NoContent, NotFound> result = await _controller.DeleteAccounts(ids);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -378,11 +370,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteAccounts(ids);
+		Results<NoContent, NotFound> result = await _controller.DeleteAccounts(ids);
 
 		// Assert
-		NotFoundResult notFoundResult = Assert.IsType<NotFoundResult>(result.Result);
-		Assert.Equal(404, notFoundResult.StatusCode);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -414,10 +405,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		IActionResult result = await _controller.RestoreAccount(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreAccount(id);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -431,10 +422,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		IActionResult result = await _controller.RestoreAccount(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreAccount(id);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]

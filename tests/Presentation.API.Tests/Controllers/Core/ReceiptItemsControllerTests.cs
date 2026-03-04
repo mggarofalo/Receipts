@@ -11,6 +11,7 @@ using Application.Queries.Core.ReceiptItem;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -49,10 +50,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<ReceiptItemResponse> result = await _controller.GetReceiptItemById(mediatorReturn.Id);
+		Results<Ok<ReceiptItemResponse>, NotFound> result = await _controller.GetReceiptItemById(mediatorReturn.Id);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		Ok<ReceiptItemResponse> okResult = Assert.IsType<Ok<ReceiptItemResponse>>(result.Result);
 		ReceiptItemResponse actualControllerReturn = Assert.IsType<ReceiptItemResponse>(okResult.Value);
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
@@ -69,10 +70,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync((ReceiptItem?)null);
 
 		// Act
-		ActionResult<ReceiptItemResponse> result = await _controller.GetReceiptItemById(missingReceiptItemId);
+		Results<Ok<ReceiptItemResponse>, NotFound> result = await _controller.GetReceiptItemById(missingReceiptItemId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -106,11 +107,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(new PagedResult<ReceiptItem>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(null, 0, 50);
+		Ok<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(null, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptItemListResponse actualControllerReturn = Assert.IsType<ReceiptItemListResponse>(okResult.Value);
+		ReceiptItemListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
 		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
@@ -148,11 +148,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(new PagedResult<ReceiptItem>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
+		Ok<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptItemListResponse actualControllerReturn = Assert.IsType<ReceiptItemListResponse>(okResult.Value);
+		ReceiptItemListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
 		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
@@ -172,11 +171,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(new PagedResult<ReceiptItem>([], 0, 0, 50));
 
 		// Act
-		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
+		Ok<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptItemListResponse actualControllerReturn = Assert.IsType<ReceiptItemListResponse>(okResult.Value);
+		ReceiptItemListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEmpty();
 	}
@@ -193,11 +191,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(new PagedResult<ReceiptItem>([], 0, 0, 50));
 
 		// Act
-		ActionResult<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(missingReceiptId, 0, 50);
+		Ok<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(missingReceiptId, 0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptItemListResponse actualReturn = Assert.IsType<ReceiptItemListResponse>(okResult.Value);
+		ReceiptItemListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEmpty();
 	}
 
@@ -235,11 +232,10 @@ public class ReceiptItemsControllerTests
 		CreateReceiptItemRequest controllerInput = ReceiptItemDtoGenerator.GenerateCreateRequest();
 
 		// Act
-		ActionResult<ReceiptItemResponse> result = await _controller.CreateReceiptItem(controllerInput, receiptId);
+		Ok<ReceiptItemResponse> result = await _controller.CreateReceiptItem(controllerInput, receiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptItemResponse actualReturn = Assert.IsType<ReceiptItemResponse>(okResult.Value);
+		ReceiptItemResponse actualReturn = result.Value!;
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -279,11 +275,10 @@ public class ReceiptItemsControllerTests
 		List<CreateReceiptItemRequest> controllerInput = ReceiptItemDtoGenerator.GenerateCreateRequestList(2);
 
 		// Act
-		ActionResult<List<ReceiptItemResponse>> result = await _controller.CreateReceiptItems(controllerInput, receiptId);
+		Ok<List<ReceiptItemResponse>> result = await _controller.CreateReceiptItems(controllerInput, receiptId);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<ReceiptItemResponse> actualControllerReturn = Assert.IsType<List<ReceiptItemResponse>>(okResult.Value);
+		List<ReceiptItemResponse> actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
@@ -320,10 +315,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceiptItem(controllerInput, id);
+		Results<NoContent, NotFound> result = await _controller.UpdateReceiptItem(controllerInput, id);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -339,10 +334,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceiptItem(controllerInput, id);
+		Results<NoContent, NotFound> result = await _controller.UpdateReceiptItem(controllerInput, id);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -376,10 +371,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceiptItems(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateReceiptItems(controllerInput);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -394,10 +389,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceiptItems(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateReceiptItems(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -430,10 +425,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteReceiptItems(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.DeleteReceiptItems(controllerInput);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -448,10 +443,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteReceiptItems(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.DeleteReceiptItems(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -466,10 +461,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteReceiptItems(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.DeleteReceiptItems(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -501,10 +496,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		IActionResult result = await _controller.RestoreReceiptItem(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreReceiptItem(id);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
@@ -518,10 +513,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		IActionResult result = await _controller.RestoreReceiptItem(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreReceiptItem(id);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]

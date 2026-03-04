@@ -19,10 +19,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
+                {}
 
   # ──────────────────────────────────────────────
   # Accounts
@@ -53,8 +50,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
     put:
@@ -83,8 +78,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -106,8 +99,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountListResponse"
-        "401":
-          description: Unauthorized
     post:
       operationId: CreateAccount
       tags: [Accounts]
@@ -131,8 +122,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountResponse"
-        "401":
-          description: Unauthorized
     delete:
       operationId: DeleteAccounts
       tags: [Accounts]
@@ -152,8 +141,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -175,8 +162,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountListResponse"
-        "401":
-          description: Unauthorized
 
   /api/accounts/{id}/restore:
     post:
@@ -199,8 +184,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -229,8 +212,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AccountResponse"
-        "401":
-          description: Unauthorized
     put:
       operationId: UpdateAccounts
       tags: [Accounts]
@@ -249,8 +230,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -283,8 +262,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
     put:
@@ -313,8 +290,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -336,8 +311,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryListResponse"
-        "401":
-          description: Unauthorized
     post:
       operationId: CreateCategory
       tags: [Categories]
@@ -361,14 +334,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryResponse"
-        "401":
-          description: Unauthorized
-        "409":
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteCategories
       tags: [Categories]
@@ -388,8 +353,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -411,8 +374,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryListResponse"
-        "401":
-          description: Unauthorized
 
   /api/categories/{id}/restore:
     post:
@@ -435,8 +396,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -465,14 +424,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CategoryResponse"
-        "401":
-          description: Unauthorized
-        "409":
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateCategories
       tags: [Categories]
@@ -491,8 +442,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -525,8 +474,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubcategoryResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
     put:
@@ -555,8 +502,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -584,8 +529,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubcategoryListResponse"
-        "401":
-          description: Unauthorized
     post:
       operationId: CreateSubcategory
       tags: [Subcategories]
@@ -609,14 +552,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubcategoryResponse"
-        "401":
-          description: Unauthorized
-        "409":
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteSubcategories
       tags: [Subcategories]
@@ -636,8 +571,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -659,8 +592,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubcategoryListResponse"
-        "401":
-          description: Unauthorized
 
   /api/subcategories/{id}/restore:
     post:
@@ -683,8 +614,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -713,14 +642,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SubcategoryResponse"
-        "401":
-          description: Unauthorized
-        "409":
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateSubcategories
       tags: [Subcategories]
@@ -739,8 +660,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -773,8 +692,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemTemplateResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
     put:
@@ -803,8 +720,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -826,8 +741,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemTemplateListResponse"
-        "401":
-          description: Unauthorized
     post:
       operationId: CreateItemTemplate
       tags: [ItemTemplates]
@@ -851,8 +764,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemTemplateResponse"
-        "401":
-          description: Unauthorized
     delete:
       operationId: DeleteItemTemplates
       tags: [ItemTemplates]
@@ -872,8 +783,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -895,8 +804,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemTemplateListResponse"
-        "401":
-          description: Unauthorized
 
   /api/item-templates/{id}/restore:
     post:
@@ -919,8 +826,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -953,8 +858,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
     put:
@@ -983,8 +886,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1006,8 +907,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptListResponse"
-        "401":
-          description: Unauthorized
     post:
       operationId: CreateReceipt
       tags: [Receipts]
@@ -1031,8 +930,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptResponse"
-        "401":
-          description: Unauthorized
     delete:
       operationId: DeleteReceipts
       tags: [Receipts]
@@ -1052,8 +949,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1075,8 +970,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptListResponse"
-        "401":
-          description: Unauthorized
 
   /api/receipts/{id}/restore:
     post:
@@ -1099,8 +992,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1129,8 +1020,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptResponse"
-        "401":
-          description: Unauthorized
     put:
       operationId: UpdateReceipts
       tags: [Receipts]
@@ -1149,8 +1038,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1184,8 +1071,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
     put:
@@ -1215,8 +1100,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1244,8 +1127,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemListResponse"
-        "401":
-          description: Unauthorized
     delete:
       operationId: DeleteReceiptItems
       tags: [ReceiptItems]
@@ -1265,8 +1146,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1288,8 +1167,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemListResponse"
-        "401":
-          description: Unauthorized
 
   /api/receipt-items/{id}/restore:
     post:
@@ -1312,8 +1189,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1336,8 +1211,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1372,8 +1245,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemResponse"
-        "401":
-          description: Unauthorized
 
   /api/receipts/{receiptId}/receipt-items/batch:
     post:
@@ -1407,8 +1278,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ReceiptItemResponse"
-        "401":
-          description: Unauthorized
 
   # ──────────────────────────────────────────────
   # Transactions
@@ -1439,8 +1308,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
     put:
@@ -1470,8 +1337,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1499,8 +1364,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionListResponse"
-        "401":
-          description: Unauthorized
     delete:
       operationId: DeleteTransactions
       tags: [Transactions]
@@ -1520,8 +1383,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1543,8 +1404,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionListResponse"
-        "401":
-          description: Unauthorized
 
   /api/transactions/{id}/restore:
     post:
@@ -1567,8 +1426,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1591,8 +1448,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1627,8 +1482,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionResponse"
-        "401":
-          description: Unauthorized
 
   /api/receipts/{receiptId}/transactions/batch:
     post:
@@ -1662,8 +1515,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TransactionResponse"
-        "401":
-          description: Unauthorized
 
   # ──────────────────────────────────────────────
   # Adjustments
@@ -1694,8 +1545,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdjustmentResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
     put:
@@ -1725,8 +1574,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1754,8 +1601,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdjustmentListResponse"
-        "401":
-          description: Unauthorized
     delete:
       operationId: DeleteAdjustments
       tags: [Adjustments]
@@ -1775,8 +1620,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1798,8 +1641,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdjustmentListResponse"
-        "401":
-          description: Unauthorized
 
   /api/adjustments/{id}/restore:
     post:
@@ -1822,8 +1663,6 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1858,8 +1697,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdjustmentResponse"
-        "401":
-          description: Unauthorized
 
   # ──────────────────────────────────────────────
   # Trash
@@ -1876,8 +1713,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
 
   # ──────────────────────────────────────────────
   # Aggregates (read-only)
@@ -1905,8 +1740,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptWithItemsResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -1946,8 +1779,6 @@ paths:
             application/json:
               schema:
                 type: string
-        "401":
-          description: Unauthorized
 
   /api/trips:
     get:
@@ -1971,8 +1802,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TripResponse"
-        "401":
-          description: Unauthorized
         "404":
           description: Not Found
 
@@ -2018,15 +1847,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AuditLogResponse"
+                  $ref: "#/components/schemas/AuditLogDto"
         "400":
           description: Bad Request
           content:
             application/json:
               schema:
                 type: string
-        "401":
-          description: Unauthorized
 
   /api/audit/recent:
     get:
@@ -2051,9 +1878,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AuditLogResponse"
-        "401":
-          description: Unauthorized
+                  $ref: "#/components/schemas/AuditLogDto"
 
   # ──────────────────────────────────────────────
   # Auth
@@ -2102,12 +1927,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TokenResponse"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OAuthErrorResponse"
 
   /api/auth/logout:
     post:
@@ -2120,8 +1939,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
 
   /api/auth/change-password:
     post:
@@ -2149,8 +1966,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OAuthErrorResponse"
-        "401":
-          description: Unauthorized
 
   /api/auth/introspect:
     post:
@@ -2173,8 +1988,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TokenIntrospectionResponse"
-        "401":
-          description: Unauthorized
 
   /api/auth/revoke:
     post:
@@ -2215,8 +2028,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ApiKeyResponse"
-        "401":
-          description: Unauthorized
     post:
       operationId: CreateApiKey
       tags: [ApiKeys]
@@ -2237,8 +2048,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CreateApiKeyResponse"
-        "401":
-          description: Unauthorized
 
   /api/apikeys/{id}:
     delete:
@@ -2258,10 +2067,6 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
-        "404":
-          description: Not Found
 
   # ──────────────────────────────────────────────
   # Auth Audit
@@ -2290,9 +2095,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AuthAuditLogResponse"
-        "401":
-          description: Unauthorized
+                  $ref: "#/components/schemas/AuthAuditEntryDto"
 
   /api/auth/audit/recent:
     get:
@@ -2317,9 +2120,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AuthAuditLogResponse"
-        "401":
-          description: Unauthorized
+                  $ref: "#/components/schemas/AuthAuditEntryDto"
 
   /api/auth/audit/failed:
     get:
@@ -2344,9 +2145,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AuthAuditLogResponse"
-        "401":
-          description: Unauthorized
+                  $ref: "#/components/schemas/AuthAuditEntryDto"
 
   # ──────────────────────────────────────────────
   # Users (admin-only)
@@ -2370,10 +2169,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserListResponse"
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
     post:
       operationId: CreateUser
       tags: [Users]
@@ -2396,10 +2191,6 @@ paths:
                 $ref: "#/components/schemas/UserSummaryResponse"
         "400":
           description: Bad Request
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
 
   /api/users/{userId}:
     get:
@@ -2422,10 +2213,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserSummaryResponse"
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
         "404":
           description: Not Found
     put:
@@ -2452,10 +2239,6 @@ paths:
           description: No Content
         "400":
           description: Bad Request
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
         "404":
           description: Not Found
     delete:
@@ -2476,10 +2259,6 @@ paths:
           description: No Content
         "400":
           description: Bad Request
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
         "404":
           description: Not Found
 
@@ -2508,10 +2287,6 @@ paths:
           description: No Content
         "400":
           description: Bad Request
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
         "404":
           description: Not Found
 
@@ -2540,10 +2315,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserRolesResponse"
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
         "404":
           description: Not Found
 
@@ -2571,10 +2342,6 @@ paths:
           description: No Content
         "400":
           description: Bad Request
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
         "404":
           description: Not Found
     delete:
@@ -2600,10 +2367,6 @@ paths:
           description: No Content
         "400":
           description: Bad Request
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
         "404":
           description: Not Found
 
@@ -3316,36 +3079,11 @@ components:
             $ref: "#/components/schemas/ValidationWarningResponse"
           description: "Soft validation warnings including date consistency checks"
 
-    ProblemDetails:
-      type: object
-      properties:
-        type:
-          type:
-            - string
-            - "null"
-        title:
-          type:
-            - string
-            - "null"
-        status:
-          type:
-            - integer
-            - "null"
-          format: int32
-        detail:
-          type:
-            - string
-            - "null"
-        instance:
-          type:
-            - string
-            - "null"
-
     # ── Audit ───────────────────────────────────────
 
-    AuditLogResponse:
+    AuditLogDto:
       type: object
-      required: [id, entityType, entityId, action, changesJson, changedAt]
+      required: [id, entityType, entityId, action, changesJson, changedByUserId, changedByApiKeyId, changedAt, ipAddress]
       properties:
         id:
           type: string
@@ -3377,9 +3115,9 @@ components:
 
     # ── Auth Audit ────────────────────────────────
 
-    AuthAuditLogResponse:
+    AuthAuditEntryDto:
       type: object
-      required: [id, eventType, timestamp]
+      required: [id, eventType, userId, apiKeyId, username, success, failureReason, ipAddress, userAgent, timestamp, metadataJson]
       properties:
         id:
           type: string

@@ -11,6 +11,7 @@ using Application.Queries.Core.Receipt;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -50,10 +51,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(mediatorReturn);
 
 		// Act
-		ActionResult<ReceiptResponse> result = await _controller.GetReceiptById(mediatorReturn.Id);
+		Results<Ok<ReceiptResponse>, NotFound> result = await _controller.GetReceiptById(mediatorReturn.Id);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
+		Ok<ReceiptResponse> okResult = Assert.IsType<Ok<ReceiptResponse>>(result.Result);
 		ReceiptResponse actualControllerReturn = Assert.IsType<ReceiptResponse>(okResult.Value);
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 	}
@@ -70,10 +71,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync((Receipt?)null);
 
 		// Act
-		ActionResult<ReceiptResponse> result = await _controller.GetReceiptById(missingReceiptId);
+		Results<Ok<ReceiptResponse>, NotFound> result = await _controller.GetReceiptById(missingReceiptId);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -107,11 +108,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(new PagedResult<Receipt>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<ReceiptListResponse> result = await _controller.GetAllReceipts(0, 50);
+		Ok<ReceiptListResponse> result = await _controller.GetAllReceipts(0, 50);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptListResponse actualControllerReturn = Assert.IsType<ReceiptListResponse>(okResult.Value);
+		ReceiptListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
 		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
@@ -150,11 +150,10 @@ public class ReceiptsControllerTests
 		CreateReceiptRequest controllerInput = ReceiptDtoGenerator.GenerateCreateRequest();
 
 		// Act
-		ActionResult<ReceiptResponse> result = await _controller.CreateReceipt(controllerInput);
+		Ok<ReceiptResponse> result = await _controller.CreateReceipt(controllerInput);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		ReceiptResponse actualReturn = Assert.IsType<ReceiptResponse>(okResult.Value);
+		ReceiptResponse actualReturn = result.Value!;
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 		_notifierMock.Verify(n => n.NotifyCreated("receipt", receipt.Id), Times.Once);
@@ -193,11 +192,10 @@ public class ReceiptsControllerTests
 		List<CreateReceiptRequest> controllerInput = ReceiptDtoGenerator.GenerateCreateRequestList(2);
 
 		// Act
-		ActionResult<List<ReceiptResponse>> result = await _controller.CreateReceipts(controllerInput);
+		Ok<List<ReceiptResponse>> result = await _controller.CreateReceipts(controllerInput);
 
 		// Assert
-		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<ReceiptResponse> actualControllerReturn = Assert.IsType<List<ReceiptResponse>>(okResult.Value);
+		List<ReceiptResponse> actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
 		_notifierMock.Verify(n => n.NotifyBulkChanged("receipt", "created", It.IsAny<IEnumerable<Guid>>()), Times.Once);
@@ -233,10 +231,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceipt(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateReceipt(controllerInput.Id, controllerInput);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 		_notifierMock.Verify(n => n.NotifyUpdated("receipt", controllerInput.Id), Times.Once);
 	}
 
@@ -252,10 +250,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceipt(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateReceipt(controllerInput.Id, controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -288,10 +286,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceipts(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateReceipts(controllerInput);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 		_notifierMock.Verify(n => n.NotifyBulkChanged("receipt", "updated", It.IsAny<IEnumerable<Guid>>()), Times.Once);
 	}
 
@@ -307,10 +305,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceipts(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.UpdateReceipts(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -343,10 +341,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteReceipts(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.DeleteReceipts(controllerInput);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result.Result);
+		Assert.IsType<NoContent>(result.Result);
 		_notifierMock.Verify(n => n.NotifyBulkChanged("receipt", "deleted", controllerInput), Times.Once);
 	}
 
@@ -362,10 +360,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteReceipts(controllerInput);
+		Results<NoContent, NotFound> result = await _controller.DeleteReceipts(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result.Result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
@@ -397,10 +395,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		IActionResult result = await _controller.RestoreReceipt(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreReceipt(id);
 
 		// Assert
-		Assert.IsType<NoContentResult>(result);
+		Assert.IsType<NoContent>(result.Result);
 		_notifierMock.Verify(n => n.NotifyUpdated("receipt", id), Times.Once);
 	}
 
@@ -415,10 +413,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		IActionResult result = await _controller.RestoreReceipt(id);
+		Results<NoContent, NotFound> result = await _controller.RestoreReceipt(id);
 
 		// Assert
-		Assert.IsType<NotFoundResult>(result);
+		Assert.IsType<NotFound>(result.Result);
 	}
 
 	[Fact]
