@@ -53,7 +53,7 @@ public class UpdateTransactionCommandHandler(
 			]);
 		}
 
-		await transactionService.UpdateAsync([.. request.Transactions], receiptId, request.AccountId, cancellationToken);
+		await transactionService.UpdateAsync([.. request.Transactions], receiptId, cancellationToken);
 		return true;
 	}
 }
