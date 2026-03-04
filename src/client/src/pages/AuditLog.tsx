@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 const COUNT_OPTIONS = [50, 100, 200] as const;
 
 function csvField(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+  if (value.includes(",") || value.includes('"') || value.includes("\n") || value.includes("\r")) {
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;
