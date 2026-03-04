@@ -46,6 +46,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -83,6 +86,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -136,6 +142,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -223,6 +232,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -318,6 +330,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -355,6 +370,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -408,6 +426,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -501,6 +522,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -602,6 +626,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -639,6 +666,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -698,6 +728,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -791,6 +824,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -892,6 +928,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -929,6 +968,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -982,6 +1024,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -1069,6 +1114,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -1102,6 +1150,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -1139,6 +1190,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -1192,6 +1246,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -1279,6 +1336,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -1375,6 +1435,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -1413,6 +1476,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -1531,6 +1597,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -1596,6 +1665,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -1672,6 +1744,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -1710,6 +1785,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -1828,6 +1906,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -1893,6 +1974,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -1969,6 +2053,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -2007,6 +2094,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -2125,6 +2215,9 @@ paths:
       responses:
         "204":
           description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
         "401":
           description: Unauthorized
         "404":
@@ -2160,6 +2253,9 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
           content:
             application/json:
               schema:
@@ -4029,6 +4125,14 @@ components:
       properties:
         newPassword:
           type: string
+
+  headers:
+    X-Resource-Id:
+      description: Canonical identifier of the resource
+      required: false
+      schema:
+        type: string
+        format: uuid
 
   parameters:
     Offset:
