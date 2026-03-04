@@ -114,7 +114,7 @@ public class AuthControllerTests
 		UnauthorizedObjectResult unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result.Result);
 		OAuthErrorResponse error = Assert.IsType<OAuthErrorResponse>(unauthorizedResult.Value);
 		error.Error.Should().Be(OAuthErrorResponseError.Invalid_grant);
-		error.ErrorDescription.Should().Be("Invalid email or password");
+		error.Error_description.Should().Be("Invalid email or password");
 	}
 
 	[Fact]
@@ -133,7 +133,7 @@ public class AuthControllerTests
 		UnauthorizedObjectResult unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result.Result);
 		OAuthErrorResponse error = Assert.IsType<OAuthErrorResponse>(unauthorizedResult.Value);
 		error.Error.Should().Be(OAuthErrorResponseError.Invalid_grant);
-		error.ErrorDescription.Should().Be("Account is disabled");
+		error.Error_description.Should().Be("Account is disabled");
 	}
 
 	// ── Refresh ──────────────────────────────────────────────
@@ -200,7 +200,7 @@ public class AuthControllerTests
 		BadRequestObjectResult badResult = Assert.IsType<BadRequestObjectResult>(result.Result);
 		OAuthErrorResponse error = Assert.IsType<OAuthErrorResponse>(badResult.Value);
 		error.Error.Should().Be(OAuthErrorResponseError.Invalid_request);
-		error.ErrorDescription.Should().Contain("Password too short");
+		error.Error_description.Should().Contain("Password too short");
 	}
 
 	// ── Introspect ───────────────────────────────────────────

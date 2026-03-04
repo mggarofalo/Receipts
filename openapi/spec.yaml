@@ -3624,19 +3624,19 @@ components:
       properties:
         error:
           $ref: "#/components/schemas/OAuthErrorResponseError"
-        errorDescription:
+        error_description:
           type: string
-        errorUri:
+        error_uri:
           type: string
 
     OAuthErrorResponseError:
       enum:
-        - Invalid_request
-        - Invalid_client
-        - Invalid_grant
-        - Unauthorized_client
-        - Unsupported_grant_type
-        - Invalid_scope
+        - invalid_request
+        - invalid_client
+        - invalid_grant
+        - unauthorized_client
+        - unsupported_grant_type
+        - invalid_scope
 
     TokenIntrospectionRequest:
       type: object
@@ -3645,7 +3645,9 @@ components:
         token:
           type: string
         tokenTypeHint:
-          $ref: "#/components/schemas/TokenIntrospectionRequestTokenTypeHint"
+          oneOf:
+            - $ref: "#/components/schemas/TokenIntrospectionRequestTokenTypeHint"
+            - type: "null"
 
     TokenIntrospectionRequestTokenTypeHint:
       enum:
@@ -3680,7 +3682,9 @@ components:
         token:
           type: string
         tokenTypeHint:
-          $ref: "#/components/schemas/TokenRevocationRequestTokenTypeHint"
+          oneOf:
+            - $ref: "#/components/schemas/TokenRevocationRequestTokenTypeHint"
+            - type: "null"
 
     TokenRevocationRequestTokenTypeHint:
       enum:

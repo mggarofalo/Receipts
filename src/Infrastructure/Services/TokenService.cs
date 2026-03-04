@@ -93,7 +93,7 @@ public class TokenService(IConfiguration configuration) : ITokenService
 		if (result.SecurityToken is JsonWebToken jwt)
 		{
 			exp = new DateTimeOffset(jwt.ValidTo).ToUnixTimeSeconds();
-			iat = new DateTimeOffset(jwt.ValidFrom).ToUnixTimeSeconds();
+			iat = new DateTimeOffset(jwt.IssuedAt).ToUnixTimeSeconds();
 		}
 
 		return new TokenIntrospectionResult(

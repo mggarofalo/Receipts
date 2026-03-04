@@ -35,7 +35,7 @@ public class AuthController(
 			return Unauthorized(new OAuthErrorResponse
 			{
 				Error = OAuthErrorResponseError.Invalid_grant,
-				ErrorDescription = "Invalid email or password",
+				Error_description = "Invalid email or password",
 			});
 		}
 
@@ -45,7 +45,7 @@ public class AuthController(
 			return Unauthorized(new OAuthErrorResponse
 			{
 				Error = OAuthErrorResponseError.Invalid_grant,
-				ErrorDescription = "Account is disabled",
+				Error_description = "Account is disabled",
 			});
 		}
 
@@ -159,7 +159,7 @@ public class AuthController(
 			return BadRequest(new OAuthErrorResponse
 			{
 				Error = OAuthErrorResponseError.Invalid_request,
-				ErrorDescription = string.Join("; ", result.Errors.Select(e => e.Description)),
+				Error_description = string.Join("; ", result.Errors.Select(e => e.Description)),
 			});
 		}
 
