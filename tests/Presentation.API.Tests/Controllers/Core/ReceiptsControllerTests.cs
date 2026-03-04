@@ -88,7 +88,7 @@ public class ReceiptsControllerTests
 	}
 
 	[Fact]
-	public async Task GetReceiptById_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetReceiptById_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = ReceiptGenerator.Generate().Id;
@@ -99,12 +99,10 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<ReceiptResponse> result = await _controller.GetReceiptById(id);
+		Func<Task> act = () => _controller.GetReceiptById(id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -133,7 +131,7 @@ public class ReceiptsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllReceipts_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllReceipts_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
@@ -142,12 +140,10 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<ReceiptListResponse> result = await _controller.GetAllReceipts(0, 50);
+		Func<Task> act = () => _controller.GetAllReceipts(0, 50);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -175,7 +171,7 @@ public class ReceiptsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateReceipt_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateReceipt_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		CreateReceiptRequest controllerInput = ReceiptDtoGenerator.GenerateCreateRequest();
@@ -186,12 +182,10 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<ReceiptResponse> result = await _controller.CreateReceipt(controllerInput);
+		Func<Task> act = () => _controller.CreateReceipt(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -219,7 +213,7 @@ public class ReceiptsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateReceipts_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateReceipts_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<CreateReceiptRequest> controllerInput = ReceiptDtoGenerator.GenerateCreateRequestList(2);
@@ -230,12 +224,10 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<List<ReceiptResponse>> result = await _controller.CreateReceipts(controllerInput);
+		Func<Task> act = () => _controller.CreateReceipts(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -275,7 +267,7 @@ public class ReceiptsControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateReceipt_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task UpdateReceipt_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		UpdateReceiptRequest controllerInput = ReceiptDtoGenerator.GenerateUpdateRequest();
@@ -286,12 +278,10 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceipt(controllerInput.Id, controllerInput);
+		Func<Task> act = () => _controller.UpdateReceipt(controllerInput.Id, controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -331,7 +321,7 @@ public class ReceiptsControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateReceipts_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task UpdateReceipts_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<UpdateReceiptRequest> controllerInput = ReceiptDtoGenerator.GenerateUpdateRequestList(2);
@@ -342,12 +332,10 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateReceipts(controllerInput);
+		Func<Task> act = () => _controller.UpdateReceipts(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -387,7 +375,7 @@ public class ReceiptsControllerTests
 	}
 
 	[Fact]
-	public async Task DeleteReceipts_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task DeleteReceipts_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<Guid> controllerInput = [.. ReceiptGenerator.GenerateList(2).Select(a => a.Id)];
@@ -398,12 +386,10 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteReceipts(controllerInput);
+		Func<Task> act = () => _controller.DeleteReceipts(controllerInput);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -441,7 +427,7 @@ public class ReceiptsControllerTests
 	}
 
 	[Fact]
-	public async Task RestoreReceipt_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task RestoreReceipt_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -451,10 +437,9 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		IActionResult result = await _controller.RestoreReceipt(id);
+		Func<Task> act = () => _controller.RestoreReceipt(id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }

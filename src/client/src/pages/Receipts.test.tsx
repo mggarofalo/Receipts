@@ -139,6 +139,55 @@ describe("Receipts", () => {
     ).toBeInTheDocument();
   });
 
+  it("closes edit dialog when dismissed", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<Receipts />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByRole("heading", { name: /edit receipt/i })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /edit receipt/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes create dialog when Cancel is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithProviders(<Receipts />);
+    await user.click(screen.getByRole("button", { name: /new receipt/i }));
+    expect(screen.getByRole("heading", { name: /create receipt/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /create receipt/i })).not.toBeInTheDocument();
+    });
+  });
+
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
@@ -197,6 +246,96 @@ describe("Receipts", () => {
     expect(
       screen.getByRole("button", { name: /delete/i }),
     ).toBeInTheDocument();
+  });
+
+  it("submits edit form and calls updateReceipt.mutate", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useUpdateReceipt } = await import("@/hooks/useReceipts");
+    vi.mocked(useUpdateReceipt).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    const items = [
+      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<Receipts />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const locationInput = screen.getByLabelText(/location/i);
+    await user.clear(locationInput);
+    await user.type(locationInput, "Target");
+    await user.click(screen.getByRole("button", { name: /update receipt/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalled();
+    });
+  });
+
+  it("submits create form and calls createReceipt.mutate", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useCreateReceipt } = await import("@/hooks/useReceipts");
+    vi.mocked(useCreateReceipt).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    renderWithProviders(<Receipts />);
+    await user.click(screen.getByRole("button", { name: /new receipt/i }));
+
+    await user.type(screen.getByLabelText(/location/i), "Walmart");
+    await user.type(screen.getByLabelText(/date/i), "2024-01-15");
+    await user.type(screen.getByLabelText(/tax amount/i), "5.25");
+    await user.click(screen.getByRole("button", { name: /create receipt/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalled();
+    });
+  });
+
+  it("renders NoResults when search returns no matches", async () => {
+    const { useReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
+      data: [{ id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }],
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "xyz",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 0,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Receipts />);
+    expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
   });
 
   it("opens delete dialog and confirms deletion", async () => {

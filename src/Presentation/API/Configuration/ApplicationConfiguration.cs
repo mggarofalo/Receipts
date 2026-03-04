@@ -1,9 +1,11 @@
+using System.Security.Claims;
 using API.Filters;
 using API.Hubs;
 using API.Middleware;
 using API.Services;
 using API.Validators;
 using FluentValidation;
+using Serilog;
 
 namespace API.Configuration;
 
@@ -43,6 +45,19 @@ public static class ApplicationConfiguration
 
 	public static WebApplication UseApplicationServices(this WebApplication app)
 	{
+		app.UseSerilogRequestLogging(options =>
+		{
+			options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+			{
+				diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+				diagnosticContext.Set("UserAgent", httpContext.Request.Headers.UserAgent.ToString());
+				string? userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				if (userId is not null)
+				{
+					diagnosticContext.Set("UserId", userId);
+				}
+			};
+		});
 		app.UseMiddleware<ValidationExceptionMiddleware>();
 		app.UseHttpsRedirection();
 		app.UseRouting();

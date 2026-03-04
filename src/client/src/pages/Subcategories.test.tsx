@@ -217,6 +217,111 @@ describe("Subcategories", () => {
     }
   });
 
+  it("closes edit dialog when dismissed", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", name: "Dairy", categoryId: "c1", categoryName: "Food", description: "Dairy products" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<Subcategories />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByRole("heading", { name: /edit subcategory/i })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /edit subcategory/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes create dialog when Cancel is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithProviders(<Subcategories />);
+    await user.click(screen.getByRole("button", { name: /new subcategory/i }));
+    expect(screen.getByRole("heading", { name: /create subcategory/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /create subcategory/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("renders NoResults when search returns no matches", async () => {
+    const { useSubcategories } = await import("@/hooks/useSubcategories");
+    vi.mocked(useSubcategories).mockReturnValue(mockQueryResult({
+      data: [{ id: "1", name: "Dairy", categoryId: "c1", description: "Dairy products" }],
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "xyz",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 0,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Subcategories />);
+    expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
+  });
+
+  it("opens edit dialog when Edit button is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", name: "Dairy", categoryId: "c1", categoryName: "Food", description: "Dairy products" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<Subcategories />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(
+      screen.getByRole("heading", { name: /edit subcategory/i }),
+    ).toBeInTheDocument();
+  });
+
   it("opens create dialog on shortcut:new-item event", async () => {
     const { act } = await import("@testing-library/react");
     renderWithProviders(<Subcategories />);

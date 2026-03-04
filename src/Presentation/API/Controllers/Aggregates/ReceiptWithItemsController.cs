@@ -17,8 +17,6 @@ namespace API.Controllers.Aggregates;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapper mapper, ILogger<ReceiptWithItemsController> logger) : ControllerBase
 {
-	public const string MessageWithId = "Error occurred in {Method} for receiptId: {receiptId}";
-	public const string MessageWithoutId = "Error occurred in {Method}";
 	public const string RouteByReceiptId = "";
 
 	[HttpGet(RouteByReceiptId)]
@@ -26,29 +24,18 @@ public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapp
 	[EndpointDescription("Returns a receipt and all its associated line items as a single aggregate, looked up by receipt ID.")]
 	[ProducesResponseType<ReceiptWithItemsResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ReceiptWithItemsResponse>> GetReceiptWithItemsByReceiptId([FromQuery] Guid receiptId)
 	{
-		try
-		{
-			logger.LogDebug("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId}", receiptId);
-			GetReceiptWithItemsByReceiptIdQuery query = new(receiptId);
-			ReceiptWithItems? result = await mediator.Send(query);
+		GetReceiptWithItemsByReceiptIdQuery query = new(receiptId);
+		ReceiptWithItems? result = await mediator.Send(query);
 
-			if (result == null)
-			{
-				logger.LogWarning("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId} not found", receiptId);
-				return NotFound();
-			}
-
-			ReceiptWithItemsResponse model = mapper.ToResponse(result);
-			logger.LogDebug("GetReceiptWithItemsByReceiptId called with receiptId: {receiptId} found", receiptId);
-			return Ok(model);
-		}
-		catch (Exception ex)
+		if (result == null)
 		{
-			logger.LogError(ex, MessageWithId, nameof(GetReceiptWithItemsByReceiptId), receiptId);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("ReceiptWithItems for receipt {ReceiptId} not found", receiptId);
+			return NotFound();
 		}
+
+		ReceiptWithItemsResponse model = mapper.ToResponse(result);
+		return Ok(model);
 	}
 }

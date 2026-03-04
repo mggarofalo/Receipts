@@ -22,8 +22,6 @@ namespace API.Controllers.Core;
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger) : ControllerBase
 {
-	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
-	public const string MessageWithoutId = "Error occurred in {Method}";
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "";
@@ -39,185 +37,110 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	[EndpointDescription("Returns a single account matching the provided GUID.")]
 	[ProducesResponseType<AccountResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<AccountResponse>> GetAccountById([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("GetAccountById called with id: {Id}", id);
-			GetAccountByIdQuery query = new(id);
-			Account? result = await mediator.Send(query);
+		GetAccountByIdQuery query = new(id);
+		Account? result = await mediator.Send(query);
 
-			if (result == null)
-			{
-				logger.LogWarning("GetAccountById called with id: {Id} not found", id);
-				return NotFound();
-			}
-
-			AccountResponse model = mapper.ToResponse(result);
-			logger.LogDebug("GetAccountById called with id: {Id} found", id);
-			return Ok(model);
-		}
-		catch (Exception ex)
+		if (result == null)
 		{
-			logger.LogError(ex, MessageWithId, nameof(GetAccountById), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Account {Id} not found", id);
+			return NotFound();
 		}
+
+		AccountResponse model = mapper.ToResponse(result);
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all accounts")]
 	[ProducesResponseType<AccountListResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<AccountListResponse>> GetAllAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		try
-		{
-			logger.LogDebug("GetAllAccounts called");
-			GetAllAccountsQuery query = new(offset, limit);
-			PagedResult<Account> result = await mediator.Send(query);
-			logger.LogDebug("GetAllAccounts called with {Count} accounts", result.Data.Count);
+		GetAllAccountsQuery query = new(offset, limit);
+		PagedResult<Account> result = await mediator.Send(query);
 
-			return Ok(new AccountListResponse
-			{
-				Data = [.. result.Data.Select(mapper.ToResponse)],
-				Total = result.Total,
-				Offset = result.Offset,
-				Limit = result.Limit,
-			});
-		}
-		catch (Exception ex)
+		return Ok(new AccountListResponse
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetAllAccounts));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted accounts")]
 	[EndpointDescription("Returns all accounts that have been soft-deleted.")]
 	[ProducesResponseType<AccountListResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<AccountListResponse>> GetDeletedAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		try
-		{
-			logger.LogDebug("GetDeletedAccounts called");
-			GetDeletedAccountsQuery query = new(offset, limit);
-			PagedResult<Account> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedAccounts called with {Count} accounts", result.Data.Count);
+		GetDeletedAccountsQuery query = new(offset, limit);
+		PagedResult<Account> result = await mediator.Send(query);
 
-			return Ok(new AccountListResponse
-			{
-				Data = [.. result.Data.Select(mapper.ToResponse)],
-				Total = result.Total,
-				Offset = result.Offset,
-				Limit = result.Limit,
-			});
-		}
-		catch (Exception ex)
+		return Ok(new AccountListResponse
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedAccounts));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single account")]
 	[ProducesResponseType<AccountResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<AccountResponse>> CreateAccount([FromBody] CreateAccountRequest model)
 	{
-		try
-		{
-			logger.LogDebug("CreateAccount called");
-			CreateAccountCommand command = new([mapper.ToDomain(model)]);
-			List<Account> accounts = await mediator.Send(command);
-			return Ok(mapper.ToResponse(accounts[0]));
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateAccount));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		CreateAccountCommand command = new([mapper.ToDomain(model)]);
+		List<Account> accounts = await mediator.Send(command);
+		return Ok(mapper.ToResponse(accounts[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create accounts in batch")]
 	[ProducesResponseType<List<AccountResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<AccountResponse>>> CreateAccounts([FromBody] List<CreateAccountRequest> models)
 	{
-		try
-		{
-			logger.LogDebug("CreateAccounts called with {Count} accounts", models.Count);
-			CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
-			List<Account> accounts = await mediator.Send(command);
-			return Ok(accounts.Select(mapper.ToResponse).ToList());
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateAccounts));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
+		List<Account> accounts = await mediator.Send(command);
+		return Ok(accounts.Select(mapper.ToResponse).ToList());
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single account")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateAccount([FromRoute] Guid id, [FromBody] UpdateAccountRequest model)
 	{
-		try
-		{
-			logger.LogDebug("UpdateAccount called for id: {Id}", id);
-			UpdateAccountCommand command = new([mapper.ToDomain(model)]);
-			bool result = await mediator.Send(command);
+		UpdateAccountCommand command = new([mapper.ToDomain(model)]);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("UpdateAccount called for id: {Id}, but not found", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(UpdateAccount), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Account {Id} not found for update", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update accounts in batch")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateAccounts([FromBody] List<UpdateAccountRequest> models)
 	{
-		try
+		UpdateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("UpdateAccounts called with {Count} accounts", models.Count);
-			UpdateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("UpdateAccounts called with {Count} accounts, but not found", models.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("UpdateAccounts called with {Count} accounts, and found", models.Count);
-
-			return NoContent();
+			logger.LogWarning("Accounts batch update failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(UpdateAccounts));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		return NoContent();
 	}
 
 	[HttpDelete(RouteDelete)]
@@ -225,30 +148,18 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	[EndpointDescription("Deletes one or more accounts by their IDs. Returns 404 if any account is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> DeleteAccounts([FromBody] List<Guid> ids)
 	{
-		try
+		DeleteAccountCommand command = new(ids);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("DeleteAccounts called with {Count} ids", ids.Count);
-			DeleteAccountCommand command = new(ids);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("DeleteAccounts called with {Count} ids, but not found", ids.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("DeleteAccounts called with {Count} ids, and found", ids.Count);
-
-			return NoContent();
+			logger.LogWarning("Accounts delete failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(DeleteAccounts));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+
+		return NoContent();
 	}
 
 	[HttpPost(RouteRestore)]
@@ -256,27 +167,17 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	[EndpointDescription("Restores a previously soft-deleted account by clearing its DeletedAt timestamp.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> RestoreAccount([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("RestoreAccount called with id: {Id}", id);
-			RestoreAccountCommand command = new(id);
-			bool result = await mediator.Send(command);
+		RestoreAccountCommand command = new(id);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("RestoreAccount called with id: {Id}, but not found or not deleted", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(RestoreAccount), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Account {Id} not found or not deleted for restore", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 }

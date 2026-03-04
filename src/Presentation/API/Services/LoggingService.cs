@@ -10,16 +10,22 @@ public static class LoggingService
 		LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
 			.Enrich.FromLogContext();
 
+		loggerConfiguration
+			.MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+			.MinimumLevel.Override("Microsoft.Hosting.Lifetime", Serilog.Events.LogEventLevel.Information);
+
+		string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}";
+
 		if (builder.Environment.IsDevelopment())
 		{
 			loggerConfiguration
-				.WriteTo.Console()
+				.WriteTo.Console(outputTemplate: outputTemplate)
 				.MinimumLevel.Debug();
 		}
 		else
 		{
 			loggerConfiguration
-				.WriteTo.Console()
+				.WriteTo.Console(outputTemplate: outputTemplate)
 				.MinimumLevel.Information();
 		}
 

@@ -146,6 +146,111 @@ describe("Transactions", () => {
     ).toBeInTheDocument();
   });
 
+  it("closes edit dialog when dismissed", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<Transactions />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByRole("heading", { name: /edit transaction/i })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /edit transaction/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes create dialog when Cancel is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithProviders(<Transactions />);
+    await user.click(screen.getByRole("button", { name: /new transaction/i }));
+    expect(screen.getByRole("heading", { name: /create transaction/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /create transaction/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("renders NoResults when search returns no matches", async () => {
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: [{ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }],
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "xyz",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 0,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Transactions />);
+    expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
+  });
+
+  it("opens edit dialog when Edit button is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<Transactions />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(
+      screen.getByRole("heading", { name: /edit transaction/i }),
+    ).toBeInTheDocument();
+  });
+
   it("toggles checkbox selection and shows delete button", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [

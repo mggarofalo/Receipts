@@ -69,7 +69,7 @@ public class ReceiptWithItemsControllerTests
 	}
 
 	[Fact]
-	public async Task GetReceiptWithItemsByReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetReceiptWithItemsByReceiptId_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid receiptId = ReceiptWithItemsGenerator.Generate().Receipt.Id;
@@ -80,11 +80,9 @@ public class ReceiptWithItemsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<ReceiptWithItemsResponse> result = await _controller.GetReceiptWithItemsByReceiptId(receiptId);
+		Func<Task> act = () => _controller.GetReceiptWithItemsByReceiptId(receiptId);
 
 		// Assert
-		Assert.IsType<ObjectResult>(result.Result);
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }

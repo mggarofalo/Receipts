@@ -101,97 +101,11 @@ vi.mock("@/components/ui/sonner", () => ({
   Toaster: () => null,
 }));
 
-// Import mocked components (vi.mock is hoisted, so these get the mocked versions)
-import { RootLayout } from "@/components/RootLayout";
-import { PublicLayout } from "@/components/PublicLayout";
-import { Layout } from "@/components/Layout";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AdminRoute } from "@/components/AdminRoute";
-import Home from "@/pages/Home";
-import Login from "@/pages/Login";
-import ChangePassword from "@/pages/ChangePassword";
-import Accounts from "@/pages/Accounts";
-import Categories from "@/pages/Categories";
-import Subcategories from "@/pages/Subcategories";
-import Receipts from "@/pages/Receipts";
-import ReceiptItems from "@/pages/ReceiptItems";
-import Transactions from "@/pages/Transactions";
-import Trips from "@/pages/Trips";
-import ItemTemplates from "@/pages/ItemTemplates";
-import ReceiptDetail from "@/pages/ReceiptDetail";
-import TransactionDetail from "@/pages/TransactionDetail";
-import ApiKeys from "@/pages/ApiKeys";
-import AdminUsers from "@/pages/AdminUsers";
-import AuditLog from "@/pages/AuditLog";
-import SecurityLog from "@/pages/SecurityLog";
-import RecycleBin from "@/pages/RecycleBin";
-import NotFound from "@/pages/NotFound";
-
-// Build the route config matching App.tsx structure
-const routes = [
-  {
-    element: <RootLayout />,
-    children: [
-      {
-        element: <PublicLayout />,
-        children: [
-          { path: "/login", element: <Login /> },
-          { path: "/change-password", element: <ChangePassword /> },
-        ],
-      },
-      {
-        element: (
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        ),
-        children: [
-          { path: "/", element: <Home /> },
-          { path: "/accounts", element: <Accounts /> },
-          { path: "/categories", element: <Categories /> },
-          { path: "/subcategories", element: <Subcategories /> },
-          { path: "/receipts", element: <Receipts /> },
-          { path: "/receipt-items", element: <ReceiptItems /> },
-          { path: "/transactions", element: <Transactions /> },
-          { path: "/trips", element: <Trips /> },
-          { path: "/item-templates", element: <ItemTemplates /> },
-          { path: "/receipt-detail", element: <ReceiptDetail /> },
-          { path: "/transaction-detail", element: <TransactionDetail /> },
-          { path: "/api-keys", element: <ApiKeys /> },
-          { path: "/security", element: <SecurityLog /> },
-          {
-            path: "/audit",
-            element: (
-              <AdminRoute>
-                <AuditLog />
-              </AdminRoute>
-            ),
-          },
-          {
-            path: "/trash",
-            element: (
-              <AdminRoute>
-                <RecycleBin />
-              </AdminRoute>
-            ),
-          },
-          {
-            path: "/admin/users",
-            element: (
-              <AdminRoute>
-                <AdminUsers />
-              </AdminRoute>
-            ),
-          },
-        ],
-      },
-      { path: "*", element: <NotFound /> },
-    ],
-  },
-];
+// Import routeConfig from App.tsx (vi.mock is hoisted, so mocks are applied)
+import { routeConfig } from "./App";
 
 function renderRoute(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
+  const router = createMemoryRouter(routeConfig, { initialEntries: [path] });
   return render(<RouterProvider router={router} />);
 }
 

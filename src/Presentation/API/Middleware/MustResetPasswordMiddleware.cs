@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace API.Middleware;
 
 public class MustResetPasswordMiddleware(RequestDelegate next)
@@ -11,9 +13,16 @@ public class MustResetPasswordMiddleware(RequestDelegate next)
 			if (!path.Equals("/api/auth/change-password", StringComparison.OrdinalIgnoreCase)
 				&& !path.Equals("/api/auth/logout", StringComparison.OrdinalIgnoreCase))
 			{
+				ProblemDetails problemDetails = new()
+				{
+					Status = StatusCodes.Status403Forbidden,
+					Title = "Forbidden",
+					Detail = "Password change required",
+					Type = "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+				};
+
 				context.Response.StatusCode = StatusCodes.Status403Forbidden;
-				context.Response.ContentType = "application/json";
-				await context.Response.WriteAsJsonAsync(new { error = "Password change required" });
+				await context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
 				return;
 			}
 		}

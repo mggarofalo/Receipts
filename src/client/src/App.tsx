@@ -1,4 +1,3 @@
-import { createBrowserRouter } from "react-router";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { Layout } from "@/components/Layout";
@@ -24,7 +23,7 @@ import SecurityLog from "@/pages/SecurityLog";
 import RecycleBin from "@/pages/RecycleBin";
 import NotFound from "@/pages/NotFound";
 
-export const router = createBrowserRouter([
+export const routeConfig = [
   {
     element: <RootLayout />,
     children: [
@@ -84,4 +83,5 @@ export const router = createBrowserRouter([
       { path: "*", element: <NotFound /> },
     ],
   },
-]);
+];
+

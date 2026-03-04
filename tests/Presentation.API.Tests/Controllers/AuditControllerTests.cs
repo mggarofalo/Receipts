@@ -2,7 +2,6 @@ using API.Controllers;
 using Application.Interfaces.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Presentation.API.Tests.Controllers;
@@ -10,14 +9,12 @@ namespace Presentation.API.Tests.Controllers;
 public class AuditControllerTests
 {
 	private readonly Mock<IAuditService> _auditServiceMock;
-	private readonly Mock<ILogger<AuditController>> _loggerMock;
 	private readonly AuditController _controller;
 
 	public AuditControllerTests()
 	{
 		_auditServiceMock = new Mock<IAuditService>();
-		_loggerMock = ControllerTestHelpers.GetLoggerMock<AuditController>();
-		_controller = new AuditController(_auditServiceMock.Object, _loggerMock.Object);
+		_controller = new AuditController(_auditServiceMock.Object);
 	}
 
 	[Fact]
@@ -131,7 +128,7 @@ public class AuditControllerTests
 	}
 
 	[Fact]
-	public async Task GetAuditLogs_WithEntityParams_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task GetAuditLogs_WithEntityParams_ThrowsException_WhenServiceFails()
 	{
 		// Arrange
 		string entityType = "Account";
@@ -141,30 +138,28 @@ public class AuditControllerTests
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
+		Func<Task> act = () => _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
-	public async Task GetRecent_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task GetRecent_ThrowsException_WhenServiceFails()
 	{
 		// Arrange
 		_auditServiceMock.Setup(s => s.GetRecentAsync(50, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetRecent(50, CancellationToken.None);
+		Func<Task> act = () => _controller.GetRecent(50, CancellationToken.None);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
-	public async Task GetAuditLogs_WithUserId_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task GetAuditLogs_WithUserId_ThrowsException_WhenServiceFails()
 	{
 		// Arrange
 		string userId = "test-user";
@@ -172,15 +167,14 @@ public class AuditControllerTests
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(null, null, userId, null, CancellationToken.None);
+		Func<Task> act = () => _controller.GetAuditLogs(null, null, userId, null, CancellationToken.None);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
-	public async Task GetAuditLogs_WithApiKeyId_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task GetAuditLogs_WithApiKeyId_ThrowsException_WhenServiceFails()
 	{
 		// Arrange
 		Guid apiKeyId = Guid.NewGuid();
@@ -188,10 +182,9 @@ public class AuditControllerTests
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		IActionResult result = await _controller.GetAuditLogs(null, null, null, apiKeyId, CancellationToken.None);
+		Func<Task> act = () => _controller.GetAuditLogs(null, null, null, apiKeyId, CancellationToken.None);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }

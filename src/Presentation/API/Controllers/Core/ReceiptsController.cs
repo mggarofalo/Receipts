@@ -28,9 +28,6 @@ public class ReceiptsController(
 	ILogger<ReceiptsController> logger,
 	IHubContext<ReceiptsHub, IReceiptsHubClient> hubContext) : ControllerBase
 {
-	public const string MessageWithId = "Error occurred in {Method} for id: {Id}";
-	public const string MessageWithoutId = "Error occurred in {Method}";
-
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "";
@@ -46,209 +43,134 @@ public class ReceiptsController(
 	[EndpointDescription("Returns a single receipt matching the provided GUID.")]
 	[ProducesResponseType<ReceiptResponse>(StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ReceiptResponse>> GetReceiptById([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("GetReceiptById called with id: {Id}", id);
-			GetReceiptByIdQuery query = new(id);
-			Receipt? result = await mediator.Send(query);
+		GetReceiptByIdQuery query = new(id);
+		Receipt? result = await mediator.Send(query);
 
-			if (result == null)
-			{
-				logger.LogWarning("GetReceiptById called with id: {Id} not found", id);
-				return NotFound();
-			}
-
-			ReceiptResponse model = mapper.ToResponse(result);
-			logger.LogDebug("GetReceiptById called with id: {Id} found", id);
-			return Ok(model);
-		}
-		catch (Exception ex)
+		if (result == null)
 		{
-			logger.LogError(ex, MessageWithId, nameof(GetReceiptById), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Receipt {Id} not found", id);
+			return NotFound();
 		}
+
+		ReceiptResponse model = mapper.ToResponse(result);
+		return Ok(model);
 	}
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipts")]
 	[ProducesResponseType<ReceiptListResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ReceiptListResponse>> GetAllReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		try
-		{
-			logger.LogDebug("GetAllReceipts called");
-			GetAllReceiptsQuery query = new(offset, limit);
-			PagedResult<Receipt> result = await mediator.Send(query);
-			logger.LogDebug("GetAllReceipts called with {Count} receipts", result.Data.Count);
+		GetAllReceiptsQuery query = new(offset, limit);
+		PagedResult<Receipt> result = await mediator.Send(query);
 
-			return Ok(new ReceiptListResponse
-			{
-				Data = [.. result.Data.Select(mapper.ToResponse)],
-				Total = result.Total,
-				Offset = result.Offset,
-				Limit = result.Limit,
-			});
-		}
-		catch (Exception ex)
+		return Ok(new ReceiptListResponse
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetAllReceipts));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted receipts")]
 	[EndpointDescription("Returns all receipts that have been soft-deleted.")]
 	[ProducesResponseType<ReceiptListResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ReceiptListResponse>> GetDeletedReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		try
-		{
-			logger.LogDebug("GetDeletedReceipts called");
-			GetDeletedReceiptsQuery query = new(offset, limit);
-			PagedResult<Receipt> result = await mediator.Send(query);
-			logger.LogDebug("GetDeletedReceipts called with {Count} receipts", result.Data.Count);
+		GetDeletedReceiptsQuery query = new(offset, limit);
+		PagedResult<Receipt> result = await mediator.Send(query);
 
-			return Ok(new ReceiptListResponse
-			{
-				Data = [.. result.Data.Select(mapper.ToResponse)],
-				Total = result.Total,
-				Offset = result.Offset,
-				Limit = result.Limit,
-			});
-		}
-		catch (Exception ex)
+		return Ok(new ReceiptListResponse
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(GetDeletedReceipts));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single receipt")]
 	[ProducesResponseType<ReceiptResponse>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<ReceiptResponse>> CreateReceipt([FromBody] CreateReceiptRequest model)
 	{
-		try
-		{
-			logger.LogDebug("CreateReceipt called");
-			CreateReceiptCommand command = new([mapper.ToDomain(model)]);
-			List<Receipt> receipts = await mediator.Send(command);
-			ReceiptResponse response = mapper.ToResponse(receipts[0]);
-			await hubContext.Clients.All.ReceiptCreated(response);
-			return Ok(response);
-		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateReceipt));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		CreateReceiptCommand command = new([mapper.ToDomain(model)]);
+		List<Receipt> receipts = await mediator.Send(command);
+		ReceiptResponse response = mapper.ToResponse(receipts[0]);
+		await hubContext.Clients.All.ReceiptCreated(response);
+		return Ok(response);
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create receipts in batch")]
 	[ProducesResponseType<List<ReceiptResponse>>(StatusCodes.Status200OK)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<List<ReceiptResponse>>> CreateReceipts([FromBody] List<CreateReceiptRequest> models)
 	{
-		try
+		CreateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
+		List<Receipt> receipts = await mediator.Send(command);
+		List<ReceiptResponse> responses = receipts.Select(mapper.ToResponse).ToList();
+		foreach (ReceiptResponse response in responses)
 		{
-			logger.LogDebug("CreateReceipts called with {Count} receipts", models.Count);
-			CreateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
-			List<Receipt> receipts = await mediator.Send(command);
-			List<ReceiptResponse> responses = receipts.Select(mapper.ToResponse).ToList();
-			foreach (ReceiptResponse response in responses)
-			{
-				await hubContext.Clients.All.ReceiptCreated(response);
-			}
-			return Ok(responses);
+			await hubContext.Clients.All.ReceiptCreated(response);
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, MessageWithoutId, nameof(CreateReceipts));
-			return StatusCode(500, "An error occurred while processing your request.");
-		}
+		return Ok(responses);
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single receipt")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateReceipt([FromRoute] Guid id, [FromBody] UpdateReceiptRequest model)
 	{
-		try
+		UpdateReceiptCommand command = new([mapper.ToDomain(model)]);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("UpdateReceipt called for id: {Id}", id);
-			UpdateReceiptCommand command = new([mapper.ToDomain(model)]);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("UpdateReceipt called for id: {Id}, but not found", id);
-				return NotFound();
-			}
-
-			GetReceiptByIdQuery fetchQuery = new(id);
-			Receipt? updatedReceipt = await mediator.Send(fetchQuery);
-			if (updatedReceipt != null)
-			{
-				await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
-			}
-
-			return NoContent();
+			logger.LogWarning("Receipt {Id} not found for update", id);
+			return NotFound();
 		}
-		catch (Exception ex)
+
+		GetReceiptByIdQuery fetchQuery = new(id);
+		Receipt? updatedReceipt = await mediator.Send(fetchQuery);
+		if (updatedReceipt != null)
 		{
-			logger.LogError(ex, MessageWithId, nameof(UpdateReceipt), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
 		}
+
+		return NoContent();
 	}
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update receipts in batch")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> UpdateReceipts([FromBody] List<UpdateReceiptRequest> models)
 	{
-		try
+		UpdateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("UpdateReceipts called with {Count} receipts", models.Count);
-			UpdateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("UpdateReceipts called with {Count} receipts, but not found", models.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("UpdateReceipts called with {Count} receipts, and found", models.Count);
-
-			foreach (UpdateReceiptRequest model in models)
-			{
-				GetReceiptByIdQuery fetchQuery = new(model.Id);
-				Receipt? updatedReceipt = await mediator.Send(fetchQuery);
-				if (updatedReceipt != null)
-				{
-					await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
-				}
-			}
-
-			return NoContent();
+			logger.LogWarning("Receipts batch update failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
+
+		foreach (UpdateReceiptRequest model in models)
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(UpdateReceipts));
-			return StatusCode(500, "An error occurred while processing your request.");
+			GetReceiptByIdQuery fetchQuery = new(model.Id);
+			Receipt? updatedReceipt = await mediator.Send(fetchQuery);
+			if (updatedReceipt != null)
+			{
+				await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
+			}
 		}
+
+		return NoContent();
 	}
 
 	[HttpDelete(RouteDelete)]
@@ -256,35 +178,23 @@ public class ReceiptsController(
 	[EndpointDescription("Deletes one or more receipts by their IDs. Returns 404 if any receipt is not found.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<ActionResult<bool>> DeleteReceipts([FromBody] List<Guid> ids)
 	{
-		try
+		DeleteReceiptCommand command = new(ids);
+		bool result = await mediator.Send(command);
+
+		if (!result)
 		{
-			logger.LogDebug("DeleteReceipts called with {Count} receipt ids", ids.Count);
-			DeleteReceiptCommand command = new(ids);
-			bool result = await mediator.Send(command);
-
-			if (!result)
-			{
-				logger.LogWarning("DeleteReceipts called with {Count} receipt ids, but not found", ids.Count);
-				return NotFound();
-			}
-
-			logger.LogDebug("DeleteReceipts called with {Count} receipt ids, and found", ids.Count);
-
-			foreach (Guid id in ids)
-			{
-				await hubContext.Clients.All.ReceiptDeleted(id);
-			}
-
-			return NoContent();
+			logger.LogWarning("Receipts delete failed — not found");
+			return NotFound();
 		}
-		catch (Exception ex)
+
+		foreach (Guid id in ids)
 		{
-			logger.LogError(ex, MessageWithoutId, nameof(DeleteReceipts));
-			return StatusCode(500, "An error occurred while processing your request.");
+			await hubContext.Clients.All.ReceiptDeleted(id);
 		}
+
+		return NoContent();
 	}
 
 	[HttpPost(RouteRestore)]
@@ -292,27 +202,17 @@ public class ReceiptsController(
 	[EndpointDescription("Restores a previously soft-deleted receipt and its associated items and transactions.")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
-	[ProducesResponseType(StatusCodes.Status500InternalServerError)]
 	public async Task<IActionResult> RestoreReceipt([FromRoute] Guid id)
 	{
-		try
-		{
-			logger.LogDebug("RestoreReceipt called with id: {Id}", id);
-			RestoreReceiptCommand command = new(id);
-			bool result = await mediator.Send(command);
+		RestoreReceiptCommand command = new(id);
+		bool result = await mediator.Send(command);
 
-			if (!result)
-			{
-				logger.LogWarning("RestoreReceipt called with id: {Id}, but not found or not deleted", id);
-				return NotFound();
-			}
-
-			return NoContent();
-		}
-		catch (Exception ex)
+		if (!result)
 		{
-			logger.LogError(ex, MessageWithId, nameof(RestoreReceipt), id);
-			return StatusCode(500, "An error occurred while processing your request.");
+			logger.LogWarning("Receipt {Id} not found or not deleted for restore", id);
+			return NotFound();
 		}
+
+		return NoContent();
 	}
 }

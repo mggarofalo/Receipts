@@ -73,7 +73,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAdjustmentById_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAdjustmentById_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = AdjustmentGenerator.Generate().Id;
@@ -84,11 +84,10 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AdjustmentResponse> result = await _controller.GetAdjustmentById(id);
+		Func<Task> act = () => _controller.GetAdjustmentById(id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -116,7 +115,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllAdjustments_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllAdjustments_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
@@ -125,11 +124,10 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(null, 0, 50);
+		Func<Task> act = () => _controller.GetAllAdjustments(null, 0, 50);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -157,7 +155,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task GetDeletedAdjustments_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetDeletedAdjustments_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
@@ -166,11 +164,10 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AdjustmentListResponse> result = await _controller.GetDeletedAdjustments(0, 50);
+		Func<Task> act = () => _controller.GetDeletedAdjustments(0, 50);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -219,7 +216,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task GetAllAdjustments_WithReceiptId_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task GetAllAdjustments_WithReceiptId_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -230,11 +227,10 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
+		Func<Task> act = () => _controller.GetAllAdjustments(receiptId, 0, 50);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -262,7 +258,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateAdjustment_ReturnsInternalServerError_WhenExceptionIsThrown()
+	public async Task CreateAdjustment_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -274,12 +270,10 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<AdjustmentResponse> result = await _controller.CreateAdjustment(controllerInput, receiptId);
+		Func<Task> act = () => _controller.CreateAdjustment(controllerInput, receiptId);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -323,7 +317,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateAdjustment_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task UpdateAdjustment_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -335,12 +329,10 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.UpdateAdjustment(controllerInput, id);
+		Func<Task> act = () => _controller.UpdateAdjustment(controllerInput, id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -382,7 +374,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task DeleteAdjustments_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task DeleteAdjustments_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		List<Guid> ids = [.. AdjustmentGenerator.GenerateList(2).Select(a => a.Id)];
@@ -393,12 +385,10 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		ActionResult<bool> result = await _controller.DeleteAdjustments(ids);
+		Func<Task> act = () => _controller.DeleteAdjustments(ids);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result.Result);
-		Assert.Equal(500, objectResult.StatusCode);
-		Assert.Equal("An error occurred while processing your request.", objectResult.Value);
+		await act.Should().ThrowAsync<Exception>();
 	}
 
 	[Fact]
@@ -436,7 +426,7 @@ public class AdjustmentsControllerTests
 	}
 
 	[Fact]
-	public async Task RestoreAdjustment_ReturnsInternalServerError_WhenExceptionThrown()
+	public async Task RestoreAdjustment_ThrowsException_WhenMediatorFails()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -446,10 +436,9 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		IActionResult result = await _controller.RestoreAdjustment(id);
+		Func<Task> act = () => _controller.RestoreAdjustment(id);
 
 		// Assert
-		ObjectResult objectResult = Assert.IsType<ObjectResult>(result);
-		Assert.Equal(500, objectResult.StatusCode);
+		await act.Should().ThrowAsync<Exception>();
 	}
 }

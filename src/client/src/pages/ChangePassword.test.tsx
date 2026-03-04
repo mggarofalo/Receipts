@@ -44,4 +44,81 @@ describe("ChangePassword", () => {
       screen.getByText(/you must change your password before continuing/i),
     ).toBeInTheDocument();
   });
+
+  it("redirects to /login when user is null", async () => {
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      mustResetPassword: false,
+      changePassword: vi.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<ChangePassword />, { route: "/change-password" });
+    // Navigate replaces with /login — the component renders nothing visible
+    expect(screen.queryByRole("heading", { name: /change password/i })).not.toBeInTheDocument();
+  });
+
+  it("redirects to / when mustResetPassword is false", async () => {
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: { email: "test@example.com" } as ReturnType<typeof useAuth>["user"],
+      mustResetPassword: false,
+      changePassword: vi.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<ChangePassword />);
+    expect(screen.queryByRole("heading", { name: /change password/i })).not.toBeInTheDocument();
+  });
+
+  it("calls changePassword on successful form submission", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockChangePassword = vi.fn().mockResolvedValue(undefined);
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: { email: "test@example.com" } as ReturnType<typeof useAuth>["user"],
+      mustResetPassword: true,
+      changePassword: mockChangePassword,
+      login: vi.fn(),
+      logout: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<ChangePassword />);
+    await user.type(screen.getByLabelText(/^current password$/i), "OldPass123");
+    await user.type(screen.getByLabelText(/^new password$/i), "NewPass456");
+    await user.type(screen.getByLabelText(/^confirm new password$/i), "NewPass456");
+    await user.click(screen.getByRole("button", { name: /change password/i }));
+
+    await vi.waitFor(() => {
+      expect(mockChangePassword).toHaveBeenCalledWith("OldPass123", "NewPass456");
+    });
+  });
+
+  it("shows error alert on failed form submission", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockChangePassword = vi.fn().mockRejectedValue(new Error("fail"));
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: { email: "test@example.com" } as ReturnType<typeof useAuth>["user"],
+      mustResetPassword: true,
+      changePassword: mockChangePassword,
+      login: vi.fn(),
+      logout: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<ChangePassword />);
+    await user.type(screen.getByLabelText(/^current password$/i), "OldPass123");
+    await user.type(screen.getByLabelText(/^new password$/i), "NewPass456");
+    await user.type(screen.getByLabelText(/^confirm new password$/i), "NewPass456");
+    await user.click(screen.getByRole("button", { name: /change password/i }));
+
+    expect(await screen.findByText(/failed to change password/i)).toBeInTheDocument();
+  });
 });

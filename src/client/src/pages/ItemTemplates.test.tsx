@@ -135,6 +135,55 @@ describe("ItemTemplates", () => {
     expect(screen.getByText("Drinks")).toBeInTheDocument();
   });
 
+  it("closes edit dialog when dismissed", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByRole("heading", { name: /edit item template/i })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /edit item template/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes create dialog when Cancel is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByRole("button", { name: /new template/i }));
+    expect(screen.getByRole("heading", { name: /create item template/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /create item template/i })).not.toBeInTheDocument();
+    });
+  });
+
   it("opens create dialog when New Template button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithProviders(<ItemTemplates />);
@@ -204,6 +253,94 @@ describe("ItemTemplates", () => {
     expect(
       screen.getByRole("button", { name: /delete/i }),
     ).toBeInTheDocument();
+  });
+
+  it("submits edit form and calls updateItemTemplate.mutate", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useUpdateItemTemplate } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useUpdateItemTemplate).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const nameInput = screen.getByLabelText(/^name$/i);
+    await user.clear(nameInput);
+    await user.type(nameInput, "Updated Template");
+    await user.click(screen.getByRole("button", { name: /update template/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalled();
+    });
+  });
+
+  it("submits create form and calls createItemTemplate.mutate", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useCreateItemTemplate } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useCreateItemTemplate).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByRole("button", { name: /new template/i }));
+
+    await user.type(screen.getByLabelText(/^name$/i), "Coffee Template");
+    await user.click(screen.getByRole("button", { name: /create template/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalled();
+    });
+  });
+
+  it("renders NoResults when search returns no matches", async () => {
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
+      data: [{ id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" }],
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "xyz",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 0,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<ItemTemplates />);
+    expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
   });
 
   it("opens delete dialog and confirms deletion", async () => {
