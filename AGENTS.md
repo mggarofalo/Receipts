@@ -91,6 +91,35 @@ See **[docs/architecture.md](docs/architecture.md)** for full layer structure, k
 - Generated DTOs live in `src/Presentation/API/Generated/Dtos.g.cs` (namespace `API.Generated.Dtos`)
 - Naming: `CreateXRequest`, `UpdateXRequest`, `XResponse`
 
+## Agent Workflow Rules
+
+### Tests and Code Review
+
+**Never write tests or perform code review in the main conversation context.** Always spawn subagents for these tasks:
+- Use the `test-runner` or equivalent subagent for running and writing tests
+- Use `pr-review-toolkit:code-reviewer` or similar review agents for code review
+- This keeps the main context focused on implementation and prevents context window bloat
+
+### EF Core Query Guidelines
+
+Prefer **narrow projections** — always select the minimum required fields:
+- Use `.Select()` to project only the columns/properties needed by the caller
+- Use `.IgnoreAutoIncludes()` when navigation properties aren't needed for the query
+- Avoid loading full entities when only a subset of fields is required
+- For delete/update-only operations, prefer `ExecuteUpdateAsync`/`ExecuteDeleteAsync` over materializing entities
+- Eliminate N+1 query patterns — use joined queries or batch operations instead of loops
+
+### API Endpoint Return Types
+
+Use `TypedResults` with concrete `Results<T1, T2, ...>` union return types on all endpoints (see MGG-227). This provides compile-time enforcement of response types and eliminates the need for `[ProducesResponseType]` attributes.
+
+### Authentication Standards
+
+Token-based authentication must conform to these RFCs:
+- **RFC 6749** — OAuth 2.0 Authorization Framework: token issuance, response format, error codes
+- **RFC 7662** — OAuth 2.0 Token Introspection: token validation endpoint semantics
+- **RFC 7009** — OAuth 2.0 Token Revocation: revocation endpoint behavior and response codes
+
 ## Validation and Code Quality
 
 ### LSP Server Checks
