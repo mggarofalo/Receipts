@@ -1,0 +1,58 @@
+using API.Controllers.Core;
+using API.Services;
+using Application.Commands.Trash.Purge;
+using FluentAssertions;
+using MediatR;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+namespace Presentation.API.Tests.Controllers.Core;
+
+public class TrashControllerTests
+{
+	private readonly Mock<IMediator> _mediatorMock;
+	private readonly Mock<ILogger<TrashController>> _loggerMock;
+	private readonly Mock<IEntityChangeNotifier> _notifierMock;
+	private readonly TrashController _controller;
+
+	public TrashControllerTests()
+	{
+		_mediatorMock = new Mock<IMediator>();
+		_loggerMock = ControllerTestHelpers.GetLoggerMock<TrashController>();
+		_notifierMock = new Mock<IEntityChangeNotifier>();
+		_controller = new TrashController(_mediatorMock.Object, _loggerMock.Object, _notifierMock.Object);
+	}
+
+	[Fact]
+	public async Task PurgeTrash_ReturnsNoContent_AndNotifiesAllEntityTypes()
+	{
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<PurgeTrashCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		NoContent result = await _controller.PurgeTrash();
+
+		Assert.IsType<NoContent>(result);
+
+		string[] expectedEntityTypes = ["receipt", "receipt-item", "transaction", "adjustment", "account", "category", "subcategory", "item-template"];
+		foreach (string entityType in expectedEntityTypes)
+		{
+			_notifierMock.Verify(n => n.NotifyAllChanged(entityType, "deleted"), Times.Once);
+		}
+	}
+
+	[Fact]
+	public async Task PurgeTrash_ThrowsException_WhenMediatorFails()
+	{
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<PurgeTrashCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.PurgeTrash();
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+}
