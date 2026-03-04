@@ -30,13 +30,12 @@ fi
 echo "Stopping app..."
 docker compose stop app
 
+trap 'echo "Starting app..."; docker compose start app' EXIT
+
 echo "Restoring database from ${BACKUP_FILE}..."
 gunzip -c "${BACKUP_FILE}" | docker compose exec -T db psql \
     -U "${POSTGRES_USER:-receipts}" \
     -d "${POSTGRES_DB:-receipts}" \
     --quiet
-
-echo "Starting app..."
-docker compose start app
 
 echo "Restore complete."

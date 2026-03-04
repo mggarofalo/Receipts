@@ -1,3 +1,4 @@
+using System.Net;
 using API.Configuration;
 using API.Hubs;
 using API.Middleware;
@@ -27,10 +28,12 @@ builder.Services
 WebApplication app = builder.Build();
 
 // Configure middleware
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+var forwardedHeadersOptions = new ForwardedHeadersOptions
 {
 	ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-});
+};
+forwardedHeadersOptions.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("172.16.0.0"), 12));
+app.UseForwardedHeaders(forwardedHeadersOptions);
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseOpenApiServices()

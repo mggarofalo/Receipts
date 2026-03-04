@@ -10,7 +10,6 @@
 .vs/
 .vscode/
 .idea/
-src/Receipts.AppHost/
 TestResults/
 coveragereport/
 *.md

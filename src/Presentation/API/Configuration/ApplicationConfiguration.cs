@@ -70,11 +70,14 @@ public static class ApplicationConfiguration
 						SegmentsPerWindow = 4,
 					}));
 
-			options.AddFixedWindowLimiter("auth", limiterOptions =>
-			{
-				limiterOptions.PermitLimit = 5;
-				limiterOptions.Window = TimeSpan.FromMinutes(1);
-			});
+			options.AddPolicy("auth", context =>
+				RateLimitPartition.GetFixedWindowLimiter(
+					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+					_ => new FixedWindowRateLimiterOptions
+					{
+						PermitLimit = 5,
+						Window = TimeSpan.FromMinutes(1),
+					}));
 
 			options.OnRejected = async (context, cancellationToken) =>
 			{
