@@ -57,12 +57,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateAccount
       tags: [Accounts]
@@ -93,12 +87,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/accounts:
     get:
@@ -120,12 +108,6 @@ paths:
                 $ref: "#/components/schemas/AccountListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     post:
       operationId: CreateAccount
       tags: [Accounts]
@@ -151,12 +133,6 @@ paths:
                 $ref: "#/components/schemas/AccountResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteAccounts
       tags: [Accounts]
@@ -180,12 +156,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/accounts/deleted:
     get:
@@ -207,12 +177,6 @@ paths:
                 $ref: "#/components/schemas/AccountListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/accounts/{id}/restore:
     post:
@@ -239,12 +203,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/accounts/batch:
     post:
@@ -273,12 +231,6 @@ paths:
                   $ref: "#/components/schemas/AccountResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateAccounts
       tags: [Accounts]
@@ -301,12 +253,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Categories
@@ -341,12 +287,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateCategory
       tags: [Categories]
@@ -377,12 +317,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/categories:
     get:
@@ -404,12 +338,6 @@ paths:
                 $ref: "#/components/schemas/CategoryListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     post:
       operationId: CreateCategory
       tags: [Categories]
@@ -441,12 +369,6 @@ paths:
             application/json:
               schema:
                 type: string
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteCategories
       tags: [Categories]
@@ -470,12 +392,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/categories/deleted:
     get:
@@ -497,12 +413,6 @@ paths:
                 $ref: "#/components/schemas/CategoryListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/categories/{id}/restore:
     post:
@@ -529,12 +439,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/categories/batch:
     post:
@@ -569,12 +473,6 @@ paths:
             application/json:
               schema:
                 type: string
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateCategories
       tags: [Categories]
@@ -597,12 +495,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Subcategories
@@ -637,12 +529,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateSubcategory
       tags: [Subcategories]
@@ -673,12 +559,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/subcategories:
     get:
@@ -706,12 +586,6 @@ paths:
                 $ref: "#/components/schemas/SubcategoryListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     post:
       operationId: CreateSubcategory
       tags: [Subcategories]
@@ -743,12 +617,6 @@ paths:
             application/json:
               schema:
                 type: string
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteSubcategories
       tags: [Subcategories]
@@ -772,12 +640,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/subcategories/deleted:
     get:
@@ -799,12 +661,6 @@ paths:
                 $ref: "#/components/schemas/SubcategoryListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/subcategories/{id}/restore:
     post:
@@ -831,12 +687,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/subcategories/batch:
     post:
@@ -871,12 +721,6 @@ paths:
             application/json:
               schema:
                 type: string
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateSubcategories
       tags: [Subcategories]
@@ -899,12 +743,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Item Templates
@@ -939,12 +777,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateItemTemplate
       tags: [ItemTemplates]
@@ -975,12 +807,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/item-templates:
     get:
@@ -1002,12 +828,6 @@ paths:
                 $ref: "#/components/schemas/ItemTemplateListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     post:
       operationId: CreateItemTemplate
       tags: [ItemTemplates]
@@ -1033,12 +853,6 @@ paths:
                 $ref: "#/components/schemas/ItemTemplateResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteItemTemplates
       tags: [ItemTemplates]
@@ -1062,12 +876,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/item-templates/deleted:
     get:
@@ -1089,12 +897,6 @@ paths:
                 $ref: "#/components/schemas/ItemTemplateListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/item-templates/{id}/restore:
     post:
@@ -1121,12 +923,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Receipts
@@ -1161,12 +957,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateReceipt
       tags: [Receipts]
@@ -1197,12 +987,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts:
     get:
@@ -1224,12 +1008,6 @@ paths:
                 $ref: "#/components/schemas/ReceiptListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     post:
       operationId: CreateReceipt
       tags: [Receipts]
@@ -1255,12 +1033,6 @@ paths:
                 $ref: "#/components/schemas/ReceiptResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteReceipts
       tags: [Receipts]
@@ -1284,12 +1056,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts/deleted:
     get:
@@ -1311,12 +1077,6 @@ paths:
                 $ref: "#/components/schemas/ReceiptListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts/{id}/restore:
     post:
@@ -1343,12 +1103,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts/batch:
     post:
@@ -1377,12 +1131,6 @@ paths:
                   $ref: "#/components/schemas/ReceiptResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateReceipts
       tags: [Receipts]
@@ -1405,12 +1153,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Receipt Items
@@ -1446,12 +1188,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateReceiptItem
       tags: [ReceiptItems]
@@ -1483,12 +1219,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipt-items:
     get:
@@ -1516,12 +1246,6 @@ paths:
                 $ref: "#/components/schemas/ReceiptItemListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteReceiptItems
       tags: [ReceiptItems]
@@ -1545,12 +1269,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipt-items/deleted:
     get:
@@ -1572,12 +1290,6 @@ paths:
                 $ref: "#/components/schemas/ReceiptItemListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipt-items/{id}/restore:
     post:
@@ -1604,12 +1316,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipt-items/batch:
     put:
@@ -1634,12 +1340,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts/{receiptId}/receipt-items:
     post:
@@ -1674,12 +1374,6 @@ paths:
                 $ref: "#/components/schemas/ReceiptItemResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts/{receiptId}/receipt-items/batch:
     post:
@@ -1715,12 +1409,6 @@ paths:
                   $ref: "#/components/schemas/ReceiptItemResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Transactions
@@ -1755,12 +1443,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateTransaction
       tags: [Transactions]
@@ -1792,12 +1474,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/transactions:
     get:
@@ -1825,12 +1501,6 @@ paths:
                 $ref: "#/components/schemas/TransactionListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteTransactions
       tags: [Transactions]
@@ -1854,12 +1524,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/transactions/deleted:
     get:
@@ -1881,12 +1545,6 @@ paths:
                 $ref: "#/components/schemas/TransactionListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/transactions/{id}/restore:
     post:
@@ -1913,12 +1571,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/transactions/batch:
     put:
@@ -1943,12 +1595,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts/{receiptId}/transactions:
     post:
@@ -1983,12 +1629,6 @@ paths:
                 $ref: "#/components/schemas/TransactionResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts/{receiptId}/transactions/batch:
     post:
@@ -2024,12 +1664,6 @@ paths:
                   $ref: "#/components/schemas/TransactionResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Adjustments
@@ -2064,12 +1698,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateAdjustment
       tags: [Adjustments]
@@ -2101,12 +1729,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/adjustments:
     get:
@@ -2134,12 +1756,6 @@ paths:
                 $ref: "#/components/schemas/AdjustmentListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeleteAdjustments
       tags: [Adjustments]
@@ -2163,12 +1779,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/adjustments/deleted:
     get:
@@ -2190,12 +1800,6 @@ paths:
                 $ref: "#/components/schemas/AdjustmentListResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/adjustments/{id}/restore:
     post:
@@ -2222,12 +1826,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/receipts/{receiptId}/adjustments:
     post:
@@ -2262,12 +1860,6 @@ paths:
                 $ref: "#/components/schemas/AdjustmentResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Trash
@@ -2286,12 +1878,6 @@ paths:
           description: No Content
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Aggregates (read-only)
@@ -2323,12 +1909,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/transaction-accounts:
     get:
@@ -2368,12 +1948,6 @@ paths:
                 type: string
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/trips:
     get:
@@ -2401,12 +1975,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Audit
@@ -2459,12 +2027,6 @@ paths:
                 type: string
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/audit/recent:
     get:
@@ -2492,12 +2054,6 @@ paths:
                   $ref: "#/components/schemas/AuditLogResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Auth
@@ -2523,12 +2079,6 @@ paths:
                 $ref: "#/components/schemas/TokenResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/auth/refresh:
     post:
@@ -2550,12 +2100,6 @@ paths:
                 $ref: "#/components/schemas/TokenResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/auth/logout:
     post:
@@ -2570,12 +2114,6 @@ paths:
           description: No Content
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/auth/change-password:
     post:
@@ -2601,12 +2139,6 @@ paths:
           description: Bad Request
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # API Keys
@@ -2631,12 +2163,6 @@ paths:
                   $ref: "#/components/schemas/ApiKeyResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     post:
       operationId: CreateApiKey
       tags: [ApiKeys]
@@ -2659,12 +2185,6 @@ paths:
                 $ref: "#/components/schemas/CreateApiKeyResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/apikeys/{id}:
     delete:
@@ -2688,12 +2208,6 @@ paths:
           description: Unauthorized
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Auth Audit
@@ -2725,12 +2239,6 @@ paths:
                   $ref: "#/components/schemas/AuthAuditLogResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/auth/audit/recent:
     get:
@@ -2758,12 +2266,6 @@ paths:
                   $ref: "#/components/schemas/AuthAuditLogResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/auth/audit/failed:
     get:
@@ -2791,12 +2293,6 @@ paths:
                   $ref: "#/components/schemas/AuthAuditLogResponse"
         "401":
           description: Unauthorized
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # Users (admin-only)
@@ -2824,12 +2320,6 @@ paths:
           description: Unauthorized
         "403":
           description: Forbidden
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     post:
       operationId: CreateUser
       tags: [Users]
@@ -2856,12 +2346,6 @@ paths:
           description: Unauthorized
         "403":
           description: Forbidden
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/users/{userId}:
     get:
@@ -2890,12 +2374,6 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     put:
       operationId: UpdateUser
       tags: [Users]
@@ -2926,12 +2404,6 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: DeactivateUser
       tags: [Users]
@@ -2956,12 +2428,6 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/users/{userId}/reset-password:
     post:
@@ -2994,12 +2460,6 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   # ──────────────────────────────────────────────
   # User Roles (admin-only)
@@ -3032,12 +2492,6 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/users/{userId}/roles/{role}:
     post:
@@ -3069,12 +2523,6 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
     delete:
       operationId: RemoveUserRole
       tags: [UserRoles]
@@ -3104,12 +2552,6 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: string
 
 components:
   schemas:

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useForm } from "react-hook-form";
@@ -141,10 +141,10 @@ function ApiKeys() {
     defaultValues: { name: "", expiresAt: "" },
   });
 
-  function handleCreateOpen() {
+  const handleCreateOpen = useCallback(() => {
     createForm.reset();
     setCreateOpen(true);
-  }
+  }, [createForm]);
 
   useEffect(() => {
     function onNewItem() {
@@ -152,7 +152,7 @@ function ApiKeys() {
     }
     window.addEventListener("shortcut:new-item", onNewItem);
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
-  }, []);
+  }, [handleCreateOpen]);
 
   function handleCreateSubmit(values: CreateKeyFormValues) {
     createMutation.mutate(values);
