@@ -1,4 +1,5 @@
 using Application.Models;
+using Domain.Aggregates;
 using Domain.Core;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
@@ -15,13 +16,15 @@ public class TransactionServiceTests
 {
 	private readonly Mock<ITransactionRepository> _mockRepository;
 	private readonly TransactionMapper _mapper;
+	private readonly AccountMapper _accountMapper;
 	private readonly TransactionService _service;
 
 	public TransactionServiceTests()
 	{
 		_mockRepository = new Mock<ITransactionRepository>();
 		_mapper = new TransactionMapper();
-		_service = new TransactionService(_mockRepository.Object, _mapper);
+		_accountMapper = new AccountMapper();
+		_service = new TransactionService(_mockRepository.Object, _mapper, _accountMapper);
 	}
 
 	[Fact]
@@ -184,5 +187,70 @@ public class TransactionServiceTests
 		_mockRepository.Verify(r => r.UpdateAsync(It.Is<List<TransactionEntity>>(e =>
 			e.All(t => t.ReceiptId == receiptId)),
 			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetTransactionAccountsByReceiptIdAsync_ReturnsTransactionAccounts()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		List<AccountEntity> accountEntities = AccountEntityGenerator.GenerateList(3);
+		List<TransactionEntity> transactionEntities = TransactionEntityGenerator.GenerateList(3, receiptId);
+		for (int i = 0; i < transactionEntities.Count; i++)
+		{
+			transactionEntities[i].AccountId = accountEntities[i].Id;
+			transactionEntities[i].Account = accountEntities[i];
+		}
+
+		_mockRepository.Setup(r => r.GetWithAccountByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(transactionEntities);
+
+		// Act
+		List<TransactionAccount> result = await _service.GetTransactionAccountsByReceiptIdAsync(receiptId, CancellationToken.None);
+
+		// Assert
+		result.Should().HaveCount(3);
+		for (int i = 0; i < result.Count; i++)
+		{
+			result[i].Transaction.Id.Should().Be(transactionEntities[i].Id);
+			result[i].Account.Id.Should().Be(accountEntities[i].Id);
+		}
+	}
+
+	[Fact]
+	public async Task GetTransactionAccountsByReceiptIdAsync_SkipsTransactionsWithNullAccount()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		List<TransactionEntity> transactionEntities = TransactionEntityGenerator.GenerateList(2, receiptId);
+		AccountEntity account = AccountEntityGenerator.Generate();
+		transactionEntities[0].Account = account;
+		transactionEntities[0].AccountId = account.Id;
+		transactionEntities[1].Account = null;
+
+		_mockRepository.Setup(r => r.GetWithAccountByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(transactionEntities);
+
+		// Act
+		List<TransactionAccount> result = await _service.GetTransactionAccountsByReceiptIdAsync(receiptId, CancellationToken.None);
+
+		// Assert
+		result.Should().HaveCount(1);
+		result[0].Transaction.Id.Should().Be(transactionEntities[0].Id);
+	}
+
+	[Fact]
+	public async Task GetTransactionAccountsByReceiptIdAsync_EmptyList_ReturnsEmpty()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		_mockRepository.Setup(r => r.GetWithAccountByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync([]);
+
+		// Act
+		List<TransactionAccount> result = await _service.GetTransactionAccountsByReceiptIdAsync(receiptId, CancellationToken.None);
+
+		// Assert
+		result.Should().BeEmpty();
 	}
 }

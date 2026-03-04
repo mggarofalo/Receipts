@@ -4,32 +4,11 @@ using MediatR;
 namespace Application.Queries.Aggregates.TransactionAccounts;
 
 public class GetTransactionAccountsByReceiptIdQueryHandler(
-	ITransactionService transactionService,
-	IAccountService accountService
+	ITransactionService transactionService
 ) : IRequestHandler<GetTransactionAccountsByReceiptIdQuery, List<Domain.Aggregates.TransactionAccount>?>
 {
 	public async Task<List<Domain.Aggregates.TransactionAccount>?> Handle(GetTransactionAccountsByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
-		var transactionsResult = await transactionService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, cancellationToken);
-
-		List<Domain.Aggregates.TransactionAccount> transactionAccounts = [];
-
-		foreach (Domain.Core.Transaction transaction in transactionsResult.Data)
-		{
-			Domain.Core.Account? account = await accountService.GetByTransactionIdAsync(transaction.Id, cancellationToken);
-
-			if (account == null)
-			{
-				continue;
-			}
-
-			transactionAccounts.Add(new Domain.Aggregates.TransactionAccount()
-			{
-				Transaction = transaction,
-				Account = account
-			});
-		}
-
-		return transactionAccounts;
+		return await transactionService.GetTransactionAccountsByReceiptIdAsync(request.ReceiptId, cancellationToken);
 	}
 }

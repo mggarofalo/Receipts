@@ -241,6 +241,37 @@ public class TransactionRepositoryTests
 	}
 
 	[Fact]
+	public async Task GetWithAccountByReceiptIdAsync_ReturnsTransactionsWithAccounts()
+	{
+		// Arrange
+		const int expectedTransactionCount = 3;
+		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+
+		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
+		await context.Transactions.AddRangeAsync(entities);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		TransactionRepository repository = new(_contextFactory);
+
+		// Act
+		List<TransactionEntity> actual = await repository.GetWithAccountByReceiptIdAsync(receipt.Id, CancellationToken.None);
+
+		// Assert
+		actual.Should().HaveCount(expectedTransactionCount);
+		actual.Should().AllSatisfy(t =>
+		{
+			t.Account.Should().NotBeNull();
+			t.Account!.Id.Should().Be(account.Id);
+		});
+		actual.Should().BeEquivalentTo(entities, opt => opt
+			.Excluding(member => member.Name == nameof(TransactionEntity.Receipt))
+			.Excluding(member => member.Name == nameof(TransactionEntity.Account)));
+
+		_contextFactory.ResetDatabase();
+	}
+
+	[Fact]
 	public async Task GetCountAsync_ReturnsCorrectCount()
 	{
 		// Arrange

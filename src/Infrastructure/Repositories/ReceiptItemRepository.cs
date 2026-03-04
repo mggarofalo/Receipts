@@ -18,11 +18,27 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems
+			.IgnoreAutoIncludes()
 			.Where(ri => ri.ReceiptId == receiptId)
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(ri => new ReceiptItemEntity
+			{
+				Id = ri.Id,
+				ReceiptId = ri.ReceiptId,
+				ReceiptItemCode = ri.ReceiptItemCode,
+				Description = ri.Description,
+				Quantity = ri.Quantity,
+				UnitPrice = ri.UnitPrice,
+				UnitPriceCurrency = ri.UnitPriceCurrency,
+				TotalAmount = ri.TotalAmount,
+				TotalAmountCurrency = ri.TotalAmountCurrency,
+				Category = ri.Category,
+				Subcategory = ri.Subcategory,
+				PricingMode = ri.PricingMode
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -38,10 +54,26 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems
+			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(ri => new ReceiptItemEntity
+			{
+				Id = ri.Id,
+				ReceiptId = ri.ReceiptId,
+				ReceiptItemCode = ri.ReceiptItemCode,
+				Description = ri.Description,
+				Quantity = ri.Quantity,
+				UnitPrice = ri.UnitPrice,
+				UnitPriceCurrency = ri.UnitPriceCurrency,
+				TotalAmount = ri.TotalAmount,
+				TotalAmountCurrency = ri.TotalAmountCurrency,
+				Category = ri.Category,
+				Subcategory = ri.Subcategory,
+				PricingMode = ri.PricingMode
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -50,10 +82,27 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems
 			.OnlyDeleted()
+			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(ri => new ReceiptItemEntity
+			{
+				Id = ri.Id,
+				ReceiptId = ri.ReceiptId,
+				ReceiptItemCode = ri.ReceiptItemCode,
+				Description = ri.Description,
+				Quantity = ri.Quantity,
+				UnitPrice = ri.UnitPrice,
+				UnitPriceCurrency = ri.UnitPriceCurrency,
+				TotalAmount = ri.TotalAmount,
+				TotalAmountCurrency = ri.TotalAmountCurrency,
+				Category = ri.Category,
+				Subcategory = ri.Subcategory,
+				PricingMode = ri.PricingMode,
+				DeletedAt = ri.DeletedAt
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -86,6 +135,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		IEnumerable<Guid> ids = entities.Select(e => e.Id);
 		List<ReceiptItemEntity> existingEntities = await context.ReceiptItems
+			.IgnoreAutoIncludes()
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
 
@@ -102,6 +152,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<ReceiptItemEntity> entities = await context.ReceiptItems
+			.IgnoreAutoIncludes()
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
 
