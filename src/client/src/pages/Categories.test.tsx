@@ -53,6 +53,18 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
   })),
 }));
 
+vi.mock("@/hooks/usePagination", () => ({
+  usePagination: vi.fn(() => ({
+    paginatedItems: [],
+    currentPage: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 1,
+    setPage: vi.fn(),
+    setPageSize: vi.fn(),
+  })),
+}));
+
 describe("Categories", () => {
   it("renders the page heading", () => {
     renderWithProviders(<Categories />);

@@ -72,6 +72,18 @@ vi.mock("@/hooks/useItemTemplates", () => ({
   useItemTemplates: vi.fn(() => ({ data: [], isLoading: false })),
 }));
 
+vi.mock("@/hooks/usePagination", () => ({
+  usePagination: vi.fn(() => ({
+    paginatedItems: [],
+    currentPage: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 1,
+    setPage: vi.fn(),
+    setPageSize: vi.fn(),
+  })),
+}));
+
 describe("ReceiptItems", () => {
   it("renders the page heading", () => {
     renderWithProviders(<ReceiptItems />);
