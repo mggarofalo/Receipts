@@ -56,7 +56,7 @@ public class GetTripByReceiptIdQueryHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_ShouldReturnNull_WhenTransactionAccountsDoNotExist()
+	public async Task Handle_ShouldReturnTripWithEmptyTransactions_WhenTransactionAccountsAreNull()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -75,6 +75,8 @@ public class GetTripByReceiptIdQueryHandlerTests
 		Trip? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
-		Assert.Null(result);
+		Assert.NotNull(result);
+		result.Receipt.Should().BeSameAs(receiptWithItems);
+		Assert.Empty(result.Transactions);
 	}
 }

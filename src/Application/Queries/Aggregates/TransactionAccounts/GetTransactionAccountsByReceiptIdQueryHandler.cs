@@ -12,11 +12,6 @@ public class GetTransactionAccountsByReceiptIdQueryHandler(
 	{
 		var transactionsResult = await transactionService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, cancellationToken);
 
-		if (transactionsResult.Data.Count == 0)
-		{
-			return null;
-		}
-
 		List<Domain.Aggregates.TransactionAccount> transactionAccounts = [];
 
 		foreach (Domain.Core.Transaction transaction in transactionsResult.Data)

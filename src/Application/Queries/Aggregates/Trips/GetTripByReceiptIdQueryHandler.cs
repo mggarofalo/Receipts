@@ -21,15 +21,10 @@ public class GetTripByReceiptIdQueryHandler(IMediator mediator) : IRequestHandle
 			return null;
 		}
 
-		if (transactionAccountsTask.Result == null)
-		{
-			return null;
-		}
-
 		return new Domain.Aggregates.Trip()
 		{
 			Receipt = receiptWithItemsTask.Result,
-			Transactions = transactionAccountsTask.Result
+			Transactions = transactionAccountsTask.Result ?? []
 		};
 	}
 }

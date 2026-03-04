@@ -11,7 +11,7 @@ public class UserService(ApplicationDbContext dbContext) : IUserService
 	public async Task<PagedResult<UserSummary>> ListUsersAsync(int offset, int limit, CancellationToken cancellationToken = default)
 	{
 		offset = Math.Max(0, offset);
-		limit = Math.Clamp(limit, 1, 200);
+		limit = Math.Clamp(limit, 1, 100);
 
 		int totalCount = await dbContext.Users.CountAsync(cancellationToken);
 

@@ -43,7 +43,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_ShouldReturnNull_WhenReceiptDoesNotExist()
+	public async Task Handle_ShouldReturnEmptyList_WhenReceiptDoesNotExist()
 	{
 		// Arrange
 		Guid missingReceiptId = Guid.NewGuid();
@@ -60,7 +60,8 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		List<Domain.Aggregates.TransactionAccount>? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
-		Assert.Null(result);
+		Assert.NotNull(result);
+		Assert.Empty(result);
 	}
 
 	[Fact]
@@ -109,6 +110,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 		List<Domain.Aggregates.TransactionAccount>? result = await handler.Handle(query, CancellationToken.None);
 
 		// Assert
-		Assert.Null(result);
+		Assert.NotNull(result);
+		Assert.Empty(result);
 	}
 }
