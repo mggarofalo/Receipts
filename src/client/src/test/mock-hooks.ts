@@ -1,5 +1,3 @@
-import type { UseQueryResult, UseMutationResult } from "@tanstack/react-query";
-
 /**
  * Creates a mock UseQueryResult with sensible defaults.
  * Use this instead of `as unknown as ReturnType<typeof useXxx>` double-casts.
