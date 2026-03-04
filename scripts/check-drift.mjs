@@ -256,8 +256,11 @@ function compareSchemas(specDoc, generatedDoc) {
     const specSchema = specSchemas[name];
     const genSchema = genSchemas[name];
 
-    // Compare schema type
-    if (specSchema.type !== genSchema.type) {
+    // Compare schema type.
+    // Skip type mismatch for enum-only schemas: NSwag generates enums without a
+    // type in the spec, while ASP.NET always emits "integer" for C# enums.
+    const isEnumSchema = specSchema.enum || genSchema.enum;
+    if (specSchema.type !== genSchema.type && !isEnumSchema) {
       error(
         `Schema "${name}": type mismatch — spec="${specSchema.type}", generated="${genSchema.type}"`,
       );
@@ -291,9 +294,9 @@ function compareSchemas(specDoc, generatedDoc) {
     }
 
     // Compare required fields.
-    // Skip value-type properties (boolean, number, integer) when checking
-    // spec-required vs generated-required — ASP.NET never marks C# value types
-    // as required because they always have a default value.
+    // Skip value-type properties (boolean, number, integer) and $ref to enum
+    // schemas when checking spec-required vs generated-required — ASP.NET never
+    // marks C# value types as required because they always have a default value.
     const specRequired = new Set(specSchema.required || []);
     const genRequired = new Set(genSchema.required || []);
     for (const field of specRequired) {
@@ -308,7 +311,11 @@ function compareSchemas(specDoc, generatedDoc) {
           propType === "boolean" ||
           propType === "number" ||
           propType === "integer";
-        if (!isValueType) {
+        // $ref to an enum schema is also a value type in C#
+        const refTarget = propSchema ? extractRef(propSchema) : null;
+        const isEnumRef =
+          refTarget && specSchemas[refTarget] && specSchemas[refTarget].enum;
+        if (!isValueType && !isEnumRef) {
           error(
             `Schema "${name}": field "${field}" is required in spec but NOT in generated`,
           );
