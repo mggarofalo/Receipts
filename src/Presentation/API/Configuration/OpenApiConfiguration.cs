@@ -19,6 +19,10 @@ public static class OpenApiConfiguration
 			app.MapScalarApiReference();
 			app.UseOpenApiResponseValidation();
 		}
+		else
+		{
+			app.UseHsts();
+		}
 
 		return app;
 	}
