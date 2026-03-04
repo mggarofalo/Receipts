@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Adjustment.Create;
 using Application.Commands.Adjustment.Delete;
 using Application.Commands.Adjustment.Restore;
@@ -20,7 +21,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, ILogger<AdjustmentsController> logger) : ControllerBase
+public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, ILogger<AdjustmentsController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -106,6 +107,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	{
 		CreateAdjustmentCommand command = new([mapper.ToDomain(model)], receiptId);
 		List<Adjustment> adjustments = await mediator.Send(command);
+		await notifier.NotifyCreated("adjustment", adjustments[0].Id);
 		return Ok(mapper.ToResponse(adjustments[0]));
 	}
 
@@ -124,6 +126,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("adjustment", id);
 		return NoContent();
 	}
 
@@ -143,6 +146,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("adjustment", "deleted", ids);
 		return NoContent();
 	}
 
@@ -162,6 +166,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("adjustment", id);
 		return NoContent();
 	}
 }

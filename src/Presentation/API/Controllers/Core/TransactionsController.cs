@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
@@ -20,7 +21,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger) : ControllerBase
+public class TransactionsController(IMediator mediator, TransactionMapper mapper, ILogger<TransactionsController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -110,6 +111,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		transaction.AccountId = model.AccountId;
 		CreateTransactionCommand command = new([transaction], receiptId);
 		List<Transaction> transactions = await mediator.Send(command);
+		await notifier.NotifyCreated("transaction", transactions[0].Id);
 		return Ok(mapper.ToResponse(transactions[0]));
 	}
 
@@ -129,6 +131,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		List<Transaction> result = await mediator.Send(command);
 
 		List<TransactionResponse> results = [.. result.Select(mapper.ToResponse)];
+		await notifier.NotifyBulkChanged("transaction", "created", result.Select(t => t.Id));
 		return Ok(results);
 	}
 
@@ -149,6 +152,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("transaction", id);
 		return NoContent();
 	}
 
@@ -174,6 +178,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("transaction", "updated", models.Select(m => m.Id));
 		return NoContent();
 	}
 
@@ -193,6 +198,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("transaction", "deleted", ids);
 		return NoContent();
 	}
 
@@ -212,6 +218,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("transaction", id);
 		return NoContent();
 	}
 }

@@ -1,6 +1,6 @@
 using API.Generated.Dtos;
-using API.Hubs;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
@@ -12,7 +12,6 @@ using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 
 namespace API.Controllers.Core;
 
@@ -26,7 +25,7 @@ public class ReceiptsController(
 	IMediator mediator,
 	ReceiptMapper mapper,
 	ILogger<ReceiptsController> logger,
-	IHubContext<ReceiptsHub, IReceiptsHubClient> hubContext) : ControllerBase
+	IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -101,7 +100,7 @@ public class ReceiptsController(
 		CreateReceiptCommand command = new([mapper.ToDomain(model)]);
 		List<Receipt> receipts = await mediator.Send(command);
 		ReceiptResponse response = mapper.ToResponse(receipts[0]);
-		await hubContext.Clients.All.ReceiptCreated(response);
+		await notifier.NotifyCreated("receipt", receipts[0].Id);
 		return Ok(response);
 	}
 
@@ -113,10 +112,7 @@ public class ReceiptsController(
 		CreateReceiptCommand command = new([.. models.Select(mapper.ToDomain)]);
 		List<Receipt> receipts = await mediator.Send(command);
 		List<ReceiptResponse> responses = receipts.Select(mapper.ToResponse).ToList();
-		foreach (ReceiptResponse response in responses)
-		{
-			await hubContext.Clients.All.ReceiptCreated(response);
-		}
+		await notifier.NotifyBulkChanged("receipt", "created", receipts.Select(r => r.Id));
 		return Ok(responses);
 	}
 
@@ -135,13 +131,7 @@ public class ReceiptsController(
 			return NotFound();
 		}
 
-		GetReceiptByIdQuery fetchQuery = new(id);
-		Receipt? updatedReceipt = await mediator.Send(fetchQuery);
-		if (updatedReceipt != null)
-		{
-			await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
-		}
-
+		await notifier.NotifyUpdated("receipt", id);
 		return NoContent();
 	}
 
@@ -160,16 +150,7 @@ public class ReceiptsController(
 			return NotFound();
 		}
 
-		foreach (UpdateReceiptRequest model in models)
-		{
-			GetReceiptByIdQuery fetchQuery = new(model.Id);
-			Receipt? updatedReceipt = await mediator.Send(fetchQuery);
-			if (updatedReceipt != null)
-			{
-				await hubContext.Clients.All.ReceiptUpdated(mapper.ToResponse(updatedReceipt));
-			}
-		}
-
+		await notifier.NotifyBulkChanged("receipt", "updated", models.Select(m => m.Id));
 		return NoContent();
 	}
 
@@ -189,11 +170,7 @@ public class ReceiptsController(
 			return NotFound();
 		}
 
-		foreach (Guid id in ids)
-		{
-			await hubContext.Clients.All.ReceiptDeleted(id);
-		}
-
+		await notifier.NotifyBulkChanged("receipt", "deleted", ids);
 		return NoContent();
 	}
 
@@ -213,6 +190,7 @@ public class ReceiptsController(
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("receipt", id);
 		return NoContent();
 	}
 }

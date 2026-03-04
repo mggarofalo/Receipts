@@ -1,6 +1,7 @@
 using API.Controllers.Core;
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.ReceiptItem.Create;
 using Application.Commands.ReceiptItem.Delete;
 using Application.Commands.ReceiptItem.Restore;
@@ -23,6 +24,7 @@ public class ReceiptItemsControllerTests
 	private readonly ReceiptItemMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<ReceiptItemsController>> _loggerMock;
+	private readonly Mock<IEntityChangeNotifier> _notifierMock;
 	private readonly ReceiptItemsController _controller;
 
 	public ReceiptItemsControllerTests()
@@ -30,7 +32,8 @@ public class ReceiptItemsControllerTests
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new ReceiptItemMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<ReceiptItemsController>();
-		_controller = new ReceiptItemsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
+		_notifierMock = new Mock<IEntityChangeNotifier>();
+		_controller = new ReceiptItemsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
 	}
 
 	[Fact]

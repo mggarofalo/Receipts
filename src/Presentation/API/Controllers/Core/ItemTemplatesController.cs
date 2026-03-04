@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.ItemTemplate.Create;
 using Application.Commands.ItemTemplate.Delete;
 using Application.Commands.ItemTemplate.Restore;
@@ -20,7 +21,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapper, ILogger<ItemTemplatesController> logger) : ControllerBase
+public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapper, ILogger<ItemTemplatesController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -92,6 +93,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	{
 		CreateItemTemplateCommand command = new([mapper.ToDomain(model)]);
 		List<ItemTemplate> itemTemplates = await mediator.Send(command);
+		await notifier.NotifyCreated("item-template", itemTemplates[0].Id);
 		return Ok(mapper.ToResponse(itemTemplates[0]));
 	}
 
@@ -110,6 +112,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("item-template", id);
 		return NoContent();
 	}
 
@@ -129,6 +132,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("item-template", "deleted", ids);
 		return NoContent();
 	}
 
@@ -148,6 +152,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("item-template", id);
 		return NoContent();
 	}
 }

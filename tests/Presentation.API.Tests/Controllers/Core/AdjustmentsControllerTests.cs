@@ -1,6 +1,7 @@
 using API.Controllers.Core;
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Adjustment.Create;
 using Application.Commands.Adjustment.Delete;
 using Application.Commands.Adjustment.Restore;
@@ -23,6 +24,7 @@ public class AdjustmentsControllerTests
 	private readonly AdjustmentMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<AdjustmentsController>> _loggerMock;
+	private readonly Mock<IEntityChangeNotifier> _notifierMock;
 	private readonly AdjustmentsController _controller;
 
 	public AdjustmentsControllerTests()
@@ -30,7 +32,8 @@ public class AdjustmentsControllerTests
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new AdjustmentMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<AdjustmentsController>();
-		_controller = new AdjustmentsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
+		_notifierMock = new Mock<IEntityChangeNotifier>();
+		_controller = new AdjustmentsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
 	}
 
 	[Fact]
