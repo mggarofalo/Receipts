@@ -95,6 +95,8 @@ See **[docs/architecture.md](docs/architecture.md)** for full layer structure, k
 
 ### Tests and Code Review
 
+**All new functionality must include tests.** When implementing a new feature, endpoint, command, query, or fixing a bug, include corresponding unit tests in the same PR. Do not merge code without test coverage for the changes introduced. Follow existing test conventions (xUnit, Arrange/Act/Assert, FluentAssertions, Moq).
+
 **Never write tests or perform code review in the main conversation context.** Always spawn subagents for these tasks:
 - Use the `test-runner` or equivalent subagent for running and writing tests
 - Use `pr-review-toolkit:code-reviewer` or similar review agents for code review
