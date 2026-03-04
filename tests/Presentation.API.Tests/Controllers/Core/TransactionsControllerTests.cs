@@ -1,6 +1,7 @@
 using API.Controllers.Core;
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
@@ -23,6 +24,7 @@ public class TransactionsControllerTests
 	private readonly TransactionMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<TransactionsController>> _loggerMock;
+	private readonly Mock<IEntityChangeNotifier> _notifierMock;
 	private readonly TransactionsController _controller;
 
 	public TransactionsControllerTests()
@@ -30,7 +32,8 @@ public class TransactionsControllerTests
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new TransactionMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<TransactionsController>();
-		_controller = new TransactionsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
+		_notifierMock = new Mock<IEntityChangeNotifier>();
+		_controller = new TransactionsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
 	}
 
 	[Fact]

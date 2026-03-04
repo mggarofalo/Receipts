@@ -77,7 +77,7 @@ describe("useSignalR", () => {
     renderHook(() => useSignalR(true));
 
     expect(mockBuilder.withUrl).toHaveBeenCalledWith(
-      "/hubs/receipts",
+      "/hubs/entities",
       expect.objectContaining({ accessTokenFactory: expect.any(Function) }),
     );
     expect(mockBuilder.withAutomaticReconnect).toHaveBeenCalled();
@@ -86,15 +86,13 @@ describe("useSignalR", () => {
     expect(mockConnection.start).toHaveBeenCalled();
   });
 
-  it("registers event handlers for receipt events", () => {
+  it("registers EntityChanged event handler", () => {
     renderHook(() => useSignalR(true));
 
     const registeredEvents = mockConnection.on.mock.calls.map(
       (call: unknown[]) => call[0],
     );
-    expect(registeredEvents).toContain("ReceiptCreated");
-    expect(registeredEvents).toContain("ReceiptUpdated");
-    expect(registeredEvents).toContain("ReceiptDeleted");
+    expect(registeredEvents).toContain("EntityChanged");
   });
 
   it("registers reconnecting and close handlers", () => {
@@ -127,64 +125,112 @@ describe("useSignalR", () => {
     expect(mockConnection.stop).toHaveBeenCalled();
   });
 
-  describe("hub event handlers", () => {
-    it("ReceiptCreated invalidates queries and shows toast", async () => {
+  describe("EntityChanged handler", () => {
+    it("invalidates receipt query keys and shows toast for receipt created", async () => {
       const mockQueryClient = vi.mocked(useQueryClient)();
 
       await renderEnabled();
 
-      const handler = getOnHandler("ReceiptCreated");
+      const handler = getOnHandler("EntityChanged");
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!({ id: "abc", store: "Test Store" });
+        handler!({ entityType: "receipt", changeType: "created", id: "abc-123" });
       });
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["receipts"],
+      });
+      expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["receipts-with-items"],
+      });
+      expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["trips"],
       });
       expect(toast.info).toHaveBeenCalledWith(
         "A receipt was created by another user",
       );
     });
 
-    it("ReceiptUpdated invalidates queries and shows toast", async () => {
+    it("invalidates account query keys and shows toast for account updated", async () => {
       const mockQueryClient = vi.mocked(useQueryClient)();
 
       await renderEnabled();
 
-      const handler = getOnHandler("ReceiptUpdated");
+      const handler = getOnHandler("EntityChanged");
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!({ id: "abc", store: "Updated Store" });
+        handler!({ entityType: "account", changeType: "updated", id: "abc-123" });
       });
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-        queryKey: ["receipts"],
+        queryKey: ["accounts"],
+      });
+      expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["transaction-accounts"],
       });
       expect(toast.info).toHaveBeenCalledWith(
-        "A receipt was updated by another user",
+        "A account was updated by another user",
       );
     });
 
-    it("ReceiptDeleted invalidates queries and shows toast", async () => {
+    it("invalidates transaction query keys for transaction deleted", async () => {
       const mockQueryClient = vi.mocked(useQueryClient)();
 
       await renderEnabled();
 
-      const handler = getOnHandler("ReceiptDeleted");
+      const handler = getOnHandler("EntityChanged");
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!("some-receipt-id");
+        handler!({ entityType: "transaction", changeType: "deleted", id: "abc-123" });
       });
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-        queryKey: ["receipts"],
+        queryKey: ["transactions"],
+      });
+      expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["receipts-with-items"],
+      });
+      expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["trips"],
+      });
+      expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["transaction-accounts"],
       });
       expect(toast.info).toHaveBeenCalledWith(
-        "A receipt was deleted by another user",
+        "A transaction was deleted by another user",
+      );
+    });
+
+    it("shows toast with display name for receipt-item", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt-item", changeType: "created", id: "abc" });
+      });
+
+      expect(toast.info).toHaveBeenCalledWith(
+        "A receipt item was created by another user",
+      );
+    });
+
+    it("shows toast with display name for item-template", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "item-template", changeType: "updated", id: "abc" });
+      });
+
+      expect(toast.info).toHaveBeenCalledWith(
+        "A item template was updated by another user",
       );
     });
   });

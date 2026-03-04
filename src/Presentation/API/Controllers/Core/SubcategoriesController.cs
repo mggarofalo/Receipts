@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Subcategory.Create;
 using Application.Commands.Subcategory.Delete;
 using Application.Commands.Subcategory.Restore;
@@ -20,7 +21,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class SubcategoriesController(IMediator mediator, SubcategoryMapper mapper, ILogger<SubcategoriesController> logger) : ControllerBase
+public class SubcategoriesController(IMediator mediator, SubcategoryMapper mapper, ILogger<SubcategoriesController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -109,6 +110,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	{
 		CreateSubcategoryCommand command = new([mapper.ToDomain(model)]);
 		List<Subcategory> subcategories = await mediator.Send(command);
+		await notifier.NotifyCreated("subcategory", subcategories[0].Id);
 		return Ok(mapper.ToResponse(subcategories[0]));
 	}
 
@@ -120,6 +122,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	{
 		CreateSubcategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
 		List<Subcategory> subcategories = await mediator.Send(command);
+		await notifier.NotifyBulkChanged("subcategory", "created", subcategories.Select(s => s.Id));
 		return Ok(subcategories.Select(mapper.ToResponse).ToList());
 	}
 
@@ -138,6 +141,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("subcategory", id);
 		return NoContent();
 	}
 
@@ -156,6 +160,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("subcategory", "updated", models.Select(m => m.Id));
 		return NoContent();
 	}
 
@@ -175,6 +180,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("subcategory", "deleted", ids);
 		return NoContent();
 	}
 
@@ -194,6 +200,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("subcategory", id);
 		return NoContent();
 	}
 }

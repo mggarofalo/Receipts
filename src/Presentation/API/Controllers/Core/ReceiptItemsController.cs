@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.ReceiptItem.Create;
 using Application.Commands.ReceiptItem.Delete;
 using Application.Commands.ReceiptItem.Restore;
@@ -20,7 +21,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper, ILogger<ReceiptItemsController> logger) : ControllerBase
+public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper, ILogger<ReceiptItemsController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -108,6 +109,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	{
 		CreateReceiptItemCommand command = new([mapper.ToDomain(model)], receiptId);
 		List<ReceiptItem> receiptItems = await mediator.Send(command);
+		await notifier.NotifyCreated("receipt-item", receiptItems[0].Id);
 		return Ok(mapper.ToResponse(receiptItems[0]));
 	}
 
@@ -118,6 +120,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	{
 		CreateReceiptItemCommand command = new([.. models.Select(mapper.ToDomain)], receiptId);
 		List<ReceiptItem> receiptItems = await mediator.Send(command);
+		await notifier.NotifyBulkChanged("receipt-item", "created", receiptItems.Select(ri => ri.Id));
 		return Ok(receiptItems.Select(mapper.ToResponse).ToList());
 	}
 
@@ -136,6 +139,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("receipt-item", id);
 		return NoContent();
 	}
 
@@ -154,6 +158,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("receipt-item", "updated", models.Select(m => m.Id));
 		return NoContent();
 	}
 
@@ -173,6 +178,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("receipt-item", "deleted", ids);
 		return NoContent();
 	}
 
@@ -192,6 +198,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("receipt-item", id);
 		return NoContent();
 	}
 }

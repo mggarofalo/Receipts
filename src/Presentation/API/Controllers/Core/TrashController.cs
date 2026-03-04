@@ -1,3 +1,4 @@
+using API.Services;
 using Application.Commands.Trash.Purge;
 using Asp.Versioning;
 using MediatR;
@@ -12,7 +13,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class TrashController(IMediator mediator, ILogger<TrashController> logger) : ControllerBase
+public class TrashController(IMediator mediator, ILogger<TrashController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	[HttpPost("purge")]
 	[EndpointSummary("Permanently delete all soft-deleted items")]
@@ -22,6 +23,13 @@ public class TrashController(IMediator mediator, ILogger<TrashController> logger
 		logger.LogWarning("PurgeTrash called — permanently deleting all soft-deleted items");
 		PurgeTrashCommand command = new();
 		await mediator.Send(command);
+
+		string[] entityTypes = ["receipt", "receipt-item", "transaction", "adjustment", "account", "category", "subcategory", "item-template"];
+		foreach (string entityType in entityTypes)
+		{
+			await notifier.NotifyAllChanged(entityType, "deleted");
+		}
+
 		return NoContent();
 	}
 }
