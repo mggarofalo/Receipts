@@ -371,6 +371,7 @@ public class AuthControllerTests
 		ApplicationUser user = CreateTestUser();
 		SetupUserClaims(user.Id);
 		_userManagerMock.Setup(m => m.FindByIdAsync(user.Id)).ReturnsAsync(user);
+		_userManagerMock.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
 
 		// Act
 		Results<NoContent, UnauthorizedHttpResult> result = await _controller.Logout();
@@ -379,6 +380,7 @@ public class AuthControllerTests
 		Assert.IsType<NoContent>(result.Result);
 		user.RefreshToken.Should().BeNull();
 		user.RefreshTokenExpiresAt.Should().BeNull();
+		_userManagerMock.Verify(m => m.UpdateAsync(user), Times.Once);
 	}
 
 	[Fact]
