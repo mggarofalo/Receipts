@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using API.Filters;
@@ -6,6 +7,7 @@ using API.Middleware;
 using API.Services;
 using API.Validators;
 using FluentValidation;
+using Microsoft.AspNetCore.ResponseCompression;
 using Serilog;
 
 namespace API.Configuration;
@@ -43,11 +45,23 @@ public static class ApplicationConfiguration
 				options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 			});
 
+		services.AddResponseCompression(options =>
+		{
+			options.EnableForHttps = true;
+			options.Providers.Add<BrotliCompressionProvider>();
+			options.Providers.Add<GzipCompressionProvider>();
+		});
+		services.Configure<BrotliCompressionProviderOptions>(options =>
+			options.Level = CompressionLevel.Fastest);
+		services.Configure<GzipCompressionProviderOptions>(options =>
+			options.Level = CompressionLevel.SmallestSize);
+
 		return services;
 	}
 
 	public static WebApplication UseApplicationServices(this WebApplication app)
 	{
+		app.UseResponseCompression();
 		app.UseSerilogRequestLogging(options =>
 		{
 			options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
