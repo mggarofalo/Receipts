@@ -1,12 +1,14 @@
 using System.IO.Compression;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using API.Filters;
 using API.Hubs;
 using API.Middleware;
 using API.Services;
 using API.Validators;
 using FluentValidation;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Serilog;
 
@@ -56,6 +58,37 @@ public static class ApplicationConfiguration
 		services.Configure<GzipCompressionProviderOptions>(options =>
 			options.Level = CompressionLevel.SmallestSize);
 
+		services.AddRateLimiter(options =>
+		{
+			options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+				RateLimitPartition.GetSlidingWindowLimiter(
+					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+					_ => new SlidingWindowRateLimiterOptions
+					{
+						PermitLimit = 100,
+						Window = TimeSpan.FromMinutes(1),
+						SegmentsPerWindow = 4,
+					}));
+
+			options.AddFixedWindowLimiter("auth", limiterOptions =>
+			{
+				limiterOptions.PermitLimit = 5;
+				limiterOptions.Window = TimeSpan.FromMinutes(1);
+			});
+
+			options.OnRejected = async (context, cancellationToken) =>
+			{
+				string ip = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+				ILoggerFactory loggerFactory = context.HttpContext.RequestServices
+					.GetRequiredService<ILoggerFactory>();
+				Microsoft.Extensions.Logging.ILogger logger = loggerFactory.CreateLogger("API.RateLimiting");
+				logger.LogWarning("Rate limit exceeded. IP: {IP}, Path: {Path}", ip, context.HttpContext.Request.Path);
+
+				context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+				await context.HttpContext.Response.WriteAsync("Rate limit exceeded. Try again later.", cancellationToken);
+			};
+		});
+
 		return services;
 	}
 
@@ -81,6 +114,7 @@ public static class ApplicationConfiguration
 			app.UseHttpsRedirection();
 		}
 
+		app.UseRateLimiter();
 		app.UseRouting();
 
 		return app;

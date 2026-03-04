@@ -5,6 +5,7 @@ using API.Services;
 using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 
 // Create builder
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -26,6 +27,10 @@ builder.Services
 WebApplication app = builder.Build();
 
 // Configure middleware
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+	ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+});
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseOpenApiServices()
