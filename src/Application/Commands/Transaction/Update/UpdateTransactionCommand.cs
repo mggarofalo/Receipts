@@ -5,11 +5,10 @@ namespace Application.Commands.Transaction.Update;
 public record UpdateTransactionCommand : ICommand<bool>
 {
 	public IReadOnlyList<Domain.Core.Transaction> Transactions { get; }
-	public Guid AccountId { get; }
 
 	public const string TransactionsCannotBeEmptyExceptionMessage = "Transactions list cannot be empty.";
 
-	public UpdateTransactionCommand(List<Domain.Core.Transaction> transactions, Guid accountId)
+	public UpdateTransactionCommand(List<Domain.Core.Transaction> transactions)
 	{
 		ArgumentNullException.ThrowIfNull(transactions);
 
@@ -19,6 +18,5 @@ public record UpdateTransactionCommand : ICommand<bool>
 		}
 
 		Transactions = transactions.AsReadOnly();
-		AccountId = accountId;
 	}
 }

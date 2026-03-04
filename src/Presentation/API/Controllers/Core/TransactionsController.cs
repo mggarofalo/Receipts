@@ -106,7 +106,9 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[ProducesResponseType<TransactionResponse>(StatusCodes.Status200OK)]
 	public async Task<ActionResult<TransactionResponse>> CreateTransaction([FromBody] CreateTransactionRequest model, [FromRoute] Guid receiptId)
 	{
-		CreateTransactionCommand command = new([mapper.ToDomain(model)], receiptId, model.AccountId);
+		Transaction transaction = mapper.ToDomain(model);
+		transaction.AccountId = model.AccountId;
+		CreateTransactionCommand command = new([transaction], receiptId);
 		List<Transaction> transactions = await mediator.Send(command);
 		return Ok(mapper.ToResponse(transactions[0]));
 	}
@@ -116,20 +118,17 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[ProducesResponseType<List<TransactionResponse>>(StatusCodes.Status200OK)]
 	public async Task<ActionResult<List<TransactionResponse>>> CreateTransactions([FromBody] List<CreateTransactionRequest> models, [FromRoute] Guid receiptId)
 	{
-		IEnumerable<IGrouping<Guid, CreateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
-
-		List<Task<List<Transaction>>> tasks = [.. groups.Select(group =>
+		List<Transaction> transactions = [.. models.Select(m =>
 		{
-			CreateTransactionCommand command = new(
-				[.. group.Select(mapper.ToDomain)],
-				receiptId,
-				group.Key);
-			return mediator.Send(command);
+			Transaction t = mapper.ToDomain(m);
+			t.AccountId = m.AccountId;
+			return t;
 		})];
 
-		await Task.WhenAll(tasks);
+		CreateTransactionCommand command = new(transactions, receiptId);
+		List<Transaction> result = await mediator.Send(command);
 
-		List<TransactionResponse> results = [.. tasks.SelectMany(t => t.Result.Select(mapper.ToResponse))];
+		List<TransactionResponse> results = [.. result.Select(mapper.ToResponse)];
 		return Ok(results);
 	}
 
@@ -139,7 +138,9 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<bool>> UpdateTransaction([FromBody] UpdateTransactionRequest model, [FromRoute] Guid id)
 	{
-		UpdateTransactionCommand command = new([mapper.ToDomain(model)], model.AccountId);
+		Transaction transaction = mapper.ToDomain(model);
+		transaction.AccountId = model.AccountId;
+		UpdateTransactionCommand command = new([transaction]);
 		bool result = await mediator.Send(command);
 
 		if (!result)
@@ -157,19 +158,17 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[ProducesResponseType(StatusCodes.Status404NotFound)]
 	public async Task<ActionResult<bool>> UpdateTransactions([FromBody] List<UpdateTransactionRequest> models)
 	{
-		IEnumerable<IGrouping<Guid, UpdateTransactionRequest>> groups = models.GroupBy(m => m.AccountId);
-
-		List<Task<bool>> tasks = [.. groups.Select(group =>
+		List<Transaction> transactions = [.. models.Select(m =>
 		{
-			UpdateTransactionCommand command = new(
-				[.. group.Select(mapper.ToDomain)],
-				group.Key);
-			return mediator.Send(command);
+			Transaction t = mapper.ToDomain(m);
+			t.AccountId = m.AccountId;
+			return t;
 		})];
 
-		await Task.WhenAll(tasks);
+		UpdateTransactionCommand command = new(transactions);
+		bool result = await mediator.Send(command);
 
-		if (tasks.Any(t => !t.Result))
+		if (!result)
 		{
 			logger.LogWarning("Transactions batch update failed — some not found");
 			return NotFound();

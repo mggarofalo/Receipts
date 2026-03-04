@@ -29,6 +29,12 @@ public class UpdateTransactionCommandHandler(
 		Domain.Core.Receipt receipt = receiptTask.Result
 			?? throw new InvalidOperationException("Receipt not found");
 
+		HashSet<Guid> receiptTransactionIds = [.. existingTransactionsTask.Result.Data.Select(t => t.Id)];
+		if (!request.Transactions.All(t => receiptTransactionIds.Contains(t.Id)))
+		{
+			throw new InvalidOperationException("All transactions in the batch must belong to the same receipt.");
+		}
+
 		ReceiptWithItems receiptWithItems = new()
 		{
 			Receipt = receipt,
@@ -53,7 +59,7 @@ public class UpdateTransactionCommandHandler(
 			]);
 		}
 
-		await transactionService.UpdateAsync([.. request.Transactions], receiptId, request.AccountId, cancellationToken);
+		await transactionService.UpdateAsync([.. request.Transactions], receiptId, cancellationToken);
 		return true;
 	}
 }

@@ -30,13 +30,12 @@ public class TransactionServiceTests
 		// Arrange
 		List<Transaction> models = TransactionGenerator.GenerateList(2);
 		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 		List<TransactionEntity> createdEntities = TransactionEntityGenerator.GenerateList(2);
 
 		_mockRepository.Setup(r => r.CreateAsync(It.IsAny<List<TransactionEntity>>(), It.IsAny<CancellationToken>())).ReturnsAsync(createdEntities);
 
 		// Act
-		List<Transaction> actual = await _service.CreateAsync(models, receiptId, accountId, CancellationToken.None);
+		List<Transaction> actual = await _service.CreateAsync(models, receiptId, CancellationToken.None);
 
 		// Assert
 		Assert.Equal(createdEntities.Count, actual.Count);
@@ -177,14 +176,13 @@ public class TransactionServiceTests
 		// Arrange
 		List<Transaction> models = TransactionGenerator.GenerateList(2);
 		Guid receiptId = Guid.NewGuid();
-		Guid accountId = Guid.NewGuid();
 
 		// Act
-		await _service.UpdateAsync(models, receiptId, accountId, CancellationToken.None);
+		await _service.UpdateAsync(models, receiptId, CancellationToken.None);
 
 		// Assert
 		_mockRepository.Verify(r => r.UpdateAsync(It.Is<List<TransactionEntity>>(e =>
-			e.All(t => t.ReceiptId == receiptId && t.AccountId == accountId)),
+			e.All(t => t.ReceiptId == receiptId)),
 			It.IsAny<CancellationToken>()), Times.Once);
 	}
 }
