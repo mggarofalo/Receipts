@@ -22,6 +22,15 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(r => new ReceiptEntity
+			{
+				Id = r.Id,
+				Description = r.Description,
+				Location = r.Location,
+				Date = r.Date,
+				TaxAmount = r.TaxAmount,
+				TaxAmountCurrency = r.TaxAmountCurrency
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -34,6 +43,16 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(r => new ReceiptEntity
+			{
+				Id = r.Id,
+				Description = r.Description,
+				Location = r.Location,
+				Date = r.Date,
+				TaxAmount = r.TaxAmount,
+				TaxAmountCurrency = r.TaxAmountCurrency,
+				DeletedAt = r.DeletedAt
+			})
 			.ToListAsync(cancellationToken);
 	}
 

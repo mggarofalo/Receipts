@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models;
+using Domain.Aggregates;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
@@ -7,7 +8,7 @@ using Infrastructure.Mapping;
 
 namespace Infrastructure.Services;
 
-public class TransactionService(ITransactionRepository repository, TransactionMapper mapper) : ITransactionService
+public class TransactionService(ITransactionRepository repository, TransactionMapper mapper, AccountMapper accountMapper) : ITransactionService
 {
 	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, CancellationToken cancellationToken)
 	{
@@ -78,6 +79,21 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 		}
 
 		await repository.UpdateAsync(transactionEntities, cancellationToken);
+	}
+
+	public async Task<List<TransactionAccount>> GetTransactionAccountsByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
+	{
+		List<TransactionEntity> entities = await repository.GetWithAccountByReceiptIdAsync(receiptId, cancellationToken);
+		return
+		[
+			.. entities
+				.Where(e => e.Account != null)
+				.Select(e => new TransactionAccount
+				{
+					Transaction = mapper.ToDomain(e),
+					Account = accountMapper.ToDomain(e.Account!)
+				})
+		];
 	}
 
 	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)

@@ -31,6 +31,13 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(a => new AccountEntity
+			{
+				Id = a.Id,
+				AccountCode = a.AccountCode,
+				Name = a.Name,
+				IsActive = a.IsActive
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -43,6 +50,14 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(a => new AccountEntity
+			{
+				Id = a.Id,
+				AccountCode = a.AccountCode,
+				Name = a.Name,
+				IsActive = a.IsActive,
+				DeletedAt = a.DeletedAt
+			})
 			.ToListAsync(cancellationToken);
 	}
 
