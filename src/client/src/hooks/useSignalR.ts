@@ -9,6 +9,39 @@ export type SignalRConnectionState =
   | "disconnected"
   | "reconnecting";
 
+interface EntityChangeNotification {
+  entityType: string;
+  changeType: string;
+  id: string | null;
+}
+
+const queryKeyMap: Record<string, string[][]> = {
+  receipt: [["receipts"], ["receipts-with-items"], ["trips"]],
+  "receipt-item": [["receipt-items"], ["receipts-with-items"], ["trips"]],
+  transaction: [
+    ["transactions"],
+    ["receipts-with-items"],
+    ["trips"],
+    ["transaction-accounts"],
+  ],
+  adjustment: [["adjustments"], ["receipts-with-items"], ["trips"]],
+  account: [["accounts"], ["transaction-accounts"]],
+  category: [["categories"]],
+  subcategory: [["subcategories"]],
+  "item-template": [["itemTemplates"]],
+};
+
+const displayNameMap: Record<string, string> = {
+  receipt: "receipt",
+  "receipt-item": "receipt item",
+  transaction: "transaction",
+  adjustment: "adjustment",
+  account: "account",
+  category: "category",
+  subcategory: "subcategory",
+  "item-template": "item template",
+};
+
 export function useSignalR(enabled: boolean) {
   const queryClient = useQueryClient();
   const connectionRef = useRef<signalR.HubConnection | null>(null);
@@ -21,7 +54,7 @@ export function useSignalR(enabled: boolean) {
     }
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("/hubs/receipts", {
+      .withUrl("/hubs/entities", {
         accessTokenFactory: () => getAccessToken() ?? "",
       })
       .withAutomaticReconnect()
@@ -51,29 +84,31 @@ export function useSignalR(enabled: boolean) {
       }
     });
 
-    connection.on("ReceiptCreated", (receipt) => {
-      if (import.meta.env.DEV) {
-        console.debug("[SignalR] ReceiptCreated", receipt);
-      }
-      queryClient.invalidateQueries({ queryKey: ["receipts"] });
-      toast.info("A receipt was created by another user");
-    });
+    connection.on(
+      "EntityChanged",
+      (notification: EntityChangeNotification) => {
+        if (import.meta.env.DEV) {
+          console.debug("[SignalR] EntityChanged", notification);
+        }
 
-    connection.on("ReceiptUpdated", (receipt) => {
-      if (import.meta.env.DEV) {
-        console.debug("[SignalR] ReceiptUpdated", receipt);
-      }
-      queryClient.invalidateQueries({ queryKey: ["receipts"] });
-      toast.info("A receipt was updated by another user");
-    });
+        const keys = queryKeyMap[notification.entityType];
+        if (keys) {
+          for (const queryKey of keys) {
+            queryClient.invalidateQueries({ queryKey });
+          }
+        }
 
-    connection.on("ReceiptDeleted", (id: string) => {
-      if (import.meta.env.DEV) {
-        console.debug("[SignalR] ReceiptDeleted", id);
-      }
-      queryClient.invalidateQueries({ queryKey: ["receipts"] });
-      toast.info("A receipt was deleted by another user");
-    });
+        const displayName =
+          displayNameMap[notification.entityType] ?? notification.entityType;
+        const action =
+          notification.changeType === "created"
+            ? "created"
+            : notification.changeType === "deleted"
+              ? "deleted"
+              : "updated";
+        toast.info(`A ${displayName} was ${action} by another user`);
+      },
+    );
 
     connectionRef.current = connection;
 
@@ -82,7 +117,7 @@ export function useSignalR(enabled: boolean) {
       .then(() => {
         setConnectionState("connected");
         if (import.meta.env.DEV) {
-          console.debug("[SignalR] Connected to /receipts hub.");
+          console.debug("[SignalR] Connected to /entities hub.");
         }
       })
       .catch((err: unknown) => {

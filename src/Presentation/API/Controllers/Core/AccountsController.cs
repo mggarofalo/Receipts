@@ -10,6 +10,7 @@ using Asp.Versioning;
 using Domain.Core;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using API.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Core;
@@ -20,7 +21,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger) : ControllerBase
+public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -94,6 +95,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	{
 		CreateAccountCommand command = new([mapper.ToDomain(model)]);
 		List<Account> accounts = await mediator.Send(command);
+		await notifier.NotifyCreated("account", accounts[0].Id);
 		return Ok(mapper.ToResponse(accounts[0]));
 	}
 
@@ -104,6 +106,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	{
 		CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
 		List<Account> accounts = await mediator.Send(command);
+		await notifier.NotifyBulkChanged("account", "created", accounts.Select(a => a.Id));
 		return Ok(accounts.Select(mapper.ToResponse).ToList());
 	}
 
@@ -122,6 +125,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("account", id);
 		return NoContent();
 	}
 
@@ -140,6 +144,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("account", "updated", models.Select(m => m.Id));
 		return NoContent();
 	}
 
@@ -159,6 +164,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("account", "deleted", ids);
 		return NoContent();
 	}
 
@@ -178,6 +184,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("account", id);
 		return NoContent();
 	}
 }

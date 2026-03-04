@@ -1,7 +1,7 @@
 using API.Controllers.Core;
 using API.Generated.Dtos;
-using API.Hubs;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
@@ -12,7 +12,6 @@ using Domain.Core;
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
@@ -25,8 +24,7 @@ public class ReceiptsControllerTests
 	private readonly ReceiptMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<ReceiptsController>> _loggerMock;
-	private readonly Mock<IHubContext<ReceiptsHub, IReceiptsHubClient>> _hubContextMock;
-	private readonly Mock<IReceiptsHubClient> _hubClientMock;
+	private readonly Mock<IEntityChangeNotifier> _notifierMock;
 	private readonly ReceiptsController _controller;
 
 	public ReceiptsControllerTests()
@@ -34,18 +32,9 @@ public class ReceiptsControllerTests
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new ReceiptMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<ReceiptsController>();
+		_notifierMock = new Mock<IEntityChangeNotifier>();
 
-		_hubClientMock = new Mock<IReceiptsHubClient>();
-		Mock<IHubClients<IReceiptsHubClient>> hubClientsMock = new();
-		hubClientsMock.Setup(c => c.All).Returns(_hubClientMock.Object);
-		_hubContextMock = new Mock<IHubContext<ReceiptsHub, IReceiptsHubClient>>();
-		_hubContextMock.Setup(h => h.Clients).Returns(hubClientsMock.Object);
-
-		// Default: GetReceiptByIdQuery returns null (broadcast skipped for update operations)
-		_mediatorMock.Setup(m => m.Send(It.IsAny<GetReceiptByIdQuery>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync((Receipt?)null);
-
-		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _hubContextMock.Object);
+		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
 	}
 
 	[Fact]
@@ -168,6 +157,7 @@ public class ReceiptsControllerTests
 		ReceiptResponse actualReturn = Assert.IsType<ReceiptResponse>(okResult.Value);
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
+		_notifierMock.Verify(n => n.NotifyCreated("receipt", receipt.Id), Times.Once);
 	}
 
 	[Fact]
@@ -210,6 +200,7 @@ public class ReceiptsControllerTests
 		List<ReceiptResponse> actualControllerReturn = Assert.IsType<List<ReceiptResponse>>(okResult.Value);
 
 		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		_notifierMock.Verify(n => n.NotifyBulkChanged("receipt", "created", It.IsAny<IEnumerable<Guid>>()), Times.Once);
 	}
 
 	[Fact]
@@ -246,6 +237,7 @@ public class ReceiptsControllerTests
 
 		// Assert
 		Assert.IsType<NoContentResult>(result.Result);
+		_notifierMock.Verify(n => n.NotifyUpdated("receipt", controllerInput.Id), Times.Once);
 	}
 
 	[Fact]
@@ -300,6 +292,7 @@ public class ReceiptsControllerTests
 
 		// Assert
 		Assert.IsType<NoContentResult>(result.Result);
+		_notifierMock.Verify(n => n.NotifyBulkChanged("receipt", "updated", It.IsAny<IEnumerable<Guid>>()), Times.Once);
 	}
 
 	[Fact]
@@ -354,6 +347,7 @@ public class ReceiptsControllerTests
 
 		// Assert
 		Assert.IsType<NoContentResult>(result.Result);
+		_notifierMock.Verify(n => n.NotifyBulkChanged("receipt", "deleted", controllerInput), Times.Once);
 	}
 
 	[Fact]
@@ -407,6 +401,7 @@ public class ReceiptsControllerTests
 
 		// Assert
 		Assert.IsType<NoContentResult>(result);
+		_notifierMock.Verify(n => n.NotifyUpdated("receipt", id), Times.Once);
 	}
 
 	[Fact]

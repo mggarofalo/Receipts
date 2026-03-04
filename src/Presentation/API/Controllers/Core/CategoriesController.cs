@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using API.Services;
 using Application.Commands.Category.Create;
 using Application.Commands.Category.Delete;
 using Application.Commands.Category.Restore;
@@ -20,7 +21,7 @@ namespace API.Controllers.Core;
 [Produces("application/json")]
 [Authorize]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILogger<CategoriesController> logger) : ControllerBase
+public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILogger<CategoriesController> logger, IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -95,6 +96,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	{
 		CreateCategoryCommand command = new([mapper.ToDomain(model)]);
 		List<Category> categories = await mediator.Send(command);
+		await notifier.NotifyCreated("category", categories[0].Id);
 		return Ok(mapper.ToResponse(categories[0]));
 	}
 
@@ -106,6 +108,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	{
 		CreateCategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
 		List<Category> categories = await mediator.Send(command);
+		await notifier.NotifyBulkChanged("category", "created", categories.Select(c => c.Id));
 		return Ok(categories.Select(mapper.ToResponse).ToList());
 	}
 
@@ -124,6 +127,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("category", id);
 		return NoContent();
 	}
 
@@ -142,6 +146,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("category", "updated", models.Select(m => m.Id));
 		return NoContent();
 	}
 
@@ -161,6 +166,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			return NotFound();
 		}
 
+		await notifier.NotifyBulkChanged("category", "deleted", ids);
 		return NoContent();
 	}
 
@@ -180,6 +186,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			return NotFound();
 		}
 
+		await notifier.NotifyUpdated("category", id);
 		return NoContent();
 	}
 }

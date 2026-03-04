@@ -4,19 +4,19 @@ using Moq;
 
 namespace Presentation.API.Tests.Hubs;
 
-public class ReceiptsHubTests
+public class EntityHubTests
 {
-	private readonly Mock<IHubCallerClients<IReceiptsHubClient>> _mockClients;
-	private readonly Mock<IReceiptsHubClient> _mockClientProxy;
-	private readonly ReceiptsHub _hub;
+	private readonly Mock<IHubCallerClients<IEntityHubClient>> _mockClients;
+	private readonly Mock<IEntityHubClient> _mockClientProxy;
+	private readonly EntityHub _hub;
 
-	public ReceiptsHubTests()
+	public EntityHubTests()
 	{
-		_mockClients = new Mock<IHubCallerClients<IReceiptsHubClient>>();
-		_mockClientProxy = new Mock<IReceiptsHubClient>();
+		_mockClients = new Mock<IHubCallerClients<IEntityHubClient>>();
+		_mockClientProxy = new Mock<IEntityHubClient>();
 		_mockClients.Setup(clients => clients.All).Returns(_mockClientProxy.Object);
 
-		_hub = new ReceiptsHub
+		_hub = new EntityHub
 		{
 			Clients = _mockClients.Object,
 			Context = new Mock<HubCallerContext>().Object

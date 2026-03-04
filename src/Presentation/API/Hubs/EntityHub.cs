@@ -5,6 +5,6 @@ using Microsoft.AspNetCore.SignalR;
 namespace API.Hubs;
 
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-public class ReceiptsHub : Hub<IReceiptsHubClient>
+public class EntityHub : Hub<IEntityHubClient>
 {
 }

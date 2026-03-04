@@ -54,7 +54,7 @@ app.MapDefaultEndpoints();
 app.MapControllers();
 
 // Map SignalR hubs
-app.MapHub<ReceiptsHub>("/hubs/receipts");
+app.MapHub<EntityHub>("/hubs/entities");
 
 // Run application
 await app.RunAsync();

@@ -11,6 +11,7 @@ using Domain.Core;
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using API.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
@@ -23,6 +24,7 @@ public class AccountsControllerTests
 	private readonly AccountMapper _mapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<AccountsController>> _loggerMock;
+	private readonly Mock<IEntityChangeNotifier> _notifierMock;
 	private readonly AccountsController _controller;
 
 	public AccountsControllerTests()
@@ -30,7 +32,8 @@ public class AccountsControllerTests
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new AccountMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<AccountsController>();
-		_controller = new AccountsController(_mediatorMock.Object, _mapper, _loggerMock.Object);
+		_notifierMock = new Mock<IEntityChangeNotifier>();
+		_controller = new AccountsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
 	}
 
 	[Fact]
