@@ -46,12 +46,14 @@ RUN dotnet restore Receipts.slnx
 # Copy remaining source
 COPY src/ src/
 
-RUN dotnet publish src/Presentation/API/API.csproj \
-    -c Release \
-    -o /app/publish \
-    --no-restore \
-    -p:PublishReadyToRun=true \
-    -a $TARGETARCH
+RUN case ${TARGETARCH} in \
+      amd64) DOTNET_ARCH=x64 ;; \
+      arm64) DOTNET_ARCH=arm64 ;; \
+      arm)   DOTNET_ARCH=arm ;; \
+    esac && \
+    dotnet publish src/Presentation/API/API.csproj \
+      -c Release -o /app/publish --no-restore \
+      -p:PublishReadyToRun=true -a ${DOTNET_ARCH}
 
 # Stage 3: Runtime (noble for wget-based healthchecks; security via docker-compose constraints)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS runtime

@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/../.env" ]; then
+    set -a
+    source "${SCRIPT_DIR}/../.env"
+    set +a
+fi
+
 # Backup the Receipts PostgreSQL database.
 # Usage: ./scripts/backup.sh [backup_dir]
 # Keeps 7 days of backups by default.
