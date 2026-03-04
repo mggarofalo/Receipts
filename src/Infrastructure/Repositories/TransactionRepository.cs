@@ -18,11 +18,33 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
+			.IgnoreAutoIncludes()
 			.Where(t => t.ReceiptId == receiptId)
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(t => new TransactionEntity
+			{
+				Id = t.Id,
+				ReceiptId = t.ReceiptId,
+				AccountId = t.AccountId,
+				Amount = t.Amount,
+				AmountCurrency = t.AmountCurrency,
+				Date = t.Date
+			})
+			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<List<TransactionEntity>> GetWithAccountByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Transactions
+			.IgnoreAutoIncludes()
+			.Include(t => t.Account)
+			.Where(t => t.ReceiptId == receiptId)
+			.AsNoTracking()
+			.OrderBy(e => e.Id)
 			.ToListAsync(cancellationToken);
 	}
 
@@ -38,10 +60,20 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
+			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(t => new TransactionEntity
+			{
+				Id = t.Id,
+				ReceiptId = t.ReceiptId,
+				AccountId = t.AccountId,
+				Amount = t.Amount,
+				AmountCurrency = t.AmountCurrency,
+				Date = t.Date
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -50,10 +82,21 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.OnlyDeleted()
+			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(t => new TransactionEntity
+			{
+				Id = t.Id,
+				ReceiptId = t.ReceiptId,
+				AccountId = t.AccountId,
+				Amount = t.Amount,
+				AmountCurrency = t.AmountCurrency,
+				Date = t.Date,
+				DeletedAt = t.DeletedAt
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -86,6 +129,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		IEnumerable<Guid> ids = entities.Select(e => e.Id);
 		List<TransactionEntity> existingEntities = await context.Transactions
+			.IgnoreAutoIncludes()
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
 
@@ -102,6 +146,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<TransactionEntity> entities = await context.Transactions
+			.IgnoreAutoIncludes()
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
 

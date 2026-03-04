@@ -18,11 +18,21 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
+			.IgnoreAutoIncludes()
 			.Where(a => a.ReceiptId == receiptId)
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(a => new AdjustmentEntity
+			{
+				Id = a.Id,
+				ReceiptId = a.ReceiptId,
+				Type = a.Type,
+				Amount = a.Amount,
+				AmountCurrency = a.AmountCurrency,
+				Description = a.Description
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -38,10 +48,20 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
+			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(a => new AdjustmentEntity
+			{
+				Id = a.Id,
+				ReceiptId = a.ReceiptId,
+				Type = a.Type,
+				Amount = a.Amount,
+				AmountCurrency = a.AmountCurrency,
+				Description = a.Description
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -50,10 +70,21 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.OnlyDeleted()
+			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.OrderBy(e => e.Id)
 			.Skip(offset)
 			.Take(limit)
+			.Select(a => new AdjustmentEntity
+			{
+				Id = a.Id,
+				ReceiptId = a.ReceiptId,
+				Type = a.Type,
+				Amount = a.Amount,
+				AmountCurrency = a.AmountCurrency,
+				Description = a.Description,
+				DeletedAt = a.DeletedAt
+			})
 			.ToListAsync(cancellationToken);
 	}
 
@@ -86,6 +117,7 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		IEnumerable<Guid> ids = entities.Select(e => e.Id);
 		List<AdjustmentEntity> existingEntities = await context.Adjustments
+			.IgnoreAutoIncludes()
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
 
@@ -102,6 +134,7 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		List<AdjustmentEntity> entities = await context.Adjustments
+			.IgnoreAutoIncludes()
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
 
