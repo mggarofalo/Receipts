@@ -8,14 +8,14 @@ public class GetTransactionsByReceiptIdQueryTests : IQueryTests
 	public void Query_CanBeCreated()
 	{
 		Guid receiptId = Guid.NewGuid();
-		GetTransactionsByReceiptIdQuery query = new(receiptId);
+		GetTransactionsByReceiptIdQuery query = new(receiptId, 0, 50);
 		Assert.Equal(receiptId, query.ReceiptId);
 	}
 
 	[Fact]
 	public void Query_WithEmptyId_ThrowsArgumentException()
 	{
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new GetTransactionsByReceiptIdQuery(Guid.Empty));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new GetTransactionsByReceiptIdQuery(Guid.Empty, 0, 50));
 		Assert.StartsWith(GetTransactionsByReceiptIdQuery.ReceiptIdCannotBeEmptyExceptionMessage, exception.Message);
 		Assert.Equal("receiptId", exception.ParamName);
 	}

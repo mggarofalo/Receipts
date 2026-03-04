@@ -7,7 +7,7 @@ public class GetAllCategoriesQueryTests : IQueryTests
 	[Fact]
 	public void Query_CanBeCreated()
 	{
-		GetAllCategoriesQuery query = new();
+		GetAllCategoriesQuery query = new(0, 50);
 		Assert.NotNull(query);
 	}
 }

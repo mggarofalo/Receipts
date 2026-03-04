@@ -10,16 +10,11 @@ public class GetTransactionAccountsByReceiptIdQueryHandler(
 {
 	public async Task<List<Domain.Aggregates.TransactionAccount>?> Handle(GetTransactionAccountsByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
-		List<Domain.Core.Transaction>? transactions = await transactionService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
-
-		if (transactions == null)
-		{
-			return null;
-		}
+		var transactionsResult = await transactionService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, cancellationToken);
 
 		List<Domain.Aggregates.TransactionAccount> transactionAccounts = [];
 
-		foreach (Domain.Core.Transaction transaction in transactions)
+		foreach (Domain.Core.Transaction transaction in transactionsResult.Data)
 		{
 			Domain.Core.Account? account = await accountService.GetByTransactionIdAsync(transaction.Id, cancellationToken);
 

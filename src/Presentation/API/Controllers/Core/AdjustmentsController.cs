@@ -4,6 +4,7 @@ using Application.Commands.Adjustment.Create;
 using Application.Commands.Adjustment.Delete;
 using Application.Commands.Adjustment.Restore;
 using Application.Commands.Adjustment.Update;
+using Application.Models;
 using Application.Queries.Core.Adjustment;
 using Asp.Versioning;
 using Domain.Core;
@@ -51,36 +52,51 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all adjustments")]
-	[ProducesResponseType<List<AdjustmentResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<AdjustmentResponse>>> GetAllAdjustments([FromQuery] Guid? receiptId = null)
+	[ProducesResponseType<AdjustmentListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<AdjustmentListResponse>> GetAllAdjustments([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		if (receiptId.HasValue)
 		{
-			GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value);
-			List<Adjustment>? byReceiptResult = await mediator.Send(byReceiptQuery);
+			GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit);
+			PagedResult<Adjustment> byReceiptResult = await mediator.Send(byReceiptQuery);
 
-			List<AdjustmentResponse> byReceiptModel = [.. (byReceiptResult ?? []).Select(mapper.ToResponse)];
-			return Ok(byReceiptModel);
+			return Ok(new AdjustmentListResponse
+			{
+				Data = [.. byReceiptResult.Data.Select(mapper.ToResponse)],
+				Total = byReceiptResult.Total,
+				Offset = byReceiptResult.Offset,
+				Limit = byReceiptResult.Limit,
+			});
 		}
 
-		GetAllAdjustmentsQuery query = new();
-		List<Adjustment> result = await mediator.Send(query);
+		GetAllAdjustmentsQuery query = new(offset, limit);
+		PagedResult<Adjustment> result = await mediator.Send(query);
 
-		List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new AdjustmentListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted adjustments")]
 	[EndpointDescription("Returns all adjustments that have been soft-deleted.")]
-	[ProducesResponseType<List<AdjustmentResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<AdjustmentResponse>>> GetDeletedAdjustments()
+	[ProducesResponseType<AdjustmentListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<AdjustmentListResponse>> GetDeletedAdjustments([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		GetDeletedAdjustmentsQuery query = new();
-		List<Adjustment> result = await mediator.Send(query);
+		GetDeletedAdjustmentsQuery query = new(offset, limit);
+		PagedResult<Adjustment> result = await mediator.Send(query);
 
-		List<AdjustmentResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new AdjustmentListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpPost(RouteCreate)]

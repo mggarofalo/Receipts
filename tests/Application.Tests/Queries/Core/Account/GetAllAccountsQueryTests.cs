@@ -7,7 +7,7 @@ public class GetAllAccountsQueryTests : IQueryTests
 	[Fact]
 	public void Query_CanBeCreated()
 	{
-		GetAllAccountsQuery query = new();
+		GetAllAccountsQuery query = new(0, 50);
 		Assert.NotNull(query);
 	}
 }

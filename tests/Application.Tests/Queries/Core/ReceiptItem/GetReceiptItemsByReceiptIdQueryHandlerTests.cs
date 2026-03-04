@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Core.ReceiptItem;
 using FluentAssertions;
 using Moq;
@@ -15,14 +16,13 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 		List<Domain.Core.ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2);
 
 		Mock<IReceiptItemService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>(expected, expected.Count, 0, 50));
 
 		GetReceiptItemsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id);
-		List<Domain.Core.ReceiptItem>? result = await handler.Handle(query, CancellationToken.None);
+		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id, 0, 50);
+		PagedResult<Domain.Core.ReceiptItem> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.NotNull(result);
-		result.Should().BeSameAs(expected);
+		result.Data.Should().BeSameAs(expected);
 	}
 
 	[Fact]
@@ -31,29 +31,30 @@ public class GetReceiptItemsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<IReceiptItemService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>([], 0, 0, 50));
 
 		GetReceiptItemsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id);
-		List<Domain.Core.ReceiptItem>? result = await handler.Handle(query, CancellationToken.None);
+		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id, 0, 50);
+		PagedResult<Domain.Core.ReceiptItem> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.NotNull(result);
-		Assert.Empty(result);
+		result.Data.Should().BeEmpty();
+		result.Total.Should().Be(0);
 	}
 
 	[Fact]
-	public async Task Handle_ShouldReturnNull_WhenReceiptDoesNotExist()
+	public async Task Handle_ShouldReturnEmpty_WhenReceiptDoesNotExist()
 	{
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<IReceiptItemService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync((List<Domain.Core.ReceiptItem>?)null);
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>([], 0, 0, 50));
 
 		GetReceiptItemsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id);
+		GetReceiptItemsByReceiptIdQuery query = new(receipt.Id, 0, 50);
 
-		List<Domain.Core.ReceiptItem>? result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.ReceiptItem> result = await handler.Handle(query, CancellationToken.None);
 
-		Assert.Null(result);
+		result.Data.Should().BeEmpty();
+		result.Total.Should().Be(0);
 	}
 }

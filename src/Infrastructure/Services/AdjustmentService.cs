@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
@@ -31,16 +32,20 @@ public class AdjustmentService(IAdjustmentRepository repository, AdjustmentMappe
 		return await repository.ExistsAsync(id, cancellationToken);
 	}
 
-	public async Task<List<Adjustment>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<PagedResult<Adjustment>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
-		List<AdjustmentEntity> adjustmentEntities = await repository.GetAllAsync(cancellationToken);
-		return [.. adjustmentEntities.Select(mapper.ToDomain)];
+		int total = await repository.GetCountAsync(cancellationToken);
+		List<AdjustmentEntity> entities = await repository.GetAllAsync(offset, limit, cancellationToken);
+		List<Adjustment> data = [.. entities.Select(mapper.ToDomain)];
+		return new PagedResult<Adjustment>(data, total, offset, limit);
 	}
 
-	public async Task<List<Adjustment>> GetDeletedAsync(CancellationToken cancellationToken)
+	public async Task<PagedResult<Adjustment>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
-		List<AdjustmentEntity> adjustmentEntities = await repository.GetDeletedAsync(cancellationToken);
-		return [.. adjustmentEntities.Select(mapper.ToDomain)];
+		int total = await repository.GetDeletedCountAsync(cancellationToken);
+		List<AdjustmentEntity> entities = await repository.GetDeletedAsync(offset, limit, cancellationToken);
+		List<Adjustment> data = [.. entities.Select(mapper.ToDomain)];
+		return new PagedResult<Adjustment>(data, total, offset, limit);
 	}
 
 	public async Task<Adjustment?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -49,10 +54,12 @@ public class AdjustmentService(IAdjustmentRepository repository, AdjustmentMappe
 		return adjustmentEntity == null ? null : mapper.ToDomain(adjustmentEntity);
 	}
 
-	public async Task<List<Adjustment>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken)
+	public async Task<PagedResult<Adjustment>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, CancellationToken cancellationToken)
 	{
-		List<AdjustmentEntity>? adjustmentEntities = await repository.GetByReceiptIdAsync(receiptId, cancellationToken);
-		return adjustmentEntities?.Select(mapper.ToDomain).ToList();
+		int total = await repository.GetByReceiptIdCountAsync(receiptId, cancellationToken);
+		List<AdjustmentEntity> entities = await repository.GetByReceiptIdAsync(receiptId, offset, limit, cancellationToken);
+		List<Adjustment> data = entities.Select(mapper.ToDomain).ToList();
+		return new PagedResult<Adjustment>(data, total, offset, limit);
 	}
 
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)

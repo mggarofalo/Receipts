@@ -7,7 +7,7 @@ public class GetAllTransactionsQueryTests : IQueryTests
 	[Fact]
 	public void Query_CanBeCreated()
 	{
-		GetAllTransactionsQuery query = new();
+		GetAllTransactionsQuery query = new(0, 50);
 		Assert.NotNull(query);
 	}
 }

@@ -14,21 +14,35 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		return await context.Receipts.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<ReceiptEntity>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<List<ReceiptEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<ReceiptEntity>> GetDeletedAsync(CancellationToken cancellationToken)
+	public async Task<List<ReceiptEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts
 			.OnlyDeleted()
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<int> GetDeletedCountAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Receipts
+			.OnlyDeleted()
+			.CountAsync(cancellationToken);
 	}
 
 	public async Task<List<ReceiptEntity>> CreateAsync(List<ReceiptEntity> entities, CancellationToken cancellationToken)

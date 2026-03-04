@@ -8,37 +8,37 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useAccounts", () => ({
-  useDeletedAccounts: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeletedAccounts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useRestoreAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useDeletedCategories: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeletedCategories: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useRestoreCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useDeletedSubcategories: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeletedSubcategories: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useRestoreSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useReceipts", () => ({
-  useDeletedReceipts: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeletedReceipts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useRestoreReceipt: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useReceiptItems", () => ({
-  useDeletedReceiptItems: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeletedReceiptItems: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useRestoreReceiptItem: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useTransactions", () => ({
-  useDeletedTransactions: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeletedTransactions: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useRestoreTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useItemTemplates", () => ({
-  useDeletedItemTemplates: vi.fn(() => ({ data: [], isLoading: false })),
+  useDeletedItemTemplates: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useRestoreItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
@@ -76,7 +76,7 @@ describe("RecycleBin", () => {
   it("renders the All tab", async () => {
     const { useDeletedAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
-      data: [],
+      data: { data: [], total: 0, offset: 0, limit: 50 },
       isLoading: false,
     }));
 
@@ -103,17 +103,19 @@ describe("RecycleBin", () => {
   it("renders deleted items in the table when data exists", async () => {
     const { useDeletedAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
-      data: [
-        { id: "a1", name: "Old Account", accountCode: "ACC-OLD" },
-      ],
+      data: {
+        data: [{ id: "a1", name: "Old Account", accountCode: "ACC-OLD" }],
+        total: 1, offset: 0, limit: 50,
+      },
       isLoading: false,
     }));
 
     const { useDeletedCategories } = await import("@/hooks/useCategories");
     vi.mocked(useDeletedCategories).mockReturnValue(mockQueryResult({
-      data: [
-        { id: "c1", name: "Deleted Category" },
-      ],
+      data: {
+        data: [{ id: "c1", name: "Deleted Category" }],
+        total: 1, offset: 0, limit: 50,
+      },
       isLoading: false,
     }));
 
@@ -127,9 +129,10 @@ describe("RecycleBin", () => {
   it("renders entity type tabs when deleted items exist", async () => {
     const { useDeletedAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
-      data: [
-        { id: "a1", name: "Old Account", accountCode: "ACC-OLD" },
-      ],
+      data: {
+        data: [{ id: "a1", name: "Old Account", accountCode: "ACC-OLD" }],
+        total: 1, offset: 0, limit: 50,
+      },
       isLoading: false,
     }));
 

@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useReceiptItems() {
+export function useReceiptItems(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["receipt-items"],
+    queryKey: ["receipt-items", "list", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/receipt-items");
+      const { data, error } = await client.GET("/api/receipt-items", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },
@@ -27,13 +29,13 @@ export function useReceiptItem(id: string | null) {
   });
 }
 
-export function useReceiptItemsByReceiptId(receiptId: string | null) {
+export function useReceiptItemsByReceiptId(receiptId: string | null, offset = 0, limit = 200) {
   return useQuery({
-    queryKey: ["receipt-items", "by-receipt", receiptId],
+    queryKey: ["receipt-items", "by-receipt", receiptId, offset, limit],
     enabled: !!receiptId,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/receipt-items", {
-        params: { query: { receiptId: receiptId! } },
+        params: { query: { receiptId: receiptId!, offset, limit } },
       });
       if (error) throw error;
       return data;
@@ -120,17 +122,19 @@ export function useDeleteReceiptItems() {
     },
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: ["receipt-items"] });
-      const previous = queryClient.getQueryData(["receipt-items"]);
-      queryClient.setQueryData(
-        ["receipt-items"],
-        (old: { id: string }[] | undefined) =>
-          old?.filter((item) => !ids.includes(item.id)),
-      );
+      const previous = queryClient.getQueriesData<{ data: { id: string }[]; total: number }>({ queryKey: ["receipt-items", "list"] });
+      for (const [key] of previous) {
+        queryClient.setQueryData(key, (old: { data: { id: string }[]; total: number; offset: number; limit: number } | undefined) => {
+          if (!old?.data) return old;
+          const filtered = old.data.filter((item) => !ids.includes(item.id));
+          return { ...old, data: filtered, total: old.total - (old.data.length - filtered.length) };
+        });
+      }
       return { previous };
     },
     onError: (_err, _ids, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["receipt-items"], context.previous);
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
       }
       toast.error("Failed to delete receipt item(s)");
     },
@@ -144,11 +148,13 @@ export function useDeleteReceiptItems() {
   });
 }
 
-export function useDeletedReceiptItems() {
+export function useDeletedReceiptItems(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["receipt-items", "deleted"],
+    queryKey: ["receipt-items", "deleted", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/receipt-items/deleted");
+      const { data, error } = await client.GET("/api/receipt-items/deleted", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },

@@ -64,7 +64,9 @@ describe("useReceiptItems", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(items);
-    expect(client.GET).toHaveBeenCalledWith("/api/receipt-items");
+    expect(client.GET).toHaveBeenCalledWith("/api/receipt-items", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("single query is disabled when id is null", () => {
@@ -89,7 +91,7 @@ describe("useReceiptItems", () => {
     expect(result.current.data).toEqual(items);
     expect(client.GET).toHaveBeenCalledWith(
       "/api/receipt-items",
-      { params: { query: { receiptId: "r-1" } } },
+      { params: { query: { receiptId: "r-1", offset: 0, limit: 200 } } },
     );
   });
 
@@ -179,7 +181,9 @@ describe("useReceiptItems", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(deleted);
-    expect(client.GET).toHaveBeenCalledWith("/api/receipt-items/deleted");
+    expect(client.GET).toHaveBeenCalledWith("/api/receipt-items/deleted", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("restore mutation calls POST and shows toast on success", async () => {

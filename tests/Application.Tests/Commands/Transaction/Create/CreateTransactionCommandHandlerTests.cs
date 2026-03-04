@@ -1,5 +1,6 @@
 using Application.Commands.Transaction.Create;
 using Application.Interfaces.Services;
+using Application.Models;
 using Common;
 using Domain;
 using FluentAssertions;
@@ -31,12 +32,12 @@ public class CreateTransactionCommandHandlerTests
 
 		_receiptService.Setup(s => s.GetByIdAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(receipt);
-		_receiptItemService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([item]);
-		_adjustmentService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([]);
-		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(existingTransactions ?? []);
+		_receiptItemService.Setup(s => s.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>([item], 1, 0, int.MaxValue));
+		_adjustmentService.Setup(s => s.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Domain.Core.Adjustment>([], 0, 0, int.MaxValue));
+		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Domain.Core.Transaction>(existingTransactions ?? [], (existingTransactions ?? []).Count, 0, int.MaxValue));
 	}
 
 	[Fact]
@@ -132,12 +133,12 @@ public class CreateTransactionCommandHandlerTests
 		Guid receiptId = Guid.NewGuid();
 		_receiptService.Setup(s => s.GetByIdAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync((Domain.Core.Receipt?)null);
-		_receiptItemService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([]);
-		_adjustmentService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([]);
-		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([]);
+		_receiptItemService.Setup(s => s.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>([], 0, 0, int.MaxValue));
+		_adjustmentService.Setup(s => s.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Domain.Core.Adjustment>([], 0, 0, int.MaxValue));
+		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, int.MaxValue));
 
 		List<Domain.Core.Transaction> input =
 		[

@@ -45,14 +45,14 @@ describe("useUsers", () => {
     const mockUsers = [{ id: "1", email: "a@b.com" }];
     (client.GET as Mock).mockResolvedValue({ data: mockUsers, error: null });
 
-    const { result } = renderHook(() => useUsers(1, 10), {
+    const { result } = renderHook(() => useUsers(0, 10), {
       wrapper: createWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/users", {
-      params: { query: { page: 1, pageSize: 10 } },
+      params: { query: { offset: 0, limit: 10 } },
     });
     expect(result.current.data).toEqual(mockUsers);
   });
@@ -63,7 +63,7 @@ describe("useUsers", () => {
       error: { message: "Forbidden" },
     });
 
-    const { result } = renderHook(() => useUsers(1, 10), {
+    const { result } = renderHook(() => useUsers(0, 10), {
       wrapper: createWrapper(),
     });
 

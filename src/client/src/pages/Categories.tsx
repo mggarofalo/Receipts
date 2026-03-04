@@ -8,7 +8,7 @@ import {
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
-import { usePagination } from "@/hooks/usePagination";
+import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig } from "@/lib/search";
 import { CategoryForm } from "@/components/CategoryForm";
@@ -50,7 +50,8 @@ const SEARCH_CONFIG: FuseSearchConfig<CategoryResponse> = {
 
 function Categories() {
   usePageTitle("Categories");
-  const { data: categories, isLoading } = useCategories();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { data: categoriesResponse, isLoading } = useCategories(offset, limit);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategories = useDeleteCategories();
@@ -72,7 +73,8 @@ function Categories() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const data = (categories as CategoryResponse[] | undefined) ?? [];
+  const data = (categoriesResponse?.data as CategoryResponse[] | undefined) ?? [];
+  const serverTotal = categoriesResponse?.total ?? 0;
   useSavedFilters("categories");
 
   const { search, setSearch, results, totalCount, clearSearch } =
@@ -90,16 +92,6 @@ function Categories() {
     return map;
   }, [results]);
 
-  const {
-    paginatedItems,
-    currentPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  } = usePagination({ items: filteredResults });
-
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -110,21 +102,21 @@ function Categories() {
   }
 
   function toggleAll() {
-    if (selected.size === paginatedItems.length) {
+    if (selected.size === filteredResults.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(paginatedItems.map((a) => a.id)));
+      setSelected(new Set(filteredResults.map((a) => a.id)));
     }
   }
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: paginatedItems,
+    items: filteredResults,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditCategory(a),
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
-      setSelected(new Set(paginatedItems.map((a) => a.id))),
+      setSelected(new Set(filteredResults.map((a) => a.id))),
     onDeselectAll: () => setSelected(new Set()),
     onToggleSelect: (a) => toggleSelect(a.id),
     selected,
@@ -181,8 +173,8 @@ function Categories() {
                       type="checkbox"
                       aria-label="Select all rows"
                       checked={
-                        selected.size === paginatedItems.length &&
-                        paginatedItems.length > 0
+                        selected.size === filteredResults.length &&
+                        filteredResults.length > 0
                       }
                       onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
@@ -194,7 +186,7 @@ function Categories() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((category, index) => {
+                {filteredResults.map((category, index) => {
                   const result = matchMap.get(category.id);
                   const matches = result?.matches;
                   return (
@@ -253,10 +245,10 @@ function Categories() {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalItems={totalItems}
+            totalItems={serverTotal}
             pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
         </>

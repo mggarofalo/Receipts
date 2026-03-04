@@ -4,6 +4,7 @@ using Application.Commands.Subcategory.Create;
 using Application.Commands.Subcategory.Delete;
 using Application.Commands.Subcategory.Restore;
 using Application.Commands.Subcategory.Update;
+using Application.Models;
 using Application.Queries.Core.Subcategory;
 using Asp.Versioning;
 using Domain.Core;
@@ -53,36 +54,51 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all subcategories")]
-	[ProducesResponseType<List<SubcategoryResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<SubcategoryResponse>>> GetAllSubcategories([FromQuery] Guid? categoryId = null)
+	[ProducesResponseType<SubcategoryListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<SubcategoryListResponse>> GetAllSubcategories([FromQuery] Guid? categoryId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
 		if (categoryId.HasValue)
 		{
-			GetSubcategoriesByCategoryIdQuery byCategoryQuery = new(categoryId.Value);
-			List<Subcategory> byCategoryResult = await mediator.Send(byCategoryQuery);
+			GetSubcategoriesByCategoryIdQuery byCategoryQuery = new(categoryId.Value, offset, limit);
+			PagedResult<Subcategory> byCategoryResult = await mediator.Send(byCategoryQuery);
 
-			List<SubcategoryResponse> byCategoryModel = [.. byCategoryResult.Select(mapper.ToResponse)];
-			return Ok(byCategoryModel);
+			return Ok(new SubcategoryListResponse
+			{
+				Data = [.. byCategoryResult.Data.Select(mapper.ToResponse)],
+				Total = byCategoryResult.Total,
+				Offset = byCategoryResult.Offset,
+				Limit = byCategoryResult.Limit,
+			});
 		}
 
-		GetAllSubcategoriesQuery query = new();
-		List<Subcategory> result = await mediator.Send(query);
+		GetAllSubcategoriesQuery query = new(offset, limit);
+		PagedResult<Subcategory> result = await mediator.Send(query);
 
-		List<SubcategoryResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new SubcategoryListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted subcategories")]
 	[EndpointDescription("Returns all subcategories that have been soft-deleted.")]
-	[ProducesResponseType<List<SubcategoryResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<SubcategoryResponse>>> GetDeletedSubcategories()
+	[ProducesResponseType<SubcategoryListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<SubcategoryListResponse>> GetDeletedSubcategories([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		GetDeletedSubcategoriesQuery query = new();
-		List<Subcategory> result = await mediator.Send(query);
+		GetDeletedSubcategoriesQuery query = new(offset, limit);
+		PagedResult<Subcategory> result = await mediator.Send(query);
 
-		List<SubcategoryResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new SubcategoryListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpPost(RouteCreate)]

@@ -23,21 +23,35 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.FirstOrDefaultAsync(cancellationToken);
 	}
 
-	public async Task<List<AccountEntity>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<List<AccountEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<AccountEntity>> GetDeletedAsync(CancellationToken cancellationToken)
+	public async Task<List<AccountEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts
 			.OnlyDeleted()
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<int> GetDeletedCountAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Accounts
+			.OnlyDeleted()
+			.CountAsync(cancellationToken);
 	}
 
 	public async Task<List<AccountEntity>> CreateAsync(List<AccountEntity> entities, CancellationToken cancellationToken)

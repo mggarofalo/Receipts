@@ -65,7 +65,7 @@ public class ReceiptRepositoryTests
 		ReceiptRepository repository = new(_contextFactory);
 
 		// Act
-		List<ReceiptEntity> actual = await repository.GetAllAsync(CancellationToken.None);
+		List<ReceiptEntity> actual = await repository.GetAllAsync(0, 50, CancellationToken.None);
 
 		// Assert
 		actual.Should().BeEquivalentTo(entities);

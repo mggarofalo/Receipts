@@ -8,7 +8,7 @@ import {
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
-import { usePagination } from "@/hooks/usePagination";
+import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
@@ -64,7 +64,8 @@ const FILTER_DEFS: FilterDefinition[] = [
 
 function Transactions() {
   usePageTitle("Transactions");
-  const { data: transactions, isLoading } = useTransactions();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { data: transactionsResponse, isLoading } = useTransactions(offset, limit);
   const createTransaction = useCreateTransaction();
   const updateTransaction = useUpdateTransaction();
   const deleteTransactions = useDeleteTransactions();
@@ -87,11 +88,12 @@ function Transactions() {
   }, []);
 
   const data = useMemo(() => {
-    const list = (transactions as TransactionResponse[] | undefined) ?? [];
+    const list = (transactionsResponse?.data as TransactionResponse[] | undefined) ?? [];
     return [...list].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-  }, [transactions]);
+  }, [transactionsResponse?.data]);
+  const serverTotal = transactionsResponse?.total ?? 0;
 
   const {
     filters: savedFilters,
@@ -115,16 +117,6 @@ function Transactions() {
     return map;
   }, [results]);
 
-  const {
-    paginatedItems,
-    currentPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  } = usePagination({ items: filteredResults });
-
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -135,15 +127,15 @@ function Transactions() {
   }
 
   function toggleAll() {
-    if (selected.size === paginatedItems.length) {
+    if (selected.size === filteredResults.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(paginatedItems.map((t) => t.id)));
+      setSelected(new Set(filteredResults.map((t) => t.id)));
     }
   }
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: paginatedItems,
+    items: filteredResults,
     getId: (t) => t.id,
     enabled: !anyDialogOpen,
     onOpen: (t) => {
@@ -151,7 +143,7 @@ function Transactions() {
     },
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
-      setSelected(new Set(paginatedItems.map((t) => t.id))),
+      setSelected(new Set(filteredResults.map((t) => t.id))),
     onDeselectAll: () => setSelected(new Set()),
     onToggleSelect: (t) => toggleSelect(t.id),
     selected,
@@ -228,8 +220,8 @@ function Transactions() {
                       type="checkbox"
                       aria-label="Select all rows"
                       checked={
-                        selected.size === paginatedItems.length &&
-                        paginatedItems.length > 0
+                        selected.size === filteredResults.length &&
+                        filteredResults.length > 0
                       }
                       onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
@@ -241,7 +233,7 @@ function Transactions() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((txn, index) => {
+                {filteredResults.map((txn, index) => {
                   const result = matchMap.get(txn.id);
                   const matches = result?.matches;
                   return (
@@ -290,10 +282,10 @@ function Transactions() {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalItems={totalItems}
+            totalItems={serverTotal}
             pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
         </>

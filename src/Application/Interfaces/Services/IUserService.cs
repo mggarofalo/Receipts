@@ -1,3 +1,5 @@
+using Application.Models;
+
 namespace Application.Interfaces.Services;
 
 public record UserSummary(
@@ -10,14 +12,8 @@ public record UserSummary(
 	DateTimeOffset CreatedAt,
 	DateTimeOffset? LastLoginAt);
 
-public record PagedUserList(
-	IReadOnlyList<UserSummary> Items,
-	int Page,
-	int PageSize,
-	int TotalCount);
-
 public interface IUserService
 {
-	Task<PagedUserList> ListUsersAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+	Task<PagedResult<UserSummary>> ListUsersAsync(int offset, int limit, CancellationToken cancellationToken = default);
 	Task<string?> FindUserIdByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
 }

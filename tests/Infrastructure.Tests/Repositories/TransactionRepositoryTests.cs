@@ -79,10 +79,9 @@ public class TransactionRepositoryTests
 		TransactionRepository repository = new(_contextFactory);
 
 		// Act
-		List<TransactionEntity>? actual = await repository.GetByReceiptIdAsync(receipt.Id, CancellationToken.None);
+		List<TransactionEntity> actual = await repository.GetByReceiptIdAsync(receipt.Id, 0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.NotNull(actual);
 		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(TransactionEntity.Receipt) || member.Name == nameof(TransactionEntity.Account)));
 
 		_contextFactory.ResetDatabase();
@@ -104,7 +103,7 @@ public class TransactionRepositoryTests
 		TransactionRepository repository = new(_contextFactory);
 
 		// Act
-		List<TransactionEntity> actual = await repository.GetAllAsync(CancellationToken.None);
+		List<TransactionEntity> actual = await repository.GetAllAsync(0, 50, CancellationToken.None);
 
 		// Assert
 		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(TransactionEntity.Receipt) || member.Name == nameof(TransactionEntity.Account)));

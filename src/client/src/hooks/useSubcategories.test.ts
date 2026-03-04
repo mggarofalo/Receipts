@@ -58,7 +58,9 @@ describe("useSubcategories", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(subcategories);
-    expect(client.GET).toHaveBeenCalledWith("/api/subcategories");
+    expect(client.GET).toHaveBeenCalledWith("/api/subcategories", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("single query is disabled when id is null", () => {
@@ -98,7 +100,7 @@ describe("useSubcategories", () => {
     expect(result.current.data).toEqual(items);
     expect(client.GET).toHaveBeenCalledWith(
       "/api/subcategories",
-      { params: { query: { categoryId: "cat-1" } } },
+      { params: { query: { categoryId: "cat-1", offset: 0, limit: 200 } } },
     );
   });
 
@@ -168,7 +170,9 @@ describe("useSubcategories", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(deleted);
-    expect(client.GET).toHaveBeenCalledWith("/api/subcategories/deleted");
+    expect(client.GET).toHaveBeenCalledWith("/api/subcategories/deleted", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("restore mutation calls POST and shows toast on success", async () => {

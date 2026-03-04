@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Core.Account;
 using FluentAssertions;
 using Moq;
@@ -14,13 +15,13 @@ public class GetAllAccountsQueryHandlerTests
 		List<Domain.Core.Account> expected = AccountGenerator.GenerateList(2);
 
 		Mock<IAccountService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Account>(expected, expected.Count, 0, 50));
 
 		GetAllAccountsQueryHandler handler = new(mockService.Object);
-		GetAllAccountsQuery query = new();
+		GetAllAccountsQuery query = new(0, 50);
 
-		List<Domain.Core.Account> result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.Account> result = await handler.Handle(query, CancellationToken.None);
 
-		result.Should().BeSameAs(expected);
+		result.Data.Should().BeSameAs(expected);
 	}
 }

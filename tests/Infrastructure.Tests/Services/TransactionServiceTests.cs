@@ -1,3 +1,4 @@
+using Application.Models;
 using Domain.Core;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
@@ -75,13 +76,17 @@ public class TransactionServiceTests
 		// Arrange
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(3);
 
-		_mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
+		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		List<Transaction> actual = await _service.GetAllAsync(CancellationToken.None);
+		PagedResult<Transaction> actual = await _service.GetAllAsync(0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Data.Count);
+		Assert.Equal(entities.Count, actual.Total);
+		Assert.Equal(0, actual.Offset);
+		Assert.Equal(50, actual.Limit);
 	}
 
 	[Fact]
@@ -122,28 +127,33 @@ public class TransactionServiceTests
 		Guid receiptId = Guid.NewGuid();
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2);
 
-		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetByReceiptIdCountAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
+		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		List<Transaction>? actual = await _service.GetByReceiptIdAsync(receiptId, CancellationToken.None);
+		PagedResult<Transaction> actual = await _service.GetByReceiptIdAsync(receiptId, 0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.NotNull(actual);
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Data.Count);
+		Assert.Equal(entities.Count, actual.Total);
+		Assert.Equal(0, actual.Offset);
+		Assert.Equal(50, actual.Limit);
 	}
 
 	[Fact]
-	public async Task GetByReceiptIdAsync_NonExistingReceiptId_ReturnsNull()
+	public async Task GetByReceiptIdAsync_NonExistingReceiptId_ReturnsEmptyPagedResult()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync((List<TransactionEntity>?)null);
+		_mockRepository.Setup(r => r.GetByReceiptIdCountAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(0);
+		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
 		// Act
-		List<Transaction>? actual = await _service.GetByReceiptIdAsync(receiptId, CancellationToken.None);
+		PagedResult<Transaction> actual = await _service.GetByReceiptIdAsync(receiptId, 0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.Null(actual);
+		Assert.Empty(actual.Data);
+		Assert.Equal(0, actual.Total);
 	}
 
 	[Fact]

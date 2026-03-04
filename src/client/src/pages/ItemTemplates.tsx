@@ -8,7 +8,7 @@ import {
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
-import { usePagination } from "@/hooks/usePagination";
+import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig } from "@/lib/search";
 import { ItemTemplateForm } from "@/components/ItemTemplateForm";
@@ -59,7 +59,8 @@ const SEARCH_CONFIG: FuseSearchConfig<ItemTemplateResponse> = {
 
 function ItemTemplates() {
   usePageTitle("Item Templates");
-  const { data: itemTemplates, isLoading } = useItemTemplates();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { data: itemTemplatesResponse, isLoading } = useItemTemplates(offset, limit);
   const createItemTemplate = useCreateItemTemplate();
   const updateItemTemplate = useUpdateItemTemplate();
   const deleteItemTemplates = useDeleteItemTemplates();
@@ -81,7 +82,8 @@ function ItemTemplates() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const data = (itemTemplates as ItemTemplateResponse[] | undefined) ?? [];
+  const data = (itemTemplatesResponse?.data as ItemTemplateResponse[] | undefined) ?? [];
+  const serverTotal = itemTemplatesResponse?.total ?? 0;
   useSavedFilters("itemTemplates");
 
   const { search, setSearch, results, totalCount, clearSearch } =
@@ -99,16 +101,6 @@ function ItemTemplates() {
     return map;
   }, [results]);
 
-  const {
-    paginatedItems,
-    currentPage,
-    pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  } = usePagination({ items: filteredResults });
-
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -119,20 +111,20 @@ function ItemTemplates() {
   }
 
   function toggleAll() {
-    if (selected.size === paginatedItems.length) {
+    if (selected.size === filteredResults.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(paginatedItems.map((a) => a.id)));
+      setSelected(new Set(filteredResults.map((a) => a.id)));
     }
   }
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: paginatedItems,
+    items: filteredResults,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditTemplate(a),
     onDelete: () => setDeleteOpen(true),
-    onSelectAll: () => setSelected(new Set(paginatedItems.map((a) => a.id))),
+    onSelectAll: () => setSelected(new Set(filteredResults.map((a) => a.id))),
     onDeselectAll: () => setSelected(new Set()),
     onToggleSelect: (a) => toggleSelect(a.id),
     selected,
@@ -189,8 +181,8 @@ function ItemTemplates() {
                       type="checkbox"
                       aria-label="Select all rows"
                       checked={
-                        selected.size === paginatedItems.length &&
-                        paginatedItems.length > 0
+                        selected.size === filteredResults.length &&
+                        filteredResults.length > 0
                       }
                       onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
@@ -205,7 +197,7 @@ function ItemTemplates() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((template, index) => {
+                {filteredResults.map((template, index) => {
                   const result = matchMap.get(template.id);
                   const matches = result?.matches;
                   return (
@@ -284,10 +276,10 @@ function ItemTemplates() {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalItems={totalItems}
+            totalItems={serverTotal}
             pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
         </>

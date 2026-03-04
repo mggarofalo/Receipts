@@ -5,9 +5,11 @@ namespace Infrastructure.Interfaces.Repositories;
 public interface IReceiptItemRepository
 {
 	Task<ReceiptItemEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-	Task<List<ReceiptItemEntity>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken);
-	Task<List<ReceiptItemEntity>> GetAllAsync(CancellationToken cancellationToken);
-	Task<List<ReceiptItemEntity>> GetDeletedAsync(CancellationToken cancellationToken);
+	Task<List<ReceiptItemEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, CancellationToken cancellationToken);
+	Task<int> GetByReceiptIdCountAsync(Guid receiptId, CancellationToken cancellationToken);
+	Task<List<ReceiptItemEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken);
+	Task<List<ReceiptItemEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken);
+	Task<int> GetDeletedCountAsync(CancellationToken cancellationToken);
 	Task<List<ReceiptItemEntity>> CreateAsync(List<ReceiptItemEntity> entities, CancellationToken cancellationToken);
 	Task UpdateAsync(List<ReceiptItemEntity> entities, CancellationToken cancellationToken);
 	Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken);

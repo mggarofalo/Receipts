@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useReceipts() {
+export function useReceipts(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["receipts"],
+    queryKey: ["receipts", "list", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/receipts");
+      const { data, error } = await client.GET("/api/receipts", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },
@@ -85,17 +87,19 @@ export function useDeleteReceipts() {
     },
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: ["receipts"] });
-      const previous = queryClient.getQueryData(["receipts"]);
-      queryClient.setQueryData(
-        ["receipts"],
-        (old: { id: string }[] | undefined) =>
-          old?.filter((item) => !ids.includes(item.id)),
-      );
+      const previous = queryClient.getQueriesData<{ data: { id: string }[]; total: number }>({ queryKey: ["receipts", "list"] });
+      for (const [key] of previous) {
+        queryClient.setQueryData(key, (old: { data: { id: string }[]; total: number; offset: number; limit: number } | undefined) => {
+          if (!old?.data) return old;
+          const filtered = old.data.filter((item) => !ids.includes(item.id));
+          return { ...old, data: filtered, total: old.total - (old.data.length - filtered.length) };
+        });
+      }
       return { previous };
     },
     onError: (_err, _ids, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["receipts"], context.previous);
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
       }
       toast.error("Failed to delete receipt(s)");
     },
@@ -109,11 +113,13 @@ export function useDeleteReceipts() {
   });
 }
 
-export function useDeletedReceipts() {
+export function useDeletedReceipts(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["receipts", "deleted"],
+    queryKey: ["receipts", "deleted", offset, limit],
     queryFn: async () => {
-      const { data, error } = await client.GET("/api/receipts/deleted");
+      const { data, error } = await client.GET("/api/receipts/deleted", {
+        params: { query: { offset, limit } },
+      });
       if (error) throw error;
       return data;
     },

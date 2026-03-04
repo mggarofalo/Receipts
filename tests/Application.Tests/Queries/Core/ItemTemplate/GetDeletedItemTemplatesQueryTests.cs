@@ -7,7 +7,7 @@ public class GetDeletedItemTemplatesQueryTests : IQueryTests
 	[Fact]
 	public void Query_CanBeCreated()
 	{
-		GetDeletedItemTemplatesQuery query = new();
+		GetDeletedItemTemplatesQuery query = new(0, 50);
 		Assert.NotNull(query);
 	}
 }

@@ -4,6 +4,7 @@ using Application.Commands.Account.Create;
 using Application.Commands.Account.Delete;
 using Application.Commands.Account.Restore;
 using Application.Commands.Account.Update;
+using Application.Models;
 using Application.Queries.Core.Account;
 using Asp.Versioning;
 using Domain.Core;
@@ -53,27 +54,37 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all accounts")]
-	[ProducesResponseType<List<AccountResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<AccountResponse>>> GetAllAccounts()
+	[ProducesResponseType<AccountListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<AccountListResponse>> GetAllAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		GetAllAccountsQuery query = new();
-		List<Account> result = await mediator.Send(query);
+		GetAllAccountsQuery query = new(offset, limit);
+		PagedResult<Account> result = await mediator.Send(query);
 
-		List<AccountResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new AccountListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted accounts")]
 	[EndpointDescription("Returns all accounts that have been soft-deleted.")]
-	[ProducesResponseType<List<AccountResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<AccountResponse>>> GetDeletedAccounts()
+	[ProducesResponseType<AccountListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<AccountListResponse>> GetDeletedAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		GetDeletedAccountsQuery query = new();
-		List<Account> result = await mediator.Send(query);
+		GetDeletedAccountsQuery query = new(offset, limit);
+		PagedResult<Account> result = await mediator.Send(query);
 
-		List<AccountResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new AccountListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpPost(RouteCreate)]

@@ -5,6 +5,7 @@ using Application.Commands.Account.Create;
 using Application.Commands.Account.Delete;
 using Application.Commands.Account.Restore;
 using Application.Commands.Account.Update;
+using Application.Models;
 using Application.Queries.Core.Account;
 using Domain.Core;
 using FluentAssertions;
@@ -97,18 +98,21 @@ public class AccountsControllerTests
 		List<AccountResponse> expectedReturn = [.. accounts.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAllAccountsQuery>(q => true),
+			It.Is<GetAllAccountsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(accounts);
+			.ReturnsAsync(new PagedResult<Account>(accounts, accounts.Count, 0, 50));
 
 		// Act
-		ActionResult<List<AccountResponse>> result = await _controller.GetAllAccounts();
+		ActionResult<AccountListResponse> result = await _controller.GetAllAccounts(0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<AccountResponse> actualReturn = Assert.IsType<List<AccountResponse>>(okResult.Value);
+		AccountListResponse actualReturn = Assert.IsType<AccountListResponse>(okResult.Value);
 
-		actualReturn.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(accounts.Count);
+		actualReturn.Offset.Should().Be(0);
+		actualReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -116,12 +120,12 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetAllAccountsQuery>(q => true),
+			It.Is<GetAllAccountsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllAccounts();
+		Func<Task> act = () => _controller.GetAllAccounts(0, 50);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

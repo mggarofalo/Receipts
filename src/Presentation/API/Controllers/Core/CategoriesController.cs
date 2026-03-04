@@ -4,6 +4,7 @@ using Application.Commands.Category.Create;
 using Application.Commands.Category.Delete;
 using Application.Commands.Category.Restore;
 using Application.Commands.Category.Update;
+using Application.Models;
 using Application.Queries.Core.Category;
 using Asp.Versioning;
 using Domain.Core;
@@ -53,27 +54,37 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all categories")]
-	[ProducesResponseType<List<CategoryResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<CategoryResponse>>> GetAllCategories()
+	[ProducesResponseType<CategoryListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<CategoryListResponse>> GetAllCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		GetAllCategoriesQuery query = new();
-		List<Category> result = await mediator.Send(query);
+		GetAllCategoriesQuery query = new(offset, limit);
+		PagedResult<Category> result = await mediator.Send(query);
 
-		List<CategoryResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new CategoryListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted categories")]
 	[EndpointDescription("Returns all categories that have been soft-deleted.")]
-	[ProducesResponseType<List<CategoryResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<CategoryResponse>>> GetDeletedCategories()
+	[ProducesResponseType<CategoryListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<CategoryListResponse>> GetDeletedCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		GetDeletedCategoriesQuery query = new();
-		List<Category> result = await mediator.Send(query);
+		GetDeletedCategoriesQuery query = new(offset, limit);
+		PagedResult<Category> result = await mediator.Send(query);
 
-		List<CategoryResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new CategoryListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpPost(RouteCreate)]

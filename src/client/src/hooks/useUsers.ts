@@ -6,12 +6,12 @@ import {
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useUsers(page: number, pageSize: number) {
+export function useUsers(offset = 0, limit = 50) {
   return useQuery({
-    queryKey: ["users", page, pageSize],
+    queryKey: ["users", "list", offset, limit],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/users", {
-        params: { query: { page, pageSize } },
+        params: { query: { offset, limit } },
       });
       if (error) throw error;
       return data;

@@ -63,7 +63,9 @@ describe("useItemTemplates", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(templates);
-    expect(client.GET).toHaveBeenCalledWith("/api/item-templates");
+    expect(client.GET).toHaveBeenCalledWith("/api/item-templates", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("single query is disabled when id is null", () => {
@@ -164,7 +166,9 @@ describe("useItemTemplates", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(deleted);
-    expect(client.GET).toHaveBeenCalledWith("/api/item-templates/deleted");
+    expect(client.GET).toHaveBeenCalledWith("/api/item-templates/deleted", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("restore mutation calls POST and shows toast on success", async () => {

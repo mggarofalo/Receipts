@@ -15,7 +15,7 @@ vi.mock("@/hooks/useAuth", () => ({
 
 vi.mock("@/hooks/useUsers", () => ({
   useUsers: vi.fn(() => ({
-    data: { items: [], totalCount: 0 },
+    data: { data: [], total: 0, offset: 0, limit: 20 },
     isLoading: false,
   })),
   useCreateUser: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
@@ -24,6 +24,18 @@ vi.mock("@/hooks/useUsers", () => ({
   useResetUserPassword: vi.fn(() => ({
     mutateAsync: vi.fn(),
     isPending: false,
+  })),
+}));
+
+vi.mock("@/hooks/useServerPagination", () => ({
+  useServerPagination: vi.fn(() => ({
+    offset: 0,
+    limit: 20,
+    currentPage: 1,
+    pageSize: 20,
+    totalPages: vi.fn(() => 1),
+    setPage: vi.fn(),
+    setPageSize: vi.fn(),
   })),
 }));
 
@@ -53,7 +65,7 @@ describe("AdminUsers", () => {
   it("renders loading skeleton when data is loading", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: { items: [], totalCount: 0 },
+      data: { data: [], total: 0, offset: 0, limit: 20 },
       isLoading: true,
     }));
 
@@ -64,7 +76,7 @@ describe("AdminUsers", () => {
   it("renders empty state when no users exist", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: { items: [], totalCount: 0 },
+      data: { data: [], total: 0, offset: 0, limit: 20 },
       isLoading: false,
     }));
 
@@ -76,7 +88,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "1",
             email: "test@example.com",
@@ -88,7 +100,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -113,7 +125,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "1",
             email: "test@example.com",
@@ -125,7 +137,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -143,7 +155,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "1",
             email: "test@example.com",
@@ -155,7 +167,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -175,7 +187,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "1",
             email: "admin@example.com",
@@ -187,7 +199,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -200,7 +212,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "2",
             email: "disabled@example.com",
@@ -212,7 +224,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -226,7 +238,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "1",
             email: "test@example.com",
@@ -238,7 +250,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -251,7 +263,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "1",
             email: "test@example.com",
@@ -263,7 +275,7 @@ describe("AdminUsers", () => {
             lastLoginAt: null,
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -275,10 +287,21 @@ describe("AdminUsers", () => {
   });
 
   it("renders pagination when totalPages > 1", async () => {
+    const { useServerPagination } = await import("@/hooks/useServerPagination");
+    vi.mocked(useServerPagination).mockReturnValue({
+      offset: 0,
+      limit: 20,
+      currentPage: 1,
+      pageSize: 20,
+      totalPages: vi.fn(() => 2),
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: Array.from({ length: 20 }, (_, i) => ({
+        data: Array.from({ length: 20 }, (_, i) => ({
           id: String(i + 1),
           email: `user${i + 1}@example.com`,
           firstName: `User`,
@@ -288,23 +311,35 @@ describe("AdminUsers", () => {
           createdAt: "2024-01-01",
           lastLoginAt: null,
         })),
-        totalCount: 25,
+        total: 25, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
 
     renderWithProviders(<AdminUsers />);
-    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /next/i })).not.toBeDisabled();
+    expect(screen.getByText("1/2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /previous page/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /next page/i })).not.toBeDisabled();
   });
 
   it("advances page when Next button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
+    const mockSetPage = vi.fn();
+    const { useServerPagination } = await import("@/hooks/useServerPagination");
+    vi.mocked(useServerPagination).mockReturnValue({
+      offset: 0,
+      limit: 20,
+      currentPage: 1,
+      pageSize: 20,
+      totalPages: vi.fn(() => 2),
+      setPage: mockSetPage,
+      setPageSize: vi.fn(),
+    });
+
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: Array.from({ length: 20 }, (_, i) => ({
+        data: Array.from({ length: 20 }, (_, i) => ({
           id: String(i + 1),
           email: `user${i + 1}@example.com`,
           firstName: `User`,
@@ -314,17 +349,15 @@ describe("AdminUsers", () => {
           createdAt: "2024-01-01",
           lastLoginAt: null,
         })),
-        totalCount: 25,
+        total: 25, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
 
     renderWithProviders(<AdminUsers />);
-    await user.click(screen.getByRole("button", { name: /next/i }));
+    await user.click(screen.getByRole("button", { name: /next page/i }));
 
-    // After clicking Next, useUsers will be called with page=2
-    // We verify by checking the component re-renders (pagination state update)
-    expect(useUsers).toHaveBeenLastCalledWith(2, 20);
+    expect(mockSetPage).toHaveBeenCalledWith(2, 25);
   });
 
   it("closes edit dialog when dialog is dismissed", async () => {
@@ -332,7 +365,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "1",
             email: "test@example.com",
@@ -344,7 +377,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -364,7 +397,7 @@ describe("AdminUsers", () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "1",
             email: "test@example.com",
@@ -376,7 +409,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));
@@ -401,7 +434,7 @@ describe("AdminUsers", () => {
     } as ReturnType<typeof useDeleteUser>);
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
-        items: [
+        data: [
           {
             id: "2",
             email: "other@example.com",
@@ -413,7 +446,7 @@ describe("AdminUsers", () => {
             lastLoginAt: "2024-01-15",
           },
         ],
-        totalCount: 1,
+        total: 1, offset: 0, limit: 20,
       },
       isLoading: false,
     }));

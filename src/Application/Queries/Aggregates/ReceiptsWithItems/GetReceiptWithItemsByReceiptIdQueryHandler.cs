@@ -18,14 +18,14 @@ public class GetReceiptWithItemsByReceiptIdQueryHandler(
 			return null;
 		}
 
-		List<Domain.Core.ReceiptItem>? receiptItems = await receiptItemService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
-		List<Domain.Core.Adjustment>? adjustments = await adjustmentService.GetByReceiptIdAsync(request.ReceiptId, cancellationToken);
+		var receiptItemsResult = await receiptItemService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, cancellationToken);
+		var adjustmentsResult = await adjustmentService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, cancellationToken);
 
 		return new Domain.Aggregates.ReceiptWithItems()
 		{
 			Receipt = receipt,
-			Items = receiptItems!,
-			Adjustments = adjustments ?? []
+			Items = receiptItemsResult.Data,
+			Adjustments = adjustmentsResult.Data
 		};
 	}
 }

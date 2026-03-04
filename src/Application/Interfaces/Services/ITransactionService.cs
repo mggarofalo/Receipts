@@ -1,10 +1,11 @@
+using Application.Models;
 using Domain.Core;
 
 namespace Application.Interfaces.Services;
 
 public interface ITransactionService : IService<Transaction>
 {
-	Task<List<Transaction>?> GetByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken);
+	Task<PagedResult<Transaction>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, CancellationToken cancellationToken);
 	Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, CancellationToken cancellationToken);
 	Task UpdateAsync(List<Transaction> models, Guid receiptId, CancellationToken cancellationToken);
 }

@@ -5,6 +5,7 @@ using Application.Commands.Receipt.Create;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
 using Application.Commands.Receipt.Update;
+using Application.Models;
 using Application.Queries.Core.Receipt;
 using Asp.Versioning;
 using Domain.Core;
@@ -59,27 +60,37 @@ public class ReceiptsController(
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipts")]
-	[ProducesResponseType<List<ReceiptResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<ReceiptResponse>>> GetAllReceipts()
+	[ProducesResponseType<ReceiptListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<ReceiptListResponse>> GetAllReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		GetAllReceiptsQuery query = new();
-		List<Receipt> result = await mediator.Send(query);
+		GetAllReceiptsQuery query = new(offset, limit);
+		PagedResult<Receipt> result = await mediator.Send(query);
 
-		List<ReceiptResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new ReceiptListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted receipts")]
 	[EndpointDescription("Returns all receipts that have been soft-deleted.")]
-	[ProducesResponseType<List<ReceiptResponse>>(StatusCodes.Status200OK)]
-	public async Task<ActionResult<List<ReceiptResponse>>> GetDeletedReceipts()
+	[ProducesResponseType<ReceiptListResponse>(StatusCodes.Status200OK)]
+	public async Task<ActionResult<ReceiptListResponse>> GetDeletedReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
 	{
-		GetDeletedReceiptsQuery query = new();
-		List<Receipt> result = await mediator.Send(query);
+		GetDeletedReceiptsQuery query = new(offset, limit);
+		PagedResult<Receipt> result = await mediator.Send(query);
 
-		List<ReceiptResponse> model = [.. result.Select(mapper.ToResponse)];
-		return Ok(model);
+		return Ok(new ReceiptListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
 	}
 
 	[HttpPost(RouteCreate)]

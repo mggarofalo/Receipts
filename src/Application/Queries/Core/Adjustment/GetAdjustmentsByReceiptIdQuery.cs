@@ -1,13 +1,16 @@
 using Application.Interfaces;
+using Application.Models;
 
 namespace Application.Queries.Core.Adjustment;
 
-public record GetAdjustmentsByReceiptIdQuery : IQuery<List<Domain.Core.Adjustment>?>
+public record GetAdjustmentsByReceiptIdQuery : IQuery<PagedResult<Domain.Core.Adjustment>>
 {
 	public Guid ReceiptId { get; }
+	public int Offset { get; }
+	public int Limit { get; }
 	public const string ReceiptIdCannotBeEmptyExceptionMessage = "Receipt Id cannot be empty.";
 
-	public GetAdjustmentsByReceiptIdQuery(Guid receiptId)
+	public GetAdjustmentsByReceiptIdQuery(Guid receiptId, int offset, int limit)
 	{
 		if (receiptId == Guid.Empty)
 		{
@@ -15,5 +18,7 @@ public record GetAdjustmentsByReceiptIdQuery : IQuery<List<Domain.Core.Adjustmen
 		}
 
 		ReceiptId = receiptId;
+		Offset = offset;
+		Limit = limit;
 	}
 }

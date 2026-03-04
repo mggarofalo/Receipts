@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Application.Queries.Core.ItemTemplate;
 using FluentAssertions;
 using Moq;
@@ -14,13 +15,13 @@ public class GetDeletedItemTemplatesQueryHandlerTests
 		List<Domain.Core.ItemTemplate> expected = ItemTemplateGenerator.GenerateList(2);
 
 		Mock<IItemTemplateService> mockService = new();
-		mockService.Setup(r => r.GetDeletedAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		mockService.Setup(r => r.GetDeletedAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ItemTemplate>(expected, expected.Count, 0, 50));
 
 		GetDeletedItemTemplatesQueryHandler handler = new(mockService.Object);
-		GetDeletedItemTemplatesQuery query = new();
+		GetDeletedItemTemplatesQuery query = new(0, 50);
 
-		List<Domain.Core.ItemTemplate> result = await handler.Handle(query, CancellationToken.None);
+		PagedResult<Domain.Core.ItemTemplate> result = await handler.Handle(query, CancellationToken.None);
 
-		result.Should().BeSameAs(expected);
+		result.Data.Should().BeSameAs(expected);
 	}
 }

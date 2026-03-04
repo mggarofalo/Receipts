@@ -1,3 +1,4 @@
+using Application.Models;
 using Domain.Core;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
@@ -75,13 +76,17 @@ public class AdjustmentServiceTests
 	{
 		// Arrange
 		List<AdjustmentEntity> entities = AdjustmentEntityGenerator.GenerateList(3);
-		_mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
+		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		List<Adjustment> actual = await _service.GetAllAsync(CancellationToken.None);
+		PagedResult<Adjustment> actual = await _service.GetAllAsync(0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Data.Count);
+		Assert.Equal(entities.Count, actual.Total);
+		Assert.Equal(0, actual.Offset);
+		Assert.Equal(50, actual.Limit);
 	}
 
 	[Fact]
@@ -89,13 +94,17 @@ public class AdjustmentServiceTests
 	{
 		// Arrange
 		List<AdjustmentEntity> entities = AdjustmentEntityGenerator.GenerateList(2);
-		_mockRepository.Setup(r => r.GetDeletedAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetDeletedCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
+		_mockRepository.Setup(r => r.GetDeletedAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		List<Adjustment> actual = await _service.GetDeletedAsync(CancellationToken.None);
+		PagedResult<Adjustment> actual = await _service.GetDeletedAsync(0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Data.Count);
+		Assert.Equal(entities.Count, actual.Total);
+		Assert.Equal(0, actual.Offset);
+		Assert.Equal(50, actual.Limit);
 	}
 
 	[Fact]
@@ -134,28 +143,33 @@ public class AdjustmentServiceTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		List<AdjustmentEntity> entities = AdjustmentEntityGenerator.GenerateList(2);
-		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetByReceiptIdCountAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
+		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		List<Adjustment>? actual = await _service.GetByReceiptIdAsync(receiptId, CancellationToken.None);
+		PagedResult<Adjustment> actual = await _service.GetByReceiptIdAsync(receiptId, 0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.NotNull(actual);
-		Assert.Equal(entities.Count, actual.Count);
+		Assert.Equal(entities.Count, actual.Data.Count);
+		Assert.Equal(entities.Count, actual.Total);
+		Assert.Equal(0, actual.Offset);
+		Assert.Equal(50, actual.Limit);
 	}
 
 	[Fact]
-	public async Task GetByReceiptIdAsync_NonExistingReceiptId_ReturnsNull()
+	public async Task GetByReceiptIdAsync_NonExistingReceiptId_ReturnsEmptyPagedResult()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync((List<AdjustmentEntity>?)null);
+		_mockRepository.Setup(r => r.GetByReceiptIdCountAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(0);
+		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
 		// Act
-		List<Adjustment>? actual = await _service.GetByReceiptIdAsync(receiptId, CancellationToken.None);
+		PagedResult<Adjustment> actual = await _service.GetByReceiptIdAsync(receiptId, 0, 50, CancellationToken.None);
 
 		// Assert
-		Assert.Null(actual);
+		Assert.Empty(actual.Data);
+		Assert.Equal(0, actual.Total);
 	}
 
 	[Fact]

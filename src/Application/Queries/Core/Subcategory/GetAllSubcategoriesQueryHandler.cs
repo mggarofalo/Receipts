@@ -1,12 +1,13 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using MediatR;
 
 namespace Application.Queries.Core.Subcategory;
 
-public class GetAllSubcategoriesQueryHandler(ISubcategoryService subcategoryService) : IRequestHandler<GetAllSubcategoriesQuery, List<Domain.Core.Subcategory>>
+public class GetAllSubcategoriesQueryHandler(ISubcategoryService subcategoryService) : IRequestHandler<GetAllSubcategoriesQuery, PagedResult<Domain.Core.Subcategory>>
 {
-	public async Task<List<Domain.Core.Subcategory>> Handle(GetAllSubcategoriesQuery request, CancellationToken cancellationToken)
+	public async Task<PagedResult<Domain.Core.Subcategory>> Handle(GetAllSubcategoriesQuery request, CancellationToken cancellationToken)
 	{
-		return await subcategoryService.GetAllAsync(cancellationToken);
+		return await subcategoryService.GetAllAsync(request.Offset, request.Limit, cancellationToken);
 	}
 }

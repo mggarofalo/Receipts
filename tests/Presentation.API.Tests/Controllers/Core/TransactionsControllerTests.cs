@@ -5,6 +5,7 @@ using Application.Commands.Transaction.Create;
 using Application.Commands.Transaction.Delete;
 using Application.Commands.Transaction.Restore;
 using Application.Commands.Transaction.Update;
+using Application.Models;
 using Application.Queries.Core.Transaction;
 using Domain.Core;
 using FluentAssertions;
@@ -97,18 +98,21 @@ public class TransactionsControllerTests
 		List<TransactionResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<GetAllTransactionsQuery>(),
+			It.Is<GetAllTransactionsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(mediatorReturn);
+			.ReturnsAsync(new PagedResult<Transaction>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions();
+		ActionResult<TransactionListResponse> result = await _controller.GetAllTransactions(null, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionResponse> actualControllerReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
+		TransactionListResponse actualControllerReturn = Assert.IsType<TransactionListResponse>(okResult.Value);
 
-		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
+		actualControllerReturn.Offset.Should().Be(0);
+		actualControllerReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -116,12 +120,12 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		_mediatorMock.Setup(m => m.Send(
-			It.IsAny<GetAllTransactionsQuery>(),
+			It.Is<GetAllTransactionsQuery>(q => q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllTransactions();
+		Func<Task> act = () => _controller.GetAllTransactions(null, 0, 50);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -136,18 +140,21 @@ public class TransactionsControllerTests
 		List<TransactionResponse> expectedControllerReturn = [.. mediatorReturn.Select(_mapper.ToResponse)];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(mediatorReturn);
+			.ReturnsAsync(new PagedResult<Transaction>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(receiptId);
+		ActionResult<TransactionListResponse> result = await _controller.GetAllTransactions(receiptId, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionResponse> actualControllerReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
+		TransactionListResponse actualControllerReturn = Assert.IsType<TransactionListResponse>(okResult.Value);
 
-		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Total.Should().Be(mediatorReturn.Count);
+		actualControllerReturn.Offset.Should().Be(0);
+		actualControllerReturn.Limit.Should().Be(50);
 	}
 
 	[Fact]
@@ -155,22 +162,20 @@ public class TransactionsControllerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<Transaction> mediatorReturn = [];
-		List<TransactionResponse> expectedControllerReturn = [];
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(mediatorReturn);
+			.ReturnsAsync(new PagedResult<Transaction>([], 0, 0, 50));
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(receiptId);
+		ActionResult<TransactionListResponse> result = await _controller.GetAllTransactions(receiptId, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionResponse> actualControllerReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
+		TransactionListResponse actualControllerReturn = Assert.IsType<TransactionListResponse>(okResult.Value);
 
-		actualControllerReturn.Should().BeEquivalentTo(expectedControllerReturn);
+		actualControllerReturn.Data.Should().BeEmpty();
 	}
 
 	[Fact]
@@ -180,17 +185,17 @@ public class TransactionsControllerTests
 		Guid missingReceiptId = Guid.NewGuid();
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == missingReceiptId),
+			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == missingReceiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync((List<Transaction>?)null);
+			.ReturnsAsync(new PagedResult<Transaction>([], 0, 0, 50));
 
 		// Act
-		ActionResult<List<TransactionResponse>> result = await _controller.GetAllTransactions(missingReceiptId);
+		ActionResult<TransactionListResponse> result = await _controller.GetAllTransactions(missingReceiptId, 0, 50);
 
 		// Assert
 		OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
-		List<TransactionResponse> actualReturn = Assert.IsType<List<TransactionResponse>>(okResult.Value);
-		actualReturn.Should().BeEmpty();
+		TransactionListResponse actualReturn = Assert.IsType<TransactionListResponse>(okResult.Value);
+		actualReturn.Data.Should().BeEmpty();
 	}
 
 	[Fact]
@@ -199,12 +204,12 @@ public class TransactionsControllerTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId),
+			It.Is<GetTransactionsByReceiptIdQuery>(q => q.ReceiptId == receiptId && q.Offset == 0 && q.Limit == 50),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllTransactions(receiptId);
+		Func<Task> act = () => _controller.GetAllTransactions(receiptId, 0, 50);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

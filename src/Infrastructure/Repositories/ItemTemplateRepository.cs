@@ -14,21 +14,35 @@ public class ItemTemplateRepository(IDbContextFactory<ApplicationDbContext> cont
 		return await context.ItemTemplates.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<ItemTemplateEntity>> GetAllAsync(CancellationToken cancellationToken)
+	public async Task<List<ItemTemplateEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ItemTemplates
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<ItemTemplateEntity>> GetDeletedAsync(CancellationToken cancellationToken)
+	public async Task<List<ItemTemplateEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ItemTemplates
 			.OnlyDeleted()
 			.AsNoTracking()
+			.OrderBy(e => e.Id)
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<int> GetDeletedCountAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.ItemTemplates
+			.OnlyDeleted()
+			.CountAsync(cancellationToken);
 	}
 
 	public async Task<List<ItemTemplateEntity>> CreateAsync(List<ItemTemplateEntity> entities, CancellationToken cancellationToken)

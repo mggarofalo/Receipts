@@ -55,7 +55,9 @@ describe("useTransactions", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(transactions);
-    expect(client.GET).toHaveBeenCalledWith("/api/transactions");
+    expect(client.GET).toHaveBeenCalledWith("/api/transactions", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("single query is disabled when id is null", () => {
@@ -80,7 +82,7 @@ describe("useTransactions", () => {
     expect(result.current.data).toEqual(items);
     expect(client.GET).toHaveBeenCalledWith(
       "/api/transactions",
-      { params: { query: { receiptId: "r-1" } } },
+      { params: { query: { receiptId: "r-1", offset: 0, limit: 200 } } },
     );
   });
 
@@ -158,7 +160,9 @@ describe("useTransactions", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(deleted);
-    expect(client.GET).toHaveBeenCalledWith("/api/transactions/deleted");
+    expect(client.GET).toHaveBeenCalledWith("/api/transactions/deleted", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
   });
 
   it("restore mutation calls POST and shows toast on success", async () => {
