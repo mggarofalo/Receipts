@@ -8,13 +8,14 @@ namespace Infrastructure.Services;
 
 public class TransactionService(ITransactionRepository repository, TransactionMapper mapper) : ITransactionService
 {
-	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, CancellationToken cancellationToken)
+	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> transactionEntities = [.. models.Select(mapper.ToEntity)];
 
 		foreach (TransactionEntity entity in transactionEntities)
 		{
 			entity.ReceiptId = receiptId;
+			entity.AccountId = accountId;
 		}
 
 		List<TransactionEntity> createdTransactionEntities = await repository.CreateAsync(transactionEntities, cancellationToken);
@@ -61,13 +62,14 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 		return await repository.GetCountAsync(cancellationToken);
 	}
 
-	public async Task UpdateAsync(List<Transaction> models, Guid receiptId, CancellationToken cancellationToken)
+	public async Task UpdateAsync(List<Transaction> models, Guid receiptId, Guid accountId, CancellationToken cancellationToken)
 	{
 		List<TransactionEntity> transactionEntities = [.. models.Select(mapper.ToEntity)];
 
 		foreach (TransactionEntity entity in transactionEntities)
 		{
 			entity.ReceiptId = receiptId;
+			entity.AccountId = accountId;
 		}
 
 		await repository.UpdateAsync(transactionEntities, cancellationToken);

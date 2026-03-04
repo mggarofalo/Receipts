@@ -19,7 +19,7 @@ public class UpdateTransactionCommandHandlerTests
 		new(_transactionService.Object, _receiptService.Object,
 			_receiptItemService.Object, _adjustmentService.Object);
 
-	private void SetupBalancedData(Guid receiptId, Guid txId, List<Domain.Core.Transaction> existingTransactions)
+	private void SetupBalancedData(Guid receiptId, Guid accountId, Guid txId, List<Domain.Core.Transaction> existingTransactions)
 	{
 		// Receipt: TaxAmount = $10
 		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10), "desc");
@@ -43,7 +43,7 @@ public class UpdateTransactionCommandHandlerTests
 		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingTransactions);
 		_transactionService.Setup(s => s.UpdateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
+				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 	}
 
@@ -56,7 +56,7 @@ public class UpdateTransactionCommandHandlerTests
 		Guid txId = Guid.NewGuid();
 		// Existing transaction matches what we're updating (same ID)
 		Domain.Core.Transaction existing = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now));
-		SetupBalancedData(receiptId, txId, [existing]);
+		SetupBalancedData(receiptId, accountId, txId, [existing]);
 
 		// Update with same amount → still balanced at $15
 		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now))];
@@ -79,7 +79,7 @@ public class UpdateTransactionCommandHandlerTests
 		Guid accountId = Guid.NewGuid();
 		Guid txId = Guid.NewGuid();
 		Domain.Core.Transaction existing = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now));
-		SetupBalancedData(receiptId, txId, [existing]);
+		SetupBalancedData(receiptId, accountId, txId, [existing]);
 
 		// Update to $100 → unbalanced (ExpectedTotal is $15)
 		List<Domain.Core.Transaction> updated = [new(txId, new Money(100), DateOnly.FromDateTime(DateTime.Now))];

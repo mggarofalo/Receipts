@@ -19,7 +19,7 @@ public class CreateTransactionCommandHandlerTests
 		new(_transactionService.Object, _receiptService.Object,
 			_receiptItemService.Object, _adjustmentService.Object);
 
-	private void SetupBalancedData(Guid receiptId, List<Domain.Core.Transaction> transactions)
+	private void SetupBalancedData(Guid receiptId, Guid accountId, List<Domain.Core.Transaction> transactions)
 	{
 		// Receipt: TaxAmount = $10
 		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10), "desc");
@@ -38,7 +38,7 @@ public class CreateTransactionCommandHandlerTests
 		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync([]);
 		_transactionService.Setup(s => s.CreateAsync(
-				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
+				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, accountId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(transactions);
 	}
 
@@ -53,7 +53,7 @@ public class CreateTransactionCommandHandlerTests
 		[
 			new(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now))
 		];
-		SetupBalancedData(receiptId, input);
+		SetupBalancedData(receiptId, accountId, input);
 
 		CreateTransactionCommandHandler handler = CreateHandler();
 		CreateTransactionCommand command = new(input, receiptId, accountId);
@@ -77,7 +77,7 @@ public class CreateTransactionCommandHandlerTests
 		[
 			new(Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now))
 		];
-		SetupBalancedData(receiptId, input);
+		SetupBalancedData(receiptId, accountId, input);
 
 		CreateTransactionCommandHandler handler = CreateHandler();
 		CreateTransactionCommand command = new(input, receiptId, accountId);
