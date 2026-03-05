@@ -7,6 +7,7 @@ import {
   setTokens,
   clearTokens,
   notifyTokenRefresh,
+  notifyPasswordChangeRequired,
 } from "@/lib/auth";
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "";
@@ -58,6 +59,19 @@ const authMiddleware: Middleware = {
     return request;
   },
   async onResponse({ request, response }) {
+    if (response.status === 403) {
+      const cloned = response.clone();
+      try {
+        const body = await cloned.json();
+        if (body?.detail === "Password change required") {
+          notifyPasswordChangeRequired();
+        }
+      } catch {
+        // Not JSON — ignore
+      }
+      return response;
+    }
+
     if (response.status !== 401) return response;
 
     // Avoid refresh loop for auth endpoints

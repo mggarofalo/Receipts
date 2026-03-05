@@ -22,6 +22,7 @@ vi.mock("@/lib/auth", () => ({
   setTokens: vi.fn(),
   clearTokens: vi.fn(),
   addTokenRefreshListener: vi.fn(() => vi.fn()),
+  addPasswordChangeRequiredListener: vi.fn(() => vi.fn()),
 }));
 
 import client from "@/lib/api-client";
@@ -83,6 +84,7 @@ describe("AuthProvider", () => {
     mockedAuth.parseJwtPayload.mockReturnValue({
       email: "user@test.com",
       roles: ["User"],
+      mustResetPassword: false,
     });
 
     render(
@@ -92,6 +94,47 @@ describe("AuthProvider", () => {
     );
 
     expect(screen.getByTestId("user")).toHaveTextContent("user@test.com");
+  });
+
+  it("initializes mustResetPassword from JWT claim", () => {
+    const token = makeJwt("admin@test.com", "Admin");
+    mockedAuth.isAuthenticated.mockReturnValue(true);
+    mockedAuth.getAccessToken.mockReturnValue(token);
+    mockedAuth.parseJwtPayload.mockReturnValue({
+      email: "admin@test.com",
+      roles: ["Admin"],
+      mustResetPassword: true,
+    });
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("true");
+  });
+
+  it("sets mustResetPassword when password-change-required listener fires", () => {
+    let capturedListener: (() => void) | undefined;
+    mockedAuth.addPasswordChangeRequiredListener.mockImplementation((cb: () => void) => {
+      capturedListener = cb;
+      return vi.fn();
+    });
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("false");
+
+    act(() => {
+      capturedListener!();
+    });
+
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("true");
   });
 
   it("login calls POST /api/auth/login, stores tokens, and sets user", async () => {

@@ -8,6 +8,8 @@ import {
   parseJwtPayload,
   addTokenRefreshListener,
   notifyTokenRefresh,
+  addPasswordChangeRequiredListener,
+  notifyPasswordChangeRequired,
 } from "./auth";
 
 describe("token storage", () => {
@@ -62,6 +64,7 @@ describe("parseJwtPayload", () => {
     expect(result).toEqual({
       email: "user@example.com",
       roles: ["Admin", "User"],
+      mustResetPassword: false,
     });
   });
 
@@ -75,7 +78,25 @@ describe("parseJwtPayload", () => {
     expect(result).toEqual({
       email: "ms@example.com",
       roles: ["Admin"],
+      mustResetPassword: false,
     });
+  });
+
+  it("parses must_reset_password claim as true", () => {
+    const token = encodePayload({
+      email: "user@example.com",
+      must_reset_password: "true",
+    });
+    const result = parseJwtPayload(token);
+    expect(result?.mustResetPassword).toBe(true);
+  });
+
+  it("parses must_reset_password claim as false when absent", () => {
+    const token = encodePayload({
+      email: "user@example.com",
+    });
+    const result = parseJwtPayload(token);
+    expect(result?.mustResetPassword).toBe(false);
   });
 
   it("wraps a single role string into an array", () => {
@@ -134,6 +155,33 @@ describe("token refresh listeners", () => {
 
     unsub();
     notifyTokenRefresh();
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe("password change required listeners", () => {
+  it("calls all registered listeners on notify", () => {
+    const listener1 = vi.fn();
+    const listener2 = vi.fn();
+    const unsub1 = addPasswordChangeRequiredListener(listener1);
+    const unsub2 = addPasswordChangeRequiredListener(listener2);
+
+    notifyPasswordChangeRequired();
+
+    expect(listener1).toHaveBeenCalledOnce();
+    expect(listener2).toHaveBeenCalledOnce();
+
+    unsub1();
+    unsub2();
+  });
+
+  it("unsubscribe prevents future calls", () => {
+    const listener = vi.fn();
+    const unsub = addPasswordChangeRequiredListener(listener);
+
+    unsub();
+    notifyPasswordChangeRequired();
 
     expect(listener).not.toHaveBeenCalled();
   });
