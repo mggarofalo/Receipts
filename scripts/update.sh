@@ -26,7 +26,7 @@ echo "Updating to tag: ${NEW_TAG}"
 
 # Pre-update backup
 echo "Creating pre-update backup..."
-bash scripts/backup.sh
+bash "${SCRIPT_DIR}/backup.sh"
 
 # Pull new image
 echo "Pulling new image..."
@@ -54,8 +54,9 @@ echo "Health check failed after ${MAX_WAIT}s. Rolling back..."
 if [ -n "${CURRENT_IMAGE_ID}" ]; then
     # Re-tag the previous image by ID so compose resolves it correctly
     COMPOSE_IMAGE=$(docker compose config --images 2>/dev/null | head -1 || echo "")
-    if [ -n "${COMPOSE_IMAGE}" ] && [ -n "${CURRENT_IMAGE_TAG}" ]; then
-        docker tag "${CURRENT_IMAGE_ID}" "${COMPOSE_IMAGE}:${CURRENT_IMAGE_TAG}"
+    IMAGE_NAME="${COMPOSE_IMAGE%:*}"
+    if [ -n "${IMAGE_NAME}" ] && [ -n "${CURRENT_IMAGE_TAG}" ]; then
+        docker tag "${CURRENT_IMAGE_ID}" "${IMAGE_NAME}:${CURRENT_IMAGE_TAG}"
     fi
     IMAGE_TAG="${CURRENT_IMAGE_TAG:-latest}" docker compose up -d app
     echo "Rolled back to image ID ${CURRENT_IMAGE_ID}"

@@ -30,7 +30,7 @@ docker compose exec -T db pg_dump \
 echo "Backup complete: ${BACKUP_FILE} ($(du -h "${BACKUP_FILE}" | cut -f1))"
 
 # Prune old backups
-PRUNED=$(find "${BACKUP_DIR}" -name "receipts_*.sql.gz" -mtime "+${RETENTION_DAYS}" -delete -print | wc -l)
+PRUNED=$(find "${BACKUP_DIR}" -name "receipts_*.sql.gz" -mtime "+$((RETENTION_DAYS - 1))" -delete -print | wc -l)
 if [ "${PRUNED}" -gt 0 ]; then
     echo "Pruned ${PRUNED} backup(s) older than ${RETENTION_DAYS} days"
 fi
