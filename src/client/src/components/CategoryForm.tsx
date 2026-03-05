@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -13,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Spinner } from "@/components/ui/spinner";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -84,14 +84,11 @@ export function CategoryForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Spinner size="sm" />}
-            {isSubmitting
-              ? "Saving..."
-              : mode === "create"
-                ? "Create Category"
-                : "Update Category"}
-          </Button>
+          <SubmitButton
+            isSubmitting={isSubmitting ?? false}
+            label={mode === "create" ? "Create Category" : "Update Category"}
+            loadingLabel="Saving..."
+          />
         </div>
       </form>
     </Form>

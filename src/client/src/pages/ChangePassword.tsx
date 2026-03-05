@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { isTimeoutError } from "@/lib/api-client";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -63,10 +63,14 @@ function ChangePassword() {
     setError(null);
     try {
       await changePassword(values.currentPassword, values.newPassword);
-    } catch {
-      setError(
-        "Failed to change password. Please check your current password and try again.",
-      );
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        setError("Request timed out. Please try again.");
+      } else {
+        setError(
+          "Failed to change password. Please check your current password and try again.",
+        );
+      }
     }
   }
 
@@ -139,16 +143,12 @@ function ChangePassword() {
                 </FormItem>
               )}
             />
-            <Button
-              type="submit"
+            <SubmitButton
+              isSubmitting={form.formState.isSubmitting}
+              label="Change Password"
+              loadingLabel="Changing password..."
               className="w-full"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting && <Spinner size="sm" />}
-              {form.formState.isSubmitting
-                ? "Changing password..."
-                : "Change Password"}
-            </Button>
+            />
           </form>
         </Form>
       </CardContent>

@@ -6,6 +6,7 @@ import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useCategories } from "@/hooks/useCategories";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -15,7 +16,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Spinner } from "@/components/ui/spinner";
 
 const subcategorySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -121,14 +121,11 @@ export function SubcategoryForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Spinner size="sm" />}
-            {isSubmitting
-              ? "Saving..."
-              : mode === "create"
-                ? "Create Subcategory"
-                : "Update Subcategory"}
-          </Button>
+          <SubmitButton
+            isSubmitting={isSubmitting ?? false}
+            label={mode === "create" ? "Create Subcategory" : "Update Subcategory"}
+            loadingLabel="Saving..."
+          />
         </div>
       </form>
     </Form>
