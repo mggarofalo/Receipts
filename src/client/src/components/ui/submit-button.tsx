@@ -20,7 +20,7 @@ export function SubmitButton({
   const { isWarning } = useSubmitTimeout(isSubmitting);
 
   return (
-    <Button type="submit" disabled={disabled ?? isSubmitting} {...props}>
+    <Button type="submit" disabled={disabled || isSubmitting} {...props}>
       {isSubmitting &&
         (isWarning ? (
           <TriangleAlertIcon className="size-4 text-amber-500" />

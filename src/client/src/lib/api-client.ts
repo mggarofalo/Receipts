@@ -13,15 +13,17 @@ const baseUrl = import.meta.env.VITE_API_URL ?? "";
 
 const client = createClient<paths>({
   baseUrl,
-  fetch: (input, init) =>
-    fetch(input, { ...init, signal: AbortSignal.timeout(30_000) }),
+  fetch: (input, init) => {
+    const timeoutSignal = AbortSignal.timeout(30_000);
+    const signal = init?.signal
+      ? AbortSignal.any([timeoutSignal, init.signal])
+      : timeoutSignal;
+    return fetch(input, { ...init, signal });
+  },
 });
 
 export function isTimeoutError(error: unknown): boolean {
-  return (
-    error instanceof DOMException &&
-    (error.name === "TimeoutError" || error.name === "AbortError")
-  );
+  return error instanceof DOMException && error.name === "TimeoutError";
 }
 
 let refreshPromise: Promise<boolean> | null = null;
