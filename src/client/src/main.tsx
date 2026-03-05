@@ -7,7 +7,9 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { showApiError, showNetworkError } from "@/lib/toast";
+import { isTimeoutError } from "@/lib/api-client";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -18,6 +20,11 @@ import "./index.css";
 const router = createBrowserRouter(routeConfig);
 
 function handleGlobalError(error: unknown) {
+  if (isTimeoutError(error)) {
+    toast.error("Request timed out. Please try again.");
+    return;
+  }
+
   if (
     error &&
     typeof error === "object" &&
