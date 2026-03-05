@@ -13,6 +13,18 @@ export function notifyTokenRefresh(): void {
   tokenRefreshListeners.forEach((cb) => cb());
 }
 
+type PasswordChangeRequiredListener = () => void;
+const passwordChangeRequiredListeners = new Set<PasswordChangeRequiredListener>();
+
+export function addPasswordChangeRequiredListener(cb: PasswordChangeRequiredListener): () => void {
+  passwordChangeRequiredListeners.add(cb);
+  return () => passwordChangeRequiredListeners.delete(cb);
+}
+
+export function notifyPasswordChangeRequired(): void {
+  passwordChangeRequiredListeners.forEach((cb) => cb());
+}
+
 export function getAccessToken(): string | null {
   return localStorage.getItem(LS_ACCESS_KEY);
 }
@@ -38,6 +50,7 @@ export function isAuthenticated(): boolean {
 export interface JwtPayload {
   email: string;
   roles: string[];
+  mustResetPassword: boolean;
 }
 
 export function parseJwtPayload(token: string): JwtPayload | null {
@@ -59,7 +72,8 @@ export function parseJwtPayload(token: string): JwtPayload | null {
       : roleClaim
         ? [roleClaim]
         : [];
-    return { email, roles };
+    const mustResetPassword = payload.must_reset_password === "true" || payload.must_reset_password === true;
+    return { email, roles, mustResetPassword };
   } catch {
     return null;
   }

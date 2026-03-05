@@ -121,4 +121,32 @@ describe("ChangePassword", () => {
 
     expect(await screen.findByText(/failed to change password/i)).toBeInTheDocument();
   });
+
+  it("shows backend error_description when available", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const backendError = {
+      error: "invalid_request",
+      error_description: "Passwords must have at least one uppercase ('A'-'Z').",
+    };
+    const mockChangePassword = vi.fn().mockRejectedValue(backendError);
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: { email: "test@example.com" } as ReturnType<typeof useAuth>["user"],
+      mustResetPassword: true,
+      changePassword: mockChangePassword,
+      login: vi.fn(),
+      logout: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<ChangePassword />);
+    await user.type(screen.getByLabelText(/^current password$/i), "OldPass123");
+    await user.type(screen.getByLabelText(/^new password$/i), "weakpass");
+    await user.type(screen.getByLabelText(/^confirm new password$/i), "weakpass");
+    await user.click(screen.getByRole("button", { name: /change password/i }));
+
+    expect(
+      await screen.findByText("Passwords must have at least one uppercase ('A'-'Z')."),
+    ).toBeInTheDocument();
+  });
 });

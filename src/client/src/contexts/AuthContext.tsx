@@ -8,6 +8,7 @@ import {
   parseJwtPayload,
   setTokens,
   addTokenRefreshListener,
+  addPasswordChangeRequiredListener,
 } from "@/lib/auth";
 import type { JwtPayload } from "@/lib/auth";
 import { AuthContext } from "@/contexts/auth-context";
@@ -20,13 +21,24 @@ function getInitialUser(): JwtPayload | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<JwtPayload | null>(getInitialUser);
-  const [mustResetPassword, setMustResetPassword] = useState(false);
+  const [mustResetPassword, setMustResetPassword] = useState(
+    () => getInitialUser()?.mustResetPassword ?? false,
+  );
 
   useEffect(() => {
-    return addTokenRefreshListener(() => {
+    const unsubRefresh = addTokenRefreshListener(() => {
       const token = getAccessToken();
-      setUser(token ? parseJwtPayload(token) : null);
+      const parsed = token ? parseJwtPayload(token) : null;
+      setUser(parsed);
+      setMustResetPassword(parsed?.mustResetPassword ?? false);
     });
+    const unsubPasswordChange = addPasswordChangeRequiredListener(() => {
+      setMustResetPassword(true);
+    });
+    return () => {
+      unsubRefresh();
+      unsubPasswordChange();
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
