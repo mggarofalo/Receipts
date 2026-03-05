@@ -126,7 +126,6 @@ public static class InfrastructureService
 			.AddScoped<IUserService, UserService>()
 			.AddScoped<ITrashService, TrashService>();
 
-		services.AddScoped<DevelopmentDataSeeder>();
 		services.AddHostedService<AuthAuditCleanupService>();
 
 		services
