@@ -63,12 +63,20 @@ function ChangePassword() {
     setError(null);
     try {
       await changePassword(values.currentPassword, values.newPassword);
-    } catch (err) {
+    } catch (err: unknown) {
       if (isTimeoutError(err)) {
         setError("Request timed out. Please try again.");
       } else {
+        const description =
+          err != null &&
+          typeof err === "object" &&
+          "error_description" in err &&
+          typeof (err as Record<string, unknown>).error_description === "string"
+            ? (err as Record<string, string>).error_description
+            : null;
         setError(
-          "Failed to change password. Please check your current password and try again.",
+          description ??
+            "Failed to change password. Please check your current password and try again.",
         );
       }
     }
