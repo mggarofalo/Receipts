@@ -306,3 +306,6 @@ src/client/coverage/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Windows NUL device files
+[Nn][Uu][Ll]
