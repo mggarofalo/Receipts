@@ -10,6 +10,44 @@ This file provides guidance to AI agents when working with code in this reposito
 
 After cloning, run `dotnet restore Receipts.slnx` then `npm install`.
 
+## Worktree Setup
+
+When working in a git worktree (e.g., created by Claude Code's `/worktree` or `git worktree add`), the workspace needs bootstrapping before you can build or test.
+
+### Detecting a worktree
+
+- `test -f .git` — if `.git` is a **file** (not a directory), you're in a worktree
+- `git rev-parse --show-toplevel` — confirms your working directory root
+
+### What's shared vs not shared
+
+| Shared (via common `.git` dir) | NOT shared (need fresh setup) |
+|-------------------------------|-------------------------------|
+| Git history, refs, branches | `node_modules/` (root and `src/client/`) |
+| Hooks config (`core.hooksPath`) | `bin/` / `obj/` (.NET build output) |
+| | `openapi/generated/` |
+| | `src/client/src/generated/` |
+
+### Bootstrap commands
+
+Run these in order (or use `scripts/worktree-setup.sh` to run them all):
+
+```bash
+dotnet restore Receipts.slnx          # NuGet packages + configures git hooks
+npm install                            # Root tooling (Spectral, js-yaml, cross-env)
+cd src/client && npm install && cd -   # React client dependencies
+dotnet build Receipts.slnx             # Compiles + generates openapi/generated/API.json
+cd src/client && npm run generate:types && cd -  # TypeScript types from OpenAPI spec
+```
+
+### Branch naming in worktrees
+
+Use the same convention as issue branches (Linear's `gitBranchName`). Worktrees are just an isolation mechanism — the branch name should reflect the work, not the worktree.
+
+### Permission settings
+
+The file `.claude/settings.local.json` pre-approves read operations, MCP tools (Linear), git commands, and build tools so agents don't face excessive approval prompts. This file is gitignored (`.local.json` suffix) so it's per-user. Copy it from the main worktree if it's missing.
+
 ## Workflow Rules
 
 ### Linear
