@@ -39,12 +39,6 @@ if (Infrastructure.Services.InfrastructureService.IsDatabaseConfigured(builder.C
 	using IServiceScope scope = app.Services.CreateScope();
 	await scope.ServiceProvider.GetRequiredService<IDatabaseMigratorService>().MigrateAsync();
 	await app.Services.SeedRolesAndAdminAsync();
-
-	if (app.Environment.IsDevelopment())
-	{
-		Infrastructure.Services.DevelopmentDataSeeder seeder = scope.ServiceProvider.GetRequiredService<Infrastructure.Services.DevelopmentDataSeeder>();
-		await seeder.SeedAsync();
-	}
 }
 
 // Map Aspire health check endpoints (/health, /alive)
