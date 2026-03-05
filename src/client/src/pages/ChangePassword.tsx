@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getConnectionErrorMessage } from "@/lib/api-errors";
 
 const changePasswordSchema = z
   .object({
@@ -63,9 +64,10 @@ function ChangePassword() {
     setError(null);
     try {
       await changePassword(values.currentPassword, values.newPassword);
-    } catch {
+    } catch (err) {
       setError(
-        "Failed to change password. Please check your current password and try again.",
+        getConnectionErrorMessage(err) ??
+          "Failed to change password. Please check your current password and try again.",
       );
     }
   }

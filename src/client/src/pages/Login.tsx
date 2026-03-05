@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getConnectionErrorMessage } from "@/lib/api-errors";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -54,8 +55,11 @@ function Login() {
     setError(null);
     try {
       await login(values.email, values.password);
-    } catch {
-      setError("Invalid email or password. Please try again.");
+    } catch (err) {
+      setError(
+        getConnectionErrorMessage(err) ??
+          "Invalid email or password. Please try again.",
+      );
     }
   }
 
