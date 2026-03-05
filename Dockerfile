@@ -41,7 +41,13 @@ COPY nswag.json ./
 COPY openapi/ openapi/
 COPY tools/ tools/
 
-RUN dotnet restore Receipts.slnx
+RUN case ${TARGETARCH} in \
+      amd64) DOTNET_ARCH=x64 ;; \
+      arm64) DOTNET_ARCH=arm64 ;; \
+      arm)   DOTNET_ARCH=arm ;; \
+      *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac && \
+    dotnet restore Receipts.slnx -a ${DOTNET_ARCH}
 
 # Copy remaining source
 COPY src/ src/
