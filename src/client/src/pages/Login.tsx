@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { isTimeoutError } from "@/lib/api-client";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -54,8 +54,12 @@ function Login() {
     setError(null);
     try {
       await login(values.email, values.password);
-    } catch {
-      setError("Invalid email or password. Please try again.");
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        setError("Request timed out. Please try again.");
+      } else {
+        setError("Invalid email or password. Please try again.");
+      }
     }
   }
 
@@ -110,14 +114,12 @@ function Login() {
                   </FormItem>
                 )}
               />
-              <Button
-                type="submit"
+              <SubmitButton
+                isSubmitting={form.formState.isSubmitting}
+                label="Sign In"
+                loadingLabel="Signing in..."
                 className="w-full"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting && <Spinner size="sm" />}
-                {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
-              </Button>
+              />
             </form>
           </Form>
         </CardContent>

@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
@@ -14,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Spinner } from "@/components/ui/spinner";
 
 const receiptSchema = z.object({
   description: z.string().optional(),
@@ -117,14 +117,11 @@ export function ReceiptForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Spinner size="sm" />}
-            {isSubmitting
-              ? "Saving..."
-              : mode === "create"
-                ? "Create Receipt"
-                : "Update Receipt"}
-          </Button>
+          <SubmitButton
+            isSubmitting={isSubmitting ?? false}
+            label={mode === "create" ? "Create Receipt" : "Update Receipt"}
+            loadingLabel="Saving..."
+          />
         </div>
       </form>
     </Form>

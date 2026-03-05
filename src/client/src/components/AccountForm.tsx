@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -13,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Spinner } from "@/components/ui/spinner";
 
 const accountSchema = z.object({
   accountCode: z.string().min(1, "Account code is required"),
@@ -106,14 +106,11 @@ export function AccountForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Spinner size="sm" />}
-            {isSubmitting
-              ? "Saving..."
-              : mode === "create"
-                ? "Create Account"
-                : "Update Account"}
-          </Button>
+          <SubmitButton
+            isSubmitting={isSubmitting ?? false}
+            label={mode === "create" ? "Create Account" : "Update Account"}
+            loadingLabel="Saving..."
+          />
         </div>
       </form>
     </Form>
