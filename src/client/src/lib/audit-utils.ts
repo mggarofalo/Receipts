@@ -1,7 +1,7 @@
 import type { components } from "@/generated/api";
 
-export type AuditLog = components["schemas"]["AuditLogResponse"];
-export type AuthAuditLog = components["schemas"]["AuthAuditLogResponse"];
+export type AuditLog = components["schemas"]["AuditLogDto"];
+export type AuthAuditLog = components["schemas"]["AuthAuditEntryDto"];
 
 export interface FieldChange {
   field: string;

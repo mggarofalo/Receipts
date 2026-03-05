@@ -92,12 +92,14 @@ export function ReceiptItemForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
-  const { data: receipts, isLoading: receiptsLoading } = useReceipts();
-  const { data: categories } = useCategories();
-  const { data: itemTemplatesData } = useItemTemplates();
+  const { data: receiptsData, isLoading: receiptsLoading } = useReceipts();
+  const receipts = receiptsData?.data;
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData?.data;
+  const { data: itemTemplatesRaw } = useItemTemplates();
   const templates = useMemo(
-    () => (itemTemplatesData as ItemTemplate[] | undefined) ?? [],
-    [itemTemplatesData],
+    () => (itemTemplatesRaw?.data as ItemTemplate[] | undefined) ?? [],
+    [itemTemplatesRaw],
   );
 
   const receiptOptions = useMemo(

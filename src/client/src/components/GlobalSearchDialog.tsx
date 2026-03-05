@@ -68,10 +68,15 @@ export function GlobalSearchDialog({
   onOpenChange,
 }: GlobalSearchDialogProps) {
   const navigate = useNavigate();
-  const { data: accounts } = useAccounts();
-  const { data: receipts } = useReceipts();
-  const { data: receiptItems } = useReceiptItems();
-  const { data: transactions } = useTransactions();
+  const { data: accountsData } = useAccounts();
+  const { data: receiptsData } = useReceipts();
+  const { data: receiptItemsData } = useReceiptItems();
+  const { data: transactionsData } = useTransactions();
+
+  const accounts = accountsData?.data as AccountResponse[] | undefined;
+  const receipts = receiptsData?.data as ReceiptResponse[] | undefined;
+  const receiptItems = receiptItemsData?.data as ReceiptItemResponse[] | undefined;
+  const transactions = transactionsData?.data as TransactionResponse[] | undefined;
 
   const toggleOpen = useCallback(() => {
     onOpenChange(!open);
@@ -103,11 +108,11 @@ export function GlobalSearchDialog({
           ))}
         </CommandGroup>
 
-        {(accounts as AccountResponse[] | undefined)?.length ? (
+        {accounts?.length ? (
           <>
             <CommandSeparator />
             <CommandGroup heading="Accounts">
-              {(accounts as AccountResponse[]).slice(0, 8).map((a) => (
+              {accounts.slice(0, 8).map((a) => (
                 <CommandItem
                   key={a.id}
                   value={`account:${a.name} ${a.accountCode}`}
@@ -124,11 +129,11 @@ export function GlobalSearchDialog({
           </>
         ) : null}
 
-        {(receipts as ReceiptResponse[] | undefined)?.length ? (
+        {receipts?.length ? (
           <>
             <CommandSeparator />
             <CommandGroup heading="Receipts">
-              {(receipts as ReceiptResponse[]).slice(0, 8).map((r) => (
+              {receipts.slice(0, 8).map((r) => (
                 <CommandItem
                   key={r.id}
                   value={`receipt:${r.description ?? ""} ${r.location}`}
@@ -147,11 +152,11 @@ export function GlobalSearchDialog({
           </>
         ) : null}
 
-        {(receiptItems as ReceiptItemResponse[] | undefined)?.length ? (
+        {receiptItems?.length ? (
           <>
             <CommandSeparator />
             <CommandGroup heading="Receipt Items">
-              {(receiptItems as ReceiptItemResponse[]).slice(0, 8).map((i) => (
+              {receiptItems.slice(0, 8).map((i) => (
                 <CommandItem
                   key={i.id}
                   value={`item:${i.description} ${i.receiptItemCode} ${i.category}`}
@@ -168,11 +173,11 @@ export function GlobalSearchDialog({
           </>
         ) : null}
 
-        {(transactions as TransactionResponse[] | undefined)?.length ? (
+        {transactions?.length ? (
           <>
             <CommandSeparator />
             <CommandGroup heading="Transactions">
-              {(transactions as TransactionResponse[]).slice(0, 8).map((t) => (
+              {transactions.slice(0, 8).map((t) => (
                 <CommandItem
                   key={t.id}
                   value={`txn:${t.date} ${t.amount}`}
