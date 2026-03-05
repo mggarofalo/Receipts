@@ -251,7 +251,7 @@ export function Layout() {
               Receipts
             </Link>
             <Separator orientation="vertical" className="h-6" />
-            <NavigationMenu>
+            <NavigationMenu viewport={false}>
               <NavigationMenuList>
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
