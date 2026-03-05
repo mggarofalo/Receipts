@@ -8,7 +8,7 @@ COPY src/client/package.json src/client/package-lock.json ./
 RUN npm ci
 
 # Copy OpenAPI spec (needed for type generation) and client source
-COPY openapi/spec.yaml /app/openapi/spec.yaml
+COPY openapi/spec.yaml /openapi/spec.yaml
 COPY src/client/ ./
 
 RUN npm run build
