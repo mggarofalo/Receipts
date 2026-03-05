@@ -311,3 +311,6 @@ src/client/coverage/
 .env
 .env.production
 .env.local
+
+# Windows NUL device files
+[Nn][Uu][Ll]
