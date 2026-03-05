@@ -47,7 +47,7 @@ RUN case ${TARGETARCH} in \
       arm)   DOTNET_ARCH=arm ;; \
       *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac && \
-    dotnet restore Receipts.slnx -a ${DOTNET_ARCH}
+    dotnet restore Receipts.slnx -r linux-${DOTNET_ARCH} -p:PublishReadyToRun=true
 
 # Copy remaining source
 COPY src/ src/
@@ -60,7 +60,7 @@ RUN case ${TARGETARCH} in \
     esac && \
     dotnet publish src/Presentation/API/API.csproj \
       -c Release -o /app/publish --no-restore \
-      -p:PublishReadyToRun=true -a ${DOTNET_ARCH}
+      -p:PublishReadyToRun=true -r linux-${DOTNET_ARCH}
 
 # Stage 3: Runtime (noble for wget-based healthchecks; security via docker-compose constraints)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS runtime
