@@ -12,18 +12,26 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  matrix-prep:
+    name: Prepare Build Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo 'matrix={"include":[{"platform":"linux/amd64","runner":"ubuntu-latest","platform_pair":"linux-amd64"}]}' >> "$GITHUB_OUTPUT"
+          else
+            echo 'matrix={"include":[{"platform":"linux/amd64","runner":"ubuntu-latest","platform_pair":"linux-amd64"},{"platform":"linux/arm64","runner":"ubuntu-latest-arm64","platform_pair":"linux-arm64"}]}' >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     name: Build (${{ matrix.platform_pair }})
+    needs: matrix-prep
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - platform: linux/amd64
-            runner: ubuntu-latest
-            platform_pair: linux-amd64
-          - platform: linux/arm64
-            runner: ubuntu-latest-arm64
-            platform_pair: linux-arm64
+      matrix: ${{ fromJson(needs.matrix-prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -51,8 +59,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build (PR only)
-        # Skip arm64 on PRs (MGG-245 optimization)
-        if: github.event_name == 'pull_request' && matrix.platform != 'linux/arm64'
+        if: github.event_name == 'pull_request'
         uses: docker/build-push-action@v6
         with:
           context: .
