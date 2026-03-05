@@ -612,8 +612,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 				.HasConversion(
 					v => v.ToString().ToLowerInvariant(),
 					v => Enum.Parse<PricingMode>(v, ignoreCase: true))
-				.HasMaxLength(8)
-				.HasDefaultValueSql("'quantity'");
+				.HasMaxLength(8);
 
 			entity.Navigation(e => e.Receipt)
 				.AutoInclude();
