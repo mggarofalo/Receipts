@@ -13,12 +13,12 @@ const baseUrl = import.meta.env.VITE_API_URL ?? "";
 
 const client = createClient<paths>({
   baseUrl,
-  fetch: (input, init) => {
+  fetch: (request: Request) => {
     const timeoutSignal = AbortSignal.timeout(30_000);
-    const signal = init?.signal
-      ? AbortSignal.any([timeoutSignal, init.signal])
+    const signal = request.signal
+      ? AbortSignal.any([timeoutSignal, request.signal])
       : timeoutSignal;
-    return fetch(input, { ...init, signal });
+    return fetch(new Request(request, { signal }));
   },
 });
 
