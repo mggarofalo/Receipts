@@ -13,6 +13,17 @@ const baseUrl = import.meta.env.VITE_API_URL ?? "";
 
 const client = createClient<paths>({ baseUrl });
 
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+const timeoutMiddleware: Middleware = {
+  onRequest({ request }) {
+    if (request.signal && !request.signal.aborted) return request;
+    return new Request(request, {
+      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    });
+  },
+};
+
 let refreshPromise: Promise<boolean> | null = null;
 
 async function attemptTokenRefresh(): Promise<boolean> {
@@ -24,6 +35,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
+      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
     });
     if (!res.ok) return false;
 
@@ -77,6 +89,7 @@ const authMiddleware: Middleware = {
   },
 };
 
+client.use(timeoutMiddleware);
 client.use(authMiddleware);
 
 export default client;
