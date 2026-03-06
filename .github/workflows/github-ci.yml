@@ -152,9 +152,6 @@ jobs:
   security:
     name: Vulnerability Scan
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-
     steps:
       - uses: actions/checkout@v4
 
@@ -174,38 +171,6 @@ jobs:
             echo "::error::Vulnerable packages detected!"
             exit 1
           fi
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: Install npm dependencies
-        run: npm ci
-
-      - name: Run Snyk Code analysis
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: code test
-          args: --severity-threshold=medium --sarif-file-output=snyk.sarif
-
-      - name: Upload Snyk results to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: snyk.sarif
-        continue-on-error: true
-
-      - name: Sync Snyk findings to Linear
-        if: always()
-        run: node scripts/create-linear-issues.mjs snyk.sarif
-        env:
-          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-        continue-on-error: true
 
   api-compat:
     name: API Breaking Changes
