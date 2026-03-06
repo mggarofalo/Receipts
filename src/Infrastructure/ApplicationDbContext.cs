@@ -360,6 +360,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 		if (columnTypes.TryGetValue(baseType, out string? columnType))
 		{
+			// Npgsql rejects DateTimeOffset with non-zero offset for timestamptz columns.
+			// Normalize all DateTimeOffset values to UTC before persisting.
+			if (baseType == typeof(DateTimeOffset))
+			{
+				property.SetValueConverter(new ValueConverter<DateTimeOffset, DateTimeOffset>(
+					v => v.ToUniversalTime(),
+					v => v.ToUniversalTime()));
+			}
+
 			return columnType;
 		}
 
