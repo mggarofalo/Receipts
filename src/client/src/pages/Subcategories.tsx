@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { Fragment, useState, useMemo, useEffect } from "react";
 import {
   useSubcategories,
   useCreateSubcategory,
@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { Pencil } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil } from "lucide-react";
 
 interface SubcategoryResponse {
   id: string;
@@ -80,6 +80,9 @@ function Subcategories() {
   const [filterValues, setFilterValues] = useState<FilterValues>({
     categoryId: "all",
   });
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(),
+  );
 
   const anyDialogOpen = createOpen || editSubcategory !== null || deleteOpen;
 
@@ -154,6 +157,51 @@ function Subcategories() {
     return map;
   }, [results]);
 
+  const groupedByCategory = useMemo(() => {
+    const groups = new Map<string, SubcategoryResponse[]>();
+    for (const item of filteredResults) {
+      const existing = groups.get(item.categoryId);
+      if (existing) {
+        existing.push(item);
+      } else {
+        groups.set(item.categoryId, [item]);
+      }
+    }
+    const sorted = [...groups.entries()].sort((a, b) => {
+      const nameA = categoryMap.get(a[0]) ?? "";
+      const nameB = categoryMap.get(b[0]) ?? "";
+      return nameA.localeCompare(nameB);
+    });
+    return sorted;
+  }, [filteredResults, categoryMap]);
+
+  const visibleSubcategories = useMemo(
+    () =>
+      groupedByCategory.flatMap(([categoryId, items]) =>
+        expandedCategories.has(categoryId) ? items : [],
+      ),
+    [groupedByCategory, expandedCategories],
+  );
+
+  function toggleCategory(categoryId: string) {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
+      return next;
+    });
+  }
+
+  function expandAll() {
+    setExpandedCategories(
+      new Set(groupedByCategory.map(([categoryId]) => categoryId)),
+    );
+  }
+
+  function collapseAll() {
+    setExpandedCategories(new Set());
+  }
+
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -163,22 +211,34 @@ function Subcategories() {
     });
   }
 
+  const allVisibleSelected =
+    visibleSubcategories.length > 0 &&
+    visibleSubcategories.every((a) => selected.has(a.id));
+
   function toggleAll() {
-    if (selected.size === filteredResults.length) {
-      setSelected(new Set());
+    if (allVisibleSelected) {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const a of visibleSubcategories) next.delete(a.id);
+        return next;
+      });
     } else {
-      setSelected(new Set(filteredResults.map((a) => a.id)));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const a of visibleSubcategories) next.add(a.id);
+        return next;
+      });
     }
   }
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
-    items: filteredResults,
+    items: visibleSubcategories,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditSubcategory(a),
     onDelete: () => setDeleteOpen(true),
     onSelectAll: () =>
-      setSelected(new Set(filteredResults.map((a) => a.id))),
+      setSelected(new Set(visibleSubcategories.map((a) => a.id))),
     onDeselectAll: () => setSelected(new Set()),
     onToggleSelect: (a) => toggleSelect(a.id),
     selected,
@@ -202,6 +262,12 @@ function Subcategories() {
           className="max-w-sm"
         />
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={expandAll}>
+            Expand All
+          </Button>
+          <Button variant="outline" size="sm" onClick={collapseAll}>
+            Collapse All
+          </Button>
           {selected.size > 0 && (
             <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
               Delete ({selected.size})
@@ -254,10 +320,7 @@ function Subcategories() {
                     <input
                       type="checkbox"
                       aria-label="Select all rows"
-                      checked={
-                        selected.size === filteredResults.length &&
-                        filteredResults.length > 0
-                      }
+                      checked={allVisibleSelected}
                       onChange={toggleAll}
                       className="h-4 w-4 rounded border-gray-300"
                     />
@@ -269,66 +332,102 @@ function Subcategories() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredResults.map((subcategory, index) => {
-                  const result = matchMap.get(subcategory.id);
-                  const matches = result?.matches;
+                {groupedByCategory.map(([categoryId, items]) => {
+                  const isExpanded = expandedCategories.has(categoryId);
+                  const categoryName =
+                    categoryMap.get(categoryId) ?? "Unknown";
                   return (
-                    <TableRow
-                      key={subcategory.id}
-                      className={`cursor-pointer ${focusedId === subcategory.id ? "bg-accent" : ""}`}
-                      onClick={(e) => {
-                        if (
-                          (e.target as HTMLElement).closest(
-                            "button, input, a, [role='button']",
-                          )
-                        )
-                          return;
-                        setFocusedIndex(index);
-                      }}
-                    >
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${subcategory.name}`}
-                          checked={selected.has(subcategory.id)}
-                          onChange={() => toggleSelect(subcategory.id)}
-                          className="h-4 w-4 rounded border-gray-300"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <SearchHighlight
-                          text={subcategory.name}
-                          indices={getMatchIndices(matches, "name")}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {categoryMap.get(subcategory.categoryId) ?? (
-                          <span className="italic text-muted-foreground">
-                            Unknown
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {subcategory.description ? (
-                          <SearchHighlight
-                            text={subcategory.description}
-                            indices={getMatchIndices(matches, "description")}
-                          />
-                        ) : (
-                          <span className="italic">--</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Edit"
-                          onClick={() => setEditSubcategory(subcategory)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                    <Fragment key={categoryId}>
+                      <TableRow
+                        className="cursor-pointer bg-muted/50 hover:bg-muted"
+                        onClick={() => toggleCategory(categoryId)}
+                        data-testid={`category-header-${categoryId}`}
+                      >
+                        <TableCell colSpan={5}>
+                          <div className="flex items-center gap-2 font-medium">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                            {categoryName}
+                            <span className="ml-1 text-xs text-muted-foreground">
+                              ({items.length})
+                            </span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded &&
+                        items.map((subcategory) => {
+                          const visibleIndex =
+                            visibleSubcategories.indexOf(subcategory);
+                          const result = matchMap.get(subcategory.id);
+                          const matches = result?.matches;
+                          return (
+                            <TableRow
+                              key={subcategory.id}
+                              className={`cursor-pointer ${focusedId === subcategory.id ? "bg-accent" : ""}`}
+                              onClick={(e) => {
+                                if (
+                                  (e.target as HTMLElement).closest(
+                                    "button, input, a, [role='button']",
+                                  )
+                                )
+                                  return;
+                                setFocusedIndex(visibleIndex);
+                              }}
+                            >
+                              <TableCell>
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Select ${subcategory.name}`}
+                                  checked={selected.has(subcategory.id)}
+                                  onChange={() => toggleSelect(subcategory.id)}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <SearchHighlight
+                                  text={subcategory.name}
+                                  indices={getMatchIndices(matches, "name")}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {categoryMap.get(subcategory.categoryId) ?? (
+                                  <span className="italic text-muted-foreground">
+                                    Unknown
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {subcategory.description ? (
+                                  <SearchHighlight
+                                    text={subcategory.description}
+                                    indices={getMatchIndices(
+                                      matches,
+                                      "description",
+                                    )}
+                                  />
+                                ) : (
+                                  <span className="italic">--</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Edit"
+                                  onClick={() =>
+                                    setEditSubcategory(subcategory)
+                                  }
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </Fragment>
                   );
                 })}
               </TableBody>
