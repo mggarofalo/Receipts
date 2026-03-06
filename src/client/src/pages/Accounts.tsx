@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
 import {
   useAccounts,
   useCreateAccount,
@@ -6,6 +7,7 @@ import {
   useDeleteAccounts,
 } from "@/hooks/useAccounts";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
@@ -62,8 +64,11 @@ const FILTER_DEFS: FilterDefinition[] = [
   { key: "isActive", type: "boolean", field: "isActive" },
 ];
 
+const HIGHLIGHT_PARAMS = ["highlight"] as const;
+
 function Accounts() {
   usePageTitle("Accounts");
+  const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
   const { data: accountsResponse, isLoading } = useAccounts(offset, limit);
   const createAccount = useCreateAccount();
@@ -223,6 +228,7 @@ function Accounts() {
                   <TableHead>Account Code</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -233,7 +239,7 @@ function Accounts() {
                   return (
                     <TableRow
                       key={account.id}
-                      className={`cursor-pointer ${focusedId === account.id ? "bg-accent" : ""}`}
+                      className={`cursor-pointer ${focusedId === account.id ? "bg-accent" : ""} ${linkParams.highlight === account.id ? "ring-2 ring-primary" : ""}`}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
                         setFocusedIndex(index);
@@ -266,6 +272,11 @@ function Accounts() {
                         >
                           {account.isActive ? "Active" : "Inactive"}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Link to={`/transactions?accountId=${account.id}`} className="text-sm text-primary hover:underline">
+                          Txns
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <Button

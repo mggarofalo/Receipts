@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
 import {
   useSubcategories,
   useCreateSubcategory,
@@ -7,6 +8,7 @@ import {
 } from "@/hooks/useSubcategories";
 import { useCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
@@ -20,6 +22,7 @@ import { FilterPanel } from "@/components/FilterPanel";
 import type { FilterField } from "@/components/FilterPanel";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
+import { ActiveFilterBanner } from "@/components/ActiveFilterBanner";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
@@ -59,8 +62,11 @@ const SEARCH_CONFIG: FuseSearchConfig<SubcategoryResponse> = {
   ],
 };
 
+const FILTER_PARAMS = ["categoryId"] as const;
+
 function Subcategories() {
   usePageTitle("Subcategories");
+  const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
   const { data: subcategoriesResponse, isLoading: subcategoriesLoading } =
     useSubcategories(offset, limit);
@@ -138,12 +144,14 @@ function Subcategories() {
     useFuzzySearch({ data, config: SEARCH_CONFIG });
 
   const filteredResults = useMemo(() => {
-    const items = results.map((r) => ({
+    let items = results.map((r) => ({
       ...r.item,
       categoryName: categoryMap.get(r.item.categoryId) ?? "",
     }));
-    return applyFilters(items, filterDefs, filterValues);
-  }, [results, filterValues, categoryMap, filterDefs]);
+    items = applyFilters(items, filterDefs, filterValues);
+    if (linkParams.categoryId) items = items.filter((s) => s.categoryId === linkParams.categoryId);
+    return items;
+  }, [results, filterValues, categoryMap, filterDefs, linkParams.categoryId]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -230,6 +238,13 @@ function Subcategories() {
         }
       />
 
+      {hasActiveFilter && (
+        <ActiveFilterBanner
+          message={`Showing subcategories for category: ${categoryMap.get(linkParams.categoryId!) ?? linkParams.categoryId}`}
+          onClear={clearParams}
+        />
+      )}
+
       {filteredResults.length === 0 ? (
         search ? (
           <NoResults
@@ -264,6 +279,7 @@ function Subcategories() {
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -301,11 +317,9 @@ function Subcategories() {
                         />
                       </TableCell>
                       <TableCell>
-                        {categoryMap.get(subcategory.categoryId) ?? (
-                          <span className="italic text-muted-foreground">
-                            Unknown
-                          </span>
-                        )}
+                        <Link to={`/categories?highlight=${subcategory.categoryId}`} className="text-primary hover:underline">
+                          {categoryMap.get(subcategory.categoryId) ?? "Unknown"}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {subcategory.description ? (
@@ -316,6 +330,11 @@ function Subcategories() {
                         ) : (
                           <span className="italic">--</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Link to={`/receipt-items?subcategory=${encodeURIComponent(subcategory.name)}`} className="text-sm text-primary hover:underline">
+                          Items
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <Button

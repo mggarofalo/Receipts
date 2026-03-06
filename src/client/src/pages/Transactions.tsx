@@ -1,18 +1,23 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
 import {
   useTransactions,
   useCreateTransaction,
   useUpdateTransaction,
   useDeleteTransactions,
 } from "@/hooks/useTransactions";
+import { useAccounts } from "@/hooks/useAccounts";
+import { useReceipts } from "@/hooks/useReceipts";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
+import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
+import { ActiveFilterBanner } from "@/components/ActiveFilterBanner";
 import { TransactionForm } from "@/components/TransactionForm";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { FilterPanel } from "@/components/FilterPanel";
@@ -62,13 +67,18 @@ const FILTER_DEFS: FilterDefinition[] = [
   { key: "amount", type: "numberRange", field: "amount" },
 ];
 
+const FILTER_PARAMS = ["receiptId", "accountId"] as const;
+
 function Transactions() {
   usePageTitle("Transactions");
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
   const { data: transactionsResponse, isLoading } = useTransactions(offset, limit);
+  const { data: accountsResponse } = useAccounts(0, 1000);
+  const { data: receiptsResponse } = useReceipts(0, 1000);
   const createTransaction = useCreateTransaction();
   const updateTransaction = useUpdateTransaction();
   const deleteTransactions = useDeleteTransactions();
+  const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -95,6 +105,20 @@ function Transactions() {
   }, [transactionsResponse?.data]);
   const serverTotal = transactionsResponse?.total ?? 0;
 
+  const accountMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const list = (accountsResponse?.data as { id: string; name: string }[] | undefined) ?? [];
+    for (const a of list) map.set(a.id, a.name);
+    return map;
+  }, [accountsResponse?.data]);
+
+  const receiptMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const list = (receiptsResponse?.data as { id: string; description?: string | null; location: string }[] | undefined) ?? [];
+    for (const r of list) map.set(r.id, r.description || r.location);
+    return map;
+  }, [receiptsResponse?.data]);
+
   const {
     filters: savedFilters,
     save: saveFilter,
@@ -105,9 +129,12 @@ function Transactions() {
     useFuzzySearch({ data, config: SEARCH_CONFIG });
 
   const filteredResults = useMemo(() => {
-    const list = results.map((r) => r.item);
-    return applyFilters(list, FILTER_DEFS, filterValues);
-  }, [results, filterValues]);
+    let list = results.map((r) => r.item);
+    list = applyFilters(list, FILTER_DEFS, filterValues);
+    if (linkParams.accountId) list = list.filter((t) => t.accountId === linkParams.accountId);
+    if (linkParams.receiptId) list = list.filter((t) => t.receiptId === linkParams.receiptId);
+    return list;
+  }, [results, filterValues, linkParams.accountId, linkParams.receiptId]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -196,6 +223,17 @@ function Transactions() {
         }
       />
 
+      {hasActiveFilter && (
+        <ActiveFilterBanner
+          message={
+            linkParams.receiptId
+              ? `Showing transactions for receipt: ${receiptMap.get(linkParams.receiptId) ?? linkParams.receiptId}`
+              : `Showing transactions for account: ${accountMap.get(linkParams.accountId!) ?? linkParams.accountId}`
+          }
+          onClear={clearParams}
+        />
+      )}
+
       {filteredResults.length === 0 ? (
         search ? (
           <NoResults
@@ -227,6 +265,8 @@ function Transactions() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
+                  <TableHead>Account</TableHead>
+                  <TableHead>Receipt</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
@@ -253,6 +293,16 @@ function Transactions() {
                           onChange={() => toggleSelect(txn.id)}
                           className="h-4 w-4 rounded border-gray-300"
                         />
+                      </TableCell>
+                      <TableCell>
+                        <Link to={`/accounts?highlight=${txn.accountId}`} className="text-primary hover:underline">
+                          {accountMap.get(txn.accountId) ?? "Unknown"}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Link to={`/receipts?highlight=${txn.receiptId}`} className="text-sm text-primary hover:underline">
+                          Receipt
+                        </Link>
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(txn.amount)}

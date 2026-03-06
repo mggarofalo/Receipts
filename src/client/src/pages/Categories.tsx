@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
 import {
   useCategories,
   useCreateCategory,
@@ -6,6 +7,7 @@ import {
   useDeleteCategories,
 } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
@@ -48,8 +50,11 @@ const SEARCH_CONFIG: FuseSearchConfig<CategoryResponse> = {
   ],
 };
 
+const HIGHLIGHT_PARAMS = ["highlight"] as const;
+
 function Categories() {
   usePageTitle("Categories");
+  const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
   const { data: categoriesResponse, isLoading } = useCategories(offset, limit);
   const createCategory = useCreateCategory();
@@ -182,6 +187,7 @@ function Categories() {
                   </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -192,7 +198,7 @@ function Categories() {
                   return (
                     <TableRow
                       key={category.id}
-                      className={`cursor-pointer ${focusedId === category.id ? "bg-accent" : ""}`}
+                      className={`cursor-pointer ${focusedId === category.id ? "bg-accent" : ""} ${linkParams.highlight === category.id ? "ring-2 ring-primary" : ""}`}
                       onClick={(e) => {
                         if (
                           (e.target as HTMLElement).closest(
@@ -227,6 +233,11 @@ function Categories() {
                         ) : (
                           <span className="italic">--</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Link to={`/subcategories?categoryId=${category.id}`} className="text-sm text-primary hover:underline">
+                          Subcategories
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <Button
