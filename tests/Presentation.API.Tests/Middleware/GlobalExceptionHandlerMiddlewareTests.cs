@@ -153,6 +153,30 @@ public class GlobalExceptionHandlerMiddlewareTests
 			Times.Once);
 	}
 
+	[Fact]
+	public async Task InvokeAsync_ArgumentException_Returns400ValidationProblemDetails()
+	{
+		// Arrange
+		DefaultHttpContext context = new();
+		context.Response.Body = new MemoryStream();
+
+		GlobalExceptionHandlerMiddleware middleware = new(
+			_ => throw new ArgumentException("Name cannot be empty"),
+			_loggerMock.Object);
+
+		// Act
+		await middleware.InvokeAsync(context);
+
+		// Assert
+		context.Response.StatusCode.Should().Be(400);
+		context.Response.ContentType.Should().Be("application/problem+json");
+
+		ProblemDetails? problemDetails = await DeserializeProblemDetails(context.Response);
+		problemDetails.Should().NotBeNull();
+		problemDetails!.Status.Should().Be(400);
+		problemDetails.Title.Should().Be("Validation Error");
+	}
+
 	private static async Task<ProblemDetails?> DeserializeProblemDetails(HttpResponse response)
 	{
 		response.Body.Position = 0;

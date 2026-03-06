@@ -15,6 +15,13 @@ public class FluentValidationActionFilter(IServiceProvider serviceProvider) : IA
 				continue;
 			}
 
+			if (argument is System.Collections.IList { Count: 0 })
+			{
+				throw new ValidationException([
+					new ValidationFailure("", "Request body must contain at least one item.")
+				]);
+			}
+
 			Type validatorType = typeof(IValidator<>).MakeGenericType(argument.GetType());
 
 			if (serviceProvider.GetService(validatorType) is not IValidator validator)
