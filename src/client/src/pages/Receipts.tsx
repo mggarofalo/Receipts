@@ -39,6 +39,7 @@ import {
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
+import { Pencil } from "lucide-react";
 
 interface ReceiptResponse {
   id: string;
@@ -283,10 +284,11 @@ function Receipts() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          aria-label="Edit"
                           onClick={() => setEditReceipt(receipt)}
                         >
-                          Edit
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
