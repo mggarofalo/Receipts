@@ -33,7 +33,7 @@ public static class InfrastructureService
 			&& !string.IsNullOrEmpty(configuration[ConfigurationVariables.PostgresDb]);
 	}
 
-	private static string GetConnectionString(IConfiguration configuration)
+	public static string GetConnectionString(IConfiguration configuration)
 	{
 		// Aspire-injected connection string (set by WithReference(db) in AppHost)
 		string? aspireConnectionString = configuration[$"ConnectionStrings:{ConfigurationVariables.AspireConnectionStringName}"];
