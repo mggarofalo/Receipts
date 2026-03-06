@@ -69,10 +69,10 @@ describe("GlobalSearchDialog", () => {
   it("renders account items when accounts data is available", async () => {
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: [
+      data: { data: [
         { id: "acc-1", accountCode: "ACC001", name: "Checking" },
         { id: "acc-2", accountCode: "ACC002", name: "Savings" },
-      ],
+      ], total: 2, offset: 0, limit: 50 },
     }));
 
     renderWithQueryClient(
@@ -144,14 +144,14 @@ describe("GlobalSearchDialog", () => {
   it("renders receipt items when receiptItems data is available", async () => {
     const { useReceiptItems } = await import("@/hooks/useReceiptItems");
     vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
-      data: [
+      data: { data: [
         {
           id: "ri-1",
           receiptItemCode: "RI001",
           description: "Test Item",
           category: "Food",
         },
-      ],
+      ], total: 1, offset: 0, limit: 50 },
     }));
 
     renderWithQueryClient(
@@ -166,9 +166,9 @@ describe("GlobalSearchDialog", () => {
   it("renders transaction items when transactions data is available", async () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: [
+      data: { data: [
         { id: "txn-1", amount: 42.5, date: "2024-01-15" },
-      ],
+      ], total: 1, offset: 0, limit: 50 },
     }));
 
     renderWithQueryClient(
@@ -183,10 +183,10 @@ describe("GlobalSearchDialog", () => {
   it("renders receipt items when receipts data is available", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: [
+      data: { data: [
         { id: "r-1", description: "Grocery receipt", location: "Store A" },
         { id: "r-2", description: null, location: "Store B" },
-      ],
+      ], total: 2, offset: 0, limit: 50 },
     }));
 
     renderWithQueryClient(
@@ -199,9 +199,9 @@ describe("GlobalSearchDialog", () => {
   it("selecting an account item closes dialog", async () => {
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: [
+      data: { data: [
         { id: "acc-1", accountCode: "ACC001", name: "Checking" },
-      ],
+      ], total: 1, offset: 0, limit: 50 },
     }));
 
     const user = userEvent.setup();
@@ -216,9 +216,9 @@ describe("GlobalSearchDialog", () => {
   it("selecting a receipt item closes dialog", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: [
+      data: { data: [
         { id: "r-1", description: "Test Receipt", location: "Downtown" },
-      ],
+      ], total: 1, offset: 0, limit: 50 },
     }));
 
     const user = userEvent.setup();
@@ -233,9 +233,9 @@ describe("GlobalSearchDialog", () => {
   it("selecting a transaction item closes dialog", async () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: [
+      data: { data: [
         { id: "txn-1", amount: 100, date: "2024-06-01" },
-      ],
+      ], total: 1, offset: 0, limit: 50 },
     }));
 
     const user = userEvent.setup();

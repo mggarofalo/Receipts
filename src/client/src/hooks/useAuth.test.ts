@@ -7,12 +7,13 @@ describe("useAuth", () => {
   it("returns auth context when inside provider", () => {
     const { result } = renderHook(() => useAuth(), {
       wrapper: createWrapper({
-        auth: { user: { email: "user@test.com", roles: ["User"] } },
+        auth: { user: { email: "user@test.com", roles: ["User"], mustResetPassword: false } },
       }),
     });
     expect(result.current.user).toEqual({
       email: "user@test.com",
       roles: ["User"],
+      mustResetPassword: false,
     });
   });
 

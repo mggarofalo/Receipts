@@ -18,12 +18,12 @@ import { formatCurrency } from "@/lib/format";
 
 interface ReceiptItem {
   id: string;
-  receiptItemCode: string | null;
+  receiptItemCode?: string | null;
   description: string;
   quantity: number;
   unitPrice: number;
   category: string;
-  subcategory: string | null;
+  subcategory?: string | null;
 }
 
 interface ReceiptItemsCardProps {

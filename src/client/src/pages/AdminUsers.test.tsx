@@ -431,7 +431,7 @@ describe("AdminUsers", () => {
     vi.mocked(useDeleteUser).mockReturnValue({
       mutateAsync: mockMutateAsync,
       isPending: false,
-    } as ReturnType<typeof useDeleteUser>);
+    } as unknown as ReturnType<typeof useDeleteUser>);
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
       data: {
         data: [
