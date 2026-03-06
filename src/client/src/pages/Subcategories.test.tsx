@@ -9,6 +9,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 
 vi.mock("@/hooks/useSubcategories", () => ({
   useSubcategories: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useSubcategoriesByCategoryId: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 200 }, isLoading: false })),
   useCreateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteSubcategories: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),

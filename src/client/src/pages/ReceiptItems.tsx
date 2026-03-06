@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import {
   useReceiptItems,
+  useReceiptItemsByReceiptId,
   useCreateReceiptItem,
   useUpdateReceiptItem,
   useDeleteReceiptItems,
@@ -76,12 +77,15 @@ const FILTER_PARAMS = ["receiptId", "subcategory"] as const;
 function ReceiptItems() {
   usePageTitle("Receipt Items");
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: itemsResponse, isLoading } = useReceiptItems(offset, limit);
+  const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
+  const allItemsQuery = useReceiptItems(offset, limit);
+  const filteredItemsQuery = useReceiptItemsByReceiptId(linkParams.receiptId ?? null, offset, limit);
+  const activeItemsQuery = linkParams.receiptId ? filteredItemsQuery : allItemsQuery;
+  const { data: itemsResponse, isLoading } = activeItemsQuery;
   const { data: receiptsResponse } = useReceipts(0, 1000);
   const createItem = useCreateReceiptItem();
   const updateItem = useUpdateReceiptItem();
   const deleteItems = useDeleteReceiptItems();
-  const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -144,10 +148,9 @@ function ReceiptItems() {
   const filteredResults = useMemo(() => {
     let list = results.map((r) => r.item);
     list = applyFilters(list, FILTER_DEFS, filterValues);
-    if (linkParams.receiptId) list = list.filter((i) => i.receiptId === linkParams.receiptId);
     if (linkParams.subcategory) list = list.filter((i) => i.subcategory === linkParams.subcategory);
     return list;
-  }, [results, filterValues, linkParams.receiptId, linkParams.subcategory]);
+  }, [results, filterValues, linkParams.subcategory]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();

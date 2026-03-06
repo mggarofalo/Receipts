@@ -9,6 +9,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 
 vi.mock("@/hooks/useTransactions", () => ({
   useTransactions: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useTransactionsByReceiptId: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 200 }, isLoading: false })),
   useCreateTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteTransactions: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),

@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 interface CategoryResponse {
   id: string;
@@ -96,6 +97,12 @@ function Categories() {
     }
     return map;
   }, [results]);
+
+  useEffect(() => {
+    if (linkParams.highlight && data.length > 0 && !data.some((c) => c.id === linkParams.highlight)) {
+      toast.info("The highlighted item is not on this page.");
+    }
+  }, [linkParams.highlight, data]);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {

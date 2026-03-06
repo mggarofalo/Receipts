@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import {
   useTransactions,
+  useTransactionsByReceiptId,
   useCreateTransaction,
   useUpdateTransaction,
   useDeleteTransactions,
@@ -72,13 +73,16 @@ const FILTER_PARAMS = ["receiptId", "accountId"] as const;
 function Transactions() {
   usePageTitle("Transactions");
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: transactionsResponse, isLoading } = useTransactions(offset, limit);
+  const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
+  const allTxnQuery = useTransactions(offset, limit);
+  const filteredTxnQuery = useTransactionsByReceiptId(linkParams.receiptId ?? null, offset, limit);
+  const activeTxnQuery = linkParams.receiptId ? filteredTxnQuery : allTxnQuery;
+  const { data: transactionsResponse, isLoading } = activeTxnQuery;
   const { data: accountsResponse } = useAccounts(0, 1000);
   const { data: receiptsResponse } = useReceipts(0, 1000);
   const createTransaction = useCreateTransaction();
   const updateTransaction = useUpdateTransaction();
   const deleteTransactions = useDeleteTransactions();
-  const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -132,9 +136,8 @@ function Transactions() {
     let list = results.map((r) => r.item);
     list = applyFilters(list, FILTER_DEFS, filterValues);
     if (linkParams.accountId) list = list.filter((t) => t.accountId === linkParams.accountId);
-    if (linkParams.receiptId) list = list.filter((t) => t.receiptId === linkParams.receiptId);
     return list;
-  }, [results, filterValues, linkParams.accountId, linkParams.receiptId]);
+  }, [results, filterValues, linkParams.accountId]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();

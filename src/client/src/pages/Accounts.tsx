@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 interface AccountResponse {
   id: string;
@@ -116,6 +117,12 @@ function Accounts() {
     }
     return map;
   }, [results]);
+
+  useEffect(() => {
+    if (linkParams.highlight && data.length > 0 && !data.some((a) => a.id === linkParams.highlight)) {
+      toast.info("The highlighted item is not on this page.");
+    }
+  }, [linkParams.highlight, data]);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import {
   useSubcategories,
+  useSubcategoriesByCategoryId,
   useCreateSubcategory,
   useUpdateSubcategory,
   useDeleteSubcategories,
@@ -68,8 +69,10 @@ function Subcategories() {
   usePageTitle("Subcategories");
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: subcategoriesResponse, isLoading: subcategoriesLoading } =
-    useSubcategories(offset, limit);
+  const allSubcatQuery = useSubcategories(offset, limit);
+  const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit);
+  const activeSubcatQuery = linkParams.categoryId ? filteredSubcatQuery : allSubcatQuery;
+  const { data: subcategoriesResponse, isLoading: subcategoriesLoading } = activeSubcatQuery;
   const { data: categoriesResponse, isLoading: categoriesLoading } = useCategories();
   const createSubcategory = useCreateSubcategory();
   const updateSubcategory = useUpdateSubcategory();
@@ -144,14 +147,12 @@ function Subcategories() {
     useFuzzySearch({ data, config: SEARCH_CONFIG });
 
   const filteredResults = useMemo(() => {
-    let items = results.map((r) => ({
+    const items = results.map((r) => ({
       ...r.item,
       categoryName: categoryMap.get(r.item.categoryId) ?? "",
     }));
-    items = applyFilters(items, filterDefs, filterValues);
-    if (linkParams.categoryId) items = items.filter((s) => s.categoryId === linkParams.categoryId);
-    return items;
-  }, [results, filterValues, categoryMap, filterDefs, linkParams.categoryId]);
+    return applyFilters(items, filterDefs, filterValues);
+  }, [results, filterValues, categoryMap, filterDefs]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();

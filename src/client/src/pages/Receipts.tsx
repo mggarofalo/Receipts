@@ -41,6 +41,7 @@ import {
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
+import { toast } from "sonner";
 
 interface ReceiptResponse {
   id: string;
@@ -125,6 +126,12 @@ function Receipts() {
     }
     return map;
   }, [results]);
+
+  useEffect(() => {
+    if (linkParams.highlight && data.length > 0 && !data.some((r) => r.id === linkParams.highlight)) {
+      toast.info("The highlighted item is not on this page.");
+    }
+  }, [linkParams.highlight, data]);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
