@@ -244,7 +244,7 @@ function RecycleBin() {
         entityType: "ReceiptItem",
         entityTypeLabel: "Receipt Item",
         id: ri.id,
-        label: `${ri.description} (${ri.receiptItemCode})`,
+        label: `${ri.description} (${ri.receiptItemCode ?? "N/A"})`,
       });
     }
     for (const t of transactions.data?.data ?? []) {

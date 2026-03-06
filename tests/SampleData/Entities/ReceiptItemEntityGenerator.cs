@@ -5,13 +5,13 @@ namespace SampleData.Entities;
 
 public static class ReceiptItemEntityGenerator
 {
-	public static ReceiptItemEntity Generate(Guid? receiptId = null, PricingMode pricingMode = PricingMode.Quantity)
+	public static ReceiptItemEntity Generate(Guid? receiptId = null, PricingMode pricingMode = PricingMode.Quantity, string? receiptItemCode = "ITEMCODE", string? subcategory = "Test Subcategory")
 	{
 		return new ReceiptItemEntity
 		{
 			Id = Guid.NewGuid(),
 			ReceiptId = receiptId ?? Guid.NewGuid(),
-			ReceiptItemCode = "ITEMCODE",
+			ReceiptItemCode = receiptItemCode,
 			Description = "Test Item",
 			Quantity = 1,
 			UnitPrice = 5m,
@@ -19,7 +19,7 @@ public static class ReceiptItemEntityGenerator
 			TotalAmount = 5m,
 			TotalAmountCurrency = Currency.USD,
 			Category = "Test Category",
-			Subcategory = "Test Subcategory",
+			Subcategory = subcategory,
 			PricingMode = pricingMode
 		};
 	}

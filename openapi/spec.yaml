@@ -2766,10 +2766,10 @@ components:
 
     CreateReceiptItemRequest:
       type: object
-      required: [receiptItemCode, description, quantity, unitPrice, category, subcategory]
+      required: [description, quantity, unitPrice, category]
       properties:
         receiptItemCode:
-          type: string
+          type: ["string", "null"]
         description:
           type: string
         quantity:
@@ -2781,7 +2781,7 @@ components:
         category:
           type: string
         subcategory:
-          type: string
+          type: ["string", "null"]
         pricingMode:
           type: string
           description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
@@ -2789,13 +2789,13 @@ components:
 
     UpdateReceiptItemRequest:
       type: object
-      required: [id, receiptItemCode, description, quantity, unitPrice, category, subcategory]
+      required: [id, description, quantity, unitPrice, category]
       properties:
         id:
           type: string
           format: uuid
         receiptItemCode:
-          type: string
+          type: ["string", "null"]
         description:
           type: string
         quantity:
@@ -2807,7 +2807,7 @@ components:
         category:
           type: string
         subcategory:
-          type: string
+          type: ["string", "null"]
         pricingMode:
           type: string
           description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
@@ -2815,7 +2815,7 @@ components:
 
     ReceiptItemResponse:
       type: object
-      required: [id, receiptId, receiptItemCode, description, quantity, unitPrice, category, subcategory, pricingMode]
+      required: [id, receiptId, description, quantity, unitPrice, category, pricingMode]
       properties:
         id:
           type: string
@@ -2824,7 +2824,7 @@ components:
           type: string
           format: uuid
         receiptItemCode:
-          type: string
+          type: ["string", "null"]
         description:
           type: string
         quantity:
@@ -2836,7 +2836,7 @@ components:
         category:
           type: string
         subcategory:
-          type: string
+          type: ["string", "null"]
         pricingMode:
           type: string
           description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"

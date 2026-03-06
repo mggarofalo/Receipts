@@ -55,6 +55,30 @@ public class ReceiptItemEntityTests
 	}
 
 	[Fact]
+	public void Constructor_NullReceiptItemCodeAndSubcategory_CreatesEntity()
+	{
+		// Arrange & Act
+		ReceiptItemEntity entity = new()
+		{
+			Id = Guid.NewGuid(),
+			ReceiptId = Guid.NewGuid(),
+			ReceiptItemCode = null,
+			Description = "Test Item",
+			Quantity = 1,
+			UnitPrice = 5m,
+			UnitPriceCurrency = Currency.USD,
+			TotalAmount = 5m,
+			TotalAmountCurrency = Currency.USD,
+			Category = "Test Category",
+			Subcategory = null
+		};
+
+		// Assert
+		Assert.Null(entity.ReceiptItemCode);
+		Assert.Null(entity.Subcategory);
+	}
+
+	[Fact]
 	public async Task VirtualReceiptEntity_IsNavigable()
 	{
 		// Arrange

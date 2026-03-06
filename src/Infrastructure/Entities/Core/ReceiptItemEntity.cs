@@ -7,7 +7,7 @@ public class ReceiptItemEntity : ISoftDeletable
 {
 	public Guid Id { get; set; }
 	public Guid ReceiptId { get; set; }
-	public string ReceiptItemCode { get; set; } = string.Empty;
+	public string? ReceiptItemCode { get; set; }
 	public string Description { get; set; } = string.Empty;
 	public decimal Quantity { get; set; }
 	public decimal UnitPrice { get; set; }
@@ -15,7 +15,7 @@ public class ReceiptItemEntity : ISoftDeletable
 	public decimal TotalAmount { get; set; }
 	public Currency TotalAmountCurrency { get; set; }
 	public string Category { get; set; } = string.Empty;
-	public string Subcategory { get; set; } = string.Empty;
+	public string? Subcategory { get; set; }
 	public PricingMode PricingMode { get; set; } = PricingMode.Quantity;
 	public virtual ReceiptEntity? Receipt { get; set; }
 	public DateTimeOffset? DeletedAt { get; set; }

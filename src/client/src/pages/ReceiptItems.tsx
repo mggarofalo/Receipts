@@ -44,12 +44,12 @@ import { formatCurrency } from "@/lib/format";
 interface ReceiptItemResponse {
   id: string;
   receiptId: string;
-  receiptItemCode: string;
+  receiptItemCode: string | null;
   description: string;
   quantity: number;
   unitPrice: number;
   category: string;
-  subcategory: string;
+  subcategory: string | null;
   pricingMode: "quantity" | "flat";
 }
 
@@ -293,7 +293,7 @@ function ReceiptItems() {
                       </TableCell>
                       <TableCell className="font-mono">
                         <SearchHighlight
-                          text={item.receiptItemCode}
+                          text={item.receiptItemCode ?? ""}
                           indices={getMatchIndices(matches, "receiptItemCode")}
                         />
                       </TableCell>
@@ -323,7 +323,7 @@ function ReceiptItems() {
                           indices={getMatchIndices(matches, "category")}
                         />
                       </TableCell>
-                      <TableCell>{item.subcategory}</TableCell>
+                      <TableCell>{item.subcategory ?? ""}</TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
@@ -398,13 +398,13 @@ function ReceiptItems() {
               mode="edit"
               defaultValues={{
                 receiptId: editItem.receiptId,
-                receiptItemCode: editItem.receiptItemCode,
+                receiptItemCode: editItem.receiptItemCode ?? "",
                 description: editItem.description,
                 pricingMode: editItem.pricingMode ?? "quantity",
                 quantity: editItem.quantity,
                 unitPrice: editItem.unitPrice,
                 category: editItem.category,
-                subcategory: editItem.subcategory,
+                subcategory: editItem.subcategory ?? "",
               }}
               isSubmitting={updateItem.isPending}
               onCancel={() => setEditItem(null)}
