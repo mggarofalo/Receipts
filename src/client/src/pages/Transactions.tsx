@@ -55,8 +55,25 @@ interface TransactionResponse {
   date: string;
 }
 
-const SEARCH_CONFIG: FuseSearchConfig<TransactionResponse> = {
-  keys: [{ name: "date", weight: 1 }],
+interface ReceiptInfo {
+  description: string | null | undefined;
+  location: string;
+  date: string;
+}
+
+interface EnrichedTransaction extends TransactionResponse {
+  accountName?: string;
+  receiptDescription?: string;
+  receiptLocation?: string;
+}
+
+const SEARCH_CONFIG: FuseSearchConfig<EnrichedTransaction> = {
+  keys: [
+    { name: "date", weight: 1 },
+    { name: "accountName", weight: 2 },
+    { name: "receiptDescription", weight: 2 },
+    { name: "receiptLocation", weight: 1 },
+  ],
 };
 
 const FILTER_FIELDS: FilterField[] = [
@@ -102,12 +119,6 @@ function Transactions() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const data = useMemo(() => {
-    const list = (transactionsResponse?.data as TransactionResponse[] | undefined) ?? [];
-    return [...list].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
-  }, [transactionsResponse?.data]);
   const serverTotal = transactionsResponse?.total ?? 0;
 
   const accountMap = useMemo(() => {
@@ -118,11 +129,26 @@ function Transactions() {
   }, [accountsResponse?.data]);
 
   const receiptMap = useMemo(() => {
-    const map = new Map<string, string>();
-    const list = (receiptsResponse?.data as { id: string; description?: string | null; location: string }[] | undefined) ?? [];
-    for (const r of list) map.set(r.id, r.description || r.location);
+    const map = new Map<string, ReceiptInfo>();
+    const list = (receiptsResponse?.data as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? [];
+    for (const r of list) map.set(r.id, { description: r.description, location: r.location, date: r.date });
     return map;
   }, [receiptsResponse?.data]);
+
+  const data: EnrichedTransaction[] = useMemo(() => {
+    const list = (transactionsResponse?.data as TransactionResponse[] | undefined) ?? [];
+    return [...list]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .map((txn) => {
+        const receipt = receiptMap.get(txn.receiptId);
+        return {
+          ...txn,
+          accountName: accountMap.get(txn.accountId),
+          receiptDescription: receipt?.description ?? undefined,
+          receiptLocation: receipt?.location,
+        };
+      });
+  }, [transactionsResponse?.data, accountMap, receiptMap]);
 
   const {
     filters: savedFilters,
@@ -181,7 +207,7 @@ function Transactions() {
   });
 
   if (isLoading) {
-    return <TableSkeleton columns={3} />;
+    return <TableSkeleton columns={8} />;
   }
 
   return (
@@ -231,7 +257,7 @@ function Transactions() {
         <ActiveFilterBanner
           message={
             linkParams.receiptId
-              ? `Showing transactions for receipt: ${receiptMap.get(linkParams.receiptId) ?? linkParams.receiptId}`
+              ? `Showing transactions for receipt: ${receiptMap.get(linkParams.receiptId)?.description || receiptMap.get(linkParams.receiptId)?.location || linkParams.receiptId}`
               : `Showing transactions for account: ${accountMap.get(linkParams.accountId!) ?? linkParams.accountId}`
           }
           onClear={clearParams}
@@ -279,8 +305,10 @@ function Transactions() {
                   </TableHead>
                   <TableHead>Account</TableHead>
                   <TableHead>Receipt</TableHead>
+                  <TableHead>Location</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Receipt Date</TableHead>
+                  <TableHead>Transaction Date</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -313,11 +341,17 @@ function Transactions() {
                       </TableCell>
                       <TableCell>
                         <Link to={`/receipts?highlight=${txn.receiptId}`} className="text-sm text-primary hover:underline">
-                          Receipt
+                          {receiptMap.get(txn.receiptId)?.description || receiptMap.get(txn.receiptId)?.location || "Receipt"}
                         </Link>
+                      </TableCell>
+                      <TableCell>
+                        {receiptMap.get(txn.receiptId)?.location ?? ""}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(txn.amount)}
+                      </TableCell>
+                      <TableCell>
+                        {receiptMap.get(txn.receiptId)?.date ?? ""}
                       </TableCell>
                       <TableCell>
                         <SearchHighlight

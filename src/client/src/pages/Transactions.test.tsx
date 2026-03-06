@@ -54,13 +54,31 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
   })),
 }));
 
-// Mocks needed by TransactionForm (rendered inside dialogs)
+// Mocks needed by TransactionForm (rendered inside dialogs) and receipt/account lookups
 vi.mock("@/hooks/useReceipts", () => ({
-  useReceipts: vi.fn(() => ({ data: [], isLoading: false })),
+  useReceipts: vi.fn(() => ({
+    data: {
+      data: [
+        { id: "r1", description: "Grocery Run", location: "Whole Foods", date: "2024-01-14" },
+        { id: "r2", description: null, location: "Target Store", date: "2024-01-19" },
+      ],
+      total: 2, offset: 0, limit: 1000,
+    },
+    isLoading: false,
+  })),
 }));
 
 vi.mock("@/hooks/useAccounts", () => ({
-  useAccounts: vi.fn(() => ({ data: [], isLoading: false })),
+  useAccounts: vi.fn(() => ({
+    data: {
+      data: [
+        { id: "a1", name: "Chase Checking" },
+        { id: "a2", name: "Amex Gold" },
+      ],
+      total: 2, offset: 0, limit: 1000,
+    },
+    isLoading: false,
+  })),
 }));
 
 vi.mock("@/hooks/usePagination", () => ({
@@ -146,6 +164,49 @@ describe("Transactions", () => {
     renderWithProviders(<Transactions />);
     expect(screen.getByText("2024-01-15")).toBeInTheDocument();
     expect(screen.getByText("2024-01-20")).toBeInTheDocument();
+    // Verify account names are resolved
+    expect(screen.getByText("Chase Checking")).toBeInTheDocument();
+    expect(screen.getByText("Amex Gold")).toBeInTheDocument();
+    // Verify receipt description is shown for r1
+    expect(screen.getByText("Grocery Run")).toBeInTheDocument();
+    // r2 has null description so location "Target Store" appears in both Receipt and Location columns
+    expect(screen.getAllByText("Target Store").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders receipt location and receipt date columns", async () => {
+    const items = [
+      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
+      { id: "t2", receiptId: "r2", accountId: "a2", amount: 100.00, date: "2024-01-20" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Transactions />);
+    // Verify location column values
+    expect(screen.getByText("Whole Foods")).toBeInTheDocument();
+    // "Target Store" appears in both Receipt (fallback) and Location columns
+    expect(screen.getAllByText("Target Store")).toHaveLength(2);
+    // Verify receipt date column values
+    expect(screen.getByText("2024-01-14")).toBeInTheDocument();
+    expect(screen.getByText("2024-01-19")).toBeInTheDocument();
+    // Verify column headers
+    expect(screen.getByText("Location")).toBeInTheDocument();
+    expect(screen.getByText("Receipt Date")).toBeInTheDocument();
+    expect(screen.getByText("Transaction Date")).toBeInTheDocument();
   });
 
   it("opens create dialog when New Transaction button is clicked", async () => {
