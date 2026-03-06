@@ -46,7 +46,7 @@ if (Infrastructure.Services.InfrastructureService.IsDatabaseConfigured(builder.C
 {
 	using IServiceScope scope = app.Services.CreateScope();
 	await scope.ServiceProvider.GetRequiredService<IDatabaseMigratorService>().MigrateAsync();
-	await app.Services.SeedRolesAndAdminAsync();
+	await DatabaseSeederService.SeedRolesAndAdminAsync(app.Services);
 }
 
 // Serve SPA static files in production (Vite dev server handles this in development)
