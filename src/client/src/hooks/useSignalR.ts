@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { getAccessToken } from "@/lib/auth";
+import { bufferToast } from "@/lib/signalr-toast-buffer";
 
 export type SignalRConnectionState =
   | "connected"
@@ -13,6 +13,7 @@ interface EntityChangeNotification {
   entityType: string;
   changeType: string;
   id: string | null;
+  count?: number;
 }
 
 const queryKeyMap: Record<string, string[][]> = {
@@ -100,13 +101,7 @@ export function useSignalR(enabled: boolean) {
 
         const displayName =
           displayNameMap[notification.entityType] ?? notification.entityType;
-        const action =
-          notification.changeType === "created"
-            ? "created"
-            : notification.changeType === "deleted"
-              ? "deleted"
-              : "updated";
-        toast.info(`A ${displayName} was ${action} by another user`);
+        bufferToast(displayName, notification.changeType, notification.count ?? 1);
       },
     );
 
