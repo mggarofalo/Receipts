@@ -11,11 +11,12 @@ import {
 } from "@/lib/auth";
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "";
+const API_TIMEOUT_MS = 30_000;
 
 const client = createClient<paths>({
   baseUrl,
   fetch: (input: Request) => {
-    const timeoutSignal = AbortSignal.timeout(30_000);
+    const timeoutSignal = AbortSignal.timeout(API_TIMEOUT_MS);
     const signal = input.signal
       ? AbortSignal.any([timeoutSignal, input.signal])
       : timeoutSignal;
@@ -25,6 +26,10 @@ const client = createClient<paths>({
 
 export function isTimeoutError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "TimeoutError";
+}
+
+export function isNetworkError(error: unknown): boolean {
+  return error instanceof TypeError;
 }
 
 let refreshPromise: Promise<boolean> | null = null;
@@ -38,6 +43,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
     });
     if (!res.ok) return false;
 
@@ -100,7 +106,7 @@ const authMiddleware: Middleware = {
     if (newToken) {
       retryRequest.headers.set("Authorization", `Bearer ${newToken}`);
     }
-    return fetch(retryRequest);
+    return fetch(retryRequest, { signal: AbortSignal.timeout(API_TIMEOUT_MS) });
   },
 };
 

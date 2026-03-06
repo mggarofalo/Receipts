@@ -115,4 +115,48 @@ describe("Login", () => {
 
     expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
   });
+
+  it("shows timeout message when login times out", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const timeoutError = new DOMException("Signal timed out", "TimeoutError");
+    const mockLogin = vi.fn().mockRejectedValue(timeoutError);
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      mustResetPassword: false,
+      login: mockLogin,
+      logout: vi.fn(),
+      changePassword: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<Login />);
+    await user.type(screen.getByLabelText(/email/i), "test@example.com");
+    await user.type(screen.getByLabelText(/^password$/i), "Password123");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByText(/request timed out/i)).toBeInTheDocument();
+  });
+
+  it("shows network error message when server is unreachable", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const networkError = new TypeError("Failed to fetch");
+    const mockLogin = vi.fn().mockRejectedValue(networkError);
+    const { useAuth } = await import("@/hooks/useAuth");
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      mustResetPassword: false,
+      login: mockLogin,
+      logout: vi.fn(),
+      changePassword: vi.fn(),
+      isLoading: false,
+    });
+
+    renderWithProviders(<Login />);
+    await user.type(screen.getByLabelText(/email/i), "test@example.com");
+    await user.type(screen.getByLabelText(/^password$/i), "Password123");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByText(/unable to reach the server/i)).toBeInTheDocument();
+  });
 });

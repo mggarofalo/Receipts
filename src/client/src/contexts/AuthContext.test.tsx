@@ -200,6 +200,46 @@ describe("AuthProvider", () => {
     expect(screen.getByTestId("user")).toHaveTextContent("null");
   });
 
+  it("login propagates timeout error to caller", async () => {
+    const timeoutError = new DOMException("Signal timed out", "TimeoutError");
+    mockedClient.POST.mockRejectedValueOnce(timeoutError);
+
+    const ref: { login?: (email: string, password: string) => Promise<void> } = {};
+    function CaptureFn() {
+      const ctx = useContext(AuthContext);
+      ref.login = ctx!.login;
+      return null;
+    }
+
+    render(
+      <AuthProvider>
+        <CaptureFn />
+      </AuthProvider>,
+    );
+
+    await expect(ref.login!("a@b.com", "pw")).rejects.toBe(timeoutError);
+  });
+
+  it("login propagates network error to caller", async () => {
+    const networkError = new TypeError("Failed to fetch");
+    mockedClient.POST.mockRejectedValueOnce(networkError);
+
+    const ref: { login?: (email: string, password: string) => Promise<void> } = {};
+    function CaptureFn() {
+      const ctx = useContext(AuthContext);
+      ref.login = ctx!.login;
+      return null;
+    }
+
+    render(
+      <AuthProvider>
+        <CaptureFn />
+      </AuthProvider>,
+    );
+
+    await expect(ref.login!("a@b.com", "pw")).rejects.toThrow(networkError);
+  });
+
   it("changePassword calls POST /api/auth/change-password and updates user", async () => {
     const newToken = makeJwt("a@b.com", "User");
     mockedClient.POST.mockResolvedValueOnce({
