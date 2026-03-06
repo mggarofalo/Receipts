@@ -9,22 +9,18 @@ import {
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
-import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
-import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
-import { applyFilters } from "@/lib/search";
-import type { FilterValues } from "@/components/FilterPanel";
+import type { FuseSearchConfig } from "@/lib/search";
 import { AccountForm } from "@/components/AccountForm";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
-import { FilterPanel } from "@/components/FilterPanel";
-import type { FilterField } from "@/components/FilterPanel";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -58,13 +54,8 @@ const SEARCH_CONFIG: FuseSearchConfig<AccountResponse> = {
   ],
 };
 
-const FILTER_FIELDS: FilterField[] = [
-  { type: "boolean", key: "isActive", label: "Active" },
-];
-
-const FILTER_DEFS: FilterDefinition[] = [
-  { key: "isActive", type: "boolean", field: "isActive" },
-];
+const STATUS_STORAGE_KEY = "accounts-status-filter";
+type StatusFilter = "all" | "true" | "false";
 
 const HIGHLIGHT_PARAMS = ["highlight"] as const;
 
@@ -81,8 +72,9 @@ function Accounts() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editAccount, setEditAccount] = useState<AccountResponse | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [filterValues, setFilterValues] = useState<FilterValues>({
-    isActive: "all",
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
+    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
   });
 
   const anyDialogOpen = createOpen || editAccount !== null || deleteOpen;
@@ -97,19 +89,22 @@ function Accounts() {
 
   const data = (accountsResponse?.data as AccountResponse[] | undefined) ?? [];
   const serverTotal = accountsResponse?.total ?? 0;
-  const {
-    filters: savedFilters,
-    save: saveFilter,
-    remove: removeFilter,
-  } = useSavedFilters("accounts");
 
   const { search, setSearch, results, totalCount, clearSearch } =
     useFuzzySearch({ data, config: SEARCH_CONFIG });
 
+  function handleStatusChange(value: string) {
+    const v = value as StatusFilter;
+    setStatusFilter(v);
+    localStorage.setItem(STATUS_STORAGE_KEY, v);
+  }
+
   const filteredResults = useMemo(() => {
     const items = results.map((r) => r.item);
-    return applyFilters(items, FILTER_DEFS, filterValues);
-  }, [results, filterValues]);
+    if (statusFilter === "all") return items;
+    const expected = statusFilter === "true";
+    return items.filter((a) => a.isActive === expected);
+  }, [results, statusFilter]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -182,25 +177,13 @@ function Accounts() {
         </div>
       </div>
 
-      <FilterPanel
-        fields={FILTER_FIELDS}
-        values={filterValues}
-        onChange={setFilterValues}
-        savedFilters={savedFilters}
-        onSaveFilter={(name) =>
-          saveFilter({
-            id: crypto.randomUUID(),
-            name,
-            entityType: "accounts",
-            values: filterValues,
-            createdAt: new Date().toISOString(),
-          })
-        }
-        onDeleteFilter={removeFilter}
-        onLoadFilter={(preset) =>
-          setFilterValues(preset.values as FilterValues)
-        }
-      />
+      <Tabs value={statusFilter} onValueChange={handleStatusChange}>
+        <TabsList>
+          <TabsTrigger value="true">Active</TabsTrigger>
+          <TabsTrigger value="false">Inactive</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {filteredResults.length === 0 ? (
         search ? (
