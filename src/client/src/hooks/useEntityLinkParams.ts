@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router";
 import { useCallback, useMemo } from "react";
 
-export function useEntityLinkParams<T extends string>(recognizedParams: T[]) {
+export function useEntityLinkParams<T extends string>(recognizedParams: readonly T[]) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const params = useMemo(() => {
