@@ -1,10 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
 import {
   useReceiptItems,
+  useReceiptItemsByReceiptId,
   useCreateReceiptItem,
   useUpdateReceiptItem,
   useDeleteReceiptItems,
 } from "@/hooks/useReceiptItems";
+import { useReceipts } from "@/hooks/useReceipts";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
@@ -19,6 +22,8 @@ import { FilterPanel } from "@/components/FilterPanel";
 import type { FilterField } from "@/components/FilterPanel";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
+import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
+import { ActiveFilterBanner } from "@/components/ActiveFilterBanner";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
@@ -68,10 +73,17 @@ const FILTER_DEFS: FilterDefinition[] = [
   { key: "unitPrice", type: "numberRange", field: "unitPrice" },
 ];
 
+const FILTER_PARAMS = ["receiptId", "subcategory"] as const;
+
 function ReceiptItems() {
   usePageTitle("Receipt Items");
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: itemsResponse, isLoading } = useReceiptItems(offset, limit);
+  const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
+  const allItemsQuery = useReceiptItems(offset, limit);
+  const filteredItemsQuery = useReceiptItemsByReceiptId(linkParams.receiptId ?? null, offset, limit);
+  const activeItemsQuery = linkParams.receiptId ? filteredItemsQuery : allItemsQuery;
+  const { data: itemsResponse, isLoading } = activeItemsQuery;
+  const { data: receiptsResponse } = useReceipts(0, 1000);
   const createItem = useCreateReceiptItem();
   const updateItem = useUpdateReceiptItem();
   const deleteItems = useDeleteReceiptItems();
@@ -118,6 +130,13 @@ function ReceiptItems() {
     [categories],
   );
 
+  const receiptMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const list = (receiptsResponse?.data as { id: string; description?: string | null; location: string }[] | undefined) ?? [];
+    for (const r of list) map.set(r.id, r.description || r.location);
+    return map;
+  }, [receiptsResponse?.data]);
+
   const {
     filters: savedFilters,
     save: saveFilter,
@@ -128,9 +147,11 @@ function ReceiptItems() {
     useFuzzySearch({ data, config: SEARCH_CONFIG });
 
   const filteredResults = useMemo(() => {
-    const list = results.map((r) => r.item);
-    return applyFilters(list, FILTER_DEFS, filterValues);
-  }, [results, filterValues]);
+    let list = results.map((r) => r.item);
+    list = applyFilters(list, FILTER_DEFS, filterValues);
+    if (linkParams.subcategory) list = list.filter((i) => i.subcategory === linkParams.subcategory);
+    return list;
+  }, [results, filterValues, linkParams.subcategory]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -228,6 +249,17 @@ function ReceiptItems() {
         }
       />
 
+      {hasActiveFilter && (
+        <ActiveFilterBanner
+          message={
+            linkParams.receiptId
+              ? `Showing items for receipt: ${receiptMap.get(linkParams.receiptId) ?? linkParams.receiptId}`
+              : `Showing items for subcategory: ${linkParams.subcategory}`
+          }
+          onClear={clearParams}
+        />
+      )}
+
       {filteredResults.length === 0 ? (
         search ? (
           <NoResults
@@ -267,6 +299,7 @@ function ReceiptItems() {
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Subcategory</TableHead>
+                  <TableHead>Receipt</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -326,6 +359,11 @@ function ReceiptItems() {
                       </TableCell>
                       <TableCell>{item.subcategory ?? ""}</TableCell>
                       <TableCell>
+                        <Link to={`/receipts?highlight=${item.receiptId}`} className="text-sm text-primary hover:underline">
+                          Receipt
+                        </Link>
+                      </TableCell>
+                      <TableCell>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -349,7 +387,7 @@ function ReceiptItems() {
                   <TableCell className="text-right font-bold">
                     {formatCurrency(grandTotal)}
                   </TableCell>
-                  <TableCell colSpan={3} />
+                  <TableCell colSpan={4} />
                 </TableRow>
               </TableFooter>
             </Table>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
 import {
   useReceipts,
   useCreateReceipt,
@@ -10,6 +11,7 @@ import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
+import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
@@ -39,6 +41,7 @@ import {
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
+import { toast } from "sonner";
 import { Pencil } from "lucide-react";
 
 interface ReceiptResponse {
@@ -66,8 +69,11 @@ const FILTER_DEFS: FilterDefinition[] = [
   { key: "taxAmount", type: "numberRange", field: "taxAmount" },
 ];
 
+const HIGHLIGHT_PARAMS = ["highlight"] as const;
+
 function Receipts() {
   usePageTitle("Receipts");
+  const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
   const { data: receiptsResponse, isLoading } = useReceipts(offset, limit);
   const createReceipt = useCreateReceipt();
@@ -121,6 +127,12 @@ function Receipts() {
     }
     return map;
   }, [results]);
+
+  useEffect(() => {
+    if (linkParams.highlight && data.length > 0 && !data.some((r) => r.id === linkParams.highlight)) {
+      toast.info("The highlighted item is not on this page.");
+    }
+  }, [linkParams.highlight, data]);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -234,6 +246,7 @@ function Receipts() {
                   <TableHead>Location</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-right">Tax Amount</TableHead>
+                  <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -244,7 +257,7 @@ function Receipts() {
                   return (
                     <TableRow
                       key={receipt.id}
-                      className={`cursor-pointer ${focusedId === receipt.id ? "bg-accent" : ""}`}
+                      className={`cursor-pointer ${focusedId === receipt.id ? "bg-accent" : ""} ${linkParams.highlight === receipt.id ? "ring-2 ring-primary" : ""}`}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
                         setFocusedIndex(index);
@@ -280,6 +293,16 @@ function Receipts() {
                       <TableCell>{receipt.date}</TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(receipt.taxAmount)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Link to={`/receipt-items?receiptId=${receipt.id}`} className="text-sm text-primary hover:underline">
+                            Items
+                          </Link>
+                          <Link to={`/transactions?receiptId=${receipt.id}`} className="text-sm text-primary hover:underline">
+                            Txns
+                          </Link>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Button
