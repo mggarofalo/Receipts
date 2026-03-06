@@ -38,13 +38,13 @@ vi.mock("@/hooks/useSavedFilters", () => ({
   })),
 }));
 
-vi.mock("@/hooks/useServerPagination", () => ({
-  useServerPagination: vi.fn(() => ({
-    offset: 0,
-    limit: 25,
+vi.mock("@/hooks/usePagination", () => ({
+  usePagination: vi.fn(() => ({
+    paginatedItems: [],
     currentPage: 1,
     pageSize: 25,
-    totalPages: vi.fn(() => 1),
+    totalItems: 0,
+    totalPages: 1,
     setPage: vi.fn(),
     setPageSize: vi.fn(),
   })),
@@ -88,9 +88,20 @@ describe("Trips", () => {
       clearSearch: vi.fn(),
     }));
 
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 25,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 25 },
+      data: { data: items, total: items.length, offset: 0, limit: 10000 },
       isLoading: false,
     }));
 
@@ -135,10 +146,31 @@ describe("Trips", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders no-results state when search yields nothing", async () => {
+  it("renders no-results state when search yields nothing but receipts exist", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 25 },
+      data: { data: [{ id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }], total: 1, offset: 0, limit: 10000 },
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "xyz",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 1,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Trips />);
+    expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
+  });
+
+  it("shows empty state when searching with zero receipts in database", async () => {
+    const { useReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
+      data: { data: [], total: 0, offset: 0, limit: 10000 },
       isLoading: false,
     }));
 
@@ -153,7 +185,7 @@ describe("Trips", () => {
     }));
 
     renderWithProviders(<Trips />);
-    expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
+    expect(screen.getByText(/no receipts found/i)).toBeInTheDocument();
   });
 
   it("does not render trip data when no receipt is selected", () => {

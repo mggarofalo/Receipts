@@ -4,7 +4,7 @@ import { useReceipts } from "@/hooks/useReceipts";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
-import { useServerPagination } from "@/hooks/useServerPagination";
+import { usePagination } from "@/hooks/usePagination";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
 import type { FilterValues } from "@/components/FilterPanel";
@@ -69,8 +69,7 @@ function Trips() {
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const { data: trip, isLoading: tripLoading, isError } = useTripByReceiptId(receiptId);
 
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: receiptsResponse, isLoading: receiptsLoading } = useReceipts(offset, limit);
+  const { data: receiptsResponse, isLoading: receiptsLoading } = useReceipts(0, 10000);
 
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
@@ -80,7 +79,6 @@ function Trips() {
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
   }, [receiptsResponse?.data]);
-  const serverTotal = receiptsResponse?.total ?? 0;
 
   const {
     filters: savedFilters,
@@ -95,6 +93,19 @@ function Trips() {
     const items = results.map((r) => r.item);
     return applyFilters(items, FILTER_DEFS, filterValues);
   }, [results, filterValues]);
+
+  const { paginatedItems, currentPage, pageSize, totalItems, totalPages, setPage, setPageSize } =
+    usePagination({ items: filteredResults });
+
+  const hasActiveFilters = useMemo(() => {
+    return Object.values(filterValues).some((v) => {
+      if (v == null) return false;
+      if (typeof v === "object") {
+        return Object.values(v as Record<string, unknown>).some((inner) => inner != null);
+      }
+      return v !== "" && v !== "all";
+    });
+  }, [filterValues]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -158,9 +169,9 @@ function Trips() {
         {receiptsLoading ? (
           <TableSkeleton columns={4} />
         ) : filteredResults.length === 0 ? (
-          search ? (
+          (search || hasActiveFilters) && totalCount > 0 ? (
             <NoResults
-              searchTerm={search}
+              searchTerm={search || "current filters"}
               onClearSearch={clearSearch}
               onSelectSuggestion={setSearch}
               entityName="receipts"
@@ -183,7 +194,7 @@ function Trips() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredResults.map((receipt) => {
+                  {paginatedItems.map((receipt) => {
                     const result = matchMap.get(receipt.id);
                     const matches = result?.matches;
                     return (
@@ -222,10 +233,10 @@ function Trips() {
             </div>
             <Pagination
               currentPage={currentPage}
-              totalItems={serverTotal}
+              totalItems={totalItems}
               pageSize={pageSize}
-              totalPages={totalPages(serverTotal)}
-              onPageChange={(page) => setPage(page, serverTotal)}
+              totalPages={totalPages}
+              onPageChange={setPage}
               onPageSizeChange={setPageSize}
             />
           </>
