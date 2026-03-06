@@ -62,6 +62,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
+import { Pencil } from "lucide-react";
 
 const AVAILABLE_ROLES = ["Admin", "User"];
 
@@ -288,10 +289,11 @@ function AdminUsers() {
                         <div className="flex gap-1">
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="icon"
+                            aria-label="Edit"
                             onClick={() => openEdit(user)}
                           >
-                            Edit
+                            <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="outline"

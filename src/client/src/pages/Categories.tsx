@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { Pencil } from "lucide-react";
 
 interface CategoryResponse {
   id: string;
@@ -231,10 +232,11 @@ function Categories() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          aria-label="Edit"
                           onClick={() => setEditCategory(category)}
                         >
-                          Edit
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>

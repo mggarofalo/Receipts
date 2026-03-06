@@ -37,6 +37,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
+import { Pencil } from "lucide-react";
 
 interface AdjustmentRow {
   id: string;
@@ -199,13 +200,14 @@ export function AdjustmentsCard({
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          aria-label="Edit"
                           onClick={() => {
                             setServerErrors({});
                             setEditAdj(adj);
                           }}
                         >
-                          Edit
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
