@@ -30,7 +30,7 @@ public static class ProgramService
 		services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationLoggingHandler>();
 
 		services.AddSignalR();
-		services.AddScoped<IEntityChangeNotifier, EntityChangeNotifier>();
+		services.AddSingleton<IEntityChangeNotifier, EntityChangeNotifier>();
 
 		return services;
 	}
