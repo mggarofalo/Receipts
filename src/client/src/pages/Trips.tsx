@@ -1,13 +1,23 @@
 import { useState, useMemo } from "react";
 import { useTripByReceiptId } from "@/hooks/useTrips";
 import { useReceipts } from "@/hooks/useReceipts";
-import { receiptToOption } from "@/lib/combobox-options";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useFuzzySearch } from "@/hooks/useFuzzySearch";
+import { useSavedFilters } from "@/hooks/useSavedFilters";
+import { useServerPagination } from "@/hooks/useServerPagination";
+import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
+import { applyFilters } from "@/lib/search";
+import type { FilterValues } from "@/components/FilterPanel";
+import { FuzzySearchInput } from "@/components/FuzzySearchInput";
+import { FilterPanel } from "@/components/FilterPanel";
+import type { FilterField } from "@/components/FilterPanel";
+import { SearchHighlight } from "@/components/SearchHighlight";
+import { getMatchIndices } from "@/lib/search-highlight";
+import { NoResults } from "@/components/NoResults";
+import { Pagination } from "@/components/Pagination";
 import { ValidationWarnings } from "@/components/ValidationWarnings";
 import { BalanceSummaryCard } from "@/components/BalanceSummaryCard";
 import { ReceiptItemsCard } from "@/components/ReceiptItemsCard";
-import { Combobox } from "@/components/ui/combobox";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -26,31 +36,83 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { formatCurrency } from "@/lib/format";
+
+interface ReceiptResponse {
+  id: string;
+  description?: string | null;
+  location: string;
+  date: string;
+  taxAmount: number;
+}
+
+const SEARCH_CONFIG: FuseSearchConfig<ReceiptResponse> = {
+  keys: [
+    { name: "description", weight: 2 },
+    { name: "location", weight: 1.5 },
+  ],
+};
+
+const FILTER_FIELDS: FilterField[] = [
+  { type: "dateRange", key: "date", label: "Date" },
+  { type: "numberRange", key: "taxAmount", label: "Tax Amount" },
+];
+
+const FILTER_DEFS: FilterDefinition[] = [
+  { key: "date", type: "dateRange", field: "date" },
+  { key: "taxAmount", type: "numberRange", field: "taxAmount" },
+];
 
 function Trips() {
   usePageTitle("Trips");
   const [receiptId, setReceiptId] = useState<string | null>(null);
-  const { data: trip, isLoading, isError } = useTripByReceiptId(receiptId);
-  const { data: receipts, isLoading: receiptsLoading } = useReceipts();
+  const { data: trip, isLoading: tripLoading, isError } = useTripByReceiptId(receiptId);
 
-  const receiptOptions = useMemo(
-    () =>
-      ((receipts?.data as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
-    [receipts],
-  );
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { data: receiptsResponse, isLoading: receiptsLoading } = useReceipts(offset, limit);
+
+  const [filterValues, setFilterValues] = useState<FilterValues>({});
+
+  const data = useMemo(() => {
+    const list = (receiptsResponse?.data as ReceiptResponse[] | undefined) ?? [];
+    return [...list].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+  }, [receiptsResponse?.data]);
+  const serverTotal = receiptsResponse?.total ?? 0;
+
+  const {
+    filters: savedFilters,
+    save: saveFilter,
+    remove: removeFilter,
+  } = useSavedFilters("trips");
+
+  const { search, setSearch, results, totalCount, clearSearch } =
+    useFuzzySearch({ data, config: SEARCH_CONFIG });
+
+  const filteredResults = useMemo(() => {
+    const items = results.map((r) => r.item);
+    return applyFilters(items, FILTER_DEFS, filterValues);
+  }, [results, filterValues]);
+
+  const matchMap = useMemo(() => {
+    const map = new Map<string, (typeof results)[number]>();
+    for (const r of results) {
+      map.set(r.item.id, r);
+    }
+    return map;
+  }, [results]);
 
   const transactionsTotal =
     trip?.transactions?.reduce((sum: number, ta: { transaction: { amount: number } }) => sum + ta.transaction.amount, 0) ??
     0;
 
-  // Balance equation values from the server-computed response
   const subtotal = trip?.receipt?.subtotal ?? 0;
   const adjustmentTotal = trip?.receipt?.adjustmentTotal ?? 0;
   const expectedTotal = trip?.receipt?.expectedTotal ?? 0;
   const taxAmount = trip?.receipt?.receipt?.taxAmount ?? 0;
 
-  // Combine warnings from both receipt and trip levels
   const allWarnings = [
     ...(trip?.receipt?.warnings ?? []),
     ...(trip?.warnings ?? []),
@@ -59,20 +121,118 @@ function Trips() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Trips</h1>
-      <div className="max-w-md space-y-2">
-        <Label>Select a Receipt</Label>
-        <Combobox
-          options={receiptOptions}
-          value={receiptId ?? ""}
-          onValueChange={(value) => setReceiptId(value || null)}
-          placeholder="Search for a receipt..."
-          searchPlaceholder="Search receipts..."
-          emptyMessage="No receipts found."
-          loading={receiptsLoading}
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <FuzzySearchInput
+            aria-label="Search receipts"
+            value={search}
+            onChange={setSearch}
+            placeholder="Search receipts..."
+            resultCount={filteredResults.length}
+            totalCount={totalCount}
+            className="max-w-sm"
+          />
+        </div>
+
+        <FilterPanel
+          fields={FILTER_FIELDS}
+          values={filterValues}
+          onChange={setFilterValues}
+          savedFilters={savedFilters}
+          onSaveFilter={(name) =>
+            saveFilter({
+              id: crypto.randomUUID(),
+              name,
+              entityType: "trips",
+              values: filterValues,
+              createdAt: new Date().toISOString(),
+            })
+          }
+          onDeleteFilter={removeFilter}
+          onLoadFilter={(preset) =>
+            setFilterValues(preset.values as FilterValues)
+          }
         />
+
+        {receiptsLoading ? (
+          <TableSkeleton columns={4} />
+        ) : filteredResults.length === 0 ? (
+          search ? (
+            <NoResults
+              searchTerm={search}
+              onClearSearch={clearSearch}
+              onSelectSuggestion={setSearch}
+              entityName="receipts"
+            />
+          ) : (
+            <div className="py-12 text-center text-muted-foreground">
+              No receipts found.
+            </div>
+          )
+        ) : (
+          <>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Tax Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredResults.map((receipt) => {
+                    const result = matchMap.get(receipt.id);
+                    const matches = result?.matches;
+                    return (
+                      <TableRow
+                        key={receipt.id}
+                        className={`cursor-pointer ${receiptId === receipt.id ? "bg-accent" : ""}`}
+                        onClick={() => setReceiptId(receipt.id)}
+                      >
+                        <TableCell>
+                          {receipt.description ? (
+                            <SearchHighlight
+                              text={receipt.description}
+                              indices={getMatchIndices(matches, "description")}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground italic">
+                              No description
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <SearchHighlight
+                            text={receipt.location}
+                            indices={getMatchIndices(matches, "location")}
+                          />
+                        </TableCell>
+                        <TableCell>{receipt.date}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(receipt.taxAmount)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={serverTotal}
+              pageSize={pageSize}
+              totalPages={totalPages(serverTotal)}
+              onPageChange={(page) => setPage(page, serverTotal)}
+              onPageSizeChange={setPageSize}
+            />
+          </>
+        )}
       </div>
 
-      {isLoading && (
+      {tripLoading && (
         <div className="space-y-4">
           <CardSkeleton lines={1} />
           <CardSkeleton lines={3} />
