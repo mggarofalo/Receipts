@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
 import Subcategories from "./Subcategories";
@@ -8,10 +8,16 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useSubcategories: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useSubcategories: vi.fn(() => ({
+    data: { data: [], total: 0, offset: 0, limit: 50 },
+    isLoading: false,
+  })),
   useCreateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-  useDeleteSubcategories: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDeleteSubcategories: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  })),
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
@@ -69,6 +75,55 @@ vi.mock("@/hooks/usePagination", () => ({
   })),
 }));
 
+const ITEMS = [
+  { id: "1", name: "Dairy", categoryId: "c1", description: "Dairy products" },
+  { id: "2", name: "Bakery", categoryId: "c1", description: "Baked goods" },
+  { id: "3", name: "Electronics", categoryId: "c2", description: null },
+];
+
+const CATEGORIES = [
+  { id: "c1", name: "Food" },
+  { id: "c2", name: "Goods" },
+];
+
+async function setupWithData(items = ITEMS, categories = CATEGORIES) {
+  const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+  vi.mocked(useFuzzySearch).mockReturnValue(
+    mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({
+        item,
+        matches: [],
+        score: 0,
+        refIndex: 0,
+      })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }),
+  );
+
+  const { useSubcategories } = await import("@/hooks/useSubcategories");
+  vi.mocked(useSubcategories).mockReturnValue(
+    mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      isLoading: false,
+    }),
+  );
+
+  const { useCategories } = await import("@/hooks/useCategories");
+  // Use Object.assign to create an array with a .data property so both
+  // the page (accesses .data) and SubcategoryForm (iterates directly) work.
+  const catData = Object.assign([...categories], { data: categories });
+  vi.mocked(useCategories).mockReturnValue(
+    mockQueryResult({
+      data: catData,
+      isLoading: false,
+    }),
+  );
+}
+
 describe("Subcategories", () => {
   it("renders the page heading", () => {
     renderWithProviders(<Subcategories />);
@@ -79,26 +134,30 @@ describe("Subcategories", () => {
 
   it("renders loading skeleton when data is loading", async () => {
     const { useSubcategories } = await import("@/hooks/useSubcategories");
-    vi.mocked(useSubcategories).mockReturnValue(mockQueryResult({
-      data: undefined,
-      isLoading: true,
-    }));
+    vi.mocked(useSubcategories).mockReturnValue(
+      mockQueryResult({
+        data: undefined,
+        isLoading: true,
+      }),
+    );
 
     const { container } = renderWithProviders(<Subcategories />);
-    expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
+    expect(
+      container.querySelector("[data-slot='skeleton']"),
+    ).toBeInTheDocument();
   });
 
   it("renders empty state when no subcategories exist", async () => {
     const { useSubcategories } = await import("@/hooks/useSubcategories");
-    vi.mocked(useSubcategories).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
+    vi.mocked(useSubcategories).mockReturnValue(
+      mockQueryResult({
+        data: { data: [], total: 0, offset: 0, limit: 50 },
+        isLoading: false,
+      }),
+    );
 
     renderWithProviders(<Subcategories />);
-    expect(
-      screen.getByText(/no subcategories yet/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/no subcategories yet/i)).toBeInTheDocument();
   });
 
   it("renders the New Subcategory button", () => {
@@ -115,31 +174,97 @@ describe("Subcategories", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders table with subcategories when data exists", async () => {
-    const items = [
-      { id: "1", name: "Dairy", categoryId: "c1", categoryName: "Food", description: "Dairy products" },
-      { id: "2", name: "Electronics", categoryId: "c2", categoryName: "Goods", description: null },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useSubcategories } = await import("@/hooks/useSubcategories");
-    vi.mocked(useSubcategories).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
+  it("renders category group headers when data exists", async () => {
+    await setupWithData();
     renderWithProviders(<Subcategories />);
+
+    expect(screen.getByText("Food")).toBeInTheDocument();
+    expect(screen.getByText("Goods")).toBeInTheDocument();
+  });
+
+  it("groups are collapsed by default — subcategory rows not visible", async () => {
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    expect(screen.queryByText("Dairy")).not.toBeInTheDocument();
+    expect(screen.queryByText("Electronics")).not.toBeInTheDocument();
+  });
+
+  it("clicking a category header expands its group", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    await user.click(screen.getByTestId("category-header-c1"));
+
     expect(screen.getByText("Dairy")).toBeInTheDocument();
+    expect(screen.getByText("Bakery")).toBeInTheDocument();
+    expect(screen.queryByText("Electronics")).not.toBeInTheDocument();
+  });
+
+  it("clicking an expanded category header collapses it", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    const foodHeader = screen.getByTestId("category-header-c1");
+    await user.click(foodHeader);
+    expect(screen.getByText("Dairy")).toBeInTheDocument();
+
+    await user.click(foodHeader);
+    expect(screen.queryByText("Dairy")).not.toBeInTheDocument();
+  });
+
+  it("Expand All button expands all groups", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    await user.click(screen.getByRole("button", { name: /expand all/i }));
+
+    expect(screen.getByText("Dairy")).toBeInTheDocument();
+    expect(screen.getByText("Bakery")).toBeInTheDocument();
     expect(screen.getByText("Electronics")).toBeInTheDocument();
+  });
+
+  it("Collapse All button collapses all groups", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    await user.click(screen.getByRole("button", { name: /expand all/i }));
+    expect(screen.getByText("Dairy")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /collapse all/i }));
+    expect(screen.queryByText("Dairy")).not.toBeInTheDocument();
+    expect(screen.queryByText("Electronics")).not.toBeInTheDocument();
+  });
+
+  it("category header shows item count", async () => {
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    const foodHeader = screen.getByTestId("category-header-c1");
+    expect(within(foodHeader).getByText("(2)")).toBeInTheDocument();
+
+    const goodsHeader = screen.getByTestId("category-header-c2");
+    expect(within(goodsHeader).getByText("(1)")).toBeInTheDocument();
+  });
+
+  it("select-all only selects visible (expanded) rows", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    await user.click(screen.getByTestId("category-header-c1"));
+    await user.click(screen.getByLabelText("Select all rows"));
+
+    expect(screen.getByLabelText("Select Dairy")).toBeChecked();
+    expect(screen.getByLabelText("Select Bakery")).toBeChecked();
+
+    expect(
+      screen.getByRole("button", { name: /delete \(2\)/i }),
+    ).toBeInTheDocument();
   });
 
   it("opens create dialog when New Subcategory button is clicked", async () => {
@@ -155,27 +280,10 @@ describe("Subcategories", () => {
 
   it("toggles checkbox selection and shows delete button", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      { id: "1", name: "Dairy", categoryId: "c1", categoryName: "Food", description: "Dairy products" },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useSubcategories } = await import("@/hooks/useSubcategories");
-    vi.mocked(useSubcategories).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
+    await setupWithData();
     renderWithProviders(<Subcategories />);
+
+    await user.click(screen.getByTestId("category-header-c1"));
     await user.click(screen.getByLabelText("Select Dairy"));
 
     expect(
@@ -186,33 +294,20 @@ describe("Subcategories", () => {
   it("opens delete dialog and confirms deletion", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const mockMutate = vi.fn();
-    const { useDeleteSubcategories } = await import("@/hooks/useSubcategories");
-    vi.mocked(useDeleteSubcategories).mockReturnValue(mockMutationResult({
-      mutate: mockMutate,
-      isPending: false,
-    }));
+    const { useDeleteSubcategories } = await import(
+      "@/hooks/useSubcategories"
+    );
+    vi.mocked(useDeleteSubcategories).mockReturnValue(
+      mockMutationResult({
+        mutate: mockMutate,
+        isPending: false,
+      }),
+    );
 
-    const items = [
-      { id: "1", name: "Dairy", categoryId: "c1", categoryName: "Food", description: "Dairy products" },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useSubcategories } = await import("@/hooks/useSubcategories");
-    vi.mocked(useSubcategories).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
+    await setupWithData();
     renderWithProviders(<Subcategories />);
+
+    await user.click(screen.getByTestId("category-header-c1"));
     await user.click(screen.getByLabelText("Select Dairy"));
     await user.click(screen.getByRole("button", { name: /delete/i }));
 
@@ -231,38 +326,20 @@ describe("Subcategories", () => {
 
   it("closes edit dialog when dismissed", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      { id: "1", name: "Dairy", categoryId: "c1", categoryName: "Food", description: "Dairy products" },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
-
+    await setupWithData();
     renderWithProviders(<Subcategories />);
-    await user.click(screen.getByRole("button", { name: /edit/i }));
-    expect(screen.getByRole("heading", { name: /edit subcategory/i })).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("category-header-c1"));
+    await user.click(screen.getAllByRole("button", { name: /edit/i })[0]);
+    expect(
+      screen.getByRole("heading", { name: /edit subcategory/i }),
+    ).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
     await vi.waitFor(() => {
-      expect(screen.queryByRole("heading", { name: /edit subcategory/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("heading", { name: /edit subcategory/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -270,30 +347,45 @@ describe("Subcategories", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithProviders(<Subcategories />);
     await user.click(screen.getByRole("button", { name: /new subcategory/i }));
-    expect(screen.getByRole("heading", { name: /create subcategory/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /create subcategory/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /cancel/i }));
     await vi.waitFor(() => {
-      expect(screen.queryByRole("heading", { name: /create subcategory/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("heading", { name: /create subcategory/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
   it("renders NoResults when search returns no matches", async () => {
     const { useSubcategories } = await import("@/hooks/useSubcategories");
-    vi.mocked(useSubcategories).mockReturnValue(mockQueryResult({
-      data: [{ id: "1", name: "Dairy", categoryId: "c1", description: "Dairy products" }],
-      isLoading: false,
-    }));
+    vi.mocked(useSubcategories).mockReturnValue(
+      mockQueryResult({
+        data: [
+          {
+            id: "1",
+            name: "Dairy",
+            categoryId: "c1",
+            description: "Dairy products",
+          },
+        ],
+        isLoading: false,
+      }),
+    );
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "xyz",
-      setSearch: vi.fn(),
-      results: [],
-      totalCount: 0,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
+    vi.mocked(useFuzzySearch).mockReturnValue(
+      mockQueryResult({
+        search: "xyz",
+        setSearch: vi.fn(),
+        results: [],
+        totalCount: 0,
+        isSearching: false,
+        clearSearch: vi.fn(),
+      }),
+    );
 
     renderWithProviders(<Subcategories />);
     expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
@@ -301,33 +393,11 @@ describe("Subcategories", () => {
 
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      { id: "1", name: "Dairy", categoryId: "c1", categoryName: "Food", description: "Dairy products" },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { usePagination } = await import("@/hooks/usePagination");
-    vi.mocked(usePagination).mockReturnValue({
-      paginatedItems: items,
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: items.length,
-      totalPages: 1,
-      setPage: vi.fn(),
-      setPageSize: vi.fn(),
-    });
-
+    await setupWithData();
     renderWithProviders(<Subcategories />);
-    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    await user.click(screen.getByTestId("category-header-c1"));
+    await user.click(screen.getAllByRole("button", { name: /edit/i })[0]);
 
     expect(
       screen.getByRole("heading", { name: /edit subcategory/i }),
