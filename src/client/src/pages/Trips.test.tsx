@@ -16,13 +16,37 @@ vi.mock("@/hooks/useTrips", () => ({
 }));
 
 vi.mock("@/hooks/useReceipts", () => ({
-  useReceipts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useReceipts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 25 }, isLoading: false })),
 }));
 
-vi.mock("@/lib/combobox-options", () => ({
-  receiptToOption: vi.fn((r: { id: string }) => ({
-    value: r.id,
-    label: r.id,
+vi.mock("@/hooks/useFuzzySearch", () => ({
+  useFuzzySearch: vi.fn(() => ({
+    search: "",
+    setSearch: vi.fn(),
+    results: [],
+    totalCount: 0,
+    isSearching: false,
+    clearSearch: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/useSavedFilters", () => ({
+  useSavedFilters: vi.fn(() => ({
+    filters: [],
+    save: vi.fn(),
+    remove: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/usePagination", () => ({
+  usePagination: vi.fn(() => ({
+    paginatedItems: [],
+    currentPage: 1,
+    pageSize: 25,
+    totalItems: 0,
+    totalPages: 1,
+    setPage: vi.fn(),
+    setPageSize: vi.fn(),
   })),
 }));
 
@@ -34,9 +58,134 @@ describe("Trips", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the receipt selection label", () => {
+  it("renders the search input", () => {
     renderWithProviders(<Trips />);
-    expect(screen.getByText(/select a receipt/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/search receipts/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the filter panel", () => {
+    renderWithProviders(<Trips />);
+    expect(
+      screen.getByRole("button", { name: /filters/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders receipt table when receipts exist", async () => {
+    const items = [
+      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "2", description: null, location: "Target", date: "2024-01-20", taxAmount: 3.50 },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { usePagination } = await import("@/hooks/usePagination");
+    vi.mocked(usePagination).mockReturnValue({
+      paginatedItems: items,
+      currentPage: 1,
+      pageSize: 25,
+      totalItems: items.length,
+      totalPages: 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+    });
+
+    const { useReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
+      data: { data: items, total: items.length, offset: 0, limit: 10000 },
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Trips />);
+    expect(screen.getByText("Grocery")).toBeInTheDocument();
+    expect(screen.getByText("Walmart")).toBeInTheDocument();
+    expect(screen.getByText("Target")).toBeInTheDocument();
+    expect(screen.getByText(/no description/i)).toBeInTheDocument();
+  });
+
+  it("renders loading skeleton when receipts are loading", async () => {
+    const { useReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
+      data: undefined,
+      isLoading: true,
+    }));
+
+    const { container } = renderWithProviders(<Trips />);
+    expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
+  });
+
+  it("renders empty state when no receipts found", async () => {
+    const { useReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
+      data: { data: [], total: 0, offset: 0, limit: 25 },
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 0,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Trips />);
+    expect(
+      screen.getByText(/no receipts found/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders no-results state when search yields nothing but receipts exist", async () => {
+    const { useReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
+      data: { data: [{ id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }], total: 1, offset: 0, limit: 10000 },
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "xyz",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 1,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Trips />);
+    expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
+  });
+
+  it("shows empty state when searching with zero receipts in database", async () => {
+    const { useReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
+      data: { data: [], total: 0, offset: 0, limit: 10000 },
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "xyz",
+      setSearch: vi.fn(),
+      results: [],
+      totalCount: 0,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Trips />);
+    expect(screen.getByText(/no receipts found/i)).toBeInTheDocument();
   });
 
   it("does not render trip data when no receipt is selected", () => {
