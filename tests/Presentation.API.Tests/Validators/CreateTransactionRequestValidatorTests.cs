@@ -15,6 +15,7 @@ public class CreateTransactionRequestValidatorTests
 		{
 			Amount = 100,
 			Date = DateOnly.FromDateTime(DateTime.Today),
+			AccountId = Guid.NewGuid(),
 		};
 
 		// Act
@@ -50,7 +51,8 @@ public class CreateTransactionRequestValidatorTests
 		CreateTransactionRequest transaction = new()
 		{
 			Amount = 100,
-			Date = pastDate
+			Date = pastDate,
+			AccountId = Guid.NewGuid(),
 		};
 
 		// Act
@@ -68,7 +70,8 @@ public class CreateTransactionRequestValidatorTests
 		CreateTransactionRequest transaction = new()
 		{
 			Amount = 100,
-			Date = today
+			Date = today,
+			AccountId = Guid.NewGuid(),
 		};
 
 		// Act
@@ -94,5 +97,24 @@ public class CreateTransactionRequestValidatorTests
 		// Assert
 		Assert.False(result.IsValid);
 		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateTransactionRequestValidator.DateMustBePriorToCurrentDate);
+	}
+
+	[Fact]
+	public void Should_Fail_When_AccountIdIsEmpty()
+	{
+		// Arrange
+		CreateTransactionRequest transaction = new()
+		{
+			Amount = 100,
+			Date = DateOnly.FromDateTime(DateTime.Today),
+			AccountId = Guid.Empty,
+		};
+
+		// Act
+		FluentValidation.Results.ValidationResult result = _validator.Validate(transaction);
+
+		// Assert
+		Assert.False(result.IsValid);
+		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateTransactionRequestValidator.AccountIdMustNotBeEmpty);
 	}
 }

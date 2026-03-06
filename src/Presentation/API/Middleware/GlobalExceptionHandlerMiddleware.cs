@@ -41,6 +41,25 @@ public class GlobalExceptionHandlerMiddleware(RequestDelegate next, ILogger<Glob
 			context.Response.StatusCode = StatusCodes.Status404NotFound;
 			await context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
 		}
+		catch (ArgumentException ex) when (ex is not ArgumentNullException and not ArgumentOutOfRangeException)
+		{
+			logger.LogWarning(ex, "Validation error: {Message}", ex.Message);
+
+			string detail = ex.ParamName is not null
+				? ex.Message.Replace($" (Parameter '{ex.ParamName}')", "")
+				: ex.Message;
+
+			ValidationProblemDetails problemDetails = new()
+			{
+				Status = StatusCodes.Status400BadRequest,
+				Title = "Validation Error",
+				Detail = detail,
+				Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+			};
+
+			context.Response.StatusCode = StatusCodes.Status400BadRequest;
+			await context.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json");
+		}
 		catch (Exception ex)
 		{
 			string errorId = Guid.NewGuid().ToString();

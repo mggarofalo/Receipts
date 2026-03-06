@@ -153,6 +153,89 @@ public class GlobalExceptionHandlerMiddlewareTests
 			Times.Once);
 	}
 
+	[Fact]
+	public async Task InvokeAsync_ArgumentException_Returns400ValidationProblemDetails()
+	{
+		// Arrange
+		DefaultHttpContext context = new();
+		context.Response.Body = new MemoryStream();
+
+		GlobalExceptionHandlerMiddleware middleware = new(
+			_ => throw new ArgumentException("Name cannot be empty"),
+			_loggerMock.Object);
+
+		// Act
+		await middleware.InvokeAsync(context);
+
+		// Assert
+		context.Response.StatusCode.Should().Be(400);
+		context.Response.ContentType.Should().Be("application/problem+json");
+
+		ProblemDetails? problemDetails = await DeserializeProblemDetails(context.Response);
+		problemDetails.Should().NotBeNull();
+		problemDetails!.Status.Should().Be(400);
+		problemDetails.Title.Should().Be("Validation Error");
+	}
+
+	[Fact]
+	public async Task InvokeAsync_ArgumentException_StripsParameterNameFromDetail()
+	{
+		// Arrange
+		DefaultHttpContext context = new();
+		context.Response.Body = new MemoryStream();
+
+		GlobalExceptionHandlerMiddleware middleware = new(
+			_ => throw new ArgumentException("Amount must be non-zero", "amount"),
+			_loggerMock.Object);
+
+		// Act
+		await middleware.InvokeAsync(context);
+
+		// Assert
+		ProblemDetails? problemDetails = await DeserializeProblemDetails(context.Response);
+		problemDetails.Should().NotBeNull();
+		problemDetails!.Detail.Should().Be("Amount must be non-zero");
+		problemDetails.Detail.Should().NotContain("Parameter");
+	}
+
+	[Fact]
+	public async Task InvokeAsync_ArgumentNullException_Returns500NotCaughtAsValidation()
+	{
+		// Arrange
+		DefaultHttpContext context = new();
+		context.Response.Body = new MemoryStream();
+		context.Items[CorrelationIdMiddleware.ItemKey] = "test-correlation-id";
+
+		GlobalExceptionHandlerMiddleware middleware = new(
+			_ => throw new ArgumentNullException("connectionString"),
+			_loggerMock.Object);
+
+		// Act
+		await middleware.InvokeAsync(context);
+
+		// Assert
+		context.Response.StatusCode.Should().Be(500);
+	}
+
+	[Fact]
+	public async Task InvokeAsync_ArgumentOutOfRangeException_Returns500NotCaughtAsValidation()
+	{
+		// Arrange
+		DefaultHttpContext context = new();
+		context.Response.Body = new MemoryStream();
+		context.Items[CorrelationIdMiddleware.ItemKey] = "test-correlation-id";
+
+		GlobalExceptionHandlerMiddleware middleware = new(
+			_ => throw new ArgumentOutOfRangeException("index"),
+			_loggerMock.Object);
+
+		// Act
+		await middleware.InvokeAsync(context);
+
+		// Assert
+		context.Response.StatusCode.Should().Be(500);
+	}
+
 	private static async Task<ProblemDetails?> DeserializeProblemDetails(HttpResponse response)
 	{
 		response.Body.Position = 0;

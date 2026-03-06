@@ -81,4 +81,23 @@ public class CreateReceiptRequestValidatorTests
 		Assert.False(result.IsValid);
 		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateReceiptRequestValidator.DateMustBePriorToCurrentDate);
 	}
+
+	[Fact]
+	public void Should_Fail_When_LocationIsEmpty()
+	{
+		// Arrange
+		CreateReceiptRequest receipt = new()
+		{
+			Description = "Valid Description",
+			Location = "",
+			Date = DateOnly.FromDateTime(DateTime.Today)
+		};
+
+		// Act
+		FluentValidation.Results.ValidationResult result = _validator.Validate(receipt);
+
+		// Assert
+		Assert.False(result.IsValid);
+		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateReceiptRequestValidator.LocationMustNotBeEmpty);
+	}
 }

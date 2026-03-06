@@ -110,6 +110,26 @@ public class FluentValidationActionFilterTests
 	}
 
 	[Fact]
+	public async Task OnActionExecutionAsync_EmptyList_ThrowsValidationException()
+	{
+		// Arrange
+		ServiceCollection services = new();
+		ServiceProvider provider = services.BuildServiceProvider();
+		FluentValidationActionFilter filter = new(provider);
+		ActionExecutingContext context = CreateContext(new Dictionary<string, object?>
+		{
+			["model"] = new List<TestModel>()
+		});
+
+		// Act
+		Func<Task> act = () => filter.OnActionExecutionAsync(context, () =>
+			Task.FromResult<ActionExecutedContext>(null!));
+
+		// Assert
+		await act.Should().ThrowAsync<ValidationException>();
+	}
+
+	[Fact]
 	public async Task OnActionExecutionAsync_NullArgument_SkipsValidation()
 	{
 		// Arrange
