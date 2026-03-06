@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { isTimeoutError } from "@/lib/api-client";
+import { isTimeoutError, isNetworkError } from "@/lib/api-client";
 import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
@@ -56,7 +56,9 @@ function Login() {
       await login(values.email, values.password);
     } catch (err) {
       if (isTimeoutError(err)) {
-        setError("Request timed out. Please try again.");
+        setError("Request timed out. Please check your connection and try again.");
+      } else if (isNetworkError(err)) {
+        setError("Unable to reach the server. Please check your connection and try again.");
       } else {
         setError("Invalid email or password. Please try again.");
       }

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthProvider } from "./AuthContext";
 import { AuthContext } from "./auth-context";
 
@@ -198,6 +198,72 @@ describe("AuthProvider", () => {
 
     expect(mockedAuth.clearTokens).toHaveBeenCalled();
     expect(screen.getByTestId("user")).toHaveTextContent("null");
+  });
+
+  it("login propagates timeout error to caller", async () => {
+    const timeoutError = new DOMException("Signal timed out", "TimeoutError");
+    mockedClient.POST.mockRejectedValueOnce(timeoutError);
+
+    function ErrorCapture() {
+      const ctx = useContext(AuthContext);
+      const [error, setError] = useState<string>("none");
+      return (
+        <div>
+          <span data-testid="error-type">{error}</span>
+          <button
+            data-testid="login-catch"
+            onClick={() => ctx!.login("a@b.com", "pw").catch((e: unknown) =>
+              setError(e instanceof DOMException ? e.name : "other"),
+            )}
+          />
+        </div>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <ErrorCapture />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      screen.getByTestId("login-catch").click();
+    });
+
+    expect(screen.getByTestId("error-type")).toHaveTextContent("TimeoutError");
+  });
+
+  it("login propagates network error to caller", async () => {
+    const networkError = new TypeError("Failed to fetch");
+    mockedClient.POST.mockRejectedValueOnce(networkError);
+
+    function ErrorCapture() {
+      const ctx = useContext(AuthContext);
+      const [error, setError] = useState<string>("none");
+      return (
+        <div>
+          <span data-testid="error-type">{error}</span>
+          <button
+            data-testid="login-catch"
+            onClick={() => ctx!.login("a@b.com", "pw").catch((e: unknown) =>
+              setError(e instanceof TypeError ? e.message : "other"),
+            )}
+          />
+        </div>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <ErrorCapture />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      screen.getByTestId("login-catch").click();
+    });
+
+    expect(screen.getByTestId("error-type")).toHaveTextContent("Failed to fetch");
   });
 
   it("changePassword calls POST /api/auth/change-password and updates user", async () => {
