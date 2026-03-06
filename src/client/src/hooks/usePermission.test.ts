@@ -7,7 +7,7 @@ describe("usePermission", () => {
   it("returns roles from auth context", () => {
     const { result } = renderHook(() => usePermission(), {
       wrapper: createWrapper({
-        auth: { user: { email: "user@test.com", roles: ["Admin", "User"] } },
+        auth: { user: { email: "user@test.com", roles: ["Admin", "User"], mustResetPassword: false } },
       }),
     });
     expect(result.current.roles).toEqual(["Admin", "User"]);
@@ -16,7 +16,7 @@ describe("usePermission", () => {
   it("hasRole returns true for existing role", () => {
     const { result } = renderHook(() => usePermission(), {
       wrapper: createWrapper({
-        auth: { user: { email: "user@test.com", roles: ["Admin"] } },
+        auth: { user: { email: "user@test.com", roles: ["Admin"], mustResetPassword: false } },
       }),
     });
     expect(result.current.hasRole("Admin")).toBe(true);
@@ -25,7 +25,7 @@ describe("usePermission", () => {
   it("hasRole returns false for missing role", () => {
     const { result } = renderHook(() => usePermission(), {
       wrapper: createWrapper({
-        auth: { user: { email: "user@test.com", roles: ["User"] } },
+        auth: { user: { email: "user@test.com", roles: ["User"], mustResetPassword: false } },
       }),
     });
     expect(result.current.hasRole("Admin")).toBe(false);
@@ -34,7 +34,7 @@ describe("usePermission", () => {
   it("isAdmin returns true for Admin role", () => {
     const { result } = renderHook(() => usePermission(), {
       wrapper: createWrapper({
-        auth: { user: { email: "admin@test.com", roles: ["Admin"] } },
+        auth: { user: { email: "admin@test.com", roles: ["Admin"], mustResetPassword: false } },
       }),
     });
     expect(result.current.isAdmin()).toBe(true);
@@ -43,7 +43,7 @@ describe("usePermission", () => {
   it("isAdmin returns false without Admin role", () => {
     const { result } = renderHook(() => usePermission(), {
       wrapper: createWrapper({
-        auth: { user: { email: "user@test.com", roles: ["User"] } },
+        auth: { user: { email: "user@test.com", roles: ["User"], mustResetPassword: false } },
       }),
     });
     expect(result.current.isAdmin()).toBe(false);

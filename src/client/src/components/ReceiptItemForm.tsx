@@ -93,7 +93,8 @@ export function ReceiptItemForm({
   useFormShortcuts({ formRef });
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
-  const { data: categories } = useCategories();
+  const { data: categoriesResponse } = useCategories();
+  const categories = categoriesResponse?.data as { id: string; name: string }[] | undefined;
   const { data: itemTemplatesData } = useItemTemplates();
   const templates = useMemo(
     () => (itemTemplatesData as ItemTemplate[] | undefined) ?? [],
@@ -118,7 +119,7 @@ export function ReceiptItemForm({
   const categoryOptions = useMemo(
     () =>
       (
-        (categories as { id: string; name: string }[] | undefined) ?? []
+        categories ?? []
       ).map((c) => ({
         value: c.name,
         label: c.name,
@@ -147,8 +148,7 @@ export function ReceiptItemForm({
 
   const selectedCategoryId = useMemo(() => {
     if (!categories || !watchedCategory) return null;
-    return (categories as { id: string; name: string }[])
-      .find((c) => c.name === watchedCategory)?.id ?? null;
+    return categories?.find((c) => c.name === watchedCategory)?.id ?? null;
   }, [categories, watchedCategory]);
 
   const { data: subcategoriesData } =
