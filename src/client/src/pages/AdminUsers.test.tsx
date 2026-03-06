@@ -317,9 +317,13 @@ describe("AdminUsers", () => {
     }));
 
     renderWithProviders(<AdminUsers />);
-    expect(screen.getByText("1/2")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /previous page/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /next page/i })).not.toBeDisabled();
+    expect(screen.getAllByText("1/2")).toHaveLength(2);
+    const prevButtons = screen.getAllByRole("button", { name: /previous page/i });
+    const nextButtons = screen.getAllByRole("button", { name: /next page/i });
+    expect(prevButtons).toHaveLength(2);
+    expect(nextButtons).toHaveLength(2);
+    prevButtons.forEach((btn) => expect(btn).toBeDisabled());
+    nextButtons.forEach((btn) => expect(btn).not.toBeDisabled());
   });
 
   it("advances page when Next button is clicked", async () => {
@@ -355,7 +359,8 @@ describe("AdminUsers", () => {
     }));
 
     renderWithProviders(<AdminUsers />);
-    await user.click(screen.getByRole("button", { name: /next page/i }));
+    const nextButtons = screen.getAllByRole("button", { name: /next page/i });
+    await user.click(nextButtons[0]);
 
     expect(mockSetPage).toHaveBeenCalledWith(2, 25);
   });

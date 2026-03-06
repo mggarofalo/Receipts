@@ -173,6 +173,14 @@ function ItemTemplates() {
         )
       ) : (
         <>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={serverTotal}
+            pageSize={pageSize}
+            totalPages={totalPages(serverTotal)}
+            onPageChange={(page) => setPage(page, serverTotal)}
+            onPageSizeChange={setPageSize}
+          />
           <div className="rounded-md border" ref={tableRef}>
             <Table>
               <TableHeader>
