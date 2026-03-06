@@ -57,6 +57,7 @@ All issue work is tracked in Linear. See **[docs/linear.md](docs/linear.md)** fo
 - Team: "Mggarofalo" (ID: `a4aff05d-41e6-45dc-b670-cdb485fef765`), Project: "Receipts"
 - All issues assigned to a milestone (Phase 0-8) with at least one layer label (`backend`, `frontend`, `infra`, `docs`)
 - Issues labeled `epic` are parent containers — skip and work their children
+- **Issue lookup fallback:** If you cannot find an issue via the Linear MCP (e.g., API error, deleted, or archived), check `docs/issues/` — Linear issues are archived there as Markdown files named by issue ID (e.g., `mgg-123-short-title.md`)
 
 ### Branching
 
