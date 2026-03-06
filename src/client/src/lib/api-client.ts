@@ -29,7 +29,7 @@ export function isTimeoutError(error: unknown): boolean {
 }
 
 export function isNetworkError(error: unknown): boolean {
-  return error instanceof TypeError;
+  return error instanceof TypeError && error.message.includes("fetch");
 }
 
 let refreshPromise: Promise<boolean> | null = null;
@@ -106,7 +106,11 @@ const authMiddleware: Middleware = {
     if (newToken) {
       retryRequest.headers.set("Authorization", `Bearer ${newToken}`);
     }
-    return fetch(retryRequest, { signal: AbortSignal.timeout(API_TIMEOUT_MS) });
+    const timeoutSignal = AbortSignal.timeout(API_TIMEOUT_MS);
+    const retrySignal = retryRequest.signal
+      ? AbortSignal.any([timeoutSignal, retryRequest.signal])
+      : timeoutSignal;
+    return fetch(retryRequest, { signal: retrySignal });
   },
 };
 
