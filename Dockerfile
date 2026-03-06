@@ -28,6 +28,7 @@ COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
 COPY src/Presentation/API/API.csproj src/Presentation/API/
 COPY src/Receipts.ServiceDefaults/Receipts.ServiceDefaults.csproj src/Receipts.ServiceDefaults/
 COPY src/Receipts.AppHost/Receipts.AppHost.csproj src/Receipts.AppHost/
+COPY src/Tools/DbMigrator/DbMigrator.csproj src/Tools/DbMigrator/
 COPY tests/Domain.Tests/Domain.Tests.csproj tests/Domain.Tests/
 COPY tests/Common.Tests/Common.Tests.csproj tests/Common.Tests/
 COPY tests/Application.Tests/Application.Tests.csproj tests/Application.Tests/
