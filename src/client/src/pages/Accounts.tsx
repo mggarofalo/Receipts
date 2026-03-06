@@ -42,6 +42,7 @@ import {
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
+import { Pencil } from "lucide-react";
 
 interface AccountResponse {
   id: string;
@@ -288,10 +289,11 @@ function Accounts() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          aria-label="Edit"
                           onClick={() => setEditAccount(account)}
                         >
-                          Edit
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>

@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { Pencil } from "lucide-react";
 
 interface ItemTemplateResponse {
   id: string;
@@ -262,10 +263,11 @@ function ItemTemplates() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          aria-label="Edit"
                           onClick={() => setEditTemplate(template)}
                         >
-                          Edit
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
