@@ -52,13 +52,13 @@ export function TransactionForm({
 
   const receiptOptions = useMemo(
     () =>
-      ((receipts as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
+      ((receipts?.data as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
     [receipts],
   );
 
   const accountOptions = useMemo(
     () =>
-      ((accounts as { id: string; name: string; accountCode: string }[] | undefined) ?? []).map(accountToOption),
+      ((accounts?.data as { id: string; name: string; accountCode: string }[] | undefined) ?? []).map(accountToOption),
     [accounts],
   );
 

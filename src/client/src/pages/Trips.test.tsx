@@ -16,7 +16,7 @@ vi.mock("@/hooks/useTrips", () => ({
 }));
 
 vi.mock("@/hooks/useReceipts", () => ({
-  useReceipts: vi.fn(() => ({ data: [], isLoading: false })),
+  useReceipts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
 }));
 
 vi.mock("@/lib/combobox-options", () => ({
