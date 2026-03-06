@@ -32,6 +32,7 @@ public class CreateAdjustmentRequestValidatorTests
 		// Assert
 		Assert.False(result.IsValid);
 		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateAdjustmentRequestValidator.TypeMustNotBeEmpty);
+		Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == CreateAdjustmentRequestValidator.TypeMustBeValid);
 	}
 
 	[Fact]

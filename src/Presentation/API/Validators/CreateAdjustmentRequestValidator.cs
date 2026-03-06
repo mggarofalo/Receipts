@@ -16,6 +16,7 @@ public class CreateAdjustmentRequestValidator : AbstractValidator<CreateAdjustme
 	public CreateAdjustmentRequestValidator()
 	{
 		RuleFor(x => x.Type)
+			.Cascade(CascadeMode.Stop)
 			.NotEmpty()
 			.WithMessage(TypeMustNotBeEmpty)
 			.Must(type => ValidTypeNames.Contains(type, StringComparer.OrdinalIgnoreCase))

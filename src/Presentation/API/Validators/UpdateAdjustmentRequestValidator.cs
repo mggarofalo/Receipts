@@ -21,6 +21,7 @@ public class UpdateAdjustmentRequestValidator : AbstractValidator<UpdateAdjustme
 			.WithMessage(IdMustNotBeEmpty);
 
 		RuleFor(x => x.Type)
+			.Cascade(CascadeMode.Stop)
 			.NotEmpty()
 			.WithMessage(TypeMustNotBeEmpty)
 			.Must(type => ValidTypeNames.Contains(type, StringComparer.OrdinalIgnoreCase))

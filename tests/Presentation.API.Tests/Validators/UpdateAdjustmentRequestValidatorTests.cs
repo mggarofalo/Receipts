@@ -46,6 +46,7 @@ public class UpdateAdjustmentRequestValidatorTests
 		// Assert
 		Assert.False(result.IsValid);
 		Assert.Contains(result.Errors, e => e.ErrorMessage == UpdateAdjustmentRequestValidator.TypeMustNotBeEmpty);
+		Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == UpdateAdjustmentRequestValidator.TypeMustBeValid);
 	}
 
 	[Fact]
