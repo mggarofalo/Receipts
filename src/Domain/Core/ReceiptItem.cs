@@ -6,7 +6,7 @@ public class ReceiptItem
 {
 	public Guid Id { get; set; }
 	public Guid ReceiptId { get; set; }
-	public string ReceiptItemCode { get; set; }
+	public string? ReceiptItemCode { get; set; }
 	public string Description { get; set; }
 	public decimal Quantity { get; set; }
 	public Money UnitPrice { get; set; }
@@ -15,25 +15,18 @@ public class ReceiptItem
 	// This is intentional: values capture the historical categorization at time of entry,
 	// while the Category/Subcategory tables serve as suggestion lists for the UI.
 	public string Category { get; set; }
-	public string Subcategory { get; set; }
+	public string? Subcategory { get; set; }
 	public PricingMode PricingMode { get; set; }
 
-	public const string ReceiptItemCodeCannotBeEmpty = "Receipt item code cannot be empty";
 	public const string DescriptionCannotBeEmpty = "Description cannot be empty";
 	public const string QuantityMustBePositive = "Quantity must be positive";
 	public const string CategoryCannotBeEmpty = "Category cannot be empty";
-	public const string SubcategoryCannotBeEmpty = "Subcategory cannot be empty";
 	public const string FlatPricingModeQuantityMustBeOne = "Quantity must be 1 when pricing mode is flat.";
 	public const string UnitPriceMustBePositive = "Unit price must be positive";
 	public const string TotalAmountExceedsTolerance = "Total amount must be within $0.01 of quantity times unit price";
 
-	public ReceiptItem(Guid id, string receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string subcategory, PricingMode pricingMode = PricingMode.Quantity)
+	public ReceiptItem(Guid id, string? receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string? subcategory, PricingMode pricingMode = PricingMode.Quantity)
 	{
-		if (string.IsNullOrWhiteSpace(receiptItemCode))
-		{
-			throw new ArgumentException(ReceiptItemCodeCannotBeEmpty, nameof(receiptItemCode));
-		}
-
 		if (string.IsNullOrWhiteSpace(description))
 		{
 			throw new ArgumentException(DescriptionCannotBeEmpty, nameof(description));
@@ -58,11 +51,6 @@ public class ReceiptItem
 		if (string.IsNullOrWhiteSpace(category))
 		{
 			throw new ArgumentException(CategoryCannotBeEmpty, nameof(category));
-		}
-
-		if (string.IsNullOrWhiteSpace(subcategory))
-		{
-			throw new ArgumentException(SubcategoryCannotBeEmpty, nameof(subcategory));
 		}
 
 		if (pricingMode == PricingMode.Flat && quantity != 1)

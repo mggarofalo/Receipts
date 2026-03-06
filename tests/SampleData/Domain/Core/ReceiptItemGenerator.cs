@@ -6,17 +6,17 @@ namespace SampleData.Domain.Core;
 
 public static class ReceiptItemGenerator
 {
-	public static ReceiptItem Generate(PricingMode pricingMode = PricingMode.Quantity)
+	public static ReceiptItem Generate(PricingMode pricingMode = PricingMode.Quantity, string? receiptItemCode = "ITEMCODE", string? subcategory = "Test Subcategory")
 	{
 		return new ReceiptItem(
 			Guid.NewGuid(),
-			"ITEMCODE",
+			receiptItemCode,
 			"Test Item",
 			1,
 			new Money(5),
 			new Money(5),
 			"Test Category",
-			"Test Subcategory",
+			subcategory,
 			pricingMode
 		);
 	}

@@ -18,12 +18,12 @@ import { formatCurrency } from "@/lib/format";
 
 interface ReceiptItem {
   id: string;
-  receiptItemCode: string;
+  receiptItemCode: string | null;
   description: string;
   quantity: number;
   unitPrice: number;
   category: string;
-  subcategory: string;
+  subcategory: string | null;
 }
 
 interface ReceiptItemsCardProps {
@@ -73,7 +73,7 @@ export function ReceiptItemsCard({ items, subtotal }: ReceiptItemsCardProps) {
                     }}
                   >
                     <TableCell className="font-mono">
-                      {item.receiptItemCode}
+                      {item.receiptItemCode ?? ""}
                     </TableCell>
                     <TableCell>{item.description}</TableCell>
                     <TableCell className="text-right">
@@ -86,7 +86,7 @@ export function ReceiptItemsCard({ items, subtotal }: ReceiptItemsCardProps) {
                       {formatCurrency(item.quantity * item.unitPrice)}
                     </TableCell>
                     <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.subcategory}</TableCell>
+                    <TableCell>{item.subcategory ?? ""}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

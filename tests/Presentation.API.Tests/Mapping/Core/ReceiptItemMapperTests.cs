@@ -263,6 +263,76 @@ public class ReceiptItemMapperTests
 	}
 
 	[Fact]
+	public void ToDomain_FromCreateRequest_NullReceiptItemCodeAndSubcategory_MapsAsNull()
+	{
+		// Arrange
+		CreateReceiptItemRequest request = new()
+		{
+			ReceiptItemCode = null,
+			Description = "No Code Item",
+			Quantity = 1.0,
+			UnitPrice = 5.00,
+			Category = "Test",
+			Subcategory = null
+		};
+
+		// Act
+		ReceiptItem actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Null(actual.ReceiptItemCode);
+		Assert.Null(actual.Subcategory);
+	}
+
+	[Fact]
+	public void ToDomain_FromUpdateRequest_NullReceiptItemCodeAndSubcategory_MapsAsNull()
+	{
+		// Arrange
+		Guid expectedId = Guid.NewGuid();
+		UpdateReceiptItemRequest request = new()
+		{
+			Id = expectedId,
+			ReceiptItemCode = null,
+			Description = "No Code Item",
+			Quantity = 1.0,
+			UnitPrice = 5.00,
+			Category = "Test",
+			Subcategory = null
+		};
+
+		// Act
+		ReceiptItem actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Null(actual.ReceiptItemCode);
+		Assert.Null(actual.Subcategory);
+	}
+
+	[Fact]
+	public void ToResponse_NullReceiptItemCodeAndSubcategory_MapsAsNull()
+	{
+		// Arrange
+		Guid expectedId = Guid.NewGuid();
+		ReceiptItem item = new(
+			expectedId,
+			null,
+			"No Code Item",
+			1.0m,
+			new Money(5.00m, Currency.USD),
+			new Money(5.00m, Currency.USD),
+			"Test",
+			null
+		);
+
+		// Act
+		ReceiptItemResponse actual = _mapper.ToResponse(item);
+
+		// Assert
+		Assert.Null(actual.ReceiptItemCode);
+		Assert.Null(actual.Subcategory);
+	}
+
+	[Fact]
 	public void ToResponse_MapsPricingMode()
 	{
 		// Arrange
