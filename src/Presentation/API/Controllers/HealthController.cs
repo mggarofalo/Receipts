@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +14,14 @@ public class HealthController : ControllerBase
 {
 	[HttpGet]
 	[EndpointSummary("Check API health")]
-	public Ok<object> Get()
+	public async Task<IResult> Get(
+		[FromServices] ApplicationDbContext dbContext,
+		CancellationToken cancellationToken)
 	{
-		return TypedResults.Ok<object>(new { status = "Healthy" });
+		bool dbOk = await dbContext.Database.CanConnectAsync(cancellationToken);
+		var payload = new { status = dbOk ? "Healthy" : "Unhealthy", database = dbOk };
+		return dbOk
+			? TypedResults.Ok<object>(payload)
+			: Results.Json(payload, statusCode: 503);
 	}
 }

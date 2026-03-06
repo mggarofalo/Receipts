@@ -95,6 +95,12 @@ jobs:
         run: npm ci
         working-directory: src/client
 
+      - name: Regenerate types and check for drift
+        run: |
+          npm run generate:types
+          npm run build
+        working-directory: src/client
+
       - name: Run tests with coverage
         run: npm run coverage
         working-directory: src/client

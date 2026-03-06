@@ -309,3 +309,8 @@ src/client/coverage/
 
 # Windows NUL device files
 [Nn][Uu][Ll]
+
+# Docker deployment environment files
+.env
+.env.production
+.env.local
