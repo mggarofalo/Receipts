@@ -118,6 +118,16 @@ See **[docs/architecture.md](docs/architecture.md)** for full layer structure, k
 
 C# conventions, Mapperly rules, EF Core query guidelines, and LSP validation workflow. See **[docs/coding-standards.md](docs/coding-standards.md)** for full details.
 
+### React Custom Hook Conventions
+
+All functions, objects, and arrays returned from custom hooks (`use*`) **must** be referentially stable:
+
+- Wrap returned functions in `useCallback`
+- Wrap returned objects/arrays in `useMemo`
+- Ensure reducers return the same state reference when values haven't changed (bail out with `return state`)
+
+**Why:** Consumers may place hook return values in `useEffect`/`useMemo`/`useCallback` dependency arrays. Unstable references cause infinite render loops that are invisible in static review and pass individual test files but hang the full test suite.
+
 ## Agent Workflow Rules
 
 ### Tests and Code Review
