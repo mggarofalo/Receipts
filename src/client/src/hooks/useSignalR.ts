@@ -124,7 +124,7 @@ export function useSignalR(enabled: boolean) {
         const keys = queryKeyMap[notification.entityType];
         if (keys) {
           for (const queryKey of keys) {
-            queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey, refetchType: "active" });
           }
         }
 
