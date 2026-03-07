@@ -48,6 +48,11 @@ describe("persistPageSize", () => {
     expect(localStorage.getItem("table-page-size")).toBe("100");
   });
 
+  it("does not write an invalid size", () => {
+    persistPageSize(15);
+    expect(localStorage.getItem("table-page-size")).toBeNull();
+  });
+
   it("does not throw when localStorage.setItem throws", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("quota exceeded");

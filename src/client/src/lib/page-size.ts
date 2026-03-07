@@ -13,6 +13,7 @@ export function getPersistedPageSize(): number | null {
 }
 
 export function persistPageSize(size: number): void {
+  if (!VALID_PAGE_SIZES.includes(size)) return;
   try {
     localStorage.setItem(PAGE_SIZE_KEY, String(size));
   } catch {
