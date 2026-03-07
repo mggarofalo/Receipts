@@ -12,17 +12,15 @@ public class ReceiptTests
 		string location = "Test Store";
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 		Money taxAmount = new(5.00m);
-		string description = "Test Receipt";
 
 		// Act
-		Receipt receipt = new(id, location, date, taxAmount, description);
+		Receipt receipt = new(id, location, date, taxAmount);
 
 		// Assert
 		Assert.Equal(id, receipt.Id);
 		Assert.Equal(location, receipt.Location);
 		Assert.Equal(date, receipt.Date);
 		Assert.Equal(taxAmount, receipt.TaxAmount);
-		Assert.Equal(description, receipt.Description);
 	}
 
 	[Fact]
@@ -32,29 +30,12 @@ public class ReceiptTests
 		string location = "Test Store";
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 		Money taxAmount = new(5.00m);
-		string description = "Test Receipt";
 
 		// Act
-		Receipt receipt = new(Guid.Empty, location, date, taxAmount, description);
+		Receipt receipt = new(Guid.Empty, location, date, taxAmount);
 
 		// Assert
 		Assert.Equal(Guid.Empty, receipt.Id);
-	}
-
-	[Fact]
-	public void Constructor_DefaultDescription_CreatesReceiptWithNullDescription()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		string location = "Test Store";
-		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
-		Money taxAmount = new(5.00m);
-
-		// Act
-		Receipt receipt = new(id, location, date, taxAmount);
-
-		// Assert
-		Assert.Null(receipt.Description);
 	}
 
 	[Theory]
@@ -67,10 +48,9 @@ public class ReceiptTests
 		Guid id = Guid.NewGuid();
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 		Money taxAmount = new(5.00m);
-		string description = "Test Receipt";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, invalidLocation, date, taxAmount, description));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, invalidLocation, date, taxAmount));
 		Assert.StartsWith(Receipt.LocationCannotBeEmpty, exception.Message);
 	}
 
@@ -82,10 +62,9 @@ public class ReceiptTests
 		string location = "Test Store";
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
 		Money taxAmount = new(5.00m);
-		string description = "Test Receipt";
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, location, date, taxAmount, description));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Receipt(id, location, date, taxAmount));
 		Assert.StartsWith(Receipt.DateCannotBeInTheFuture, exception.Message);
 	}
 }

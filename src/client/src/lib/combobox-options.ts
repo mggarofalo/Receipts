@@ -8,7 +8,6 @@ interface AccountLike {
 
 interface ReceiptLike {
   id: string;
-  description?: string | null;
   location: string;
   date: string;
 }
@@ -24,7 +23,7 @@ export function accountToOption(account: AccountLike): ComboboxOption {
 export function receiptToOption(receipt: ReceiptLike): ComboboxOption {
   return {
     value: receipt.id,
-    label: receipt.description || receipt.location,
+    label: receipt.location,
     sublabel: `${receipt.location} — ${receipt.date}`,
   };
 }

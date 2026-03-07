@@ -24,8 +24,7 @@ public class TripMapperTests
 			receiptId,
 			"Department Store",
 			new DateOnly(2025, 5, 20),
-			new Money(7.89m, Currency.USD),
-			"Trip to mall"
+			new Money(7.89m, Currency.USD)
 		);
 
 		ReceiptItem item = new(
@@ -79,7 +78,6 @@ public class TripMapperTests
 		Assert.Equal("Department Store", actual.Receipt.Receipt.Location);
 		Assert.Equal(new DateOnly(2025, 5, 20), actual.Receipt.Receipt.Date);
 		Assert.Equal((double)7.89m, actual.Receipt.Receipt.TaxAmount);
-		Assert.Equal("Trip to mall", actual.Receipt.Receipt.Description);
 
 		// Assert — Receipt Items
 		Assert.Single(actual.Receipt.Items);

@@ -10,7 +10,6 @@ public static class ReceiptEntityGenerator
 		return new ReceiptEntity
 		{
 			Id = Guid.NewGuid(),
-			Description = "Test Description",
 			Location = "Test Location",
 			Date = DateOnly.FromDateTime(DateTime.Now),
 			TaxAmount = 10m,

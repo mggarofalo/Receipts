@@ -142,7 +142,6 @@ describe("ReceiptDetail", () => {
       data: {
         receipt: {
           id: "r1",
-          description: "Weekly grocery",
           location: "Walmart",
           date: "2024-01-15",
           taxAmount: 5.25,
@@ -161,7 +160,6 @@ describe("ReceiptDetail", () => {
     renderWithProviders(<ReceiptDetail />);
     expect(screen.getByText(/walmart/i)).toBeInTheDocument();
     expect(screen.getByText(/2024-01-15/)).toBeInTheDocument();
-    expect(screen.getByText(/weekly grocery/i)).toBeInTheDocument();
   });
 
   it("renders error state when receipt is not found", async () => {

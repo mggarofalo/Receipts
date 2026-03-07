@@ -113,8 +113,8 @@ describe("Receipts", () => {
 
   it("renders table with receipts when data exists", async () => {
     const items = [
-      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
-      { id: "2", description: null, location: "Target", date: "2024-01-20", taxAmount: 3.50 },
+      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "2", location: "Target", date: "2024-01-20", taxAmount: 3.50 },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -134,10 +134,8 @@ describe("Receipts", () => {
     }));
 
     renderWithProviders(<Receipts />);
-    expect(screen.getByText("Grocery")).toBeInTheDocument();
     expect(screen.getByText("Walmart")).toBeInTheDocument();
     expect(screen.getByText("Target")).toBeInTheDocument();
-    expect(screen.getByText(/no description/i)).toBeInTheDocument();
   });
 
   it("opens create dialog when New Receipt button is clicked", async () => {
@@ -154,7 +152,7 @@ describe("Receipts", () => {
   it("closes edit dialog when dismissed", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -203,7 +201,7 @@ describe("Receipts", () => {
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -233,7 +231,7 @@ describe("Receipts", () => {
   it("toggles checkbox selection and shows delete button", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -253,7 +251,7 @@ describe("Receipts", () => {
     }));
 
     renderWithProviders(<Receipts />);
-    await user.click(screen.getByLabelText("Select Grocery"));
+    await user.click(screen.getByLabelText("Select Walmart"));
 
     expect(
       screen.getByRole("button", { name: /delete/i }),
@@ -270,7 +268,7 @@ describe("Receipts", () => {
     }));
 
     const items = [
-      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -332,7 +330,7 @@ describe("Receipts", () => {
   it("renders NoResults when search returns no matches", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: [{ id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }],
+      data: [{ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }],
       isLoading: false,
     }));
 
@@ -360,7 +358,7 @@ describe("Receipts", () => {
     }));
 
     const items = [
-      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -380,7 +378,7 @@ describe("Receipts", () => {
     }));
 
     renderWithProviders(<Receipts />);
-    await user.click(screen.getByLabelText("Select Grocery"));
+    await user.click(screen.getByLabelText("Select Walmart"));
     await user.click(screen.getByRole("button", { name: /delete/i }));
 
     expect(
@@ -399,8 +397,8 @@ describe("Receipts", () => {
   it("toggles select all checkbox", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
-      { id: "2", description: "Lunch", location: "Chipotle", date: "2024-01-20", taxAmount: 1.50 },
+      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "2", location: "Chipotle", date: "2024-01-20", taxAmount: 1.50 },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");

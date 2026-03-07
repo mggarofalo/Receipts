@@ -13,7 +13,6 @@ public class CreateReceiptRequestValidatorTests
 		// Arrange
 		CreateReceiptRequest receipt = new()
 		{
-			Description = "Valid Description",
 			Location = "Valid Location",
 			Date = DateOnly.FromDateTime(DateTime.Today)
 		};
@@ -26,31 +25,11 @@ public class CreateReceiptRequestValidatorTests
 	}
 
 	[Fact]
-	public void Should_Fail_When_DescriptionExceeds256Characters()
-	{
-		// Arrange
-		CreateReceiptRequest receipt = new()
-		{
-			Description = new string('a', 257),
-			Location = "Valid Location",
-			Date = DateOnly.FromDateTime(DateTime.Today)
-		};
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(receipt);
-
-		// Assert
-		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateReceiptRequestValidator.DescriptionMustNotExceed256Characters);
-	}
-
-	[Fact]
 	public void Should_Fail_When_LocationExceeds200Characters()
 	{
 		// Arrange
 		CreateReceiptRequest receipt = new()
 		{
-			Description = "Valid Description",
 			Location = new string('a', 201),
 			Date = DateOnly.FromDateTime(DateTime.Today)
 		};
@@ -69,7 +48,6 @@ public class CreateReceiptRequestValidatorTests
 		// Arrange
 		CreateReceiptRequest receipt = new()
 		{
-			Description = "Valid Description",
 			Location = "Valid Location",
 			Date = DateOnly.FromDateTime(DateTime.Today.AddDays(1))
 		};
@@ -88,7 +66,6 @@ public class CreateReceiptRequestValidatorTests
 		// Arrange
 		CreateReceiptRequest receipt = new()
 		{
-			Description = "Valid Description",
 			Location = "",
 			Date = DateOnly.FromDateTime(DateTime.Today)
 		};

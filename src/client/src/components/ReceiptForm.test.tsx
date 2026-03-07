@@ -21,7 +21,6 @@ describe("ReceiptForm", () => {
     render(<ReceiptForm {...defaultProps} />);
 
     expect(screen.getByLabelText("Location")).toHaveValue("");
-    expect(screen.getByLabelText("Description (optional)")).toHaveValue("");
     expect(screen.getByRole("button", { name: /create receipt/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
@@ -32,7 +31,6 @@ describe("ReceiptForm", () => {
         {...defaultProps}
         mode="edit"
         defaultValues={{
-          description: "Weekly groceries",
           location: "Walmart",
           date: "2024-01-15",
           taxAmount: 5.25,
@@ -41,7 +39,6 @@ describe("ReceiptForm", () => {
     );
 
     expect(screen.getByLabelText("Location")).toHaveValue("Walmart");
-    expect(screen.getByLabelText("Description (optional)")).toHaveValue("Weekly groceries");
     expect(screen.getByRole("button", { name: /update receipt/i })).toBeInTheDocument();
   });
 

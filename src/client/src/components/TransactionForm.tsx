@@ -52,7 +52,7 @@ export function TransactionForm({
 
   const receiptOptions = useMemo(
     () =>
-      ((receipts?.data as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
+      ((receipts?.data as { id: string; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
     [receipts],
   );
 

@@ -46,7 +46,6 @@ import { Pencil } from "lucide-react";
 
 interface ReceiptResponse {
   id: string;
-  description?: string | null;
   location: string;
   date: string;
   taxAmount: number;
@@ -54,7 +53,6 @@ interface ReceiptResponse {
 
 const SEARCH_CONFIG: FuseSearchConfig<ReceiptResponse> = {
   keys: [
-    { name: "description", weight: 2 },
     { name: "location", weight: 1.5 },
   ],
 };
@@ -250,7 +248,6 @@ function Receipts() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
-                  <TableHead>Description</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-right">Tax Amount</TableHead>
@@ -274,23 +271,11 @@ function Receipts() {
                       <TableCell>
                         <input
                           type="checkbox"
-                          aria-label={`Select ${receipt.description || receipt.id}`}
+                          aria-label={`Select ${receipt.location}`}
                           checked={selected.has(receipt.id)}
                           onChange={() => toggleSelect(receipt.id)}
                           className="h-4 w-4 rounded border-gray-300"
                         />
-                      </TableCell>
-                      <TableCell>
-                        {receipt.description ? (
-                          <SearchHighlight
-                            text={receipt.description}
-                            indices={getMatchIndices(matches, "description")}
-                          />
-                        ) : (
-                          <span className="text-muted-foreground italic">
-                            No description
-                          </span>
-                        )}
                       </TableCell>
                       <TableCell>
                         <SearchHighlight
@@ -350,10 +335,7 @@ function Receipts() {
             onCancel={() => setCreateOpen(false)}
             onSubmit={(values) => {
               createReceipt.mutate(
-                {
-                  ...values,
-                  description: values.description || null,
-                },
+                values,
                 { onSuccess: () => setCreateOpen(false) },
               );
             }}
@@ -373,7 +355,6 @@ function Receipts() {
             <ReceiptForm
               mode="edit"
               defaultValues={{
-                description: editReceipt.description ?? "",
                 location: editReceipt.location,
                 date: editReceipt.date,
                 taxAmount: editReceipt.taxAmount,
@@ -385,7 +366,6 @@ function Receipts() {
                   {
                     id: editReceipt.id,
                     ...values,
-                    description: values.description || null,
                   },
                   { onSuccess: () => setEditReceipt(null) },
                 );

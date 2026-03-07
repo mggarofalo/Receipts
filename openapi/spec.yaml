@@ -2691,10 +2691,6 @@ components:
       type: object
       required: [location, date, taxAmount]
       properties:
-        description:
-          type:
-            - string
-            - "null"
         location:
           type: string
         date:
@@ -2711,10 +2707,6 @@ components:
         id:
           type: string
           format: uuid
-        description:
-          type:
-            - string
-            - "null"
         location:
           type: string
         date:
@@ -2731,10 +2723,6 @@ components:
         id:
           type: string
           format: uuid
-        description:
-          type:
-            - string
-            - "null"
         location:
           type: string
         date:

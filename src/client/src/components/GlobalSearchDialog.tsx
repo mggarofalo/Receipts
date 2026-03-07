@@ -32,7 +32,6 @@ interface AccountResponse {
 
 interface ReceiptResponse {
   id: string;
-  description?: string | null;
   location: string;
 }
 
@@ -136,16 +135,11 @@ export function GlobalSearchDialog({
               {(receipts ?? []).slice(0, 8).map((r) => (
                 <CommandItem
                   key={r.id}
-                  value={`receipt:${r.description ?? ""} ${r.location}`}
+                  value={`receipt:${r.location}`}
                   onSelect={() => select("/receipts")}
                 >
                   <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{r.description || r.location}</span>
-                  {r.description && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {r.location}
-                    </span>
-                  )}
+                  <span>{r.location}</span>
                 </CommandItem>
               ))}
             </CommandGroup>

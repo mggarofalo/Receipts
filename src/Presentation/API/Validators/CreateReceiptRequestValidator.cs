@@ -5,7 +5,6 @@ namespace API.Validators;
 
 public class CreateReceiptRequestValidator : AbstractValidator<CreateReceiptRequest>
 {
-	public const string DescriptionMustNotExceed256Characters = "Description must not exceed 256 characters.";
 	public const string LocationMustNotExceed200Characters = "Location must not exceed 200 characters.";
 	public const string DateMustBePriorToCurrentDate = "Date must be prior to the current date";
 
@@ -13,10 +12,6 @@ public class CreateReceiptRequestValidator : AbstractValidator<CreateReceiptRequ
 
 	public CreateReceiptRequestValidator()
 	{
-		RuleFor(x => x.Description)
-			.MaximumLength(256)
-			.WithMessage(DescriptionMustNotExceed256Characters);
-
 		RuleFor(x => x.Location)
 			.NotEmpty()
 			.WithMessage(LocationMustNotBeEmpty)

@@ -107,7 +107,6 @@ export function ReceiptItemForm({
         (receipts as
           | {
               id: string;
-              description?: string | null;
               location: string;
               date: string;
             }[]

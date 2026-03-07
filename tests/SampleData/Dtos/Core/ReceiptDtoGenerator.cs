@@ -10,8 +10,7 @@ public static class ReceiptDtoGenerator
 		{
 			Location = "Test Location",
 			Date = DateOnly.FromDateTime(DateTime.Today),
-			TaxAmount = 8.50,
-			Description = "Test Description"
+			TaxAmount = 8.50
 		};
 	}
 
@@ -27,8 +26,7 @@ public static class ReceiptDtoGenerator
 			Id = Guid.NewGuid(),
 			Location = "Test Location",
 			Date = DateOnly.FromDateTime(DateTime.Today),
-			TaxAmount = 8.50,
-			Description = "Test Description"
+			TaxAmount = 8.50
 		};
 	}
 
