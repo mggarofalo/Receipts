@@ -148,19 +148,22 @@ The OpenAPI spec is generated at build time to `openapi/generated/API.json`. Thi
 
 ## Pre-commit Hooks
 
-Native Git hooks (`.githooks/`) run a six-stage pipeline on every `git commit`:
+Native Git hooks (`.githooks/`) run a nine-step pipeline on every `git commit`:
 
+0. **Prerequisites** - `bash scripts/worktree-setup.sh --check`
 1. **OpenAPI spec lint** - `npx spectral lint openapi/spec.yaml`
 2. **Format check** - `dotnet format --verify-no-changes`
 3. **Build** - `dotnet build -p:TreatWarningsAsErrors=true`
 4. **DTO staleness check** - `git diff --exit-code -- src/Presentation/API/Generated/`
 5. **Spec drift check** - `node scripts/check-drift.mjs`
 6. **Test** - `dotnet test --no-build`
+7. **TypeScript types** - `npx tsc --noEmit`
+8. **ESLint** - `npx eslint src/client/src`
 
-Hooks install automatically on `dotnet restore`. To skip temporarily:
+Hooks install automatically on `dotnet restore`. For faster iteration, use quick mode (runs only steps 0, 2, 7, 8):
 
 ```bash
-git commit --no-verify -m "message"
+PRECOMMIT_QUICK=1 git commit -m "message"
 ```
 
 ## CI/CD

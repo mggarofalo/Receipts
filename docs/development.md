@@ -108,15 +108,19 @@ dotnet test tests/Application.Tests/Application.Tests.csproj
 
 Every `git commit` runs the full quality pipeline automatically:
 
+0. **Prerequisites** — `bash scripts/worktree-setup.sh --check`
 1. **OpenAPI spec lint** — `npx spectral lint openapi/spec.yaml`
 2. **Code format check** — `dotnet format --verify-no-changes`
 3. **Build with warnings-as-errors** — also regenerates `openapi/generated/API.json`
-4. **Semantic drift check** — compares spec vs generated output for structural differences
-5. **Tests** — `dotnet test --no-build`
+4. **DTO staleness check** — `git diff --exit-code -- src/Presentation/API/Generated/`
+5. **Semantic drift check** — compares spec vs generated output for structural differences
+6. **Tests** — `dotnet test --no-build`
+7. **TypeScript types** — `npx tsc --noEmit`
+8. **ESLint** — `npx eslint src/client/src`
 
-To skip hooks temporarily (use sparingly):
+For faster iteration, quick mode runs only prerequisites, format, tsc, and eslint:
 ```bash
-git commit --no-verify -m "message"
+PRECOMMIT_QUICK=1 git commit -m "message"
 ```
 
 ## OpenAPI Spec-First Workflow
