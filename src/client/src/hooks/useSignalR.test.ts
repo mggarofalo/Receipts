@@ -145,12 +145,15 @@ describe("useSignalR", () => {
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["receipts"],
+        refetchType: "active",
       });
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["receipts-with-items"],
+        refetchType: "active",
       });
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["trips"],
+        refetchType: "active",
       });
       expect(bufferToast).toHaveBeenCalledWith("receipt", "created", 1);
       expect(toast.info).not.toHaveBeenCalled();
@@ -170,9 +173,11 @@ describe("useSignalR", () => {
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["accounts"],
+        refetchType: "active",
       });
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["transaction-accounts"],
+        refetchType: "active",
       });
       expect(bufferToast).toHaveBeenCalledWith("account", "updated", 1);
       expect(toast.info).not.toHaveBeenCalled();
@@ -192,15 +197,19 @@ describe("useSignalR", () => {
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["transactions"],
+        refetchType: "active",
       });
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["receipts-with-items"],
+        refetchType: "active",
       });
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["trips"],
+        refetchType: "active",
       });
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["transaction-accounts"],
+        refetchType: "active",
       });
       expect(bufferToast).toHaveBeenCalledWith("transaction", "deleted", 1);
       expect(toast.info).not.toHaveBeenCalled();
