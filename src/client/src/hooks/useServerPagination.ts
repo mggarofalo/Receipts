@@ -1,4 +1,5 @@
 import { useReducer, useMemo } from "react";
+import { getPersistedPageSize, persistPageSize } from "@/lib/page-size";
 
 interface UseServerPaginationOptions {
   defaultPageSize?: number;
@@ -37,7 +38,7 @@ export function useServerPagination({
 }: UseServerPaginationOptions = {}): UseServerPaginationReturn {
   const [state, dispatch] = useReducer(reducer, {
     offset: 0,
-    limit: defaultPageSize,
+    limit: getPersistedPageSize() ?? defaultPageSize,
   });
 
   const currentPage = useMemo(
@@ -56,6 +57,7 @@ export function useServerPagination({
   }
 
   function setPageSize(size: number) {
+    persistPageSize(size);
     dispatch({ type: "SET_LIMIT", limit: size });
   }
 

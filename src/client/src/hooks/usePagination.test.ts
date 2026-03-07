@@ -1,10 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { usePagination } from "./usePagination";
 
 const items = Array.from({ length: 50 }, (_, i) => i + 1);
 
 describe("usePagination", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it("returns first page by default", () => {
     const { result } = renderHook(() =>
       usePagination({ items, defaultPageSize: 10 }),
@@ -69,5 +73,30 @@ describe("usePagination", () => {
     );
     expect(result.current.totalPages).toBe(1);
     expect(result.current.paginatedItems).toEqual([]);
+  });
+
+  it("uses persisted page size from localStorage when available", () => {
+    localStorage.setItem("table-page-size", "50");
+    const { result } = renderHook(() =>
+      usePagination({ items, defaultPageSize: 10 }),
+    );
+    expect(result.current.pageSize).toBe(50);
+    expect(result.current.totalPages).toBe(1);
+  });
+
+  it("falls back to defaultPageSize when nothing is persisted", () => {
+    const { result } = renderHook(() =>
+      usePagination({ items, defaultPageSize: 10 }),
+    );
+    expect(result.current.pageSize).toBe(10);
+  });
+
+  it("persists new page size to localStorage via setPageSize", () => {
+    const { result } = renderHook(() =>
+      usePagination({ items, defaultPageSize: 10 }),
+    );
+    act(() => result.current.setPageSize(50));
+    expect(localStorage.getItem("table-page-size")).toBe("50");
+    expect(result.current.pageSize).toBe(50);
   });
 });
