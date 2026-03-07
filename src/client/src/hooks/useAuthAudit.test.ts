@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 describe("useMyAuthAuditLog", () => {
-  it("fetches my auth audit logs with default count", async () => {
+  it("fetches my auth audit logs with default params", async () => {
     const mockLogs = [{ id: "log1", event: "Login" }];
     (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
 
@@ -48,29 +48,43 @@ describe("useMyAuthAuditLog", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/auth/audit/me", {
-      params: { query: { count: 50 } },
+      params: {
+        query: {
+          offset: 0,
+          limit: 50,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
     });
     expect(result.current.data).toEqual(mockLogs);
   });
 
-  it("fetches my auth audit logs with custom count", async () => {
+  it("fetches my auth audit logs with custom offset and limit", async () => {
     const mockLogs = [{ id: "log1" }];
     (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
 
-    const { result } = renderHook(() => useMyAuthAuditLog(10), {
+    const { result } = renderHook(() => useMyAuthAuditLog(10, 25), {
       wrapper: createWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/auth/audit/me", {
-      params: { query: { count: 10 } },
+      params: {
+        query: {
+          offset: 10,
+          limit: 25,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
     });
   });
 });
 
 describe("useRecentAuthAuditLogs", () => {
-  it("fetches recent auth audit logs with default count", async () => {
+  it("fetches recent auth audit logs with default params", async () => {
     const mockLogs = [{ id: "log2", event: "Logout" }];
     (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
 
@@ -81,28 +95,42 @@ describe("useRecentAuthAuditLogs", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/auth/audit/recent", {
-      params: { query: { count: 50 } },
+      params: {
+        query: {
+          offset: 0,
+          limit: 50,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
     });
     expect(result.current.data).toEqual(mockLogs);
   });
 
-  it("fetches recent auth audit logs with custom count", async () => {
+  it("fetches recent auth audit logs with custom offset and limit", async () => {
     (client.GET as Mock).mockResolvedValue({ data: [], error: null });
 
-    const { result } = renderHook(() => useRecentAuthAuditLogs(5), {
+    const { result } = renderHook(() => useRecentAuthAuditLogs(5, 20), {
       wrapper: createWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/auth/audit/recent", {
-      params: { query: { count: 5 } },
+      params: {
+        query: {
+          offset: 5,
+          limit: 20,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
     });
   });
 });
 
 describe("useFailedAuthAttempts", () => {
-  it("fetches failed auth attempts with default count", async () => {
+  it("fetches failed auth attempts with default params", async () => {
     const mockAttempts = [{ id: "f1", reason: "InvalidPassword" }];
     (client.GET as Mock).mockResolvedValue({
       data: mockAttempts,
@@ -116,22 +144,58 @@ describe("useFailedAuthAttempts", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/auth/audit/failed", {
-      params: { query: { count: 50 } },
+      params: {
+        query: {
+          offset: 0,
+          limit: 50,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
     });
     expect(result.current.data).toEqual(mockAttempts);
   });
 
-  it("fetches failed auth attempts with custom count", async () => {
+  it("fetches failed auth attempts with custom offset and limit", async () => {
     (client.GET as Mock).mockResolvedValue({ data: [], error: null });
 
-    const { result } = renderHook(() => useFailedAuthAttempts(100), {
+    const { result } = renderHook(() => useFailedAuthAttempts(100, 10), {
       wrapper: createWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/auth/audit/failed", {
-      params: { query: { count: 100 } },
+      params: {
+        query: {
+          offset: 100,
+          limit: 10,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
+    });
+  });
+
+  it("fetches failed auth attempts with sort params", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: [], error: null });
+
+    const { result } = renderHook(
+      () => useFailedAuthAttempts(0, 50, "timestamp", "asc"),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(client.GET).toHaveBeenCalledWith("/api/auth/audit/failed", {
+      params: {
+        query: {
+          offset: 0,
+          limit: 50,
+          sortBy: "timestamp",
+          sortDirection: "asc",
+        },
+      },
     });
   });
 });

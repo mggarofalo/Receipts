@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using Common;
 using FluentAssertions;
 using Infrastructure.Entities.Audit;
@@ -12,6 +13,8 @@ namespace Infrastructure.Tests.Services;
 
 public class AuthAuditServiceTests
 {
+	private static readonly SortParams DefaultSort = SortParams.Default;
+
 	[Fact]
 	public async Task LogAsync_LoginEvent_CreatesAuthAuditLogEntry()
 	{
@@ -173,7 +176,7 @@ public class AuthAuditServiceTests
 	}
 
 	[Fact]
-	public async Task GetMyAuditLogAsync_ReturnsLogsForSpecificUser_OrderedByTimestampDesc()
+	public async Task GetMyAuditLogAsync_ReturnsPagedLogsForSpecificUser_OrderedByTimestampDesc()
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
@@ -192,18 +195,19 @@ public class AuthAuditServiceTests
 		AuthAuditService service = new(contextFactory);
 
 		// Act
-		List<AuthAuditEntryDto> results = await service.GetMyAuditLogAsync(targetUserId);
+		PagedResult<AuthAuditEntryDto> results = await service.GetMyAuditLogAsync(targetUserId, 0, 50, DefaultSort);
 
 		// Assert
-		results.Should().HaveCount(2);
-		results[0].Timestamp.Should().BeOnOrAfter(results[1].Timestamp);
-		results.Should().AllSatisfy(r => r.UserId.Should().Be(targetUserId));
+		results.Data.Should().HaveCount(2);
+		results.Total.Should().Be(2);
+		results.Data[0].Timestamp.Should().BeOnOrAfter(results.Data[1].Timestamp);
+		results.Data.Should().AllSatisfy(r => r.UserId.Should().Be(targetUserId));
 
 		contextFactory.ResetDatabase();
 	}
 
 	[Fact]
-	public async Task GetMyAuditLogAsync_RespectsCountLimit()
+	public async Task GetMyAuditLogAsync_RespectsLimit()
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
@@ -223,16 +227,17 @@ public class AuthAuditServiceTests
 		AuthAuditService service = new(contextFactory);
 
 		// Act
-		List<AuthAuditEntryDto> results = await service.GetMyAuditLogAsync(userId, count: 5);
+		PagedResult<AuthAuditEntryDto> results = await service.GetMyAuditLogAsync(userId, 0, 5, DefaultSort);
 
 		// Assert
-		results.Should().HaveCount(5);
+		results.Data.Should().HaveCount(5);
+		results.Total.Should().Be(10);
 
 		contextFactory.ResetDatabase();
 	}
 
 	[Fact]
-	public async Task GetRecentAsync_ReturnsAllRecentEvents_OrderedByTimestampDesc()
+	public async Task GetRecentAsync_ReturnsPagedResults_OrderedByTimestampDesc()
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
@@ -250,12 +255,13 @@ public class AuthAuditServiceTests
 		AuthAuditService service = new(contextFactory);
 
 		// Act
-		List<AuthAuditEntryDto> results = await service.GetRecentAsync(50);
+		PagedResult<AuthAuditEntryDto> results = await service.GetRecentAsync(0, 50, DefaultSort);
 
 		// Assert
-		results.Should().HaveCount(3);
-		results[0].Timestamp.Should().BeOnOrAfter(results[1].Timestamp);
-		results[1].Timestamp.Should().BeOnOrAfter(results[2].Timestamp);
+		results.Data.Should().HaveCount(3);
+		results.Total.Should().Be(3);
+		results.Data[0].Timestamp.Should().BeOnOrAfter(results.Data[1].Timestamp);
+		results.Data[1].Timestamp.Should().BeOnOrAfter(results.Data[2].Timestamp);
 
 		contextFactory.ResetDatabase();
 	}
@@ -279,11 +285,12 @@ public class AuthAuditServiceTests
 		AuthAuditService service = new(contextFactory);
 
 		// Act
-		List<AuthAuditEntryDto> results = await service.GetFailedAttemptsAsync();
+		PagedResult<AuthAuditEntryDto> results = await service.GetFailedAttemptsAsync(0, 50, DefaultSort);
 
 		// Assert
-		results.Should().HaveCount(2);
-		results.Should().AllSatisfy(r => r.Success.Should().BeFalse());
+		results.Data.Should().HaveCount(2);
+		results.Total.Should().Be(2);
+		results.Data.Should().AllSatisfy(r => r.Success.Should().BeFalse());
 
 		contextFactory.ResetDatabase();
 	}

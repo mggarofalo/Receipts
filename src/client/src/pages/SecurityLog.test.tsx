@@ -14,9 +14,45 @@ vi.mock("@/hooks/usePermission", () => ({
 }));
 
 vi.mock("@/hooks/useAuthAudit", () => ({
-  useMyAuthAuditLog: vi.fn(() => ({ data: [], isLoading: false })),
-  useRecentAuthAuditLogs: vi.fn(() => ({ data: [], isLoading: false })),
-  useFailedAuthAttempts: vi.fn(() => ({ data: [], isLoading: false })),
+  useMyAuthAuditLog: vi.fn(() => ({
+    data: { data: [], total: 0, offset: 0, limit: 50 },
+    isLoading: false,
+  })),
+  useRecentAuthAuditLogs: vi.fn(() => ({
+    data: { data: [], total: 0, offset: 0, limit: 50 },
+    isLoading: false,
+  })),
+  useFailedAuthAttempts: vi.fn(() => ({
+    data: { data: [], total: 0, offset: 0, limit: 50 },
+    isLoading: false,
+  })),
+}));
+
+vi.mock("@/hooks/useServerPagination", () => ({
+  useServerPagination: vi.fn(() => ({
+    offset: 0,
+    limit: 50,
+    currentPage: 1,
+    pageSize: 50,
+    totalPages: () => 1,
+    setPage: vi.fn(),
+    setPageSize: vi.fn(),
+    resetPage: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/useServerSort", () => ({
+  useServerSort: vi.fn(() => ({
+    sortBy: "timestamp",
+    sortDirection: "desc",
+    toggleSort: vi.fn(),
+  })),
+}));
+
+vi.mock("@/components/Pagination", () => ({
+  Pagination: function MockPagination() {
+    return <div data-testid="pagination">Pagination</div>;
+  },
 }));
 
 vi.mock("@/components/AuthAuditTable", () => ({

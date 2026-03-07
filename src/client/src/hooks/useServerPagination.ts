@@ -1,4 +1,4 @@
-import { useReducer, useMemo } from "react";
+import { useReducer, useMemo, useCallback } from "react";
 import { getPersistedPageSize, persistPageSize } from "@/lib/page-size";
 
 interface UseServerPaginationOptions {
@@ -28,8 +28,10 @@ interface State {
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "SET_OFFSET":
+      if (state.offset === action.offset) return state;
       return { ...state, offset: action.offset };
     case "SET_LIMIT":
+      if (state.offset === 0 && state.limit === action.limit) return state;
       return { offset: 0, limit: action.limit };
   }
 }
@@ -47,24 +49,28 @@ export function useServerPagination({
     [state.offset, state.limit],
   );
 
-  function totalPages(total: number) {
-    return Math.max(1, Math.ceil(total / state.limit));
-  }
+  const totalPages = useCallback(
+    (total: number) => Math.max(1, Math.ceil(total / state.limit)),
+    [state.limit],
+  );
 
-  function setPage(page: number, total: number) {
-    const maxPage = totalPages(total);
-    const safePage = Math.max(1, Math.min(page, maxPage));
-    dispatch({ type: "SET_OFFSET", offset: (safePage - 1) * state.limit });
-  }
+  const setPage = useCallback(
+    (page: number, total: number) => {
+      const maxPage = Math.max(1, Math.ceil(total / state.limit));
+      const safePage = Math.max(1, Math.min(page, maxPage));
+      dispatch({ type: "SET_OFFSET", offset: (safePage - 1) * state.limit });
+    },
+    [state.limit],
+  );
 
-  function setPageSize(size: number) {
+  const setPageSize = useCallback((size: number) => {
     persistPageSize(size);
     dispatch({ type: "SET_LIMIT", limit: size });
-  }
+  }, []);
 
-  function resetPage() {
+  const resetPage = useCallback(() => {
     dispatch({ type: "SET_OFFSET", offset: 0 });
-  }
+  }, []);
 
   return {
     offset: state.offset,

@@ -1,8 +1,10 @@
 using API.Controllers;
 using Application.Interfaces.Services;
+using Application.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
+using GeneratedDtos = API.Generated.Dtos;
 
 namespace Presentation.API.Tests.Controllers;
 
@@ -27,17 +29,18 @@ public class AuditControllerTests
 		[
 			new AuditLogDto(Guid.NewGuid(), entityType, entityId, "Create", "[]", null, null, DateTimeOffset.UtcNow, null)
 		];
+		PagedResult<AuditLogDto> pagedResult = new(logs, 1, 0, 50);
 
-		_auditServiceMock.Setup(s => s.GetByEntityAsync(entityType, entityId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(logs);
+		_auditServiceMock.Setup(s => s.GetByEntityAsync(entityType, entityId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(pagedResult);
 
 		// Act
-		Results<Ok<List<AuditLogDto>>, BadRequest<string>> result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetAuditLogs(entityType, entityId, null, null, 0, 50, null, null, CancellationToken.None);
 
 		// Assert
-		Ok<List<AuditLogDto>> okResult = Assert.IsType<Ok<List<AuditLogDto>>>(result.Result);
-		List<AuditLogDto> returnedLogs = okResult.Value!;
-		returnedLogs.Should().HaveCount(1);
+		Ok<GeneratedDtos.AuditLogListResponse> okResult = Assert.IsType<Ok<GeneratedDtos.AuditLogListResponse>>(result.Result);
+		okResult.Value!.Data.Should().HaveCount(1);
+		okResult.Value.Total.Should().Be(1);
 	}
 
 	[Fact]
@@ -46,17 +49,18 @@ public class AuditControllerTests
 		// Arrange
 		string entityType = "Account";
 		string entityId = Guid.NewGuid().ToString();
+		PagedResult<AuditLogDto> pagedResult = new([], 0, 0, 50);
 
-		_auditServiceMock.Setup(s => s.GetByEntityAsync(entityType, entityId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([]);
+		_auditServiceMock.Setup(s => s.GetByEntityAsync(entityType, entityId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(pagedResult);
 
 		// Act
-		Results<Ok<List<AuditLogDto>>, BadRequest<string>> result = await _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetAuditLogs(entityType, entityId, null, null, 0, 50, null, null, CancellationToken.None);
 
 		// Assert
-		Ok<List<AuditLogDto>> okResult = Assert.IsType<Ok<List<AuditLogDto>>>(result.Result);
-		List<AuditLogDto> returnedLogs = okResult.Value!;
-		returnedLogs.Should().BeEmpty();
+		Ok<GeneratedDtos.AuditLogListResponse> okResult = Assert.IsType<Ok<GeneratedDtos.AuditLogListResponse>>(result.Result);
+		okResult.Value!.Data.Should().BeEmpty();
+		okResult.Value.Total.Should().Be(0);
 	}
 
 	[Fact]
@@ -68,16 +72,17 @@ public class AuditControllerTests
 			new AuditLogDto(Guid.NewGuid(), "Account", Guid.NewGuid().ToString(), "Create", "[]", null, null, DateTimeOffset.UtcNow, null),
 			new AuditLogDto(Guid.NewGuid(), "Receipt", Guid.NewGuid().ToString(), "Update", "[]", null, null, DateTimeOffset.UtcNow, null)
 		];
+		PagedResult<AuditLogDto> pagedResult = new(logs, 2, 0, 50);
 
-		_auditServiceMock.Setup(s => s.GetRecentAsync(50, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(logs);
+		_auditServiceMock.Setup(s => s.GetRecentAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(pagedResult);
 
 		// Act
-		Ok<List<AuditLogDto>> result = await _controller.GetRecent(50, CancellationToken.None);
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetRecent(0, 50, null, null, CancellationToken.None);
 
 		// Assert
-		List<AuditLogDto> returnedLogs = result.Value!;
-		returnedLogs.Should().HaveCount(2);
+		Ok<GeneratedDtos.AuditLogListResponse> okResult = Assert.IsType<Ok<GeneratedDtos.AuditLogListResponse>>(result.Result);
+		okResult.Value!.Data.Should().HaveCount(2);
 	}
 
 	[Fact]
@@ -89,18 +94,18 @@ public class AuditControllerTests
 		[
 			new AuditLogDto(Guid.NewGuid(), "Account", Guid.NewGuid().ToString(), "Create", "[]", userId, null, DateTimeOffset.UtcNow, null)
 		];
+		PagedResult<AuditLogDto> pagedResult = new(logs, 1, 0, 50);
 
-		_auditServiceMock.Setup(s => s.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(logs);
+		_auditServiceMock.Setup(s => s.GetByUserAsync(userId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(pagedResult);
 
 		// Act
-		Results<Ok<List<AuditLogDto>>, BadRequest<string>> result = await _controller.GetAuditLogs(null, null, userId, null, CancellationToken.None);
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetAuditLogs(null, null, userId, null, 0, 50, null, null, CancellationToken.None);
 
 		// Assert
-		Ok<List<AuditLogDto>> okResult = Assert.IsType<Ok<List<AuditLogDto>>>(result.Result);
-		List<AuditLogDto> returnedLogs = okResult.Value!;
-		returnedLogs.Should().HaveCount(1);
-		returnedLogs[0].ChangedByUserId.Should().Be(userId);
+		Ok<GeneratedDtos.AuditLogListResponse> okResult = Assert.IsType<Ok<GeneratedDtos.AuditLogListResponse>>(result.Result);
+		okResult.Value!.Data.Should().HaveCount(1);
+		okResult.Value.Data.First().ChangedByUserId.Should().Be(userId);
 	}
 
 	[Fact]
@@ -112,18 +117,18 @@ public class AuditControllerTests
 		[
 			new AuditLogDto(Guid.NewGuid(), "Account", Guid.NewGuid().ToString(), "Create", "[]", null, apiKeyId, DateTimeOffset.UtcNow, null)
 		];
+		PagedResult<AuditLogDto> pagedResult = new(logs, 1, 0, 50);
 
-		_auditServiceMock.Setup(s => s.GetByApiKeyAsync(apiKeyId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(logs);
+		_auditServiceMock.Setup(s => s.GetByApiKeyAsync(apiKeyId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(pagedResult);
 
 		// Act
-		Results<Ok<List<AuditLogDto>>, BadRequest<string>> result = await _controller.GetAuditLogs(null, null, null, apiKeyId, CancellationToken.None);
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetAuditLogs(null, null, null, apiKeyId, 0, 50, null, null, CancellationToken.None);
 
 		// Assert
-		Ok<List<AuditLogDto>> okResult = Assert.IsType<Ok<List<AuditLogDto>>>(result.Result);
-		List<AuditLogDto> returnedLogs = okResult.Value!;
-		returnedLogs.Should().HaveCount(1);
-		returnedLogs[0].ChangedByApiKeyId.Should().Be(apiKeyId);
+		Ok<GeneratedDtos.AuditLogListResponse> okResult = Assert.IsType<Ok<GeneratedDtos.AuditLogListResponse>>(result.Result);
+		okResult.Value!.Data.Should().HaveCount(1);
+		okResult.Value.Data.First().ChangedByApiKeyId.Should().Be(apiKeyId);
 	}
 
 	[Fact]
@@ -133,11 +138,11 @@ public class AuditControllerTests
 		string entityType = "Account";
 		string entityId = Guid.NewGuid().ToString();
 
-		_auditServiceMock.Setup(s => s.GetByEntityAsync(entityType, entityId, It.IsAny<CancellationToken>()))
+		_auditServiceMock.Setup(s => s.GetByEntityAsync(entityType, entityId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		Func<Task> act = () => _controller.GetAuditLogs(entityType, entityId, null, null, CancellationToken.None);
+		Func<Task> act = () => _controller.GetAuditLogs(entityType, entityId, null, null, 0, 50, null, null, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -147,11 +152,11 @@ public class AuditControllerTests
 	public async Task GetRecent_ThrowsException_WhenServiceFails()
 	{
 		// Arrange
-		_auditServiceMock.Setup(s => s.GetRecentAsync(50, It.IsAny<CancellationToken>()))
+		_auditServiceMock.Setup(s => s.GetRecentAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		Func<Task> act = () => _controller.GetRecent(50, CancellationToken.None);
+		Func<Task> act = () => _controller.GetRecent(0, 50, null, null, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -162,11 +167,11 @@ public class AuditControllerTests
 	{
 		// Arrange
 		string userId = "test-user";
-		_auditServiceMock.Setup(s => s.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+		_auditServiceMock.Setup(s => s.GetByUserAsync(userId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		Func<Task> act = () => _controller.GetAuditLogs(null, null, userId, null, CancellationToken.None);
+		Func<Task> act = () => _controller.GetAuditLogs(null, null, userId, null, 0, 50, null, null, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -177,13 +182,59 @@ public class AuditControllerTests
 	{
 		// Arrange
 		Guid apiKeyId = Guid.NewGuid();
-		_auditServiceMock.Setup(s => s.GetByApiKeyAsync(apiKeyId, It.IsAny<CancellationToken>()))
+		_auditServiceMock.Setup(s => s.GetByApiKeyAsync(apiKeyId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception("Test error"));
 
 		// Act
-		Func<Task> act = () => _controller.GetAuditLogs(null, null, null, apiKeyId, CancellationToken.None);
+		Func<Task> act = () => _controller.GetAuditLogs(null, null, null, apiKeyId, 0, 50, null, null, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
+	}
+
+	[Fact]
+	public async Task GetAuditLogs_InvalidSortBy_ReturnsBadRequest()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetAuditLogs(
+			"Account", Guid.NewGuid().ToString(), null, null, 0, 50, "invalid", null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Contain("Invalid sortBy");
+	}
+
+	[Fact]
+	public async Task GetAuditLogs_InvalidSortDirection_ReturnsBadRequest()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetAuditLogs(
+			"Account", Guid.NewGuid().ToString(), null, null, 0, 50, null, "invalid", CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Contain("Invalid sortDirection");
+	}
+
+	[Fact]
+	public async Task GetRecent_InvalidSortBy_ReturnsBadRequest()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetRecent(0, 50, "invalid", null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Contain("Invalid sortBy");
+	}
+
+	[Fact]
+	public async Task GetRecent_InvalidSortDirection_ReturnsBadRequest()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetRecent(0, 50, null, "invalid", CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Contain("Invalid sortDirection");
 	}
 }

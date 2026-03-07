@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("sonner", () => ({
   toast: { info: vi.fn() },
@@ -15,6 +15,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   _resetForTesting();
   vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("signalr-toast-buffer", () => {

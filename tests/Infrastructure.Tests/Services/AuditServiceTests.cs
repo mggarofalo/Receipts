@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using FluentAssertions;
 using Infrastructure.Entities.Audit;
 using Infrastructure.Services;
@@ -11,6 +12,8 @@ namespace Infrastructure.Tests.Services;
 
 public class AuditServiceTests
 {
+	private static readonly SortParams DefaultSort = SortParams.Default;
+
 	[Fact]
 	public async Task GetByEntityAsync_ReturnsLogsForSpecificEntity()
 	{
@@ -29,33 +32,35 @@ public class AuditServiceTests
 		AuditService service = new(contextFactory);
 
 		// Act
-		List<AuditLogDto> results = await service.GetByEntityAsync("Account", entityId);
+		PagedResult<AuditLogDto> results = await service.GetByEntityAsync("Account", entityId, 0, 50, DefaultSort);
 
 		// Assert
-		results.Should().HaveCount(1);
-		results[0].EntityId.Should().Be(entityId);
+		results.Data.Should().HaveCount(1);
+		results.Data[0].EntityId.Should().Be(entityId);
+		results.Total.Should().Be(1);
 
 		contextFactory.ResetDatabase();
 	}
 
 	[Fact]
-	public async Task GetByEntityAsync_NoLogs_ReturnsEmptyList()
+	public async Task GetByEntityAsync_NoLogs_ReturnsEmptyResult()
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
 		AuditService service = new(contextFactory);
 
 		// Act
-		List<AuditLogDto> results = await service.GetByEntityAsync("Account", Guid.NewGuid().ToString());
+		PagedResult<AuditLogDto> results = await service.GetByEntityAsync("Account", Guid.NewGuid().ToString(), 0, 50, DefaultSort);
 
 		// Assert
-		results.Should().BeEmpty();
+		results.Data.Should().BeEmpty();
+		results.Total.Should().Be(0);
 
 		contextFactory.ResetDatabase();
 	}
 
 	[Fact]
-	public async Task GetRecentAsync_ReturnsSpecifiedCount_OrderedByChangedAtDesc()
+	public async Task GetRecentAsync_ReturnsPaginatedResults_OrderedByChangedAtDesc()
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
@@ -78,11 +83,40 @@ public class AuditServiceTests
 		AuditService service = new(contextFactory);
 
 		// Act
-		List<AuditLogDto> results = await service.GetRecentAsync(2);
+		PagedResult<AuditLogDto> results = await service.GetRecentAsync(0, 2, DefaultSort);
 
 		// Assert
-		results.Should().HaveCount(2);
-		results[0].ChangedAt.Should().BeOnOrAfter(results[1].ChangedAt);
+		results.Data.Should().HaveCount(2);
+		results.Total.Should().Be(3);
+		results.Data[0].ChangedAt.Should().BeOnOrAfter(results.Data[1].ChangedAt);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetRecentAsync_Offset_SkipsRecords()
+	{
+		// Arrange
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
+
+		for (int i = 0; i < 5; i++)
+		{
+			AuditLogEntity log = AuditLogEntityGenerator.Generate();
+			log.ChangedAt = DateTimeOffset.UtcNow.AddMinutes(-i);
+			await using ApplicationDbContext context = contextFactory.CreateDbContext();
+			context.AuditLogs.Add(log);
+			await context.SaveChangesAsync();
+		}
+
+		AuditService service = new(contextFactory);
+
+		// Act
+		PagedResult<AuditLogDto> results = await service.GetRecentAsync(2, 2, DefaultSort);
+
+		// Assert
+		results.Data.Should().HaveCount(2);
+		results.Total.Should().Be(5);
+		results.Offset.Should().Be(2);
 
 		contextFactory.ResetDatabase();
 	}
@@ -105,11 +139,12 @@ public class AuditServiceTests
 		AuditService service = new(contextFactory);
 
 		// Act
-		List<AuditLogDto> results = await service.GetByUserAsync(userId);
+		PagedResult<AuditLogDto> results = await service.GetByUserAsync(userId, 0, 50, DefaultSort);
 
 		// Assert
-		results.Should().HaveCount(1);
-		results[0].ChangedByUserId.Should().Be(userId);
+		results.Data.Should().HaveCount(1);
+		results.Data[0].ChangedByUserId.Should().Be(userId);
+		results.Total.Should().Be(1);
 
 		contextFactory.ResetDatabase();
 	}
@@ -132,11 +167,12 @@ public class AuditServiceTests
 		AuditService service = new(contextFactory);
 
 		// Act
-		List<AuditLogDto> results = await service.GetByApiKeyAsync(apiKeyId);
+		PagedResult<AuditLogDto> results = await service.GetByApiKeyAsync(apiKeyId, 0, 50, DefaultSort);
 
 		// Assert
-		results.Should().HaveCount(1);
-		results[0].ChangedByApiKeyId.Should().Be(apiKeyId);
+		results.Data.Should().HaveCount(1);
+		results.Data[0].ChangedByApiKeyId.Should().Be(apiKeyId);
+		results.Total.Should().Be(1);
 
 		contextFactory.ResetDatabase();
 	}

@@ -27,28 +27,21 @@ namespace API.Generated.Dtos
 
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.3.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class UpdateAdjustmentRequest
+    public partial class AuditLogListResponse
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("data")]
+        [System.ComponentModel.DataAnnotations.Required]
+        public System.Collections.Generic.ICollection<AuditLogDto> Data { get; set; } = new System.Collections.ObjectModel.Collection<AuditLogDto>();
 
-        /// <summary>
-        /// Adjustment type: tip, discount, rounding, loyaltyRedemption, coupon, storeCredit, other
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("type")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string Type { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("total")]
+        public int Total { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("amount")]
-        public double Amount { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("offset")]
+        public int Offset { get; set; } = default!;
 
-        /// <summary>
-        /// Required when type is 'other'
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("limit")]
+        public int Limit { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

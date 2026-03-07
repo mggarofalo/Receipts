@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Application.Interfaces.Services;
+using Application.Models;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using GeneratedDtos = API.Generated.Dtos;
 
 namespace API.Controllers;
 
@@ -15,7 +17,12 @@ namespace API.Controllers;
 public class AuthAuditController(IAuthAuditService authAuditService) : ControllerBase
 {
 	[HttpGet("me")]
-	public async Task<Results<Ok<List<AuthAuditEntryDto>>, UnauthorizedHttpResult>> GetMyAuditLog([FromQuery] int count = 50, CancellationToken cancellationToken = default)
+	public async Task<Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>, UnauthorizedHttpResult>> GetMyAuditLog(
+		[FromQuery] int offset = 0,
+		[FromQuery] int limit = 50,
+		[FromQuery] string? sortBy = null,
+		[FromQuery] string? sortDirection = null,
+		CancellationToken cancellationToken = default)
 	{
 		string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		if (userId is null)
@@ -23,21 +30,85 @@ public class AuthAuditController(IAuthAuditService authAuditService) : Controlle
 			return TypedResults.Unauthorized();
 		}
 
-		List<AuthAuditEntryDto> logs = await authAuditService.GetMyAuditLogAsync(userId, count, cancellationToken);
-		return TypedResults.Ok(logs);
+		if (sortBy is not null && !SortableColumns.AuthAudit.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.AuthAudit)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		PagedResult<AuthAuditEntryDto> result = await authAuditService.GetMyAuditLogAsync(userId, offset, limit, sort, cancellationToken);
+		return TypedResults.Ok(ToListResponse(result));
 	}
 
 	[HttpGet("recent")]
-	public async Task<Ok<List<AuthAuditEntryDto>>> GetRecent([FromQuery] int count = 50, CancellationToken cancellationToken = default)
+	public async Task<Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>>> GetRecent(
+		[FromQuery] int offset = 0,
+		[FromQuery] int limit = 50,
+		[FromQuery] string? sortBy = null,
+		[FromQuery] string? sortDirection = null,
+		CancellationToken cancellationToken = default)
 	{
-		List<AuthAuditEntryDto> logs = await authAuditService.GetRecentAsync(count, cancellationToken);
-		return TypedResults.Ok(logs);
+		if (sortBy is not null && !SortableColumns.AuthAudit.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.AuthAudit)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		PagedResult<AuthAuditEntryDto> result = await authAuditService.GetRecentAsync(offset, limit, sort, cancellationToken);
+		return TypedResults.Ok(ToListResponse(result));
 	}
 
 	[HttpGet("failed")]
-	public async Task<Ok<List<AuthAuditEntryDto>>> GetFailed([FromQuery] int count = 50, CancellationToken cancellationToken = default)
+	public async Task<Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>>> GetFailed(
+		[FromQuery] int offset = 0,
+		[FromQuery] int limit = 50,
+		[FromQuery] string? sortBy = null,
+		[FromQuery] string? sortDirection = null,
+		CancellationToken cancellationToken = default)
 	{
-		List<AuthAuditEntryDto> logs = await authAuditService.GetFailedAttemptsAsync(count, cancellationToken);
-		return TypedResults.Ok(logs);
+		if (sortBy is not null && !SortableColumns.AuthAudit.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.AuthAudit)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		PagedResult<AuthAuditEntryDto> result = await authAuditService.GetFailedAttemptsAsync(offset, limit, sort, cancellationToken);
+		return TypedResults.Ok(ToListResponse(result));
 	}
+
+	private static GeneratedDtos.AuthAuditListResponse ToListResponse(PagedResult<AuthAuditEntryDto> result) => new()
+	{
+		Data = [.. result.Data.Select(d => new GeneratedDtos.AuthAuditEntryDto
+		{
+			Id = d.Id,
+			EventType = d.EventType,
+			UserId = d.UserId,
+			ApiKeyId = d.ApiKeyId,
+			Username = d.Username,
+			Success = d.Success,
+			FailureReason = d.FailureReason,
+			IpAddress = d.IpAddress,
+			UserAgent = d.UserAgent,
+			Timestamp = d.Timestamp,
+			MetadataJson = d.MetadataJson,
+		})],
+		Total = result.Total,
+		Offset = result.Offset,
+		Limit = result.Limit,
+	};
 }

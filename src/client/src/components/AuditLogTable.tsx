@@ -26,11 +26,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { FieldDiff } from "@/components/FieldDiff";
 
 interface AuditLogTableProps {
   logs: AuditLog[];
   isLoading: boolean;
+  sortBy?: string | null;
+  sortDirection?: "asc" | "desc";
+  onToggleSort?: (column: string) => void;
 }
 
 function AuditRow({ log }: { log: AuditLog }) {
@@ -116,7 +120,7 @@ function AuditRow({ log }: { log: AuditLog }) {
   );
 }
 
-export function AuditLogTable({ logs, isLoading }: AuditLogTableProps) {
+export function AuditLogTable({ logs, isLoading, sortBy, sortDirection = "desc", onToggleSort }: AuditLogTableProps) {
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -140,12 +144,25 @@ export function AuditLogTable({ logs, isLoading }: AuditLogTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Timestamp</TableHead>
-            <TableHead>Entity Type</TableHead>
-            <TableHead>Entity ID</TableHead>
-            <TableHead>Action</TableHead>
-            <TableHead>Changed By</TableHead>
-            <TableHead className="text-center">Changes</TableHead>
+            {onToggleSort ? (
+              <>
+                <SortableTableHead column="changedAt" label="Timestamp" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
+                <SortableTableHead column="entityType" label="Entity Type" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
+                <TableHead>Entity ID</TableHead>
+                <SortableTableHead column="action" label="Action" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
+                <TableHead>Changed By</TableHead>
+                <TableHead className="text-center">Changes</TableHead>
+              </>
+            ) : (
+              <>
+                <TableHead>Timestamp</TableHead>
+                <TableHead>Entity Type</TableHead>
+                <TableHead>Entity ID</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Changed By</TableHead>
+                <TableHead className="text-center">Changes</TableHead>
+              </>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>

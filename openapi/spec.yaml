@@ -1967,15 +1967,17 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuditLogDto"
+                $ref: "#/components/schemas/AuditLogListResponse"
         "400":
           description: Bad Request
           content:
@@ -1992,21 +1994,23 @@ paths:
         - BearerAuth: []
         - ApiKey: []
       parameters:
-        - name: count
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 50
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuditLogDto"
+                $ref: "#/components/schemas/AuditLogListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   # ──────────────────────────────────────────────
   # Auth
@@ -2209,21 +2213,23 @@ paths:
         - BearerAuth: []
         - ApiKey: []
       parameters:
-        - name: count
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 50
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuthAuditEntryDto"
+                $ref: "#/components/schemas/AuthAuditListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/auth/audit/recent:
     get:
@@ -2234,21 +2240,23 @@ paths:
         - BearerAuth: []
         - ApiKey: []
       parameters:
-        - name: count
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 50
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuthAuditEntryDto"
+                $ref: "#/components/schemas/AuthAuditListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/auth/audit/failed:
     get:
@@ -2259,21 +2267,23 @@ paths:
         - BearerAuth: []
         - ApiKey: []
       parameters:
-        - name: count
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 50
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuthAuditEntryDto"
+                $ref: "#/components/schemas/AuthAuditListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   # ──────────────────────────────────────────────
   # Users (admin-only)
@@ -3207,7 +3217,7 @@ components:
 
     AuditLogDto:
       type: object
-      required: [id, entityType, entityId, action, changesJson, changedByUserId, changedByApiKeyId, changedAt, ipAddress]
+      required: [id, entityType, entityId, action, changesJson, changedAt]
       properties:
         id:
           type: string
@@ -3237,11 +3247,29 @@ components:
             - string
             - "null"
 
+    AuditLogListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLogDto"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+
     # ── Auth Audit ────────────────────────────────
 
     AuthAuditEntryDto:
       type: object
-      required: [id, eventType, userId, apiKeyId, username, success, failureReason, ipAddress, userAgent, timestamp, metadataJson]
+      required: [id, eventType, success, timestamp]
       properties:
         id:
           type: string
@@ -3282,6 +3310,24 @@ components:
           type:
             - string
             - "null"
+
+    AuthAuditListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthAuditEntryDto"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
 
     # ── Auth ──────────────────────────────────────
 
