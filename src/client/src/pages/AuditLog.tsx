@@ -1,33 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
-import { format } from "date-fns";
+import { useEffect } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useRecentAuditLogs } from "@/hooks/useAudit";
 import { useServerPagination } from "@/hooks/useServerPagination";
 import { useServerSort } from "@/hooks/useServerSort";
 import type { AuditLog as AuditLogEntry } from "@/lib/audit-utils";
-import {
-  ENTITY_TYPES,
-  ENTITY_TYPE_LABELS,
-  ACTION_TYPES,
-} from "@/lib/audit-utils";
 import { AuditLogTable } from "@/components/AuditLogTable";
 import { Pagination } from "@/components/Pagination";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 function csvField(value: string): string {
   if (value.includes(",") || value.includes('"') || value.includes("\n") || value.includes("\r")) {
@@ -71,116 +50,16 @@ function exportToCsv(logs: AuditLogEntry[]) {
   URL.revokeObjectURL(url);
 }
 
-function DateRangePicker({
-  from,
-  to,
-  onFromChange,
-  onToChange,
-}: {
-  from: Date | undefined;
-  to: Date | undefined;
-  onFromChange: (d: Date | undefined) => void;
-  onToChange: (d: Date | undefined) => void;
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              "w-[120px] justify-start text-left font-normal",
-              !from && "text-muted-foreground",
-            )}
-          >
-            {from ? format(from, "MMM d, yyyy") : "From"}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={from}
-            onSelect={onFromChange}
-            disabled={(d) => (to ? d > to : false)}
-          />
-        </PopoverContent>
-      </Popover>
-      <span className="text-muted-foreground text-xs">—</span>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              "w-[120px] justify-start text-left font-normal",
-              !to && "text-muted-foreground",
-            )}
-          >
-            {to ? format(to, "MMM d, yyyy") : "To"}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={to}
-            onSelect={onToChange}
-            disabled={(d) => (from ? d < from : false)}
-          />
-        </PopoverContent>
-      </Popover>
-      {(from || to) && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            onFromChange(undefined);
-            onToChange(undefined);
-          }}
-        >
-          Clear
-        </Button>
-      )}
-    </div>
-  );
-}
-
 function AuditLog() {
   usePageTitle("Audit Log");
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "changedAt", defaultSortDirection: "desc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
-  const [search, setSearch] = useState("");
-  const [entityTypeFilter, setEntityTypeFilter] = useState("all");
-  const [actionFilter, setActionFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState<Date | undefined>();
-  const [dateTo, setDateTo] = useState<Date | undefined>();
 
   const { data: response, isLoading } = useRecentAuditLogs(offset, limit, sortBy, sortDirection);
   const serverTotal = response?.total ?? 0;
+  const logs = (response?.data ?? []) as AuditLogEntry[];
 
   useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
-
-  const filtered = useMemo(() => {
-    const logs = (response?.data ?? []) as AuditLogEntry[];
-    const term = search.toLowerCase();
-    return logs.filter((log) => {
-      if (term && !log.entityId.toLowerCase().includes(term)) return false;
-      if (entityTypeFilter !== "all" && log.entityType !== entityTypeFilter)
-        return false;
-      if (actionFilter !== "all" && log.action !== actionFilter) return false;
-      if (dateFrom) {
-        const logDate = new Date(log.changedAt);
-        if (logDate < dateFrom) return false;
-      }
-      if (dateTo) {
-        const end = new Date(dateTo);
-        end.setHours(23, 59, 59, 999);
-        const logDate = new Date(log.changedAt);
-        if (logDate > end) return false;
-      }
-      return true;
-    });
-  }, [response, search, entityTypeFilter, actionFilter, dateFrom, dateTo]);
 
   return (
     <div className="space-y-4">
@@ -189,57 +68,15 @@ function AuditLog() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => exportToCsv(filtered)}
-          disabled={filtered.length === 0}
+          onClick={() => exportToCsv(logs)}
+          disabled={logs.length === 0}
         >
           Export CSV
         </Button>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <Input
-          placeholder="Search by entity ID..."
-          aria-label="Search audit log by entity ID"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <Select value={entityTypeFilter} onValueChange={setEntityTypeFilter}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Entity Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {ENTITY_TYPES.map((t) => (
-              <SelectItem key={t} value={t}>
-                {ENTITY_TYPE_LABELS[t]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={actionFilter} onValueChange={setActionFilter}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Action" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Actions</SelectItem>
-            {ACTION_TYPES.map((a) => (
-              <SelectItem key={a} value={a}>
-                {a}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <DateRangePicker
-          from={dateFrom}
-          to={dateTo}
-          onFromChange={setDateFrom}
-          onToChange={setDateTo}
-        />
-      </div>
-
       <AuditLogTable
-        logs={filtered}
+        logs={logs}
         isLoading={isLoading}
         sortBy={sortBy}
         sortDirection={sortDirection}
