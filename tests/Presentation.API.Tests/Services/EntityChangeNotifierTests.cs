@@ -309,6 +309,25 @@ public class EntityChangeNotifierTests : IDisposable
 	}
 
 	[Fact]
+	public async Task NotifyCreated_WithUnauthenticatedIdentity_SetsAuthMethodToNull()
+	{
+		// Arrange — HttpContext exists but identity has no AuthenticationType
+		var context = new DefaultHttpContext();
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns(context);
+
+		// Act
+		await _notifier.NotifyCreated("receipt", Guid.NewGuid());
+		await _notifier.FlushAsync();
+
+		// Assert
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.UserId == null &&
+				n.AuthMethod == null)),
+			Times.Once);
+	}
+
+	[Fact]
 	public async Task SameEntityAndChange_DifferentOrigin_ProducesSeparateNotifications()
 	{
 		// Arrange — first call with user A

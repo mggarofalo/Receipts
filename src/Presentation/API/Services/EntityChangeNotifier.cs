@@ -84,9 +84,14 @@ public sealed class EntityChangeNotifier : IEntityChangeNotifier, IDisposable
 		}
 
 		var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-		var authMethod = httpContext.User.Identity?.AuthenticationType == ApiKeyAuthenticationDefaults.AuthenticationScheme
+		var authType = httpContext.User.Identity?.AuthenticationType;
+		var authMethod = authType == ApiKeyAuthenticationDefaults.AuthenticationScheme
 			? "apikey"
-			: "jwt";
+			: authType is not null
+				? "jwt"
+				: null;
+		// connectionId is client-supplied and untrusted; spoofing suppresses a toast
+		// but does not affect data integrity or query invalidation.
 		var connectionId = httpContext.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
 
 		return new NotificationOrigin(userId, authMethod, connectionId);

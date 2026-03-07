@@ -60,6 +60,7 @@ import { toast } from "sonner";
 import { bufferToast } from "@/lib/signalr-toast-buffer";
 import { act } from "@testing-library/react";
 import { setConnectionId, getConnectionId } from "@/lib/signalr-connection";
+import { parseJwtPayload } from "@/lib/auth";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -311,6 +312,21 @@ describe("useSignalR", () => {
       });
 
       expect(bufferToast).toHaveBeenCalledWith("receipt", "deleted", 1, "other-user");
+    });
+
+    it("classifies as other-user when parseJwtPayload returns null", async () => {
+      vi.mocked(parseJwtPayload).mockReturnValueOnce(null);
+
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "created", id: "abc", count: 1, userId: "current-user-id", authMethod: "jwt", connectionId: "different-conn" });
+      });
+
+      expect(bufferToast).toHaveBeenCalledWith("receipt", "created", 1, "other-user");
     });
   });
 
