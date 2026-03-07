@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Security.Claims;
+using API.Authentication;
 using API.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
@@ -7,19 +9,21 @@ namespace API.Services;
 public sealed class EntityChangeNotifier : IEntityChangeNotifier, IDisposable
 {
 	private readonly IHubContext<EntityHub, IEntityHubClient> _hubContext;
-	private readonly ConcurrentDictionary<(string EntityType, string ChangeType), NotificationBucket> _pending = new();
+	private readonly IHttpContextAccessor _httpContextAccessor;
+	private readonly ConcurrentDictionary<(string EntityType, string ChangeType, string? UserId, string? AuthMethod, string? ConnectionId), NotificationBucket> _pending = new();
 	private readonly Timer _flushTimer;
 	private readonly TimeSpan _flushInterval;
 	private int _disposed;
 
-	public EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubContext)
-		: this(hubContext, TimeSpan.FromSeconds(1))
+	public EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubContext, IHttpContextAccessor httpContextAccessor)
+		: this(hubContext, httpContextAccessor, TimeSpan.FromSeconds(1))
 	{
 	}
 
-	internal EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubContext, TimeSpan flushInterval)
+	internal EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubContext, IHttpContextAccessor httpContextAccessor, TimeSpan flushInterval)
 	{
 		_hubContext = hubContext;
+		_httpContextAccessor = httpContextAccessor;
 		_flushInterval = flushInterval;
 		_flushTimer = new Timer(_ => _ = FlushAsync(), null, _flushInterval, _flushInterval);
 	}
@@ -59,7 +63,8 @@ public sealed class EntityChangeNotifier : IEntityChangeNotifier, IDisposable
 
 	private void Enqueue(string entityType, string changeType, Guid? id)
 	{
-		var key = (entityType, changeType);
+		var origin = CaptureOrigin();
+		var key = (entityType, changeType, origin.UserId, origin.AuthMethod, origin.ConnectionId);
 		_pending.AddOrUpdate(
 			key,
 			_ => new NotificationBucket(id),
@@ -70,22 +75,39 @@ public sealed class EntityChangeNotifier : IEntityChangeNotifier, IDisposable
 			});
 	}
 
+	private NotificationOrigin CaptureOrigin()
+	{
+		var httpContext = _httpContextAccessor.HttpContext;
+		if (httpContext is null)
+		{
+			return new NotificationOrigin(null, null, null);
+		}
+
+		var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+		var authMethod = httpContext.User.Identity?.AuthenticationType == ApiKeyAuthenticationDefaults.AuthenticationScheme
+			? "apikey"
+			: "jwt";
+		var connectionId = httpContext.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
+
+		return new NotificationOrigin(userId, authMethod, connectionId);
+	}
+
 	internal async Task FlushAsync()
 	{
 		// Snapshot and remove all pending buckets atomically per key
-		List<(string EntityType, string ChangeType, int Count)> toSend = [];
+		List<(string EntityType, string ChangeType, string? UserId, string? AuthMethod, string? ConnectionId, int Count)> toSend = [];
 		foreach (var key in _pending.Keys)
 		{
 			if (_pending.TryRemove(key, out NotificationBucket? bucket))
 			{
-				toSend.Add((key.EntityType, key.ChangeType, bucket.Count));
+				toSend.Add((key.EntityType, key.ChangeType, key.UserId, key.AuthMethod, key.ConnectionId, bucket.Count));
 			}
 		}
 
-		foreach (var (entityType, changeType, count) in toSend)
+		foreach (var (entityType, changeType, userId, authMethod, connectionId, count) in toSend)
 		{
 			await _hubContext.Clients.All.EntityChanged(
-				new EntityChangeNotification(entityType, changeType, null, count));
+				new EntityChangeNotification(entityType, changeType, null, count, userId, authMethod, connectionId));
 		}
 	}
 
@@ -98,6 +120,8 @@ public sealed class EntityChangeNotifier : IEntityChangeNotifier, IDisposable
 			FlushAsync().GetAwaiter().GetResult();
 		}
 	}
+
+	private sealed record NotificationOrigin(string? UserId, string? AuthMethod, string? ConnectionId);
 
 	private sealed class NotificationBucket
 	{

@@ -8,6 +8,7 @@ const mockConnection = {
   onreconnecting: vi.fn(),
   onreconnected: vi.fn(),
   onclose: vi.fn(),
+  connectionId: "mock-conn-id",
 };
 
 const mockBuilder = {
@@ -40,6 +41,17 @@ vi.mock("@/lib/signalr-toast-buffer", () => ({
 
 vi.mock("@/lib/auth", () => ({
   getAccessToken: vi.fn().mockReturnValue("mock-token"),
+  parseJwtPayload: vi.fn().mockReturnValue({
+    userId: "current-user-id",
+    email: "user@example.com",
+    roles: [],
+    mustResetPassword: false,
+  }),
+}));
+
+vi.mock("@/lib/signalr-connection", () => ({
+  setConnectionId: vi.fn(),
+  getConnectionId: vi.fn().mockReturnValue("mock-conn-id"),
 }));
 
 import { useSignalR } from "./useSignalR";
@@ -47,11 +59,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { bufferToast } from "@/lib/signalr-toast-buffer";
 import { act } from "@testing-library/react";
+import { setConnectionId, getConnectionId } from "@/lib/signalr-connection";
 
 beforeEach(() => {
   vi.clearAllMocks();
   // Restore start to resolve by default (individual tests may override)
   mockConnection.start.mockResolvedValue(undefined);
+  mockConnection.connectionId = "mock-conn-id";
+  vi.mocked(getConnectionId).mockReturnValue("mock-conn-id");
 });
 
 /** Helper: render the hook, flush the start() promise, and return the result. */
@@ -122,12 +137,19 @@ describe("useSignalR", () => {
     expect(result.current.connectionState).toBe("connected");
   });
 
+  it("sets connectionId on connect", async () => {
+    await renderEnabled();
+
+    expect(setConnectionId).toHaveBeenCalledWith("mock-conn-id");
+  });
+
   it("clears connectionRef on cleanup", () => {
     const { unmount } = renderHook(() => useSignalR(true));
 
     unmount();
 
     expect(mockConnection.stop).toHaveBeenCalled();
+    expect(setConnectionId).toHaveBeenCalledWith(null);
   });
 
   describe("EntityChanged handler", () => {
@@ -140,7 +162,7 @@ describe("useSignalR", () => {
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!({ entityType: "receipt", changeType: "created", id: "abc-123", count: 1 });
+        handler!({ entityType: "receipt", changeType: "created", id: "abc-123", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
       });
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
@@ -152,7 +174,7 @@ describe("useSignalR", () => {
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["trips"],
       });
-      expect(bufferToast).toHaveBeenCalledWith("receipt", "created", 1);
+      expect(bufferToast).toHaveBeenCalledWith("receipt", "created", 1, "other-user");
       expect(toast.info).not.toHaveBeenCalled();
     });
 
@@ -165,7 +187,7 @@ describe("useSignalR", () => {
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!({ entityType: "account", changeType: "updated", id: "abc-123", count: 1 });
+        handler!({ entityType: "account", changeType: "updated", id: "abc-123", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
       });
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
@@ -174,7 +196,7 @@ describe("useSignalR", () => {
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["transaction-accounts"],
       });
-      expect(bufferToast).toHaveBeenCalledWith("account", "updated", 1);
+      expect(bufferToast).toHaveBeenCalledWith("account", "updated", 1, "other-user");
       expect(toast.info).not.toHaveBeenCalled();
     });
 
@@ -187,7 +209,7 @@ describe("useSignalR", () => {
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!({ entityType: "transaction", changeType: "deleted", id: "abc-123", count: 1 });
+        handler!({ entityType: "transaction", changeType: "deleted", id: "abc-123", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
       });
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
@@ -202,7 +224,7 @@ describe("useSignalR", () => {
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["transaction-accounts"],
       });
-      expect(bufferToast).toHaveBeenCalledWith("transaction", "deleted", 1);
+      expect(bufferToast).toHaveBeenCalledWith("transaction", "deleted", 1, "other-user");
       expect(toast.info).not.toHaveBeenCalled();
     });
 
@@ -213,10 +235,10 @@ describe("useSignalR", () => {
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!({ entityType: "receipt-item", changeType: "created", id: "abc", count: 1 });
+        handler!({ entityType: "receipt-item", changeType: "created", id: "abc", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
       });
 
-      expect(bufferToast).toHaveBeenCalledWith("receipt item", "created", 1);
+      expect(bufferToast).toHaveBeenCalledWith("receipt item", "created", 1, "other-user");
       expect(toast.info).not.toHaveBeenCalled();
     });
 
@@ -227,11 +249,68 @@ describe("useSignalR", () => {
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!({ entityType: "item-template", changeType: "updated", id: "abc", count: 1 });
+        handler!({ entityType: "item-template", changeType: "updated", id: "abc", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
       });
 
-      expect(bufferToast).toHaveBeenCalledWith("item template", "updated", 1);
+      expect(bufferToast).toHaveBeenCalledWith("item template", "updated", 1, "other-user");
       expect(toast.info).not.toHaveBeenCalled();
+    });
+
+    it("suppresses toast when notification.connectionId matches own connectionId", async () => {
+      const mockQueryClient = vi.mocked(useQueryClient)();
+
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "created", id: "abc", count: 1, userId: "current-user-id", authMethod: "jwt", connectionId: "mock-conn-id" });
+      });
+
+      // Queries still invalidated
+      expect(mockQueryClient.invalidateQueries).toHaveBeenCalled();
+      // But no toast
+      expect(bufferToast).not.toHaveBeenCalled();
+    });
+
+    it("calls bufferToast with api-key origin when authMethod=apikey and userId matches", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "updated", id: "abc", count: 1, userId: "current-user-id", authMethod: "apikey", connectionId: null });
+      });
+
+      expect(bufferToast).toHaveBeenCalledWith("receipt", "updated", 1, "api-key");
+    });
+
+    it("calls bufferToast with other-session origin when same userId, different connectionId", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "created", id: "abc", count: 1, userId: "current-user-id", authMethod: "jwt", connectionId: "different-conn" });
+      });
+
+      expect(bufferToast).toHaveBeenCalledWith("receipt", "created", 1, "other-session");
+    });
+
+    it("calls bufferToast with other-user origin when different userId", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "deleted", id: "abc", count: 1, userId: "someone-else", authMethod: "jwt", connectionId: "other-conn" });
+      });
+
+      expect(bufferToast).toHaveBeenCalledWith("receipt", "deleted", 1, "other-user");
     });
   });
 

@@ -62,6 +62,7 @@ describe("parseJwtPayload", () => {
     });
     const result = parseJwtPayload(token);
     expect(result).toEqual({
+      userId: "",
       email: "user@example.com",
       roles: ["Admin", "User"],
       mustResetPassword: false,
@@ -76,6 +77,7 @@ describe("parseJwtPayload", () => {
     });
     const result = parseJwtPayload(token);
     expect(result).toEqual({
+      userId: "",
       email: "ms@example.com",
       roles: ["Admin"],
       mustResetPassword: false,
@@ -130,6 +132,25 @@ describe("parseJwtPayload", () => {
 
   it("returns null for token with invalid base64", () => {
     expect(parseJwtPayload("a.!!!invalid!!!.c")).toBeNull();
+  });
+
+  it("parses userId from NameIdentifier claim URI", () => {
+    const token = encodePayload({
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier":
+        "user-id-123",
+      email: "user@example.com",
+    });
+    const result = parseJwtPayload(token);
+    expect(result?.userId).toBe("user-id-123");
+  });
+
+  it("parses userId from sub claim", () => {
+    const token = encodePayload({
+      sub: "sub-user-456",
+      email: "user@example.com",
+    });
+    const result = parseJwtPayload(token);
+    expect(result?.userId).toBe("sub-user-456");
   });
 });
 

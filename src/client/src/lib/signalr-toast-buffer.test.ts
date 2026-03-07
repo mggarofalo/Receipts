@@ -103,4 +103,36 @@ describe("signalr-toast-buffer", () => {
 
     expect(toast.info).not.toHaveBeenCalled();
   });
+
+  it("shows 'via your API key' for api-key origin", () => {
+    bufferToast("receipt", "created", 1, "api-key");
+    _flushForTesting();
+
+    expect(toast.info).toHaveBeenCalledWith(
+      "A receipt was created via your API key",
+    );
+  });
+
+  it("shows 'in another of your sessions' for other-session origin", () => {
+    bufferToast("account", "updated", 1, "other-session");
+    _flushForTesting();
+
+    expect(toast.info).toHaveBeenCalledWith(
+      "A account was updated in another of your sessions",
+    );
+  });
+
+  it("different origins for same entity/change produce separate toasts", () => {
+    bufferToast("receipt", "created", 1, "api-key");
+    bufferToast("receipt", "created", 1, "other-user");
+    _flushForTesting();
+
+    expect(toast.info).toHaveBeenCalledWith(
+      "A receipt was created via your API key",
+    );
+    expect(toast.info).toHaveBeenCalledWith(
+      "A receipt was created by another user",
+    );
+    expect(toast.info).toHaveBeenCalledTimes(2);
+  });
 });
