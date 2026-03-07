@@ -1,4 +1,5 @@
 import { useReducer, useMemo } from "react";
+import { getPersistedPageSize, persistPageSize } from "@/lib/page-size";
 
 interface UsePaginationOptions<T> {
   items: T[];
@@ -39,7 +40,7 @@ export function usePagination<T>({
 }: UsePaginationOptions<T>): UsePaginationReturn<T> {
   const [state, dispatch] = useReducer(reducer, {
     currentPage: 1,
-    pageSize: defaultPageSize,
+    pageSize: getPersistedPageSize() ?? defaultPageSize,
   });
 
   const totalItems = items.length;
@@ -60,6 +61,7 @@ export function usePagination<T>({
   }
 
   function setPageSize(size: number) {
+    persistPageSize(size);
     dispatch({ type: "SET_PAGE_SIZE", size });
   }
 
