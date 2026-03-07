@@ -91,14 +91,22 @@ dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructu
 Native Git hooks via `core.hooksPath`. Install automatically on `dotnet restore` (or `bash .githooks/setup.sh`).
 
 **Pipeline (runs on every `git commit`):**
+0. `bash scripts/worktree-setup.sh --check` — prerequisite verification
 1. `npx spectral lint openapi/spec.yaml` — OpenAPI spec linting
 2. `dotnet format --verify-no-changes` — code formatting check
 3. `dotnet build -p:TreatWarningsAsErrors=true` — build (also generates `openapi/generated/API.json`)
 4. `git diff --exit-code -- src/Presentation/API/Generated/` — DTO staleness check
 5. `node scripts/check-drift.mjs` — semantic drift detection
 6. `dotnet test --no-build` — run all tests
+7. `npx tsc --noEmit` — TypeScript type checking
+8. `npx eslint src/client/src` — React client linting
 
-Skip with `git commit --no-verify -m "message"` (use sparingly).
+**Quick mode** runs only steps 0, 2, 7, 8 (prerequisites, format, tsc, eslint):
+```bash
+PRECOMMIT_QUICK=1 git commit -m "message"
+```
+
+`git commit --no-verify` skips all hooks — use only as a last resort.
 
 ## Architecture
 
