@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Application.Models;
 using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
@@ -8,18 +10,25 @@ namespace Infrastructure.Repositories;
 
 public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : IReceiptRepository
 {
+	private static readonly Dictionary<string, Expression<Func<ReceiptEntity, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["location"] = e => e.Location,
+		["date"] = e => e.Date,
+		["taxAmount"] = e => e.TaxAmount,
+	};
+
 	public async Task<ReceiptEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<ReceiptEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<ReceiptEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
 			.Skip(offset)
 			.Take(limit)
 			.Select(r => new ReceiptEntity
@@ -33,13 +42,13 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<ReceiptEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<ReceiptEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Receipts
 			.OnlyDeleted()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
 			.Skip(offset)
 			.Take(limit)
 			.Select(r => new ReceiptEntity

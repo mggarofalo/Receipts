@@ -1,3 +1,4 @@
+using Application.Models;
 using Application.Queries.Core.ItemTemplate;
 
 namespace Application.Tests.Queries.Core.ItemTemplate;
@@ -7,7 +8,7 @@ public class GetAllItemTemplatesQueryTests : IQueryTests
 	[Fact]
 	public void Query_CanBeCreated()
 	{
-		GetAllItemTemplatesQuery query = new(0, 50);
+		GetAllItemTemplatesQuery query = new(0, 50, SortParams.Default);
 		Assert.NotNull(query);
 	}
 }

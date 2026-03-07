@@ -15,10 +15,10 @@ public class GetDeletedItemTemplatesQueryHandlerTests
 		List<Domain.Core.ItemTemplate> expected = ItemTemplateGenerator.GenerateList(2);
 
 		Mock<IItemTemplateService> mockService = new();
-		mockService.Setup(r => r.GetDeletedAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ItemTemplate>(expected, expected.Count, 0, 50));
+		mockService.Setup(r => r.GetDeletedAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ItemTemplate>(expected, expected.Count, 0, 50));
 
 		GetDeletedItemTemplatesQueryHandler handler = new(mockService.Object);
-		GetDeletedItemTemplatesQuery query = new(0, 50);
+		GetDeletedItemTemplatesQuery query = new(0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.ItemTemplate> result = await handler.Handle(query, CancellationToken.None);
 

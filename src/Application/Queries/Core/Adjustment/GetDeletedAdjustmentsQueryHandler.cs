@@ -8,6 +8,6 @@ public class GetDeletedAdjustmentsQueryHandler(IAdjustmentService adjustmentServ
 {
 	public async Task<PagedResult<Domain.Core.Adjustment>> Handle(GetDeletedAdjustmentsQuery request, CancellationToken cancellationToken)
 	{
-		return await adjustmentService.GetDeletedAsync(request.Offset, request.Limit, cancellationToken);
+		return await adjustmentService.GetDeletedAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

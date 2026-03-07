@@ -107,9 +107,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(new PagedResult<Transaction>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		Ok<TransactionListResponse> result = await _controller.GetAllTransactions(null, 0, 50);
+		Results<Ok<TransactionListResponse>, BadRequest<string>> rawResult = await _controller.GetAllTransactions(null, 0, 50, null, null);
 
 		// Assert
+		Ok<TransactionListResponse> result = Assert.IsType<Ok<TransactionListResponse>>(rawResult.Result);
 		TransactionListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
@@ -128,7 +129,7 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllTransactions(null, 0, 50);
+		Func<Task> act = () => _controller.GetAllTransactions(null, 0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -148,9 +149,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(new PagedResult<Transaction>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		Ok<TransactionListResponse> result = await _controller.GetAllTransactions(receiptId, 0, 50);
+		Results<Ok<TransactionListResponse>, BadRequest<string>> rawResult = await _controller.GetAllTransactions(receiptId, 0, 50, null, null);
 
 		// Assert
+		Ok<TransactionListResponse> result = Assert.IsType<Ok<TransactionListResponse>>(rawResult.Result);
 		TransactionListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
@@ -171,9 +173,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(new PagedResult<Transaction>([], 0, 0, 50));
 
 		// Act
-		Ok<TransactionListResponse> result = await _controller.GetAllTransactions(receiptId, 0, 50);
+		Results<Ok<TransactionListResponse>, BadRequest<string>> rawResult = await _controller.GetAllTransactions(receiptId, 0, 50, null, null);
 
 		// Assert
+		Ok<TransactionListResponse> result = Assert.IsType<Ok<TransactionListResponse>>(rawResult.Result);
 		TransactionListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEmpty();
@@ -191,9 +194,10 @@ public class TransactionsControllerTests
 			.ReturnsAsync(new PagedResult<Transaction>([], 0, 0, 50));
 
 		// Act
-		Ok<TransactionListResponse> result = await _controller.GetAllTransactions(missingReceiptId, 0, 50);
+		Results<Ok<TransactionListResponse>, BadRequest<string>> rawResult = await _controller.GetAllTransactions(missingReceiptId, 0, 50, null, null);
 
 		// Assert
+		Ok<TransactionListResponse> result = Assert.IsType<Ok<TransactionListResponse>>(rawResult.Result);
 		TransactionListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEmpty();
 	}
@@ -209,7 +213,7 @@ public class TransactionsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllTransactions(receiptId, 0, 50);
+		Func<Task> act = () => _controller.GetAllTransactions(receiptId, 0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

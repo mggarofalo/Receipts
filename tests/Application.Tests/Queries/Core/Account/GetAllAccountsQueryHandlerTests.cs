@@ -15,10 +15,10 @@ public class GetAllAccountsQueryHandlerTests
 		List<Domain.Core.Account> expected = AccountGenerator.GenerateList(2);
 
 		Mock<IAccountService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Account>(expected, expected.Count, 0, 50));
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Account>(expected, expected.Count, 0, 50));
 
 		GetAllAccountsQueryHandler handler = new(mockService.Object);
-		GetAllAccountsQuery query = new(0, 50);
+		GetAllAccountsQuery query = new(0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.Account> result = await handler.Handle(query, CancellationToken.None);
 

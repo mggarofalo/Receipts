@@ -8,6 +8,6 @@ public class GetAllReceiptItemsQueryHandler(IReceiptItemService receiptitemServi
 {
 	public async Task<PagedResult<Domain.Core.ReceiptItem>> Handle(GetAllReceiptItemsQuery request, CancellationToken cancellationToken)
 	{
-		return await receiptitemService.GetAllAsync(request.Offset, request.Limit, cancellationToken);
+		return await receiptitemService.GetAllAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

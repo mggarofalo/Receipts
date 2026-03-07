@@ -53,11 +53,18 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipt items")]
-	public async Task<Ok<ReceiptItemListResponse>> GetAllReceiptItems([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<ReceiptItemListResponse>, BadRequest<string>>> GetAllReceiptItems([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (sortBy is not null && !SortableColumns.ReceiptItem.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ReceiptItem)}");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+
 		if (receiptId.HasValue)
 		{
-			GetReceiptItemsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit);
+			GetReceiptItemsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit, sort);
 			PagedResult<ReceiptItem> byReceiptResult = await mediator.Send(byReceiptQuery);
 
 			return TypedResults.Ok(new ReceiptItemListResponse
@@ -69,7 +76,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			});
 		}
 
-		GetAllReceiptItemsQuery query = new(offset, limit);
+		GetAllReceiptItemsQuery query = new(offset, limit, sort);
 		PagedResult<ReceiptItem> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new ReceiptItemListResponse
@@ -84,9 +91,15 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted receipt items")]
 	[EndpointDescription("Returns all receipt items that have been soft-deleted.")]
-	public async Task<Ok<ReceiptItemListResponse>> GetDeletedReceiptItems([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<ReceiptItemListResponse>, BadRequest<string>>> GetDeletedReceiptItems([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetDeletedReceiptItemsQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.ReceiptItem.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ReceiptItem)}");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedReceiptItemsQuery query = new(offset, limit, sort);
 		PagedResult<ReceiptItem> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new ReceiptItemListResponse

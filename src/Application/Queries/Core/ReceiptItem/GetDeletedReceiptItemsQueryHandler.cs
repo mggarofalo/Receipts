@@ -8,6 +8,6 @@ public class GetDeletedReceiptItemsQueryHandler(IReceiptItemService receiptitemS
 {
 	public async Task<PagedResult<Domain.Core.ReceiptItem>> Handle(GetDeletedReceiptItemsQuery request, CancellationToken cancellationToken)
 	{
-		return await receiptitemService.GetDeletedAsync(request.Offset, request.Limit, cancellationToken);
+		return await receiptitemService.GetDeletedAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

@@ -8,6 +8,6 @@ public class GetAdjustmentsByReceiptIdQueryHandler(IAdjustmentService adjustment
 {
 	public async Task<PagedResult<Domain.Core.Adjustment>> Handle(GetAdjustmentsByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
-		return await adjustmentService.GetByReceiptIdAsync(request.ReceiptId, request.Offset, request.Limit, cancellationToken);
+		return await adjustmentService.GetByReceiptIdAsync(request.ReceiptId, request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

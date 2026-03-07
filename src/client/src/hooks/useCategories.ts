@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useCategories(offset = 0, limit = 50) {
+export function useCategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["categories", "list", offset, limit],
+    queryKey: ["categories", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/categories", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -106,12 +106,12 @@ export function useDeleteCategories() {
   });
 }
 
-export function useDeletedCategories(offset = 0, limit = 50) {
+export function useDeletedCategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["categories", "deleted", offset, limit],
+    queryKey: ["categories", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/categories/deleted", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;

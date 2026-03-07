@@ -1,3 +1,4 @@
+using Application.Models;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Repositories;
@@ -65,7 +66,7 @@ public class ReceiptRepositoryTests
 		ReceiptRepository repository = new(_contextFactory);
 
 		// Act
-		List<ReceiptEntity> actual = await repository.GetAllAsync(0, 50, CancellationToken.None);
+		List<ReceiptEntity> actual = await repository.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None);
 
 		// Assert
 		actual.Should().BeEquivalentTo(entities);

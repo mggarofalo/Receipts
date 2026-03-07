@@ -99,8 +99,9 @@ public class SubcategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
 
-		Ok<SubcategoryListResponse> result = await _controller.GetAllSubcategories(null, 0, 50);
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(null, 0, 50, null, null);
 
+		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
 		SubcategoryListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(subcategories.Count);
@@ -120,8 +121,9 @@ public class SubcategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
 
-		Ok<SubcategoryListResponse> result = await _controller.GetAllSubcategories(categoryId, 0, 50);
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(categoryId, 0, 50, null, null);
 
+		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
 		SubcategoryListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(subcategories.Count);
@@ -135,7 +137,7 @@ public class SubcategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
-		Func<Task> act = () => _controller.GetAllSubcategories(null, 0, 50);
+		Func<Task> act = () => _controller.GetAllSubcategories(null, 0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}
@@ -153,8 +155,9 @@ public class SubcategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
 
-		Ok<SubcategoryListResponse> result = await _controller.GetDeletedSubcategories(0, 50);
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetDeletedSubcategories(0, 50, null, null);
 
+		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
 		SubcategoryListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(subcategories.Count);
@@ -168,7 +171,7 @@ public class SubcategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
-		Func<Task> act = () => _controller.GetDeletedSubcategories(0, 50);
+		Func<Task> act = () => _controller.GetDeletedSubcategories(0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}

@@ -8,6 +8,6 @@ public class GetAllCategoriesQueryHandler(ICategoryService categoryService) : IR
 {
 	public async Task<PagedResult<Domain.Core.Category>> Handle(GetAllCategoriesQuery request, CancellationToken cancellationToken)
 	{
-		return await categoryService.GetAllAsync(request.Offset, request.Limit, cancellationToken);
+		return await categoryService.GetAllAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

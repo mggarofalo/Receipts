@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useTransactions(offset = 0, limit = 50) {
+export function useTransactions(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["transactions", "list", offset, limit],
+    queryKey: ["transactions", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/transactions", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -29,13 +29,13 @@ export function useTransaction(id: string | null) {
   });
 }
 
-export function useTransactionsByReceiptId(receiptId: string | null, offset = 0, limit = 200) {
+export function useTransactionsByReceiptId(receiptId: string | null, offset = 0, limit = 200, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["transactions", "by-receipt", receiptId, offset, limit],
+    queryKey: ["transactions", "by-receipt", receiptId, offset, limit, sortBy, sortDirection],
     enabled: !!receiptId,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/transactions", {
-        params: { query: { receiptId: receiptId!, offset, limit } },
+        params: { query: { receiptId: receiptId!, offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -131,12 +131,12 @@ export function useDeleteTransactions() {
   });
 }
 
-export function useDeletedTransactions(offset = 0, limit = 50) {
+export function useDeletedTransactions(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["transactions", "deleted", offset, limit],
+    queryKey: ["transactions", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/transactions/deleted", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;

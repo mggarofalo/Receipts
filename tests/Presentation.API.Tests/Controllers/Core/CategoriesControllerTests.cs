@@ -99,8 +99,9 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Category>(categories, categories.Count, 0, 50));
 
-		Ok<CategoryListResponse> result = await _controller.GetAllCategories(0, 50);
+		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllCategories(0, 50, null, null);
 
+		Ok<CategoryListResponse> result = Assert.IsType<Ok<CategoryListResponse>>(rawResult.Result);
 		CategoryListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(categories.Count);
@@ -116,7 +117,7 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
-		Func<Task> act = () => _controller.GetAllCategories(0, 50);
+		Func<Task> act = () => _controller.GetAllCategories(0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}
@@ -134,8 +135,9 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Category>(categories, categories.Count, 0, 50));
 
-		Ok<CategoryListResponse> result = await _controller.GetDeletedCategories(0, 50);
+		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetDeletedCategories(0, 50, null, null);
 
+		Ok<CategoryListResponse> result = Assert.IsType<Ok<CategoryListResponse>>(rawResult.Result);
 		CategoryListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(categories.Count);
@@ -149,7 +151,7 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
-		Func<Task> act = () => _controller.GetDeletedCategories(0, 50);
+		Func<Task> act = () => _controller.GetDeletedCategories(0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}

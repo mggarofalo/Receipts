@@ -107,9 +107,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		Ok<AdjustmentListResponse> result = await _controller.GetAllAdjustments(null, 0, 50);
+		Results<Ok<AdjustmentListResponse>, BadRequest<string>> rawResult = await _controller.GetAllAdjustments(null, 0, 50, null, null);
 
 		// Assert
+		Ok<AdjustmentListResponse> result = Assert.IsType<Ok<AdjustmentListResponse>>(rawResult.Result);
 		AdjustmentListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(adjustments.Count);
@@ -127,7 +128,7 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllAdjustments(null, 0, 50);
+		Func<Task> act = () => _controller.GetAllAdjustments(null, 0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -146,9 +147,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		Ok<AdjustmentListResponse> result = await _controller.GetDeletedAdjustments(0, 50);
+		Results<Ok<AdjustmentListResponse>, BadRequest<string>> rawResult = await _controller.GetDeletedAdjustments(0, 50, null, null);
 
 		// Assert
+		Ok<AdjustmentListResponse> result = Assert.IsType<Ok<AdjustmentListResponse>>(rawResult.Result);
 		AdjustmentListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(adjustments.Count);
@@ -166,7 +168,7 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetDeletedAdjustments(0, 50);
+		Func<Task> act = () => _controller.GetDeletedAdjustments(0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -186,9 +188,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(new PagedResult<Adjustment>(adjustments, adjustments.Count, 0, 50));
 
 		// Act
-		Ok<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
+		Results<Ok<AdjustmentListResponse>, BadRequest<string>> rawResult = await _controller.GetAllAdjustments(receiptId, 0, 50, null, null);
 
 		// Assert
+		Ok<AdjustmentListResponse> result = Assert.IsType<Ok<AdjustmentListResponse>>(rawResult.Result);
 		AdjustmentListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(adjustments.Count);
@@ -208,9 +211,10 @@ public class AdjustmentsControllerTests
 			.ReturnsAsync(new PagedResult<Adjustment>([], 0, 0, 50));
 
 		// Act
-		Ok<AdjustmentListResponse> result = await _controller.GetAllAdjustments(receiptId, 0, 50);
+		Results<Ok<AdjustmentListResponse>, BadRequest<string>> rawResult = await _controller.GetAllAdjustments(receiptId, 0, 50, null, null);
 
 		// Assert
+		Ok<AdjustmentListResponse> result = Assert.IsType<Ok<AdjustmentListResponse>>(rawResult.Result);
 		AdjustmentListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEmpty();
 	}
@@ -227,7 +231,7 @@ public class AdjustmentsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllAdjustments(receiptId, 0, 50);
+		Func<Task> act = () => _controller.GetAllAdjustments(receiptId, 0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

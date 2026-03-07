@@ -80,10 +80,10 @@ public class TransactionServiceTests
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(3);
 
 		_mockRepository.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
-		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		PagedResult<Transaction> actual = await _service.GetAllAsync(0, 50, CancellationToken.None);
+		PagedResult<Transaction> actual = await _service.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None);
 
 		// Assert
 		Assert.Equal(entities.Count, actual.Data.Count);
@@ -131,10 +131,10 @@ public class TransactionServiceTests
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(2);
 
 		_mockRepository.Setup(r => r.GetByReceiptIdCountAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
-		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		PagedResult<Transaction> actual = await _service.GetByReceiptIdAsync(receiptId, 0, 50, CancellationToken.None);
+		PagedResult<Transaction> actual = await _service.GetByReceiptIdAsync(receiptId, 0, 50, SortParams.Default, CancellationToken.None);
 
 		// Assert
 		Assert.Equal(entities.Count, actual.Data.Count);
@@ -149,10 +149,10 @@ public class TransactionServiceTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		_mockRepository.Setup(r => r.GetByReceiptIdCountAsync(receiptId, It.IsAny<CancellationToken>())).ReturnsAsync(0);
-		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+		_mockRepository.Setup(r => r.GetByReceiptIdAsync(receiptId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
 		// Act
-		PagedResult<Transaction> actual = await _service.GetByReceiptIdAsync(receiptId, 0, 50, CancellationToken.None);
+		PagedResult<Transaction> actual = await _service.GetByReceiptIdAsync(receiptId, 0, 50, SortParams.Default, CancellationToken.None);
 
 		// Assert
 		Assert.Empty(actual.Data);

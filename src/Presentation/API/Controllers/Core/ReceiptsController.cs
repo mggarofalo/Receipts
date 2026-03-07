@@ -57,9 +57,15 @@ public class ReceiptsController(
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipts")]
-	public async Task<Ok<ReceiptListResponse>> GetAllReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<ReceiptListResponse>, BadRequest<string>>> GetAllReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetAllReceiptsQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Receipt.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Receipt)}");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetAllReceiptsQuery query = new(offset, limit, sort);
 		PagedResult<Receipt> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new ReceiptListResponse
@@ -74,9 +80,15 @@ public class ReceiptsController(
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted receipts")]
 	[EndpointDescription("Returns all receipts that have been soft-deleted.")]
-	public async Task<Ok<ReceiptListResponse>> GetDeletedReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<ReceiptListResponse>, BadRequest<string>>> GetDeletedReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetDeletedReceiptsQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Receipt.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Receipt)}");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedReceiptsQuery query = new(offset, limit, sort);
 		PagedResult<Receipt> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new ReceiptListResponse

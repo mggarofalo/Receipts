@@ -9,12 +9,14 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig } from "@/lib/search";
 import { ItemTemplateForm } from "@/components/ItemTemplateForm";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { formatCurrency } from "@/lib/format";
@@ -60,8 +62,9 @@ const SEARCH_CONFIG: FuseSearchConfig<ItemTemplateResponse> = {
 
 function ItemTemplates() {
   usePageTitle("Item Templates");
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: itemTemplatesResponse, isLoading } = useItemTemplates(offset, limit);
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { data: itemTemplatesResponse, isLoading } = useItemTemplates(offset, limit, sortBy, sortDirection);
   const createItemTemplate = useCreateItemTemplate();
   const updateItemTemplate = useUpdateItemTemplate();
   const deleteItemTemplates = useDeleteItemTemplates();
@@ -82,6 +85,8 @@ function ItemTemplates() {
     window.addEventListener("shortcut:new-item", onNewItem);
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
+
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const data = (itemTemplatesResponse?.data as ItemTemplateResponse[] | undefined) ?? [];
   const serverTotal = itemTemplatesResponse?.total ?? 0;
@@ -197,7 +202,7 @@ function ItemTemplates() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
-                  <TableHead>Name</TableHead>
+                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Category</TableHead>
                   <TableHead>Subcategory</TableHead>
                   <TableHead>Unit Price</TableHead>

@@ -53,11 +53,18 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all subcategories")]
-	public async Task<Ok<SubcategoryListResponse>> GetAllSubcategories([FromQuery] Guid? categoryId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetAllSubcategories([FromQuery] Guid? categoryId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (sortBy is not null && !SortableColumns.Subcategory.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Subcategory)}");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+
 		if (categoryId.HasValue)
 		{
-			GetSubcategoriesByCategoryIdQuery byCategoryQuery = new(categoryId.Value, offset, limit);
+			GetSubcategoriesByCategoryIdQuery byCategoryQuery = new(categoryId.Value, offset, limit, sort);
 			PagedResult<Subcategory> byCategoryResult = await mediator.Send(byCategoryQuery);
 
 			return TypedResults.Ok(new SubcategoryListResponse
@@ -69,7 +76,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			});
 		}
 
-		GetAllSubcategoriesQuery query = new(offset, limit);
+		GetAllSubcategoriesQuery query = new(offset, limit, sort);
 		PagedResult<Subcategory> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new SubcategoryListResponse
@@ -84,9 +91,15 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted subcategories")]
 	[EndpointDescription("Returns all subcategories that have been soft-deleted.")]
-	public async Task<Ok<SubcategoryListResponse>> GetDeletedSubcategories([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetDeletedSubcategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetDeletedSubcategoriesQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Subcategory.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Subcategory)}");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedSubcategoriesQuery query = new(offset, limit, sort);
 		PagedResult<Subcategory> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new SubcategoryListResponse

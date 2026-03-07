@@ -107,9 +107,10 @@ public class AccountsControllerTests
 			.ReturnsAsync(new PagedResult<Account>(accounts, accounts.Count, 0, 50));
 
 		// Act
-		Ok<AccountListResponse> result = await _controller.GetAllAccounts(0, 50);
+		Results<Ok<AccountListResponse>, BadRequest<string>> rawResult = await _controller.GetAllAccounts(0, 50, null, null);
 
 		// Assert
+		Ok<AccountListResponse> result = Assert.IsType<Ok<AccountListResponse>>(rawResult.Result);
 		AccountListResponse actualReturn = result.Value!;
 
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
@@ -128,7 +129,7 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllAccounts(0, 50);
+		Func<Task> act = () => _controller.GetAllAccounts(0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

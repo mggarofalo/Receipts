@@ -16,10 +16,10 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		List<Domain.Core.Transaction> expected = TransactionGenerator.GenerateList(2);
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expected, expected.Count, 0, 50));
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expected, expected.Count, 0, 50));
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 
@@ -32,10 +32,10 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, 50));
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, 50));
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 
@@ -49,10 +49,10 @@ public class GetTransactionsByReceiptIdQueryHandlerTests
 		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, 50));
+		mockService.Setup(r => r.GetByReceiptIdAsync(receipt.Id, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, 50));
 
 		GetTransactionsByReceiptIdQueryHandler handler = new(mockService.Object);
-		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50);
+		GetTransactionsByReceiptIdQuery query = new(receipt.Id, 0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 

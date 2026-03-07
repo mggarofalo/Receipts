@@ -8,9 +8,10 @@ public record GetTransactionsByReceiptIdQuery : IQuery<PagedResult<Domain.Core.T
 	public Guid ReceiptId { get; }
 	public int Offset { get; }
 	public int Limit { get; }
+	public SortParams Sort { get; }
 	public const string ReceiptIdCannotBeEmptyExceptionMessage = "Receipt Id cannot be empty.";
 
-	public GetTransactionsByReceiptIdQuery(Guid receiptId, int offset, int limit)
+	public GetTransactionsByReceiptIdQuery(Guid receiptId, int offset, int limit, SortParams sort)
 	{
 		if (receiptId == Guid.Empty)
 		{
@@ -20,5 +21,6 @@ public record GetTransactionsByReceiptIdQuery : IQuery<PagedResult<Domain.Core.T
 		ReceiptId = receiptId;
 		Offset = offset;
 		Limit = limit;
+		Sort = sort;
 	}
 }

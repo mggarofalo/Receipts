@@ -108,9 +108,10 @@ public class ReceiptsControllerTests
 			.ReturnsAsync(new PagedResult<Receipt>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		Ok<ReceiptListResponse> result = await _controller.GetAllReceipts(0, 50);
+		Results<Ok<ReceiptListResponse>, BadRequest<string>> rawResult = await _controller.GetAllReceipts(0, 50, null, null);
 
 		// Assert
+		Ok<ReceiptListResponse> result = Assert.IsType<Ok<ReceiptListResponse>>(rawResult.Result);
 		ReceiptListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
@@ -129,7 +130,7 @@ public class ReceiptsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllReceipts(0, 50);
+		Func<Task> act = () => _controller.GetAllReceipts(0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

@@ -36,6 +36,15 @@ vi.mock("@/hooks/useServerPagination", () => ({
     totalPages: vi.fn(() => 1),
     setPage: vi.fn(),
     setPageSize: vi.fn(),
+    resetPage: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/useServerSort", () => ({
+  useServerSort: vi.fn(() => ({
+    sortBy: "email",
+    sortDirection: "asc",
+    toggleSort: vi.fn(),
   })),
 }));
 
@@ -296,6 +305,7 @@ describe("AdminUsers", () => {
       totalPages: vi.fn(() => 2),
       setPage: vi.fn(),
       setPageSize: vi.fn(),
+      resetPage: vi.fn(),
     });
 
     const { useUsers } = await import("@/hooks/useUsers");
@@ -338,6 +348,7 @@ describe("AdminUsers", () => {
       totalPages: vi.fn(() => 2),
       setPage: mockSetPage,
       setPageSize: vi.fn(),
+      resetPage: vi.fn(),
     });
 
     const { useUsers } = await import("@/hooks/useUsers");

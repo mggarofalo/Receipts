@@ -8,6 +8,6 @@ public class GetDeletedSubcategoriesQueryHandler(ISubcategoryService subcategory
 {
 	public async Task<PagedResult<Domain.Core.Subcategory>> Handle(GetDeletedSubcategoriesQuery request, CancellationToken cancellationToken)
 	{
-		return await subcategoryService.GetDeletedAsync(request.Offset, request.Limit, cancellationToken);
+		return await subcategoryService.GetDeletedAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

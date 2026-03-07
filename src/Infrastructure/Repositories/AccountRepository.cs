@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Application.Models;
 using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
@@ -8,6 +10,13 @@ namespace Infrastructure.Repositories;
 
 public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : IAccountRepository
 {
+	private static readonly Dictionary<string, Expression<Func<AccountEntity, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["accountCode"] = e => e.AccountCode,
+		["name"] = e => e.Name,
+		["isActive"] = e => e.IsActive,
+	};
+
 	public async Task<AccountEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
@@ -23,12 +32,12 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.FirstOrDefaultAsync(cancellationToken);
 	}
 
-	public async Task<List<AccountEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<AccountEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
 			.Select(a => new AccountEntity
@@ -41,13 +50,13 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<AccountEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<AccountEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts
 			.OnlyDeleted()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
 			.Select(a => new AccountEntity

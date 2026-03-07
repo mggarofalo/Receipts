@@ -107,9 +107,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(new PagedResult<ReceiptItem>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		Ok<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(null, 0, 50);
+		Results<Ok<ReceiptItemListResponse>, BadRequest<string>> rawResult = await _controller.GetAllReceiptItems(null, 0, 50, null, null);
 
 		// Assert
+		Ok<ReceiptItemListResponse> result = Assert.IsType<Ok<ReceiptItemListResponse>>(rawResult.Result);
 		ReceiptItemListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
@@ -128,7 +129,7 @@ public class ReceiptItemsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllReceiptItems(null, 0, 50);
+		Func<Task> act = () => _controller.GetAllReceiptItems(null, 0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -148,9 +149,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(new PagedResult<ReceiptItem>(mediatorReturn, mediatorReturn.Count, 0, 50));
 
 		// Act
-		Ok<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
+		Results<Ok<ReceiptItemListResponse>, BadRequest<string>> rawResult = await _controller.GetAllReceiptItems(receiptId, 0, 50, null, null);
 
 		// Assert
+		Ok<ReceiptItemListResponse> result = Assert.IsType<Ok<ReceiptItemListResponse>>(rawResult.Result);
 		ReceiptItemListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEquivalentTo(expectedControllerReturn);
@@ -171,9 +173,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(new PagedResult<ReceiptItem>([], 0, 0, 50));
 
 		// Act
-		Ok<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(receiptId, 0, 50);
+		Results<Ok<ReceiptItemListResponse>, BadRequest<string>> rawResult = await _controller.GetAllReceiptItems(receiptId, 0, 50, null, null);
 
 		// Assert
+		Ok<ReceiptItemListResponse> result = Assert.IsType<Ok<ReceiptItemListResponse>>(rawResult.Result);
 		ReceiptItemListResponse actualControllerReturn = result.Value!;
 
 		actualControllerReturn.Data.Should().BeEmpty();
@@ -191,9 +194,10 @@ public class ReceiptItemsControllerTests
 			.ReturnsAsync(new PagedResult<ReceiptItem>([], 0, 0, 50));
 
 		// Act
-		Ok<ReceiptItemListResponse> result = await _controller.GetAllReceiptItems(missingReceiptId, 0, 50);
+		Results<Ok<ReceiptItemListResponse>, BadRequest<string>> rawResult = await _controller.GetAllReceiptItems(missingReceiptId, 0, 50, null, null);
 
 		// Assert
+		Ok<ReceiptItemListResponse> result = Assert.IsType<Ok<ReceiptItemListResponse>>(rawResult.Result);
 		ReceiptItemListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEmpty();
 	}
@@ -210,7 +214,7 @@ public class ReceiptItemsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllReceiptItems(receiptId, 0, 50);
+		Func<Task> act = () => _controller.GetAllReceiptItems(receiptId, 0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

@@ -1,4 +1,5 @@
 using Application.Interfaces.Services;
+using Application.Models;
 using MediatR;
 
 namespace Application.Queries.Aggregates.ReceiptsWithItems;
@@ -18,8 +19,8 @@ public class GetReceiptWithItemsByReceiptIdQueryHandler(
 			return null;
 		}
 
-		var receiptItemsResult = await receiptItemService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, cancellationToken);
-		var adjustmentsResult = await adjustmentService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, cancellationToken);
+		var receiptItemsResult = await receiptItemService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, SortParams.Default, cancellationToken);
+		var adjustmentsResult = await adjustmentService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, SortParams.Default, cancellationToken);
 
 		return new Domain.Aggregates.ReceiptWithItems()
 		{

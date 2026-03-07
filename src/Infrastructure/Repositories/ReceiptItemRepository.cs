@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Application.Models;
 using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
@@ -8,20 +10,29 @@ namespace Infrastructure.Repositories;
 
 public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : IReceiptItemRepository
 {
+	private static readonly Dictionary<string, Expression<Func<ReceiptItemEntity, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["description"] = e => e.Description,
+		["quantity"] = e => e.Quantity,
+		["unitPrice"] = e => e.UnitPrice,
+		["totalAmount"] = e => e.TotalAmount,
+		["category"] = e => e.Category,
+	};
+
 	public async Task<ReceiptItemEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<ReceiptItemEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<ReceiptItemEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems
 			.IgnoreAutoIncludes()
 			.Where(ri => ri.ReceiptId == receiptId)
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Description)
 			.Skip(offset)
 			.Take(limit)
 			.Select(ri => new ReceiptItemEntity
@@ -50,13 +61,13 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 			.CountAsync(cancellationToken);
 	}
 
-	public async Task<List<ReceiptItemEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<ReceiptItemEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Description)
 			.Skip(offset)
 			.Take(limit)
 			.Select(ri => new ReceiptItemEntity
@@ -77,14 +88,14 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<ReceiptItemEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<ReceiptItemEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems
 			.OnlyDeleted()
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Description)
 			.Skip(offset)
 			.Take(limit)
 			.Select(ri => new ReceiptItemEntity

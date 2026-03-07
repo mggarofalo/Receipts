@@ -26,18 +26,18 @@ public class AccountService(IAccountRepository repository, AccountMapper mapper)
 		return await repository.ExistsAsync(id, cancellationToken);
 	}
 
-	public async Task<PagedResult<Account>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<Account>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetCountAsync(cancellationToken);
-		List<AccountEntity> entities = await repository.GetAllAsync(offset, limit, cancellationToken);
+		List<AccountEntity> entities = await repository.GetAllAsync(offset, limit, sort, cancellationToken);
 		List<Account> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<Account>(data, total, offset, limit);
 	}
 
-	public async Task<PagedResult<Account>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<Account>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetDeletedCountAsync(cancellationToken);
-		List<AccountEntity> entities = await repository.GetDeletedAsync(offset, limit, cancellationToken);
+		List<AccountEntity> entities = await repository.GetDeletedAsync(offset, limit, sort, cancellationToken);
 		List<Account> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<Account>(data, total, offset, limit);
 	}

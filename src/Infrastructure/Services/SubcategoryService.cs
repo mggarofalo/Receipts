@@ -36,18 +36,18 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 		return await repository.ExistsAsync(id, cancellationToken);
 	}
 
-	public async Task<PagedResult<Subcategory>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<Subcategory>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetCountAsync(cancellationToken);
-		List<SubcategoryEntity> entities = await repository.GetAllAsync(offset, limit, cancellationToken);
+		List<SubcategoryEntity> entities = await repository.GetAllAsync(offset, limit, sort, cancellationToken);
 		List<Subcategory> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<Subcategory>(data, total, offset, limit);
 	}
 
-	public async Task<PagedResult<Subcategory>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<Subcategory>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetDeletedCountAsync(cancellationToken);
-		List<SubcategoryEntity> entities = await repository.GetDeletedAsync(offset, limit, cancellationToken);
+		List<SubcategoryEntity> entities = await repository.GetDeletedAsync(offset, limit, sort, cancellationToken);
 		List<Subcategory> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<Subcategory>(data, total, offset, limit);
 	}
@@ -58,10 +58,10 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 		return subcategoryEntity == null ? null : mapper.ToDomain(subcategoryEntity);
 	}
 
-	public async Task<PagedResult<Subcategory>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<Subcategory>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetByCategoryIdCountAsync(categoryId, cancellationToken);
-		List<SubcategoryEntity> entities = await repository.GetByCategoryIdAsync(categoryId, offset, limit, cancellationToken);
+		List<SubcategoryEntity> entities = await repository.GetByCategoryIdAsync(categoryId, offset, limit, sort, cancellationToken);
 		List<Subcategory> data = entities.Select(mapper.ToDomain).ToList();
 		return new PagedResult<Subcategory>(data, total, offset, limit);
 	}

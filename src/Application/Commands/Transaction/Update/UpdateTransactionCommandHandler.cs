@@ -20,9 +20,9 @@ public class UpdateTransactionCommandHandler(
 		Guid receiptId = existingTransaction.ReceiptId;
 
 		Task<Domain.Core.Receipt?> receiptTask = receiptService.GetByIdAsync(receiptId, cancellationToken);
-		Task<Models.PagedResult<Domain.Core.ReceiptItem>> itemsTask = receiptItemService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, cancellationToken);
-		Task<Models.PagedResult<Domain.Core.Adjustment>> adjustmentsTask = adjustmentService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, cancellationToken);
-		Task<Models.PagedResult<Domain.Core.Transaction>> existingTransactionsTask = transactionService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, cancellationToken);
+		Task<Models.PagedResult<Domain.Core.ReceiptItem>> itemsTask = receiptItemService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, Models.SortParams.Default, cancellationToken);
+		Task<Models.PagedResult<Domain.Core.Adjustment>> adjustmentsTask = adjustmentService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, Models.SortParams.Default, cancellationToken);
+		Task<Models.PagedResult<Domain.Core.Transaction>> existingTransactionsTask = transactionService.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, Models.SortParams.Default, cancellationToken);
 
 		await Task.WhenAll(receiptTask, itemsTask, adjustmentsTask, existingTransactionsTask);
 

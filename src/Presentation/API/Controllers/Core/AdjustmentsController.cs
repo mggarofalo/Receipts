@@ -51,11 +51,18 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all adjustments")]
-	public async Task<Ok<AdjustmentListResponse>> GetAllAdjustments([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<AdjustmentListResponse>, BadRequest<string>>> GetAllAdjustments([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (sortBy is not null && !SortableColumns.Adjustment.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Adjustment)}");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+
 		if (receiptId.HasValue)
 		{
-			GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit);
+			GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit, sort);
 			PagedResult<Adjustment> byReceiptResult = await mediator.Send(byReceiptQuery);
 
 			return TypedResults.Ok(new AdjustmentListResponse
@@ -67,7 +74,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 			});
 		}
 
-		GetAllAdjustmentsQuery query = new(offset, limit);
+		GetAllAdjustmentsQuery query = new(offset, limit, sort);
 		PagedResult<Adjustment> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new AdjustmentListResponse
@@ -82,9 +89,15 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted adjustments")]
 	[EndpointDescription("Returns all adjustments that have been soft-deleted.")]
-	public async Task<Ok<AdjustmentListResponse>> GetDeletedAdjustments([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<AdjustmentListResponse>, BadRequest<string>>> GetDeletedAdjustments([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetDeletedAdjustmentsQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Adjustment.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Adjustment)}");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedAdjustmentsQuery query = new(offset, limit, sort);
 		PagedResult<Adjustment> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new AdjustmentListResponse

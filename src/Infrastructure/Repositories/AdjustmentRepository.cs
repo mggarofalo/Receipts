@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Application.Models;
 using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
@@ -8,20 +10,27 @@ namespace Infrastructure.Repositories;
 
 public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : IAdjustmentRepository
 {
+	private static readonly Dictionary<string, Expression<Func<AdjustmentEntity, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["type"] = e => e.Type,
+		["amount"] = e => e.Amount,
+		["description"] = e => e.Description!,
+	};
+
 	public async Task<AdjustmentEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<AdjustmentEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<AdjustmentEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.IgnoreAutoIncludes()
 			.Where(a => a.ReceiptId == receiptId)
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Type)
 			.Skip(offset)
 			.Take(limit)
 			.Select(a => new AdjustmentEntity
@@ -44,13 +53,13 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 			.CountAsync(cancellationToken);
 	}
 
-	public async Task<List<AdjustmentEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<AdjustmentEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Type)
 			.Skip(offset)
 			.Take(limit)
 			.Select(a => new AdjustmentEntity
@@ -65,14 +74,14 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<AdjustmentEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<AdjustmentEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.OnlyDeleted()
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Type)
 			.Skip(offset)
 			.Take(limit)
 			.Select(a => new AdjustmentEntity

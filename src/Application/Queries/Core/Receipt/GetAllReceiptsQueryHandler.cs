@@ -8,6 +8,6 @@ public class GetAllReceiptsQueryHandler(IReceiptService receiptService) : IReque
 {
 	public async Task<PagedResult<Domain.Core.Receipt>> Handle(GetAllReceiptsQuery request, CancellationToken cancellationToken)
 	{
-		return await receiptService.GetAllAsync(request.Offset, request.Limit, cancellationToken);
+		return await receiptService.GetAllAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Application.Models;
 using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
@@ -8,30 +10,35 @@ namespace Infrastructure.Repositories;
 
 public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : ISubcategoryRepository
 {
+	private static readonly Dictionary<string, Expression<Func<SubcategoryEntity, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["name"] = e => e.Name,
+	};
+
 	public async Task<SubcategoryEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Subcategories.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<SubcategoryEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Subcategories
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<SubcategoryEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Subcategories
 			.OnlyDeleted()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
 			.ToListAsync(cancellationToken);
@@ -45,13 +52,13 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 			.CountAsync(cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<SubcategoryEntity>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Subcategories
 			.Where(s => s.CategoryId == categoryId)
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
 			.ToListAsync(cancellationToken);
