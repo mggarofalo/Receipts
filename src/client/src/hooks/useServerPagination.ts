@@ -13,6 +13,7 @@ interface UseServerPaginationReturn {
   totalPages: (total: number) => number;
   setPage: (page: number, total: number) => void;
   setPageSize: (size: number) => void;
+  resetPage: () => void;
 }
 
 type Action =
@@ -61,6 +62,10 @@ export function useServerPagination({
     dispatch({ type: "SET_LIMIT", limit: size });
   }
 
+  function resetPage() {
+    dispatch({ type: "SET_OFFSET", offset: 0 });
+  }
+
   return {
     offset: state.offset,
     limit: state.limit,
@@ -69,5 +74,6 @@ export function useServerPagination({
     totalPages,
     setPage,
     setPageSize,
+    resetPage,
   };
 }

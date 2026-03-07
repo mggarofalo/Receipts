@@ -26,18 +26,18 @@ public class ItemTemplateService(IItemTemplateRepository repository, ItemTemplat
 		return await repository.ExistsAsync(id, cancellationToken);
 	}
 
-	public async Task<PagedResult<ItemTemplate>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<ItemTemplate>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetCountAsync(cancellationToken);
-		List<ItemTemplateEntity> entities = await repository.GetAllAsync(offset, limit, cancellationToken);
+		List<ItemTemplateEntity> entities = await repository.GetAllAsync(offset, limit, sort, cancellationToken);
 		List<ItemTemplate> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<ItemTemplate>(data, total, offset, limit);
 	}
 
-	public async Task<PagedResult<ItemTemplate>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<ItemTemplate>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetDeletedCountAsync(cancellationToken);
-		List<ItemTemplateEntity> entities = await repository.GetDeletedAsync(offset, limit, cancellationToken);
+		List<ItemTemplateEntity> entities = await repository.GetDeletedAsync(offset, limit, sort, cancellationToken);
 		List<ItemTemplate> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<ItemTemplate>(data, total, offset, limit);
 	}

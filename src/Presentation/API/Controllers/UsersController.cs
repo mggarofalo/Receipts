@@ -25,11 +25,24 @@ public class UsersController(
 {
 	[HttpGet]
 	[EndpointSummary("List all users with their roles")]
-	public async Task<Ok<UserListResponse>> ListUsers(
+	public async Task<Results<Ok<UserListResponse>, BadRequest<string>>> ListUsers(
 		[FromQuery] int offset = 0,
-		[FromQuery] int limit = 50)
+		[FromQuery] int limit = 50,
+		[FromQuery] string? sortBy = null,
+		[FromQuery] string? sortDirection = null)
 	{
-		PagedResult<UserSummary> result = await userService.ListUsersAsync(offset, limit);
+		if (sortBy is not null && !SortableColumns.User.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.User)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		PagedResult<UserSummary> result = await userService.ListUsersAsync(offset, limit, sort);
 
 		List<UserSummaryResponse> items = result.Data.Select(MapToResponse).ToList();
 

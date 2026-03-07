@@ -21,10 +21,10 @@ public class GetReceiptWithItemsByReceiptIdQueryHandlerTests
 		mockReceiptService.Setup(r => r.GetByIdAsync(expectedReceipt.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedReceipt);
 
 		Mock<IReceiptItemService> mockReceiptItemService = new();
-		mockReceiptItemService.Setup(r => r.GetByReceiptIdAsync(expectedReceipt.Id, 0, int.MaxValue, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>(expectedReceiptItems, expectedReceiptItems.Count, 0, int.MaxValue));
+		mockReceiptItemService.Setup(r => r.GetByReceiptIdAsync(expectedReceipt.Id, 0, int.MaxValue, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>(expectedReceiptItems, expectedReceiptItems.Count, 0, int.MaxValue));
 
 		Mock<IAdjustmentService> mockAdjustmentService = new();
-		mockAdjustmentService.Setup(a => a.GetByReceiptIdAsync(expectedReceipt.Id, 0, int.MaxValue, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Adjustment>(expectedAdjustments, expectedAdjustments.Count, 0, int.MaxValue));
+		mockAdjustmentService.Setup(a => a.GetByReceiptIdAsync(expectedReceipt.Id, 0, int.MaxValue, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Adjustment>(expectedAdjustments, expectedAdjustments.Count, 0, int.MaxValue));
 
 		GetReceiptWithItemsByReceiptIdQueryHandler handler = new(mockReceiptService.Object, mockReceiptItemService.Object, mockAdjustmentService.Object);
 		GetReceiptWithItemsByReceiptIdQuery query = new(expectedReceipt.Id);

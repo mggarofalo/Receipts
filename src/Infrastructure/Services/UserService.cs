@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using Application.Interfaces.Services;
 using Application.Models;
 using Infrastructure.Entities;
+using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +10,15 @@ namespace Infrastructure.Services;
 
 public class UserService(ApplicationDbContext dbContext) : IUserService
 {
-	public async Task<PagedResult<UserSummary>> ListUsersAsync(int offset, int limit, CancellationToken cancellationToken = default)
+	private static readonly Dictionary<string, Expression<Func<ApplicationUser, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["email"] = u => u.Email!,
+		["firstName"] = u => u.FirstName!,
+		["lastName"] = u => u.LastName!,
+		["createdAt"] = u => u.CreatedAt,
+	};
+
+	public async Task<PagedResult<UserSummary>> ListUsersAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken = default)
 	{
 		offset = Math.Max(0, offset);
 		limit = Math.Clamp(limit, 1, 100);
@@ -16,7 +26,7 @@ public class UserService(ApplicationDbContext dbContext) : IUserService
 		int totalCount = await dbContext.Users.CountAsync(cancellationToken);
 
 		List<ApplicationUser> users = await dbContext.Users
-			.OrderBy(u => u.Email)
+			.ApplySort(sort, AllowedSortColumns, u => u.Email!)
 			.Skip(offset)
 			.Take(limit)
 			.ToListAsync(cancellationToken);

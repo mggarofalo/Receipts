@@ -99,8 +99,9 @@ public class ItemTemplatesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<ItemTemplate>(itemTemplates, itemTemplates.Count, 0, 50));
 
-		Ok<ItemTemplateListResponse> result = await _controller.GetAllItemTemplates(0, 50);
+		Results<Ok<ItemTemplateListResponse>, BadRequest<string>> rawResult = await _controller.GetAllItemTemplates(0, 50, null, null);
 
+		Ok<ItemTemplateListResponse> result = Assert.IsType<Ok<ItemTemplateListResponse>>(rawResult.Result);
 		ItemTemplateListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(itemTemplates.Count);
@@ -116,7 +117,7 @@ public class ItemTemplatesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
-		Func<Task> act = () => _controller.GetAllItemTemplates(0, 50);
+		Func<Task> act = () => _controller.GetAllItemTemplates(0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}
@@ -134,8 +135,9 @@ public class ItemTemplatesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<ItemTemplate>(itemTemplates, itemTemplates.Count, 0, 50));
 
-		Ok<ItemTemplateListResponse> result = await _controller.GetDeletedItemTemplates(0, 50);
+		Results<Ok<ItemTemplateListResponse>, BadRequest<string>> rawResult = await _controller.GetDeletedItemTemplates(0, 50, null, null);
 
+		Ok<ItemTemplateListResponse> result = Assert.IsType<Ok<ItemTemplateListResponse>>(rawResult.Result);
 		ItemTemplateListResponse actualReturn = result.Value!;
 		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
 		actualReturn.Total.Should().Be(itemTemplates.Count);
@@ -149,7 +151,7 @@ public class ItemTemplatesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
-		Func<Task> act = () => _controller.GetDeletedItemTemplates(0, 50);
+		Func<Task> act = () => _controller.GetDeletedItemTemplates(0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}

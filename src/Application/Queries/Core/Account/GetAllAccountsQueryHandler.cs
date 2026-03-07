@@ -8,6 +8,6 @@ public class GetAllAccountsQueryHandler(IAccountService accountService) : IReque
 {
 	public async Task<PagedResult<Domain.Core.Account>> Handle(GetAllAccountsQuery request, CancellationToken cancellationToken)
 	{
-		return await accountService.GetAllAsync(request.Offset, request.Limit, cancellationToken);
+		return await accountService.GetAllAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

@@ -11,12 +11,14 @@ import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig } from "@/lib/search";
 import { CategoryForm } from "@/components/CategoryForm";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
@@ -57,8 +59,9 @@ const HIGHLIGHT_PARAMS = ["highlight"] as const;
 function Categories() {
   usePageTitle("Categories");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: categoriesResponse, isLoading } = useCategories(offset, limit);
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { data: categoriesResponse, isLoading } = useCategories(offset, limit, sortBy, sortDirection);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategories = useDeleteCategories();
@@ -79,6 +82,8 @@ function Categories() {
     window.addEventListener("shortcut:new-item", onNewItem);
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
+
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const data = (categoriesResponse?.data as CategoryResponse[] | undefined) ?? [];
   const serverTotal = categoriesResponse?.total ?? 0;
@@ -201,7 +206,7 @@ function Categories() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
-                  <TableHead>Name</TableHead>
+                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Description</TableHead>
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>

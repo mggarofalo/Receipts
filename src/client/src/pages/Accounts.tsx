@@ -10,12 +10,14 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig } from "@/lib/search";
 import { AccountForm } from "@/components/AccountForm";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
@@ -62,8 +64,9 @@ const HIGHLIGHT_PARAMS = ["highlight"] as const;
 function Accounts() {
   usePageTitle("Accounts");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: accountsResponse, isLoading } = useAccounts(offset, limit);
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { data: accountsResponse, isLoading } = useAccounts(offset, limit, sortBy, sortDirection);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccounts = useDeleteAccounts();
@@ -86,6 +89,8 @@ function Accounts() {
     window.addEventListener("shortcut:new-item", onNewItem);
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
+
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const data = (accountsResponse?.data as AccountResponse[] | undefined) ?? [];
   const serverTotal = accountsResponse?.total ?? 0;
@@ -224,9 +229,9 @@ function Accounts() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
-                  <TableHead>Account Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
+                  <SortableTableHead column="accountCode" label="Account Code" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>

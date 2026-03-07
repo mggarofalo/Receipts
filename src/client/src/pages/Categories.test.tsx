@@ -42,6 +42,15 @@ vi.mock("@/hooks/useServerPagination", () => ({
     totalPages: vi.fn(() => 1),
     setPage: vi.fn(),
     setPageSize: vi.fn(),
+    resetPage: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/useServerSort", () => ({
+  useServerSort: vi.fn(() => ({
+    sortBy: "name",
+    sortDirection: "asc",
+    toggleSort: vi.fn(),
   })),
 }));
 

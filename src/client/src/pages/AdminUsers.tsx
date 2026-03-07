@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { Pagination } from "@/components/Pagination";
 import {
   Dialog,
@@ -96,8 +98,11 @@ function AdminUsers() {
   usePageTitle("User Management");
   const { user: currentUser } = useAuth();
 
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination({ defaultPageSize: 20 });
-  const { data: usersResponse, isLoading } = useUsers(offset, limit);
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "email", defaultSortDirection: "asc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ defaultPageSize: 20 });
+  const { data: usersResponse, isLoading } = useUsers(offset, limit, sortBy, sortDirection);
+
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
@@ -239,11 +244,11 @@ function AdminUsers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
+                  <SortableTableHead column="firstName" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="email" label="Email" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <SortableTableHead column="createdAt" label="Created" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Last Login</TableHead>
                   <TableHead className="w-[200px]">Actions</TableHead>
                 </TableRow>

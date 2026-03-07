@@ -51,9 +51,20 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all item templates")]
-	public async Task<Ok<ItemTemplateListResponse>> GetAllItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<ItemTemplateListResponse>, BadRequest<string>>> GetAllItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetAllItemTemplatesQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.ItemTemplate.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ItemTemplate)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetAllItemTemplatesQuery query = new(offset, limit, sort);
 		PagedResult<ItemTemplate> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new ItemTemplateListResponse
@@ -68,9 +79,20 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted item templates")]
 	[EndpointDescription("Returns all item templates that have been soft-deleted.")]
-	public async Task<Ok<ItemTemplateListResponse>> GetDeletedItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<ItemTemplateListResponse>, BadRequest<string>>> GetDeletedItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetDeletedItemTemplatesQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.ItemTemplate.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ItemTemplate)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedItemTemplatesQuery query = new(offset, limit, sort);
 		PagedResult<ItemTemplate> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new ItemTemplateListResponse

@@ -12,6 +12,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
@@ -24,6 +25,7 @@ import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { ActiveFilterBanner } from "@/components/ActiveFilterBanner";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
@@ -77,10 +79,11 @@ const FILTER_PARAMS = ["receiptId", "subcategory"] as const;
 
 function ReceiptItems() {
   usePageTitle("Receipt Items");
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "description", defaultSortDirection: "asc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
-  const allItemsQuery = useReceiptItems(offset, limit);
-  const filteredItemsQuery = useReceiptItemsByReceiptId(linkParams.receiptId ?? null, offset, limit);
+  const allItemsQuery = useReceiptItems(offset, limit, sortBy, sortDirection);
+  const filteredItemsQuery = useReceiptItemsByReceiptId(linkParams.receiptId ?? null, offset, limit, sortBy, sortDirection);
   const activeItemsQuery = linkParams.receiptId ? filteredItemsQuery : allItemsQuery;
   const { data: itemsResponse, isLoading } = activeItemsQuery;
   const { data: receiptsResponse } = useReceipts(0, 1000);
@@ -105,6 +108,8 @@ function ReceiptItems() {
     window.addEventListener("shortcut:new-item", onNewItem);
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
+
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const data = useMemo(
     () => (itemsResponse?.data as ReceiptItemResponse[] | undefined) ?? [],
@@ -300,12 +305,12 @@ function ReceiptItems() {
                     />
                   </TableHead>
                   <TableHead>Code</TableHead>
-                  <TableHead>Description</TableHead>
+                  <SortableTableHead column="description" label="Description" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Mode</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Unit Price</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Category</TableHead>
+                  <SortableTableHead column="quantity" label="Qty" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
+                  <SortableTableHead column="unitPrice" label="Unit Price" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
+                  <SortableTableHead column="totalAmount" label="Total" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
+                  <SortableTableHead column="category" label="Category" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Subcategory</TableHead>
                   <TableHead>Receipt</TableHead>
                   <TableHead className="w-24">Actions</TableHead>

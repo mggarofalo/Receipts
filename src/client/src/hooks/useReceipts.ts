@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useReceipts(offset = 0, limit = 50) {
+export function useReceipts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["receipts", "list", offset, limit],
+    queryKey: ["receipts", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/receipts", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -113,12 +113,12 @@ export function useDeleteReceipts() {
   });
 }
 
-export function useDeletedReceipts(offset = 0, limit = 50) {
+export function useDeletedReceipts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["receipts", "deleted", offset, limit],
+    queryKey: ["receipts", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/receipts/deleted", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;

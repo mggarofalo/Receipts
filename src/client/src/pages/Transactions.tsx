@@ -13,6 +13,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
@@ -25,6 +26,7 @@ import { FilterPanel } from "@/components/FilterPanel";
 import type { FilterField } from "@/components/FilterPanel";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
@@ -87,10 +89,11 @@ const FILTER_PARAMS = ["receiptId", "accountId"] as const;
 
 function Transactions() {
   usePageTitle("Transactions");
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "date", defaultSortDirection: "desc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
-  const allTxnQuery = useTransactions(offset, limit);
-  const filteredTxnQuery = useTransactionsByReceiptId(linkParams.receiptId ?? null, offset, limit);
+  const allTxnQuery = useTransactions(offset, limit, sortBy, sortDirection);
+  const filteredTxnQuery = useTransactionsByReceiptId(linkParams.receiptId ?? null, offset, limit, sortBy, sortDirection);
   const activeTxnQuery = linkParams.receiptId ? filteredTxnQuery : allTxnQuery;
   const { data: transactionsResponse, isLoading } = activeTxnQuery;
   const { data: accountsResponse } = useAccounts(0, 1000);
@@ -132,18 +135,18 @@ function Transactions() {
     return map;
   }, [receiptsResponse?.data]);
 
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+
   const data: EnrichedTransaction[] = useMemo(() => {
     const list = (transactionsResponse?.data as TransactionResponse[] | undefined) ?? [];
-    return [...list]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .map((txn) => {
-        const receipt = receiptMap.get(txn.receiptId);
-        return {
-          ...txn,
-          accountName: accountMap.get(txn.accountId),
-          receiptLocation: receipt?.location,
-        };
-      });
+    return list.map((txn) => {
+      const receipt = receiptMap.get(txn.receiptId);
+      return {
+        ...txn,
+        accountName: accountMap.get(txn.accountId),
+        receiptLocation: receipt?.location,
+      };
+    });
   }, [transactionsResponse?.data, accountMap, receiptMap]);
 
   const {
@@ -302,9 +305,9 @@ function Transactions() {
                   <TableHead>Account</TableHead>
                   <TableHead>Receipt</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <SortableTableHead column="amount" label="Amount" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
                   <TableHead>Receipt Date</TableHead>
-                  <TableHead>Transaction Date</TableHead>
+                  <SortableTableHead column="date" label="Transaction Date" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>

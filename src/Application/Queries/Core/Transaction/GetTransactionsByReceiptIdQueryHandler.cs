@@ -8,6 +8,6 @@ public class GetTransactionsByReceiptIdQueryHandler(ITransactionService transact
 {
 	public async Task<PagedResult<Domain.Core.Transaction>> Handle(GetTransactionsByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
-		return await transactionService.GetByReceiptIdAsync(request.ReceiptId, request.Offset, request.Limit, cancellationToken);
+		return await transactionService.GetByReceiptIdAsync(request.ReceiptId, request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

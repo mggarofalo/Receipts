@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useItemTemplates(offset = 0, limit = 50) {
+export function useItemTemplates(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["itemTemplates", "list", offset, limit],
+    queryKey: ["itemTemplates", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/item-templates", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -125,12 +125,12 @@ export function useDeleteItemTemplates() {
   });
 }
 
-export function useDeletedItemTemplates(offset = 0, limit = 50) {
+export function useDeletedItemTemplates(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["itemTemplates", "deleted", offset, limit],
+    queryKey: ["itemTemplates", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/item-templates/deleted", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;

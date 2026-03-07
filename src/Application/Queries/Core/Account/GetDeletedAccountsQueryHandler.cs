@@ -8,6 +8,6 @@ public class GetDeletedAccountsQueryHandler(IAccountService accountService) : IR
 {
 	public async Task<PagedResult<Domain.Core.Account>> Handle(GetDeletedAccountsQuery request, CancellationToken cancellationToken)
 	{
-		return await accountService.GetDeletedAsync(request.Offset, request.Limit, cancellationToken);
+		return await accountService.GetDeletedAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

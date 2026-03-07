@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Application.Models;
 using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
@@ -8,30 +10,35 @@ namespace Infrastructure.Repositories;
 
 public class ItemTemplateRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : IItemTemplateRepository
 {
+	private static readonly Dictionary<string, Expression<Func<ItemTemplateEntity, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["name"] = e => e.Name,
+	};
+
 	public async Task<ItemTemplateEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ItemTemplates.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<ItemTemplateEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<ItemTemplateEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ItemTemplates
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<ItemTemplateEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<ItemTemplateEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ItemTemplates
 			.OnlyDeleted()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
 			.ToListAsync(cancellationToken);

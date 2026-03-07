@@ -53,11 +53,23 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all transactions")]
-	public async Task<Ok<TransactionListResponse>> GetAllTransactions([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<TransactionListResponse>, BadRequest<string>>> GetAllTransactions([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (sortBy is not null && !SortableColumns.Transaction.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Transaction)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+
 		if (receiptId.HasValue)
 		{
-			GetTransactionsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit);
+			GetTransactionsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit, sort);
 			PagedResult<Transaction> byReceiptResult = await mediator.Send(byReceiptQuery);
 
 			return TypedResults.Ok(new TransactionListResponse
@@ -69,7 +81,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			});
 		}
 
-		GetAllTransactionsQuery query = new(offset, limit);
+		GetAllTransactionsQuery query = new(offset, limit, sort);
 		PagedResult<Transaction> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new TransactionListResponse
@@ -84,9 +96,20 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted transactions")]
 	[EndpointDescription("Returns all transactions that have been soft-deleted.")]
-	public async Task<Ok<TransactionListResponse>> GetDeletedTransactions([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<TransactionListResponse>, BadRequest<string>>> GetDeletedTransactions([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetDeletedTransactionsQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Transaction.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Transaction)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedTransactionsQuery query = new(offset, limit, sort);
 		PagedResult<Transaction> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new TransactionListResponse

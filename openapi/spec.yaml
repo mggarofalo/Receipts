@@ -92,6 +92,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -99,6 +101,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     post:
       operationId: CreateAccount
       tags: [Accounts]
@@ -155,6 +163,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -162,6 +172,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AccountListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/accounts/{id}/restore:
     post:
@@ -304,6 +320,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -311,6 +329,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     post:
       operationId: CreateCategory
       tags: [Categories]
@@ -367,6 +391,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -374,6 +400,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/categories/{id}/restore:
     post:
@@ -522,6 +554,8 @@ paths:
             format: uuid
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -529,6 +563,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubcategoryListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     post:
       operationId: CreateSubcategory
       tags: [Subcategories]
@@ -585,6 +625,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -592,6 +634,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SubcategoryListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/subcategories/{id}/restore:
     post:
@@ -734,6 +782,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -741,6 +791,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemTemplateListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     post:
       operationId: CreateItemTemplate
       tags: [ItemTemplates]
@@ -797,6 +853,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -804,6 +862,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemTemplateListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/item-templates/{id}/restore:
     post:
@@ -900,6 +964,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -907,6 +973,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     post:
       operationId: CreateReceipt
       tags: [Receipts]
@@ -963,6 +1035,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -970,6 +1044,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/receipts/{id}/restore:
     post:
@@ -1120,6 +1200,8 @@ paths:
             format: uuid
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -1127,6 +1209,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     delete:
       operationId: DeleteReceiptItems
       tags: [ReceiptItems]
@@ -1160,6 +1248,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -1167,6 +1257,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptItemListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/receipt-items/{id}/restore:
     post:
@@ -1357,6 +1453,8 @@ paths:
             format: uuid
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -1364,6 +1462,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     delete:
       operationId: DeleteTransactions
       tags: [Transactions]
@@ -1397,6 +1501,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -1404,6 +1510,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TransactionListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/transactions/{id}/restore:
     post:
@@ -1594,6 +1706,8 @@ paths:
             format: uuid
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -1601,6 +1715,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdjustmentListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     delete:
       operationId: DeleteAdjustments
       tags: [Adjustments]
@@ -1634,6 +1754,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -1641,6 +1763,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdjustmentListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
 
   /api/adjustments/{id}/restore:
     post:
@@ -2162,6 +2290,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
       responses:
         "200":
           description: OK
@@ -2169,6 +2299,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
     post:
       operationId: CreateUser
       tags: [Users]
@@ -3450,6 +3586,21 @@ components:
         minimum: 1
         maximum: 100
         default: 50
+    SortBy:
+      name: sortBy
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Column name to sort by. Allowed values depend on the entity type.
+    SortDirection:
+      name: sortDirection
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: asc
 
   securitySchemes:
     BearerAuth:

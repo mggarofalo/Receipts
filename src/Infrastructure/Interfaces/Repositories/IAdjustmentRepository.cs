@@ -1,3 +1,4 @@
+using Application.Models;
 using Infrastructure.Entities.Core;
 
 namespace Infrastructure.Interfaces.Repositories;
@@ -5,10 +6,10 @@ namespace Infrastructure.Interfaces.Repositories;
 public interface IAdjustmentRepository
 {
 	Task<AdjustmentEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-	Task<List<AdjustmentEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, CancellationToken cancellationToken);
+	Task<List<AdjustmentEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, SortParams sort, CancellationToken cancellationToken);
 	Task<int> GetByReceiptIdCountAsync(Guid receiptId, CancellationToken cancellationToken);
-	Task<List<AdjustmentEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken);
-	Task<List<AdjustmentEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken);
+	Task<List<AdjustmentEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken);
+	Task<List<AdjustmentEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken);
 	Task<int> GetDeletedCountAsync(CancellationToken cancellationToken);
 	Task<List<AdjustmentEntity>> CreateAsync(List<AdjustmentEntity> entities, CancellationToken cancellationToken);
 	Task UpdateAsync(List<AdjustmentEntity> entities, CancellationToken cancellationToken);

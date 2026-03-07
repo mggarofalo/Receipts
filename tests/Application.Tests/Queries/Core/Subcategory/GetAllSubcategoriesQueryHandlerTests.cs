@@ -15,10 +15,10 @@ public class GetAllSubcategoriesQueryHandlerTests
 		List<Domain.Core.Subcategory> expected = SubcategoryGenerator.GenerateList(2);
 
 		Mock<ISubcategoryService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Subcategory>(expected, expected.Count, 0, 50));
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Subcategory>(expected, expected.Count, 0, 50));
 
 		GetAllSubcategoriesQueryHandler handler = new(mockService.Object);
-		GetAllSubcategoriesQuery query = new(0, 50);
+		GetAllSubcategoriesQuery query = new(0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.Subcategory> result = await handler.Handle(query, CancellationToken.None);
 

@@ -1,3 +1,4 @@
+using Application.Models;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Repositories;
@@ -96,7 +97,7 @@ public class AccountRepositoryTests
 		AccountRepository repository = new(_contextFactory);
 
 		// Act
-		List<AccountEntity> actual = await repository.GetAllAsync(0, 50, CancellationToken.None);
+		List<AccountEntity> actual = await repository.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None);
 
 		// Assert
 		actual.Should().BeEquivalentTo(entities);

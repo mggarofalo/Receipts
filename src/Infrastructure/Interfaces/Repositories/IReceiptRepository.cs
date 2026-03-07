@@ -1,3 +1,4 @@
+using Application.Models;
 using Infrastructure.Entities.Core;
 
 namespace Infrastructure.Interfaces.Repositories;
@@ -5,8 +6,8 @@ namespace Infrastructure.Interfaces.Repositories;
 public interface IReceiptRepository
 {
 	Task<ReceiptEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-	Task<List<ReceiptEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken);
-	Task<List<ReceiptEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken);
+	Task<List<ReceiptEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken);
+	Task<List<ReceiptEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken);
 	Task<int> GetDeletedCountAsync(CancellationToken cancellationToken);
 	Task<List<ReceiptEntity>> CreateAsync(List<ReceiptEntity> entities, CancellationToken cancellationToken);
 	Task UpdateAsync(List<ReceiptEntity> entities, CancellationToken cancellationToken);

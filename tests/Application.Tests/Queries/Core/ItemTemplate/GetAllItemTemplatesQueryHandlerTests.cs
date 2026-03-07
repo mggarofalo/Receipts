@@ -15,10 +15,10 @@ public class GetAllItemTemplatesQueryHandlerTests
 		List<Domain.Core.ItemTemplate> expected = ItemTemplateGenerator.GenerateList(2);
 
 		Mock<IItemTemplateService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ItemTemplate>(expected, expected.Count, 0, 50));
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ItemTemplate>(expected, expected.Count, 0, 50));
 
 		GetAllItemTemplatesQueryHandler handler = new(mockService.Object);
-		GetAllItemTemplatesQuery query = new(0, 50);
+		GetAllItemTemplatesQuery query = new(0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.ItemTemplate> result = await handler.Handle(query, CancellationToken.None);
 

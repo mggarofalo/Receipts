@@ -8,6 +8,6 @@ public class GetDeletedItemTemplatesQueryHandler(IItemTemplateService itemTempla
 {
 	public async Task<PagedResult<Domain.Core.ItemTemplate>> Handle(GetDeletedItemTemplatesQuery request, CancellationToken cancellationToken)
 	{
-		return await itemTemplateService.GetDeletedAsync(request.Offset, request.Limit, cancellationToken);
+		return await itemTemplateService.GetDeletedAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

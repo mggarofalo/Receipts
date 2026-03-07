@@ -84,11 +84,12 @@ public class UsersControllerTests
 			new("u1", "a@b.com", "A", "B", ["Admin"], false, DateTimeOffset.UtcNow, null),
 			new("u2", "c@d.com", "C", "D", ["User"], false, DateTimeOffset.UtcNow, null),
 		];
-		_userServiceMock.Setup(s => s.ListUsersAsync(0, 50, It.IsAny<CancellationToken>()))
+		_userServiceMock.Setup(s => s.ListUsersAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<UserSummary>(users, 2, 0, 50));
 
-		Ok<UserListResponse> result = await _controller.ListUsers(0, 50);
+		Results<Ok<UserListResponse>, BadRequest<string>> rawResult = await _controller.ListUsers(0, 50, null, null);
 
+		Ok<UserListResponse> result = Assert.IsType<Ok<UserListResponse>>(rawResult.Result);
 		UserListResponse response = result.Value!;
 		response.Data.Should().HaveCount(2);
 		response.Total.Should().Be(2);

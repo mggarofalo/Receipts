@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useAdjustments(offset = 0, limit = 50) {
+export function useAdjustments(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["adjustments", "list", offset, limit],
+    queryKey: ["adjustments", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/adjustments", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -29,13 +29,13 @@ export function useAdjustment(id: string | null) {
   });
 }
 
-export function useAdjustmentsByReceiptId(receiptId: string | null, offset = 0, limit = 200) {
+export function useAdjustmentsByReceiptId(receiptId: string | null, offset = 0, limit = 200, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["adjustments", "by-receipt", receiptId, offset, limit],
+    queryKey: ["adjustments", "by-receipt", receiptId, offset, limit, sortBy, sortDirection],
     enabled: !!receiptId,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/adjustments", {
-        params: { query: { receiptId: receiptId!, offset, limit } },
+        params: { query: { receiptId: receiptId!, offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -146,12 +146,12 @@ export function useDeleteAdjustments() {
   });
 }
 
-export function useDeletedAdjustments(offset = 0, limit = 50) {
+export function useDeletedAdjustments(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["adjustments", "deleted", offset, limit],
+    queryKey: ["adjustments", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/adjustments/deleted", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;

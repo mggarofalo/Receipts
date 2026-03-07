@@ -53,9 +53,20 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all categories")]
-	public async Task<Ok<CategoryListResponse>> GetAllCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetAllCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetAllCategoriesQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Category.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Category)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetAllCategoriesQuery query = new(offset, limit, sort);
 		PagedResult<Category> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new CategoryListResponse
@@ -70,9 +81,20 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted categories")]
 	[EndpointDescription("Returns all categories that have been soft-deleted.")]
-	public async Task<Ok<CategoryListResponse>> GetDeletedCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetDeletedCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetDeletedCategoriesQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Category.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Category)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedCategoriesQuery query = new(offset, limit, sort);
 		PagedResult<Category> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new CategoryListResponse

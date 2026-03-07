@@ -76,10 +76,10 @@ public class AccountServiceTests
 		List<AccountEntity> entities = AccountEntityGenerator.GenerateList(3);
 
 		_mockRepository.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
-		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
-		PagedResult<Account> actual = await _service.GetAllAsync(0, 50, CancellationToken.None);
+		PagedResult<Account> actual = await _service.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None);
 
 		// Assert
 		Assert.Equal(entities.Count, actual.Data.Count);

@@ -1,3 +1,4 @@
+using Application.Models;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Repositories;
@@ -72,7 +73,7 @@ public class ReceiptItemRepositoryTests
 		ReceiptItemRepository repository = new(_contextFactory);
 
 		// Act
-		List<ReceiptItemEntity> actual = await repository.GetByReceiptIdAsync(receipt.Id, 0, 50, CancellationToken.None);
+		List<ReceiptItemEntity> actual = await repository.GetByReceiptIdAsync(receipt.Id, 0, 50, SortParams.Default, CancellationToken.None);
 
 		// Assert
 		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(ReceiptItemEntity.Receipt)));
@@ -95,7 +96,7 @@ public class ReceiptItemRepositoryTests
 		ReceiptItemRepository repository = new(_contextFactory);
 
 		// Act
-		List<ReceiptItemEntity> actual = await repository.GetAllAsync(0, 50, CancellationToken.None);
+		List<ReceiptItemEntity> actual = await repository.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None);
 
 		// Assert
 		actual.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(ReceiptItemEntity.Receipt)));

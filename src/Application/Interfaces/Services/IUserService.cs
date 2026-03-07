@@ -14,6 +14,6 @@ public record UserSummary(
 
 public interface IUserService
 {
-	Task<PagedResult<UserSummary>> ListUsersAsync(int offset, int limit, CancellationToken cancellationToken = default);
+	Task<PagedResult<UserSummary>> ListUsersAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken = default);
 	Task<string?> FindUserIdByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
 }

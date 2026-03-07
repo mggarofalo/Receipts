@@ -36,18 +36,18 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 		return await repository.ExistsAsync(id, cancellationToken);
 	}
 
-	public async Task<PagedResult<Category>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<Category>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetCountAsync(cancellationToken);
-		List<CategoryEntity> entities = await repository.GetAllAsync(offset, limit, cancellationToken);
+		List<CategoryEntity> entities = await repository.GetAllAsync(offset, limit, sort, cancellationToken);
 		List<Category> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<Category>(data, total, offset, limit);
 	}
 
-	public async Task<PagedResult<Category>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<PagedResult<Category>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		int total = await repository.GetDeletedCountAsync(cancellationToken);
-		List<CategoryEntity> entities = await repository.GetDeletedAsync(offset, limit, cancellationToken);
+		List<CategoryEntity> entities = await repository.GetDeletedAsync(offset, limit, sort, cancellationToken);
 		List<Category> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<Category>(data, total, offset, limit);
 	}

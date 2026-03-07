@@ -1,3 +1,4 @@
+using Application.Models;
 using Infrastructure.Entities.Core;
 
 namespace Infrastructure.Interfaces.Repositories;
@@ -5,8 +6,8 @@ namespace Infrastructure.Interfaces.Repositories;
 public interface IItemTemplateRepository
 {
 	Task<ItemTemplateEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-	Task<List<ItemTemplateEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken);
-	Task<List<ItemTemplateEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken);
+	Task<List<ItemTemplateEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken);
+	Task<List<ItemTemplateEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken);
 	Task<int> GetDeletedCountAsync(CancellationToken cancellationToken);
 	Task<List<ItemTemplateEntity>> CreateAsync(List<ItemTemplateEntity> entities, CancellationToken cancellationToken);
 	Task UpdateAsync(List<ItemTemplateEntity> entities, CancellationToken cancellationToken);

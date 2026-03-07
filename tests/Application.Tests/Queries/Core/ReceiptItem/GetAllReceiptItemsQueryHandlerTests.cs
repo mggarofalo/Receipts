@@ -15,10 +15,10 @@ public class GetAllReceiptItemsQueryHandlerTests
 		List<Domain.Core.ReceiptItem> expected = ReceiptItemGenerator.GenerateList(2);
 
 		Mock<IReceiptItemService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>(expected, expected.Count, 0, 50));
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.ReceiptItem>(expected, expected.Count, 0, 50));
 
 		GetAllReceiptItemsQueryHandler handler = new(mockService.Object);
-		GetAllReceiptItemsQuery query = new(0, 50);
+		GetAllReceiptItemsQuery query = new(0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.ReceiptItem> result = await handler.Handle(query, CancellationToken.None);
 

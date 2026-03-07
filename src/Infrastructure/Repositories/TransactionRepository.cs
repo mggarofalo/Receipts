@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Application.Models;
 using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
@@ -8,20 +10,26 @@ namespace Infrastructure.Repositories;
 
 public class TransactionRepository(IDbContextFactory<ApplicationDbContext> contextFactory) : ITransactionRepository
 {
+	private static readonly Dictionary<string, Expression<Func<TransactionEntity, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["amount"] = e => e.Amount,
+		["date"] = e => e.Date,
+	};
+
 	public async Task<TransactionEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<TransactionEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<TransactionEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.IgnoreAutoIncludes()
 			.Where(t => t.ReceiptId == receiptId)
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
 			.Skip(offset)
 			.Take(limit)
 			.Select(t => new TransactionEntity
@@ -56,13 +64,13 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 			.CountAsync(cancellationToken);
 	}
 
-	public async Task<List<TransactionEntity>> GetAllAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<TransactionEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
 			.Skip(offset)
 			.Take(limit)
 			.Select(t => new TransactionEntity
@@ -77,14 +85,14 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<TransactionEntity>> GetDeletedAsync(int offset, int limit, CancellationToken cancellationToken)
+	public async Task<List<TransactionEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.OnlyDeleted()
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
-			.OrderBy(e => e.Id)
+			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
 			.Skip(offset)
 			.Take(limit)
 			.Select(t => new TransactionEntity

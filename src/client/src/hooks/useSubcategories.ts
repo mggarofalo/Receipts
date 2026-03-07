@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useSubcategories(offset = 0, limit = 50) {
+export function useSubcategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["subcategories", "list", offset, limit],
+    queryKey: ["subcategories", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/subcategories", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -29,13 +29,13 @@ export function useSubcategory(id: string | null) {
   });
 }
 
-export function useSubcategoriesByCategoryId(categoryId: string | null, offset = 0, limit = 200) {
+export function useSubcategoriesByCategoryId(categoryId: string | null, offset = 0, limit = 200, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["subcategories", "byCategory", categoryId, offset, limit],
+    queryKey: ["subcategories", "byCategory", categoryId, offset, limit, sortBy, sortDirection],
     enabled: !!categoryId,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/subcategories", {
-        params: { query: { categoryId: categoryId!, offset, limit } },
+        params: { query: { categoryId: categoryId!, offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;
@@ -133,12 +133,12 @@ export function useDeleteSubcategories() {
   });
 }
 
-export function useDeletedSubcategories(offset = 0, limit = 50) {
+export function useDeletedSubcategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   return useQuery({
-    queryKey: ["subcategories", "deleted", offset, limit],
+    queryKey: ["subcategories", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/subcategories/deleted", {
-        params: { query: { offset, limit } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
       });
       if (error) throw error;
       return data;

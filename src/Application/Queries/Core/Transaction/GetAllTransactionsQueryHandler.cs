@@ -8,6 +8,6 @@ public class GetAllTransactionsQueryHandler(ITransactionService transactionServi
 {
 	public async Task<PagedResult<Domain.Core.Transaction>> Handle(GetAllTransactionsQuery request, CancellationToken cancellationToken)
 	{
-		return await transactionService.GetAllAsync(request.Offset, request.Limit, cancellationToken);
+		return await transactionService.GetAllAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

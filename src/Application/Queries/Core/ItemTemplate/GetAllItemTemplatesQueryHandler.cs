@@ -8,6 +8,6 @@ public class GetAllItemTemplatesQueryHandler(IItemTemplateService itemTemplateSe
 {
 	public async Task<PagedResult<Domain.Core.ItemTemplate>> Handle(GetAllItemTemplatesQuery request, CancellationToken cancellationToken)
 	{
-		return await itemTemplateService.GetAllAsync(request.Offset, request.Limit, cancellationToken);
+		return await itemTemplateService.GetAllAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

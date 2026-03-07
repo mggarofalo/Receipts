@@ -1,3 +1,4 @@
+using Application.Models;
 using Application.Queries.Core.ReceiptItem;
 
 namespace Application.Tests.Queries.Core.ReceiptItem;
@@ -8,14 +9,14 @@ public class GetReceiptItemsByReceiptIdQueryTests : IQueryTests
 	public void Query_CanBeCreated()
 	{
 		Guid receiptId = Guid.NewGuid();
-		GetReceiptItemsByReceiptIdQuery query = new(receiptId, 0, 50);
+		GetReceiptItemsByReceiptIdQuery query = new(receiptId, 0, 50, SortParams.Default);
 		Assert.Equal(receiptId, query.ReceiptId);
 	}
 
 	[Fact]
 	public void Query_WithEmptyId_ThrowsArgumentException()
 	{
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new GetReceiptItemsByReceiptIdQuery(Guid.Empty, 0, 50));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new GetReceiptItemsByReceiptIdQuery(Guid.Empty, 0, 50, SortParams.Default));
 		Assert.StartsWith(GetReceiptItemsByReceiptIdQuery.ReceiptIdCannotBeEmptyExceptionMessage, exception.Message);
 		Assert.Equal("receiptId", exception.ParamName);
 	}

@@ -8,6 +8,6 @@ public class GetDeletedTransactionsQueryHandler(ITransactionService transactionS
 {
 	public async Task<PagedResult<Domain.Core.Transaction>> Handle(GetDeletedTransactionsQuery request, CancellationToken cancellationToken)
 	{
-		return await transactionService.GetDeletedAsync(request.Offset, request.Limit, cancellationToken);
+		return await transactionService.GetDeletedAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }

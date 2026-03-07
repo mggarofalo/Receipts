@@ -15,10 +15,10 @@ public class GetAllTransactionsQueryHandlerTests
 		List<Domain.Core.Transaction> expected = TransactionGenerator.GenerateList(2);
 
 		Mock<ITransactionService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expected, expected.Count, 0, 50));
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Transaction>(expected, expected.Count, 0, 50));
 
 		GetAllTransactionsQueryHandler handler = new(mockService.Object);
-		GetAllTransactionsQuery query = new(0, 50);
+		GetAllTransactionsQuery query = new(0, 50, SortParams.Default);
 
 		PagedResult<Domain.Core.Transaction> result = await handler.Handle(query, CancellationToken.None);
 

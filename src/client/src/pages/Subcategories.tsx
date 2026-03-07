@@ -13,6 +13,7 @@ import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
 import { applyFilters } from "@/lib/search";
@@ -24,6 +25,7 @@ import type { FilterField } from "@/components/FilterPanel";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
 import { ActiveFilterBanner } from "@/components/ActiveFilterBanner";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
@@ -69,9 +71,10 @@ const FILTER_PARAMS = ["categoryId"] as const;
 function Subcategories() {
   usePageTitle("Subcategories");
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const allSubcatQuery = useSubcategories(offset, limit);
-  const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit);
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const allSubcatQuery = useSubcategories(offset, limit, sortBy, sortDirection);
+  const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit, sortBy, sortDirection);
   const activeSubcatQuery = linkParams.categoryId ? filteredSubcatQuery : allSubcatQuery;
   const { data: subcategoriesResponse, isLoading: subcategoriesLoading } = activeSubcatQuery;
   const { data: categoriesResponse, isLoading: categoriesLoading } = useCategories();
@@ -102,6 +105,8 @@ function Subcategories() {
     window.addEventListener("shortcut:new-item", onNewItem);
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
+
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const data = (subcategoriesResponse?.data as SubcategoryResponse[] | undefined) ?? [];
   const serverTotal = subcategoriesResponse?.total ?? 0;
@@ -349,7 +354,7 @@ function Subcategories() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
-                  <TableHead>Name</TableHead>
+                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Related</TableHead>

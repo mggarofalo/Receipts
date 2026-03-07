@@ -10,6 +10,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import type { FuseSearchConfig, FilterDefinition } from "@/lib/search";
@@ -21,6 +22,7 @@ import { FilterPanel } from "@/components/FilterPanel";
 import type { FilterField } from "@/components/FilterPanel";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
+import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
@@ -72,8 +74,9 @@ const HIGHLIGHT_PARAMS = ["highlight"] as const;
 function Receipts() {
   usePageTitle("Receipts");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination();
-  const { data: receiptsResponse, isLoading } = useReceipts(offset, limit);
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "date", defaultSortDirection: "desc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { data: receiptsResponse, isLoading } = useReceipts(offset, limit, sortBy, sortDirection);
   const createReceipt = useCreateReceipt();
   const updateReceipt = useUpdateReceipt();
   const deleteReceipts = useDeleteReceipts();
@@ -94,12 +97,9 @@ function Receipts() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const data = useMemo(() => {
-    const list = (receiptsResponse?.data as ReceiptResponse[] | undefined) ?? [];
-    return [...list].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
-  }, [receiptsResponse?.data]);
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+
+  const data = (receiptsResponse?.data as ReceiptResponse[] | undefined) ?? [];
   const serverTotal = receiptsResponse?.total ?? 0;
 
   const {
@@ -248,9 +248,9 @@ function Receipts() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Tax Amount</TableHead>
+                  <SortableTableHead column="location" label="Location" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="date" label="Date" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="taxAmount" label="Tax Amount" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>

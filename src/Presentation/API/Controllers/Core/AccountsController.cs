@@ -53,9 +53,20 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all accounts")]
-	public async Task<Ok<AccountListResponse>> GetAllAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<AccountListResponse>, BadRequest<string>>> GetAllAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetAllAccountsQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Account.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Account)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetAllAccountsQuery query = new(offset, limit, sort);
 		PagedResult<Account> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new AccountListResponse
@@ -70,9 +81,20 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted accounts")]
 	[EndpointDescription("Returns all accounts that have been soft-deleted.")]
-	public async Task<Ok<AccountListResponse>> GetDeletedAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50)
+	public async Task<Results<Ok<AccountListResponse>, BadRequest<string>>> GetDeletedAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
-		GetDeletedAccountsQuery query = new(offset, limit);
+		if (sortBy is not null && !SortableColumns.Account.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Account)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedAccountsQuery query = new(offset, limit, sort);
 		PagedResult<Account> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new AccountListResponse

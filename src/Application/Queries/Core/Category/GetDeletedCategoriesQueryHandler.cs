@@ -8,6 +8,6 @@ public class GetDeletedCategoriesQueryHandler(ICategoryService categoryService) 
 {
 	public async Task<PagedResult<Domain.Core.Category>> Handle(GetDeletedCategoriesQuery request, CancellationToken cancellationToken)
 	{
-		return await categoryService.GetDeletedAsync(request.Offset, request.Limit, cancellationToken);
+		return await categoryService.GetDeletedAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}
 }
