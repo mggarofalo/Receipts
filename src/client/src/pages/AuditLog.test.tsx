@@ -9,8 +9,29 @@ vi.mock("@/hooks/usePageTitle", () => ({
 
 vi.mock("@/hooks/useAudit", () => ({
   useRecentAuditLogs: vi.fn(() => ({
-    data: [],
+    data: { data: [], total: 0, offset: 0, limit: 50 },
     isLoading: false,
+  })),
+}));
+
+vi.mock("@/hooks/useServerPagination", () => ({
+  useServerPagination: vi.fn(() => ({
+    offset: 0,
+    limit: 50,
+    currentPage: 1,
+    pageSize: 50,
+    totalPages: () => 1,
+    setPage: vi.fn(),
+    setPageSize: vi.fn(),
+    resetPage: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/useServerSort", () => ({
+  useServerSort: vi.fn(() => ({
+    sortBy: "changedAt",
+    sortDirection: "desc",
+    toggleSort: vi.fn(),
   })),
 }));
 
@@ -24,6 +45,12 @@ vi.mock("@/components/AuditLogTable", () => ({
   }) {
     if (isLoading) return "Loading...";
     return <div data-testid="audit-table">AuditLogTable ({logs?.length ?? 0} rows)</div>;
+  },
+}));
+
+vi.mock("@/components/Pagination", () => ({
+  Pagination: function MockPagination() {
+    return <div data-testid="pagination">Pagination</div>;
   },
 }));
 
@@ -42,16 +69,14 @@ describe("AuditLog", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the search input for entity ID", () => {
-    renderWithProviders(<AuditLog />);
-    expect(
-      screen.getByLabelText(/search audit log by entity id/i),
-    ).toBeInTheDocument();
-  });
-
   it("renders the AuditLogTable component", () => {
     renderWithProviders(<AuditLog />);
     expect(screen.getByTestId("audit-table")).toBeInTheDocument();
+  });
+
+  it("renders the Pagination component", () => {
+    renderWithProviders(<AuditLog />);
+    expect(screen.getByTestId("pagination")).toBeInTheDocument();
   });
 
   it("shows loading state in AuditLogTable when data is loading", async () => {
@@ -65,74 +90,55 @@ describe("AuditLog", () => {
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
-  it("passes filtered logs to AuditLogTable", async () => {
+  it("passes logs to AuditLogTable", async () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
     vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
-      data: [
-        {
-          id: "1",
-          entityType: "Account",
-          entityId: "abc-123",
-          action: "Created",
-          changedAt: "2024-01-15T10:00:00Z",
-          changedByUserId: "user-1",
-          changedByApiKeyId: null,
-          ipAddress: "127.0.0.1",
-          changesJson: "{}",
-        },
-      ],
+      data: {
+        data: [
+          {
+            id: "1",
+            entityType: "Account",
+            entityId: "abc-123",
+            action: "Created",
+            changedAt: "2024-01-15T10:00:00Z",
+            changedByUserId: "user-1",
+            changedByApiKeyId: null,
+            ipAddress: "127.0.0.1",
+            changesJson: "{}",
+          },
+        ],
+        total: 1,
+        offset: 0,
+        limit: 50,
+      },
       isLoading: false,
     }));
 
     renderWithProviders(<AuditLog />);
-    // The AuditLogTable mock renders "AuditLogTable" when not loading
-    expect(screen.getByTestId("audit-table")).toBeInTheDocument();
-  });
-
-  it("filters logs by entity ID search", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const { useRecentAuditLogs } = await import("@/hooks/useAudit");
-    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
-      data: [
-        {
-          id: "1",
-          entityType: "Account",
-          entityId: "abc-123",
-          action: "Created",
-          changedAt: "2024-01-15T10:00:00Z",
-          changedByUserId: "user-1",
-          changedByApiKeyId: null,
-          ipAddress: "127.0.0.1",
-          changesJson: "{}",
-        },
-      ],
-      isLoading: false,
-    }));
-
-    renderWithProviders(<AuditLog />);
-    const searchInput = screen.getByLabelText(/search audit log by entity id/i);
-    await user.type(searchInput, "abc");
-
-    // The mock AuditLogTable still renders, just with filtered data
-    expect(screen.getByTestId("audit-table")).toBeInTheDocument();
+    expect(screen.getByTestId("audit-table")).toHaveTextContent("1 rows");
   });
 
   it("enables Export CSV button when logs exist", async () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
     vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
-      data: [
-        {
-          id: "1",
-          entityType: "Account",
-          entityId: "abc-123",
-          action: "Created",
-          changedAt: "2024-01-15T10:00:00Z",
-          changedByUserId: "user-1",
-          changedByApiKeyId: null,
-          ipAddress: "127.0.0.1",
-          changesJson: "{}",
-        },
-      ],
+      data: {
+        data: [
+          {
+            id: "1",
+            entityType: "Account",
+            entityId: "abc-123",
+            action: "Created",
+            changedAt: "2024-01-15T10:00:00Z",
+            changedByUserId: "user-1",
+            changedByApiKeyId: null,
+            ipAddress: "127.0.0.1",
+            changesJson: "{}",
+          },
+        ],
+        total: 1,
+        offset: 0,
+        limit: 50,
+      },
       isLoading: false,
     }));
 
@@ -146,19 +152,24 @@ describe("AuditLog", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
     vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
-      data: [
-        {
-          id: "1",
-          entityType: "Account",
-          entityId: "abc-123",
-          action: "Created",
-          changedAt: "2024-01-15T10:00:00Z",
-          changedByUserId: "user-1",
-          changedByApiKeyId: null,
-          ipAddress: "127.0.0.1",
-          changesJson: "{}",
-        },
-      ],
+      data: {
+        data: [
+          {
+            id: "1",
+            entityType: "Account",
+            entityId: "abc-123",
+            action: "Created",
+            changedAt: "2024-01-15T10:00:00Z",
+            changedByUserId: "user-1",
+            changedByApiKeyId: null,
+            ipAddress: "127.0.0.1",
+            changesJson: "{}",
+          },
+        ],
+        total: 1,
+        offset: 0,
+        limit: 50,
+      },
       isLoading: false,
     }));
 
@@ -189,49 +200,4 @@ describe("AuditLog", () => {
     URL.revokeObjectURL = originalRevokeObjectURL;
     vi.restoreAllMocks();
   });
-
-  it("renders entity type filter trigger", () => {
-    renderWithProviders(<AuditLog />);
-    // Radix Select renders trigger buttons; count the combobox elements
-    const triggers = screen.getAllByRole("combobox");
-    expect(triggers.length).toBeGreaterThanOrEqual(3);
-  });
-
-  it("renders DateRangePicker From and To buttons", () => {
-    renderWithProviders(<AuditLog />);
-    const buttons = screen.getAllByRole("button");
-    const fromButton = buttons.find((b) => b.textContent === "From");
-    const toButton = buttons.find((b) => b.textContent === "To");
-    expect(fromButton).toBeDefined();
-    expect(toButton).toBeDefined();
-  });
-
-  it("filters logs by search term that excludes entries", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const { useRecentAuditLogs } = await import("@/hooks/useAudit");
-    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
-      data: [
-        {
-          id: "1",
-          entityType: "Account",
-          entityId: "abc-123",
-          action: "Created",
-          changedAt: "2024-01-15T10:00:00Z",
-          changedByUserId: "user-1",
-          changedByApiKeyId: null,
-          ipAddress: "127.0.0.1",
-          changesJson: "{}",
-        },
-      ],
-      isLoading: false,
-    }));
-
-    renderWithProviders(<AuditLog />);
-    expect(screen.getByTestId("audit-table")).toHaveTextContent("1 rows");
-
-    // Search for something that doesn't match
-    await user.type(screen.getByLabelText(/search audit log by entity id/i), "zzz");
-    expect(screen.getByTestId("audit-table")).toHaveTextContent("0 rows");
-  });
-
 });

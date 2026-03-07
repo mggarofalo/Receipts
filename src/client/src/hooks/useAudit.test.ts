@@ -47,10 +47,18 @@ describe("useEntityAuditHistory", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(client.GET).toHaveBeenCalledWith(
-      "/api/audit",
-      { params: { query: { entityType: "Receipt", entityId: "r1" } } },
-    );
+    expect(client.GET).toHaveBeenCalledWith("/api/audit", {
+      params: {
+        query: {
+          entityType: "Receipt",
+          entityId: "r1",
+          offset: 0,
+          limit: 50,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
+    });
     expect(result.current.data).toEqual(mockHistory);
   });
 
@@ -75,7 +83,7 @@ describe("useEntityAuditHistory", () => {
 });
 
 describe("useRecentAuditLogs", () => {
-  it("fetches recent audit logs with default count", async () => {
+  it("fetches recent audit logs with default params", async () => {
     const mockLogs = [{ id: "a1", action: "Updated" }];
     (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
 
@@ -86,23 +94,59 @@ describe("useRecentAuditLogs", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/audit/recent", {
-      params: { query: { count: 50 } },
+      params: {
+        query: {
+          offset: 0,
+          limit: 50,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
     });
     expect(result.current.data).toEqual(mockLogs);
   });
 
-  it("fetches recent audit logs with custom count", async () => {
+  it("fetches recent audit logs with custom offset and limit", async () => {
     const mockLogs = [{ id: "a1" }];
     (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
 
-    const { result } = renderHook(() => useRecentAuditLogs(25), {
+    const { result } = renderHook(() => useRecentAuditLogs(25, 10), {
       wrapper: createWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(client.GET).toHaveBeenCalledWith("/api/audit/recent", {
-      params: { query: { count: 25 } },
+      params: {
+        query: {
+          offset: 25,
+          limit: 10,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      },
+    });
+  });
+
+  it("fetches recent audit logs with sort params", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: [], error: null });
+
+    const { result } = renderHook(
+      () => useRecentAuditLogs(0, 50, "changedAt", "desc"),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(client.GET).toHaveBeenCalledWith("/api/audit/recent", {
+      params: {
+        query: {
+          offset: 0,
+          limit: 50,
+          sortBy: "changedAt",
+          sortDirection: "desc",
+        },
+      },
     });
   });
 });
