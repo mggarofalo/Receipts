@@ -27,6 +27,16 @@ public class AuditController(IAuditService auditService) : ControllerBase
 		[FromQuery] string? sortDirection = null,
 		CancellationToken cancellationToken = default)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be non-negative");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.AuditLog.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.AuditLog)}");
@@ -68,6 +78,16 @@ public class AuditController(IAuditService auditService) : ControllerBase
 		[FromQuery] string? sortDirection = null,
 		CancellationToken cancellationToken = default)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be non-negative");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.AuditLog.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.AuditLog)}");

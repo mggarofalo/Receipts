@@ -76,6 +76,29 @@ public class UsersControllerTests
 
 	// ── ListUsers ───────────────────────────────────────────
 
+	[Theory]
+	[InlineData(-1, 50)]
+	[InlineData(-100, 50)]
+	public async Task ListUsers_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
+	{
+		Results<Ok<UserListResponse>, BadRequest<string>> result = await _controller.ListUsers(offset, limit, null, null);
+
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("offset must be >= 0");
+	}
+
+	[Theory]
+	[InlineData(0, 0)]
+	[InlineData(0, -1)]
+	[InlineData(0, 501)]
+	public async Task ListUsers_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
+	{
+		Results<Ok<UserListResponse>, BadRequest<string>> result = await _controller.ListUsers(offset, limit, null, null);
+
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
 	[Fact]
 	public async Task ListUsers_ReturnsOk_WithUserList()
 	{

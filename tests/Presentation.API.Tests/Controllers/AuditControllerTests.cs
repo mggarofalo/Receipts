@@ -86,6 +86,58 @@ public class AuditControllerTests
 	}
 
 	[Fact]
+	public async Task GetRecent_ReturnsBadRequest_WhenOffsetIsNegative()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetRecent(-1, 50, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("offset must be non-negative");
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	[InlineData(501)]
+	public async Task GetRecent_ReturnsBadRequest_WhenLimitIsOutOfRange(int limit)
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetRecent(0, limit, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Fact]
+	public async Task GetAuditLogs_ReturnsBadRequest_WhenOffsetIsNegative()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetAuditLogs(
+			"Account", Guid.NewGuid().ToString(), null, null, -1, 50, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("offset must be non-negative");
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	[InlineData(501)]
+	public async Task GetAuditLogs_ReturnsBadRequest_WhenLimitIsOutOfRange(int limit)
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuditLogListResponse>, BadRequest<string>> result = await _controller.GetAuditLogs(
+			"Account", Guid.NewGuid().ToString(), null, null, 0, limit, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Fact]
 	public async Task GetAuditLogs_WithUserId_ReturnsOk_WithUserLogs()
 	{
 		// Arrange

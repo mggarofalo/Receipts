@@ -55,6 +55,16 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[EndpointSummary("Get all subcategories")]
 	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetAllSubcategories([FromQuery] Guid? categoryId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.Subcategory.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Subcategory)}");
@@ -98,6 +108,16 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[EndpointDescription("Returns all subcategories that have been soft-deleted.")]
 	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetDeletedSubcategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.Subcategory.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Subcategory)}");

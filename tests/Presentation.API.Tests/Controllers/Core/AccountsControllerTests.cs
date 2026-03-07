@@ -119,6 +119,60 @@ public class AccountsControllerTests
 		actualReturn.Limit.Should().Be(50);
 	}
 
+	[Theory]
+	[InlineData(-1, 50)]
+	[InlineData(-100, 50)]
+	public async Task GetAllAccounts_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
+	{
+		// Act
+		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetAllAccounts(offset, limit, null, null);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("offset must be >= 0");
+	}
+
+	[Theory]
+	[InlineData(0, 0)]
+	[InlineData(0, -1)]
+	[InlineData(0, 501)]
+	public async Task GetAllAccounts_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
+	{
+		// Act
+		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetAllAccounts(offset, limit, null, null);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Theory]
+	[InlineData(-1, 50)]
+	[InlineData(-100, 50)]
+	public async Task GetDeletedAccounts_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
+	{
+		// Act
+		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetDeletedAccounts(offset, limit, null, null);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("offset must be >= 0");
+	}
+
+	[Theory]
+	[InlineData(0, 0)]
+	[InlineData(0, -1)]
+	[InlineData(0, 501)]
+	public async Task GetDeletedAccounts_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
+	{
+		// Act
+		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetDeletedAccounts(offset, limit, null, null);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
 	[Fact]
 	public async Task GetAllAccounts_ThrowsException_WhenMediatorFails()
 	{

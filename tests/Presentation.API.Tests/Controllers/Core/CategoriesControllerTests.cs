@@ -109,6 +109,52 @@ public class CategoriesControllerTests
 		actualReturn.Limit.Should().Be(50);
 	}
 
+	[Theory]
+	[InlineData(-1, 50)]
+	[InlineData(-100, 50)]
+	public async Task GetAllCategories_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
+	{
+		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetAllCategories(offset, limit, null, null);
+
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("offset must be >= 0");
+	}
+
+	[Theory]
+	[InlineData(0, 0)]
+	[InlineData(0, -1)]
+	[InlineData(0, 501)]
+	public async Task GetAllCategories_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
+	{
+		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetAllCategories(offset, limit, null, null);
+
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Theory]
+	[InlineData(-1, 50)]
+	[InlineData(-100, 50)]
+	public async Task GetDeletedCategories_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
+	{
+		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetDeletedCategories(offset, limit, null, null);
+
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("offset must be >= 0");
+	}
+
+	[Theory]
+	[InlineData(0, 0)]
+	[InlineData(0, -1)]
+	[InlineData(0, 501)]
+	public async Task GetDeletedCategories_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
+	{
+		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetDeletedCategories(offset, limit, null, null);
+
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
 	[Fact]
 	public async Task GetAllCategories_ThrowsException_WhenMediatorFails()
 	{

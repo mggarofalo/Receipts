@@ -55,6 +55,16 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[EndpointSummary("Get all receipt items")]
 	public async Task<Results<Ok<ReceiptItemListResponse>, BadRequest<string>>> GetAllReceiptItems([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.ReceiptItem.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ReceiptItem)}");
@@ -98,6 +108,16 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[EndpointDescription("Returns all receipt items that have been soft-deleted.")]
 	public async Task<Results<Ok<ReceiptItemListResponse>, BadRequest<string>>> GetDeletedReceiptItems([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.ReceiptItem.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ReceiptItem)}");
