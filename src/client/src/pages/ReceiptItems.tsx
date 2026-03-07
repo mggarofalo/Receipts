@@ -132,8 +132,8 @@ function ReceiptItems() {
 
   const receiptMap = useMemo(() => {
     const map = new Map<string, string>();
-    const list = (receiptsResponse?.data as { id: string; description?: string | null; location: string }[] | undefined) ?? [];
-    for (const r of list) map.set(r.id, r.description || r.location);
+    const list = (receiptsResponse?.data as { id: string; location: string }[] | undefined) ?? [];
+    for (const r of list) map.set(r.id, r.location);
     return map;
   }, [receiptsResponse?.data]);
 

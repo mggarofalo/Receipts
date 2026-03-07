@@ -9,7 +9,7 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
     data: [
-      { id: "r-1", description: "Walmart Trip", location: "Walmart", date: "2024-01-15" },
+      { id: "r-1", location: "Walmart", date: "2024-01-15" },
     ],
     isLoading: false,
   })),
@@ -52,9 +52,9 @@ vi.mock("@/hooks/useItemTemplates", () => ({
 }));
 
 vi.mock("@/lib/combobox-options", () => ({
-  receiptToOption: vi.fn((r: { id: string; description?: string | null; location: string; date: string }) => ({
+  receiptToOption: vi.fn((r: { id: string; location: string; date: string }) => ({
     value: r.id,
-    label: r.description || r.location,
+    label: r.location,
     sublabel: `${r.location} — ${r.date}`,
   })),
 }));
