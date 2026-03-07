@@ -184,15 +184,15 @@ describe("GlobalSearchDialog", () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
       data: { data: [
-        { id: "r-1", description: "Grocery receipt", location: "Store A" },
-        { id: "r-2", description: null, location: "Store B" },
+        { id: "r-1", location: "Store A" },
+        { id: "r-2", location: "Store B" },
       ], total: 2, offset: 0, limit: 50 },
     }));
 
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
     );
-    expect(screen.getByText("Grocery receipt")).toBeInTheDocument();
+    expect(screen.getByText("Store A")).toBeInTheDocument();
     expect(screen.getByText("Store B")).toBeInTheDocument();
   });
 
@@ -217,7 +217,7 @@ describe("GlobalSearchDialog", () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
       data: { data: [
-        { id: "r-1", description: "Test Receipt", location: "Downtown" },
+        { id: "r-1", location: "Downtown" },
       ], total: 1, offset: 0, limit: 50 },
     }));
 
@@ -226,7 +226,7 @@ describe("GlobalSearchDialog", () => {
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={onOpenChange} />,
     );
-    await user.click(screen.getByText("Test Receipt"));
+    await user.click(screen.getByText("Downtown"));
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 

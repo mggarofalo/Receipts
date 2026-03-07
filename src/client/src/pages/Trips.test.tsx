@@ -74,8 +74,8 @@ describe("Trips", () => {
 
   it("renders receipt table when receipts exist", async () => {
     const items = [
-      { id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
-      { id: "2", description: null, location: "Target", date: "2024-01-20", taxAmount: 3.50 },
+      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      { id: "2", location: "Target", date: "2024-01-20", taxAmount: 3.50 },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -106,10 +106,8 @@ describe("Trips", () => {
     }));
 
     renderWithProviders(<Trips />);
-    expect(screen.getByText("Grocery")).toBeInTheDocument();
     expect(screen.getByText("Walmart")).toBeInTheDocument();
     expect(screen.getByText("Target")).toBeInTheDocument();
-    expect(screen.getByText(/no description/i)).toBeInTheDocument();
   });
 
   it("renders loading skeleton when receipts are loading", async () => {
@@ -149,7 +147,7 @@ describe("Trips", () => {
   it("renders no-results state when search yields nothing but receipts exist", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: [{ id: "1", description: "Grocery", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }], total: 1, offset: 0, limit: 10000 },
+      data: { data: [{ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }], total: 1, offset: 0, limit: 10000 },
       isLoading: false,
     }));
 
@@ -225,7 +223,6 @@ describe("Trips", () => {
         receipt: {
           receipt: {
             id: "r1",
-            description: "Weekly grocery",
             location: "Walmart",
             date: "2024-01-15",
             taxAmount: 5.25,
@@ -256,7 +253,6 @@ describe("Trips", () => {
         receipt: {
           receipt: {
             id: "r1",
-            description: "Grocery",
             location: "Walmart",
             date: "2024-01-15",
             taxAmount: 5.25,
@@ -292,7 +288,6 @@ describe("Trips", () => {
         receipt: {
           receipt: {
             id: "r1",
-            description: "Grocery",
             location: "Walmart",
             date: "2024-01-15",
             taxAmount: 5.25,
@@ -325,7 +320,6 @@ describe("Trips", () => {
         receipt: {
           receipt: {
             id: "r1",
-            description: "Grocery",
             location: "Walmart",
             date: "2024-01-15",
             taxAmount: 5.25,
@@ -357,7 +351,6 @@ describe("Trips", () => {
         receipt: {
           receipt: {
             id: "r1",
-            description: "Grocery",
             location: "Walmart",
             date: "2024-01-15",
             taxAmount: 5.25,

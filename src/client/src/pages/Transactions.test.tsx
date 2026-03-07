@@ -59,8 +59,8 @@ vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
     data: {
       data: [
-        { id: "r1", description: "Grocery Run", location: "Whole Foods", date: "2024-01-14" },
-        { id: "r2", description: null, location: "Target Store", date: "2024-01-19" },
+        { id: "r1", location: "Whole Foods", date: "2024-01-14" },
+        { id: "r2", location: "Target Store", date: "2024-01-19" },
       ],
       total: 2, offset: 0, limit: 1000,
     },
@@ -167,10 +167,9 @@ describe("Transactions", () => {
     // Verify account names are resolved
     expect(screen.getByText("Chase Checking")).toBeInTheDocument();
     expect(screen.getByText("Amex Gold")).toBeInTheDocument();
-    // Verify receipt description is shown for r1
-    expect(screen.getByText("Grocery Run")).toBeInTheDocument();
-    // r2 has null description so location "Target Store" appears in both Receipt and Location columns
-    expect(screen.getAllByText("Target Store").length).toBeGreaterThanOrEqual(1);
+    // Verify receipt locations are shown (in both Receipt link and Location columns)
+    expect(screen.getAllByText("Whole Foods")).toHaveLength(2);
+    expect(screen.getAllByText("Target Store")).toHaveLength(2);
   });
 
   it("renders receipt location and receipt date columns", async () => {
@@ -196,9 +195,8 @@ describe("Transactions", () => {
     }));
 
     renderWithProviders(<Transactions />);
-    // Verify location column values
-    expect(screen.getByText("Whole Foods")).toBeInTheDocument();
-    // "Target Store" appears in both Receipt (fallback) and Location columns
+    // Location appears in both Receipt link and Location columns
+    expect(screen.getAllByText("Whole Foods")).toHaveLength(2);
     expect(screen.getAllByText("Target Store")).toHaveLength(2);
     // Verify receipt date column values
     expect(screen.getByText("2024-01-14")).toBeInTheDocument();

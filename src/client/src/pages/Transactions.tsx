@@ -56,14 +56,12 @@ interface TransactionResponse {
 }
 
 interface ReceiptInfo {
-  description: string | null | undefined;
   location: string;
   date: string;
 }
 
 interface EnrichedTransaction extends TransactionResponse {
   accountName?: string;
-  receiptDescription?: string;
   receiptLocation?: string;
 }
 
@@ -71,7 +69,6 @@ const SEARCH_CONFIG: FuseSearchConfig<EnrichedTransaction> = {
   keys: [
     { name: "date", weight: 1 },
     { name: "accountName", weight: 2 },
-    { name: "receiptDescription", weight: 2 },
     { name: "receiptLocation", weight: 1 },
   ],
 };
@@ -130,8 +127,8 @@ function Transactions() {
 
   const receiptMap = useMemo(() => {
     const map = new Map<string, ReceiptInfo>();
-    const list = (receiptsResponse?.data as { id: string; description?: string | null; location: string; date: string }[] | undefined) ?? [];
-    for (const r of list) map.set(r.id, { description: r.description, location: r.location, date: r.date });
+    const list = (receiptsResponse?.data as { id: string; location: string; date: string }[] | undefined) ?? [];
+    for (const r of list) map.set(r.id, { location: r.location, date: r.date });
     return map;
   }, [receiptsResponse?.data]);
 
@@ -144,7 +141,6 @@ function Transactions() {
         return {
           ...txn,
           accountName: accountMap.get(txn.accountId),
-          receiptDescription: receipt?.description ?? undefined,
           receiptLocation: receipt?.location,
         };
       });
@@ -257,7 +253,7 @@ function Transactions() {
         <ActiveFilterBanner
           message={
             linkParams.receiptId
-              ? `Showing transactions for receipt: ${receiptMap.get(linkParams.receiptId)?.description || receiptMap.get(linkParams.receiptId)?.location || linkParams.receiptId}`
+              ? `Showing transactions for receipt: ${receiptMap.get(linkParams.receiptId)?.location || linkParams.receiptId}`
               : `Showing transactions for account: ${accountMap.get(linkParams.accountId!) ?? linkParams.accountId}`
           }
           onClear={clearParams}
@@ -341,7 +337,7 @@ function Transactions() {
                       </TableCell>
                       <TableCell>
                         <Link to={`/receipts?highlight=${txn.receiptId}`} className="text-sm text-primary hover:underline">
-                          {receiptMap.get(txn.receiptId)?.description || receiptMap.get(txn.receiptId)?.location || "Receipt"}
+                          {receiptMap.get(txn.receiptId)?.location || "Receipt"}
                         </Link>
                       </TableCell>
                       <TableCell>

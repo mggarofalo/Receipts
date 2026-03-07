@@ -41,7 +41,6 @@ import { formatCurrency } from "@/lib/format";
 
 interface ReceiptResponse {
   id: string;
-  description?: string | null;
   location: string;
   date: string;
   taxAmount: number;
@@ -49,7 +48,6 @@ interface ReceiptResponse {
 
 const SEARCH_CONFIG: FuseSearchConfig<ReceiptResponse> = {
   keys: [
-    { name: "description", weight: 2 },
     { name: "location", weight: 1.5 },
   ],
 };
@@ -167,7 +165,7 @@ function Trips() {
         />
 
         {receiptsLoading ? (
-          <TableSkeleton columns={4} />
+          <TableSkeleton columns={3} />
         ) : filteredResults.length === 0 ? (
           (search || hasActiveFilters) && totalCount > 0 ? (
             <NoResults
@@ -187,7 +185,6 @@ function Trips() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Description</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Tax Amount</TableHead>
@@ -203,18 +200,6 @@ function Trips() {
                         className={`cursor-pointer ${receiptId === receipt.id ? "bg-accent" : ""}`}
                         onClick={() => setReceiptId(receipt.id)}
                       >
-                        <TableCell>
-                          {receipt.description ? (
-                            <SearchHighlight
-                              text={receipt.description}
-                              indices={getMatchIndices(matches, "description")}
-                            />
-                          ) : (
-                            <span className="text-muted-foreground italic">
-                              No description
-                            </span>
-                          )}
-                        </TableCell>
                         <TableCell>
                           <SearchHighlight
                             text={receipt.location}
@@ -281,13 +266,6 @@ function Trips() {
                 {trip.receipt.receipt.date}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              {trip.receipt.receipt.description && (
-                <p className="text-sm text-muted-foreground">
-                  {trip.receipt.receipt.description}
-                </p>
-              )}
-            </CardContent>
           </Card>
 
           <ReceiptItemsCard
