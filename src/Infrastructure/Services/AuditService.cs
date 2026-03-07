@@ -66,9 +66,9 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> contextFactory
 
 		if (dateTo.HasValue)
 		{
-			// Include the entire end day
-			DateTimeOffset endOfDay = dateTo.Value.Date.AddDays(1).AddTicks(-1);
-			query = query.Where(a => a.ChangedAt <= endOfDay);
+			// Include the entire end day by moving to start of next day
+			DateTimeOffset endOfDay = new DateTimeOffset(dateTo.Value.Date.AddDays(1), dateTo.Value.Offset);
+			query = query.Where(a => a.ChangedAt < endOfDay);
 		}
 
 		int total = await query.CountAsync(cancellationToken);
