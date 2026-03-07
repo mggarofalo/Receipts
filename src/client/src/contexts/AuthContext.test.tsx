@@ -82,6 +82,7 @@ describe("AuthProvider", () => {
     mockedAuth.isAuthenticated.mockReturnValue(true);
     mockedAuth.getAccessToken.mockReturnValue(token);
     mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "user-id",
       email: "user@test.com",
       roles: ["User"],
       mustResetPassword: false,
@@ -101,6 +102,7 @@ describe("AuthProvider", () => {
     mockedAuth.isAuthenticated.mockReturnValue(true);
     mockedAuth.getAccessToken.mockReturnValue(token);
     mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "admin-id",
       email: "admin@test.com",
       roles: ["Admin"],
       mustResetPassword: true,
@@ -148,6 +150,7 @@ describe("AuthProvider", () => {
       error: undefined,
     });
     mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "user-id",
       email: "a@b.com",
       roles: ["User"],
       mustResetPassword: false,
@@ -175,6 +178,7 @@ describe("AuthProvider", () => {
     mockedAuth.isAuthenticated.mockReturnValue(true);
     mockedAuth.getAccessToken.mockReturnValue(token);
     mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "user-id",
       email: "user@test.com",
       roles: ["User"],
       mustResetPassword: false,
@@ -277,6 +281,7 @@ describe("AuthProvider", () => {
       error: undefined,
     });
     mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "user-id",
       email: "a@b.com",
       roles: ["User"],
       mustResetPassword: false,

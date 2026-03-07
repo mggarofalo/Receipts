@@ -9,6 +9,7 @@ import {
   notifyTokenRefresh,
   notifyPasswordChangeRequired,
 } from "@/lib/auth";
+import { getConnectionId } from "@/lib/signalr-connection";
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "";
 const API_TIMEOUT_MS = 30_000;
@@ -114,6 +115,17 @@ const authMiddleware: Middleware = {
   },
 };
 
+const signalRConnectionMiddleware: Middleware = {
+  async onRequest({ request }) {
+    const connId = getConnectionId();
+    if (connId) {
+      request.headers.set("X-SignalR-Connection-Id", connId);
+    }
+    return request;
+  },
+};
+
 client.use(authMiddleware);
+client.use(signalRConnectionMiddleware);
 
 export default client;

@@ -48,6 +48,7 @@ export function isAuthenticated(): boolean {
 }
 
 export interface JwtPayload {
+  userId: string;
   email: string;
   roles: string[];
   mustResetPassword: boolean;
@@ -58,6 +59,12 @@ export function parseJwtPayload(token: string): JwtPayload | null {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
     const payload = JSON.parse(atob(parts[1]));
+    const userId =
+      payload.sub ??
+      payload[
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+      ] ??
+      "";
     const email =
       payload.email ??
       payload[
@@ -73,7 +80,7 @@ export function parseJwtPayload(token: string): JwtPayload | null {
         ? [roleClaim]
         : [];
     const mustResetPassword = payload.must_reset_password === "true" || payload.must_reset_password === true;
-    return { email, roles, mustResetPassword };
+    return { userId, email, roles, mustResetPassword };
   } catch {
     return null;
   }

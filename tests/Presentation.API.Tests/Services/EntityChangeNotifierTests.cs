@@ -1,6 +1,9 @@
+using System.Security.Claims;
+using API.Authentication;
 using API.Hubs;
 using API.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Moq;
 
@@ -10,6 +13,7 @@ public class EntityChangeNotifierTests : IDisposable
 {
 	private readonly Mock<IHubContext<EntityHub, IEntityHubClient>> _hubContextMock;
 	private readonly Mock<IEntityHubClient> _clientMock;
+	private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
 	private readonly EntityChangeNotifier _notifier;
 
 	public EntityChangeNotifierTests()
@@ -24,14 +28,53 @@ public class EntityChangeNotifierTests : IDisposable
 		_hubContextMock = new Mock<IHubContext<EntityHub, IEntityHubClient>>();
 		_hubContextMock.Setup(h => h.Clients).Returns(hubClientsMock.Object);
 
+		_httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns((HttpContext?)null);
+
 		// Use a very long flush interval so the timer never fires during tests
-		_notifier = new EntityChangeNotifier(_hubContextMock.Object, TimeSpan.FromHours(1));
+		_notifier = new EntityChangeNotifier(_hubContextMock.Object, _httpContextAccessorMock.Object, TimeSpan.FromHours(1));
 	}
 
 	public void Dispose()
 	{
 		_notifier.Dispose();
 		GC.SuppressFinalize(this);
+	}
+
+	private static DefaultHttpContext CreateJwtHttpContext(string userId, string? connectionId = null)
+	{
+		var claims = new List<Claim>
+		{
+			new(ClaimTypes.NameIdentifier, userId),
+		};
+		var identity = new ClaimsIdentity(claims, "Bearer");
+		var context = new DefaultHttpContext
+		{
+			User = new ClaimsPrincipal(identity),
+		};
+		if (connectionId is not null)
+		{
+			context.Request.Headers["X-SignalR-Connection-Id"] = connectionId;
+		}
+		return context;
+	}
+
+	private static DefaultHttpContext CreateApiKeyHttpContext(string userId, string? connectionId = null)
+	{
+		var claims = new List<Claim>
+		{
+			new(ClaimTypes.NameIdentifier, userId),
+		};
+		var identity = new ClaimsIdentity(claims, ApiKeyAuthenticationDefaults.AuthenticationScheme);
+		var context = new DefaultHttpContext
+		{
+			User = new ClaimsPrincipal(identity),
+		};
+		if (connectionId is not null)
+		{
+			context.Request.Headers["X-SignalR-Connection-Id"] = connectionId;
+		}
+		return context;
 	}
 
 	[Fact]
@@ -178,7 +221,9 @@ public class EntityChangeNotifierTests : IDisposable
 		hubClientsMock.Setup(c => c.All).Returns(clientMock.Object);
 		Mock<IHubContext<EntityHub, IEntityHubClient>> hubContextMock = new();
 		hubContextMock.Setup(h => h.Clients).Returns(hubClientsMock.Object);
-		var notifier = new EntityChangeNotifier(hubContextMock.Object, TimeSpan.FromHours(1));
+		Mock<IHttpContextAccessor> httpContextAccessorMock = new();
+		httpContextAccessorMock.Setup(a => a.HttpContext).Returns((HttpContext?)null);
+		var notifier = new EntityChangeNotifier(hubContextMock.Object, httpContextAccessorMock.Object, TimeSpan.FromHours(1));
 
 		Guid id = Guid.NewGuid();
 		await notifier.NotifyCreated("receipt", id);
@@ -203,5 +248,114 @@ public class EntityChangeNotifierTests : IDisposable
 
 		// Assert
 		_clientMock.Verify(c => c.EntityChanged(It.IsAny<EntityChangeNotification>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task NotifyCreated_WithJwtContext_SetsOriginFields()
+	{
+		// Arrange
+		var context = CreateJwtHttpContext("user-123", "conn-abc");
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns(context);
+
+		// Act
+		await _notifier.NotifyCreated("receipt", Guid.NewGuid());
+		await _notifier.FlushAsync();
+
+		// Assert
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.UserId == "user-123" &&
+				n.AuthMethod == "jwt" &&
+				n.ConnectionId == "conn-abc")),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task NotifyCreated_WithApiKeyContext_SetsAuthMethodToApikey()
+	{
+		// Arrange
+		var context = CreateApiKeyHttpContext("user-456");
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns(context);
+
+		// Act
+		await _notifier.NotifyCreated("account", Guid.NewGuid());
+		await _notifier.FlushAsync();
+
+		// Assert
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.UserId == "user-456" &&
+				n.AuthMethod == "apikey" &&
+				n.ConnectionId == null)),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task NotifyCreated_WithNoHttpContext_SetsNullOriginFields()
+	{
+		// Arrange — default mock already returns null HttpContext
+
+		// Act
+		await _notifier.NotifyCreated("receipt", Guid.NewGuid());
+		await _notifier.FlushAsync();
+
+		// Assert
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.UserId == null &&
+				n.AuthMethod == null &&
+				n.ConnectionId == null)),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task NotifyCreated_WithUnauthenticatedIdentity_SetsAuthMethodToNull()
+	{
+		// Arrange — HttpContext exists but identity has no AuthenticationType
+		var context = new DefaultHttpContext();
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns(context);
+
+		// Act
+		await _notifier.NotifyCreated("receipt", Guid.NewGuid());
+		await _notifier.FlushAsync();
+
+		// Assert
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.UserId == null &&
+				n.AuthMethod == null)),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task SameEntityAndChange_DifferentOrigin_ProducesSeparateNotifications()
+	{
+		// Arrange — first call with user A
+		var contextA = CreateJwtHttpContext("user-A", "conn-1");
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns(contextA);
+		await _notifier.NotifyCreated("receipt", Guid.NewGuid());
+
+		// Second call with user B
+		var contextB = CreateJwtHttpContext("user-B", "conn-2");
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns(contextB);
+		await _notifier.NotifyCreated("receipt", Guid.NewGuid());
+
+		// Act
+		await _notifier.FlushAsync();
+
+		// Assert — two separate notifications for the same entity/change but different origins
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.EntityType == "receipt" &&
+				n.ChangeType == "created" &&
+				n.UserId == "user-A")),
+			Times.Once);
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.EntityType == "receipt" &&
+				n.ChangeType == "created" &&
+				n.UserId == "user-B")),
+			Times.Once);
+		_clientMock.Verify(c => c.EntityChanged(It.IsAny<EntityChangeNotification>()), Times.Exactly(2));
 	}
 }

@@ -37,7 +37,7 @@ vi.mock("@/components/ShortcutsHelp", () => ({
 }));
 
 const defaultAuth: AuthContextValue = {
-  user: { email: "test@example.com", roles: ["User"], mustResetPassword: false },
+  user: { userId: "test-user-id", email: "test@example.com", roles: ["User"], mustResetPassword: false },
   isLoading: false,
   mustResetPassword: false,
   login: async () => {},
@@ -95,7 +95,7 @@ describe("Layout", () => {
   });
 
   it("shows user email in the header", () => {
-    renderLayout({ user: { email: "admin@test.com", roles: ["Admin"], mustResetPassword: false } });
+    renderLayout({ user: { userId: "admin-id", email: "admin@test.com", roles: ["Admin"], mustResetPassword: false } });
     expect(screen.getByText("admin@test.com")).toBeInTheDocument();
   });
 
@@ -167,13 +167,13 @@ describe("Layout", () => {
   });
 
   it("shows admin nav group when user has Admin role", () => {
-    renderLayout({ user: { email: "admin@test.com", roles: ["Admin"], mustResetPassword: false } });
+    renderLayout({ user: { userId: "admin-id", email: "admin@test.com", roles: ["Admin"], mustResetPassword: false } });
     // Admin group should be rendered in the desktop nav
     expect(screen.getByText("Admin")).toBeInTheDocument();
   });
 
   it("does not show admin nav group for non-admin users", () => {
-    renderLayout({ user: { email: "user@test.com", roles: ["User"], mustResetPassword: false } });
+    renderLayout({ user: { userId: "user-id", email: "user@test.com", roles: ["User"], mustResetPassword: false } });
     expect(screen.queryByText("Admin")).not.toBeInTheDocument();
   });
 

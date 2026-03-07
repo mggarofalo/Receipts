@@ -6,7 +6,7 @@ import { renderWithProviders } from "@/test/test-utils";
 describe("ProtectedRoute", () => {
   it("renders children when user is authenticated", () => {
     renderWithProviders(<ProtectedRoute>Dashboard</ProtectedRoute>, {
-      auth: { user: { email: "user@test.com", roles: ["User"], mustResetPassword: false } },
+      auth: { user: { userId: "user-id", email: "user@test.com", roles: ["User"], mustResetPassword: false } },
     });
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
@@ -29,7 +29,7 @@ describe("ProtectedRoute", () => {
   it("redirects to /change-password when mustResetPassword is true", () => {
     renderWithProviders(<ProtectedRoute>Dashboard</ProtectedRoute>, {
       auth: {
-        user: { email: "user@test.com", roles: ["User"], mustResetPassword: false },
+        user: { userId: "user-id", email: "user@test.com", roles: ["User"], mustResetPassword: false },
         mustResetPassword: true,
       },
     });
