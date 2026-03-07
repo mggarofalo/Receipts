@@ -36,7 +36,8 @@
       "WebSearch",
       "mcp__aspire__*",
       "mcp__linear__*",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "mcp__plugin_linear_linear__*"
     ]
   },
   "enableAllProjectMcpServers": true,
