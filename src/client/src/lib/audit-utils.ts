@@ -46,6 +46,14 @@ export const ACTION_TYPES = [
   "Restored",
 ] as const;
 
+/** Maps display action names to the backend AuditAction enum values used for filtering. */
+export const ACTION_FILTER_VALUES: Record<string, string> = {
+  Created: "Create",
+  Updated: "Update",
+  Deleted: "Delete",
+  Restored: "Restore",
+};
+
 export const AUTH_EVENT_TYPES = [
   "Login",
   "Logout",

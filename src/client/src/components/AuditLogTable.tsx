@@ -120,7 +120,13 @@ function AuditRow({ log }: { log: AuditLog }) {
   );
 }
 
-export function AuditLogTable({ logs, isLoading, sortBy, sortDirection = "desc", onToggleSort }: AuditLogTableProps) {
+export function AuditLogTable({
+  logs,
+  isLoading,
+  sortBy = null,
+  sortDirection = "desc",
+  onToggleSort,
+}: AuditLogTableProps) {
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -146,12 +152,34 @@ export function AuditLogTable({ logs, isLoading, sortBy, sortDirection = "desc",
           <TableRow>
             {onToggleSort ? (
               <>
-                <SortableTableHead column="changedAt" label="Timestamp" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
-                <SortableTableHead column="entityType" label="Entity Type" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
-                <TableHead>Entity ID</TableHead>
-                <SortableTableHead column="action" label="Action" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
-                <TableHead>Changed By</TableHead>
-                <TableHead className="text-center">Changes</TableHead>
+                <SortableTableHead
+                  column="changedAt"
+                  label="Timestamp"
+                  currentSortBy={sortBy}
+                  currentSortDirection={sortDirection}
+                  onToggleSort={onToggleSort}
+                />
+                <SortableTableHead
+                  column="entityType"
+                  label="Entity Type"
+                  currentSortBy={sortBy}
+                  currentSortDirection={sortDirection}
+                  onToggleSort={onToggleSort}
+                />
+                <SortableTableHead
+                  column="entityId"
+                  label="Entity ID"
+                  currentSortBy={sortBy}
+                  currentSortDirection={sortDirection}
+                  onToggleSort={onToggleSort}
+                />
+                <SortableTableHead
+                  column="action"
+                  label="Action"
+                  currentSortBy={sortBy}
+                  currentSortDirection={sortDirection}
+                  onToggleSort={onToggleSort}
+                />
               </>
             ) : (
               <>
@@ -159,10 +187,10 @@ export function AuditLogTable({ logs, isLoading, sortBy, sortDirection = "desc",
                 <TableHead>Entity Type</TableHead>
                 <TableHead>Entity ID</TableHead>
                 <TableHead>Action</TableHead>
-                <TableHead>Changed By</TableHead>
-                <TableHead className="text-center">Changes</TableHead>
               </>
             )}
+            <TableHead>Changed By</TableHead>
+            <TableHead className="text-center">Changes</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

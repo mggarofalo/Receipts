@@ -90,7 +90,7 @@ describe("AuditLog", () => {
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
-  it("passes logs to AuditLogTable", async () => {
+  it("passes server-returned logs to AuditLogTable", async () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
     vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
       data: {
@@ -99,7 +99,7 @@ describe("AuditLog", () => {
             id: "1",
             entityType: "Account",
             entityId: "abc-123",
-            action: "Created",
+            action: "Create",
             changedAt: "2024-01-15T10:00:00Z",
             changedByUserId: "user-1",
             changedByApiKeyId: null,
@@ -127,7 +127,7 @@ describe("AuditLog", () => {
             id: "1",
             entityType: "Account",
             entityId: "abc-123",
-            action: "Created",
+            action: "Create",
             changedAt: "2024-01-15T10:00:00Z",
             changedByUserId: "user-1",
             changedByApiKeyId: null,
@@ -158,7 +158,7 @@ describe("AuditLog", () => {
             id: "1",
             entityType: "Account",
             entityId: "abc-123",
-            action: "Created",
+            action: "Create",
             changedAt: "2024-01-15T10:00:00Z",
             changedByUserId: "user-1",
             changedByApiKeyId: null,
@@ -199,5 +199,40 @@ describe("AuditLog", () => {
     URL.createObjectURL = originalCreateObjectURL;
     URL.revokeObjectURL = originalRevokeObjectURL;
     vi.restoreAllMocks();
+  });
+
+  it("renders entity type filter trigger", () => {
+    renderWithProviders(<AuditLog />);
+    // Radix Select renders trigger buttons; count the combobox elements
+    const triggers = screen.getAllByRole("combobox");
+    expect(triggers.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders DateRangePicker From and To buttons", () => {
+    renderWithProviders(<AuditLog />);
+    const buttons = screen.getAllByRole("button");
+    const fromButton = buttons.find((b) => b.textContent === "From");
+    const toButton = buttons.find((b) => b.textContent === "To");
+    expect(fromButton).toBeDefined();
+    expect(toButton).toBeDefined();
+  });
+
+  it("passes filter params to useRecentAuditLogs", async () => {
+    const { useRecentAuditLogs } = await import("@/hooks/useAudit");
+    const mockFn = vi.mocked(useRecentAuditLogs);
+    mockFn.mockReturnValue(mockQueryResult({
+      data: { data: [], total: 0, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AuditLog />);
+
+    // Verify it was called with filter object (server-side filtering)
+    expect(mockFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        offset: expect.any(Number),
+        limit: expect.any(Number),
+      }),
+    );
   });
 });

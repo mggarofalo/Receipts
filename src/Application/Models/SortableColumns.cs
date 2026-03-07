@@ -11,7 +11,7 @@ public static class SortableColumns
 	public static readonly IReadOnlySet<string> ItemTemplate = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "name" };
 	public static readonly IReadOnlySet<string> Adjustment = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "type", "amount", "description" };
 	public static readonly IReadOnlySet<string> User = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "email", "firstName", "lastName", "createdAt" };
-	public static readonly IReadOnlySet<string> AuditLog = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "changedAt", "entityType", "action" };
+	public static readonly IReadOnlySet<string> AuditLog = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "changedAt", "entityType", "action", "entityId" };
 	public static readonly IReadOnlySet<string> AuthAudit = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "timestamp", "eventType", "success" };
 
 	private static readonly HashSet<string> ValidDirections = new(StringComparer.OrdinalIgnoreCase) { "asc", "desc" };

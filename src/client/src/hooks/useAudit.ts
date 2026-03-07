@@ -31,14 +31,45 @@ export function useEntityAuditHistory(
   });
 }
 
-export function useRecentAuditLogs(
-  offset = 0,
-  limit = 50,
-  sortBy?: string | null,
-  sortDirection?: string | null,
-) {
+export interface AuditLogFilters {
+  offset?: number;
+  limit?: number;
+  sortBy?: string | null;
+  sortDirection?: "asc" | "desc" | null;
+  entityType?: string | null;
+  action?: string | null;
+  search?: string | null;
+  dateFrom?: string | null;
+  dateTo?: string | null;
+}
+
+export function useRecentAuditLogs(filters: AuditLogFilters = {}) {
+  const {
+    offset = 0,
+    limit = 50,
+    sortBy,
+    sortDirection,
+    entityType,
+    action,
+    search,
+    dateFrom,
+    dateTo,
+  } = filters;
+
   return useQuery({
-    queryKey: ["audit", "recent", offset, limit, sortBy, sortDirection],
+    queryKey: [
+      "audit",
+      "recent",
+      offset,
+      limit,
+      sortBy,
+      sortDirection,
+      entityType,
+      action,
+      search,
+      dateFrom,
+      dateTo,
+    ],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/audit/recent", {
         params: {
@@ -46,7 +77,15 @@ export function useRecentAuditLogs(
             offset,
             limit,
             sortBy: sortBy ?? undefined,
-            sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined,
+            sortDirection: (sortDirection ?? undefined) as
+              | "asc"
+              | "desc"
+              | undefined,
+            entityType: entityType ?? undefined,
+            action: action ?? undefined,
+            search: search ?? undefined,
+            dateFrom: dateFrom ?? undefined,
+            dateTo: dateTo ?? undefined,
           },
         },
       });
