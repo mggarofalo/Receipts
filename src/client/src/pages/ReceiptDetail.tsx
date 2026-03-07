@@ -76,9 +76,6 @@ function ReceiptDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {data.receipt.description && (
-                <p className="text-sm">{data.receipt.description}</p>
-              )}
               <p className="text-sm text-muted-foreground">
                 Tax: {formatCurrency(data.receipt.taxAmount)}
               </p>

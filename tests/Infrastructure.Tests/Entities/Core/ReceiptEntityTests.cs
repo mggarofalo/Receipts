@@ -10,7 +10,6 @@ public class ReceiptEntityTests
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
-		string description = "Test Receipt";
 		string location = "Test Store";
 		DateOnly date = DateOnly.FromDateTime(DateTime.Today);
 		decimal taxAmount = 5.00m;
@@ -20,7 +19,6 @@ public class ReceiptEntityTests
 		ReceiptEntity receipt = new()
 		{
 			Id = id,
-			Description = description,
 			Location = location,
 			Date = date,
 			TaxAmount = taxAmount,
@@ -29,7 +27,6 @@ public class ReceiptEntityTests
 
 		// Assert
 		Assert.Equal(id, receipt.Id);
-		Assert.Equal(description, receipt.Description);
 		Assert.Equal(location, receipt.Location);
 		Assert.Equal(date, receipt.Date);
 		Assert.Equal(taxAmount, receipt.TaxAmount);

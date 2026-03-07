@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/form";
 
 const receiptSchema = z.object({
-  description: z.string().optional(),
   location: z.string().min(1, "Location is required"),
   date: z.string().min(1, "Date is required"),
   taxAmount: z.number().min(0, "Tax amount must be non-negative"),
@@ -47,7 +46,6 @@ export function ReceiptForm({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(receiptSchema) as any,
     defaultValues: defaultValues ?? {
-      description: "",
       location: "",
       date: "",
       taxAmount: 0,
@@ -65,20 +63,6 @@ export function ReceiptForm({
               <FormLabel>Location</FormLabel>
               <FormControl>
                 <Input aria-required="true" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description (optional)</FormLabel>
-              <FormControl>
-                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

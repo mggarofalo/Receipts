@@ -11,8 +11,7 @@ public static class ReceiptGenerator
 			Guid.NewGuid(),
 			"Test Location",
 			DateOnly.FromDateTime(DateTime.Now),
-			new Money(10),
-			"Test Description"
+			new Money(10)
 		);
 	}
 

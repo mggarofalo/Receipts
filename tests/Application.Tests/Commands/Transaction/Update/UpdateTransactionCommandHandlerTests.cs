@@ -23,7 +23,7 @@ public class UpdateTransactionCommandHandlerTests
 	private void SetupReceiptData(Guid receiptId, Guid firstTxId, List<Domain.Core.Transaction> existingTransactions)
 	{
 		// Receipt: TaxAmount = $10
-		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10), "desc");
+		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10));
 
 		// Item: qty=1, unitPrice=$5, totalAmount=$5 → Subtotal = $5
 		Domain.Core.ReceiptItem item = new(Guid.NewGuid(), "CODE", "Item", 1, new Money(5), new Money(5), "Cat", "Sub", PricingMode.Quantity);

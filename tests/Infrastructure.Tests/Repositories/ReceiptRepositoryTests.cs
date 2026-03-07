@@ -115,7 +115,6 @@ public class ReceiptRepositoryTests
 		// Modify receipt
 		entities.ForEach(e =>
 		{
-			e.Description = "Updated " + e.Description;
 			e.TaxAmount += 1.0m;
 		});
 

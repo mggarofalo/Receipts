@@ -18,8 +18,7 @@ public class ReceiptMapperTests
 		{
 			Location = "Grocery Store",
 			Date = new DateOnly(2025, 3, 15),
-			TaxAmount = 5.75,
-			Description = "Weekly groceries"
+			TaxAmount = 5.75
 		};
 
 		// Act
@@ -31,27 +30,6 @@ public class ReceiptMapperTests
 		Assert.Equal(new DateOnly(2025, 3, 15), actual.Date);
 		Assert.Equal(5.75m, actual.TaxAmount.Amount);
 		Assert.Equal(Currency.USD, actual.TaxAmount.Currency);
-		Assert.Equal("Weekly groceries", actual.Description);
-	}
-
-	[Fact]
-	public void ToDomain_FromCreateRequest_MapsNullDescription()
-	{
-		// Arrange
-		CreateReceiptRequest request = new()
-		{
-			Location = "Hardware Store",
-			Date = new DateOnly(2025, 1, 10),
-			TaxAmount = 3.25,
-			Description = null
-		};
-
-		// Act
-		Receipt actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Equal(Guid.Empty, actual.Id);
-		Assert.Null(actual.Description);
 	}
 
 	[Fact]
@@ -64,8 +42,7 @@ public class ReceiptMapperTests
 			Id = expectedId,
 			Location = "Updated Store",
 			Date = new DateOnly(2025, 6, 20),
-			TaxAmount = 12.50,
-			Description = "Updated description"
+			TaxAmount = 12.50
 		};
 
 		// Act
@@ -77,29 +54,6 @@ public class ReceiptMapperTests
 		Assert.Equal(new DateOnly(2025, 6, 20), actual.Date);
 		Assert.Equal(12.50m, actual.TaxAmount.Amount);
 		Assert.Equal(Currency.USD, actual.TaxAmount.Currency);
-		Assert.Equal("Updated description", actual.Description);
-	}
-
-	[Fact]
-	public void ToDomain_FromUpdateRequest_MapsNullDescription()
-	{
-		// Arrange
-		Guid expectedId = Guid.NewGuid();
-		UpdateReceiptRequest request = new()
-		{
-			Id = expectedId,
-			Location = "Some Store",
-			Date = new DateOnly(2025, 2, 28),
-			TaxAmount = 0.99,
-			Description = null
-		};
-
-		// Act
-		Receipt actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Equal(expectedId, actual.Id);
-		Assert.Null(actual.Description);
 	}
 
 	[Fact]
@@ -111,8 +65,7 @@ public class ReceiptMapperTests
 			expectedId,
 			"Electronics Store",
 			new DateOnly(2025, 4, 10),
-			new Money(8.99m, Currency.USD),
-			"Monitor purchase"
+			new Money(8.99m, Currency.USD)
 		);
 
 		// Act
@@ -123,27 +76,6 @@ public class ReceiptMapperTests
 		Assert.Equal("Electronics Store", actual.Location);
 		Assert.Equal(new DateOnly(2025, 4, 10), actual.Date);
 		Assert.Equal((double)8.99m, actual.TaxAmount);
-		Assert.Equal("Monitor purchase", actual.Description);
-	}
-
-	[Fact]
-	public void ToResponse_MapsNullDescription()
-	{
-		// Arrange
-		Guid expectedId = Guid.NewGuid();
-		Receipt receipt = new(
-			expectedId,
-			"Office Supply",
-			new DateOnly(2025, 5, 5),
-			new Money(2.50m, Currency.USD)
-		);
-
-		// Act
-		ReceiptResponse actual = _mapper.ToResponse(receipt);
-
-		// Assert
-		Assert.Equal(expectedId, actual.Id);
-		Assert.Null(actual.Description);
 	}
 
 	[Fact]

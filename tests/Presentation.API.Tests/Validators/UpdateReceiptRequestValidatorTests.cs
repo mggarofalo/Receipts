@@ -45,26 +45,6 @@ public class UpdateReceiptRequestValidatorTests
 	}
 
 	[Fact]
-	public void Should_Fail_When_DescriptionExceeds256Characters()
-	{
-		// Arrange
-		UpdateReceiptRequest request = new()
-		{
-			Id = Guid.NewGuid(),
-			Description = new string('a', 257),
-			Location = "Store",
-			Date = DateOnly.FromDateTime(DateTime.Today)
-		};
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == UpdateReceiptRequestValidator.DescriptionMustNotExceed256Characters);
-	}
-
-	[Fact]
 	public void Should_Fail_When_LocationIsEmpty()
 	{
 		// Arrange

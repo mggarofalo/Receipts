@@ -23,8 +23,7 @@ public class ReceiptWithItemsMapperTests
 			receiptId,
 			"Supermarket",
 			new DateOnly(2025, 3, 10),
-			new Money(4.25m, Currency.USD),
-			"Weekly shopping"
+			new Money(4.25m, Currency.USD)
 		);
 
 		ReceiptItem item1 = new(
@@ -64,7 +63,6 @@ public class ReceiptWithItemsMapperTests
 		Assert.Equal("Supermarket", actual.Receipt.Location);
 		Assert.Equal(new DateOnly(2025, 3, 10), actual.Receipt.Date);
 		Assert.Equal((double)4.25m, actual.Receipt.TaxAmount);
-		Assert.Equal("Weekly shopping", actual.Receipt.Description);
 
 		// Assert — Items
 		Assert.Equal(2, actual.Items.Count);
@@ -112,31 +110,5 @@ public class ReceiptWithItemsMapperTests
 		// Assert
 		Assert.Equal(receiptId, actual.Receipt.Id);
 		Assert.Empty(actual.Items);
-	}
-
-	[Fact]
-	public void ToResponse_MapsReceiptWithNullDescription()
-	{
-		// Arrange
-		Guid receiptId = Guid.NewGuid();
-		Receipt receipt = new(
-			receiptId,
-			"No Description Store",
-			new DateOnly(2025, 2, 20),
-			new Money(1.50m, Currency.USD)
-		);
-
-		ReceiptWithItems aggregate = new()
-		{
-			Receipt = receipt,
-			Items = [],
-			Adjustments = []
-		};
-
-		// Act
-		ReceiptWithItemsResponse actual = _mapper.ToResponse(aggregate);
-
-		// Assert
-		Assert.Null(actual.Receipt.Description);
 	}
 }

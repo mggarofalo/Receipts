@@ -16,37 +16,16 @@ describe("accountToOption", () => {
 });
 
 describe("receiptToOption", () => {
-  it("uses description as label when present", () => {
+  it("uses location as label", () => {
     const result = receiptToOption({
       id: "r-1",
-      description: "Groceries",
       location: "Walmart",
       date: "2024-01-15",
     });
     expect(result).toEqual({
       value: "r-1",
-      label: "Groceries",
+      label: "Walmart",
       sublabel: "Walmart — 2024-01-15",
     });
-  });
-
-  it("falls back to location when description is null", () => {
-    const result = receiptToOption({
-      id: "r-2",
-      description: null,
-      location: "Target",
-      date: "2024-02-20",
-    });
-    expect(result.label).toBe("Target");
-  });
-
-  it("falls back to location when description is empty", () => {
-    const result = receiptToOption({
-      id: "r-3",
-      description: "",
-      location: "Costco",
-      date: "2024-03-01",
-    });
-    expect(result.label).toBe("Costco");
   });
 });

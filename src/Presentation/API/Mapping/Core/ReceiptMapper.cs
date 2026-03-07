@@ -19,8 +19,7 @@ public partial class ReceiptMapper
 			Guid.Empty,
 			source.Location,
 			source.Date,
-			new Money((decimal)source.TaxAmount, Currency.USD),
-			source.Description
+			new Money((decimal)source.TaxAmount, Currency.USD)
 		);
 	}
 
@@ -30,8 +29,7 @@ public partial class ReceiptMapper
 			source.Id,
 			source.Location,
 			source.Date,
-			new Money((decimal)source.TaxAmount, Currency.USD),
-			source.Description
+			new Money((decimal)source.TaxAmount, Currency.USD)
 		);
 	}
 

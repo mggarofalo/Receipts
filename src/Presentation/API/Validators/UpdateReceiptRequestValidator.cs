@@ -6,7 +6,6 @@ namespace API.Validators;
 public class UpdateReceiptRequestValidator : AbstractValidator<UpdateReceiptRequest>
 {
 	public const string IdMustNotBeEmpty = "ID must not be empty.";
-	public const string DescriptionMustNotExceed256Characters = "Description must not exceed 256 characters.";
 	public const string LocationMustNotBeEmpty = "Location must not be empty.";
 	public const string LocationMustNotExceed200Characters = "Location must not exceed 200 characters.";
 	public const string DateMustBePriorToCurrentDate = "Date must be prior to the current date";
@@ -16,10 +15,6 @@ public class UpdateReceiptRequestValidator : AbstractValidator<UpdateReceiptRequ
 		RuleFor(x => x.Id)
 			.NotEqual(Guid.Empty)
 			.WithMessage(IdMustNotBeEmpty);
-
-		RuleFor(x => x.Description)
-			.MaximumLength(256)
-			.WithMessage(DescriptionMustNotExceed256Characters);
 
 		RuleFor(x => x.Location)
 			.NotEmpty()
