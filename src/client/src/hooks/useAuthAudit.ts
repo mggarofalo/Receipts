@@ -1,12 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 
-export function useMyAuthAuditLog(count = 50) {
+export function useMyAuthAuditLog(
+  offset = 0,
+  limit = 50,
+  sortBy?: string | null,
+  sortDirection?: string | null,
+) {
   return useQuery({
-    queryKey: ["auth-audit", "me", count],
+    queryKey: ["auth-audit", "me", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/auth/audit/me", {
-        params: { query: { count } },
+        params: {
+          query: {
+            offset,
+            limit,
+            sortBy: sortBy ?? undefined,
+            sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined,
+          },
+        },
       });
       if (error) throw error;
       return data;
@@ -14,12 +26,24 @@ export function useMyAuthAuditLog(count = 50) {
   });
 }
 
-export function useRecentAuthAuditLogs(count = 50) {
+export function useRecentAuthAuditLogs(
+  offset = 0,
+  limit = 50,
+  sortBy?: string | null,
+  sortDirection?: string | null,
+) {
   return useQuery({
-    queryKey: ["auth-audit", "recent", count],
+    queryKey: ["auth-audit", "recent", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/auth/audit/recent", {
-        params: { query: { count } },
+        params: {
+          query: {
+            offset,
+            limit,
+            sortBy: sortBy ?? undefined,
+            sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined,
+          },
+        },
       });
       if (error) throw error;
       return data;
@@ -27,12 +51,24 @@ export function useRecentAuthAuditLogs(count = 50) {
   });
 }
 
-export function useFailedAuthAttempts(count = 50) {
+export function useFailedAuthAttempts(
+  offset = 0,
+  limit = 50,
+  sortBy?: string | null,
+  sortDirection?: string | null,
+) {
   return useQuery({
-    queryKey: ["auth-audit", "failed", count],
+    queryKey: ["auth-audit", "failed", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/auth/audit/failed", {
-        params: { query: { count } },
+        params: {
+          query: {
+            offset,
+            limit,
+            sortBy: sortBy ?? undefined,
+            sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined,
+          },
+        },
       });
       if (error) throw error;
       return data;

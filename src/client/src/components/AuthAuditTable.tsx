@@ -20,11 +20,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SortableTableHead } from "@/components/SortableTableHead";
 
 interface AuthAuditTableProps {
   logs: AuthAuditLog[];
   isLoading: boolean;
   showUsername?: boolean;
+  sortBy?: string | null;
+  sortDirection?: "asc" | "desc";
+  onToggleSort?: (column: string) => void;
 }
 
 function eventBadgeVariant(
@@ -145,6 +149,9 @@ export function AuthAuditTable({
   logs,
   isLoading,
   showUsername = false,
+  sortBy,
+  sortDirection = "desc",
+  onToggleSort,
 }: AuthAuditTableProps) {
   if (isLoading) {
     return (
@@ -169,13 +176,27 @@ export function AuthAuditTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Timestamp</TableHead>
-            <TableHead>Event Type</TableHead>
-            {showUsername && <TableHead>Username</TableHead>}
-            <TableHead>Result</TableHead>
-            <TableHead>IP Address</TableHead>
-            <TableHead>User Agent</TableHead>
-            <TableHead />
+            {onToggleSort ? (
+              <>
+                <SortableTableHead column="timestamp" label="Timestamp" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
+                <SortableTableHead column="eventType" label="Event Type" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
+                {showUsername && <TableHead>Username</TableHead>}
+                <SortableTableHead column="success" label="Result" currentSortBy={sortBy ?? null} currentSortDirection={sortDirection} onToggleSort={onToggleSort} />
+                <TableHead>IP Address</TableHead>
+                <TableHead>User Agent</TableHead>
+                <TableHead />
+              </>
+            ) : (
+              <>
+                <TableHead>Timestamp</TableHead>
+                <TableHead>Event Type</TableHead>
+                {showUsername && <TableHead>Username</TableHead>}
+                <TableHead>Result</TableHead>
+                <TableHead>IP Address</TableHead>
+                <TableHead>User Agent</TableHead>
+                <TableHead />
+              </>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -1,7 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useRecentAuditLogs } from "@/hooks/useAudit";
+import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import type { AuditLog as AuditLogEntry } from "@/lib/audit-utils";
 import {
   ENTITY_TYPES,
@@ -9,6 +11,7 @@ import {
   ACTION_TYPES,
 } from "@/lib/audit-utils";
 import { AuditLogTable } from "@/components/AuditLogTable";
+import { Pagination } from "@/components/Pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -25,8 +28,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-const COUNT_OPTIONS = [50, 100, 200] as const;
 
 function csvField(value: string): string {
   if (value.includes(",") || value.includes('"') || value.includes("\n") || value.includes("\r")) {
@@ -146,17 +147,21 @@ function DateRangePicker({
 
 function AuditLog() {
   usePageTitle("Audit Log");
-  const [count, setCount] = useState<number>(50);
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "changedAt", defaultSortDirection: "desc" });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
   const [search, setSearch] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
-  const { data, isLoading } = useRecentAuditLogs(count);
+  const { data: response, isLoading } = useRecentAuditLogs(offset, limit, sortBy, sortDirection);
+  const serverTotal = response?.total ?? 0;
+
+  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const filtered = useMemo(() => {
-    const logs = (data ?? []) as AuditLogEntry[];
+    const logs = (response?.data ?? []) as AuditLogEntry[];
     const term = search.toLowerCase();
     return logs.filter((log) => {
       if (term && !log.entityId.toLowerCase().includes(term)) return false;
@@ -175,7 +180,7 @@ function AuditLog() {
       }
       return true;
     });
-  }, [data, search, entityTypeFilter, actionFilter, dateFrom, dateTo]);
+  }, [response, search, entityTypeFilter, actionFilter, dateFrom, dateTo]);
 
   return (
     <div className="space-y-4">
@@ -225,21 +230,6 @@ function AuditLog() {
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={String(count)}
-          onValueChange={(v) => setCount(Number(v))}
-        >
-          <SelectTrigger className="w-[100px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {COUNT_OPTIONS.map((c) => (
-              <SelectItem key={c} value={String(c)}>
-                {c} rows
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <DateRangePicker
           from={dateFrom}
           to={dateTo}
@@ -248,7 +238,22 @@ function AuditLog() {
         />
       </div>
 
-      <AuditLogTable logs={filtered} isLoading={isLoading} />
+      <AuditLogTable
+        logs={filtered}
+        isLoading={isLoading}
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onToggleSort={toggleSort}
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={serverTotal}
+        pageSize={pageSize}
+        totalPages={totalPages(serverTotal)}
+        onPageChange={(page) => setPage(page, serverTotal)}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

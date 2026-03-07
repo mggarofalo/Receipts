@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   useMyAuthAuditLog,
   useRecentAuthAuditLogs,
@@ -5,16 +6,35 @@ import {
 } from "@/hooks/useAuthAudit";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { usePermission } from "@/hooks/usePermission";
+import { useServerPagination } from "@/hooks/useServerPagination";
+import { useServerSort } from "@/hooks/useServerSort";
 import type { AuthAuditLog } from "@/lib/audit-utils";
 import { AuthAuditTable } from "@/components/AuthAuditTable";
+import { Pagination } from "@/components/Pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function SecurityLog() {
   usePageTitle("Security Log");
   const { isAdmin } = usePermission();
-  const myLogs = useMyAuthAuditLog(100);
-  const recentLogs = useRecentAuthAuditLogs(100);
-  const failedLogs = useFailedAuthAttempts(100);
+  const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "timestamp", defaultSortDirection: "desc" });
+
+  const myPagination = useServerPagination();
+  const recentPagination = useServerPagination();
+  const failedPagination = useServerPagination();
+
+  const myLogs = useMyAuthAuditLog(myPagination.offset, myPagination.limit, sortBy, sortDirection);
+  const recentLogs = useRecentAuthAuditLogs(recentPagination.offset, recentPagination.limit, sortBy, sortDirection);
+  const failedLogs = useFailedAuthAttempts(failedPagination.offset, failedPagination.limit, sortBy, sortDirection);
+
+  useEffect(() => {
+    myPagination.resetPage();
+    recentPagination.resetPage();
+    failedPagination.resetPage();
+  }, [sortBy, sortDirection, myPagination.resetPage, recentPagination.resetPage, failedPagination.resetPage]);
+
+  const myTotal = myLogs.data?.total ?? 0;
+  const recentTotal = recentLogs.data?.total ?? 0;
+  const failedTotal = failedLogs.data?.total ?? 0;
 
   return (
     <div className="space-y-4">
@@ -31,29 +51,62 @@ function SecurityLog() {
           )}
         </TabsList>
 
-        <TabsContent value="my-activity">
+        <TabsContent value="my-activity" className="space-y-4">
           <AuthAuditTable
-            logs={(myLogs.data ?? []) as AuthAuditLog[]}
+            logs={(myLogs.data?.data ?? []) as AuthAuditLog[]}
             isLoading={myLogs.isLoading}
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+            onToggleSort={toggleSort}
+          />
+          <Pagination
+            currentPage={myPagination.currentPage}
+            totalItems={myTotal}
+            pageSize={myPagination.pageSize}
+            totalPages={myPagination.totalPages(myTotal)}
+            onPageChange={(page) => myPagination.setPage(page, myTotal)}
+            onPageSizeChange={myPagination.setPageSize}
           />
         </TabsContent>
 
         {isAdmin() && (
-          <TabsContent value="all-events">
+          <TabsContent value="all-events" className="space-y-4">
             <AuthAuditTable
-              logs={(recentLogs.data ?? []) as AuthAuditLog[]}
+              logs={(recentLogs.data?.data ?? []) as AuthAuditLog[]}
               isLoading={recentLogs.isLoading}
               showUsername
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onToggleSort={toggleSort}
+            />
+            <Pagination
+              currentPage={recentPagination.currentPage}
+              totalItems={recentTotal}
+              pageSize={recentPagination.pageSize}
+              totalPages={recentPagination.totalPages(recentTotal)}
+              onPageChange={(page) => recentPagination.setPage(page, recentTotal)}
+              onPageSizeChange={recentPagination.setPageSize}
             />
           </TabsContent>
         )}
 
         {isAdmin() && (
-          <TabsContent value="failed-logins">
+          <TabsContent value="failed-logins" className="space-y-4">
             <AuthAuditTable
-              logs={(failedLogs.data ?? []) as AuthAuditLog[]}
+              logs={(failedLogs.data?.data ?? []) as AuthAuditLog[]}
               isLoading={failedLogs.isLoading}
               showUsername
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onToggleSort={toggleSort}
+            />
+            <Pagination
+              currentPage={failedPagination.currentPage}
+              totalItems={failedTotal}
+              pageSize={failedPagination.pageSize}
+              totalPages={failedPagination.totalPages(failedTotal)}
+              onPageChange={(page) => failedPagination.setPage(page, failedTotal)}
+              onPageSizeChange={failedPagination.setPageSize}
             />
           </TabsContent>
         )}
