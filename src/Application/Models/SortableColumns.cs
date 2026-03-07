@@ -10,5 +10,10 @@ public static class SortableColumns
 	public static readonly IReadOnlySet<string> Subcategory = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "name" };
 	public static readonly IReadOnlySet<string> ItemTemplate = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "name" };
 	public static readonly IReadOnlySet<string> Adjustment = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "type", "amount", "description" };
-	public static readonly IReadOnlySet<string> User = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "email", "firstName", "lastName", "role", "createdAt" };
+	public static readonly IReadOnlySet<string> User = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "email", "firstName", "lastName", "createdAt" };
+
+	private static readonly HashSet<string> ValidDirections = new(StringComparer.OrdinalIgnoreCase) { "asc", "desc" };
+
+	public static bool IsValidDirection(string? direction) =>
+		direction is null || ValidDirections.Contains(direction);
 }

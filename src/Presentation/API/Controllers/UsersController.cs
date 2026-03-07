@@ -36,6 +36,11 @@ public class UsersController(
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.User)}");
 		}
 
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
 		SortParams sort = new(sortBy, sortDirection);
 		PagedResult<UserSummary> result = await userService.ListUsersAsync(offset, limit, sort);
 

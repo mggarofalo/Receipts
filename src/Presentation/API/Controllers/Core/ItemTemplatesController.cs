@@ -58,6 +58,11 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ItemTemplate)}");
 		}
 
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllItemTemplatesQuery query = new(offset, limit, sort);
 		PagedResult<ItemTemplate> result = await mediator.Send(query);
@@ -79,6 +84,11 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 		if (sortBy is not null && !SortableColumns.ItemTemplate.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ItemTemplate)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
 		}
 
 		SortParams sort = new(sortBy, sortDirection);

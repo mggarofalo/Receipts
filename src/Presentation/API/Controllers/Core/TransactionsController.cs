@@ -60,6 +60,11 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Transaction)}");
 		}
 
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
 		SortParams sort = new(sortBy, sortDirection);
 
 		if (receiptId.HasValue)
@@ -96,6 +101,11 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		if (sortBy is not null && !SortableColumns.Transaction.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Transaction)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
 		}
 
 		SortParams sort = new(sortBy, sortDirection);

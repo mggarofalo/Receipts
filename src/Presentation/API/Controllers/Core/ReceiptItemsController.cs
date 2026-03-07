@@ -60,6 +60,11 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ReceiptItem)}");
 		}
 
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
 		SortParams sort = new(sortBy, sortDirection);
 
 		if (receiptId.HasValue)
@@ -96,6 +101,11 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		if (sortBy is not null && !SortableColumns.ReceiptItem.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ReceiptItem)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
 		}
 
 		SortParams sort = new(sortBy, sortDirection);

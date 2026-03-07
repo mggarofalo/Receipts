@@ -64,6 +64,11 @@ public class ReceiptsController(
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Receipt)}");
 		}
 
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllReceiptsQuery query = new(offset, limit, sort);
 		PagedResult<Receipt> result = await mediator.Send(query);
@@ -85,6 +90,11 @@ public class ReceiptsController(
 		if (sortBy is not null && !SortableColumns.Receipt.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Receipt)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
 		}
 
 		SortParams sort = new(sortBy, sortDirection);

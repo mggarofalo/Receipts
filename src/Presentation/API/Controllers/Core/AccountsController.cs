@@ -60,6 +60,11 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Account)}");
 		}
 
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllAccountsQuery query = new(offset, limit, sort);
 		PagedResult<Account> result = await mediator.Send(query);
@@ -81,6 +86,11 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		if (sortBy is not null && !SortableColumns.Account.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Account)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
 		}
 
 		SortParams sort = new(sortBy, sortDirection);

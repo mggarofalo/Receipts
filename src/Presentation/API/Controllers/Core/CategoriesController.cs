@@ -60,6 +60,11 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Category)}");
 		}
 
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllCategoriesQuery query = new(offset, limit, sort);
 		PagedResult<Category> result = await mediator.Send(query);
@@ -81,6 +86,11 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 		if (sortBy is not null && !SortableColumns.Category.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Category)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
 		}
 
 		SortParams sort = new(sortBy, sortDirection);
