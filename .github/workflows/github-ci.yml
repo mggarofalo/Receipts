@@ -249,13 +249,13 @@ jobs:
             shared
             ci
             hooks
-          # Allow multiple scopes separated by commas (e.g., "api,client")
-          enableMultipleScopes: true
-          scopeDelimiter: ","
           # Require lowercase subject
           subjectPattern: ^[a-z].*$
           subjectPatternError: |
             The PR title subject must start with a lowercase letter.
             Example: "feat(api): add pagination support"
+          # Skip validation for release-please PRs
+          ignoreLabels: |
+            autorelease: pending
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
