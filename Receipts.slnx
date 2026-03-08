@@ -12,6 +12,7 @@
   </Folder>
   <Folder Name="/src/Tools/">
     <Project Path="src/Tools/DbMigrator/DbMigrator.csproj" />
+    <Project Path="src/Tools/DbSeeder/DbSeeder.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Application.Tests/Application.Tests.csproj" />
