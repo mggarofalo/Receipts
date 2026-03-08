@@ -19,22 +19,14 @@ WORKDIR /src
 
 ARG TARGETARCH
 
-# Copy solution and project files first (layer caching)
-COPY Receipts.slnx Directory.Packages.props Directory.Build.props* ./
+# Copy project files needed for API restore (layer caching)
+COPY Directory.Packages.props Directory.Build.props* ./
 COPY src/Domain/Domain.csproj src/Domain/
 COPY src/Common/Common.csproj src/Common/
 COPY src/Application/Application.csproj src/Application/
 COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
 COPY src/Presentation/API/API.csproj src/Presentation/API/
 COPY src/Receipts.ServiceDefaults/Receipts.ServiceDefaults.csproj src/Receipts.ServiceDefaults/
-COPY src/Receipts.AppHost/Receipts.AppHost.csproj src/Receipts.AppHost/
-COPY src/Tools/DbMigrator/DbMigrator.csproj src/Tools/DbMigrator/
-COPY tests/Domain.Tests/Domain.Tests.csproj tests/Domain.Tests/
-COPY tests/Common.Tests/Common.Tests.csproj tests/Common.Tests/
-COPY tests/Application.Tests/Application.Tests.csproj tests/Application.Tests/
-COPY tests/Infrastructure.Tests/Infrastructure.Tests.csproj tests/Infrastructure.Tests/
-COPY tests/Presentation.API.Tests/Presentation.API.Tests.csproj tests/Presentation.API.Tests/
-COPY tests/SampleData/SampleData.csproj tests/SampleData/
 
 # Copy NuGet config and OpenAPI tooling (needed for restore/build)
 COPY nuget.config* ./
@@ -48,7 +40,7 @@ RUN case ${TARGETARCH} in \
       arm)   DOTNET_ARCH=arm ;; \
       *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac && \
-    dotnet restore Receipts.slnx -r linux-${DOTNET_ARCH} -p:PublishReadyToRun=true
+    dotnet restore src/Presentation/API/API.csproj -r linux-${DOTNET_ARCH} -p:PublishReadyToRun=true
 
 # Copy remaining source
 COPY src/ src/
