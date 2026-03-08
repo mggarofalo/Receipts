@@ -172,6 +172,25 @@ jobs:
             exit 1
           fi
 
+  docker-build:
+    name: Docker Build Check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha,scope=docker-build-check
+          cache-to: type=gha,mode=min,scope=docker-build-check
+
   api-compat:
     name: API Breaking Changes
     runs-on: ubuntu-latest
