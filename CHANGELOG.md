@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/mggarofalo/Receipts/compare/v0.1.1...v0.1.2) (2026-03-08)
+
+
+### Bug Fixes
+
+* **ci:** use QEMU for ARM64 Docker builds instead of native ARM runner ([4154c9d](https://github.com/mggarofalo/Receipts/commit/4154c9df92c1038ae224622afa1f62a3025049b6))
+
 ## [0.1.1](https://github.com/mggarofalo/Receipts/compare/v0.1.0...v0.1.1) (2026-03-08)
 
 
