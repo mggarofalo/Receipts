@@ -70,7 +70,14 @@ Two-tier hierarchical model: milestone branches for CI/PR gating, issue branches
 
 | Types | `feat`, `fix`, `docs`, `refactor`, `test`, `chore` |
 |-------|-----------------------------------------------------|
-| Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `common`, `shared` |
+| Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `infra`, `common`, `shared`, `ci`, `hooks` |
+
+Enforced by:
+- **Local:** `commit-msg` hook runs `commitlint` on every commit (see `.githooks/commit-msg`)
+- **CI:** PR title validation via `amannn/action-semantic-pull-request` (squash-merge means the PR title becomes the commit on `main`)
+- **Config:** `commitlint.config.mjs` at the repo root defines allowed types, scopes, and header length (100 chars max)
+
+Multiple scopes are allowed with a comma separator (e.g., `feat(api,client): add pagination`).
 
 ### OpenAPI & API Guidelines
 
@@ -87,9 +94,15 @@ dotnet run --project src/Presentation/API/API.csproj           # Run the API
 dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructure.csproj --startup-project src/Presentation/API/API.csproj
 ```
 
-## Pre-commit Hooks
+## Git Hooks
 
 Native Git hooks via `core.hooksPath`. Install automatically on `dotnet restore` (or `bash .githooks/setup.sh`).
+
+### `commit-msg` hook
+
+Validates the commit message against the Conventional Commits convention using `commitlint`. Runs after you write the commit message but before the commit is finalized.
+
+### `pre-commit` hook
 
 **Pipeline (runs on every `git commit`):**
 0. `bash scripts/worktree-setup.sh --check` — prerequisite verification
