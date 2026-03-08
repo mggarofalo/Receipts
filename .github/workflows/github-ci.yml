@@ -5,6 +5,9 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+    branches: ["main"]
 
 env:
   DOTNET_VERSION: "10.0.x"
@@ -16,6 +19,7 @@ jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request_target'
     permissions:
       pull-requests: write
 
@@ -78,6 +82,7 @@ jobs:
   frontend-test:
     name: Frontend Test & Coverage
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request_target'
     permissions:
       pull-requests: write
 
@@ -126,6 +131,7 @@ jobs:
   lint:
     name: Code Formatting
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request_target'
 
     steps:
       - uses: actions/checkout@v4
@@ -152,6 +158,7 @@ jobs:
   security:
     name: Vulnerability Scan
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request_target'
     steps:
       - uses: actions/checkout@v4
 
@@ -211,3 +218,44 @@ jobs:
 
       - name: Check for breaking API changes
         run: node scripts/check-breaking.mjs origin/${{ github.base_ref }}
+
+  pr-title:
+    name: PR Title (Conventional Commits)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+    permissions:
+      pull-requests: read
+
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        with:
+          # Types allowed by the project's Conventional Commits convention
+          types: |
+            feat
+            fix
+            docs
+            refactor
+            test
+            chore
+          # Scopes allowed by the project (see AGENTS.md § Commit Convention)
+          scopes: |
+            api
+            client
+            domain
+            application
+            infrastructure
+            infra
+            common
+            shared
+            ci
+            hooks
+          # Allow multiple scopes separated by commas (e.g., "api,client")
+          enableMultipleScopes: true
+          scopeDelimiter: ","
+          # Require lowercase subject
+          subjectPattern: ^[a-z].*$
+          subjectPatternError: |
+            The PR title subject must start with a lowercase letter.
+            Example: "feat(api): add pagination support"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

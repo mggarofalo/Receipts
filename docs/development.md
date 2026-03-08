@@ -104,7 +104,26 @@ dotnet test Receipts.slnx
 dotnet test tests/Application.Tests/Application.Tests.csproj
 ```
 
-## Pre-commit Hooks
+## Git Hooks
+
+Git hooks are installed automatically by `dotnet restore` (or `bash .githooks/setup.sh`). Two hooks run on every commit:
+
+### `commit-msg` hook
+
+Validates your commit message follows [Conventional Commits](https://www.conventionalcommits.org/) format using [commitlint](https://commitlint.js.org/). Invalid messages are rejected before the commit is created.
+
+Format: `<type>(<scope>): <description>`
+
+| Types | `feat`, `fix`, `docs`, `refactor`, `test`, `chore` |
+|-------|-----------------------------------------------------|
+| Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `infra`, `common`, `shared`, `ci`, `hooks` |
+
+Examples:
+- `feat(api): add pagination to receipts endpoint`
+- `fix(client): prevent infinite re-render in TransactionForm`
+- `chore: update dependencies`
+
+### `pre-commit` hook
 
 Every `git commit` runs the full quality pipeline automatically:
 
