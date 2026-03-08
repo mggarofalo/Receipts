@@ -76,6 +76,11 @@ public class AuditController(IAuditService auditService) : ControllerBase
 		[FromQuery] int limit = 50,
 		[FromQuery] string? sortBy = null,
 		[FromQuery] string? sortDirection = null,
+		[FromQuery] string? entityType = null,
+		[FromQuery] string? action = null,
+		[FromQuery] string? search = null,
+		[FromQuery] DateTimeOffset? dateFrom = null,
+		[FromQuery] DateTimeOffset? dateTo = null,
 		CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
@@ -99,7 +104,7 @@ public class AuditController(IAuditService auditService) : ControllerBase
 		}
 
 		SortParams sort = new(sortBy, sortDirection);
-		PagedResult<AuditLogDto> result = await auditService.GetRecentAsync(offset, limit, sort, cancellationToken);
+		PagedResult<AuditLogDto> result = await auditService.GetRecentAsync(offset, limit, sort, entityType, action, search, dateFrom, dateTo, cancellationToken);
 		return TypedResults.Ok(ToListResponse(result));
 	}
 

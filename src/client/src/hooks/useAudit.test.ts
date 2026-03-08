@@ -84,8 +84,8 @@ describe("useEntityAuditHistory", () => {
 
 describe("useRecentAuditLogs", () => {
   it("fetches recent audit logs with default params", async () => {
-    const mockLogs = [{ id: "a1", action: "Updated" }];
-    (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
+    const mockResponse = { data: [{ id: "a1", action: "Updated" }], total: 1, offset: 0, limit: 50 };
+    (client.GET as Mock).mockResolvedValue({ data: mockResponse, error: null });
 
     const { result } = renderHook(() => useRecentAuditLogs(), {
       wrapper: createWrapper(),
@@ -100,40 +100,35 @@ describe("useRecentAuditLogs", () => {
           limit: 50,
           sortBy: undefined,
           sortDirection: undefined,
+          entityType: undefined,
+          action: undefined,
+          search: undefined,
+          dateFrom: undefined,
+          dateTo: undefined,
         },
       },
     });
-    expect(result.current.data).toEqual(mockLogs);
+    expect(result.current.data).toEqual(mockResponse);
   });
 
-  it("fetches recent audit logs with custom offset and limit", async () => {
-    const mockLogs = [{ id: "a1" }];
-    (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
-
-    const { result } = renderHook(() => useRecentAuditLogs(25, 10), {
-      wrapper: createWrapper(),
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    expect(client.GET).toHaveBeenCalledWith("/api/audit/recent", {
-      params: {
-        query: {
-          offset: 25,
-          limit: 10,
-          sortBy: undefined,
-          sortDirection: undefined,
-        },
-      },
-    });
-  });
-
-  it("fetches recent audit logs with sort params", async () => {
-    (client.GET as Mock).mockResolvedValue({ data: [], error: null });
+  it("fetches recent audit logs with custom filters", async () => {
+    const mockResponse = { data: [{ id: "a1" }], total: 1, offset: 0, limit: 25 };
+    (client.GET as Mock).mockResolvedValue({ data: mockResponse, error: null });
 
     const { result } = renderHook(
-      () => useRecentAuditLogs(0, 50, "changedAt", "desc"),
-      { wrapper: createWrapper() },
+      () =>
+        useRecentAuditLogs({
+          offset: 10,
+          limit: 25,
+          sortBy: "changedAt",
+          sortDirection: "desc",
+          entityType: "Account",
+          action: "Create",
+          search: "abc",
+        }),
+      {
+        wrapper: createWrapper(),
+      },
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -141,11 +136,49 @@ describe("useRecentAuditLogs", () => {
     expect(client.GET).toHaveBeenCalledWith("/api/audit/recent", {
       params: {
         query: {
-          offset: 0,
-          limit: 50,
+          offset: 10,
+          limit: 25,
           sortBy: "changedAt",
           sortDirection: "desc",
+          entityType: "Account",
+          action: "Create",
+          search: "abc",
+          dateFrom: undefined,
+          dateTo: undefined,
         },
+      },
+    });
+  });
+
+  it("converts null filter values to undefined", async () => {
+    const mockResponse = { data: [], total: 0, offset: 0, limit: 50 };
+    (client.GET as Mock).mockResolvedValue({ data: mockResponse, error: null });
+
+    const { result } = renderHook(
+      () =>
+        useRecentAuditLogs({
+          entityType: null,
+          action: null,
+          search: null,
+          dateFrom: null,
+          dateTo: null,
+        }),
+      {
+        wrapper: createWrapper(),
+      },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(client.GET).toHaveBeenCalledWith("/api/audit/recent", {
+      params: {
+        query: expect.objectContaining({
+          entityType: undefined,
+          action: undefined,
+          search: undefined,
+          dateFrom: undefined,
+          dateTo: undefined,
+        }),
       },
     });
   });

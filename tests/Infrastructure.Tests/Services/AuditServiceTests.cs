@@ -60,7 +60,7 @@ public class AuditServiceTests
 	}
 
 	[Fact]
-	public async Task GetRecentAsync_ReturnsPaginatedResults_OrderedByChangedAtDesc()
+	public async Task GetRecentAsync_ReturnsPagedResults_OrderedByChangedAtDesc()
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
@@ -94,7 +94,119 @@ public class AuditServiceTests
 	}
 
 	[Fact]
-	public async Task GetRecentAsync_Offset_SkipsRecords()
+	public async Task GetRecentAsync_FiltersBy_EntityType()
+	{
+		// Arrange
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
+
+		AuditLogEntity accountLog = AuditLogEntityGenerator.Generate(entityType: "Account");
+		AuditLogEntity receiptLog = AuditLogEntityGenerator.Generate(entityType: "Receipt");
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.AuditLogs.AddRangeAsync(accountLog, receiptLog);
+			await context.SaveChangesAsync();
+		}
+
+		AuditService service = new(contextFactory);
+
+		// Act
+		PagedResult<AuditLogDto> result = await service.GetRecentAsync(0, 50, DefaultSort, entityType: "Account");
+
+		// Assert
+		result.Data.Should().HaveCount(1);
+		result.Data[0].EntityType.Should().Be("Account");
+		result.Total.Should().Be(1);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetRecentAsync_FiltersBy_Action()
+	{
+		// Arrange
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
+
+		AuditLogEntity createLog = AuditLogEntityGenerator.Generate(action: AuditAction.Create);
+		AuditLogEntity updateLog = AuditLogEntityGenerator.Generate(action: AuditAction.Update);
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.AuditLogs.AddRangeAsync(createLog, updateLog);
+			await context.SaveChangesAsync();
+		}
+
+		AuditService service = new(contextFactory);
+
+		// Act
+		PagedResult<AuditLogDto> result = await service.GetRecentAsync(0, 50, DefaultSort, action: "Create");
+
+		// Assert
+		result.Data.Should().HaveCount(1);
+		result.Data[0].Action.Should().Be("Create");
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetRecentAsync_FiltersBy_Search()
+	{
+		// Arrange
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
+
+		AuditLogEntity matchLog = AuditLogEntityGenerator.Generate(entityId: "abc-123-def");
+		AuditLogEntity otherLog = AuditLogEntityGenerator.Generate(entityId: "xyz-789-ghi");
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.AuditLogs.AddRangeAsync(matchLog, otherLog);
+			await context.SaveChangesAsync();
+		}
+
+		AuditService service = new(contextFactory);
+
+		// Act
+		PagedResult<AuditLogDto> result = await service.GetRecentAsync(0, 50, DefaultSort, search: "abc-123");
+
+		// Assert
+		result.Data.Should().HaveCount(1);
+		result.Data[0].EntityId.Should().Contain("abc-123");
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetRecentAsync_FiltersBy_DateRange()
+	{
+		// Arrange
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
+
+		AuditLogEntity oldLog = AuditLogEntityGenerator.Generate();
+		oldLog.ChangedAt = DateTimeOffset.UtcNow.AddDays(-10);
+
+		AuditLogEntity recentLog = AuditLogEntityGenerator.Generate();
+		recentLog.ChangedAt = DateTimeOffset.UtcNow.AddDays(-1);
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.AuditLogs.AddRangeAsync(oldLog, recentLog);
+			await context.SaveChangesAsync();
+		}
+
+		AuditService service = new(contextFactory);
+
+		// Act
+		PagedResult<AuditLogDto> result = await service.GetRecentAsync(0, 50, DefaultSort, dateFrom: DateTimeOffset.UtcNow.AddDays(-3));
+
+		// Assert
+		result.Data.Should().HaveCount(1);
+		result.Total.Should().Be(1);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetRecentAsync_Paginates_WithOffset()
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
@@ -103,8 +215,9 @@ public class AuditServiceTests
 		{
 			AuditLogEntity log = AuditLogEntityGenerator.Generate();
 			log.ChangedAt = DateTimeOffset.UtcNow.AddMinutes(-i);
+
 			await using ApplicationDbContext context = contextFactory.CreateDbContext();
-			context.AuditLogs.Add(log);
+			await context.AuditLogs.AddAsync(log);
 			await context.SaveChangesAsync();
 		}
 
@@ -117,6 +230,7 @@ public class AuditServiceTests
 		results.Data.Should().HaveCount(2);
 		results.Total.Should().Be(5);
 		results.Offset.Should().Be(2);
+		results.Limit.Should().Be(2);
 
 		contextFactory.ResetDatabase();
 	}

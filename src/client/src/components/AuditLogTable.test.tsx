@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { AuditLogTable } from "./AuditLogTable";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -49,7 +49,7 @@ describe("AuditLogTable", () => {
     expect(screen.getByText("No audit log entries found.")).toBeInTheDocument();
   });
 
-  it("renders table headers", () => {
+  it("renders table headers without sort when onToggleSort is not provided", () => {
     renderWithTooltip(
       <AuditLogTable logs={mockLogs} isLoading={false} />,
     );
@@ -59,6 +59,23 @@ describe("AuditLogTable", () => {
     expect(screen.getByText("Action")).toBeInTheDocument();
     expect(screen.getByText("Changed By")).toBeInTheDocument();
     expect(screen.getByText("Changes")).toBeInTheDocument();
+  });
+
+  it("renders sortable table headers when onToggleSort is provided", () => {
+    const toggleSort = vi.fn();
+    renderWithTooltip(
+      <AuditLogTable
+        logs={mockLogs}
+        isLoading={false}
+        sortBy="changedAt"
+        sortDirection="desc"
+        onToggleSort={toggleSort}
+      />,
+    );
+    expect(screen.getByText("Timestamp")).toBeInTheDocument();
+    expect(screen.getByText("Entity Type")).toBeInTheDocument();
+    expect(screen.getByText("Entity ID")).toBeInTheDocument();
+    expect(screen.getByText("Action")).toBeInTheDocument();
   });
 
   it("renders rows for each audit log entry", () => {

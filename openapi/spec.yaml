@@ -1989,7 +1989,7 @@ paths:
     get:
       operationId: GetRecentAuditLogs
       tags: [Audit]
-      summary: Get recent audit log entries
+      summary: Get recent audit log entries with optional filtering
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -1998,6 +1998,38 @@ paths:
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/SortBy"
         - $ref: "#/components/parameters/SortDirection"
+        - name: entityType
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by entity type (e.g. Account, Receipt)
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by action type (e.g. Created, Updated, Deleted, Restored)
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search by entity ID (partial match)
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Filter entries from this date (inclusive)
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Filter entries up to this date (inclusive, end of day)
       responses:
         "200":
           description: OK

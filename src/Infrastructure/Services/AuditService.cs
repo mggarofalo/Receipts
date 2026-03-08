@@ -14,6 +14,7 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> contextFactory
 		["changedAt"] = a => a.ChangedAt,
 		["entityType"] = a => a.EntityType,
 		["action"] = a => a.Action,
+		["entityId"] = a => a.EntityId,
 	};
 
 	private static readonly Expression<Func<AuditLogEntity, object>> DefaultSort = a => a.ChangedAt;
@@ -37,11 +38,38 @@ public class AuditService(IDbContextFactory<ApplicationDbContext> contextFactory
 		return new PagedResult<AuditLogDto>(data, total, offset, limit);
 	}
 
-	public async Task<PagedResult<AuditLogDto>> GetRecentAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken = default)
+	public async Task<PagedResult<AuditLogDto>> GetRecentAsync(int offset, int limit, SortParams sort, string? entityType = null, string? action = null, string? search = null, DateTimeOffset? dateFrom = null, DateTimeOffset? dateTo = null, CancellationToken cancellationToken = default)
 	{
 		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-		IQueryable<AuditLogEntity> query = context.AuditLogs;
+		IQueryable<AuditLogEntity> query = context.AuditLogs.AsQueryable();
+
+		if (!string.IsNullOrWhiteSpace(entityType))
+		{
+			query = query.Where(a => a.EntityType == entityType);
+		}
+
+		if (!string.IsNullOrWhiteSpace(action) && Enum.TryParse<AuditAction>(action, ignoreCase: true, out AuditAction parsedAction))
+		{
+			query = query.Where(a => a.Action == parsedAction);
+		}
+
+		if (!string.IsNullOrWhiteSpace(search))
+		{
+			query = query.Where(a => a.EntityId.Contains(search));
+		}
+
+		if (dateFrom.HasValue)
+		{
+			query = query.Where(a => a.ChangedAt >= dateFrom.Value);
+		}
+
+		if (dateTo.HasValue)
+		{
+			// Include the entire end day by moving to start of next day
+			DateTimeOffset endOfDay = new DateTimeOffset(dateTo.Value.Date.AddDays(1), dateTo.Value.Offset);
+			query = query.Where(a => a.ChangedAt < endOfDay);
+		}
 
 		int total = await query.CountAsync(cancellationToken);
 
