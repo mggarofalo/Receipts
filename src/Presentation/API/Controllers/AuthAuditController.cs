@@ -24,6 +24,16 @@ public class AuthAuditController(IAuthAuditService authAuditService) : Controlle
 		[FromQuery] string? sortDirection = null,
 		CancellationToken cancellationToken = default)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be non-negative");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		if (userId is null)
 		{
@@ -53,6 +63,16 @@ public class AuthAuditController(IAuthAuditService authAuditService) : Controlle
 		[FromQuery] string? sortDirection = null,
 		CancellationToken cancellationToken = default)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be non-negative");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.AuthAudit.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.AuthAudit)}");
@@ -76,6 +96,16 @@ public class AuthAuditController(IAuthAuditService authAuditService) : Controlle
 		[FromQuery] string? sortDirection = null,
 		CancellationToken cancellationToken = default)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be non-negative");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.AuthAudit.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.AuthAudit)}");

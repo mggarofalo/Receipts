@@ -55,6 +55,16 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[EndpointSummary("Get all categories")]
 	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetAllCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.Category.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Category)}");
@@ -83,6 +93,16 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[EndpointDescription("Returns all categories that have been soft-deleted.")]
 	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetDeletedCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.Category.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Category)}");

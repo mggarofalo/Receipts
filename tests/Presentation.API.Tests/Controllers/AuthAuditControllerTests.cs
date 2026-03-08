@@ -59,6 +59,31 @@ public class AuthAuditControllerTests
 	}
 
 	[Fact]
+	public async Task GetMyAuditLog_ReturnsBadRequest_WhenOffsetIsNegative()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>, UnauthorizedHttpResult> result = await _controller.GetMyAuditLog(-1, 50, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("offset must be non-negative");
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	[InlineData(501)]
+	public async Task GetMyAuditLog_ReturnsBadRequest_WhenLimitIsOutOfRange(int limit)
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>, UnauthorizedHttpResult> result = await _controller.GetMyAuditLog(0, limit, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Fact]
 	public async Task GetRecent_ReturnsOk_WithRecentAuthEvents()
 	{
 		// Arrange
@@ -82,6 +107,31 @@ public class AuthAuditControllerTests
 	}
 
 	[Fact]
+	public async Task GetRecent_ReturnsBadRequest_WhenOffsetIsNegative()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>> result = await _controller.GetRecent(-1, 50, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("offset must be non-negative");
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	[InlineData(501)]
+	public async Task GetRecent_ReturnsBadRequest_WhenLimitIsOutOfRange(int limit)
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>> result = await _controller.GetRecent(0, limit, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Fact]
 	public async Task GetFailed_ReturnsOk_WithFailedAttempts()
 	{
 		// Arrange
@@ -102,6 +152,31 @@ public class AuthAuditControllerTests
 		Ok<GeneratedDtos.AuthAuditListResponse> okResult = Assert.IsType<Ok<GeneratedDtos.AuthAuditListResponse>>(result.Result);
 		okResult.Value!.Data.Should().HaveCount(1);
 		okResult.Value.Data.First().Success.Should().BeFalse();
+	}
+
+	[Fact]
+	public async Task GetFailed_ReturnsBadRequest_WhenOffsetIsNegative()
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>> result = await _controller.GetFailed(-1, 50, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("offset must be non-negative");
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	[InlineData(501)]
+	public async Task GetFailed_ReturnsBadRequest_WhenLimitIsOutOfRange(int limit)
+	{
+		// Act
+		Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>> result = await _controller.GetFailed(0, limit, null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequest.Value.Should().Be("limit must be between 1 and 500");
 	}
 
 	[Fact]
@@ -179,6 +254,22 @@ public class AuthAuditControllerTests
 		// Assert
 		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
 		badRequest.Value.Should().Contain("Invalid sortDirection");
+	}
+
+	[Fact]
+	public async Task GetMyAuditLog_ReturnsUnauthorized_WhenNoUserId()
+	{
+		// Arrange - no claims set up (default anonymous context)
+		_controller.ControllerContext = new ControllerContext
+		{
+			HttpContext = new DefaultHttpContext()
+		};
+
+		// Act
+		Results<Ok<GeneratedDtos.AuthAuditListResponse>, BadRequest<string>, UnauthorizedHttpResult> result = await _controller.GetMyAuditLog(0, 50, null, null, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<UnauthorizedHttpResult>(result.Result);
 	}
 
 	[Fact]

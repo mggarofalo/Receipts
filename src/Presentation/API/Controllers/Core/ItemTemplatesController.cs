@@ -53,6 +53,16 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[EndpointSummary("Get all item templates")]
 	public async Task<Results<Ok<ItemTemplateListResponse>, BadRequest<string>>> GetAllItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.ItemTemplate.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ItemTemplate)}");
@@ -81,6 +91,16 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[EndpointDescription("Returns all item templates that have been soft-deleted.")]
 	public async Task<Results<Ok<ItemTemplateListResponse>, BadRequest<string>>> GetDeletedItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.ItemTemplate.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.ItemTemplate)}");

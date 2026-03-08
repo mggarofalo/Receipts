@@ -119,6 +119,60 @@ public class TransactionsControllerTests
 		actualControllerReturn.Limit.Should().Be(50);
 	}
 
+	[Theory]
+	[InlineData(-1, 50)]
+	[InlineData(-100, 50)]
+	public async Task GetAllTransactions_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
+	{
+		// Act
+		Results<Ok<TransactionListResponse>, BadRequest<string>> result = await _controller.GetAllTransactions(null, offset, limit, null, null);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("offset must be >= 0");
+	}
+
+	[Theory]
+	[InlineData(0, 0)]
+	[InlineData(0, -1)]
+	[InlineData(0, 501)]
+	public async Task GetAllTransactions_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
+	{
+		// Act
+		Results<Ok<TransactionListResponse>, BadRequest<string>> result = await _controller.GetAllTransactions(null, offset, limit, null, null);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Theory]
+	[InlineData(-1, 50)]
+	[InlineData(-100, 50)]
+	public async Task GetDeletedTransactions_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
+	{
+		// Act
+		Results<Ok<TransactionListResponse>, BadRequest<string>> result = await _controller.GetDeletedTransactions(offset, limit, null, null);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("offset must be >= 0");
+	}
+
+	[Theory]
+	[InlineData(0, 0)]
+	[InlineData(0, -1)]
+	[InlineData(0, 501)]
+	public async Task GetDeletedTransactions_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
+	{
+		// Act
+		Results<Ok<TransactionListResponse>, BadRequest<string>> result = await _controller.GetDeletedTransactions(offset, limit, null, null);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
 	[Fact]
 	public async Task GetAllTransactions_ThrowsException_WhenMediatorFails()
 	{

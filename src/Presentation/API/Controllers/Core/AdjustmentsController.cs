@@ -53,6 +53,16 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[EndpointSummary("Get all adjustments")]
 	public async Task<Results<Ok<AdjustmentListResponse>, BadRequest<string>>> GetAllAdjustments([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.Adjustment.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Adjustment)}");
@@ -96,6 +106,16 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[EndpointDescription("Returns all adjustments that have been soft-deleted.")]
 	public async Task<Results<Ok<AdjustmentListResponse>, BadRequest<string>>> GetDeletedAdjustments([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
 		if (sortBy is not null && !SortableColumns.Adjustment.Contains(sortBy))
 		{
 			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Adjustment)}");
