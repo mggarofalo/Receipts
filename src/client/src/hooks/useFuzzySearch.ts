@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import type { FuseSearchConfig, SearchResult } from "@/lib/search";
 import { createFuseInstance, addSearchHistoryEntry } from "@/lib/search";
 
@@ -53,10 +53,10 @@ export function useFuzzySearch<T>({
 
   const isSearching = search !== debouncedSearch;
 
-  function clearSearch() {
+  const clearSearch = useCallback(() => {
     setSearch("");
     setDebouncedSearch("");
-  }
+  }, []);
 
   return {
     search,
