@@ -1,6 +1,13 @@
 export default {
   extends: ["@commitlint/config-conventional"],
   rules: {
+    // Allowed types matching the project's Conventional Commits convention
+    // (see AGENTS.md § Commit Convention)
+    "type-enum": [
+      2,
+      "always",
+      ["feat", "fix", "docs", "refactor", "test", "chore"],
+    ],
     // Allowed scopes matching the project's Conventional Commits convention
     // (see AGENTS.md § Commit Convention)
     "scope-enum": [
