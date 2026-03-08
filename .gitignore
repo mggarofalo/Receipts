@@ -295,8 +295,13 @@ __pycache__/
 openapi/generated/
 !openapi/generated/.gitkeep
 
+# NSwag-generated C# DTOs (regenerated from openapi/spec.yaml on dotnet build)
+src/Presentation/API/Generated/
+!src/Presentation/API/Generated/.gitkeep
+
 # Client generated types (regenerated from openapi/spec.yaml on dev/build)
 src/client/src/generated/
+src/client/src/lib/api-types.ts
 
 # Client test coverage output
 src/client/coverage/

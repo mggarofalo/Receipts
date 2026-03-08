@@ -26,6 +26,7 @@ When working in a git worktree (e.g., created by Claude Code's `/worktree` or `g
 | Git history, refs, branches | `node_modules/` (root and `src/client/`) |
 | Hooks config (`core.hooksPath`) | `bin/` / `obj/` (.NET build output) |
 | | `openapi/generated/` |
+| | `src/Presentation/API/Generated/*.g.cs` |
 | | `src/client/src/generated/` |
 
 ### Bootstrap commands
@@ -36,7 +37,7 @@ Run these in order (or use `scripts/worktree-setup.sh` to run them all):
 dotnet restore Receipts.slnx          # NuGet packages + configures git hooks
 npm install                            # Root tooling (Spectral, js-yaml, cross-env)
 cd src/client && npm install && cd -   # React client dependencies
-dotnet build Receipts.slnx             # Compiles + generates openapi/generated/API.json
+dotnet build Receipts.slnx             # Compiles + generates DTOs and openapi/generated/API.json
 cd src/client && npm run generate:types && cd -  # TypeScript types from OpenAPI spec
 ```
 
@@ -94,14 +95,13 @@ Native Git hooks via `core.hooksPath`. Install automatically on `dotnet restore`
 0. `bash scripts/worktree-setup.sh --check` — prerequisite verification
 1. `npx spectral lint openapi/spec.yaml` — OpenAPI spec linting
 2. `dotnet format --verify-no-changes` — code formatting check
-3. `dotnet build -p:TreatWarningsAsErrors=true` — build (also generates `openapi/generated/API.json`)
-4. `git diff --exit-code -- src/Presentation/API/Generated/` — DTO staleness check
-5. `node scripts/check-drift.mjs` — semantic drift detection
-6. `dotnet test --no-build` — run all tests
-7. `npx tsc --noEmit` — TypeScript type checking
-8. `npx eslint src/client/src` — React client linting
+3. `dotnet build -p:TreatWarningsAsErrors=true` — build (also regenerates DTOs and `openapi/generated/API.json`)
+4. `node scripts/check-drift.mjs` — semantic drift detection
+5. `dotnet test --no-build` — run all tests
+6. `npx tsc --noEmit` — TypeScript type checking
+7. `npx eslint src/client/src` — React client linting
 
-**Quick mode** runs only steps 0, 2, 7, 8 (prerequisites, format, tsc, eslint):
+**Quick mode** runs only steps 0, 2, 6, 7 (prerequisites, format, tsc, eslint):
 ```bash
 PRECOMMIT_QUICK=1 git commit -m "message"
 ```

@@ -17,7 +17,7 @@
 - Don't use `[UseMapper(typeof(...))]` — instantiate mapper dependencies as fields and call explicitly
 - Use `[MapperIgnoreTarget(nameof(XResponse.AdditionalProperties))]` on generated DTO mappings
 - For aggregates with value objects: create manual mapping methods that delegate to Core mappers
-- Generated DTOs live in `src/Presentation/API/Generated/Dtos.g.cs` (namespace `API.Generated.Dtos`)
+- Generated DTOs live in `src/Presentation/API/Generated/` (namespace `API.Generated.Dtos`) — these files are gitignored and regenerated from `openapi/spec.yaml` on every `dotnet build`
 - Naming: `CreateXRequest`, `UpdateXRequest`, `XResponse`
 
 ## EF Core Query Guidelines

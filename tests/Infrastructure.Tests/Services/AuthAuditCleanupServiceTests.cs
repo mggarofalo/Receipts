@@ -38,17 +38,21 @@ public class AuthAuditCleanupServiceTests
 	public async Task ExecuteAsync_CallsCleanupOnService()
 	{
 		// Arrange
+		TaskCompletionSource invoked = new();
 		_auditServiceMock
 			.Setup(s => s.CleanupOldEntriesAsync(180, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(5);
+			.Returns<int, CancellationToken>((_, _) =>
+			{
+				invoked.TrySetResult();
+				return Task.FromResult(5);
+			});
 
 		AuthAuditCleanupService service = new(_scopeFactoryMock.Object, _loggerMock.Object);
 		using CancellationTokenSource cts = new();
 
 		// Act
 		await service.StartAsync(cts.Token);
-		// Allow the background loop to execute once
-		await Task.Delay(100);
+		await invoked.Task.WaitAsync(TimeSpan.FromSeconds(5));
 		cts.Cancel();
 		await service.StopAsync(CancellationToken.None);
 
@@ -62,16 +66,21 @@ public class AuthAuditCleanupServiceTests
 	public async Task ExecuteAsync_LogsCleanupStatistics()
 	{
 		// Arrange
+		TaskCompletionSource invoked = new();
 		_auditServiceMock
 			.Setup(s => s.CleanupOldEntriesAsync(180, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(42);
+			.Returns<int, CancellationToken>((_, _) =>
+			{
+				invoked.TrySetResult();
+				return Task.FromResult(42);
+			});
 
 		AuthAuditCleanupService service = new(_scopeFactoryMock.Object, _loggerMock.Object);
 		using CancellationTokenSource cts = new();
 
 		// Act
 		await service.StartAsync(cts.Token);
-		await Task.Delay(100);
+		await invoked.Task.WaitAsync(TimeSpan.FromSeconds(5));
 		cts.Cancel();
 		await service.StopAsync(CancellationToken.None);
 

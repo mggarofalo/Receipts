@@ -72,8 +72,18 @@
     <Exec Command="&quot;$(_DtoSplitterExe)&quot; split &quot;$(_SpecPath)&quot; &quot;$(_GeneratedDir)\Dtos.g.cs&quot; &quot;$(_GeneratedDir)&quot;" />
   </Target>
 
-  <!-- Orchestrator: runs before compile, chains the 3 targets via DependsOnTargets -->
+  <!-- Orchestrator: runs before compile, chains the 3 targets via DependsOnTargets.
+       The ItemGroup re-adds generated files to <Compile> because the SDK's default
+       **/*.cs glob is evaluated at project-load time — files created by targets after
+       that point (e.g. on a fresh CI checkout where they're gitignored) would otherwise
+       be invisible to the compiler. Remove+Include is idempotent: safe whether files
+       were already globbed or are brand-new. -->
   <Target Name="GenerateDtos" BeforeTargets="CoreCompile"
-          DependsOnTargets="CheckDtoFreshness;NSwagGenerate;SplitDtos" />
+          DependsOnTargets="CheckDtoFreshness;NSwagGenerate;SplitDtos">
+    <ItemGroup>
+      <Compile Remove="Generated\*.g.cs" />
+      <Compile Include="Generated\*.g.cs" />
+    </ItemGroup>
+  </Target>
 
 </Project>

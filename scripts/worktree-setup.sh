@@ -19,6 +19,11 @@ if [ "${1:-}" = "--check" ]; then
   fi
 
   [ ! -f "openapi/generated/API.json" ] && missing+=("openapi/generated/API.json — run: dotnet build Receipts.slnx")
+
+  if ! find src/Presentation/API/Generated/ -name '*.g.cs' -print -quit 2>/dev/null | grep -q .; then
+    missing+=("src/Presentation/API/Generated/*.g.cs — run: dotnet build Receipts.slnx")
+  fi
+
   [ ! -f "src/client/src/generated/api.d.ts" ] && missing+=("src/client/src/generated/api.d.ts — run: cd src/client && npm run generate:types")
 
   if [ ${#missing[@]} -gt 0 ]; then
@@ -44,7 +49,7 @@ npm install
 echo "==> Installing client npm dependencies..."
 (cd src/client && npm install)
 
-echo "==> Building solution (generates openapi/generated/API.json)..."
+echo "==> Building solution (generates DTOs and openapi/generated/API.json)..."
 dotnet build Receipts.slnx
 
 echo "==> Generating TypeScript types from OpenAPI spec..."
