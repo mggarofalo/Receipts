@@ -9,7 +9,7 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 {
 	public async Task<DashboardSummaryResult> GetSummaryAsync(DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken)
 	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
 		IQueryable<ReceiptEntity> receiptsInRange = context.Receipts
 			.AsNoTracking()
@@ -75,7 +75,7 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 
 	public async Task<SpendingOverTimeResult> GetSpendingOverTimeAsync(DateOnly startDate, DateOnly endDate, string granularity, CancellationToken cancellationToken)
 	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
 		IQueryable<Guid> receiptIds = context.Receipts
 			.AsNoTracking()
@@ -99,24 +99,19 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 			case "daily":
 				buckets = await transactionsWithDate
 					.GroupBy(x => x.Date)
-					.Select(g => new SpendingBucketResult(g.Key.ToString(), g.Sum(x => x.Amount)))
+					.Select(g => new SpendingBucketResult(g.Key.ToString("yyyy-MM-dd"), g.Sum(x => x.Amount)))
 					.OrderBy(b => b.Period)
 					.ToListAsync(cancellationToken);
 				break;
 
 			case "weekly":
-				// Group by ISO week: use the Monday of each week as the period key
-				// PostgreSQL: date_trunc('week', date) gives Monday of the week
-				var weeklyRaw = await transactionsWithDate
-					.GroupBy(x => new { x.Date.Year, Week = (x.Date.DayNumber - 1) / 7 })
-					.Select(g => new { g.Key.Year, g.Key.Week, Amount = g.Sum(x => x.Amount) })
-					.OrderBy(g => g.Year)
-					.ThenBy(g => g.Week)
-					.ToListAsync(cancellationToken);
+				// Materialize first — DayOfWeek arithmetic cannot be translated to SQL by EF Core.
+				// Then group by the Monday of each ISO week in memory.
+				var weeklyRaw = await transactionsWithDate.ToListAsync(cancellationToken);
 				buckets = weeklyRaw
-					.Select(w => new SpendingBucketResult(
-						DateOnly.FromDayNumber(w.Week * 7 + 1).ToString("yyyy-MM-dd"),
-						w.Amount))
+					.GroupBy(x => x.Date.AddDays(-(((int)x.Date.DayOfWeek + 6) % 7)))
+					.OrderBy(g => g.Key)
+					.Select(g => new SpendingBucketResult(g.Key.ToString("yyyy-MM-dd"), g.Sum(x => x.Amount)))
 					.ToList();
 				break;
 
@@ -139,23 +134,26 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 
 	public async Task<SpendingByCategoryResult> GetSpendingByCategoryAsync(DateOnly startDate, DateOnly endDate, int limit, CancellationToken cancellationToken)
 	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
 		IQueryable<Guid> receiptIds = context.Receipts
 			.AsNoTracking()
 			.Where(r => r.Date >= startDate && r.Date <= endDate)
 			.Select(r => r.Id);
 
-		var categorySpending = await context.ReceiptItems
+		var allCategorySpending = context.ReceiptItems
 			.AsNoTracking()
 			.Where(ri => receiptIds.Contains(ri.ReceiptId))
 			.GroupBy(ri => ri.Category)
 			.Select(g => new { Category = g.Key, Amount = g.Sum(ri => ri.TotalAmount) })
-			.OrderByDescending(g => g.Amount)
+			.OrderByDescending(g => g.Amount);
+
+		// Compute total from ALL categories before applying the limit
+		decimal total = await allCategorySpending.SumAsync(g => g.Amount, cancellationToken);
+
+		var categorySpending = await allCategorySpending
 			.Take(limit)
 			.ToListAsync(cancellationToken);
-
-		decimal total = categorySpending.Sum(c => c.Amount);
 
 		List<SpendingCategoryItemResult> items = categorySpending
 			.Select(c => new SpendingCategoryItemResult(
@@ -169,7 +167,7 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 
 	public async Task<SpendingByAccountResult> GetSpendingByAccountAsync(DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken)
 	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
 		IQueryable<Guid> receiptIds = context.Receipts
 			.AsNoTracking()

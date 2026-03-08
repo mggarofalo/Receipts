@@ -16,18 +16,16 @@ namespace API.Controllers.Aggregates;
 [Authorize]
 public class DashboardController(IMediator mediator) : ControllerBase
 {
-	private static readonly DateOnly DefaultStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
-	private static readonly DateOnly DefaultEndDate = DateOnly.FromDateTime(DateTime.Today);
-
 	[HttpGet("summary")]
 	[EndpointSummary("Get dashboard summary statistics")]
 	[EndpointDescription("Returns high-level stats for a date range including total receipts, total spent, average trip amount, and most-used account/category.")]
 	public async Task<Results<Ok<DashboardSummaryResponse>, BadRequest<string>>> GetDashboardSummary(
 		[FromQuery] DateOnly? startDate,
-		[FromQuery] DateOnly? endDate)
+		[FromQuery] DateOnly? endDate,
+		CancellationToken cancellationToken)
 	{
-		DateOnly start = startDate ?? DefaultStartDate;
-		DateOnly end = endDate ?? DefaultEndDate;
+		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 
 		if (start > end)
 		{
@@ -35,7 +33,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		}
 
 		GetDashboardSummaryQuery query = new(start, end);
-		DashboardSummaryResult result = await mediator.Send(query);
+		DashboardSummaryResult result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new DashboardSummaryResponse
 		{
@@ -61,10 +59,11 @@ public class DashboardController(IMediator mediator) : ControllerBase
 	public async Task<Results<Ok<SpendingOverTimeResponse>, BadRequest<string>>> GetSpendingOverTime(
 		[FromQuery] DateOnly? startDate,
 		[FromQuery] DateOnly? endDate,
-		[FromQuery] string? granularity)
+		[FromQuery] string? granularity,
+		CancellationToken cancellationToken)
 	{
-		DateOnly start = startDate ?? DefaultStartDate;
-		DateOnly end = endDate ?? DefaultEndDate;
+		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 		string gran = granularity ?? "monthly";
 
 		if (start > end)
@@ -79,7 +78,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		}
 
 		GetSpendingOverTimeQuery query = new(start, end, gran);
-		SpendingOverTimeResult result = await mediator.Send(query);
+		SpendingOverTimeResult result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new SpendingOverTimeResponse
 		{
@@ -97,10 +96,11 @@ public class DashboardController(IMediator mediator) : ControllerBase
 	public async Task<Results<Ok<SpendingByCategoryResponse>, BadRequest<string>>> GetSpendingByCategory(
 		[FromQuery] DateOnly? startDate,
 		[FromQuery] DateOnly? endDate,
-		[FromQuery] int limit = 10)
+		[FromQuery] int limit = 10,
+		CancellationToken cancellationToken = default)
 	{
-		DateOnly start = startDate ?? DefaultStartDate;
-		DateOnly end = endDate ?? DefaultEndDate;
+		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 
 		if (start > end)
 		{
@@ -113,7 +113,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		}
 
 		GetSpendingByCategoryQuery query = new(start, end, limit);
-		SpendingByCategoryResult result = await mediator.Send(query);
+		SpendingByCategoryResult result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new SpendingByCategoryResponse
 		{
@@ -131,10 +131,11 @@ public class DashboardController(IMediator mediator) : ControllerBase
 	[EndpointDescription("Returns spending amounts grouped by payment account.")]
 	public async Task<Results<Ok<SpendingByAccountResponse>, BadRequest<string>>> GetSpendingByAccount(
 		[FromQuery] DateOnly? startDate,
-		[FromQuery] DateOnly? endDate)
+		[FromQuery] DateOnly? endDate,
+		CancellationToken cancellationToken)
 	{
-		DateOnly start = startDate ?? DefaultStartDate;
-		DateOnly end = endDate ?? DefaultEndDate;
+		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 
 		if (start > end)
 		{
@@ -142,7 +143,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		}
 
 		GetSpendingByAccountQuery query = new(start, end);
-		SpendingByAccountResult result = await mediator.Send(query);
+		SpendingByAccountResult result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new SpendingByAccountResponse
 		{
