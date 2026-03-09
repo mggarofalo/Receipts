@@ -18,7 +18,10 @@ next_step() {
 }
 
 next_step "Checking prerequisites..."
-bash scripts/worktree-setup.sh --check
+if ! bash scripts/worktree-setup.sh --check 2>/dev/null; then
+  echo "  -> Auto-fixing: running worktree-setup.sh..."
+  bash scripts/worktree-setup.sh
+fi
 
 if [ "${PRECOMMIT_QUICK:-}" != "1" ]; then
   next_step "Linting OpenAPI spec..."
