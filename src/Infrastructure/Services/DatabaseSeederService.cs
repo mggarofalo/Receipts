@@ -31,8 +31,8 @@ public static class DatabaseSeederService
 			return;
 		}
 
-		ApplicationUser? existingAdmin = await userManager.FindByEmailAsync(adminEmail);
-		if (existingAdmin is not null)
+		IList<ApplicationUser> existingAdmins = await userManager.GetUsersInRoleAsync(AppRoles.Admin);
+		if (existingAdmins.Count > 0)
 		{
 			return;
 		}
@@ -44,6 +44,7 @@ public static class DatabaseSeederService
 			FirstName = configuration[ConfigurationVariables.AdminSeedFirstName],
 			LastName = configuration[ConfigurationVariables.AdminSeedLastName],
 			MustResetPassword = true,
+			CreatedAt = DateTimeOffset.UtcNow,
 		};
 
 		IdentityResult result = await userManager.CreateAsync(adminUser, adminPassword);
