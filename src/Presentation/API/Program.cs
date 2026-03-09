@@ -3,7 +3,6 @@ using API.Configuration;
 using API.Hubs;
 using API.Middleware;
 using API.Services;
-using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -40,14 +39,6 @@ app.UseOpenApiServices()
    .UseApplicationServices()
    .UseCorsServices()
    .UseAuthServices();
-
-// Run database migrations (skipped when DB is not configured, e.g. build-time OpenAPI generation)
-if (Infrastructure.Services.InfrastructureService.IsDatabaseConfigured(builder.Configuration))
-{
-	using IServiceScope scope = app.Services.CreateScope();
-	await scope.ServiceProvider.GetRequiredService<IDatabaseMigratorService>().MigrateAsync();
-	await DatabaseSeederService.SeedRolesAndAdminAsync(app.Services);
-}
 
 // Serve SPA static files in production (Vite dev server handles this in development)
 if (!app.Environment.IsDevelopment())

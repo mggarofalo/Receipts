@@ -91,7 +91,7 @@ dotnet test Receipts.slnx                                     # Run all tests
 dotnet test tests/Application.Tests/Application.Tests.csproj  # Single project
 dotnet test --filter "FullyQualifiedName~TestMethodName"       # Single test
 dotnet run --project src/Presentation/API/API.csproj           # Run the API
-dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructure.csproj --startup-project src/Presentation/API/API.csproj
+dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructure.csproj --startup-project src/Tools/DbMigrator/DbMigrator.csproj
 ```
 
 ## Git Hooks
