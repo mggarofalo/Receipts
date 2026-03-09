@@ -917,12 +917,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SimilarItemResponse"
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                type: string
 
   /api/item-templates/{id}/restore:
     post:
@@ -3189,6 +3183,11 @@ components:
           type: integer
           format: int32
 
+    SimilarItemResponseSource:
+      type: string
+      description: "'template' if from item templates, 'history' if from receipt item history"
+      enum: [template, history]
+
     SimilarItemResponse:
       type: object
       required: [name, similarity, source]
@@ -3199,9 +3198,7 @@ components:
           type: number
           format: double
         source:
-          type: string
-          description: "'template' if from item templates, 'history' if from receipt item history"
-          enum: [template, history]
+          $ref: "#/components/schemas/SimilarItemResponseSource"
         defaultCategory:
           type:
             - string
