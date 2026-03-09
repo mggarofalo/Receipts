@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using API.Filters;
@@ -7,6 +8,7 @@ using API.Hubs;
 using API.Middleware;
 using API.Services;
 using API.Validators;
+using Application.Interfaces.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -32,7 +34,7 @@ public static class ApplicationConfiguration
 		return builder;
 	}
 
-	public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+	public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
 	{
 		services.AddValidatorsFromAssemblyContaining<CreateReceiptRequestValidator>();
 
@@ -58,6 +60,9 @@ public static class ApplicationConfiguration
 		services.Configure<GzipCompressionProviderOptions>(options =>
 			options.Level = CompressionLevel.SmallestSize);
 
+		RateLimitingOptions rateLimitConfig = new();
+		configuration.GetSection(RateLimitingOptions.SectionName).Bind(rateLimitConfig);
+
 		services.AddRateLimiter(options =>
 		{
 			options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
@@ -65,9 +70,9 @@ public static class ApplicationConfiguration
 					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
 					_ => new SlidingWindowRateLimiterOptions
 					{
-						PermitLimit = 100,
-						Window = TimeSpan.FromMinutes(1),
-						SegmentsPerWindow = 4,
+						PermitLimit = rateLimitConfig.Global.PermitLimit,
+						Window = TimeSpan.FromMinutes(rateLimitConfig.Global.WindowMinutes),
+						SegmentsPerWindow = rateLimitConfig.Global.SegmentsPerWindow,
 					}));
 
 			options.AddPolicy("auth", context =>
@@ -75,17 +80,77 @@ public static class ApplicationConfiguration
 					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
 					_ => new FixedWindowRateLimiterOptions
 					{
-						PermitLimit = 5,
-						Window = TimeSpan.FromMinutes(1),
+						PermitLimit = rateLimitConfig.Auth.PermitLimit,
+						Window = TimeSpan.FromMinutes(rateLimitConfig.Auth.WindowMinutes),
+					}));
+
+			options.AddPolicy("auth-sensitive", context =>
+				RateLimitPartition.GetFixedWindowLimiter(
+					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+					_ => new FixedWindowRateLimiterOptions
+					{
+						PermitLimit = rateLimitConfig.AuthSensitive.PermitLimit,
+						Window = TimeSpan.FromMinutes(rateLimitConfig.AuthSensitive.WindowMinutes),
+					}));
+
+			options.AddPolicy("api-key", context =>
+				RateLimitPartition.GetFixedWindowLimiter(
+					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+					_ => new FixedWindowRateLimiterOptions
+					{
+						PermitLimit = rateLimitConfig.ApiKey.PermitLimit,
+						Window = TimeSpan.FromMinutes(rateLimitConfig.ApiKey.WindowMinutes),
 					}));
 
 			options.OnRejected = async (context, cancellationToken) =>
 			{
 				string ip = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+				string path = context.HttpContext.Request.Path;
+				string userAgent = context.HttpContext.Request.Headers.UserAgent.ToString();
+
 				ILoggerFactory loggerFactory = context.HttpContext.RequestServices
 					.GetRequiredService<ILoggerFactory>();
 				Microsoft.Extensions.Logging.ILogger logger = loggerFactory.CreateLogger("API.RateLimiting");
-				logger.LogWarning("Rate limit exceeded. IP: {IP}, Path: {Path}", ip, context.HttpContext.Request.Path);
+
+				// Structured log format for fail2ban parsing
+				logger.LogWarning(
+					"RateLimitExceeded: IpAddress={IpAddress} Path={Path} UserAgent={UserAgent}",
+					ip, path, userAgent);
+
+				// Log to auth audit trail
+				try
+				{
+					IAuthAuditService auditService = context.HttpContext.RequestServices
+						.GetRequiredService<IAuthAuditService>();
+					string? userId = context.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+					await auditService.LogAsync(new AuthAuditEntryDto(
+						Guid.NewGuid(),
+						nameof(Common.AuthEventType.RateLimitExceeded),
+						userId,
+						null,
+						null,
+						false,
+						$"Rate limit exceeded on {path}",
+						ip,
+						userAgent,
+						DateTimeOffset.UtcNow,
+						JsonSerializer.Serialize(new { path, policy = context.Lease.TryGetMetadata(MetadataName.ReasonPhrase, out string? reason) ? reason : null })),
+						cancellationToken);
+				}
+				catch
+				{
+					// Don't fail the response if audit logging fails
+				}
+
+				// Set Retry-After header
+				if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
+				{
+					context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+				}
+				else
+				{
+					context.HttpContext.Response.Headers.RetryAfter = "60";
+				}
 
 				context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
 				await context.HttpContext.Response.WriteAsync("Rate limit exceeded. Try again later.", cancellationToken);

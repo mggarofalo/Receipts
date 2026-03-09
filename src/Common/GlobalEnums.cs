@@ -34,4 +34,5 @@ public enum AuthEventType
 	UserRegistered,
 	AccountDisabled,
 	TokenRevoked,
+	RateLimitExceeded,
 }

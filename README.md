@@ -99,6 +99,26 @@ npm install
 
 Aspire orchestrates the entire stack (API + PostgreSQL + React dev server + Dashboard) automatically. No manual database setup needed.
 
+## Docker Setup
+
+The repo includes a self-contained `docker-compose.yml` — no `.env` file or secret generation needed. Secrets are auto-generated on first run.
+
+```bash
+# Start the stack (secrets are generated automatically)
+docker compose up -d
+
+# Get the auto-generated admin password
+docker compose exec app cat /secrets/admin_password
+
+# View logs
+docker compose logs -f app
+
+# Stop
+docker compose down
+```
+
+The app is available at `http://localhost:8080`. To customize PUID/PGID, timezone, or admin email, edit the values directly in `docker-compose.yml`. See **[docs/deployment.md](docs/deployment.md)** for the full deployment guide including HTTPS, backup/restore, updates, and troubleshooting.
+
 ## Development
 
 ### Build

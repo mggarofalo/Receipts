@@ -6,6 +6,7 @@ using Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -14,6 +15,7 @@ namespace API.Controllers;
 [Route("api/apikeys")]
 [Produces("application/json")]
 [Authorize]
+[EnableRateLimiting("api-key")]
 public class ApiKeyController(
 	IApiKeyService apiKeyService,
 	IAuthAuditService authAuditService,

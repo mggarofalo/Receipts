@@ -13,13 +13,13 @@ COPY src/client/ ./
 
 RUN npm run build
 
-# Stage 2: Build .NET API
+# Stage 2: Build .NET API and CLI tools
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-build
 WORKDIR /src
 
 ARG TARGETARCH
 
-# Copy project files needed for API restore (layer caching)
+# Copy project files needed for restore (layer caching)
 COPY Directory.Packages.props Directory.Build.props* ./
 COPY src/Domain/Domain.csproj src/Domain/
 COPY src/Common/Common.csproj src/Common/
@@ -27,6 +27,8 @@ COPY src/Application/Application.csproj src/Application/
 COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
 COPY src/Presentation/API/API.csproj src/Presentation/API/
 COPY src/Receipts.ServiceDefaults/Receipts.ServiceDefaults.csproj src/Receipts.ServiceDefaults/
+COPY src/Tools/DbMigrator/DbMigrator.csproj src/Tools/DbMigrator/
+COPY src/Tools/DbSeeder/DbSeeder.csproj src/Tools/DbSeeder/
 
 # Copy NuGet config and OpenAPI tooling (needed for restore/build)
 COPY nuget.config* ./
@@ -40,7 +42,9 @@ RUN case ${TARGETARCH} in \
       arm)   DOTNET_ARCH=arm ;; \
       *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac && \
-    dotnet restore src/Presentation/API/API.csproj -r linux-${DOTNET_ARCH} -p:PublishReadyToRun=true
+    dotnet restore src/Presentation/API/API.csproj -r linux-${DOTNET_ARCH} -p:PublishReadyToRun=true && \
+    dotnet restore src/Tools/DbMigrator/DbMigrator.csproj -r linux-${DOTNET_ARCH} && \
+    dotnet restore src/Tools/DbSeeder/DbSeeder.csproj -r linux-${DOTNET_ARCH}
 
 # Copy remaining source
 COPY src/ src/
@@ -53,10 +57,24 @@ RUN case ${TARGETARCH} in \
     esac && \
     dotnet publish src/Presentation/API/API.csproj \
       -c Release -o /app/publish --no-restore \
-      -p:PublishReadyToRun=true -r linux-${DOTNET_ARCH}
+      -p:PublishReadyToRun=true -r linux-${DOTNET_ARCH} && \
+    dotnet publish src/Tools/DbMigrator/DbMigrator.csproj \
+      -c Release -o /app/tools/DbMigrator --no-restore \
+      -r linux-${DOTNET_ARCH} && \
+    dotnet publish src/Tools/DbSeeder/DbSeeder.csproj \
+      -c Release -o /app/tools/DbSeeder --no-restore \
+      -r linux-${DOTNET_ARCH}
 
-# Stage 3: Runtime (noble for wget-based healthchecks; security via docker-compose constraints)
+# Stage 3: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS runtime
+
+LABEL org.opencontainers.image.title="Receipts" \
+      org.opencontainers.image.description="Receipt management API with React SPA" \
+      org.opencontainers.image.source="https://github.com/mggarofalo/Receipts"
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gosu && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:8080
@@ -66,12 +84,22 @@ WORKDIR /app
 # Copy published API
 COPY --from=api-build /app/publish .
 
+# Copy CLI tools
+COPY --from=api-build /app/tools ./tools/
+
 # Copy React SPA into wwwroot
 COPY --from=client-build /app/client/dist ./wwwroot/
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
+
+# Create secrets mount point
+RUN mkdir -p /secrets
+
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
     CMD wget -qO- http://localhost:8080/api/health || exit 1
 
-ENTRYPOINT ["dotnet", "API.dll"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

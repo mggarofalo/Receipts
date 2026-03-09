@@ -19,42 +19,29 @@ sudo usermod -aG docker $USER
 
 ## First Deploy
 
-### 1. Clone and configure
+### 1. Clone and start
 
 ```bash
 git clone https://github.com/mggarofalo/receipts.git
 cd receipts
-cp .env.example .env
-```
-
-### 2. Generate secrets
-
-```bash
-bash scripts/generate-secrets.sh
-```
-
-Copy the output values into `.env`:
-
-```bash
-# Edit .env with the generated JWT_KEY and POSTGRES_PASSWORD
-# Also set ADMIN_EMAIL and ADMIN_PASSWORD for the initial admin account
-nano .env
-```
-
-### 3. Start services
-
-```bash
 docker compose up -d
 ```
 
-Verify both services are healthy:
+Secrets are auto-generated on first run. No `.env` file needed.
+
+### 2. Verify and get admin password
 
 ```bash
 docker compose ps
 curl http://localhost:8080/api/health
+
+# Get the auto-generated admin password
+docker compose exec app cat /secrets/admin_password
 ```
 
-### 4. Configure reverse proxy
+To customize PUID/PGID, timezone, or admin email, edit the values directly in `docker-compose.yml`.
+
+### 3. Configure reverse proxy
 
 In Nginx Proxy Manager, create a proxy host:
 
@@ -68,10 +55,10 @@ In Nginx Proxy Manager, create a proxy host:
 | Force SSL | Enable |
 | WebSocket Support | **Enable** (required for `/hubs/*` real-time updates) |
 
-### 5. First login
+### 4. First login
 
 1. Navigate to `https://receipts.yourdomain.com`
-2. Log in with the `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env`
+2. Log in with the email from `docker-compose.yml` (`AdminSeed__Email`) and the password from `docker compose exec app cat /secrets/admin_password`
 3. You'll be prompted to change the password on first login
 
 ## Maintenance

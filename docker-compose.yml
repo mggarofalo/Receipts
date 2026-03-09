@@ -1,54 +1,39 @@
 services:
-  app:
-    image: ghcr.io/mggarofalo/receipts:${IMAGE_TAG:-latest}
-    container_name: receipts-app
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT:-8080}:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-receipts}
-      - Jwt__Key=${JWT_KEY}
-      - Jwt__Issuer=${JWT_ISSUER:-receipts-api}
-      - Jwt__Audience=${JWT_AUDIENCE:-receipts-app}
-      - AdminSeed__Email=${ADMIN_EMAIL}
-      - AdminSeed__Password=${ADMIN_PASSWORD}
-      - AdminSeed__FirstName=${ADMIN_FIRST_NAME:-Admin}
-      - AdminSeed__LastName=${ADMIN_LAST_NAME:-User}
-    depends_on:
-      db:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "2"
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-    networks:
-      - receipts-net
-    logging:
-      driver: json-file
-      options:
-        max-size: "50m"
-        max-file: "3"
+  init:
+    image: alpine:3.21
+    container_name: receipts-init
+    restart: "no"
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        for secret in pg_password jwt_key admin_password; do
+          if [ ! -f "/secrets/$${secret}" ]; then
+            tr -dc 'A-Za-z0-9+/' < /dev/urandom | head -c 48 > "/secrets/$${secret}"
+            chmod 644 "/secrets/$${secret}"
+            echo "Generated /secrets/$${secret}"
+          else
+            echo "/secrets/$${secret} already exists, skipping"
+          fi
+        done
+        echo "Secrets ready"
+    volumes:
+      - secrets:/secrets
+    networks: []
 
   db:
     image: postgres:17-alpine
     container_name: receipts-db
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-receipts}
+      - POSTGRES_USER=receipts
+      - POSTGRES_PASSWORD_FILE=/secrets/pg_password
+      - POSTGRES_DB=receipts
+    depends_on:
+      init:
+        condition: service_completed_successfully
     volumes:
+      - secrets:/secrets:ro
       - db-data:/var/lib/postgresql/data
     command:
       - "postgres"
@@ -69,11 +54,69 @@ services:
       - "-c"
       - "random_page_cost=1.1"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-receipts}"]
+      test: ["CMD-SHELL", "pg_isready -U receipts -d receipts"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
+      - DAC_OVERRIDE
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - receipts-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  app:
+    image: ghcr.io/mggarofalo/receipts:${IMAGE_TAG:-latest}
+    container_name: receipts-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PUID=1654
+      - PGID=1654
+      - TZ=America/New_York
+      - ASPNETCORE_ENVIRONMENT=Production
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=receipts
+      - POSTGRES_DB=receipts
+      - Jwt__Issuer=receipts-api
+      - Jwt__Audience=receipts-app
+      - AdminSeed__Email=admin@example.com
+      - AdminSeed__FirstName=Admin
+      - AdminSeed__LastName=User
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - secrets:/secrets:ro
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2"
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
     networks:
       - receipts-net
     logging:
@@ -83,6 +126,7 @@ services:
         max-file: "3"
 
 volumes:
+  secrets:
   db-data:
 
 networks:
