@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/mggarofalo/Receipts/compare/v0.1.5...v0.1.6) (2026-03-09)
+
+
+### Bug Fixes
+
+* **infra:** resolve docker compose startup failures ([#144](https://github.com/mggarofalo/Receipts/issues/144)) ([0fefa11](https://github.com/mggarofalo/Receipts/commit/0fefa1130889f80e9314faf9c3ee30bf5a5a07d9))
+
 ## [0.1.5](https://github.com/mggarofalo/Receipts/compare/v0.1.4...v0.1.5) (2026-03-09)
 
 
