@@ -4,7 +4,6 @@ using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
@@ -75,17 +74,9 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 	public async Task<List<SubcategoryEntity>> CreateAsync(List<SubcategoryEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		List<SubcategoryEntity> createdEntities = [];
-
-		foreach (SubcategoryEntity entity in entities)
-		{
-			EntityEntry<SubcategoryEntity> entityEntry = await context.Subcategories.AddAsync(entity, cancellationToken);
-			createdEntities.Add(entityEntry.Entity);
-		}
-
+		context.Subcategories.AddRange(entities);
 		await context.SaveChangesAsync(cancellationToken);
-
-		return createdEntities;
+		return entities;
 	}
 
 	public async Task UpdateAsync(List<SubcategoryEntity> entities, CancellationToken cancellationToken)

@@ -4,7 +4,6 @@ using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
@@ -128,17 +127,9 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 	public async Task<List<ReceiptItemEntity>> CreateAsync(List<ReceiptItemEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		List<ReceiptItemEntity> createdEntities = [];
-
-		foreach (ReceiptItemEntity entity in entities)
-		{
-			EntityEntry<ReceiptItemEntity> entityEntry = await context.ReceiptItems.AddAsync(entity, cancellationToken);
-			createdEntities.Add(entityEntry.Entity);
-		}
-
+		context.ReceiptItems.AddRange(entities);
 		await context.SaveChangesAsync(cancellationToken);
-
-		return createdEntities;
+		return entities;
 	}
 
 	public async Task UpdateAsync(List<ReceiptItemEntity> entities, CancellationToken cancellationToken)

@@ -4,7 +4,6 @@ using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
@@ -81,17 +80,9 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 	public async Task<List<AccountEntity>> CreateAsync(List<AccountEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		List<AccountEntity> createdEntities = [];
-
-		foreach (AccountEntity entity in entities)
-		{
-			EntityEntry<AccountEntity> entityEntry = await context.Accounts.AddAsync(entity, cancellationToken);
-			createdEntities.Add(entityEntry.Entity);
-		}
-
+		context.Accounts.AddRange(entities);
 		await context.SaveChangesAsync(cancellationToken);
-
-		return createdEntities;
+		return entities;
 	}
 
 	public async Task UpdateAsync(List<AccountEntity> entities, CancellationToken cancellationToken)

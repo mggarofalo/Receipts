@@ -4,7 +4,6 @@ using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
@@ -55,17 +54,9 @@ public class ItemTemplateRepository(IDbContextFactory<ApplicationDbContext> cont
 	public async Task<List<ItemTemplateEntity>> CreateAsync(List<ItemTemplateEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		List<ItemTemplateEntity> createdEntities = [];
-
-		foreach (ItemTemplateEntity entity in entities)
-		{
-			EntityEntry<ItemTemplateEntity> entityEntry = await context.ItemTemplates.AddAsync(entity, cancellationToken);
-			createdEntities.Add(entityEntry.Entity);
-		}
-
+		context.ItemTemplates.AddRange(entities);
 		await context.SaveChangesAsync(cancellationToken);
-
-		return createdEntities;
+		return entities;
 	}
 
 	public async Task UpdateAsync(List<ItemTemplateEntity> entities, CancellationToken cancellationToken)
