@@ -34,28 +34,18 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 		decimal averageTripAmount = totalReceipts > 0 ? Math.Round(totalSpent / totalReceipts, 2) : 0;
 
 		// Most-used account = account with the most transactions in range
+		// Single query: EF Core translates Account!.Name to a SQL JOIN, eliminating a second round-trip.
 		var mostUsedAccountData = await context.Transactions
 			.AsNoTracking()
 			.Where(t => receiptIds.Contains(t.ReceiptId))
-			.GroupBy(t => t.AccountId)
-			.Select(g => new { AccountId = g.Key, Count = g.Count() })
+			.GroupBy(t => t.Account!.Name)
+			.Select(g => new { AccountName = g.Key, Count = g.Count() })
 			.OrderByDescending(g => g.Count)
 			.FirstOrDefaultAsync(cancellationToken);
 
-		NameCountResult mostUsedAccount;
-		if (mostUsedAccountData != null)
-		{
-			string? accountName = await context.Accounts
-				.AsNoTracking()
-				.Where(a => a.Id == mostUsedAccountData.AccountId)
-				.Select(a => a.Name)
-				.FirstOrDefaultAsync(cancellationToken);
-			mostUsedAccount = new NameCountResult(accountName, mostUsedAccountData.Count);
-		}
-		else
-		{
-			mostUsedAccount = new NameCountResult(null, 0);
-		}
+		NameCountResult mostUsedAccount = mostUsedAccountData != null
+			? new NameCountResult(mostUsedAccountData.AccountName, mostUsedAccountData.Count)
+			: new NameCountResult(null, 0);
 
 		// Most-used category = category with the most receipt items in range
 		var mostUsedCategoryData = await context.ReceiptItems
@@ -141,19 +131,20 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 			.Where(r => r.Date >= startDate && r.Date <= endDate)
 			.Select(r => r.Id);
 
-		var allCategorySpending = context.ReceiptItems
+		// Single query: materialize all categories (bounded by distinct category count, typically < 50),
+		// then compute total in memory to avoid enumerating the IQueryable twice.
+		var allCategories = await context.ReceiptItems
 			.AsNoTracking()
 			.Where(ri => receiptIds.Contains(ri.ReceiptId))
 			.GroupBy(ri => ri.Category)
 			.Select(g => new { Category = g.Key, Amount = g.Sum(ri => ri.TotalAmount) })
-			.OrderByDescending(g => g.Amount);
-
-		// Compute total from ALL categories before applying the limit
-		decimal total = await allCategorySpending.SumAsync(g => g.Amount, cancellationToken);
-
-		var categorySpending = await allCategorySpending
-			.Take(limit)
+			.OrderByDescending(g => g.Amount)
 			.ToListAsync(cancellationToken);
+
+		decimal total = allCategories.Sum(c => c.Amount);
+
+		var categorySpending = allCategories
+			.Take(limit);
 
 		List<SpendingCategoryItemResult> items = categorySpending
 			.Select(c => new SpendingCategoryItemResult(

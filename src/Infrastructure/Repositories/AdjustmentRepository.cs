@@ -4,7 +4,6 @@ using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.Repositories;
 
@@ -108,17 +107,9 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 	public async Task<List<AdjustmentEntity>> CreateAsync(List<AdjustmentEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		List<AdjustmentEntity> createdEntities = [];
-
-		foreach (AdjustmentEntity entity in entities)
-		{
-			EntityEntry<AdjustmentEntity> entityEntry = await context.Adjustments.AddAsync(entity, cancellationToken);
-			createdEntities.Add(entityEntry.Entity);
-		}
-
+		context.Adjustments.AddRange(entities);
 		await context.SaveChangesAsync(cancellationToken);
-
-		return createdEntities;
+		return entities;
 	}
 
 	public async Task UpdateAsync(List<AdjustmentEntity> entities, CancellationToken cancellationToken)
