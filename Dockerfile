@@ -90,11 +90,9 @@ COPY --from=client-build /app/client/dist ./wwwroot/
 COPY docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh
 
-# Create non-root user (--force: skip if GID already exists in base image)
-RUN groupadd --force --gid 1654 appuser && \
-    useradd --uid 1654 --gid appuser --shell /bin/false --no-create-home appuser && \
-    chown -R appuser:appuser /app
-USER appuser
+# Use the built-in non-root user from the .NET base image
+RUN chown -R app:app /app
+USER app
 
 EXPOSE 8080
 
