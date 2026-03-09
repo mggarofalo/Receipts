@@ -53,11 +53,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		PrepareEntityTypesInModelBuilder(modelBuilder, Database.ProviderName);
 		modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-		// The InMemory provider cannot map pgvector's Vector type.
-		// Exclude ItemEmbeddingEntity after configs are applied so the ignore sticks.
+		// The InMemory provider cannot map pgvector's Vector type directly.
+		// Convert Vector <-> string so InMemory tests can work with embeddings.
 		if (Database.ProviderName == InMemory)
 		{
-			modelBuilder.Ignore<ItemEmbeddingEntity>();
+			modelBuilder.Entity<ItemEmbeddingEntity>()
+				.Property(e => e.Embedding)
+				.HasColumnType(null)
+				.HasConversion(
+					v => string.Join(';', v.ToArray()),
+					v => new Pgvector.Vector(v.Split(';').Select(float.Parse).ToArray()));
 		}
 	}
 

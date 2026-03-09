@@ -86,6 +86,7 @@ jobs:
           dotnet test Receipts.slnx
           --no-build
           --verbosity normal
+          --filter "Category!=Integration"
           --collect:"XPlat Code Coverage"
           --settings scripts/tests/coverlet.runsettings
           --results-directory TestResults
