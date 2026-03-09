@@ -97,7 +97,7 @@ services:
       - AdminSeed__Email=admin@example.com
       - AdminSeed__FirstName=Admin
       - AdminSeed__LastName=User
-      - OPENAI_API_KEY_FILE=/secrets/openai_api_key
+      - OpenAI__ApiKey=${OPENAI_API_KEY}
     depends_on:
       db:
         condition: service_healthy

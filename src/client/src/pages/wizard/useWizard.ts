@@ -17,16 +17,12 @@ export function useWizard() {
   }, []);
 
   const goNext = useCallback(() => {
-    dispatch({ type: "MARK_STEP_COMPLETE", step: state.currentStep });
-    dispatch({ type: "SET_STEP", step: state.currentStep + 1 });
-  }, [state.currentStep]);
+    dispatch({ type: "NEXT" });
+  }, []);
 
   const goBack = useCallback(() => {
-    dispatch({
-      type: "SET_STEP",
-      step: Math.max(0, state.currentStep - 1),
-    });
-  }, [state.currentStep]);
+    dispatch({ type: "BACK" });
+  }, []);
 
   const setReceipt = useCallback((data: WizardReceiptData) => {
     dispatch({ type: "SET_RECEIPT", data });

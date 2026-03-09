@@ -36,6 +36,8 @@ export type WizardAction =
   | { type: "SET_TRANSACTIONS"; data: WizardTransaction[] }
   | { type: "SET_ITEMS"; data: WizardReceiptItem[] }
   | { type: "MARK_STEP_COMPLETE"; step: number }
+  | { type: "NEXT" }
+  | { type: "BACK" }
   | { type: "RESET" };
 
 export const STEP_LABELS = [
@@ -67,10 +69,18 @@ export function wizardReducer(
     case "SET_ITEMS":
       return { ...state, items: action.data };
     case "MARK_STEP_COMPLETE": {
+      if (state.completedSteps.has(action.step)) return state;
       const next = new Set(state.completedSteps);
       next.add(action.step);
       return { ...state, completedSteps: next };
     }
+    case "NEXT": {
+      const next = new Set(state.completedSteps);
+      next.add(state.currentStep);
+      return { ...state, completedSteps: next, currentStep: state.currentStep + 1 };
+    }
+    case "BACK":
+      return { ...state, currentStep: Math.max(0, state.currentStep - 1) };
     case "RESET":
       return { ...INITIAL_STATE, completedSteps: new Set<number>() };
     default:

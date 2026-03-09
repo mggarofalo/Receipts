@@ -76,40 +76,49 @@ export default function NewReceipt() {
     setIsSubmitting(true);
     try {
       // 1. Create the receipt
-      const receipt = await createReceipt.mutateAsync({
-        location: state.receipt.location,
-        date: state.receipt.date,
-        taxAmount: state.receipt.taxAmount,
-      });
+      const receipt = await createReceipt.mutateAsync(
+        {
+          location: state.receipt.location,
+          date: state.receipt.date,
+          taxAmount: state.receipt.taxAmount,
+        },
+        { onSuccess: undefined, onError: undefined },
+      );
 
       const receiptId = (receipt as { id: string }).id;
 
       // 2. Create transactions sequentially
       for (const txn of state.transactions) {
-        await createTransaction.mutateAsync({
-          receiptId,
-          body: {
-            accountId: txn.accountId,
-            amount: txn.amount,
-            date: txn.date,
+        await createTransaction.mutateAsync(
+          {
+            receiptId,
+            body: {
+              accountId: txn.accountId,
+              amount: txn.amount,
+              date: txn.date,
+            },
           },
-        });
+          { onSuccess: undefined, onError: undefined },
+        );
       }
 
       // 3. Create receipt items sequentially
       for (const item of state.items) {
-        await createReceiptItem.mutateAsync({
-          receiptId,
-          body: {
-            receiptItemCode: item.receiptItemCode,
-            description: item.description,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            category: item.category,
-            subcategory: item.subcategory,
-            pricingMode: item.pricingMode,
+        await createReceiptItem.mutateAsync(
+          {
+            receiptId,
+            body: {
+              receiptItemCode: item.receiptItemCode,
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              category: item.category,
+              subcategory: item.subcategory,
+              pricingMode: item.pricingMode,
+            },
           },
-        });
+          { onSuccess: undefined, onError: undefined },
+        );
       }
 
       toast.success("Receipt created successfully!");

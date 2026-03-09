@@ -1,6 +1,8 @@
 using Application.Interfaces.Services;
+using Common;
 using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -65,17 +67,21 @@ public class EmbeddingGenerationService(
 		List<string> texts = pending.Select(p => p.Text).ToList();
 		List<float[]> embeddings = await embeddingService.GenerateEmbeddingsAsync(texts, cancellationToken);
 
-		string modelVersion = "text-embedding-3-small";
+		IConfiguration configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+		string modelVersion = configuration[ConfigurationVariables.OpenAiEmbeddingModel]
+			?? ConfigurationVariables.OpenAiDefaultEmbeddingModel;
 		DateTimeOffset now = DateTimeOffset.UtcNow;
+
+		List<Guid> entityIds = pending.Select(p => p.EntityId).ToList();
+		Dictionary<(string EntityType, Guid EntityId), ItemEmbeddingEntity> existingMap = await context.ItemEmbeddings
+			.Where(e => entityIds.Contains(e.EntityId))
+			.ToDictionaryAsync(e => (e.EntityType, e.EntityId), cancellationToken);
 
 		for (int i = 0; i < pending.Count; i++)
 		{
 			PendingItem item = pending[i];
 
-			ItemEmbeddingEntity? existing = await context.ItemEmbeddings
-				.FirstOrDefaultAsync(e => e.EntityType == item.EntityType && e.EntityId == item.EntityId, cancellationToken);
-
-			if (existing is not null)
+			if (existingMap.TryGetValue((item.EntityType, item.EntityId), out ItemEmbeddingEntity? existing))
 			{
 				existing.EntityText = item.Text;
 				existing.Embedding = new Vector(embeddings[i]);
@@ -106,7 +112,7 @@ public class EmbeddingGenerationService(
 		// Find ItemTemplates without embeddings or with stale text
 		List<PendingItem> templateItems = await context.ItemTemplates
 			.IgnoreQueryFilters()
-			.Where(t => t.DeletedAt == null)
+			.Where(t => t.DeletedAt == null && t.Name.Length >= 2)
 			.GroupJoin(
 				context.ItemEmbeddings.Where(e => e.EntityType == "ItemTemplate"),
 				t => t.Id,
@@ -129,7 +135,7 @@ public class EmbeddingGenerationService(
 		// Find ReceiptItems without embeddings or with stale text
 		List<PendingItem> receiptItems = await context.ReceiptItems
 			.IgnoreQueryFilters()
-			.Where(r => r.DeletedAt == null)
+			.Where(r => r.DeletedAt == null && r.Description.Length >= 2)
 			.GroupJoin(
 				context.ItemEmbeddings.Where(e => e.EntityType == "ReceiptItem"),
 				r => r.Id,

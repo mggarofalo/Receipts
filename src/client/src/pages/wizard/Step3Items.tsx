@@ -130,6 +130,7 @@ export function Step3Items({
     selectedCategoryObj?.id ?? "",
   );
   const createSubcategory = useCreateSubcategory();
+  const pendingSubcategories = useRef(new Set<string>());
 
   const subcategoryOptions = useMemo(
     () =>
@@ -511,12 +512,21 @@ export function Step3Items({
                         if (
                           !isExisting &&
                           v &&
-                          selectedCategoryObj?.id
+                          selectedCategoryObj?.id &&
+                          !pendingSubcategories.current.has(v)
                         ) {
-                          createSubcategory.mutate({
-                            categoryId: selectedCategoryObj.id,
-                            name: v,
-                          });
+                          pendingSubcategories.current.add(v);
+                          createSubcategory.mutate(
+                            {
+                              categoryId: selectedCategoryObj.id,
+                              name: v,
+                            },
+                            {
+                              onSettled: () => {
+                                pendingSubcategories.current.delete(v);
+                              },
+                            },
+                          );
                         }
                       }}
                       placeholder="Select subcategory..."

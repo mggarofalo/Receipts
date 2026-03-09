@@ -72,14 +72,22 @@ public class ItemTemplateSimilarityService(
 		}
 
 		// Group by Category+Subcategory, weight by combined score
-		return [.. similar
+		List<SimilarItemResult> withCategories = similar
 			.Where(s => !string.IsNullOrEmpty(s.DefaultCategory))
+			.ToList();
+
+		if (withCategories.Count == 0)
+		{
+			return [];
+		}
+
+		return [.. withCategories
 			.GroupBy(s => new { s.DefaultCategory, s.DefaultSubcategory })
 			.Select(g => new CategoryRecommendation
 			{
 				Category = g.Key.DefaultCategory!,
 				Subcategory = g.Key.DefaultSubcategory,
-				Confidence = g.Sum(s => s.CombinedScore) / similar.Count,
+				Confidence = g.Sum(s => s.CombinedScore) / withCategories.Count,
 				OccurrenceCount = g.Count(),
 			})
 			.OrderByDescending(r => r.Confidence)
@@ -136,14 +144,8 @@ public class ItemTemplateSimilarityService(
 			SELECT
 			    c.name,
 			    c.trigram_similarity,
-			    CASE WHEN e."Embedding" IS NOT NULL
-			         THEN 1.0 - (e."Embedding" <=> {2}::vector)
-			         ELSE NULL
-			    END AS semantic_similarity,
-			    CASE WHEN e."Embedding" IS NOT NULL
-			         THEN (0.4 * c.trigram_similarity) + (0.6 * (1.0 - (e."Embedding" <=> {2}::vector)))
-			         ELSE c.trigram_similarity
-			    END AS combined_score,
+			    COALESCE(1.0 - (e."Embedding" <=> {2}::vector), 0) AS semantic_similarity,
+			    (0.4 * c.trigram_similarity) + (0.6 * COALESCE(1.0 - (e."Embedding" <=> {2}::vector), 0)) AS combined_score,
 			    c.source,
 			    c.default_category,
 			    c.default_subcategory,
@@ -222,15 +224,17 @@ public class ItemTemplateSimilarityService(
 			.ToListAsync(cancellationToken);
 	}
 
-	private record SimilarItemRow(
-		string name,
-		double trigram_similarity,
-		double? semantic_similarity,
-		double combined_score,
-		string source,
-		string? default_category,
-		string? default_subcategory,
-		decimal? default_unit_price,
-		string? default_pricing_mode,
-		string? default_item_code);
+	private sealed class SimilarItemRow
+	{
+		public string name { get; set; } = string.Empty;
+		public double trigram_similarity { get; set; }
+		public double? semantic_similarity { get; set; }
+		public double combined_score { get; set; }
+		public string source { get; set; } = string.Empty;
+		public string? default_category { get; set; }
+		public string? default_subcategory { get; set; }
+		public decimal? default_unit_price { get; set; }
+		public string? default_pricing_mode { get; set; }
+		public string? default_item_code { get; set; }
+	}
 }

@@ -13,7 +13,7 @@ public class OpenAiEmbeddingService(
 	IConfiguration configuration,
 	ILogger<OpenAiEmbeddingService> logger) : IEmbeddingService
 {
-	public bool IsConfigured => true;
+	public bool IsConfigured => httpClient.DefaultRequestHeaders.Authorization?.Parameter is { Length: > 0 };
 
 	public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken)
 	{
@@ -38,8 +38,9 @@ public class OpenAiEmbeddingService(
 		if (!response.IsSuccessStatusCode)
 		{
 			string body = await response.Content.ReadAsStringAsync(cancellationToken);
-			logger.LogError("OpenAI embedding request failed with {StatusCode}: {Body}",
-				response.StatusCode, body);
+			string truncatedBody = body.Length > 200 ? body[..200] : body;
+			logger.LogWarning("OpenAI embedding request failed with {StatusCode}: {Body}",
+				response.StatusCode, truncatedBody);
 			throw new HttpRequestException($"OpenAI API returned {response.StatusCode}");
 		}
 
