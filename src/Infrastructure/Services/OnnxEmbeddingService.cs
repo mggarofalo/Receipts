@@ -15,6 +15,7 @@ public sealed class OnnxEmbeddingService : IEmbeddingService, IDisposable
 	private readonly InferenceSession _session;
 	private readonly BertTokenizer _tokenizer;
 	private readonly ILogger<OnnxEmbeddingService> _logger;
+	private readonly object _inferLock = new();
 	private bool _disposed;
 
 	public OnnxEmbeddingService(ILogger<OnnxEmbeddingService> logger)
@@ -61,6 +62,18 @@ public sealed class OnnxEmbeddingService : IEmbeddingService, IDisposable
 	}
 
 	private float[] GenerateEmbedding(string text)
+	{
+		// Lock to guarantee thread safety: BertTokenizer's thread-safety is undocumented,
+		// and this singleton may be called concurrently from the background service and request pipeline.
+		// InferenceSession.Run is thread-safe per ONNX Runtime docs, but we lock the whole method
+		// to keep it simple — embedding generation is I/O-bound, not a hot path.
+		lock (_inferLock)
+		{
+			return GenerateEmbeddingCore(text);
+		}
+	}
+
+	private float[] GenerateEmbeddingCore(string text)
 	{
 		// Tokenize: EncodeToIds with addSpecialTokens=true adds [CLS] and [SEP]
 		IReadOnlyList<int> tokenIds = _tokenizer.EncodeToIds(text, MaxTokens, out _, out _);

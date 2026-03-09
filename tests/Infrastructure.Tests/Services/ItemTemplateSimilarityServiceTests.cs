@@ -42,7 +42,7 @@ public class ItemTemplateSimilarityServiceTests
 		{
 			await _service.GetSimilarItemsAsync("test", 10, 0.3, useSemanticSearch: false, CancellationToken.None);
 		}
-		catch
+		catch (InvalidOperationException)
 		{
 			// Expected: InMemory doesn't support SqlQueryRaw
 		}
@@ -67,7 +67,7 @@ public class ItemTemplateSimilarityServiceTests
 		{
 			await _service.GetSimilarItemsAsync("test query", 10, 0.3, useSemanticSearch: true, CancellationToken.None);
 		}
-		catch
+		catch (InvalidOperationException)
 		{
 			// Expected: InMemory doesn't support SqlQueryRaw
 		}
@@ -89,7 +89,7 @@ public class ItemTemplateSimilarityServiceTests
 		{
 			await _service.GetSimilarItemsAsync("test", 10, 0.3, useSemanticSearch: true, CancellationToken.None);
 		}
-		catch
+		catch (InvalidOperationException)
 		{
 			// Expected: InMemory doesn't support SqlQueryRaw
 		}
@@ -115,7 +115,7 @@ public class ItemTemplateSimilarityServiceTests
 		{
 			await _service.GetSimilarItemsAsync("test", 10, 0.3, useSemanticSearch: true, CancellationToken.None);
 		}
-		catch
+		catch (InvalidOperationException)
 		{
 			// Expected: InMemory doesn't support SqlQueryRaw
 		}
@@ -145,7 +145,7 @@ public class ItemTemplateSimilarityServiceTests
 		{
 			await _service.GetSimilarItemsAsync("test", 10, 0.3, useSemanticSearch: true, CancellationToken.None);
 		}
-		catch
+		catch (InvalidOperationException)
 		{
 			// Expected: InMemory doesn't support SqlQueryRaw
 		}

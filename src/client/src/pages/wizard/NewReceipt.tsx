@@ -42,9 +42,9 @@ export default function NewReceipt() {
   const [showDiscard, setShowDiscard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const createReceipt = useCreateReceipt();
-  const createTransaction = useCreateTransaction();
-  const createReceiptItem = useCreateReceiptItem();
+  const { mutateAsync: createReceiptAsync } = useCreateReceipt();
+  const { mutateAsync: createTransactionAsync } = useCreateTransaction();
+  const { mutateAsync: createReceiptItemAsync } = useCreateReceiptItem();
 
   const hasData =
     state.receipt.location !== "" ||
@@ -76,7 +76,7 @@ export default function NewReceipt() {
     setIsSubmitting(true);
     try {
       // 1. Create the receipt
-      const receipt = await createReceipt.mutateAsync(
+      const receipt = await createReceiptAsync(
         {
           location: state.receipt.location,
           date: state.receipt.date,
@@ -89,7 +89,7 @@ export default function NewReceipt() {
 
       // 2. Create transactions sequentially
       for (const txn of state.transactions) {
-        await createTransaction.mutateAsync(
+        await createTransactionAsync(
           {
             receiptId,
             body: {
@@ -104,7 +104,7 @@ export default function NewReceipt() {
 
       // 3. Create receipt items sequentially
       for (const item of state.items) {
-        await createReceiptItem.mutateAsync(
+        await createReceiptItemAsync(
           {
             receiptId,
             body: {
@@ -133,9 +133,9 @@ export default function NewReceipt() {
     }
   }, [
     state,
-    createReceipt,
-    createTransaction,
-    createReceiptItem,
+    createReceiptAsync,
+    createTransactionAsync,
+    createReceiptItemAsync,
     reset,
     navigate,
   ]);

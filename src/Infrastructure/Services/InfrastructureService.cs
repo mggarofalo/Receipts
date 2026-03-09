@@ -60,13 +60,16 @@ public static class InfrastructureService
 	{
 		if (IsDatabaseConfigured(configuration))
 		{
-			NpgsqlDataSourceBuilder dataSourceBuilder = new(GetConnectionString(configuration));
-			dataSourceBuilder.UseVector();
-			NpgsqlDataSource dataSource = dataSourceBuilder.Build();
-
-			services.AddSingleton(dataSource);
-			services.AddDbContextFactory<ApplicationDbContext>(options =>
+			services.AddSingleton<NpgsqlDataSource>(sp =>
 			{
+				NpgsqlDataSourceBuilder dataSourceBuilder = new(GetConnectionString(configuration));
+				dataSourceBuilder.UseVector();
+				return dataSourceBuilder.Build();
+			});
+
+			services.AddDbContextFactory<ApplicationDbContext>((sp, options) =>
+			{
+				NpgsqlDataSource dataSource = sp.GetRequiredService<NpgsqlDataSource>();
 				options.UseNpgsql(dataSource, b =>
 				{
 					string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;

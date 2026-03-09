@@ -75,6 +75,7 @@ export function wizardReducer(
       return { ...state, completedSteps: next };
     }
     case "NEXT": {
+      if (state.currentStep >= STEP_LABELS.length - 1) return state;
       const next = new Set(state.completedSteps);
       next.add(state.currentStep);
       return { ...state, completedSteps: next, currentStep: state.currentStep + 1 };
