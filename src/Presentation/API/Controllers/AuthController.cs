@@ -75,6 +75,7 @@ public class AuthController(
 
 	[HttpPost("refresh")]
 	[AllowAnonymous]
+	[EnableRateLimiting("auth-sensitive")]
 	[EndpointSummary("Refresh access token")]
 	public async Task<Results<Ok<TokenResponse>, UnauthorizedHttpResult>> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
@@ -133,6 +134,7 @@ public class AuthController(
 
 	[HttpPost("change-password")]
 	[Authorize]
+	[EnableRateLimiting("auth-sensitive")]
 	[EndpointSummary("Change password (required on first login)")]
 	[ProducesResponseType<OAuthErrorResponse>(StatusCodes.Status400BadRequest)]
 	public async Task<Results<Ok<TokenResponse>, JsonHttpResult<OAuthErrorResponse>, UnauthorizedHttpResult>> ChangePassword([FromBody] ChangePasswordRequest request)

@@ -198,6 +198,70 @@ sudo ufw enable
 
 Do **not** expose port 8080 externally — NPM proxies to it internally.
 
+### Application Rate Limiting
+
+The API enforces rate limiting at the application level (defense-in-depth with CloudFlare and NPM):
+
+| Policy | Endpoints | Limit | Window |
+|--------|-----------|-------|--------|
+| Global | All endpoints | 100 requests | 1 minute (sliding) |
+| `auth` | Login | 5 requests | 1 minute |
+| `auth-sensitive` | Refresh, change password | 10 requests | 1 minute |
+| `api-key` | API key operations | 10 requests | 1 minute |
+
+Rate limits are configurable in `appsettings.json` under the `RateLimiting` section — no code changes required.
+
+Clients receive HTTP 429 with a `Retry-After` header when limits are exceeded. All rate limit violations are logged to the auth audit trail.
+
+### Fail2ban (recommended)
+
+Fail2ban automatically blocks IPs with repeated auth failures at the firewall level.
+
+**Install:**
+
+```bash
+sudo apt install fail2ban
+```
+
+**Create jail** (`/etc/fail2ban/jail.d/receipts-app.conf`):
+
+```ini
+[receipts-app]
+enabled = true
+port = http,https
+filter = receipts-app
+logpath = /var/log/syslog
+backend = systemd
+maxretry = 5
+findtime = 600
+bantime = 3600
+ignoreip = 127.0.0.1 192.168.0.0/16
+```
+
+**Create filter** (`/etc/fail2ban/filter.d/receipts-app.conf`):
+
+```ini
+[Definition]
+failregex = ^.*LoginFailed.*IpAddress=<HOST>.*$
+            ^.*RateLimitExceeded.*IpAddress=<HOST>.*$
+ignoreregex =
+```
+
+**Enable and start:**
+
+```bash
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+```
+
+**Monitor:**
+
+```bash
+sudo fail2ban-client status receipts-app     # Show jail status
+sudo fail2ban-client get receipts-app banned  # List banned IPs
+sudo fail2ban-client set receipts-app unbanip 1.2.3.4  # Unban an IP
+```
+
 ## Resource Usage
 
 Target for Raspberry Pi 4 (4GB RAM):
