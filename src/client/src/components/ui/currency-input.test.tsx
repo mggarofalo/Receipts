@@ -44,6 +44,14 @@ describe("CurrencyInput", () => {
     expect(screen.getByText("$")).toBeInTheDocument();
   });
 
+  it("shows placeholder instead of 0.00 when value is zero", () => {
+    render(<CurrencyInput {...defaultProps} value={0} />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("");
+    expect(input).toHaveAttribute("placeholder", "0.00");
+  });
+
   it("formats value on blur to two decimal places", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
