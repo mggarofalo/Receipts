@@ -56,7 +56,7 @@ describe("DateRangeSelector", () => {
     );
   });
 
-  it("calls onChange with empty object for All time", async () => {
+  it("calls onChange with early start date for All time", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     renderWithProviders(
@@ -64,6 +64,11 @@ describe("DateRangeSelector", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "All time" }));
-    expect(onChange).toHaveBeenCalledWith({});
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: "2000-01-01",
+        endDate: expect.any(String),
+      }),
+    );
   });
 });

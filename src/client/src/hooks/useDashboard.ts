@@ -55,13 +55,17 @@ export function useDashboardSpendingOverTime(
   });
 }
 
-export function useDashboardSpendingByCategory(dateRange: DateRange) {
+export function useDashboardSpendingByCategory(
+  dateRange: DateRange,
+  limit = 100,
+) {
   return useQuery({
     queryKey: [
       "dashboard",
       "spending-by-category",
       dateRange.startDate,
       dateRange.endDate,
+      limit,
     ],
     queryFn: async () => {
       const { data, error } = await client.GET(
@@ -71,6 +75,7 @@ export function useDashboardSpendingByCategory(dateRange: DateRange) {
             query: {
               startDate: dateRange.startDate,
               endDate: dateRange.endDate,
+              limit,
             },
           },
         },

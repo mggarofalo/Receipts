@@ -49,7 +49,10 @@ const presets: Record<PresetKey, Preset> = {
   },
   all: {
     label: "All time",
-    getRange: () => ({}),
+    getRange: () => ({
+      startDate: "2000-01-01",
+      endDate: format(new Date(), "yyyy-MM-dd"),
+    }),
   },
 };
 

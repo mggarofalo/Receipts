@@ -73,7 +73,7 @@ export function BarChart({
             color: "hsl(var(--popover-foreground))",
           }}
         />
-        <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="value" fill={color} radius={isHorizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]} />
       </RechartsBarChart>
     </ResponsiveContainer>
   );
