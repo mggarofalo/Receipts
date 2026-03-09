@@ -1,3 +1,4 @@
+import { useId } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -22,11 +23,13 @@ export function AreaTimeChart({
   color = CHART_COLORS[0],
   formatValue = (v) => v.toLocaleString(),
 }: AreaTimeChartProps) {
+  const gradientId = useId();
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
         <defs>
-          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={color} stopOpacity={0.3} />
             <stop offset="95%" stopColor={color} stopOpacity={0} />
           </linearGradient>
@@ -43,7 +46,7 @@ export function AreaTimeChart({
           tickFormatter={formatValue}
         />
         <Tooltip
-          formatter={(value: number) => [formatValue(value), "Amount"]}
+          formatter={(value) => [formatValue(Number(value)), "Amount"]}
           contentStyle={{
             backgroundColor: "hsl(var(--popover))",
             border: "1px solid hsl(var(--border))",
@@ -55,7 +58,7 @@ export function AreaTimeChart({
           type="monotone"
           dataKey="amount"
           stroke={color}
-          fill="url(#areaGradient)"
+          fill={`url(#${gradientId})`}
           strokeWidth={2}
         />
       </AreaChart>

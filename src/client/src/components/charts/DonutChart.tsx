@@ -59,7 +59,7 @@ export function DonutChart({
           </text>
         )}
         <Tooltip
-          formatter={(value: number) => [formatValue(value)]}
+          formatter={(value) => [formatValue(Number(value))]}
           contentStyle={{
             backgroundColor: "hsl(var(--popover))",
             border: "1px solid hsl(var(--border))",

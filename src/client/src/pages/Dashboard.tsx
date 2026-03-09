@@ -9,14 +9,17 @@ import { SpendingByCategoryWidget } from "@/components/dashboard/SpendingByCateg
 import { SpendingByAccountWidget } from "@/components/dashboard/SpendingByAccountWidget";
 import { RecentReceiptsWidget } from "@/components/dashboard/RecentReceiptsWidget";
 
-const defaultRange: DateRange = {
-  startDate: format(subDays(new Date(), 30), "yyyy-MM-dd"),
-  endDate: format(new Date(), "yyyy-MM-dd"),
-};
+function getDefaultRange(): DateRange {
+  const now = new Date();
+  return {
+    startDate: format(subDays(now, 30), "yyyy-MM-dd"),
+    endDate: format(now, "yyyy-MM-dd"),
+  };
+}
 
 function Dashboard() {
   usePageTitle("Dashboard");
-  const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange);
 
   const handleDateRangeChange = useCallback((range: DateRange) => {
     setDateRange(range);

@@ -39,8 +39,8 @@ describe("RecentReceiptsWidget", () => {
     renderWithQueryClient(<RecentReceiptsWidget />);
     expect(screen.getByText("Grocery Store")).toBeInTheDocument();
     expect(screen.getByText("Gas Station")).toBeInTheDocument();
-    expect(screen.getByText("$45.99")).toBeInTheDocument();
-    expect(screen.getByText("$32.50")).toBeInTheDocument();
+    expect(screen.getByText("Tax: $45.99")).toBeInTheDocument();
+    expect(screen.getByText("Tax: $32.50")).toBeInTheDocument();
   });
 
   it("renders View all link", () => {

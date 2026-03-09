@@ -65,7 +65,7 @@ export function BarChart({
           </>
         )}
         <Tooltip
-          formatter={(value: number) => [formatValue(value), "Amount"]}
+          formatter={(value) => [formatValue(Number(value)), "Amount"]}
           contentStyle={{
             backgroundColor: "hsl(var(--popover))",
             border: "1px solid hsl(var(--border))",

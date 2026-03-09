@@ -42,7 +42,7 @@ describe("BarChart", () => {
     expect(screen.getByTestId("bar")).toBeInTheDocument();
   });
 
-  it("renders vertical layout by default", () => {
+  it("passes horizontal recharts layout for default vertical bar orientation", () => {
     render(<BarChart data={mockData} />);
     expect(screen.getByTestId("bar-chart")).toHaveAttribute(
       "data-layout",
@@ -50,7 +50,7 @@ describe("BarChart", () => {
     );
   });
 
-  it("renders horizontal layout when specified", () => {
+  it("passes vertical recharts layout for horizontal bar orientation", () => {
     render(<BarChart data={mockData} layout="horizontal" />);
     expect(screen.getByTestId("bar-chart")).toHaveAttribute(
       "data-layout",

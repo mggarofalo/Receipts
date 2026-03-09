@@ -32,7 +32,8 @@ describe("useDashboard hooks", () => {
         mostUsedAccount: { name: "Visa", count: 5 },
         mostUsedCategory: { name: "Food", count: 7 },
       };
-      mockClient.GET.mockResolvedValue({ data: mockData, error: undefined, response: {} as Response });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockClient.GET.mockResolvedValue({ data: mockData, error: undefined, response: {} as Response } as any);
 
       const { result } = renderHook(() => useDashboardSummary(dateRange), {
         wrapper: createQueryWrapper(),
@@ -54,7 +55,8 @@ describe("useDashboard hooks", () => {
           { period: "2024-02", amount: 200 },
         ],
       };
-      mockClient.GET.mockResolvedValue({ data: mockData, error: undefined, response: {} as Response });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockClient.GET.mockResolvedValue({ data: mockData, error: undefined, response: {} as Response } as any);
 
       const { result } = renderHook(
         () => useDashboardSpendingOverTime(dateRange, "monthly"),
@@ -71,7 +73,8 @@ describe("useDashboard hooks", () => {
       const mockData = {
         items: [{ categoryName: "Food", amount: 300, percentage: 60 }],
       };
-      mockClient.GET.mockResolvedValue({ data: mockData, error: undefined, response: {} as Response });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockClient.GET.mockResolvedValue({ data: mockData, error: undefined, response: {} as Response } as any);
 
       const { result } = renderHook(
         () => useDashboardSpendingByCategory(dateRange),
@@ -95,7 +98,8 @@ describe("useDashboard hooks", () => {
           },
         ],
       };
-      mockClient.GET.mockResolvedValue({ data: mockData, error: undefined, response: {} as Response });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockClient.GET.mockResolvedValue({ data: mockData, error: undefined, response: {} as Response } as any);
 
       const { result } = renderHook(
         () => useDashboardSpendingByAccount(dateRange),

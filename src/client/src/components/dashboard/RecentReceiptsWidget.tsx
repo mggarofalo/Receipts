@@ -52,8 +52,8 @@ export function RecentReceiptsWidget({ className }: RecentReceiptsWidgetProps) {
                   {format(new Date(receipt.date), "MMM d, yyyy")}
                 </p>
               </div>
-              <span className="ml-4 text-sm font-medium tabular-nums">
-                {formatCurrency(receipt.taxAmount)}
+              <span className="ml-4 text-xs text-muted-foreground tabular-nums">
+                Tax: {formatCurrency(receipt.taxAmount)}
               </span>
             </Link>
           </li>
