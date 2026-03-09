@@ -99,6 +99,26 @@ npm install
 
 Aspire orchestrates the entire stack (API + PostgreSQL + React dev server + Dashboard) automatically. No manual database setup needed.
 
+## Docker Setup
+
+The repo includes a production-ready `docker-compose.yml` with the .NET API, React SPA, and PostgreSQL.
+
+```bash
+# Generate secrets (.env file with random passwords and JWT key)
+bash scripts/generate-secrets.sh > .env
+
+# Start the stack
+docker compose up -d
+
+# View logs
+docker compose logs -f app
+
+# Stop
+docker compose down
+```
+
+The app is available at `http://localhost:8080` (configurable via `APP_PORT` in `.env`). See `.env.example` for all configuration options and **[docs/deployment.md](docs/deployment.md)** for the full deployment guide including HTTPS, backup/restore, updates, and troubleshooting.
+
 ## Development
 
 ### Build
