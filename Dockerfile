@@ -49,6 +49,13 @@ RUN case ${TARGETARCH} in \
 # Copy remaining source
 COPY src/ src/
 
+# Download ONNX model for local embedding generation
+RUN mkdir -p src/Infrastructure/Models/AllMiniLmL6V2 && \
+    curl -sL -o src/Infrastructure/Models/AllMiniLmL6V2/model.onnx \
+      "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx" && \
+    curl -sL -o src/Infrastructure/Models/AllMiniLmL6V2/vocab.txt \
+      "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/vocab.txt"
+
 RUN case ${TARGETARCH} in \
       amd64) DOTNET_ARCH=x64 ;; \
       arm64) DOTNET_ARCH=arm64 ;; \

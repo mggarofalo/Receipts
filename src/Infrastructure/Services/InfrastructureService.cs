@@ -135,21 +135,9 @@ public static class InfrastructureService
 			.AddScoped<ITrashService, TrashService>()
 			.AddScoped<IDashboardService, DashboardService>();
 
-		// Embedding services (graceful degradation: no-ops when OpenAI API key is not configured)
-		string? openAiApiKey = configuration[ConfigurationVariables.OpenAiApiKey];
-		if (!string.IsNullOrEmpty(openAiApiKey))
-		{
-			services.AddHttpClient<IEmbeddingService, OpenAiEmbeddingService>(client =>
-			{
-				client.BaseAddress = new Uri("https://api.openai.com/");
-				client.DefaultRequestHeaders.Add("Authorization", $"Bearer {openAiApiKey}");
-			});
-			services.AddHostedService<EmbeddingGenerationService>();
-		}
-		else
-		{
-			services.AddSingleton<IEmbeddingService, NoOpEmbeddingService>();
-		}
+		// Embedding services (local ONNX model — always available)
+		services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
+		services.AddHostedService<EmbeddingGenerationService>();
 
 		services.AddHostedService<AuthAuditCleanupService>();
 

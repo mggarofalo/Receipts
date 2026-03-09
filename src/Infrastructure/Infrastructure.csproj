@@ -8,9 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Models\AllMiniLmL6V2\model.onnx" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Models\AllMiniLmL6V2\vocab.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\Common\Common.csproj" />

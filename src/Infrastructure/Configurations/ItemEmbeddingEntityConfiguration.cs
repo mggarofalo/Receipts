@@ -17,7 +17,7 @@ public class ItemEmbeddingEntityConfiguration : IEntityTypeConfiguration<ItemEmb
 			.ValueGeneratedOnAdd();
 
 		builder.Property(e => e.Embedding)
-			.HasColumnType("vector(1536)");
+			.HasColumnType("vector(384)");
 
 		builder.HasIndex(e => new { e.EntityType, e.EntityId })
 			.IsUnique();

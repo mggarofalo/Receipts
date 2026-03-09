@@ -25,6 +25,7 @@ if [ "${1:-}" = "--check" ]; then
   fi
 
   [ ! -f "src/client/src/generated/api.d.ts" ] && missing+=("src/client/src/generated/api.d.ts — run: cd src/client && npm run generate:types")
+  [ ! -f "src/Infrastructure/Models/AllMiniLmL6V2/model.onnx" ] && missing+=("ONNX model — run: bash scripts/download-onnx-model.sh")
 
   if [ ${#missing[@]} -gt 0 ]; then
     echo "Pre-commit prerequisites missing:"
@@ -39,6 +40,9 @@ if [ "${1:-}" = "--check" ]; then
   echo "All prerequisites present."
   exit 0
 fi
+
+echo "==> Downloading ONNX model if needed..."
+bash scripts/download-onnx-model.sh
 
 echo "==> Restoring NuGet packages and configuring git hooks..."
 dotnet restore Receipts.slnx

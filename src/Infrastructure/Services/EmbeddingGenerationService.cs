@@ -1,8 +1,6 @@
 using Application.Interfaces.Services;
-using Common;
 using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -67,9 +65,7 @@ public class EmbeddingGenerationService(
 		List<string> texts = pending.Select(p => p.Text).ToList();
 		List<float[]> embeddings = await embeddingService.GenerateEmbeddingsAsync(texts, cancellationToken);
 
-		IConfiguration configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-		string modelVersion = configuration[ConfigurationVariables.OpenAiEmbeddingModel]
-			?? ConfigurationVariables.OpenAiDefaultEmbeddingModel;
+		string modelVersion = OnnxEmbeddingService.ModelName;
 		DateTimeOffset now = DateTimeOffset.UtcNow;
 
 		List<Guid> entityIds = pending.Select(p => p.EntityId).ToList();

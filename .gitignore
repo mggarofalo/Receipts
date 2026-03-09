@@ -319,3 +319,6 @@ src/client/coverage/
 .env
 .env.production
 .env.local
+
+# ONNX model binary (downloaded at build time)
+src/Infrastructure/Models/AllMiniLmL6V2/model.onnx
