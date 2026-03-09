@@ -1,7 +1,10 @@
 import { useState, useCallback } from "react";
+import { Link } from "react-router";
 import { format, subDays } from "date-fns";
+import { Plus } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import type { DateRange } from "@/hooks/useDashboard";
+import { Button } from "@/components/ui/button";
 import { DateRangeSelector } from "@/components/dashboard/DateRangeSelector";
 import { SummaryStats } from "@/components/dashboard/SummaryStats";
 import { SpendingOverTimeWidget } from "@/components/dashboard/SpendingOverTimeWidget";
@@ -29,7 +32,15 @@ function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <DateRangeSelector value={dateRange} onChange={handleDateRangeChange} />
+        <div className="flex items-center gap-2">
+          <Button asChild>
+            <Link to="/receipts/new">
+              <Plus className="h-4 w-4" />
+              Create Receipt
+            </Link>
+          </Button>
+          <DateRangeSelector value={dateRange} onChange={handleDateRangeChange} />
+        </div>
       </div>
 
       <SummaryStats dateRange={dateRange} />
