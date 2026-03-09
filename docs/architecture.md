@@ -17,8 +17,9 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
 - **Infrastructure** - Data access with PostgreSQL via EF Core
   - `Entities/` - Database entity classes (separate from Domain)
   - `Repositories/` - Repository pattern implementation
-  - `Services/` - Service implementations (including audit logging)
+  - `Services/` - Service implementations (audit logging, embeddings, similarity search)
   - `Mapping/` - Mapperly mappers (Domain <-> Entity)
+  - `Models/` - Local ML model files (ONNX)
 - **Presentation**
   - **API** - ASP.NET Core Web API with SignalR hub for real-time updates
     - `Controllers/Core/` and `Controllers/Aggregates/` - REST endpoints
@@ -43,10 +44,18 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
 
 ## Database
 
-PostgreSQL with EF Core. Connection configured via environment variables:
+PostgreSQL with EF Core + pgvector extension. Connection configured via environment variables:
 - `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
 
 Migrations run automatically on API startup via `IDatabaseMigratorService`.
+
+### Vector Similarity Search
+
+The system uses pgvector for semantic similarity search on item names and descriptions. Embeddings are generated locally via ONNX Runtime using the `all-MiniLM-L6-v2` model (384-dimensional vectors). No external API keys are required.
+
+- **`OnnxEmbeddingService`** — Singleton service that loads the ONNX model and tokenizer at startup, generates 384-dim L2-normalized embeddings
+- **`EmbeddingGenerationService`** — Background service that polls every 30s, generates embeddings for new/changed ItemTemplates and ReceiptItems in batches of 50
+- **`ItemTemplateSimilarityService`** — Hybrid search combining trigram similarity (0.4 weight) and cosine vector similarity (0.6 weight) with HNSW indexing
 
 ## Test Project Structure
 

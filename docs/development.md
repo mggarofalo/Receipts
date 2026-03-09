@@ -30,6 +30,9 @@ dotnet restore Receipts.slnx
 
 # Install Node dependencies (OpenAPI linting tools)
 npm install
+
+# Download the ONNX embedding model (~90MB, required at runtime)
+bash scripts/download-onnx-model.sh
 ```
 
 ## F5 Debugging (Recommended)
@@ -101,7 +104,10 @@ The API does not self-migrate or self-seed. You must run DbMigrator and DbSeeder
 # Build entire solution
 dotnet build Receipts.slnx
 
-# Run all tests
+# Run unit tests (same as CI)
+dotnet test Receipts.slnx --filter "Category!=Integration"
+
+# Run all tests including integration (requires ONNX model)
 dotnet test Receipts.slnx
 
 # Run tests for a specific project
@@ -136,7 +142,7 @@ Every `git commit` runs the full quality pipeline automatically:
 2. **Code format check** — `dotnet format --verify-no-changes`
 3. **Build with warnings-as-errors** — also regenerates DTOs and `openapi/generated/API.json`
 4. **Semantic drift check** — compares spec vs generated output for structural differences
-5. **Tests** — `dotnet test --no-build`
+5. **Tests** — `dotnet test --no-build --filter "Category!=Integration"`
 6. **TypeScript types** — `npx tsc --noEmit`
 7. **ESLint** — `npx eslint src/client/src`
 
