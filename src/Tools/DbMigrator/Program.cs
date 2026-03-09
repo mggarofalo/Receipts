@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 builder.AddServiceDefaults();
@@ -15,12 +16,17 @@ if (!InfrastructureService.IsDatabaseConfigured(builder.Configuration))
 	return 1;
 }
 
+NpgsqlDataSourceBuilder dataSourceBuilder = new(InfrastructureService.GetConnectionString(builder.Configuration));
+dataSourceBuilder.UseVector();
+NpgsqlDataSource dataSource = dataSourceBuilder.Build();
+
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 {
-	options.UseNpgsql(InfrastructureService.GetConnectionString(builder.Configuration), b =>
+	options.UseNpgsql(dataSource, b =>
 	{
 		string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
 		b.MigrationsAssembly(assemblyName);
+		b.UseVector();
 	});
 	options.ConfigureWarnings(w => w.Log(
 		(RelationalEventId.PendingModelChangesWarning, LogLevel.Warning)));
