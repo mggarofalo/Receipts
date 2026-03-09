@@ -185,7 +185,10 @@ function Receipts() {
               Delete ({selected.size})
             </Button>
           )}
-          <Button onClick={() => setCreateOpen(true)}>New Receipt</Button>
+          <Button variant="outline" asChild>
+            <Link to="/receipts/new">New Receipt (Wizard)</Link>
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>Quick Add</Button>
         </div>
       </div>
 

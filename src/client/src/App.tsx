@@ -21,6 +21,7 @@ import AdminUsers from "@/pages/AdminUsers";
 import AuditLog from "@/pages/AuditLog";
 import SecurityLog from "@/pages/SecurityLog";
 import RecycleBin from "@/pages/RecycleBin";
+import NewReceipt from "@/pages/wizard/NewReceipt";
 import NotFound from "@/pages/NotFound";
 
 export const routeConfig = [
@@ -46,6 +47,7 @@ export const routeConfig = [
           { path: "/categories", element: <Categories /> },
           { path: "/subcategories", element: <Subcategories /> },
           { path: "/receipts", element: <Receipts /> },
+          { path: "/receipts/new", element: <NewReceipt /> },
           { path: "/receipt-items", element: <ReceiptItems /> },
           { path: "/transactions", element: <Transactions /> },
           { path: "/trips", element: <Trips /> },

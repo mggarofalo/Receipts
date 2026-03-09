@@ -106,10 +106,10 @@ describe("Receipts", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the New Receipt button", () => {
+  it("renders the Quick Add button", () => {
     renderWithProviders(<Receipts />);
     expect(
-      screen.getByRole("button", { name: /new receipt/i }),
+      screen.getByRole("button", { name: /quick add/i }),
     ).toBeInTheDocument();
   });
 
@@ -147,11 +147,11 @@ describe("Receipts", () => {
     expect(screen.getByText("Target")).toBeInTheDocument();
   });
 
-  it("opens create dialog when New Receipt button is clicked", async () => {
+  it("opens create dialog when Quick Add button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithProviders(<Receipts />);
 
-    await user.click(screen.getByRole("button", { name: /new receipt/i }));
+    await user.click(screen.getByRole("button", { name: /quick add/i }));
 
     expect(
       screen.getByRole("heading", { name: /create receipt/i }),
@@ -198,7 +198,7 @@ describe("Receipts", () => {
   it("closes create dialog when Cancel is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithProviders(<Receipts />);
-    await user.click(screen.getByRole("button", { name: /new receipt/i }));
+    await user.click(screen.getByRole("button", { name: /quick add/i }));
     expect(screen.getByRole("heading", { name: /create receipt/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /cancel/i }));
@@ -324,7 +324,7 @@ describe("Receipts", () => {
     }));
 
     renderWithProviders(<Receipts />);
-    await user.click(screen.getByRole("button", { name: /new receipt/i }));
+    await user.click(screen.getByRole("button", { name: /quick add/i }));
 
     await user.type(screen.getByLabelText(/location/i), "Walmart");
     await user.type(screen.getByLabelText(/date/i), "2024-01-15");

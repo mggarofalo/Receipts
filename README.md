@@ -14,7 +14,8 @@ A full-stack receipt management application built with .NET 10 Clean Architectur
 | UI | Tailwind CSS 4, shadcn/ui, Radix UI |
 | State & Routing | TanStack Query, React Router |
 | Forms | React Hook Form, Zod |
-| Database | PostgreSQL + EF Core 10 |
+| Database | PostgreSQL + EF Core 10 + pgvector |
+| Embeddings | all-MiniLM-L6-v2 via ONNX Runtime (local, no API key) |
 | CQRS | MediatR 14 |
 | Mapping | Mapperly (compile-time, zero-reflection) |
 | Validation | FluentValidation |
@@ -130,7 +131,10 @@ dotnet build Receipts.slnx
 ### Run Tests
 
 ```bash
-# All tests
+# Unit tests only (same as CI)
+dotnet test Receipts.slnx --filter "Category!=Integration"
+
+# All tests including integration (requires ONNX model)
 dotnet test Receipts.slnx
 
 # Single project
@@ -192,7 +196,7 @@ GitHub Actions runs three parallel jobs on every push to `main` and every PR:
 
 | Job | What it does |
 |---|---|
-| **Build & Test** | `dotnet build` with warnings-as-errors, then `dotnet test` |
+| **Build & Test** | `dotnet build` with warnings-as-errors, then `dotnet test` (unit tests only; integration tests excluded) |
 | **Code Formatting** | `dotnet format --verify-no-changes` |
 | **Vulnerability Scan** | `dotnet list package --vulnerable` with fail-on-detection |
 
@@ -217,6 +221,7 @@ Tests mirror the source project structure with one test project per source layer
 - **In-memory EF Core** for Infrastructure tests (`Microsoft.EntityFrameworkCore.InMemory`)
 - **SampleData project** provides shared test fixtures so entity construction is consistent across all test projects
 - **No testing of implementation details** - tests verify behavior, not internal mechanics
+- **Integration tests** tagged with `[Trait("Category", "Integration")]` for tests requiring external resources (ONNX model, real database). Excluded from CI via `--filter "Category!=Integration"`
 
 ## API Endpoints
 

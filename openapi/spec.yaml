@@ -869,6 +869,101 @@ paths:
               schema:
                 type: string
 
+  /api/item-templates/similar:
+    get:
+      operationId: GetSimilarItems
+      tags: [ItemTemplates]
+      summary: Find similar items by trigram similarity
+      description: |
+        Returns items from templates and receipt history that are similar to the
+        provided search text, ranked by trigram similarity score.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Partial or full description text to search for
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 5
+            minimum: 1
+            maximum: 20
+          description: Maximum number of results to return
+        - name: threshold
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            default: 0.3
+            minimum: 0.0
+            maximum: 1.0
+          description: Minimum similarity score (0.0–1.0)
+        - name: semantic
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Whether to include semantic (embedding-based) similarity in ranking
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SimilarItemResponse"
+
+  /api/item-templates/category-suggestions:
+    get:
+      operationId: GetCategorySuggestions
+      tags: [ItemTemplates]
+      summary: Get category/subcategory recommendations for an item description
+      description: |
+        Returns ranked category and subcategory suggestions based on semantic and
+        trigram similarity to existing items and receipt history.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Item description to get category recommendations for
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 5
+            minimum: 1
+            maximum: 20
+          description: Maximum number of recommendations to return
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryRecommendationResponse"
+
   /api/item-templates/{id}/restore:
     post:
       operationId: RestoreItemTemplate
@@ -3133,6 +3228,74 @@ components:
         limit:
           type: integer
           format: int32
+
+    SimilarItemResponseSource:
+      type: string
+      description: "'template' if from item templates, 'history' if from receipt item history"
+      enum: [template, history]
+
+    SimilarItemResponse:
+      type: object
+      required: [name, similarity, combinedScore, source]
+      properties:
+        name:
+          type: string
+        similarity:
+          type: number
+          format: double
+          description: Trigram similarity score (0.0–1.0)
+        semanticSimilarity:
+          type:
+            - number
+            - "null"
+          format: double
+          description: Embedding cosine similarity score (0.0–1.0), null if embeddings unavailable
+        combinedScore:
+          type: number
+          format: double
+          description: Weighted combination of trigram and semantic similarity
+        source:
+          $ref: "#/components/schemas/SimilarItemResponseSource"
+        defaultCategory:
+          type:
+            - string
+            - "null"
+        defaultSubcategory:
+          type:
+            - string
+            - "null"
+        defaultUnitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        defaultPricingMode:
+          type:
+            - string
+            - "null"
+        defaultItemCode:
+          type:
+            - string
+            - "null"
+
+    CategoryRecommendationResponse:
+      type: object
+      required: [category, confidence, occurrenceCount]
+      properties:
+        category:
+          type: string
+        subcategory:
+          type:
+            - string
+            - "null"
+        confidence:
+          type: number
+          format: double
+          description: Weighted confidence score based on similarity of source items
+        occurrenceCount:
+          type: integer
+          format: int32
+          description: Number of similar items with this category
 
     # ── Receipt ──────────────────────────────────
 

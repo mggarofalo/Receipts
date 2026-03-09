@@ -1,6 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgres")
+	.WithImage("pgvector/pgvector", "pg17")
 	.WithDataVolume()
 	.WithPgAdmin();
 
@@ -11,7 +12,6 @@ IResourceBuilder<ParameterResource> adminEmail = builder.AddParameter("admin-ema
 IResourceBuilder<ParameterResource> adminPassword = builder.AddParameter("admin-password", secret: true);
 IResourceBuilder<ParameterResource> adminFirstName = builder.AddParameter("admin-first-name");
 IResourceBuilder<ParameterResource> adminLastName = builder.AddParameter("admin-last-name");
-
 // DbMigrator: applies EF Core migrations, then exits
 IResourceBuilder<ProjectResource> migrator = builder.AddProject<Projects.DbMigrator>("db-migrator")
 	.WithReference(db)

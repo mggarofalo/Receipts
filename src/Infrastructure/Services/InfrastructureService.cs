@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Infrastructure.Services;
 
@@ -59,12 +60,21 @@ public static class InfrastructureService
 	{
 		if (IsDatabaseConfigured(configuration))
 		{
-			services.AddDbContextFactory<ApplicationDbContext>(options =>
+			services.AddSingleton<NpgsqlDataSource>(sp =>
 			{
-				options.UseNpgsql(GetConnectionString(configuration), b =>
+				NpgsqlDataSourceBuilder dataSourceBuilder = new(GetConnectionString(configuration));
+				dataSourceBuilder.UseVector();
+				return dataSourceBuilder.Build();
+			});
+
+			services.AddDbContextFactory<ApplicationDbContext>((sp, options) =>
+			{
+				NpgsqlDataSource dataSource = sp.GetRequiredService<NpgsqlDataSource>();
+				options.UseNpgsql(dataSource, b =>
 				{
 					string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
 					b.MigrationsAssembly(assemblyName);
+					b.UseVector();
 				});
 				options.ConfigureWarnings(w => w.Log(
 					(RelationalEventId.PendingModelChangesWarning, LogLevel.Warning)));
@@ -110,6 +120,7 @@ public static class InfrastructureService
 			.AddScoped<IAdjustmentService, AdjustmentService>()
 			.AddScoped<IReceiptItemService, ReceiptItemService>()
 			.AddScoped<IItemTemplateService, ItemTemplateService>()
+			.AddScoped<IItemTemplateSimilarityService, ItemTemplateSimilarityService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
 			.AddScoped<IAccountRepository, AccountRepository>()
 			.AddScoped<ICategoryRepository, CategoryRepository>()
@@ -126,6 +137,10 @@ public static class InfrastructureService
 			.AddScoped<IUserService, UserService>()
 			.AddScoped<ITrashService, TrashService>()
 			.AddScoped<IDashboardService, DashboardService>();
+
+		// Embedding services (local ONNX model — always available)
+		services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
+		services.AddHostedService<EmbeddingGenerationService>();
 
 		services.AddHostedService<AuthAuditCleanupService>();
 

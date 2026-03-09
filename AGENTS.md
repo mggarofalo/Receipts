@@ -7,8 +7,9 @@ This file provides guidance to AI agents when working with code in this reposito
 - **.NET 10 SDK** — build, test, and run the API
 - **Node.js 18+** and **npm** — OpenAPI spec linting (`@stoplight/spectral-cli`) and semantic drift detection (`js-yaml`)
 - **PostgreSQL** — runtime database (connection via environment variables)
+- **ONNX model** — `all-MiniLM-L6-v2` for local embeddings (downloaded via `bash scripts/download-onnx-model.sh`)
 
-After cloning, run `dotnet restore Receipts.slnx` then `npm install`.
+After cloning, run `dotnet restore Receipts.slnx` then `npm install`. Run `bash scripts/download-onnx-model.sh` to download the ONNX embedding model (~90MB, required at runtime but not for building or CI).
 
 ## Worktree Setup
 
@@ -37,6 +38,7 @@ Run these in order (or use `scripts/worktree-setup.sh` to run them all):
 dotnet restore Receipts.slnx          # NuGet packages + configures git hooks
 npm install                            # Root tooling (Spectral, js-yaml, cross-env)
 cd src/client && npm install && cd -   # React client dependencies
+bash scripts/download-onnx-model.sh    # Download ONNX embedding model (~90MB)
 dotnet build Receipts.slnx             # Compiles + generates DTOs and openapi/generated/API.json
 cd src/client && npm run generate:types && cd -  # TypeScript types from OpenAPI spec
 ```
@@ -87,7 +89,9 @@ Spec-first workflow, endpoint return types, and authentication standards. See **
 
 ```bash
 dotnet build Receipts.slnx                                    # Build entire solution
-dotnet test Receipts.slnx                                     # Run all tests
+dotnet test Receipts.slnx                                     # Run all tests (including integration)
+dotnet test Receipts.slnx --filter "Category!=Integration"    # Unit tests only (used by CI and pre-commit)
+dotnet test --filter "Category=Integration"                    # Integration tests only (requires ONNX model)
 dotnet test tests/Application.Tests/Application.Tests.csproj  # Single project
 dotnet test --filter "FullyQualifiedName~TestMethodName"       # Single test
 dotnet run --project src/Tools/DbMigrator/DbMigrator.csproj   # Apply EF Core migrations
@@ -114,7 +118,7 @@ Validates the commit message against the Conventional Commits convention using `
 2. `dotnet format --verify-no-changes` — code formatting check
 3. `dotnet build -p:TreatWarningsAsErrors=true` — build (also regenerates DTOs and `openapi/generated/API.json`)
 4. `node scripts/check-drift.mjs` — semantic drift detection
-5. `dotnet test --no-build` — run all tests
+5. `dotnet test --no-build --filter "Category!=Integration"` — run unit tests
 6. `npx tsc --noEmit` — TypeScript type checking
 7. `npx eslint src/client/src` — React client linting
 
@@ -150,6 +154,8 @@ All functions, objects, and arrays returned from custom hooks (`use*`) **must** 
 ### Tests and Code Review
 
 **All new functionality must include tests.** When implementing a new feature, endpoint, command, query, or fixing a bug, include corresponding unit tests in the same PR. Do not merge code without test coverage for the changes introduced. Follow existing test conventions (xUnit, Arrange/Act/Assert, FluentAssertions, Moq).
+
+**Integration tests** use `[Trait("Category", "Integration")]` and are excluded from CI and pre-commit hooks via `--filter "Category!=Integration"`. Use this trait for tests that require external resources (e.g., ONNX model files, PostgreSQL). Unit tests do not need a trait — they run everywhere by default.
 
 **Never write tests or perform code review in the main conversation context.** Always spawn subagents for these tasks:
 - Use the `test-runner` or equivalent subagent for running and writing tests

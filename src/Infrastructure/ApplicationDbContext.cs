@@ -43,6 +43,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public virtual DbSet<AdjustmentEntity> Adjustments { get; set; } = null!;
 	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
 	public virtual DbSet<ItemTemplateEntity> ItemTemplates { get; set; } = null!;
+	public virtual DbSet<ItemEmbeddingEntity> ItemEmbeddings { get; set; } = null!;
 	public virtual DbSet<AuditLogEntity> AuditLogs { get; set; } = null!;
 	public virtual DbSet<AuthAuditLogEntity> AuthAuditLogs { get; set; } = null!;
 
@@ -51,6 +52,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		base.OnModelCreating(modelBuilder);
 		PrepareEntityTypesInModelBuilder(modelBuilder, Database.ProviderName);
 		modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+		// The InMemory provider cannot map pgvector's Vector type directly.
+		// Convert Vector <-> string so InMemory tests can work with embeddings.
+		if (Database.ProviderName == InMemory)
+		{
+			modelBuilder.Entity<ItemEmbeddingEntity>()
+				.Property(e => e.Embedding)
+				.HasColumnType(null)
+				.HasConversion(
+					v => string.Join(';', v.ToArray()),
+					v => new Pgvector.Vector(v.Split(';').Select(float.Parse).ToArray()));
+		}
 	}
 
 	public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

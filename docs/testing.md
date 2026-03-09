@@ -5,8 +5,14 @@
 ### Running Tests
 
 ```bash
-# All tests
+# Unit tests only (same as CI and pre-commit)
+dotnet test Receipts.slnx --filter "Category!=Integration"
+
+# All tests including integration (requires ONNX model locally)
 dotnet test Receipts.slnx
+
+# Integration tests only
+dotnet test Receipts.slnx --filter "Category=Integration"
 
 # Single project
 dotnet test tests/Application.Tests/Application.Tests.csproj
@@ -49,6 +55,25 @@ Configured in `scripts/tests/coverlet.runsettings`:
 - **Naming:** `MethodName_Condition_ExpectedResult`
 - **Structure:** Arrange / Act / Assert
 - **Mappers:** Use concrete instances, never mock Mapperly mappers
+
+### Integration Tests
+
+Tests that require external resources (ONNX model files, real database) are tagged with `[Trait("Category", "Integration")]`. This separates them from fast unit tests.
+
+```csharp
+[Trait("Category", "Integration")]
+public class OnnxEmbeddingServiceIntegrationTests : IClassFixture<OnnxEmbeddingServiceFixture>
+{
+    // Tests that run against the real ONNX model
+}
+```
+
+**Key points:**
+- CI and pre-commit hooks run with `--filter "Category!=Integration"` — integration tests are excluded
+- Unit tests do NOT need a `[Trait]` attribute — they run everywhere by default
+- Integration tests use `IClassFixture<T>` to share expensive resources (e.g., loading the ONNX model once for all tests in a class)
+- The ONNX model (~90MB) is not in git; run `bash scripts/download-onnx-model.sh` to download it locally
+- Run `dotnet test --filter "Category=Integration"` to execute integration tests locally
 
 ## React Frontend
 
