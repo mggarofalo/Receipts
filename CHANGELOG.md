@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/mggarofalo/Receipts/compare/v0.1.2...v0.1.3) (2026-03-09)
+
+
+### Features
+
+* **infra:** phase 6 — Docker deployment, Aspire orchestration, and security hardening ([#137](https://github.com/mggarofalo/Receipts/issues/137)) ([c8af0c2](https://github.com/mggarofalo/Receipts/commit/c8af0c2044322fdc5d5cb0d40ac4370f8ae21f9a))
+
 ## [0.1.2](https://github.com/mggarofalo/Receipts/compare/v0.1.1...v0.1.2) (2026-03-09)
 
 
