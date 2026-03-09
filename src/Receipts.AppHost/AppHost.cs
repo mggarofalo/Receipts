@@ -1,6 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgres")
+	.WithImage("pgvector/pgvector", "pg17")
 	.WithDataVolume()
 	.WithPgAdmin();
 
@@ -11,6 +12,7 @@ IResourceBuilder<ParameterResource> adminEmail = builder.AddParameter("admin-ema
 IResourceBuilder<ParameterResource> adminPassword = builder.AddParameter("admin-password", secret: true);
 IResourceBuilder<ParameterResource> adminFirstName = builder.AddParameter("admin-first-name");
 IResourceBuilder<ParameterResource> adminLastName = builder.AddParameter("admin-last-name");
+IResourceBuilder<ParameterResource> openaiApiKey = builder.AddParameter("openai-api-key", secret: true);
 
 // DbMigrator: applies EF Core migrations, then exits
 IResourceBuilder<ProjectResource> migrator = builder.AddProject<Projects.DbMigrator>("db-migrator")
@@ -29,6 +31,7 @@ IResourceBuilder<ProjectResource> seeder = builder.AddProject<Projects.DbSeeder>
 // API: starts after seeder completes
 IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")
 	.WithReference(db)
+	.WithEnvironment("OpenAI__ApiKey", openaiApiKey)
 	.WaitForCompletion(seeder);
 
 builder.AddViteApp("frontend", "../client")

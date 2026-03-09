@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Infrastructure.Services;
 
@@ -59,12 +60,18 @@ public static class InfrastructureService
 	{
 		if (IsDatabaseConfigured(configuration))
 		{
+			NpgsqlDataSourceBuilder dataSourceBuilder = new(GetConnectionString(configuration));
+			dataSourceBuilder.UseVector();
+			NpgsqlDataSource dataSource = dataSourceBuilder.Build();
+
+			services.AddSingleton(dataSource);
 			services.AddDbContextFactory<ApplicationDbContext>(options =>
 			{
-				options.UseNpgsql(GetConnectionString(configuration), b =>
+				options.UseNpgsql(dataSource, b =>
 				{
 					string? assemblyName = typeof(ApplicationDbContext).Assembly.FullName;
 					b.MigrationsAssembly(assemblyName);
+					b.UseVector();
 				});
 				options.ConfigureWarnings(w => w.Log(
 					(RelationalEventId.PendingModelChangesWarning, LogLevel.Warning)));
@@ -127,6 +134,22 @@ public static class InfrastructureService
 			.AddScoped<IUserService, UserService>()
 			.AddScoped<ITrashService, TrashService>()
 			.AddScoped<IDashboardService, DashboardService>();
+
+		// Embedding services (graceful degradation: no-ops when OpenAI API key is not configured)
+		string? openAiApiKey = configuration[ConfigurationVariables.OpenAiApiKey];
+		if (!string.IsNullOrEmpty(openAiApiKey))
+		{
+			services.AddHttpClient<IEmbeddingService, OpenAiEmbeddingService>(client =>
+			{
+				client.BaseAddress = new Uri("https://api.openai.com/");
+				client.DefaultRequestHeaders.Add("Authorization", $"Bearer {openAiApiKey}");
+			});
+			services.AddHostedService<EmbeddingGenerationService>();
+		}
+		else
+		{
+			services.AddSingleton<IEmbeddingService, NoOpEmbeddingService>();
+		}
 
 		services.AddHostedService<AuthAuditCleanupService>();
 

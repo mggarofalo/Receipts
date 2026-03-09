@@ -22,7 +22,7 @@ services:
     networks: []
 
   db:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:pg17
     container_name: receipts-db
     restart: unless-stopped
     environment:
@@ -97,6 +97,7 @@ services:
       - AdminSeed__Email=admin@example.com
       - AdminSeed__FirstName=Admin
       - AdminSeed__LastName=User
+      - OPENAI_API_KEY_FILE=/secrets/openai_api_key
     depends_on:
       db:
         condition: service_healthy

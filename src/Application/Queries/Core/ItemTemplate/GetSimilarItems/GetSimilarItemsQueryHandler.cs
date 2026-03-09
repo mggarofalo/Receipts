@@ -7,6 +7,6 @@ public class GetSimilarItemsQueryHandler(IItemTemplateSimilarityService similari
 {
 	public async Task<IEnumerable<SimilarItemResult>> Handle(GetSimilarItemsQuery request, CancellationToken cancellationToken)
 	{
-		return await similarityService.GetSimilarItemsAsync(request.SearchText, request.Limit, request.Threshold, cancellationToken);
+		return await similarityService.GetSimilarItemsAsync(request.SearchText, request.Limit, request.Threshold, request.UseSemanticSearch, cancellationToken);
 	}
 }

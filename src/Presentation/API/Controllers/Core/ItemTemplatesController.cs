@@ -7,6 +7,7 @@ using Application.Commands.ItemTemplate.Restore;
 using Application.Commands.ItemTemplate.Update;
 using Application.Models;
 using Application.Queries.Core.ItemTemplate;
+using Application.Queries.Core.ItemTemplate.GetCategoryRecommendations;
 using Application.Queries.Core.ItemTemplate.GetSimilarItems;
 using Asp.Versioning;
 using Domain.Core;
@@ -32,6 +33,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
 	public const string RouteGetSimilar = "similar";
+	public const string RouteGetCategorySuggestions = "category-suggestions";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get an item template by ID")]
@@ -190,23 +192,44 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	}
 
 	[HttpGet(RouteGetSimilar)]
-	[EndpointSummary("Find similar items by trigram similarity")]
-	[EndpointDescription("Returns items from templates and receipt history that are similar to the provided search text, ranked by trigram similarity score.")]
-	public async Task<Ok<List<SimilarItemResponse>>> GetSimilarItems([FromQuery] string q, [FromQuery] int limit = 5, [FromQuery] double threshold = 0.3)
+	[EndpointSummary("Find similar items by hybrid similarity")]
+	[EndpointDescription("Returns items from templates and receipt history that are similar to the provided search text, ranked by a weighted combination of trigram and semantic (embedding) similarity.")]
+	public async Task<Ok<List<SimilarItemResponse>>> GetSimilarItems([FromQuery] string q, [FromQuery] int limit = 5, [FromQuery] double threshold = 0.3, [FromQuery] bool semantic = true)
 	{
-		GetSimilarItemsQuery query = new(q, limit, threshold);
+		GetSimilarItemsQuery query = new(q, limit, threshold, semantic);
 		IEnumerable<SimilarItemResult> results = await mediator.Send(query);
 
 		List<SimilarItemResponse> response = [.. results.Select(r => new SimilarItemResponse
 		{
 			Name = r.Name,
 			Similarity = r.Similarity,
+			SemanticSimilarity = r.SemanticSimilarity,
+			CombinedScore = r.CombinedScore,
 			Source = r.Source == "template" ? SimilarItemResponseSource.Template : SimilarItemResponseSource.History,
 			DefaultCategory = r.DefaultCategory,
 			DefaultSubcategory = r.DefaultSubcategory,
 			DefaultUnitPrice = r.DefaultUnitPrice.HasValue ? (double)r.DefaultUnitPrice.Value : null,
 			DefaultPricingMode = r.DefaultPricingMode,
 			DefaultItemCode = r.DefaultItemCode,
+		})];
+
+		return TypedResults.Ok(response);
+	}
+
+	[HttpGet(RouteGetCategorySuggestions)]
+	[EndpointSummary("Get category/subcategory recommendations")]
+	[EndpointDescription("Returns ranked category and subcategory suggestions based on semantic and trigram similarity to existing items and receipt history.")]
+	public async Task<Ok<List<CategoryRecommendationResponse>>> GetCategorySuggestions([FromQuery] string q, [FromQuery] int limit = 5)
+	{
+		GetCategoryRecommendationsQuery query = new(q, limit);
+		IEnumerable<CategoryRecommendation> results = await mediator.Send(query);
+
+		List<CategoryRecommendationResponse> response = [.. results.Select(r => new CategoryRecommendationResponse
+		{
+			Category = r.Category,
+			Subcategory = r.Subcategory,
+			Confidence = r.Confidence,
+			OccurrenceCount = r.OccurrenceCount,
 		})];
 
 		return TypedResults.Ok(response);

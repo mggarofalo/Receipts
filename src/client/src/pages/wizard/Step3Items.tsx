@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,6 +7,10 @@ import {
   useSubcategoriesByCategoryId,
   useCreateSubcategory,
 } from "@/hooks/useSubcategories";
+import {
+  useSimilarItems,
+  useCategoryRecommendations,
+} from "@/hooks/useSimilarItems";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Sparkles } from "lucide-react";
 import type { WizardReceiptItem } from "./wizardReducer";
 
 const itemSchema = z
@@ -73,6 +77,9 @@ export function Step3Items({
   onBack,
 }: Step3Props) {
   const [items, setItems] = useState<WizardReceiptItem[]>(data);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIdx, setSelectedSuggestionIdx] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const { data: categories } = useCategories();
 
   const categoryOptions = useMemo(
@@ -99,7 +106,16 @@ export function Step3Items({
     },
   });
 
+  const description = form.watch("description");
   const selectedCategory = form.watch("category");
+
+  const { data: similarItems, isFetching: isFetchingSimilar } =
+    useSimilarItems(description, { enabled: showSuggestions });
+
+  const { data: categoryRecs } = useCategoryRecommendations(description, {
+    enabled: description.length >= 2 && !selectedCategory,
+  });
+
   const selectedCategoryObj = useMemo(
     () =>
       (
@@ -134,6 +150,71 @@ export function Step3Items({
   const balanceDiff = Math.abs(expectedTotal - transactionTotal);
   const isBalanced = balanceDiff < 0.01;
 
+  const applySuggestion = useCallback(
+    (suggestion: NonNullable<typeof similarItems>[number]) => {
+      form.setValue("description", suggestion.name);
+      if (suggestion.defaultCategory) {
+        form.setValue("category", suggestion.defaultCategory);
+      }
+      if (suggestion.defaultSubcategory) {
+        form.setValue("subcategory", suggestion.defaultSubcategory);
+      }
+      if (suggestion.defaultUnitPrice != null) {
+        form.setValue("unitPrice", suggestion.defaultUnitPrice);
+      }
+      if (
+        suggestion.defaultPricingMode === "quantity" ||
+        suggestion.defaultPricingMode === "flat"
+      ) {
+        form.setValue("pricingMode", suggestion.defaultPricingMode);
+        if (suggestion.defaultPricingMode === "flat") {
+          form.setValue("quantity", 1);
+        }
+      }
+      if (suggestion.defaultItemCode) {
+        form.setValue("receiptItemCode", suggestion.defaultItemCode);
+      }
+      setShowSuggestions(false);
+      setSelectedSuggestionIdx(-1);
+    },
+    [form],
+  );
+
+  const applyCategoryRec = useCallback(
+    (rec: NonNullable<typeof categoryRecs>[number]) => {
+      form.setValue("category", rec.category);
+      if (rec.subcategory) {
+        form.setValue("subcategory", rec.subcategory);
+      }
+    },
+    [form],
+  );
+
+  const handleDescriptionKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!showSuggestions || !similarItems?.length) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedSuggestionIdx((prev) =>
+          prev < similarItems.length - 1 ? prev + 1 : 0,
+        );
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedSuggestionIdx((prev) =>
+          prev > 0 ? prev - 1 : similarItems.length - 1,
+        );
+      } else if (e.key === "Enter" && selectedSuggestionIdx >= 0) {
+        e.preventDefault();
+        applySuggestion(similarItems[selectedSuggestionIdx]);
+      } else if (e.key === "Escape") {
+        setShowSuggestions(false);
+        setSelectedSuggestionIdx(-1);
+      }
+    },
+    [showSuggestions, similarItems, selectedSuggestionIdx, applySuggestion],
+  );
+
   const handleAdd = useCallback(
     (values: ItemFormValues) => {
       const newItem: WizardReceiptItem = {
@@ -156,6 +237,8 @@ export function Step3Items({
         category: values.category,
         subcategory: "",
       });
+      setShowSuggestions(false);
+      setSelectedSuggestionIdx(-1);
     },
     [form],
   );
@@ -209,15 +292,93 @@ export function Step3Items({
               control={form.control}
               name="description"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="relative">
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Item description"
-                      aria-required="true"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        placeholder="Item description"
+                        aria-required="true"
+                        autoComplete="off"
+                        {...field}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={() => {
+                          // Delay to allow click on suggestion
+                          setTimeout(() => setShowSuggestions(false), 200);
+                        }}
+                        onKeyDown={handleDescriptionKeyDown}
+                      />
+                      {isFetchingSimilar && description.length >= 2 && (
+                        <Loader2 className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
                   </FormControl>
+                  {showSuggestions &&
+                    similarItems &&
+                    similarItems.length > 0 && (
+                      <div
+                        ref={suggestionsRef}
+                        className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg"
+                        role="listbox"
+                      >
+                        {similarItems.map((item, idx) => (
+                          <button
+                            key={`${item.name}-${item.source}`}
+                            type="button"
+                            role="option"
+                            aria-selected={idx === selectedSuggestionIdx}
+                            className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent ${
+                              idx === selectedSuggestionIdx ? "bg-accent" : ""
+                            } ${idx === 0 ? "rounded-t-md" : ""} ${
+                              idx === similarItems.length - 1
+                                ? "rounded-b-md"
+                                : ""
+                            }`}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              applySuggestion(item);
+                            }}
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-medium">{item.name}</span>
+                              {item.defaultCategory && (
+                                <span className="text-xs text-muted-foreground">
+                                  {item.defaultCategory}
+                                  {item.defaultSubcategory
+                                    ? ` / ${item.defaultSubcategory}`
+                                    : ""}
+                                  {item.defaultUnitPrice != null
+                                    ? ` · ${formatCurrency(item.defaultUnitPrice)}`
+                                    : ""}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0"
+                              >
+                                {item.source === "template"
+                                  ? "Template"
+                                  : "History"}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground">
+                                {Math.round(item.combinedScore * 100)}%
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  {showSuggestions &&
+                    description.length >= 2 &&
+                    !isFetchingSimilar &&
+                    similarItems &&
+                    similarItems.length === 0 && (
+                      <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover p-3 text-center text-sm text-muted-foreground shadow-lg">
+                        No similar items found
+                      </div>
+                    )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -309,6 +470,24 @@ export function Step3Items({
                       aria-required="true"
                     />
                   </FormControl>
+                  {categoryRecs &&
+                    categoryRecs.length > 0 &&
+                    !selectedCategory && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        <Sparkles className="h-3 w-3 text-muted-foreground mt-0.5" />
+                        {categoryRecs.map((rec) => (
+                          <button
+                            key={`${rec.category}-${rec.subcategory ?? ""}`}
+                            type="button"
+                            className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                            onClick={() => applyCategoryRec(rec)}
+                          >
+                            {rec.category}
+                            {rec.subcategory ? ` / ${rec.subcategory}` : ""}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   <FormMessage />
                 </FormItem>
               )}

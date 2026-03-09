@@ -19,5 +19,9 @@ public static class ConfigurationVariables
 	public const string AdminSeedPassword = "AdminSeed:Password";
 	public const string AdminSeedFirstName = "AdminSeed:FirstName";
 	public const string AdminSeedLastName = "AdminSeed:LastName";
+
+	public const string OpenAiApiKey = "OpenAI:ApiKey";
+	public const string OpenAiEmbeddingModel = "OpenAI:EmbeddingModel";
+	public const string OpenAiDefaultEmbeddingModel = "text-embedding-3-small";
 }
 
