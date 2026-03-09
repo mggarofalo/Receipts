@@ -7,6 +7,7 @@ using Application.Commands.ItemTemplate.Restore;
 using Application.Commands.ItemTemplate.Update;
 using Application.Models;
 using Application.Queries.Core.ItemTemplate;
+using Application.Queries.Core.ItemTemplate.GetSimilarItems;
 using Asp.Versioning;
 using Domain.Core;
 using MediatR;
@@ -30,6 +31,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	public const string RouteDelete = "";
 	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
+	public const string RouteGetSimilar = "similar";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get an item template by ID")]
@@ -185,5 +187,28 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 
 		await notifier.NotifyUpdated("item-template", id);
 		return TypedResults.NoContent();
+	}
+
+	[HttpGet(RouteGetSimilar)]
+	[EndpointSummary("Find similar items by trigram similarity")]
+	[EndpointDescription("Returns items from templates and receipt history that are similar to the provided search text, ranked by trigram similarity score.")]
+	public async Task<Ok<List<SimilarItemResponse>>> GetSimilarItems([FromQuery] string q, [FromQuery] int limit = 5, [FromQuery] double threshold = 0.3)
+	{
+		GetSimilarItemsQuery query = new(q, limit, threshold);
+		IEnumerable<SimilarItemResult> results = await mediator.Send(query);
+
+		List<SimilarItemResponse> response = [.. results.Select(r => new SimilarItemResponse
+		{
+			Name = r.Name,
+			Similarity = r.Similarity,
+			Source = r.Source == "template" ? SimilarItemResponseSource.Template : SimilarItemResponseSource.History,
+			DefaultCategory = r.DefaultCategory,
+			DefaultSubcategory = r.DefaultSubcategory,
+			DefaultUnitPrice = r.DefaultUnitPrice.HasValue ? (double)r.DefaultUnitPrice.Value : null,
+			DefaultPricingMode = r.DefaultPricingMode,
+			DefaultItemCode = r.DefaultItemCode,
+		})];
+
+		return TypedResults.Ok(response);
 	}
 }

@@ -1,6 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useCreateReceipt } from "@/hooks/useReceipts";
+import { useCreateTransaction } from "@/hooks/useTransactions";
+import { useCreateReceiptItem } from "@/hooks/useReceiptItems";
 import { useWizard } from "./useWizard";
 import { WizardStepper } from "./WizardStepper";
 import { Step1TripDetails } from "./Step1TripDetails";
@@ -37,6 +40,11 @@ export default function NewReceipt() {
   } = useWizard();
 
   const [showDiscard, setShowDiscard] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createReceipt = useCreateReceipt();
+  const createTransaction = useCreateTransaction();
+  const createReceiptItem = useCreateReceiptItem();
 
   const hasData =
     state.receipt.location !== "" ||
@@ -44,6 +52,11 @@ export default function NewReceipt() {
     state.receipt.taxAmount !== 0 ||
     state.transactions.length > 0 ||
     state.items.length > 0;
+
+  const transactionTotal = useMemo(
+    () => state.transactions.reduce((sum, t) => sum + t.amount, 0),
+    [state.transactions],
+  );
 
   const handleCancel = useCallback(() => {
     if (hasData) {
@@ -59,9 +72,64 @@ export default function NewReceipt() {
     navigate("/receipts");
   }, [reset, navigate]);
 
-  const handleSubmit = useCallback(() => {
-    toast.info("Receipt submission will be implemented in a follow-up issue.");
-  }, []);
+  const handleSubmit = useCallback(async () => {
+    setIsSubmitting(true);
+    try {
+      // 1. Create the receipt
+      const receipt = await createReceipt.mutateAsync({
+        location: state.receipt.location,
+        date: state.receipt.date,
+        taxAmount: state.receipt.taxAmount,
+      });
+
+      const receiptId = (receipt as { id: string }).id;
+
+      // 2. Create transactions sequentially
+      for (const txn of state.transactions) {
+        await createTransaction.mutateAsync({
+          receiptId,
+          body: {
+            accountId: txn.accountId,
+            amount: txn.amount,
+            date: txn.date,
+          },
+        });
+      }
+
+      // 3. Create receipt items sequentially
+      for (const item of state.items) {
+        await createReceiptItem.mutateAsync({
+          receiptId,
+          body: {
+            receiptItemCode: item.receiptItemCode,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            category: item.category,
+            subcategory: item.subcategory,
+            pricingMode: item.pricingMode,
+          },
+        });
+      }
+
+      toast.success("Receipt created successfully!");
+      reset();
+      navigate(`/receipt-detail?id=${receiptId}&highlight=${receiptId}`);
+    } catch {
+      toast.error(
+        "Failed to create receipt. The receipt may have been partially created — check the receipts list.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    state,
+    createReceipt,
+    createTransaction,
+    createReceiptItem,
+    reset,
+    navigate,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -92,6 +160,8 @@ export default function NewReceipt() {
       {state.currentStep === 1 && (
         <Step2Transactions
           data={state.transactions}
+          receiptDate={state.receipt.date}
+          taxAmount={state.receipt.taxAmount}
           onNext={(data) => {
             setTransactions(data);
             goNext();
@@ -102,6 +172,8 @@ export default function NewReceipt() {
       {state.currentStep === 2 && (
         <Step3Items
           data={state.items}
+          taxAmount={state.receipt.taxAmount}
+          transactionTotal={transactionTotal}
           onNext={(data) => {
             setItems(data);
             goNext();
@@ -113,7 +185,9 @@ export default function NewReceipt() {
         <Step4Review
           state={state}
           onBack={goBack}
+          onEditStep={goToStep}
           onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
         />
       )}
 
