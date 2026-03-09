@@ -10,6 +10,9 @@ services:
         for secret in pg_password jwt_key admin_password; do
           if [ ! -f "/secrets/$${secret}" ]; then
             tr -dc 'A-Za-z0-9+/' < /dev/urandom | head -c 48 > "/secrets/$${secret}"
+            if [ "$${secret}" = "admin_password" ]; then
+              printf '!A1' >> "/secrets/$${secret}"
+            fi
             chmod 644 "/secrets/$${secret}"
             echo "Generated /secrets/$${secret}"
           else
