@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -219,7 +220,7 @@ export function Step3Items({
   const handleAdd = useCallback(
     (values: ItemFormValues) => {
       const newItem: WizardReceiptItem = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         receiptItemCode: values.receiptItemCode ?? "",
         description: values.description,
         pricingMode: values.pricingMode,

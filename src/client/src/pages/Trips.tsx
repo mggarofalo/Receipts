@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { generateId } from "@/lib/id";
 import { useTripByReceiptId } from "@/hooks/useTrips";
 import { useReceipts } from "@/hooks/useReceipts";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -151,7 +152,7 @@ function Trips() {
           savedFilters={savedFilters}
           onSaveFilter={(name) =>
             saveFilter({
-              id: crypto.randomUUID(),
+              id: generateId(),
               name,
               entityType: "trips",
               values: filterValues,
