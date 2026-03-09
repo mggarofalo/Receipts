@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Presentation\API\API.csproj" />
+    <ProjectReference Include="..\Tools\DbMigrator\DbMigrator.csproj" />
+    <ProjectReference Include="..\Tools\DbSeeder\DbSeeder.csproj" />
   </ItemGroup>
 
   <ItemGroup>
