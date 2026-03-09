@@ -80,7 +80,7 @@ LABEL org.opencontainers.image.title="Receipts" \
       org.opencontainers.image.source="https://github.com/mggarofalo/Receipts"
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gosu && \
+    apt-get install -y --no-install-recommends gosu curl && \
     rm -rf /var/lib/apt/lists/*
 
 ENV ASPNETCORE_ENVIRONMENT=Production
@@ -107,6 +107,6 @@ RUN mkdir -p /secrets
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
-    CMD wget -qO- http://localhost:8080/api/health || exit 1
+    CMD curl -sf http://localhost:8080/api/health || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
