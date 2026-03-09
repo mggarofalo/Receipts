@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    pool: "threads",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     coverage: {
@@ -29,12 +30,14 @@ export default defineConfig({
         "src/components/ui/!(combobox|currency-input).{ts,tsx}",
         "src/lib/api-types.ts",
       ],
-      thresholds: {
-        statements: 75,
-        branches: 65,
-        functions: 70,
-        lines: 78,
-      },
+      thresholds: process.env.VITEST_SHARD
+        ? undefined
+        : {
+            statements: 75,
+            branches: 65,
+            functions: 70,
+            lines: 78,
+          },
     },
   },
   server: {
