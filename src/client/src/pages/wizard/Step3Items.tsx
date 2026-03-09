@@ -503,19 +503,26 @@ export function Step3Items({
                     <Combobox
                       options={subcategoryOptions}
                       value={field.value ?? ""}
-                      onValueChange={field.onChange}
+                      onValueChange={(v: string) => {
+                        field.onChange(v);
+                        const isExisting = subcategoryOptions.some(
+                          (o) => o.value === v,
+                        );
+                        if (
+                          !isExisting &&
+                          v &&
+                          selectedCategoryObj?.id
+                        ) {
+                          createSubcategory.mutate({
+                            categoryId: selectedCategoryObj.id,
+                            name: v,
+                          });
+                        }
+                      }}
                       placeholder="Select subcategory..."
                       searchPlaceholder="Search subcategories..."
                       emptyMessage="No subcategories found."
                       allowCustom
-                      onCustomCreate={async (name) => {
-                        if (selectedCategoryObj?.id) {
-                          await createSubcategory.mutateAsync({
-                            categoryId: selectedCategoryObj.id,
-                            name,
-                          });
-                        }
-                      }}
                       disabled={!selectedCategory}
                     />
                   </FormControl>
