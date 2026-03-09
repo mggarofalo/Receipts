@@ -1,4 +1,4 @@
-import { useReducer, useMemo } from "react";
+import { useReducer, useMemo, useCallback } from "react";
 import { getPersistedPageSize, persistPageSize } from "@/lib/page-size";
 
 interface UsePaginationOptions<T> {
@@ -53,17 +53,20 @@ export function usePagination<T>({
     return items.slice(start, start + state.pageSize);
   }, [items, safePage, state.pageSize]);
 
-  function setPage(page: number) {
-    dispatch({
-      type: "SET_PAGE",
-      page: Math.max(1, Math.min(page, totalPages)),
-    });
-  }
+  const setPage = useCallback(
+    (page: number) => {
+      dispatch({
+        type: "SET_PAGE",
+        page: Math.max(1, Math.min(page, totalPages)),
+      });
+    },
+    [totalPages],
+  );
 
-  function setPageSize(size: number) {
+  const setPageSize = useCallback((size: number) => {
     persistPageSize(size);
     dispatch({ type: "SET_PAGE_SIZE", size });
-  }
+  }, []);
 
   return {
     paginatedItems,
