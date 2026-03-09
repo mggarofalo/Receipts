@@ -19,43 +19,113 @@ sudo usermod -aG docker $USER
 
 ## Quick Start
 
+The `docker-compose.yml` is fully self-contained — no `.env` file or manual secret generation required. Secrets are auto-generated on first run.
+
 ```bash
-# 1. Clone the repository
+# 1. Clone the repository (or just copy docker-compose.yml)
 git clone https://github.com/mggarofalo/Receipts.git
 cd Receipts
 
-# 2. Generate secrets and create .env
-bash scripts/generate-secrets.sh > .env
-# Edit .env to set your admin email, name, etc.
-
-# 3. Start the application
+# 2. Start the application
 docker compose up -d
+
+# 3. Get the auto-generated admin password
+docker compose exec app cat /secrets/admin_password
 
 # 4. Verify
 docker compose ps
 curl http://localhost:8080/api/health
 ```
 
-The app will be available at `http://<your-pi-ip>:8080`.
+The app will be available at `http://<your-host-ip>:8080`.
+
+## How It Works
+
+On first `docker compose up`:
+
+1. **init** container generates random secrets (`pg_password`, `jwt_key`, `admin_password`) to a shared `secrets` volume, then exits
+2. **db** (PostgreSQL) starts using `POSTGRES_PASSWORD_FILE` to read the generated password
+3. **app** reads secrets from the volume, runs migrations and seeding, then starts the API
+
+On subsequent starts, the init container detects existing secrets and skips generation. Secrets persist in the `secrets` Docker volume.
 
 ## Configuration
 
-All configuration is via environment variables in `.env`. See `.env.example` for the full list.
+Edit values directly in `docker-compose.yml`. No `.env` file needed.
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `POSTGRES_USER` | Yes | `receipts` | Database username |
-| `POSTGRES_PASSWORD` | Yes | — | Database password |
-| `POSTGRES_DB` | No | `receipts` | Database name |
-| `JWT_KEY` | Yes | — | JWT signing key (min 32 chars) |
-| `JWT_ISSUER` | No | `receipts-api` | JWT issuer claim |
-| `JWT_AUDIENCE` | No | `receipts-app` | JWT audience claim |
-| `ADMIN_EMAIL` | Yes | — | Initial admin account email |
-| `ADMIN_PASSWORD` | Yes | — | Initial admin password |
-| `ADMIN_FIRST_NAME` | No | `Admin` | Admin first name |
-| `ADMIN_LAST_NAME` | No | `User` | Admin last name |
-| `APP_PORT` | No | `8080` | Host port for the app |
-| `IMAGE_TAG` | No | `latest` | Docker image tag |
+### App Service
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PUID` | `1654` | User ID for the app process |
+| `PGID` | `1654` | Group ID for the app process |
+| `TZ` | `America/New_York` | Timezone ([tz database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) |
+| `POSTGRES_HOST` | `db` | Database hostname |
+| `POSTGRES_PORT` | `5432` | Database port |
+| `POSTGRES_USER` | `receipts` | Database username |
+| `POSTGRES_DB` | `receipts` | Database name |
+| `Jwt__Issuer` | `receipts-api` | JWT issuer claim |
+| `Jwt__Audience` | `receipts-app` | JWT audience claim |
+| `AdminSeed__Email` | `admin@example.com` | Initial admin account email |
+| `AdminSeed__FirstName` | `Admin` | Admin first name |
+| `AdminSeed__LastName` | `User` | Admin last name |
+| `IMAGE_TAG` | `latest` | Docker image tag (used by operations scripts) |
+
+### Auto-Generated Secrets
+
+These are generated automatically and stored as files in the `secrets` volume:
+
+| File | Used As | Description |
+|------|---------|-------------|
+| `/secrets/pg_password` | `POSTGRES_PASSWORD` | PostgreSQL password |
+| `/secrets/jwt_key` | `Jwt__Key` | JWT signing key |
+| `/secrets/admin_password` | `AdminSeed__Password` | Initial admin password |
+
+### PUID / PGID
+
+Match the PUID/PGID to your host user to avoid permission issues with bind mounts:
+
+```bash
+# Find your user's UID and GID
+id $USER
+# uid=1000(pi) gid=1000(pi) ...
+
+# Then set in docker-compose.yml:
+# - PUID=1000
+# - PGID=1000
+```
+
+## Secrets Management
+
+### View secrets
+
+```bash
+docker compose exec app cat /secrets/pg_password
+docker compose exec app cat /secrets/jwt_key
+docker compose exec app cat /secrets/admin_password
+```
+
+### Rotate secrets
+
+```bash
+# Stop the stack
+docker compose down
+
+# Remove the secrets volume (this deletes all secrets)
+docker volume rm receipts_secrets
+
+# Start again (new secrets are generated)
+docker compose up -d
+```
+
+> **Note:** Rotating `pg_password` also requires resetting the PostgreSQL data volume since the password is set on first database initialization.
+
+### Full reset (secrets + database)
+
+```bash
+docker compose down -v   # removes all volumes
+docker compose up -d     # fresh start with new secrets and empty database
+```
 
 ## Nginx Proxy Manager Setup
 
@@ -152,13 +222,29 @@ docker compose logs app | head -50   # Check startup logs
 docker compose exec db pg_isready -U receipts  # Check DB connectivity
 ```
 
+### Secrets missing
+
+If the app fails with "secrets not found", check that the init container ran successfully:
+
+```bash
+docker compose logs init
+```
+
+If the secrets volume is corrupted, remove it and restart:
+
+```bash
+docker compose down
+docker volume rm receipts_secrets
+docker compose up -d
+```
+
 ### Database connection errors
 
-Ensure `POSTGRES_USER` and `POSTGRES_PASSWORD` match between the `app` and `db` services in your `.env` file. The database must be healthy before the app starts (enforced by `depends_on`).
+Ensure `POSTGRES_USER` matches between the `app` and `db` services in `docker-compose.yml`. The database must be healthy before the app starts (enforced by `depends_on`).
 
 ### Port already in use
 
-Change `APP_PORT` in `.env` to a different port (e.g., `APP_PORT=8081`).
+Change the host port mapping in `docker-compose.yml` under `app.ports` (e.g., `"8081:8080"`).
 
 ### Out of memory
 
@@ -168,7 +254,7 @@ The app is limited to 1GB RAM by default. Check usage:
 docker stats --no-stream
 ```
 
-If the Pi is running low, reduce PostgreSQL memory settings in `docker-compose.yml` (e.g., `shared_buffers=64MB`).
+If the host is running low, reduce PostgreSQL memory settings in `docker-compose.yml` (e.g., `shared_buffers=64MB`).
 
 ### SignalR WebSocket issues
 
@@ -176,13 +262,13 @@ Ensure **Websockets Support** is enabled in your NPM proxy host configuration. S
 
 ## Security
 
-- All containers run as **non-root** users
-- App container uses a **read-only filesystem** with tmpfs for `/tmp`
-- Database is only accessible on the **internal Docker network** (not exposed to host)
+- All containers drop **all capabilities** (`cap_drop: ALL`) with only minimal capabilities added back
+- App container uses `gosu` for clean privilege de-escalation (root → app user)
 - `no-new-privileges` security option prevents privilege escalation
+- Secrets are auto-generated and stored in a Docker volume (never in files on disk or environment)
+- Database is only accessible on the **internal Docker network** (not exposed to host)
 - Docker images are scanned for vulnerabilities with **Trivy** in CI
-- Secrets are stored in `.env` (gitignored) — never committed to source control
-- Generate strong secrets with `bash scripts/generate-secrets.sh`
+- Log rotation configured (50MB max, 3 files)
 
 ### Firewall (recommended)
 

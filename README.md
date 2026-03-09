@@ -101,14 +101,14 @@ Aspire orchestrates the entire stack (API + PostgreSQL + React dev server + Dash
 
 ## Docker Setup
 
-The repo includes a production-ready `docker-compose.yml` with the .NET API, React SPA, and PostgreSQL.
+The repo includes a self-contained `docker-compose.yml` — no `.env` file or secret generation needed. Secrets are auto-generated on first run.
 
 ```bash
-# Generate secrets (.env file with random passwords and JWT key)
-bash scripts/generate-secrets.sh > .env
-
-# Start the stack
+# Start the stack (secrets are generated automatically)
 docker compose up -d
+
+# Get the auto-generated admin password
+docker compose exec app cat /secrets/admin_password
 
 # View logs
 docker compose logs -f app
@@ -117,7 +117,7 @@ docker compose logs -f app
 docker compose down
 ```
 
-The app is available at `http://localhost:8080` (configurable via `APP_PORT` in `.env`). See `.env.example` for all configuration options and **[docs/deployment.md](docs/deployment.md)** for the full deployment guide including HTTPS, backup/restore, updates, and troubleshooting.
+The app is available at `http://localhost:8080`. To customize PUID/PGID, timezone, or admin email, edit the values directly in `docker-compose.yml`. See **[docs/deployment.md](docs/deployment.md)** for the full deployment guide including HTTPS, backup/restore, updates, and troubleshooting.
 
 ## Development
 

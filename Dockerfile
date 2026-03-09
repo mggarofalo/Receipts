@@ -72,6 +72,10 @@ LABEL org.opencontainers.image.title="Receipts" \
       org.opencontainers.image.description="Receipt management API with React SPA" \
       org.opencontainers.image.source="https://github.com/mggarofalo/Receipts"
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gosu && \
+    rm -rf /var/lib/apt/lists/*
+
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:8080
 
@@ -90,9 +94,8 @@ COPY --from=client-build /app/client/dist ./wwwroot/
 COPY docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh
 
-# Use the built-in non-root user from the .NET base image
-RUN chown -R app:app /app
-USER app
+# Create secrets mount point
+RUN mkdir -p /secrets
 
 EXPOSE 8080
 
