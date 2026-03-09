@@ -35,8 +35,11 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 
 		// Most-used account = account with the most transactions in range
 		// Single query: EF Core translates Account!.Name to a SQL JOIN, eliminating a second round-trip.
+		// IgnoreQueryFilters: include soft-deleted accounts so all transactions are counted.
 		var mostUsedAccountData = await context.Transactions
+			.IgnoreQueryFilters()
 			.AsNoTracking()
+			.Where(t => t.DeletedAt == null)
 			.Where(t => receiptIds.Contains(t.ReceiptId))
 			.GroupBy(t => t.Account!.Name)
 			.Select(g => new { AccountName = g.Key, Count = g.Count() })
