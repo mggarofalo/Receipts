@@ -2548,8 +2548,279 @@ paths:
         "404":
           description: Not Found
 
+  # ──────────────────────────────────────────────
+  # Dashboard
+  # ──────────────────────────────────────────────
+
+  /api/dashboard/summary:
+    get:
+      operationId: GetDashboardSummary
+      tags: [Dashboard]
+      summary: Get dashboard summary statistics
+      description: Returns high-level stats for a date range including total receipts, total spent, average trip amount, and most-used account/category.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to 30 days ago.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to today.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummaryResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/dashboard/spending-over-time:
+    get:
+      operationId: GetSpendingOverTime
+      tags: [Dashboard]
+      summary: Get spending over time
+      description: Returns time-series spending data bucketed by the specified granularity.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to 30 days ago.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to today.
+        - name: granularity
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: monthly
+          description: Time bucket granularity.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendingOverTimeResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/dashboard/spending-by-category:
+    get:
+      operationId: GetSpendingByCategory
+      tags: [Dashboard]
+      summary: Get spending grouped by category
+      description: Returns spending amounts grouped by receipt item category.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to 30 days ago.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to today.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Maximum number of categories to return (top N).
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendingByCategoryResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/dashboard/spending-by-account:
+    get:
+      operationId: GetSpendingByAccount
+      tags: [Dashboard]
+      summary: Get spending grouped by account
+      description: Returns spending amounts grouped by payment account.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to 30 days ago.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to today.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendingByAccountResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
 components:
   schemas:
+    # ── Dashboard ──────────────────────────────────
+
+    DashboardSummaryResponse:
+      type: object
+      required: [totalReceipts, totalSpent, averageTripAmount, mostUsedAccount, mostUsedCategory]
+      properties:
+        totalReceipts:
+          type: integer
+          format: int32
+        totalSpent:
+          type: number
+          format: double
+        averageTripAmount:
+          type: number
+          format: double
+        mostUsedAccount:
+          $ref: "#/components/schemas/NameCountPair"
+        mostUsedCategory:
+          $ref: "#/components/schemas/NameCountPair"
+
+    NameCountPair:
+      type: object
+      required: [count]
+      properties:
+        name:
+          type:
+            - string
+            - "null"
+        count:
+          type: integer
+          format: int32
+
+    SpendingOverTimeResponse:
+      type: object
+      required: [buckets]
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpendingBucket"
+
+    SpendingBucket:
+      type: object
+      required: [period, amount]
+      properties:
+        period:
+          type: string
+        amount:
+          type: number
+          format: double
+
+    SpendingByCategoryResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpendingCategoryItem"
+
+    SpendingCategoryItem:
+      type: object
+      required: [categoryName, amount, percentage]
+      properties:
+        categoryName:
+          type: string
+        amount:
+          type: number
+          format: double
+        percentage:
+          type: number
+          format: double
+
+    SpendingByAccountResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpendingAccountItem"
+
+    SpendingAccountItem:
+      type: object
+      required: [accountId, accountName, amount, percentage]
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        accountName:
+          type: string
+        amount:
+          type: number
+          format: double
+        percentage:
+          type: number
+          format: double
+
     # ── Account ──────────────────────────────────
 
     CreateAccountRequest:

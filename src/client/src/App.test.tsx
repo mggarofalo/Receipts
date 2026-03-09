@@ -4,8 +4,8 @@ import { createMemoryRouter, RouterProvider, Outlet } from "react-router";
 import type { ReactNode } from "react";
 
 // Mock all page components to simple stubs
-vi.mock("@/pages/Home", () => ({
-  default: () => <div data-testid="page-home">Home Page</div>,
+vi.mock("@/pages/Dashboard", () => ({
+  default: () => <div data-testid="page-dashboard">Dashboard Page</div>,
 }));
 vi.mock("@/pages/Login", () => ({
   default: () => <div data-testid="page-login">Login Page</div>,
@@ -110,9 +110,9 @@ function renderRoute(path: string) {
 }
 
 describe("App router", () => {
-  it('renders Home page at "/" route', async () => {
+  it('renders Dashboard page at "/" route', async () => {
     renderRoute("/");
-    expect(await screen.findByTestId("page-home")).toBeInTheDocument();
+    expect(await screen.findByTestId("page-dashboard")).toBeInTheDocument();
   });
 
   it('renders Accounts page at "/accounts" route', async () => {

@@ -201,7 +201,7 @@ export function Layout() {
   }
 
   const navLinks = [
-    { to: "/", label: "Home" },
+    { to: "/", label: "Dashboard" },
     { to: "/accounts", label: "Accounts" },
     { to: "/categories", label: "Categories" },
     { to: "/subcategories", label: "Subcategories" },
@@ -263,7 +263,7 @@ export function Layout() {
                           "bg-accent/50 text-accent-foreground",
                       )}
                     >
-                      Home
+                      Dashboard
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>

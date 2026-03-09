@@ -3,7 +3,7 @@ import { AdminRoute } from "@/components/AdminRoute";
 import { Layout } from "@/components/Layout";
 import { PublicLayout } from "@/components/PublicLayout";
 import { RootLayout } from "@/components/RootLayout";
-import Home from "@/pages/Home";
+import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import ChangePassword from "@/pages/ChangePassword";
 import ApiKeys from "@/pages/ApiKeys";
@@ -41,7 +41,7 @@ export const routeConfig = [
           </ProtectedRoute>
         ),
         children: [
-          { path: "/", element: <Home /> },
+          { path: "/", element: <Dashboard /> },
           { path: "/accounts", element: <Accounts /> },
           { path: "/categories", element: <Categories /> },
           { path: "/subcategories", element: <Subcategories /> },
