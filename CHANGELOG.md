@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/mggarofalo/Receipts/compare/v0.1.3...v0.1.4) (2026-03-09)
+
+
+### Bug Fixes
+
+* **hooks:** auto-run worktree-setup.sh when prerequisites are missing ([#140](https://github.com/mggarofalo/Receipts/issues/140)) ([4b0456f](https://github.com/mggarofalo/Receipts/commit/4b0456f067134143c59e464a7e29bc6b995e9ceb))
+
 ## [0.1.3](https://github.com/mggarofalo/Receipts/compare/v0.1.2...v0.1.3) (2026-03-09)
 
 
