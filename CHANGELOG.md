@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/mggarofalo/Receipts/compare/v0.1.4...v0.1.5) (2026-03-09)
+
+
+### Features
+
+* receipt entry workflow with semantic similarity (MGG-306) ([#142](https://github.com/mggarofalo/Receipts/issues/142)) ([d8f9fb3](https://github.com/mggarofalo/Receipts/commit/d8f9fb3e9b436c861084e3e940368ef10b8719a3))
+
 ## [0.1.4](https://github.com/mggarofalo/Receipts/compare/v0.1.3...v0.1.4) (2026-03-09)
 
 
