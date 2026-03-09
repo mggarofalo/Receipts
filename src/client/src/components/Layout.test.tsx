@@ -177,14 +177,14 @@ describe("Layout", () => {
     expect(screen.queryByText("Admin")).not.toBeInTheDocument();
   });
 
-  it("applies active styling to Home link when on root route", () => {
+  it("applies active styling to Dashboard link when on root route", () => {
     renderLayout();
-    // The desktop nav contains the NavigationMenu with a Home link
+    // The desktop nav contains the NavigationMenu with a Dashboard link
     const desktopNav = screen.getByRole("navigation", { name: /main navigation/i });
     const homeLinks = desktopNav.querySelectorAll("a[href='/']");
-    // Find the Home link (not the brand link) -- it should contain "Home" text
+    // Find the Dashboard link (not the brand link) -- it should contain "Dashboard" text
     const homeNavLink = Array.from(homeLinks).find((link) =>
-      link.textContent?.includes("Home"),
+      link.textContent?.includes("Dashboard"),
     );
     expect(homeNavLink).toBeDefined();
     expect(homeNavLink!.className).toContain("bg-accent");
