@@ -102,6 +102,7 @@ services:
         condition: service_healthy
     volumes:
       - secrets:/secrets:ro
+      - app-data:/data
     tmpfs:
       - /tmp
     deploy:
@@ -128,6 +129,7 @@ services:
 volumes:
   secrets:
   db-data:
+  app-data:
 
 networks:
   receipts-net:

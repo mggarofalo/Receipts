@@ -101,8 +101,8 @@ COPY --from=client-build /app/client/dist ./wwwroot/
 COPY docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh
 
-# Create secrets mount point
-RUN mkdir -p /secrets
+# Create mount points
+RUN mkdir -p /secrets /data
 
 EXPOSE 8080
 
