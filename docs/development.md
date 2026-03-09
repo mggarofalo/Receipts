@@ -85,11 +85,15 @@ export POSTGRES_USER=postgres
 export POSTGRES_PASSWORD=yourpassword
 export POSTGRES_DB=receiptsdb
 
+# Apply migrations and seed the database (required before first run)
+dotnet run --project src/Tools/DbMigrator/DbMigrator.csproj
+dotnet run --project src/Tools/DbSeeder/DbSeeder.csproj
+
 # Run the API
 dotnet run --project src/Presentation/API/API.csproj
 ```
 
-EF Core migrations run automatically on startup when the database is configured.
+The API does not self-migrate or self-seed. You must run DbMigrator and DbSeeder before starting the API. Re-run DbMigrator after pulling new migrations.
 
 ## Build and Test
 

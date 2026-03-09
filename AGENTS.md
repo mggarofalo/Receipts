@@ -90,9 +90,13 @@ dotnet build Receipts.slnx                                    # Build entire sol
 dotnet test Receipts.slnx                                     # Run all tests
 dotnet test tests/Application.Tests/Application.Tests.csproj  # Single project
 dotnet test --filter "FullyQualifiedName~TestMethodName"       # Single test
+dotnet run --project src/Tools/DbMigrator/DbMigrator.csproj   # Apply EF Core migrations
+dotnet run --project src/Tools/DbSeeder/DbSeeder.csproj       # Seed roles and admin user
 dotnet run --project src/Presentation/API/API.csproj           # Run the API
 dotnet ef migrations add MigrationName --project src/Infrastructure/Infrastructure.csproj --startup-project src/Tools/DbMigrator/DbMigrator.csproj
 ```
+
+**Important:** The API does not self-migrate or self-seed. When running without Aspire, you must run DbMigrator and DbSeeder before starting the API. Aspire and Docker handle this automatically via orchestration.
 
 ## Git Hooks
 

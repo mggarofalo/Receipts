@@ -98,7 +98,7 @@ USER appuser
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
     CMD wget -qO- http://localhost:8080/api/health || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
