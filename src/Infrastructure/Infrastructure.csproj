@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Models\AllMiniLmL6V2\model.onnx" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Models\AllMiniLmL6V2\vocab.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Models\AllMiniLmL6V2\model.onnx" Condition="Exists('Models\AllMiniLmL6V2\model.onnx')" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Models\AllMiniLmL6V2\vocab.txt" Condition="Exists('Models\AllMiniLmL6V2\vocab.txt')" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
