@@ -61,7 +61,7 @@ const receiptItemSchema = z.object({
   receiptId: z.string().min(1, "Receipt is required"),
   receiptItemCode: z.string().min(1, "Item code is required"),
   description: z.string().min(1, "Description is required"),
-  pricingMode: z.string().min(1, "Pricing mode is required"),
+  pricingMode: z.enum(["flat", "quantity"], { message: "Pricing mode is required" }),
   quantity: z.number().positive("Quantity must be positive"),
   unitPrice: z.number().min(0, "Unit price must be non-negative"),
   category: z.string().min(1, "Category is required"),
