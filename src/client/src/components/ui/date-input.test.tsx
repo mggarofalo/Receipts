@@ -363,4 +363,68 @@ describe("DateInput", () => {
 
     expect(onChange).toHaveBeenCalledWith("2024-03-15");
   });
+
+  it("reformats display value after Enter key commit", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<ControlledDateInput initialValue="" onChange={onChange} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.type(input, "2024-06-01");
+    await user.keyboard("{Enter}");
+
+    // After Enter, blur is triggered so display should show MM/DD/YYYY format
+    expect(input).toHaveValue("06/01/2024");
+  });
+
+  it("does not fire redundant onChange when commitText value matches current value", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <ControlledDateInput initialValue="2024-03-15" onChange={onChange} />,
+    );
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    // Focus then blur without changing the value
+    await user.click(input);
+    await user.tab();
+
+    // onChange should NOT have been called since value didn't change
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("does not fire redundant onChange on calendar pick followed by blur", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ControlledDateInput
+        initialValue="2024-03-15"
+        onChange={onChange}
+      />,
+    );
+
+    const calendarButton = screen.getByRole("button", { name: /pick a date/i });
+    await user.click(calendarButton);
+
+    // Select March 20th, 2024
+    const dayButton = await screen.findByRole("button", {
+      name: /Wednesday, March 20th, 2024/,
+    });
+    await user.click(dayButton);
+
+    // onChange fired once for the calendar pick
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith("2024-03-20");
+
+    // Now focus and blur the input — should NOT fire onChange again
+    onChange.mockClear();
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.tab();
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

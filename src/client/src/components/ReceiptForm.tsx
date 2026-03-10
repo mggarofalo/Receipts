@@ -7,7 +7,6 @@ import { useLocationHistory } from "@/hooks/useLocationHistory";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Combobox } from "@/components/ui/combobox";
-import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
