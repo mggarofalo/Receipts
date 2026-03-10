@@ -4,13 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Collapsible,
   CollapsibleContent,
@@ -149,37 +143,34 @@ export function FilterPanel({
             <div key={field.key} className="min-w-[180px] space-y-1.5">
               <Label className="text-xs">{field.label}</Label>
               {field.type === "select" && (
-                <Select
+                <Combobox
+                  options={[
+                    { value: "all", label: "All" },
+                    ...field.options.map((opt) => ({
+                      value: opt,
+                      label: opt,
+                    })),
+                  ]}
                   value={(values[field.key] as string) ?? "all"}
                   onValueChange={(v) => updateField(field.key, v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    {field.options.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="All"
+                  searchPlaceholder="Search..."
+                  className="h-8 text-xs"
+                />
               )}
               {field.type === "boolean" && (
-                <Select
+                <Combobox
+                  options={[
+                    { value: "all", label: "All" },
+                    { value: "true", label: "Yes" },
+                    { value: "false", label: "No" },
+                  ]}
                   value={(values[field.key] as string) ?? "all"}
                   onValueChange={(v) => updateField(field.key, v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="true">Yes</SelectItem>
-                    <SelectItem value="false">No</SelectItem>
-                  </SelectContent>
-                </Select>
+                  placeholder="All"
+                  searchPlaceholder="Search..."
+                  className="h-8 text-xs"
+                />
               )}
               {field.type === "dateRange" && (
                 <div className="flex gap-2">

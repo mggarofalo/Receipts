@@ -6,13 +6,7 @@ import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Form,
   FormControl,
@@ -94,18 +88,13 @@ export function AdjustmentForm({
             <FormItem>
               <FormLabel>Type</FormLabel>
               <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select adjustment type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ADJUSTMENT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={[...ADJUSTMENT_TYPES]}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select adjustment type..."
+                  searchPlaceholder="Search types..."
+                />
               </FormControl>
               <FormMessage />
               {serverErrors?.type && (
