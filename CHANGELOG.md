@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.10](https://github.com/mggarofalo/Receipts/compare/v0.1.9...v0.1.10) (2026-03-10)
+
+
+### Bug Fixes
+
+* soft-delete cascade policy and reference entity cleanup (MGG-305) ([#158](https://github.com/mggarofalo/Receipts/issues/158)) ([b700c15](https://github.com/mggarofalo/Receipts/commit/b700c1517c2000d8686441bf9edb250894bb1e33))
+
 ## [0.1.9](https://github.com/mggarofalo/Receipts/compare/v0.1.8...v0.1.9) (2026-03-10)
 
 
