@@ -211,4 +211,94 @@ public class RestoreTests
 
 		contextFactory.ResetDatabase();
 	}
+
+	[Fact]
+	public async Task RestoreAsync_Receipt_CascadeRestoresAdjustments()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.Receipts.AddAsync(receipt);
+			AdjustmentEntity adjustment1 = AdjustmentEntityGenerator.Generate();
+			adjustment1.ReceiptId = receipt.Id;
+			AdjustmentEntity adjustment2 = AdjustmentEntityGenerator.Generate();
+			adjustment2.ReceiptId = receipt.Id;
+			await context.Adjustments.AddRangeAsync(adjustment1, adjustment2);
+			await context.SaveChangesAsync();
+		}
+
+		// Soft delete receipt and its adjustments
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			ReceiptEntity receiptToDelete = await context.Receipts.FirstAsync();
+			await context.Adjustments.Where(a => a.ReceiptId == receiptToDelete.Id).LoadAsync();
+			context.Receipts.Remove(receiptToDelete);
+			await context.SaveChangesAsync();
+		}
+
+		ReceiptRepository repository = new(contextFactory);
+
+		// Act
+		bool result = await repository.RestoreAsync(receipt.Id, CancellationToken.None);
+
+		// Assert
+		Assert.True(result);
+
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			List<AdjustmentEntity> adjustments = await context.Adjustments.IgnoreQueryFilters().Where(a => a.ReceiptId == receipt.Id).ToListAsync();
+			adjustments.Should().HaveCount(2);
+			adjustments.Should().AllSatisfy(a => a.DeletedAt.Should().BeNull());
+		}
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task RestoreAsync_Category_CascadeRestoresSubcategories()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		CategoryEntity category = CategoryEntityGenerator.Generate();
+
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.Categories.AddAsync(category);
+			SubcategoryEntity sub1 = SubcategoryEntityGenerator.Generate();
+			sub1.CategoryId = category.Id;
+			SubcategoryEntity sub2 = SubcategoryEntityGenerator.Generate();
+			sub2.CategoryId = category.Id;
+			await context.Subcategories.AddRangeAsync(sub1, sub2);
+			await context.SaveChangesAsync();
+		}
+
+		// Soft delete category and its subcategories
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			CategoryEntity categoryToDelete = await context.Categories.FirstAsync();
+			await context.Subcategories.Where(s => s.CategoryId == categoryToDelete.Id).LoadAsync();
+			context.Categories.Remove(categoryToDelete);
+			await context.SaveChangesAsync();
+		}
+
+		CategoryRepository repository = new(contextFactory);
+
+		// Act
+		bool result = await repository.RestoreAsync(category.Id, CancellationToken.None);
+
+		// Assert
+		Assert.True(result);
+
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			List<SubcategoryEntity> subcategories = await context.Subcategories.IgnoreQueryFilters().Where(s => s.CategoryId == category.Id).ToListAsync();
+			subcategories.Should().HaveCount(2);
+			subcategories.Should().AllSatisfy(s => s.DeletedAt.Should().BeNull());
+		}
+
+		contextFactory.ResetDatabase();
+	}
 }

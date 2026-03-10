@@ -160,6 +160,19 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			transaction.DeletedByApiKeyId = null;
 		}
 
+		// Cascade restore adjustments
+		List<AdjustmentEntity> deletedAdjustments = await context.Adjustments
+			.IncludeDeleted()
+			.Where(e => e.ReceiptId == id && e.DeletedAt != null)
+			.ToListAsync(cancellationToken);
+
+		foreach (AdjustmentEntity adjustment in deletedAdjustments)
+		{
+			adjustment.DeletedAt = null;
+			adjustment.DeletedByUserId = null;
+			adjustment.DeletedByApiKeyId = null;
+		}
+
 		await context.SaveChangesAsync(cancellationToken);
 		return true;
 	}
