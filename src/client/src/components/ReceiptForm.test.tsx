@@ -1,21 +1,7 @@
+import "@/test/setup-combobox-polyfills";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReceiptForm } from "./ReceiptForm";
-
-// Polyfill ResizeObserver and scrollIntoView for radix-ui / cmdk in jsdom
-beforeAll(() => {
-  if (typeof window.ResizeObserver === "undefined") {
-    window.ResizeObserver = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    } as unknown as typeof ResizeObserver;
-  }
-
-  if (!Element.prototype.scrollIntoView) {
-    Element.prototype.scrollIntoView = vi.fn();
-  }
-});
 
 vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
@@ -136,6 +122,58 @@ describe("ReceiptForm", () => {
     render(<ReceiptForm {...defaultProps} />);
 
     expect(screen.getByLabelText("Date")).toBeInTheDocument();
+  });
+
+  it("associates Location label with the combobox trigger via id", () => {
+    render(<ReceiptForm {...defaultProps} />);
+
+    const combobox = screen.getByRole("combobox");
+    const label = screen.getByText("Location");
+
+    // FormControl's Slot passes id to the Combobox trigger button;
+    // FormLabel sets htmlFor to the same id, creating the association.
+    expect(combobox).toHaveAttribute("id");
+    expect(label).toHaveAttribute("for", combobox.getAttribute("id"));
+  });
+
+  it("shows saved locations in the dropdown and allows selection", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "receipts:location-history",
+      JSON.stringify(["Walmart", "Target", "Costco"]),
+    );
+
+    render(<ReceiptForm {...defaultProps} />);
+
+    // Open the combobox
+    await user.click(screen.getByRole("combobox"));
+
+    // Verify saved locations appear as options
+    expect(screen.getByText("Walmart")).toBeInTheDocument();
+    expect(screen.getByText("Target")).toBeInTheDocument();
+    expect(screen.getByText("Costco")).toBeInTheDocument();
+
+    // Select an existing location
+    await user.click(screen.getByText("Target"));
+
+    // Combobox should show the selected value
+    expect(screen.getByRole("combobox")).toHaveTextContent("Target");
+
+    // Fill remaining fields and submit
+    await user.type(screen.getByLabelText("Date"), "2024-05-10");
+    await user.click(
+      screen.getByRole("button", { name: /create receipt/i }),
+    );
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          location: "Target",
+          date: "2024-05-10",
+          taxAmount: 0,
+        }),
+      );
+    });
   });
 
   it("persists location to history on submit", async () => {

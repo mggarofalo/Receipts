@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +35,13 @@ interface Step1Props {
 }
 
 export function Step1TripDetails({ data, onNext }: Step1Props) {
+  const locationRef = useRef<HTMLButtonElement>(null);
   const { options: locationOptions, add: addLocation } = useLocationHistory();
+
+  // Auto-focus the location combobox when the wizard step mounts
+  useEffect(() => {
+    locationRef.current?.focus();
+  }, []);
 
   const form = useForm<TripFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,6 +54,10 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
   });
 
   const handleSubmit = (values: TripFormValues) => {
+    // Persist location before calling onNext intentionally: the location string
+    // is valid user input regardless of whether the server mutation succeeds.
+    // The user typed a real location name; saving it for future autocomplete
+    // suggestions is correct even if the receipt save ultimately fails.
     addLocation(values.location);
     onNext(values);
   };
@@ -70,6 +81,7 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
                   <FormLabel>Location</FormLabel>
                   <FormControl>
                     <Combobox
+                      ref={locationRef}
                       options={locationOptions}
                       value={field.value}
                       onValueChange={field.onChange}

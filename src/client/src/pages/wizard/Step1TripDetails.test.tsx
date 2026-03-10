@@ -1,21 +1,7 @@
+import "@/test/setup-combobox-polyfills";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { Step1TripDetails } from "./Step1TripDetails";
-
-// Polyfill ResizeObserver and scrollIntoView for radix-ui / cmdk in jsdom
-beforeAll(() => {
-  if (typeof window.ResizeObserver === "undefined") {
-    window.ResizeObserver = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    } as unknown as typeof ResizeObserver;
-  }
-
-  if (!Element.prototype.scrollIntoView) {
-    Element.prototype.scrollIntoView = vi.fn();
-  }
-});
 
 describe("Step1TripDetails", () => {
   const defaultProps = {

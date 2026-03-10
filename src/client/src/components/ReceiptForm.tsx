@@ -19,7 +19,10 @@ import {
 } from "@/components/ui/form";
 
 const receiptSchema = z.object({
-  location: z.string().min(1, "Location is required"),
+  location: z
+    .string()
+    .min(1, "Location is required")
+    .max(200, "Location must be 200 characters or fewer"),
   date: z.string().min(1, "Date is required"),
   taxAmount: z.number().min(0, "Tax amount must be non-negative"),
 });
@@ -56,6 +59,10 @@ export function ReceiptForm({
   });
 
   const handleSubmit = (values: ReceiptFormValues) => {
+    // Persist location before calling onSubmit intentionally: the location string
+    // is valid user input regardless of whether the server mutation succeeds.
+    // The user typed a real location name; saving it for future autocomplete
+    // suggestions is correct even if the receipt save ultimately fails.
     addLocation(values.location);
     onSubmit(values);
   };

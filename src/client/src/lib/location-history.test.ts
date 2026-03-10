@@ -62,6 +62,35 @@ describe("location-history", () => {
       expect(history).toHaveLength(50);
       expect(history[0]).toBe("Store 59");
     });
+
+    it("does not crash when localStorage.setItem throws (quota exceeded)", () => {
+      const original = localStorage.setItem.bind(localStorage);
+      localStorage.setItem = () => {
+        throw new DOMException("QuotaExceededError", "QuotaExceededError");
+      };
+
+      expect(() => addLocation("Walmart")).not.toThrow();
+
+      localStorage.setItem = original;
+    });
+  });
+
+  describe("getLocationHistory runtime validation", () => {
+    it("filters out non-string entries from localStorage", () => {
+      localStorage.setItem(
+        "receipts:location-history",
+        JSON.stringify(["Walmart", 42, null, "Target", { name: "bad" }]),
+      );
+      expect(getLocationHistory()).toEqual(["Walmart", "Target"]);
+    });
+
+    it("returns empty array when localStorage contains a non-array JSON value", () => {
+      localStorage.setItem(
+        "receipts:location-history",
+        JSON.stringify({ not: "an array" }),
+      );
+      expect(getLocationHistory()).toEqual([]);
+    });
   });
 
   describe("clearLocationHistory", () => {
