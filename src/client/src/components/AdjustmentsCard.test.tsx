@@ -5,6 +5,22 @@ import { AdjustmentsCard } from "./AdjustmentsCard";
 import { renderWithQueryClient } from "@/test/test-utils";
 import { mockMutationResult } from "@/test/mock-hooks";
 
+vi.mock("@/hooks/useEnumMetadata", () => ({
+  useEnumMetadata: vi.fn(() => ({
+    adjustmentTypes: [{ value: "Tip", label: "Tip" }, { value: "Discount", label: "Discount" }],
+    authEventTypes: [],
+    pricingModes: [],
+    auditActions: [],
+    entityTypes: [],
+    adjustmentTypeLabels: { Tip: "Tip", Discount: "Discount" },
+    authEventLabels: {},
+    pricingModeLabels: {},
+    auditActionLabels: {},
+    entityTypeLabels: {},
+    isLoading: false,
+  })),
+}));
+
 vi.mock("@/hooks/useAdjustments", () => ({
   useCreateAdjustment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateAdjustment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),

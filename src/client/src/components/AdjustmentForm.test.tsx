@@ -7,6 +7,26 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
 }));
 
+vi.mock("@/hooks/useEnumMetadata", () => ({
+  useEnumMetadata: vi.fn(() => ({
+    adjustmentTypes: [
+      { value: "Tip", label: "Tip" },
+      { value: "Discount", label: "Discount" },
+      { value: "Other", label: "Other" },
+    ],
+    authEventTypes: [],
+    pricingModes: [],
+    auditActions: [],
+    entityTypes: [],
+    adjustmentTypeLabels: { Tip: "Tip", Discount: "Discount", Other: "Other" },
+    authEventLabels: {},
+    pricingModeLabels: {},
+    auditActionLabels: {},
+    entityTypeLabels: {},
+    isLoading: false,
+  })),
+}));
+
 describe("AdjustmentForm", () => {
   const defaultProps = {
     mode: "create" as const,

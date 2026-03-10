@@ -7,6 +7,22 @@ vi.mock("@/hooks/usePageTitle", () => ({
   usePageTitle: vi.fn(),
 }));
 
+vi.mock("@/hooks/useEnumMetadata", () => ({
+  useEnumMetadata: vi.fn(() => ({
+    adjustmentTypes: [],
+    authEventTypes: [],
+    pricingModes: [],
+    auditActions: [],
+    entityTypes: [],
+    adjustmentTypeLabels: {},
+    authEventLabels: {},
+    pricingModeLabels: {},
+    auditActionLabels: {},
+    entityTypeLabels: {},
+    isLoading: false,
+  })),
+}));
+
 vi.mock("@/hooks/useAudit", () => ({
   useRecentAuditLogs: vi.fn(() => ({
     data: { data: [], total: 0, offset: 0, limit: 50 },

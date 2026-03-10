@@ -7,6 +7,22 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
 }));
 
+vi.mock("@/hooks/useEnumMetadata", () => ({
+  useEnumMetadata: vi.fn(() => ({
+    adjustmentTypes: [],
+    authEventTypes: [],
+    pricingModes: [{ value: "quantity", label: "Quantity" }, { value: "flat", label: "Flat" }],
+    auditActions: [],
+    entityTypes: [],
+    adjustmentTypeLabels: {},
+    authEventLabels: {},
+    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
+    auditActionLabels: {},
+    entityTypeLabels: {},
+    isLoading: false,
+  })),
+}));
+
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
     data: [
@@ -87,8 +103,8 @@ describe("ReceiptItemForm", () => {
     expect(screen.getByText("Item Code")).toBeInTheDocument();
     expect(screen.getByText("Description")).toBeInTheDocument();
     expect(screen.getByText("Pricing Mode")).toBeInTheDocument();
-    expect(screen.getByText("Quantity")).toBeInTheDocument();
-    expect(screen.getByText("Unit Price")).toBeInTheDocument();
+    expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
+    expect(screen.getByLabelText("Unit Price")).toBeInTheDocument();
     expect(screen.getByText("Category")).toBeInTheDocument();
     expect(screen.getByText("Subcategory")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create item/i })).toBeInTheDocument();
@@ -206,8 +222,8 @@ describe("ReceiptItemForm", () => {
   it("defaults quantity to 1 and pricing mode to 'quantity'", () => {
     render(<ReceiptItemForm {...defaultProps} />);
 
-    expect(screen.getByText("Quantity")).toBeInTheDocument();
-    expect(screen.getByText("Unit Price")).toBeInTheDocument();
+    expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
+    expect(screen.getByLabelText("Unit Price")).toBeInTheDocument();
   });
 
   it("shows recent description history and item template groups in description autocomplete", async () => {

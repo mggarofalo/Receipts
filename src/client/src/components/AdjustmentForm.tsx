@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { adjustmentDescriptionHistory } from "@/lib/field-history";
-import { ADJUSTMENT_TYPES } from "@/lib/adjustment-types";
+import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Combobox } from "@/components/ui/combobox";
@@ -25,7 +25,7 @@ const adjustmentSchema = z
     amount: z.number({ error: "Amount is required" }),
     description: z.string().optional(),
   })
-  .refine((data) => data.type !== "other" || (data.description && data.description.trim().length > 0), {
+  .refine((data) => data.type.toLowerCase() !== "other" || (data.description && data.description.trim().length > 0), {
     message: "Description is required when type is 'other'",
     path: ["description"],
   });
@@ -51,6 +51,7 @@ export function AdjustmentForm({
 }: AdjustmentFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { adjustmentTypes } = useEnumMetadata();
   const { options: adjustmentDescOptions, add: addAdjustmentDesc } =
     useFieldHistory(adjustmentDescriptionHistory);
 
@@ -73,7 +74,7 @@ export function AdjustmentForm({
       <form
         ref={formRef}
         onSubmit={form.handleSubmit((values) => {
-          if (values.type === "other" && values.description) {
+          if (values.type.toLowerCase() === "other" && values.description) {
             addAdjustmentDesc(values.description);
           }
           onSubmit(values);
@@ -88,7 +89,7 @@ export function AdjustmentForm({
               <FormLabel>Type</FormLabel>
               <FormControl>
                 <Combobox
-                  options={[...ADJUSTMENT_TYPES]}
+                  options={adjustmentTypes}
                   value={field.value}
                   onValueChange={field.onChange}
                   placeholder="Select adjustment type..."
@@ -124,7 +125,7 @@ export function AdjustmentForm({
           )}
         />
 
-        {watchedType === "other" && (
+        {watchedType.toLowerCase() === "other" && (
           <FormField
             control={form.control}
             name="description"

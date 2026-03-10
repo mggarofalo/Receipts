@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import { useCategories } from "@/hooks/useCategories";
 import { useSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
 import { Combobox } from "@/components/ui/combobox";
@@ -48,6 +49,7 @@ export function ItemTemplateForm({
 }: ItemTemplateFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { pricingModes } = useEnumMetadata();
 
   const { data: categories } = useCategories();
   const categoryOptions =
@@ -196,10 +198,7 @@ export function ItemTemplateForm({
                 <FormLabel>Default Pricing Mode (optional)</FormLabel>
                 <FormControl>
                   <Combobox
-                    options={[
-                      { value: "quantity", label: "Quantity" },
-                      { value: "flat", label: "Flat" },
-                    ]}
+                    options={pricingModes}
                     value={field.value ?? ""}
                     onValueChange={field.onChange}
                     placeholder="Select pricing mode..."

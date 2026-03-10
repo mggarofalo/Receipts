@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Fuse from "fuse.js";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useCategories } from "@/hooks/useCategories";
@@ -60,7 +61,7 @@ const receiptItemSchema = z.object({
   receiptId: z.string().min(1, "Receipt is required"),
   receiptItemCode: z.string().min(1, "Item code is required"),
   description: z.string().min(1, "Description is required"),
-  pricingMode: z.enum(["quantity", "flat"]),
+  pricingMode: z.string().min(1, "Pricing mode is required"),
   quantity: z.number().positive("Quantity must be positive"),
   unitPrice: z.number().min(0, "Unit price must be non-negative"),
   category: z.string().min(1, "Category is required"),
@@ -89,6 +90,7 @@ export function ReceiptItemForm({
 }: ReceiptItemFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { pricingModes } = useEnumMetadata();
   const { options: descriptionHistoryOptions, add: addDescriptionHistory } =
     useFieldHistory(itemDescriptionHistory);
   const { options: itemCodeOptions, add: addItemCodeHistory } =
@@ -452,10 +454,7 @@ export function ReceiptItemForm({
               <FormLabel>Pricing Mode</FormLabel>
               <FormControl>
                 <Combobox
-                  options={[
-                    { value: "quantity", label: "Qty x Unit Price" },
-                    { value: "flat", label: "Flat Price" },
-                  ]}
+                  options={pricingModes}
                   value={field.value}
                   onValueChange={field.onChange}
                   placeholder="Select pricing mode..."
