@@ -1,5 +1,11 @@
-import { useState, useRef, useCallback, type ComponentProps } from "react";
-import { format, parse, isValid } from "date-fns";
+import {
+  useState,
+  useRef,
+  useCallback,
+  type ComponentProps,
+  type Ref,
+} from "react";
+import { format, parse, isValid, isAfter, isBefore } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -35,7 +41,7 @@ function tryParseDate(text: string): Date | null {
   if (!trimmed) return null;
   for (const fmt of PARSE_FORMATS) {
     const d = parse(trimmed, fmt, new Date());
-    if (isValid(d)) return d;
+    if (isValid(d) && format(d, fmt) === trimmed) return d;
   }
   return null;
 }
@@ -47,10 +53,22 @@ function wireToDisplay(wire: string): string {
   return d ? format(d, DISPLAY_FORMAT) : wire;
 }
 
-interface DateInputProps extends Omit<
-  ComponentProps<"input">,
-  "type" | "value" | "onChange" | "onBlur"
-> {
+/**
+ * Assigns a value to a React ref, handling both callback refs and ref objects.
+ */
+function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
+  if (typeof ref === "function") {
+    ref(value);
+  } else if (ref && typeof ref === "object" && "current" in ref) {
+    (ref as React.MutableRefObject<T | null>).current = value;
+  }
+}
+
+interface DateInputProps
+  extends Omit<
+    ComponentProps<"input">,
+    "type" | "value" | "onChange" | "onBlur"
+  > {
   /** Date value in YYYY-MM-DD wire format. */
   value: string;
   /** Called with YYYY-MM-DD wire format string. */
@@ -58,6 +76,10 @@ interface DateInputProps extends Omit<
   onBlur?: () => void;
   /** Maximum selectable date in YYYY-MM-DD format. */
   max?: string;
+  /** Minimum selectable date in YYYY-MM-DD format. */
+  min?: string;
+  /** React 19 ref-as-prop */
+  ref?: Ref<HTMLInputElement>;
 }
 
 export function DateInput({
@@ -65,13 +87,16 @@ export function DateInput({
   onChange,
   onBlur,
   max,
+  min,
+  ref,
   className,
   disabled,
   ...props
 }: DateInputProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const internalRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [isInvalid, setIsInvalid] = useState(false);
   // Local text tracks what the user is typing while focused
   const [localText, setLocalText] = useState("");
 
@@ -79,17 +104,53 @@ export function DateInput({
   // When focused, show the user's in-progress typed text.
   const displayValue = focused ? localText : wireToDisplay(value);
 
+  // Parse min/max to Date for calendar and validation
+  const maxDate = max ? (tryParseDate(max) ?? undefined) : undefined;
+  const minDate = min ? (tryParseDate(min) ?? undefined) : undefined;
+
+  // Build calendar disabled matcher combining min and max
+  const calendarDisabled = (() => {
+    const matchers: Array<{ before: Date } | { after: Date }> = [];
+    if (minDate) matchers.push({ before: minDate });
+    if (maxDate) matchers.push({ after: maxDate });
+    return matchers.length > 0 ? matchers : undefined;
+  })();
+
+  // Callback ref that assigns to both internal and forwarded ref
+  const mergedRef = useCallback(
+    (el: HTMLInputElement | null) => {
+      (internalRef as React.MutableRefObject<HTMLInputElement | null>).current =
+        el;
+      assignRef(ref, el);
+    },
+    [ref],
+  );
+
   const commitText = useCallback(
     (raw: string) => {
       const d = tryParseDate(raw);
       if (d) {
+        // Enforce max bound
+        if (maxDate && isAfter(d, maxDate)) {
+          setIsInvalid(true);
+          return;
+        }
+        // Enforce min bound
+        if (minDate && isBefore(d, minDate)) {
+          setIsInvalid(true);
+          return;
+        }
+        setIsInvalid(false);
         onChange(format(d, WIRE_FORMAT));
       } else if (!raw.trim()) {
+        setIsInvalid(false);
         onChange("");
+      } else {
+        // Non-empty but unparseable text — mark invalid
+        setIsInvalid(true);
       }
-      // If text is non-empty but unparseable, keep it so the user can fix it
     },
-    [onChange],
+    [onChange, maxDate, minDate],
   );
 
   function handleFocus() {
@@ -100,11 +161,8 @@ export function DateInput({
 
   function handleTextChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLocalText(e.target.value);
-    // Eagerly commit if the typed text is a valid date
-    const d = tryParseDate(e.target.value);
-    if (d) {
-      onChange(format(d, WIRE_FORMAT));
-    }
+    // Don't eagerly commit — let commitText on blur/Enter handle parsing.
+    // This prevents wrong intermediate dates from firing onChange.
   }
 
   function handleBlur() {
@@ -123,26 +181,24 @@ export function DateInput({
     if (date) {
       const wire = format(date, WIRE_FORMAT);
       onChange(wire);
+      setIsInvalid(false);
       // Also update local text in case input is still focused
       setLocalText(format(date, DISPLAY_FORMAT));
     }
     setOpen(false);
     // Return focus to the text input after picking
-    setTimeout(() => inputRef.current?.focus(), 0);
+    setTimeout(() => internalRef.current?.focus(), 0);
   }
 
   // Convert wire value to Date for the calendar's `selected` prop
   const selectedDate = value ? (tryParseDate(value) ?? undefined) : undefined;
 
-  // Convert max prop to Date for calendar's `disabled` matcher
-  const maxDate = max ? (tryParseDate(max) ?? undefined) : undefined;
-
   return (
     <div className="relative flex items-center">
       <input
-        ref={inputRef}
+        ref={mergedRef}
         type="text"
-        inputMode="numeric"
+        inputMode="text"
         data-slot="input"
         value={displayValue}
         onFocus={handleFocus}
@@ -151,8 +207,9 @@ export function DateInput({
         onKeyDown={handleKeyDown}
         placeholder="MM/DD/YYYY"
         disabled={disabled}
+        aria-invalid={isInvalid || undefined}
         className={cn(
-          "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 pr-9 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 pr-11 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
           "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
           "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
           className,
@@ -166,8 +223,9 @@ export function DateInput({
             variant="ghost"
             size="icon"
             disabled={disabled}
-            className="absolute right-0 h-9 w-9 rounded-l-none text-muted-foreground hover:text-foreground"
+            className="absolute right-0 size-11 rounded-l-none text-muted-foreground hover:text-foreground"
             aria-label="Pick a date"
+            aria-expanded={open}
           >
             <CalendarIcon className="h-4 w-4" />
           </Button>
@@ -178,7 +236,7 @@ export function DateInput({
             selected={selectedDate}
             onSelect={handleCalendarSelect}
             defaultMonth={selectedDate}
-            disabled={maxDate ? { after: maxDate } : undefined}
+            disabled={calendarDisabled}
           />
         </PopoverContent>
       </Popover>

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { createRef, useState } from "react";
 import { DateInput } from "./date-input";
 
 // Controlled wrapper that re-renders with updated value when onChange fires
@@ -59,7 +59,7 @@ describe("DateInput", () => {
     ).toBeInTheDocument();
   });
 
-  it("calls onChange with wire format when user types a valid MM/DD/YYYY date", async () => {
+  it("calls onChange with wire format when user types a valid MM/DD/YYYY date and blurs", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
 
@@ -68,13 +68,12 @@ describe("DateInput", () => {
     const input = screen.getByPlaceholderText("MM/DD/YYYY");
     await user.click(input);
     await user.type(input, "03/15/2024");
+    await user.tab();
 
-    // onChange should have been called with the wire format at some point
-    const calls = onChange.mock.calls.map((c) => c[0]);
-    expect(calls).toContain("2024-03-15");
+    expect(onChange).toHaveBeenCalledWith("2024-03-15");
   });
 
-  it("calls onChange with wire format when user types YYYY-MM-DD", async () => {
+  it("calls onChange with wire format when user types YYYY-MM-DD and blurs", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
 
@@ -83,9 +82,9 @@ describe("DateInput", () => {
     const input = screen.getByPlaceholderText("MM/DD/YYYY");
     await user.click(input);
     await user.type(input, "2024-01-20");
+    await user.tab();
 
-    const calls = onChange.mock.calls.map((c) => c[0]);
-    expect(calls).toContain("2024-01-20");
+    expect(onChange).toHaveBeenCalledWith("2024-01-20");
   });
 
   it("formats the display value on blur after valid input", async () => {
@@ -165,5 +164,203 @@ describe("DateInput", () => {
     await user.tab();
 
     expect(onBlur).toHaveBeenCalledTimes(1);
+  });
+
+  // --- New tests for PR review fixes ---
+
+  it("does not eagerly fire onChange while typing (no intermediate dates)", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<DateInput {...defaultProps} onChange={onChange} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.type(input, "03/1");
+
+    // onChange should not be called while still typing partial text
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("opens calendar and selects a date", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ControlledDateInput
+        initialValue="2024-03-15"
+        onChange={onChange}
+      />,
+    );
+
+    const calendarButton = screen.getByRole("button", { name: /pick a date/i });
+    await user.click(calendarButton);
+
+    // Calendar should be open — select March 20th, 2024 by its full aria-label
+    const dayButton = await screen.findByRole("button", {
+      name: /Wednesday, March 20th, 2024/,
+    });
+    await user.click(dayButton);
+
+    expect(onChange).toHaveBeenCalledWith("2024-03-20");
+  });
+
+  it("rejects date beyond max prop and shows error state", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ControlledDateInput
+        initialValue=""
+        onChange={onChange}
+        max="2024-01-15"
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.type(input, "02/01/2024");
+    await user.tab();
+
+    // Date is after max, so onChange should NOT have been called with the date
+    expect(onChange).not.toHaveBeenCalledWith("2024-02-01");
+    // Input should show invalid state
+    expect(input).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("accepts date at or before max prop", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ControlledDateInput
+        initialValue=""
+        onChange={onChange}
+        max="2024-06-15"
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.type(input, "06/15/2024");
+    await user.tab();
+
+    expect(onChange).toHaveBeenCalledWith("2024-06-15");
+    expect(input).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("rejects date before min prop and shows error state", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ControlledDateInput
+        initialValue=""
+        onChange={onChange}
+        min="2024-06-01"
+      />,
+    );
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.type(input, "01/15/2024");
+    await user.tab();
+
+    // Date is before min, so onChange should NOT have been called with the date
+    expect(onChange).not.toHaveBeenCalledWith("2024-01-15");
+    // Input should show invalid state
+    expect(input).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("shows error state for unparseable input on blur", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<DateInput {...defaultProps} onChange={onChange} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.type(input, "not-a-date");
+    await user.tab();
+
+    // onChange should not have been called with a date value
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    );
+    // Input should be marked invalid
+    expect(input).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("clears error state when valid date is committed", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<ControlledDateInput initialValue="" onChange={onChange} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+
+    // First type garbage
+    await user.click(input);
+    await user.type(input, "garbage");
+    await user.tab();
+    expect(input).toHaveAttribute("aria-invalid", "true");
+
+    // Now type a valid date
+    await user.click(input);
+    await user.clear(input);
+    await user.type(input, "03/15/2024");
+    await user.tab();
+    expect(input).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("forwards ref to the input element", () => {
+    const ref = createRef<HTMLInputElement>();
+    render(<DateInput {...defaultProps} ref={ref} />);
+
+    expect(ref.current).toBeInstanceOf(HTMLInputElement);
+    expect(ref.current).toBe(screen.getByPlaceholderText("MM/DD/YYYY"));
+  });
+
+  it("uses inputMode='text' not 'numeric'", () => {
+    render(<DateInput {...defaultProps} />);
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    expect(input).toHaveAttribute("inputMode", "text");
+  });
+
+  it("calendar trigger button has aria-expanded", () => {
+    render(<DateInput {...defaultProps} />);
+    const button = screen.getByRole("button", { name: /pick a date/i });
+    expect(button).toHaveAttribute("aria-expanded");
+  });
+
+  it("calendar trigger button has adequate touch target size (size-11)", () => {
+    render(<DateInput {...defaultProps} />);
+    const button = screen.getByRole("button", { name: /pick a date/i });
+    // size-11 = 44px (2.75rem), check the class is present
+    expect(button.className).toContain("size-11");
+  });
+
+  it("rejects ambiguous partial matches via round-trip check", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<DateInput {...defaultProps} onChange={onChange} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.type(input, "03/1");
+    fireEvent.blur(input);
+
+    // Should not have committed a date — partial input fails round-trip
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    );
+  });
+
+  it("commits valid date on Enter key", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<ControlledDateInput initialValue="" onChange={onChange} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(input);
+    await user.type(input, "03/15/2024");
+    await user.keyboard("{Enter}");
+
+    expect(onChange).toHaveBeenCalledWith("2024-03-15");
   });
 });

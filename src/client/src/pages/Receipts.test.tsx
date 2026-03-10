@@ -338,7 +338,9 @@ describe("Receipts", () => {
     await user.type(searchInput, "Walmart");
     await user.click(screen.getByText(/Use "Walmart"/));
 
-    await user.type(screen.getByLabelText(/date/i), "2024-01-15");
+    const dateInput = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.type(dateInput, "01/15/2024");
+    await user.tab(); // Commit on blur
     await user.type(screen.getByLabelText(/tax amount/i), "5.25");
     await user.click(screen.getByRole("button", { name: /create receipt/i }));
 

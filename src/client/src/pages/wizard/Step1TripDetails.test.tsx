@@ -16,6 +16,7 @@ describe("Step1TripDetails", () => {
   it("renders the form fields", () => {
     renderWithProviders(<Step1TripDetails {...defaultProps} />);
     expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByText(/^date$/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText("MM/DD/YYYY")).toBeInTheDocument();
     expect(screen.getByLabelText(/tax amount/i)).toBeInTheDocument();
   });
