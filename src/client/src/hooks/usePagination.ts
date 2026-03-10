@@ -1,4 +1,4 @@
-import { useReducer, useMemo, useCallback } from "react";
+import { useCallback, useMemo, useReducer } from "react";
 import { getPersistedPageSize, persistPageSize } from "@/lib/page-size";
 
 interface UsePaginationOptions<T> {
@@ -68,13 +68,24 @@ export function usePagination<T>({
     dispatch({ type: "SET_PAGE_SIZE", size });
   }, []);
 
-  return {
-    paginatedItems,
-    currentPage: safePage,
-    pageSize: state.pageSize,
-    totalItems,
-    totalPages,
-    setPage,
-    setPageSize,
-  };
+  return useMemo(
+    () => ({
+      paginatedItems,
+      currentPage: safePage,
+      pageSize: state.pageSize,
+      totalItems,
+      totalPages,
+      setPage,
+      setPageSize,
+    }),
+    [
+      paginatedItems,
+      safePage,
+      state.pageSize,
+      totalItems,
+      totalPages,
+      setPage,
+      setPageSize,
+    ],
+  );
 }

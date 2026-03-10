@@ -5,12 +5,14 @@ import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 
 export function useGlobalShortcuts() {
   const ctx = useContext(ShortcutsContext);
+  const helpOpen = ctx?.helpOpen;
+  const setHelpOpen = ctx?.setHelpOpen;
 
   // ? — Toggle help modal (useKeyboardShortcut because react-hotkeys-hook
   // doesn't match the "?" key)
   const toggleHelp = useCallback(
-    () => ctx?.setHelpOpen(!ctx?.helpOpen),
-    [ctx],
+    () => setHelpOpen?.(!helpOpen),
+    [helpOpen, setHelpOpen],
   );
   useKeyboardShortcut({
     key: "?",

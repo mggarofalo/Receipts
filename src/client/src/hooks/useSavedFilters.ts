@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { FilterPreset } from "@/lib/search";
 import {
   getSavedFilters,
@@ -27,5 +27,5 @@ export function useSavedFilters(entityType: string) {
     [entityType],
   );
 
-  return { filters, save, remove };
+  return useMemo(() => ({ filters, save, remove }), [filters, save, remove]);
 }

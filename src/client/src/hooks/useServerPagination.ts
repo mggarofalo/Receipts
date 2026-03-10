@@ -72,14 +72,25 @@ export function useServerPagination({
     dispatch({ type: "SET_OFFSET", offset: 0 });
   }, []);
 
-  return {
-    offset: state.offset,
-    limit: state.limit,
-    currentPage,
-    pageSize: state.limit,
-    totalPages,
-    setPage,
-    setPageSize,
-    resetPage,
-  };
+  return useMemo(
+    () => ({
+      offset: state.offset,
+      limit: state.limit,
+      currentPage,
+      pageSize: state.limit,
+      totalPages,
+      setPage,
+      setPageSize,
+      resetPage,
+    }),
+    [
+      state.offset,
+      state.limit,
+      currentPage,
+      totalPages,
+      setPage,
+      setPageSize,
+      resetPage,
+    ],
+  );
 }

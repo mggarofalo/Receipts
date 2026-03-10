@@ -58,12 +58,10 @@ export function useFuzzySearch<T>({
     setDebouncedSearch("");
   }, []);
 
-  return {
-    search,
-    setSearch,
-    results,
-    totalCount: data.length,
-    isSearching,
-    clearSearch,
-  };
+  const totalCount = data.length;
+
+  return useMemo(
+    () => ({ search, setSearch, results, totalCount, isSearching, clearSearch }),
+    [search, setSearch, results, totalCount, isSearching, clearSearch],
+  );
 }
