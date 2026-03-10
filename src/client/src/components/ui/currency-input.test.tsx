@@ -44,6 +44,14 @@ describe("CurrencyInput", () => {
     expect(screen.getByText("$")).toBeInTheDocument();
   });
 
+  it("shows placeholder instead of 0.00 when value is zero", () => {
+    render(<CurrencyInput {...defaultProps} value={0} />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("");
+    expect(input).toHaveAttribute("placeholder", "0.00");
+  });
+
   it("formats value on blur to two decimal places", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
@@ -119,5 +127,44 @@ describe("CurrencyInput", () => {
     render(<CurrencyInput {...defaultProps} value={10} symbol="EUR" />);
 
     expect(screen.getByText("EUR")).toBeInTheDocument();
+  });
+
+  it("keeps text empty (not '0.00') when focusing a zero-value field", async () => {
+    const user = userEvent.setup();
+
+    render(<ControlledCurrencyInput initialValue={0} />);
+
+    const input = screen.getByRole("textbox");
+    await user.click(input);
+
+    expect(input).toHaveValue("");
+  });
+
+  it("returns to empty with placeholder after focusing and blurring a zero-value field without typing", async () => {
+    const user = userEvent.setup();
+
+    render(<ControlledCurrencyInput initialValue={0} />);
+
+    const input = screen.getByRole("textbox");
+    await user.click(input);
+    await user.tab();
+
+    expect(input).toHaveValue("");
+    expect(input).toHaveAttribute("placeholder", "0.00");
+  });
+
+  it("applies normal formatting when typing a value into a zero-value field and blurring", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+    const input = screen.getByRole("textbox");
+    await user.click(input);
+    await user.type(input, "42.5");
+    await user.tab();
+
+    expect(onChange).toHaveBeenCalledWith(42.5);
+    expect(input).toHaveValue("42.50");
   });
 });

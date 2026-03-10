@@ -32,7 +32,7 @@ import type { WizardTransaction } from "./wizardReducer";
 
 const txnSchema = z.object({
   accountId: z.string().min(1, "Account is required"),
-  amount: z.number().refine((v) => v !== 0, "Amount must be non-zero"),
+  amount: z.number().refine((v) => v !== 0, "Amount is required"),
   date: z.string().min(1, "Date is required"),
 });
 

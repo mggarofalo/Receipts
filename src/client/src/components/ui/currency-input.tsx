@@ -18,12 +18,14 @@ export function CurrencyInput({
   className,
   ...props
 }: CurrencyInputProps) {
-  const [text, setText] = useState(() => formatDecimal(value));
+  const [text, setText] = useState(() =>
+    value === 0 ? "" : formatDecimal(value),
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
 
-  // When not focused, derive display value from the prop directly
-  const displayValue = focused ? text : formatDecimal(value);
+  // When not focused, show empty string for zero so placeholder is visible
+  const displayValue = focused ? text : value === 0 ? "" : formatDecimal(value);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = parseCurrencyInput(e.target.value);
@@ -40,15 +42,19 @@ export function CurrencyInput({
 
   function handleFocus() {
     setFocused(true);
-    setText(formatDecimal(value));
-    setTimeout(() => inputRef.current?.select(), 0);
+    if (value === 0) {
+      setText("");
+    } else {
+      setText(formatDecimal(value));
+      setTimeout(() => inputRef.current?.select(), 0);
+    }
   }
 
   function handleBlur() {
     setFocused(false);
     const num = parseFloat(text);
     const final = isNaN(num) ? 0 : num;
-    setText(formatDecimal(final));
+    setText(final === 0 ? "" : formatDecimal(final));
     onChange(final);
     onBlur?.();
   }
@@ -75,6 +81,7 @@ export function CurrencyInput({
         type="text"
         inputMode="decimal"
         value={displayValue}
+        placeholder="0.00"
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
