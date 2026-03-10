@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using System.Linq.Expressions;
 using System.Reflection;
 using Infrastructure.Interfaces;
@@ -8,44 +7,6 @@ namespace Infrastructure.Extensions;
 
 public static class OwnedChildRestoreExtensions
 {
-	private static readonly FrozenDictionary<Type, List<(Type ChildType, string FkPropertyName)>> OwnedChildrenMap = BuildOwnedChildrenMap();
-
-	private static FrozenDictionary<Type, List<(Type ChildType, string FkPropertyName)>> BuildOwnedChildrenMap()
-	{
-		Dictionary<Type, List<(Type, string)>> map = [];
-		Assembly assembly = typeof(OwnedChildRestoreExtensions).Assembly;
-
-		foreach (Type type in assembly.GetTypes())
-		{
-			if (type.IsAbstract || type.IsInterface || !typeof(ISoftDeletable).IsAssignableFrom(type))
-			{
-				continue;
-			}
-
-			foreach (Type iface in type.GetInterfaces())
-			{
-				if (!iface.IsGenericType || iface.GetGenericTypeDefinition() != typeof(IOwnedBy<>))
-				{
-					continue;
-				}
-
-				Type parentType = iface.GetGenericArguments()[0];
-				string parentName = parentType.Name.Replace("Entity", "");
-				string fkPropertyName = $"{parentName}Id";
-
-				if (!map.TryGetValue(parentType, out List<(Type, string)>? children))
-				{
-					children = [];
-					map[parentType] = children;
-				}
-
-				children.Add((type, fkPropertyName));
-			}
-		}
-
-		return map.ToFrozenDictionary();
-	}
-
 	private static readonly MethodInfo RestoreChildrenOfTypeMethod =
 		typeof(OwnedChildRestoreExtensions).GetMethod(nameof(RestoreChildrenOfType), BindingFlags.NonPublic | BindingFlags.Static)!;
 
@@ -53,15 +14,15 @@ public static class OwnedChildRestoreExtensions
 		where TParent : class, ISoftDeletable
 	{
 		Type parentType = typeof(TParent);
-		if (!OwnedChildrenMap.TryGetValue(parentType, out List<(Type ChildType, string FkPropertyName)>? children))
+		if (!OwnedChildrenMapProvider.Map.TryGetValue(parentType, out OwnedChildrenMapProvider.ParentEntry? parentEntry))
 		{
 			return;
 		}
 
-		foreach ((Type childType, string fkPropertyName) in children)
+		foreach (OwnedChildrenMapProvider.OwnedChildEntry child in parentEntry.Children)
 		{
-			MethodInfo method = RestoreChildrenOfTypeMethod.MakeGenericMethod(childType);
-			await (Task)method.Invoke(null, [context, parentId, fkPropertyName, cancellationToken])!;
+			MethodInfo method = RestoreChildrenOfTypeMethod.MakeGenericMethod(child.ChildType);
+			await (Task)method.Invoke(null, [context, parentId, child.FkPropertyName, cancellationToken])!;
 		}
 	}
 

@@ -11,10 +11,12 @@ public partial class RemoveSoftDeleteFromReferenceEntities : Migration
 	/// <inheritdoc />
 	protected override void Up(MigrationBuilder migrationBuilder)
 	{
-		// Hard-delete any soft-deleted reference rows before dropping the columns
-		migrationBuilder.Sql("""DELETE FROM "Subcategories" WHERE "DeletedAt" IS NOT NULL""");
-		migrationBuilder.Sql("""DELETE FROM "Categories" WHERE "DeletedAt" IS NOT NULL""");
-		migrationBuilder.Sql("""DELETE FROM "Accounts" WHERE "DeletedAt" IS NOT NULL""");
+		// Restore any soft-deleted reference rows before dropping the columns.
+		// Hard-deleting Accounts would cascade-delete Transactions via FK ON DELETE CASCADE.
+		// Instead, restore them: Accounts become inactive, Categories/Subcategories become active.
+		migrationBuilder.Sql("""UPDATE "Accounts" SET "IsActive" = false, "DeletedAt" = NULL, "DeletedByUserId" = NULL, "DeletedByApiKeyId" = NULL WHERE "DeletedAt" IS NOT NULL""");
+		migrationBuilder.Sql("""UPDATE "Categories" SET "DeletedAt" = NULL, "DeletedByUserId" = NULL, "DeletedByApiKeyId" = NULL WHERE "DeletedAt" IS NOT NULL""");
+		migrationBuilder.Sql("""UPDATE "Subcategories" SET "DeletedAt" = NULL, "DeletedByUserId" = NULL, "DeletedByApiKeyId" = NULL WHERE "DeletedAt" IS NOT NULL""");
 
 		migrationBuilder.DropIndex(
 			name: "IX_Subcategories_CategoryId_Name",

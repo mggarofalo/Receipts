@@ -1,5 +1,3 @@
-using System.Collections.Frozen;
-using System.Reflection;
 using System.Text.Json;
 using Application.Interfaces.Services;
 using Common;
@@ -104,46 +102,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		public EntityEntry? TrackedEntry { get; } = trackedEntry;
 	}
 
-	// Cached map: parent entity type → list of (childType, fkPropertyName)
-	// Built once via reflection over all types implementing IOwnedBy<T>.
-	private static readonly FrozenDictionary<Type, List<(Type ChildType, string FkPropertyName)>> OwnedChildrenMap = BuildOwnedChildrenMap();
-
-	private static FrozenDictionary<Type, List<(Type ChildType, string FkPropertyName)>> BuildOwnedChildrenMap()
-	{
-		Dictionary<Type, List<(Type, string)>> map = [];
-		Assembly assembly = typeof(ApplicationDbContext).Assembly;
-
-		foreach (Type type in assembly.GetTypes())
-		{
-			if (type.IsAbstract || type.IsInterface || !typeof(ISoftDeletable).IsAssignableFrom(type))
-			{
-				continue;
-			}
-
-			foreach (Type iface in type.GetInterfaces())
-			{
-				if (!iface.IsGenericType || iface.GetGenericTypeDefinition() != typeof(IOwnedBy<>))
-				{
-					continue;
-				}
-
-				Type parentType = iface.GetGenericArguments()[0];
-				string parentName = parentType.Name.Replace("Entity", "");
-				string fkPropertyName = $"{parentName}Id";
-
-				if (!map.TryGetValue(parentType, out List<(Type, string)>? children))
-				{
-					children = [];
-					map[parentType] = children;
-				}
-
-				children.Add((type, fkPropertyName));
-			}
-		}
-
-		return map.ToFrozenDictionary();
-	}
-
 	private void HandleSoftDelete()
 	{
 		IEnumerable<EntityEntry<ISoftDeletable>> entries = ChangeTracker
@@ -160,11 +118,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			entry.Entity.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
 
 			Type parentType = entry.Entity.GetType();
-			if (OwnedChildrenMap.TryGetValue(parentType, out List<(Type ChildType, string FkPropertyName)>? children))
+			if (OwnedChildrenMapProvider.Map.TryGetValue(parentType, out OwnedChildrenMapProvider.ParentEntry? parentEntry))
 			{
-				PropertyInfo idProperty = parentType.GetProperty("Id")!;
-				Guid parentId = (Guid)idProperty.GetValue(entry.Entity)!;
-				CollectOwnedChildren(parentId, children, cascadeTargets);
+				Guid parentId = (Guid)parentEntry.IdProperty.GetValue(entry.Entity)!;
+				CollectOwnedChildren(parentId, parentEntry.Children, cascadeTargets);
 			}
 		}
 
@@ -180,20 +137,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		}
 	}
 
-	private void CollectOwnedChildren(Guid parentId, List<(Type ChildType, string FkPropertyName)> children, List<ISoftDeletable> targets)
+	private void CollectOwnedChildren(Guid parentId, List<OwnedChildrenMapProvider.OwnedChildEntry> children, List<ISoftDeletable> targets)
 	{
-		foreach ((Type childType, string fkPropertyName) in children)
+		foreach (OwnedChildrenMapProvider.OwnedChildEntry child in children)
 		{
-			PropertyInfo fkProperty = childType.GetProperty(fkPropertyName)!;
-
 			foreach (EntityEntry entry in ChangeTracker.Entries())
 			{
-				if (entry.Entity.GetType() != childType || entry.State == EntityState.Deleted)
+				if (entry.Entity.GetType() != child.ChildType || entry.State == EntityState.Deleted)
 				{
 					continue;
 				}
 
-				Guid fkValue = (Guid)fkProperty.GetValue(entry.Entity)!;
+				Guid fkValue = (Guid)child.FkProperty.GetValue(entry.Entity)!;
 				if (fkValue == parentId && entry.Entity is ISoftDeletable softDeletable)
 				{
 					targets.Add(softDeletable);
