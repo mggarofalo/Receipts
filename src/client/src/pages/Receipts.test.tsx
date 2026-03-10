@@ -1,22 +1,8 @@
+import "@/test/setup-combobox-polyfills";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
 import Receipts from "./Receipts";
-
-// Polyfill ResizeObserver and scrollIntoView for radix-ui / cmdk in jsdom
-beforeAll(() => {
-  if (typeof window.ResizeObserver === "undefined") {
-    window.ResizeObserver = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    } as unknown as typeof ResizeObserver;
-  }
-
-  if (!Element.prototype.scrollIntoView) {
-    Element.prototype.scrollIntoView = vi.fn();
-  }
-});
 
 vi.mock("@/hooks/usePageTitle", () => ({
   usePageTitle: vi.fn(),

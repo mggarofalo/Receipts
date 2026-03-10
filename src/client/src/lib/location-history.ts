@@ -7,7 +7,11 @@ const MAX_LOCATIONS = 50;
 export function getLocationHistory(): string[] {
   try {
     const raw = localStorage.getItem(LOCATION_HISTORY_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === "string")
+      : [];
   } catch {
     return [];
   }
