@@ -1,9 +1,10 @@
-import { useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocationHistory } from "@/hooks/useLocationHistory";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
@@ -33,7 +34,7 @@ interface Step1Props {
 }
 
 export function Step1TripDetails({ data, onNext }: Step1Props) {
-  const locationRef = useRef<HTMLInputElement>(null);
+  const { options: locationOptions, add: addLocation } = useLocationHistory();
 
   const form = useForm<TripFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,11 +46,8 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
     },
   });
 
-  useEffect(() => {
-    locationRef.current?.focus();
-  }, []);
-
   const handleSubmit = (values: TripFormValues) => {
+    addLocation(values.location);
     onNext(values);
   };
 
@@ -71,16 +69,15 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input
-                      aria-required="true"
+                    <Combobox
+                      options={locationOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
                       placeholder="e.g. Walmart, Target, Costco"
-                      {...field}
-                      ref={(el) => {
-                        field.ref(el);
-                        (
-                          locationRef as React.MutableRefObject<HTMLInputElement | null>
-                        ).current = el;
-                      }}
+                      searchPlaceholder="Search locations..."
+                      emptyMessage="No saved locations."
+                      allowCustom
+                      aria-required="true"
                     />
                   </FormControl>
                   <FormMessage />
