@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -249,6 +249,27 @@ export function ReceiptItemForm({
     );
   }, [descriptionHistoryOptions, descriptionInput]);
 
+  const descriptionListId = "description-autocomplete-list";
+
+  const isDescriptionPopoverOpen =
+    autocompleteOpen &&
+    (suggestions.length > 0 || descriptionHistoryMatches.length > 0);
+
+  const handleDescriptionKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
+        setAutocompleteOpen(false);
+      } else if (e.key === "ArrowDown" && isDescriptionPopoverOpen) {
+        e.preventDefault();
+        // Move focus into the first item in the CommandList
+        const list = document.getElementById(descriptionListId);
+        const firstItem = list?.querySelector("[cmdk-item]") as HTMLElement | null;
+        firstItem?.focus();
+      }
+    },
+    [isDescriptionPopoverOpen, descriptionListId],
+  );
+
   function applyTemplate(template: ItemTemplate) {
     form.setValue("description", template.name);
     setDescriptionInput(template.name);
@@ -312,7 +333,7 @@ export function ReceiptItemForm({
                   onValueChange={field.onChange}
                   placeholder="Select or type an item code..."
                   searchPlaceholder="Search item codes..."
-                  emptyMessage="No saved item codes."
+                  emptyMessage="Type to add a new item code"
                   allowCustom
                   aria-required="true"
                 />
@@ -322,6 +343,11 @@ export function ReceiptItemForm({
           )}
         />
 
+        {/* Description uses Input+Popover+Command instead of Combobox because it
+            merges two heterogeneous option groups (recent history entries AND fuzzy-
+            matched item templates) with grouped headings. The Combobox component only
+            supports a single flat option list. Keeping a custom composite here avoids
+            over-engineering Combobox with group support that nothing else needs. */}
         <FormField
           control={form.control}
           name="description"
@@ -329,13 +355,17 @@ export function ReceiptItemForm({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <Popover
-                open={autocompleteOpen && (suggestions.length > 0 || descriptionHistoryMatches.length > 0)}
+                open={isDescriptionPopoverOpen}
                 onOpenChange={setAutocompleteOpen}
               >
                 <PopoverAnchor asChild>
                   <FormControl>
                     <Input
+                      role="combobox"
                       aria-required="true"
+                      aria-autocomplete="list"
+                      aria-expanded={isDescriptionPopoverOpen}
+                      aria-controls={descriptionListId}
                       {...field}
                       value={descriptionInput}
                       onChange={(e) => {
@@ -349,6 +379,7 @@ export function ReceiptItemForm({
                           setAutocompleteOpen(true);
                         }
                       }}
+                      onKeyDown={handleDescriptionKeyDown}
                       autoComplete="off"
                     />
                   </FormControl>
@@ -360,7 +391,7 @@ export function ReceiptItemForm({
                   onInteractOutside={() => setAutocompleteOpen(false)}
                 >
                   <Command>
-                    <CommandList>
+                    <CommandList id={descriptionListId}>
                       <CommandEmpty>No suggestions found.</CommandEmpty>
                       {descriptionHistoryMatches.length > 0 && (
                         <CommandGroup heading="Recent Descriptions">

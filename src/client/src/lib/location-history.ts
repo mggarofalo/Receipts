@@ -1,6 +1,6 @@
 import { createFieldHistory } from "./field-history";
 
-const locationHistory = createFieldHistory("receipts:location-history", 50);
+export const locationHistory = createFieldHistory("receipts:location-history", 50);
 
 /**
  * Retrieve saved locations from localStorage, sorted by most-recently-used.

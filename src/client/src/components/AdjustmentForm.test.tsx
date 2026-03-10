@@ -1,3 +1,4 @@
+import "@/test/setup-combobox-polyfills";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AdjustmentForm } from "./AdjustmentForm";
@@ -15,6 +16,7 @@ describe("AdjustmentForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it("renders in create mode with correct submit button text and fields", () => {
@@ -92,7 +94,6 @@ describe("AdjustmentForm", () => {
     await waitFor(() => {
       expect(defaultProps.onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({ type: "tip", amount: 10.00 }),
-        expect.anything(),
       );
     });
   });
@@ -106,5 +107,86 @@ describe("AdjustmentForm", () => {
     );
 
     expect(screen.queryByLabelText("Description")).not.toBeInTheDocument();
+  });
+
+  it("shows saved descriptions in the description Combobox when type is 'other'", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "receipts:adjustment-description-history",
+      JSON.stringify(["Price match", "Manager override"]),
+    );
+
+    render(
+      <AdjustmentForm
+        {...defaultProps}
+        defaultValues={{ type: "other", amount: 5, description: "" }}
+      />,
+    );
+
+    // The description field is a Combobox; click its trigger to open
+    const descCombobox = screen.getByLabelText("Description");
+    await user.click(descCombobox);
+
+    await waitFor(() => {
+      expect(screen.getByText("Price match")).toBeInTheDocument();
+      expect(screen.getByText("Manager override")).toBeInTheDocument();
+    });
+  });
+
+  it("selects a history description and populates the field", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "receipts:adjustment-description-history",
+      JSON.stringify(["Price match"]),
+    );
+
+    render(
+      <AdjustmentForm
+        {...defaultProps}
+        defaultValues={{ type: "other", amount: 5, description: "" }}
+      />,
+    );
+
+    const descCombobox = screen.getByLabelText("Description");
+    await user.click(descCombobox);
+
+    await waitFor(() => {
+      expect(screen.getByText("Price match")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("Price match"));
+
+    // After selection, the combobox trigger shows the selected value
+    expect(descCombobox).toHaveTextContent("Price match");
+  });
+
+  it("persists description to history on submit when type is 'other'", async () => {
+    const user = userEvent.setup();
+    render(
+      <AdjustmentForm
+        {...defaultProps}
+        defaultValues={{ type: "other", amount: 5, description: "" }}
+      />,
+    );
+
+    // Open the description combobox and type a custom value
+    const descCombobox = screen.getByLabelText("Description");
+    await user.click(descCombobox);
+    const searchInput = screen.getByPlaceholderText("Search descriptions...");
+    await user.type(searchInput, "Loyalty bonus");
+    await user.click(screen.getByText(/Use "Loyalty bonus"/));
+
+    await user.click(
+      screen.getByRole("button", { name: /add adjustment/i }),
+    );
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).toHaveBeenCalled();
+    });
+
+    const stored = JSON.parse(
+      localStorage.getItem("receipts:adjustment-description-history") ?? "[]",
+    ) as string[];
+    expect(stored).toContain("Loyalty bonus");
   });
 });

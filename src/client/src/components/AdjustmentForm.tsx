@@ -147,7 +147,7 @@ export function AdjustmentForm({
                     onValueChange={field.onChange}
                     placeholder="Describe this adjustment..."
                     searchPlaceholder="Search descriptions..."
-                    emptyMessage="No saved descriptions."
+                    emptyMessage="Type to describe this adjustment"
                     allowCustom
                     aria-required="true"
                   />
