@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Filter, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/ui/combobox";
@@ -174,33 +175,31 @@ export function FilterPanel({
               )}
               {field.type === "dateRange" && (
                 <div className="flex gap-2">
-                  <Input
-                    type="date"
+                  <DateInput
                     className="h-8 text-xs"
                     placeholder="From"
                     value={
                       (values[field.key] as { from?: string } | undefined)
                         ?.from ?? ""
                     }
-                    onChange={(e) =>
+                    onChange={(v) =>
                       updateField(field.key, {
                         ...(values[field.key] as object),
-                        from: e.target.value || undefined,
+                        from: v || undefined,
                       })
                     }
                   />
-                  <Input
-                    type="date"
+                  <DateInput
                     className="h-8 text-xs"
                     placeholder="To"
                     value={
                       (values[field.key] as { to?: string } | undefined)?.to ??
                       ""
                     }
-                    onChange={(e) =>
+                    onChange={(v) =>
                       updateField(field.key, {
                         ...(values[field.key] as object),
-                        to: e.target.value || undefined,
+                        to: v || undefined,
                       })
                     }
                   />

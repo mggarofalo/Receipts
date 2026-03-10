@@ -35,7 +35,7 @@ describe("Step2Transactions", () => {
   it("renders the form fields", () => {
     renderWithProviders(<Step2Transactions {...defaultProps} />);
     expect(screen.getByLabelText(/amount/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("MM/DD/YYYY")).toBeInTheDocument();
   });
 
   it("renders Back and Next buttons", () => {
@@ -75,9 +75,7 @@ describe("Step2Transactions", () => {
     const data = [
       { id: "1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
     ];
-    renderWithProviders(
-      <Step2Transactions {...defaultProps} data={data} />,
-    );
+    renderWithProviders(<Step2Transactions {...defaultProps} data={data} />);
     expect(screen.getByText("$25.50")).toBeInTheDocument();
   });
 });

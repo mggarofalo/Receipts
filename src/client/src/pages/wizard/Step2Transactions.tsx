@@ -7,7 +7,7 @@ import { accountToOption } from "@/lib/combobox-options";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Combobox } from "@/components/ui/combobox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Badge } from "@/components/ui/badge";
@@ -175,7 +175,7 @@ export function Step2Transactions({
                 <FormItem>
                   <FormLabel>Date</FormLabel>
                   <FormControl>
-                    <Input type="date" aria-required="true" {...field} />
+                    <DateInput aria-required="true" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

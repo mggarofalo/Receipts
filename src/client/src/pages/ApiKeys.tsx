@@ -30,6 +30,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
@@ -203,54 +204,61 @@ function ApiKeys() {
             </p>
           ) : (
             <div ref={tableRef}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Last Used</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {apiKeys.map((key, index) => {
-                  const status = getKeyStatus(key);
-                  return (
-                    <TableRow
-                      key={key.id}
-                      className={`cursor-pointer ${focusedId === key.id ? "bg-accent" : ""}`}
-                      onClick={(e) => {
-                        if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
-                        setFocusedIndex(index);
-                      }}
-                    >
-                      <TableCell className="font-medium">{key.name}</TableCell>
-                      <TableCell>{formatDate(key.createdAt)}</TableCell>
-                      <TableCell>{formatDate(key.lastUsedAt)}</TableCell>
-                      <TableCell>{formatDate(key.expiresAt)}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusBadgeVariant(status)}>
-                          {status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {status === "active" && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setRevokeId(key.id)}
-                          >
-                            Revoke
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Last Used</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {apiKeys.map((key, index) => {
+                    const status = getKeyStatus(key);
+                    return (
+                      <TableRow
+                        key={key.id}
+                        className={`cursor-pointer ${focusedId === key.id ? "bg-accent" : ""}`}
+                        onClick={(e) => {
+                          if (
+                            (e.target as HTMLElement).closest(
+                              "button, input, a, [role='button']",
+                            )
+                          )
+                            return;
+                          setFocusedIndex(index);
+                        }}
+                      >
+                        <TableCell className="font-medium">
+                          {key.name}
+                        </TableCell>
+                        <TableCell>{formatDate(key.createdAt)}</TableCell>
+                        <TableCell>{formatDate(key.lastUsedAt)}</TableCell>
+                        <TableCell>{formatDate(key.expiresAt)}</TableCell>
+                        <TableCell>
+                          <Badge variant={statusBadgeVariant(status)}>
+                            {status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {status === "active" && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setRevokeId(key.id)}
+                            >
+                              Revoke
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
@@ -293,7 +301,7 @@ function ApiKeys() {
                   <FormItem>
                     <FormLabel>Expiration Date (optional)</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DateInput {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
