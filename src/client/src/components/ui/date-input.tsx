@@ -48,7 +48,7 @@ function tryParseDate(text: string): Date | null {
 }
 
 /** Convert a wire-format value to display text. */
-function wireToDisplay(wire: string): string {
+function wireToDisplay(wire: string | undefined): string {
   if (!wire) return "";
   const d = tryParseDate(wire);
   return d ? format(d, DISPLAY_FORMAT) : wire;
@@ -71,7 +71,7 @@ interface DateInputProps
     "type" | "value" | "onChange" | "onBlur"
   > {
   /** Date value in YYYY-MM-DD wire format. */
-  value: string;
+  value?: string;
   /** Called with YYYY-MM-DD wire format string. */
   onChange: (value: string) => void;
   onBlur?: () => void;
