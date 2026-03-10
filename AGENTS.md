@@ -119,7 +119,7 @@ Validates the commit message against the Conventional Commits convention using `
 3. `dotnet build -p:TreatWarningsAsErrors=true` — build (also regenerates DTOs and `openapi/generated/API.json`)
 4. `node scripts/check-drift.mjs` — semantic drift detection
 5. `dotnet test --no-build --filter "Category!=Integration"` — run unit tests
-6. `npx tsc --noEmit` — TypeScript type checking
+6. `npx tsc -b --noEmit` — TypeScript type checking
 7. `npx eslint src/client/src` — React client linting
 
 **Quick mode** runs only steps 0, 2, 6, 7 (prerequisites, format, tsc, eslint):
