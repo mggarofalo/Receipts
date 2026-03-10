@@ -1,3 +1,4 @@
+import "@/test/setup-combobox-polyfills";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SubcategoryForm } from "./SubcategoryForm";
@@ -24,12 +25,16 @@ describe("SubcategoryForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it("renders in create mode with empty fields and correct submit button text", () => {
     render(<SubcategoryForm {...defaultProps} />);
 
-    expect(screen.getByLabelText("Name")).toHaveValue("");
+    // Name is now a Combobox (button), not an Input
+    expect(screen.getByLabelText("Name")).toHaveTextContent(
+      "Select or type a name...",
+    );
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("");
     expect(screen.getByRole("button", { name: /create subcategory/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
@@ -44,7 +49,8 @@ describe("SubcategoryForm", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Name")).toHaveValue("Produce");
+    // Name is a Combobox; it shows the value as text content
+    expect(screen.getByLabelText("Name")).toHaveTextContent("Produce");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("Fresh produce");
     expect(screen.getByRole("button", { name: /update subcategory/i })).toBeInTheDocument();
   });
@@ -81,7 +87,9 @@ describe("SubcategoryForm", () => {
   it("renders the category combobox with options from useCategories", () => {
     render(<SubcategoryForm {...defaultProps} />);
 
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    // Name and Category are both comboboxes now
+    const comboboxes = screen.getAllByRole("combobox");
+    expect(comboboxes.length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("Select a category...")).toBeInTheDocument();
   });
 
@@ -94,14 +102,86 @@ describe("SubcategoryForm", () => {
       />,
     );
 
-    await user.type(screen.getByLabelText("Name"), "Dairy");
+    // Name is a Combobox with allowCustom; type a custom value
+    const nameCombobox = screen.getByLabelText("Name");
+    await user.click(nameCombobox);
+    const searchInput = screen.getByPlaceholderText("Search names...");
+    await user.type(searchInput, "Dairy");
+    await user.click(screen.getByText(/Use "Dairy"/));
+
     await user.click(screen.getByRole("button", { name: /create subcategory/i }));
 
     await waitFor(() => {
       expect(defaultProps.onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({ name: "Dairy", categoryId: "cat-1" }),
-        expect.anything(),
       );
     });
+  });
+
+  it("shows saved subcategory names in the Name Combobox dropdown", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "receipts:subcategory-name-history",
+      JSON.stringify(["Dairy", "Produce"]),
+    );
+
+    render(<SubcategoryForm {...defaultProps} />);
+
+    const nameCombobox = screen.getByLabelText("Name");
+    await user.click(nameCombobox);
+
+    await waitFor(() => {
+      expect(screen.getByText("Dairy")).toBeInTheDocument();
+      expect(screen.getByText("Produce")).toBeInTheDocument();
+    });
+  });
+
+  it("selects a history name and populates the field", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "receipts:subcategory-name-history",
+      JSON.stringify(["Dairy"]),
+    );
+
+    render(<SubcategoryForm {...defaultProps} />);
+
+    const nameCombobox = screen.getByLabelText("Name");
+    await user.click(nameCombobox);
+
+    await waitFor(() => {
+      expect(screen.getByText("Dairy")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("Dairy"));
+
+    expect(nameCombobox).toHaveTextContent("Dairy");
+  });
+
+  it("persists subcategory name to history on submit", async () => {
+    const user = userEvent.setup();
+    render(
+      <SubcategoryForm
+        {...defaultProps}
+        defaultValues={{ name: "", categoryId: "cat-1", description: "" }}
+      />,
+    );
+
+    // Type a custom name
+    const nameCombobox = screen.getByLabelText("Name");
+    await user.click(nameCombobox);
+    const searchInput = screen.getByPlaceholderText("Search names...");
+    await user.type(searchInput, "Bakery");
+    await user.click(screen.getByText(/Use "Bakery"/));
+
+    await user.click(screen.getByRole("button", { name: /create subcategory/i }));
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).toHaveBeenCalled();
+    });
+
+    const stored = JSON.parse(
+      localStorage.getItem("receipts:subcategory-name-history") ?? "[]",
+    ) as string[];
+    expect(stored).toContain("Bakery");
   });
 });

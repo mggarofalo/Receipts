@@ -1,3 +1,4 @@
+import "@/test/setup-combobox-polyfills";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReceiptItemForm } from "./ReceiptItemForm";
@@ -76,6 +77,7 @@ describe("ReceiptItemForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it("renders in create mode with correct submit button text and all field labels", () => {
@@ -111,7 +113,8 @@ describe("ReceiptItemForm", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Item Code")).toHaveValue("ITM-001");
+    // Item Code is a Combobox; it shows the value as text content
+    expect(screen.getByLabelText("Item Code")).toHaveTextContent("ITM-001");
     expect(screen.getByRole("button", { name: /update item/i })).toBeInTheDocument();
   });
 
@@ -205,5 +208,114 @@ describe("ReceiptItemForm", () => {
 
     expect(screen.getByText("Quantity")).toBeInTheDocument();
     expect(screen.getByText("Unit Price")).toBeInTheDocument();
+  });
+
+  it("shows recent description history and item template groups in description autocomplete", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "receipts:item-description-history",
+      JSON.stringify(["Whole Milk", "Bread"]),
+    );
+
+    render(<ReceiptItemForm {...defaultProps} />);
+
+    const descriptionInput = screen.getByLabelText("Description");
+    await user.click(descriptionInput);
+
+    // History entries should appear under "Recent Descriptions"
+    await waitFor(() => {
+      expect(screen.getByText("Recent Descriptions")).toBeInTheDocument();
+      expect(screen.getByText("Whole Milk")).toBeInTheDocument();
+      expect(screen.getByText("Bread")).toBeInTheDocument();
+    });
+  });
+
+  it("shows item template suggestions when typing a matching description", async () => {
+    const user = userEvent.setup();
+    render(<ReceiptItemForm {...defaultProps} />);
+
+    const descriptionInput = screen.getByLabelText("Description");
+    await user.type(descriptionInput, "Milk");
+
+    // Fuzzy-matched template should appear under "Item Templates"
+    await waitFor(() => {
+      expect(screen.getByText("Item Templates")).toBeInTheDocument();
+    });
+  });
+
+  it("selects a description history entry and populates the field", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "receipts:item-description-history",
+      JSON.stringify(["Whole Milk"]),
+    );
+
+    render(<ReceiptItemForm {...defaultProps} />);
+
+    const descriptionInput = screen.getByLabelText("Description");
+    await user.click(descriptionInput);
+
+    await waitFor(() => {
+      expect(screen.getByText("Whole Milk")).toBeInTheDocument();
+    });
+
+    // Select the history item (rendered as a CommandItem with value prefixed "history: ")
+    await user.click(screen.getByText("Whole Milk"));
+
+    expect(descriptionInput).toHaveValue("Whole Milk");
+  });
+
+  it("persists description and item code to history on submit", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReceiptItemForm
+        {...defaultProps}
+        defaultValues={{
+          receiptId: "r-1",
+          receiptItemCode: "ITM-001",
+          description: "Bananas",
+          pricingMode: "quantity",
+          quantity: 1,
+          unitPrice: 1.29,
+          category: "Groceries",
+          subcategory: "Dairy",
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /create item/i }));
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).toHaveBeenCalled();
+    });
+
+    const storedDescriptions = JSON.parse(
+      localStorage.getItem("receipts:item-description-history") ?? "[]",
+    ) as string[];
+    expect(storedDescriptions).toContain("Bananas");
+
+    const storedItemCodes = JSON.parse(
+      localStorage.getItem("receipts:item-code-history") ?? "[]",
+    ) as string[];
+    expect(storedItemCodes).toContain("ITM-001");
+  });
+
+  it("shows saved item codes in the item code Combobox dropdown", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(
+      "receipts:item-code-history",
+      JSON.stringify(["ITM-001", "ITM-002"]),
+    );
+
+    render(<ReceiptItemForm {...defaultProps} />);
+
+    // The Item Code field is a Combobox; click its trigger to open
+    const itemCodeCombobox = screen.getByLabelText("Item Code");
+    await user.click(itemCodeCombobox);
+
+    await waitFor(() => {
+      expect(screen.getByText("ITM-001")).toBeInTheDocument();
+      expect(screen.getByText("ITM-002")).toBeInTheDocument();
+    });
   });
 });

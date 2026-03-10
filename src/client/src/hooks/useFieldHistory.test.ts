@@ -80,4 +80,26 @@ describe("useFieldHistory", () => {
       { value: "Pre-existing", label: "Pre-existing" },
     ]);
   });
+
+  it("persists entries across unmount/remount when sharing the same FieldHistory instance", () => {
+    // Simulate Component A adding entries, then unmounting.
+    const fh = createFieldHistory(TEST_KEY);
+    const { result: resultA, unmount } = renderHook(() => useFieldHistory(fh));
+
+    act(() => {
+      resultA.current.add("Alpha");
+      resultA.current.add("Beta");
+    });
+
+    expect(resultA.current.entries).toEqual(["Beta", "Alpha"]);
+    unmount();
+
+    // Component B mounts with the same FieldHistory instance and sees entries.
+    const { result: resultB } = renderHook(() => useFieldHistory(fh));
+    expect(resultB.current.entries).toEqual(["Beta", "Alpha"]);
+    expect(resultB.current.options).toEqual([
+      { value: "Beta", label: "Beta" },
+      { value: "Alpha", label: "Alpha" },
+    ]);
+  });
 });

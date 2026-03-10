@@ -11,6 +11,12 @@ import type { ComboboxOption } from "@/components/ui/combobox";
  *
  * All returned references are stable (wrapped in `useCallback`/`useMemo`)
  * to avoid infinite render loops when placed in dependency arrays.
+ *
+ * @param fieldHistory - **Must be a stable, module-scope singleton** (e.g. a
+ *   `createFieldHistory(...)` call at the top level of a module). Do NOT create
+ *   a `FieldHistory` inline during render -- that produces a new object every
+ *   render, which defeats `useCallback` memoization and can cause infinite
+ *   re-render loops.
  */
 export function useFieldHistory(fieldHistory: FieldHistory) {
   const [entries, setEntries] = useState<string[]>(fieldHistory.getHistory);

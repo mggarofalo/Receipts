@@ -89,7 +89,7 @@ export function SubcategoryForm({
                   onValueChange={field.onChange}
                   placeholder="Select or type a name..."
                   searchPlaceholder="Search names..."
-                  emptyMessage="No saved names."
+                  emptyMessage="Type to add a new subcategory"
                   allowCustom
                   aria-required="true"
                 />
