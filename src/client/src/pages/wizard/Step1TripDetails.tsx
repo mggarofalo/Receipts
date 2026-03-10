@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   Form,
@@ -104,8 +105,7 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
                 <FormItem>
                   <FormLabel>Date</FormLabel>
                   <FormControl>
-                    <Input
-                      type="date"
+                    <DateInput
                       aria-required="true"
                       max={new Date().toISOString().split("T")[0]}
                       {...field}

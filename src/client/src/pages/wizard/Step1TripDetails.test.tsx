@@ -16,7 +16,7 @@ describe("Step1TripDetails", () => {
   it("renders the form fields", () => {
     renderWithProviders(<Step1TripDetails {...defaultProps} />);
     expect(screen.getByRole("combobox")).toBeInTheDocument();
-    expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("MM/DD/YYYY")).toBeInTheDocument();
     expect(screen.getByLabelText(/tax amount/i)).toBeInTheDocument();
   });
 
@@ -25,7 +25,7 @@ describe("Step1TripDetails", () => {
     renderWithProviders(<Step1TripDetails {...defaultProps} data={data} />);
     // Combobox shows raw value as text content when no matching option exists
     expect(screen.getByRole("combobox")).toHaveTextContent("Costco");
-    expect(screen.getByLabelText(/date/i)).toHaveValue("2024-03-15");
+    expect(screen.getByPlaceholderText("MM/DD/YYYY")).toHaveValue("03/15/2024");
   });
 
   it("renders the Next button", () => {
