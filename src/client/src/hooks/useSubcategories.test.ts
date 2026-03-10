@@ -24,9 +24,6 @@ import {
   useSubcategoriesByCategoryId,
   useCreateSubcategory,
   useUpdateSubcategory,
-  useDeleteSubcategories,
-  useDeletedSubcategories,
-  useRestoreSubcategory,
 } from "./useSubcategories";
 
 function createWrapper() {
@@ -145,48 +142,4 @@ describe("useSubcategories", () => {
     expect(toast.success).toHaveBeenCalledWith("Subcategory updated");
   });
 
-  it("delete mutation calls DELETE", async () => {
-    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
-
-    const { result } = renderHook(() => useDeleteSubcategories(), {
-      wrapper: createWrapper(),
-    });
-
-    await result.current.mutateAsync(["1"]);
-
-    expect(client.DELETE).toHaveBeenCalledWith("/api/subcategories", {
-      body: ["1"],
-    });
-    expect(toast.success).toHaveBeenCalledWith("Subcategory(ies) deleted");
-  });
-
-  it("deleted subcategories query returns data on success", async () => {
-    const deleted = [{ id: "3", name: "Old Sub", categoryId: "cat-1" }];
-    (client.GET as Mock).mockResolvedValue({ data: deleted, error: undefined });
-
-    const { result } = renderHook(() => useDeletedSubcategories(), {
-      wrapper: createWrapper(),
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual(deleted);
-    expect(client.GET).toHaveBeenCalledWith("/api/subcategories/deleted", {
-      params: { query: { offset: 0, limit: 50 } },
-    });
-  });
-
-  it("restore mutation calls POST and shows toast on success", async () => {
-    (client.POST as Mock).mockResolvedValue({ error: undefined });
-
-    const { result } = renderHook(() => useRestoreSubcategory(), {
-      wrapper: createWrapper(),
-    });
-
-    await result.current.mutateAsync("1");
-
-    expect(client.POST).toHaveBeenCalledWith("/api/subcategories/{id}/restore", {
-      params: { path: { id: "1" } },
-    });
-    expect(toast.success).toHaveBeenCalledWith("Subcategory restored");
-  });
 });

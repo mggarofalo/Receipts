@@ -11,7 +11,6 @@ vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useCreateAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-  useDeleteAccounts: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useFuzzySearch", () => ({
@@ -182,102 +181,6 @@ describe("Accounts", () => {
 
     expect(
       screen.getByRole("heading", { name: /edit account/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("toggles checkbox selection on individual rows", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
-    renderWithProviders(<Accounts />);
-    const checkbox = screen.getByLabelText("Select Checking");
-    await user.click(checkbox);
-
-    // After selecting, the Delete button should appear
-    expect(
-      screen.getByRole("button", { name: /delete/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("opens delete dialog when Delete button is clicked after selection", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
-    renderWithProviders(<Accounts />);
-    await user.click(screen.getByLabelText("Select Checking"));
-    await user.click(screen.getByRole("button", { name: /delete/i }));
-
-    expect(
-      screen.getByRole("heading", { name: /delete accounts/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("toggles select all checkbox", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
-      { id: "2", accountCode: "ACC-002", name: "Savings", isActive: true },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
-    renderWithProviders(<Accounts />);
-    const selectAll = screen.getByLabelText("Select all rows");
-    await user.click(selectAll);
-
-    // Both items should be selected; Delete button should show count
-    expect(
-      screen.getByRole("button", { name: /delete \(2\)/i }),
     ).toBeInTheDocument();
   });
 
@@ -512,46 +415,4 @@ describe("Accounts", () => {
     expect(screen.getByText("Savings")).toBeInTheDocument();
   });
 
-  it("calls deleteAccounts.mutate when delete is confirmed", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const mockMutate = vi.fn();
-    const { useDeleteAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeleteAccounts).mockReturnValue(mockMutationResult({
-      mutate: mockMutate,
-      isPending: false,
-    }));
-
-    const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
-    renderWithProviders(<Accounts />);
-    await user.click(screen.getByLabelText("Select Checking"));
-    await user.click(screen.getByRole("button", { name: /delete/i }));
-
-    // Click the destructive Delete button in the dialog
-    const dialogDeleteBtn = screen
-      .getAllByRole("button", { name: /delete/i })
-      .find((btn) => btn.closest("[role='dialog']") !== null);
-    if (dialogDeleteBtn) {
-      await user.click(dialogDeleteBtn);
-      expect(mockMutate).toHaveBeenCalledWith(["1"]);
-    }
-  });
 });

@@ -2,15 +2,6 @@ import { useMemo } from "react";
 import { Trash2 } from "lucide-react";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { useDeletedAccounts, useRestoreAccount } from "@/hooks/useAccounts";
-import {
-  useDeletedCategories,
-  useRestoreCategory,
-} from "@/hooks/useCategories";
-import {
-  useDeletedSubcategories,
-  useRestoreSubcategory,
-} from "@/hooks/useSubcategories";
 import { useDeletedReceipts, useRestoreReceipt } from "@/hooks/useReceipts";
 import {
   useDeletedReceiptItems,
@@ -69,9 +60,6 @@ function RestoreButton({
   entityType: string;
   entityId: string;
 }) {
-  const restoreAccount = useRestoreAccount();
-  const restoreCategory = useRestoreCategory();
-  const restoreSubcategory = useRestoreSubcategory();
   const restoreReceipt = useRestoreReceipt();
   const restoreReceiptItem = useRestoreReceiptItem();
   const restoreTransaction = useRestoreTransaction();
@@ -81,9 +69,6 @@ function RestoreButton({
     string,
     { mutate: (id: string) => void; isPending: boolean }
   > = {
-    Account: restoreAccount,
-    Category: restoreCategory,
-    Subcategory: restoreSubcategory,
     Receipt: restoreReceipt,
     ReceiptItem: restoreReceiptItem,
     Transaction: restoreTransaction,
@@ -186,9 +171,6 @@ function DeletedItemsTable({
 
 function RecycleBin() {
   usePageTitle("Recycle Bin");
-  const accounts = useDeletedAccounts();
-  const categories = useDeletedCategories();
-  const subcategories = useDeletedSubcategories();
   const receipts = useDeletedReceipts();
   const receiptItems = useDeletedReceiptItems();
   const transactions = useDeletedTransactions();
@@ -196,9 +178,6 @@ function RecycleBin() {
   const purgeTrash = usePurgeTrash();
 
   const isLoading =
-    accounts.isLoading ||
-    categories.isLoading ||
-    subcategories.isLoading ||
     receipts.isLoading ||
     receiptItems.isLoading ||
     transactions.isLoading ||
@@ -207,30 +186,6 @@ function RecycleBin() {
   const allItems = useMemo(() => {
     const items: DeletedItem[] = [];
 
-    for (const a of accounts.data?.data ?? []) {
-      items.push({
-        entityType: "Account",
-        entityTypeLabel: "Account",
-        id: a.id,
-        label: `${a.name} (${a.accountCode})`,
-      });
-    }
-    for (const c of categories.data?.data ?? []) {
-      items.push({
-        entityType: "Category",
-        entityTypeLabel: "Category",
-        id: c.id,
-        label: c.name,
-      });
-    }
-    for (const s of subcategories.data?.data ?? []) {
-      items.push({
-        entityType: "Subcategory",
-        entityTypeLabel: "Subcategory",
-        id: s.id,
-        label: s.name,
-      });
-    }
     for (const r of receipts.data?.data ?? []) {
       items.push({
         entityType: "Receipt",
@@ -266,9 +221,6 @@ function RecycleBin() {
 
     return items;
   }, [
-    accounts.data,
-    categories.data,
-    subcategories.data,
     receipts.data,
     receiptItems.data,
     transactions.data,
