@@ -15,8 +15,7 @@ public class CategoryEntityConfiguration : IEntityTypeConfiguration<CategoryEnti
 			.ValueGeneratedOnAdd();
 
 		builder.HasIndex(e => e.Name)
-			.IsUnique()
-			.HasFilter("\"DeletedAt\" IS NULL");
+			.IsUnique();
 
 		builder.HasData(
 			new CategoryEntity { Id = new Guid("83a7f4ea-f771-40b3-850f-35b90a3bd05e"), Name = "Groceries", Description = "Food and household supplies" },
@@ -25,7 +24,5 @@ public class CategoryEntityConfiguration : IEntityTypeConfiguration<CategoryEnti
 			new CategoryEntity { Id = new Guid("92eae007-7d82-492c-9370-ff64873cc63a"), Name = "Shopping", Description = "Clothing, electronics, and general retail" },
 			new CategoryEntity { Id = new Guid("705da6c5-6fb6-4b3c-aef1-f42e5136a499"), Name = "Utilities", Description = "Electric, water, internet, and phone" }
 		);
-
-		builder.HasQueryFilter(e => e.DeletedAt == null);
 	}
 }

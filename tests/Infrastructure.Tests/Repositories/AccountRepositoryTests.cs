@@ -158,31 +158,6 @@ public class AccountRepositoryTests
 	}
 
 	[Fact]
-	public async Task DeleteAsync_ValidIds_DeletesAccounts()
-	{
-		// Arrange
-		using ApplicationDbContext context = _contextFactory.CreateDbContext();
-		List<AccountEntity> entities = AccountEntityGenerator.GenerateList(3);
-		await context.Accounts.AddRangeAsync(entities);
-		await context.SaveChangesAsync(CancellationToken.None);
-
-		List<Guid> idsToDelete = [.. entities.Take(2).Select(e => e.Id)];
-		AccountRepository repository = new(_contextFactory);
-
-		// Act
-		await repository.DeleteAsync(idsToDelete, CancellationToken.None);
-
-		using ApplicationDbContext verifyContext = _contextFactory.CreateDbContext();
-		List<AccountEntity> remainingEntities = await verifyContext.Accounts.ToListAsync();
-
-		// Assert
-		Assert.Single(remainingEntities);
-		Assert.DoesNotContain(remainingEntities, e => idsToDelete.Contains(e.Id));
-
-		_contextFactory.ResetDatabase();
-	}
-
-	[Fact]
 	public async Task ExistsAsync_ExistingId_ReturnsTrue()
 	{
 		// Arrange

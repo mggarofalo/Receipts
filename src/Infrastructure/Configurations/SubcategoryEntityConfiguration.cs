@@ -15,8 +15,7 @@ public class SubcategoryEntityConfiguration : IEntityTypeConfiguration<Subcatego
 			.ValueGeneratedOnAdd();
 
 		builder.HasIndex(e => new { e.CategoryId, e.Name })
-			.IsUnique()
-			.HasFilter("\"DeletedAt\" IS NULL");
+			.IsUnique();
 
 		builder.Navigation(e => e.Category)
 			.AutoInclude();
@@ -42,7 +41,5 @@ public class SubcategoryEntityConfiguration : IEntityTypeConfiguration<Subcatego
 			new SubcategoryEntity { Id = new Guid("f7c4d461-ed9f-421c-94d3-32e9a55d6bb0"), CategoryId = utilities, Name = "Electric" },
 			new SubcategoryEntity { Id = new Guid("c9205933-8cc6-4dfc-b08f-46ba221036fa"), CategoryId = utilities, Name = "Internet" }
 		);
-
-		builder.HasQueryFilter(e => e.DeletedAt == null);
 	}
 }

@@ -2,8 +2,6 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Category.Create;
-using Application.Commands.Category.Delete;
-using Application.Commands.Category.Restore;
 using Application.Commands.Category.Update;
 using Application.Models;
 using Application.Queries.Core.Category;
@@ -29,9 +27,6 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
-	public const string RouteDelete = "";
-	public const string RouteGetDeleted = "deleted";
-	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a category by ID")]
@@ -77,44 +72,6 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllCategoriesQuery query = new(offset, limit, sort);
-		PagedResult<Category> result = await mediator.Send(query);
-
-		return TypedResults.Ok(new CategoryListResponse
-		{
-			Data = [.. result.Data.Select(mapper.ToResponse)],
-			Total = result.Total,
-			Offset = result.Offset,
-			Limit = result.Limit,
-		});
-	}
-
-	[HttpGet(RouteGetDeleted)]
-	[EndpointSummary("Get all soft-deleted categories")]
-	[EndpointDescription("Returns all categories that have been soft-deleted.")]
-	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetDeletedCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
-	{
-		if (offset < 0)
-		{
-			return TypedResults.BadRequest("offset must be >= 0");
-		}
-
-		if (limit <= 0 || limit > 500)
-		{
-			return TypedResults.BadRequest("limit must be between 1 and 500");
-		}
-
-		if (sortBy is not null && !SortableColumns.Category.Contains(sortBy))
-		{
-			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Category)}");
-		}
-
-		if (!SortableColumns.IsValidDirection(sortDirection))
-		{
-			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
-		}
-
-		SortParams sort = new(sortBy, sortDirection);
-		GetDeletedCategoriesQuery query = new(offset, limit, sort);
 		PagedResult<Category> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new CategoryListResponse
@@ -177,42 +134,6 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 		}
 
 		await notifier.NotifyBulkChanged("category", "updated", models.Select(m => m.Id));
-		return TypedResults.NoContent();
-	}
-
-	[HttpDelete(RouteDelete)]
-	[EndpointSummary("Delete categories")]
-	[EndpointDescription("Deletes one or more categories by their IDs. Returns 404 if any category is not found.")]
-	public async Task<Results<NoContent, NotFound>> DeleteCategories([FromBody] List<Guid> ids)
-	{
-		DeleteCategoryCommand command = new(ids);
-		bool result = await mediator.Send(command);
-
-		if (!result)
-		{
-			logger.LogWarning("Categories delete failed — not found");
-			return TypedResults.NotFound();
-		}
-
-		await notifier.NotifyBulkChanged("category", "deleted", ids);
-		return TypedResults.NoContent();
-	}
-
-	[HttpPost(RouteRestore)]
-	[EndpointSummary("Restore a soft-deleted category")]
-	[EndpointDescription("Restores a previously soft-deleted category by clearing its DeletedAt timestamp.")]
-	public async Task<Results<NoContent, NotFound>> RestoreCategory([FromRoute] Guid id)
-	{
-		RestoreCategoryCommand command = new(id);
-		bool result = await mediator.Send(command);
-
-		if (!result)
-		{
-			logger.LogWarning("Category {Id} not found or not deleted for restore", id);
-			return TypedResults.NotFound();
-		}
-
-		await notifier.NotifyUpdated("category", id);
 		return TypedResults.NoContent();
 	}
 }

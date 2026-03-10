@@ -3,8 +3,6 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Subcategory.Create;
-using Application.Commands.Subcategory.Delete;
-using Application.Commands.Subcategory.Restore;
 using Application.Commands.Subcategory.Update;
 using Application.Models;
 using Application.Queries.Core.Subcategory;
@@ -152,29 +150,6 @@ public class SubcategoriesControllerTests
 		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
 	}
 
-	[Theory]
-	[InlineData(-1, 50)]
-	[InlineData(-100, 50)]
-	public async Task GetDeletedSubcategories_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
-	{
-		Results<Ok<SubcategoryListResponse>, BadRequest<string>> result = await _controller.GetDeletedSubcategories(offset, limit, null, null);
-
-		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
-		badRequestResult.Value.Should().Be("offset must be >= 0");
-	}
-
-	[Theory]
-	[InlineData(0, 0)]
-	[InlineData(0, -1)]
-	[InlineData(0, 501)]
-	public async Task GetDeletedSubcategories_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
-	{
-		Results<Ok<SubcategoryListResponse>, BadRequest<string>> result = await _controller.GetDeletedSubcategories(offset, limit, null, null);
-
-		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
-		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
-	}
-
 	[Fact]
 	public async Task GetAllSubcategories_ThrowsException_WhenMediatorFails()
 	{
@@ -184,40 +159,6 @@ public class SubcategoriesControllerTests
 			.ThrowsAsync(new Exception());
 
 		Func<Task> act = () => _controller.GetAllSubcategories(null, 0, 50, null, null);
-
-		await act.Should().ThrowAsync<Exception>();
-	}
-
-	// ── GetDeletedSubcategories ─────────────────────────────
-
-	[Fact]
-	public async Task GetDeletedSubcategories_ReturnsOkResult_WithListOfSubcategories()
-	{
-		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(2);
-		List<SubcategoryResponse> expectedReturn = [.. subcategories.Select(_mapper.ToResponse)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetDeletedSubcategoriesQuery>(q => q.Offset == 0 && q.Limit == 50),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
-
-		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetDeletedSubcategories(0, 50, null, null);
-
-		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
-		SubcategoryListResponse actualReturn = result.Value!;
-		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
-		actualReturn.Total.Should().Be(subcategories.Count);
-	}
-
-	[Fact]
-	public async Task GetDeletedSubcategories_ThrowsException_WhenMediatorFails()
-	{
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetDeletedSubcategoriesQuery>(q => q.Offset == 0 && q.Limit == 50),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception());
-
-		Func<Task> act = () => _controller.GetDeletedSubcategories(0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}
@@ -384,100 +325,6 @@ public class SubcategoriesControllerTests
 			.ThrowsAsync(new Exception());
 
 		Func<Task> act = () => _controller.UpdateSubcategories(controllerInput);
-
-		await act.Should().ThrowAsync<Exception>();
-	}
-
-	// ── DeleteSubcategories ─────────────────────────────────
-
-	[Fact]
-	public async Task DeleteSubcategories_ReturnsNoContent_WhenDeleteSucceeds()
-	{
-		List<Guid> ids = [.. SubcategoryGenerator.GenerateList(2).Select(s => s.Id)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteSubcategoryCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-
-		Results<NoContent, NotFound> result = await _controller.DeleteSubcategories(ids);
-
-		Assert.IsType<NoContent>(result.Result);
-	}
-
-	[Fact]
-	public async Task DeleteSubcategories_ReturnsNotFound_WhenDeleteFails()
-	{
-		List<Guid> ids = [SubcategoryGenerator.Generate().Id];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteSubcategoryCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		Results<NoContent, NotFound> result = await _controller.DeleteSubcategories(ids);
-
-		Assert.IsType<NotFound>(result.Result);
-	}
-
-	[Fact]
-	public async Task DeleteSubcategories_ThrowsException_WhenMediatorFails()
-	{
-		List<Guid> ids = [.. SubcategoryGenerator.GenerateList(2).Select(s => s.Id)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteSubcategoryCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception());
-
-		Func<Task> act = () => _controller.DeleteSubcategories(ids);
-
-		await act.Should().ThrowAsync<Exception>();
-	}
-
-	// ── RestoreSubcategory ──────────────────────────────────
-
-	[Fact]
-	public async Task RestoreSubcategory_ReturnsNoContent_WhenSuccessful()
-	{
-		Guid id = Guid.NewGuid();
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreSubcategoryCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-
-		Results<NoContent, NotFound> result = await _controller.RestoreSubcategory(id);
-
-		Assert.IsType<NoContent>(result.Result);
-	}
-
-	[Fact]
-	public async Task RestoreSubcategory_ReturnsNotFound_WhenEntityDoesNotExist()
-	{
-		Guid id = Guid.NewGuid();
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreSubcategoryCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		Results<NoContent, NotFound> result = await _controller.RestoreSubcategory(id);
-
-		Assert.IsType<NotFound>(result.Result);
-	}
-
-	[Fact]
-	public async Task RestoreSubcategory_ThrowsException_WhenMediatorFails()
-	{
-		Guid id = Guid.NewGuid();
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreSubcategoryCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception());
-
-		Func<Task> act = () => _controller.RestoreSubcategory(id);
 
 		await act.Should().ThrowAsync<Exception>();
 	}

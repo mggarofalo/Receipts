@@ -13,23 +13,23 @@ public class RestoreTests
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Soft delete the entity
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(account);
+			ItemTemplateEntity template = await context.ItemTemplates.FirstAsync();
+			context.ItemTemplates.Remove(template);
 			await context.SaveChangesAsync();
 		}
 
-		AccountRepository repository = new(contextFactory);
+		ItemTemplateRepository repository = new(contextFactory);
 
 		// Act
 		bool result = await repository.RestoreAsync(entity.Id, CancellationToken.None);
@@ -39,7 +39,7 @@ public class RestoreTests
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity? restored = await context.Accounts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == entity.Id);
+			ItemTemplateEntity? restored = await context.ItemTemplates.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == entity.Id);
 			restored.Should().NotBeNull();
 			restored!.DeletedAt.Should().BeNull();
 		}
@@ -52,23 +52,23 @@ public class RestoreTests
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Soft delete the entity
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(account);
+			ItemTemplateEntity template = await context.ItemTemplates.FirstAsync();
+			context.ItemTemplates.Remove(template);
 			await context.SaveChangesAsync();
 		}
 
-		AccountRepository repository = new(contextFactory);
+		ItemTemplateRepository repository = new(contextFactory);
 
 		// Act
 		await repository.RestoreAsync(entity.Id, CancellationToken.None);
@@ -76,9 +76,9 @@ public class RestoreTests
 		// Assert
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			List<AccountEntity> visibleAccounts = await context.Accounts.ToListAsync();
-			visibleAccounts.Should().HaveCount(1);
-			visibleAccounts[0].Id.Should().Be(entity.Id);
+			List<ItemTemplateEntity> visibleTemplates = await context.ItemTemplates.ToListAsync();
+			visibleTemplates.Should().HaveCount(1);
+			visibleTemplates[0].Id.Should().Be(entity.Id);
 		}
 
 		contextFactory.ResetDatabase();
@@ -89,7 +89,7 @@ public class RestoreTests
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		AccountRepository repository = new(contextFactory);
+		ItemTemplateRepository repository = new(contextFactory);
 
 		// Act
 		bool result = await repository.RestoreAsync(Guid.NewGuid(), CancellationToken.None);
@@ -105,15 +105,15 @@ public class RestoreTests
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
-		AccountRepository repository = new(contextFactory);
+		ItemTemplateRepository repository = new(contextFactory);
 
 		// Act - entity exists but is not deleted
 		bool result = await repository.RestoreAsync(entity.Id, CancellationToken.None);
@@ -252,51 +252,6 @@ public class RestoreTests
 			List<AdjustmentEntity> adjustments = await context.Adjustments.IgnoreQueryFilters().Where(a => a.ReceiptId == receipt.Id).ToListAsync();
 			adjustments.Should().HaveCount(2);
 			adjustments.Should().AllSatisfy(a => a.DeletedAt.Should().BeNull());
-		}
-
-		contextFactory.ResetDatabase();
-	}
-
-	[Fact]
-	public async Task RestoreAsync_Category_CascadeRestoresSubcategories()
-	{
-		// Arrange
-		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		CategoryEntity category = CategoryEntityGenerator.Generate();
-
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			await context.Categories.AddAsync(category);
-			SubcategoryEntity sub1 = SubcategoryEntityGenerator.Generate();
-			sub1.CategoryId = category.Id;
-			SubcategoryEntity sub2 = SubcategoryEntityGenerator.Generate();
-			sub2.CategoryId = category.Id;
-			await context.Subcategories.AddRangeAsync(sub1, sub2);
-			await context.SaveChangesAsync();
-		}
-
-		// Soft delete category and its subcategories
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			CategoryEntity categoryToDelete = await context.Categories.FirstAsync();
-			await context.Subcategories.Where(s => s.CategoryId == categoryToDelete.Id).LoadAsync();
-			context.Categories.Remove(categoryToDelete);
-			await context.SaveChangesAsync();
-		}
-
-		CategoryRepository repository = new(contextFactory);
-
-		// Act
-		bool result = await repository.RestoreAsync(category.Id, CancellationToken.None);
-
-		// Assert
-		Assert.True(result);
-
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			List<SubcategoryEntity> subcategories = await context.Subcategories.IgnoreQueryFilters().Where(s => s.CategoryId == category.Id).ToListAsync();
-			subcategories.Should().HaveCount(2);
-			subcategories.Should().AllSatisfy(s => s.DeletedAt.Should().BeNull());
 		}
 
 		contextFactory.ResetDatabase();

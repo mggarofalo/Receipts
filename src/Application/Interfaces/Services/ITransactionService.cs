@@ -3,7 +3,7 @@ using Domain.Core;
 
 namespace Application.Interfaces.Services;
 
-public interface ITransactionService : IService<Transaction>
+public interface ITransactionService : ISoftDeletableService<Transaction>
 {
 	Task<PagedResult<Transaction>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, SortParams sort, CancellationToken cancellationToken);
 	Task<List<Domain.Aggregates.TransactionAccount>> GetTransactionAccountsByReceiptIdAsync(Guid receiptId, CancellationToken cancellationToken);

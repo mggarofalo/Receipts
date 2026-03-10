@@ -9,63 +9,63 @@ namespace Infrastructure.Tests.Repositories;
 public class SoftDeleteTests
 {
 	[Fact]
-	public async Task SoftDelete_Account_SetsDeletedAtOnDelete()
+	public async Task SoftDelete_ItemTemplate_SetsDeletedAtOnDelete()
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(account);
+			ItemTemplateEntity template = await context.ItemTemplates.FirstAsync();
+			context.ItemTemplates.Remove(template);
 			await context.SaveChangesAsync();
 		}
 
 		// Assert
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			List<AccountEntity> allAccounts = await context.Accounts.IgnoreQueryFilters().ToListAsync();
-			allAccounts.Should().HaveCount(1);
-			allAccounts[0].DeletedAt.Should().NotBeNull();
+			List<ItemTemplateEntity> allTemplates = await context.ItemTemplates.IgnoreQueryFilters().ToListAsync();
+			allTemplates.Should().HaveCount(1);
+			allTemplates[0].DeletedAt.Should().NotBeNull();
 		}
 
 		contextFactory.ResetDatabase();
 	}
 
 	[Fact]
-	public async Task SoftDelete_Account_ExcludedFromNormalQueries()
+	public async Task SoftDelete_ItemTemplate_ExcludedFromNormalQueries()
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(account);
+			ItemTemplateEntity template = await context.ItemTemplates.FirstAsync();
+			context.ItemTemplates.Remove(template);
 			await context.SaveChangesAsync();
 		}
 
 		// Assert
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			List<AccountEntity> visibleAccounts = await context.Accounts.ToListAsync();
-			visibleAccounts.Should().BeEmpty();
+			List<ItemTemplateEntity> visibleTemplates = await context.ItemTemplates.ToListAsync();
+			visibleTemplates.Should().BeEmpty();
 		}
 
 		contextFactory.ResetDatabase();
@@ -148,83 +148,6 @@ public class SoftDeleteTests
 	}
 
 	[Fact]
-	public async Task SoftDelete_Category_CascadesToSubcategories()
-	{
-		// Arrange
-		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			CategoryEntity category = CategoryEntityGenerator.Generate();
-			await context.Categories.AddAsync(category);
-			SubcategoryEntity sub1 = SubcategoryEntityGenerator.Generate();
-			sub1.CategoryId = category.Id;
-			SubcategoryEntity sub2 = SubcategoryEntityGenerator.Generate();
-			sub2.CategoryId = category.Id;
-			await context.Subcategories.AddRangeAsync(sub1, sub2);
-			await context.SaveChangesAsync();
-		}
-
-		// Act - delete the category (need to load subcategories into context for cascade)
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			CategoryEntity category = await context.Categories.FirstAsync();
-			// Load related subcategories into tracker
-			await context.Subcategories.Where(s => s.CategoryId == category.Id).LoadAsync();
-			context.Categories.Remove(category);
-			await context.SaveChangesAsync();
-		}
-
-		// Assert
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			List<SubcategoryEntity> allSubcategories = await context.Subcategories.IgnoreQueryFilters().ToListAsync();
-			allSubcategories.Should().HaveCount(2);
-			allSubcategories.Should().AllSatisfy(s => s.DeletedAt.Should().NotBeNull());
-		}
-
-		contextFactory.ResetDatabase();
-	}
-
-	[Fact]
-	public async Task SoftDelete_Account_DoesNotCascade()
-	{
-		// Arrange
-		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		AccountEntity account = AccountEntityGenerator.Generate();
-		Guid receiptId = Guid.NewGuid();
-
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			await context.Accounts.AddAsync(account);
-			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-			receipt.Id = receiptId;
-			await context.Receipts.AddAsync(receipt);
-			TransactionEntity transaction = TransactionEntityGenerator.Generate(receiptId: receiptId, accountId: account.Id);
-			await context.Transactions.AddAsync(transaction);
-			await context.SaveChangesAsync();
-		}
-
-		// Act
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			AccountEntity accountToDelete = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(accountToDelete);
-			await context.SaveChangesAsync();
-		}
-
-		// Assert - receipt and transactions should not be soft-deleted
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			List<ReceiptEntity> receipts = await context.Receipts.IgnoreQueryFilters().ToListAsync();
-			receipts.Should().HaveCount(1);
-			receipts[0].DeletedAt.Should().BeNull();
-		}
-
-		contextFactory.ResetDatabase();
-	}
-
-	[Fact]
 	public async Task SoftDelete_SetsDeletedByUserId()
 	{
 		// Arrange
@@ -233,25 +156,25 @@ public class SoftDeleteTests
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity entity = AccountEntityGenerator.Generate();
-			await context.Accounts.AddAsync(entity);
+			ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(account);
+			ItemTemplateEntity template = await context.ItemTemplates.FirstAsync();
+			context.ItemTemplates.Remove(template);
 			await context.SaveChangesAsync();
 		}
 
 		// Assert
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			List<AccountEntity> allAccounts = await context.Accounts.IgnoreQueryFilters().ToListAsync();
-			allAccounts.Should().HaveCount(1);
-			allAccounts[0].DeletedByUserId.Should().Be("test-user-id");
+			List<ItemTemplateEntity> allTemplates = await context.ItemTemplates.IgnoreQueryFilters().ToListAsync();
+			allTemplates.Should().HaveCount(1);
+			allTemplates[0].DeletedByUserId.Should().Be("test-user-id");
 		}
 
 		contextFactory.ResetDatabase();
@@ -267,25 +190,25 @@ public class SoftDeleteTests
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity entity = AccountEntityGenerator.Generate();
-			await context.Accounts.AddAsync(entity);
+			ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(account);
+			ItemTemplateEntity template = await context.ItemTemplates.FirstAsync();
+			context.ItemTemplates.Remove(template);
 			await context.SaveChangesAsync();
 		}
 
 		// Assert
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			List<AccountEntity> allAccounts = await context.Accounts.IgnoreQueryFilters().ToListAsync();
-			allAccounts.Should().HaveCount(1);
-			allAccounts[0].DeletedByApiKeyId.Should().Be(apiKeyId);
+			List<ItemTemplateEntity> allTemplates = await context.ItemTemplates.IgnoreQueryFilters().ToListAsync();
+			allTemplates.Should().HaveCount(1);
+			allTemplates[0].DeletedByApiKeyId.Should().Be(apiKeyId);
 		}
 
 		contextFactory.ResetDatabase();
@@ -296,26 +219,26 @@ public class SoftDeleteTests
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		List<AccountEntity> entities = AccountEntityGenerator.GenerateList(3);
+		List<ItemTemplateEntity> entities = ItemTemplateEntityGenerator.GenerateList(3);
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddRangeAsync(entities);
+			await context.ItemTemplates.AddRangeAsync(entities);
 			await context.SaveChangesAsync();
 		}
 
 		// Delete only the first entity
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity accountToDelete = await context.Accounts.FirstAsync(a => a.Id == entities[0].Id);
-			context.Accounts.Remove(accountToDelete);
+			ItemTemplateEntity templateToDelete = await context.ItemTemplates.FirstAsync(t => t.Id == entities[0].Id);
+			context.ItemTemplates.Remove(templateToDelete);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			List<AccountEntity> onlyDeleted = await context.Accounts
+			List<ItemTemplateEntity> onlyDeleted = await context.ItemTemplates
 				.IgnoreQueryFilters()
 				.Where(e => e.DeletedAt != null)
 				.ToListAsync();
@@ -333,26 +256,26 @@ public class SoftDeleteTests
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		List<AccountEntity> entities = AccountEntityGenerator.GenerateList(3);
+		List<ItemTemplateEntity> entities = ItemTemplateEntityGenerator.GenerateList(3);
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddRangeAsync(entities);
+			await context.ItemTemplates.AddRangeAsync(entities);
 			await context.SaveChangesAsync();
 		}
 
 		// Delete one entity
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity accountToDelete = await context.Accounts.FirstAsync(a => a.Id == entities[0].Id);
-			context.Accounts.Remove(accountToDelete);
+			ItemTemplateEntity templateToDelete = await context.ItemTemplates.FirstAsync(t => t.Id == entities[0].Id);
+			context.ItemTemplates.Remove(templateToDelete);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			List<AccountEntity> allIncludingDeleted = await context.Accounts
+			List<ItemTemplateEntity> allIncludingDeleted = await context.ItemTemplates
 				.IgnoreQueryFilters()
 				.ToListAsync();
 

@@ -122,19 +122,19 @@ public class AuditLogCaptureTests
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(account);
+			ItemTemplateEntity template = await context.ItemTemplates.FirstAsync();
+			context.ItemTemplates.Remove(template);
 			await context.SaveChangesAsync();
 		}
 
@@ -145,7 +145,7 @@ public class AuditLogCaptureTests
 				.Where(a => a.Action == AuditAction.Delete)
 				.ToListAsync();
 			auditLogs.Should().HaveCount(1);
-			auditLogs[0].EntityType.Should().Be("Account");
+			auditLogs[0].EntityType.Should().Be("ItemTemplate");
 		}
 
 		contextFactory.ResetDatabase();
@@ -156,30 +156,30 @@ public class AuditLogCaptureTests
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		ItemTemplateEntity entity = ItemTemplateEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.ItemTemplates.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
-			context.Accounts.Remove(account);
+			ItemTemplateEntity template = await context.ItemTemplates.FirstAsync();
+			context.ItemTemplates.Remove(template);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts
+			ItemTemplateEntity template = await context.ItemTemplates
 				.IgnoreQueryFilters()
-				.FirstAsync(a => a.Id == entity.Id);
-			account.DeletedAt = null;
-			account.DeletedByUserId = null;
-			account.DeletedByApiKeyId = null;
+				.FirstAsync(t => t.Id == entity.Id);
+			template.DeletedAt = null;
+			template.DeletedByUserId = null;
+			template.DeletedByApiKeyId = null;
 			await context.SaveChangesAsync();
 		}
 
@@ -190,7 +190,7 @@ public class AuditLogCaptureTests
 				.Where(a => a.Action == AuditAction.Restore)
 				.ToListAsync();
 			auditLogs.Should().HaveCount(1);
-			auditLogs[0].EntityType.Should().Be("Account");
+			auditLogs[0].EntityType.Should().Be("ItemTemplate");
 		}
 
 		contextFactory.ResetDatabase();

@@ -3,7 +3,7 @@ using Domain.Core;
 
 namespace Application.Interfaces.Services;
 
-public interface IAdjustmentService : IService<Adjustment>
+public interface IAdjustmentService : ISoftDeletableService<Adjustment>
 {
 	Task<PagedResult<Adjustment>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, SortParams sort, CancellationToken cancellationToken);
 	Task<List<Adjustment>> CreateAsync(List<Adjustment> models, Guid receiptId, CancellationToken cancellationToken);

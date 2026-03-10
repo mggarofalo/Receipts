@@ -2,8 +2,6 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Account.Create;
-using Application.Commands.Account.Delete;
-using Application.Commands.Account.Restore;
 using Application.Commands.Account.Update;
 using Application.Models;
 using Application.Queries.Core.Account;
@@ -29,9 +27,6 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
-	public const string RouteDelete = "";
-	public const string RouteGetDeleted = "deleted";
-	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get an account by ID")]
@@ -77,44 +72,6 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllAccountsQuery query = new(offset, limit, sort);
-		PagedResult<Account> result = await mediator.Send(query);
-
-		return TypedResults.Ok(new AccountListResponse
-		{
-			Data = [.. result.Data.Select(mapper.ToResponse)],
-			Total = result.Total,
-			Offset = result.Offset,
-			Limit = result.Limit,
-		});
-	}
-
-	[HttpGet(RouteGetDeleted)]
-	[EndpointSummary("Get all soft-deleted accounts")]
-	[EndpointDescription("Returns all accounts that have been soft-deleted.")]
-	public async Task<Results<Ok<AccountListResponse>, BadRequest<string>>> GetDeletedAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
-	{
-		if (offset < 0)
-		{
-			return TypedResults.BadRequest("offset must be >= 0");
-		}
-
-		if (limit <= 0 || limit > 500)
-		{
-			return TypedResults.BadRequest("limit must be between 1 and 500");
-		}
-
-		if (sortBy is not null && !SortableColumns.Account.Contains(sortBy))
-		{
-			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Account)}");
-		}
-
-		if (!SortableColumns.IsValidDirection(sortDirection))
-		{
-			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
-		}
-
-		SortParams sort = new(sortBy, sortDirection);
-		GetDeletedAccountsQuery query = new(offset, limit, sort);
 		PagedResult<Account> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new AccountListResponse
@@ -177,42 +134,6 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		}
 
 		await notifier.NotifyBulkChanged("account", "updated", models.Select(m => m.Id));
-		return TypedResults.NoContent();
-	}
-
-	[HttpDelete(RouteDelete)]
-	[EndpointSummary("Delete accounts")]
-	[EndpointDescription("Deletes one or more accounts by their IDs. Returns 404 if any account is not found.")]
-	public async Task<Results<NoContent, NotFound>> DeleteAccounts([FromBody] List<Guid> ids)
-	{
-		DeleteAccountCommand command = new(ids);
-		bool result = await mediator.Send(command);
-
-		if (!result)
-		{
-			logger.LogWarning("Accounts delete failed — not found");
-			return TypedResults.NotFound();
-		}
-
-		await notifier.NotifyBulkChanged("account", "deleted", ids);
-		return TypedResults.NoContent();
-	}
-
-	[HttpPost(RouteRestore)]
-	[EndpointSummary("Restore a soft-deleted account")]
-	[EndpointDescription("Restores a previously soft-deleted account by clearing its DeletedAt timestamp.")]
-	public async Task<Results<NoContent, NotFound>> RestoreAccount([FromRoute] Guid id)
-	{
-		RestoreAccountCommand command = new(id);
-		bool result = await mediator.Send(command);
-
-		if (!result)
-		{
-			logger.LogWarning("Account {Id} not found or not deleted for restore", id);
-			return TypedResults.NotFound();
-		}
-
-		await notifier.NotifyUpdated("account", id);
 		return TypedResults.NoContent();
 	}
 }

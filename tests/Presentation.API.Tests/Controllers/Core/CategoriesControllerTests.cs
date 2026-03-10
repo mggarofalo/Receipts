@@ -3,8 +3,6 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Category.Create;
-using Application.Commands.Category.Delete;
-using Application.Commands.Category.Restore;
 using Application.Commands.Category.Update;
 using Application.Models;
 using Application.Queries.Core.Category;
@@ -132,29 +130,6 @@ public class CategoriesControllerTests
 		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
 	}
 
-	[Theory]
-	[InlineData(-1, 50)]
-	[InlineData(-100, 50)]
-	public async Task GetDeletedCategories_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
-	{
-		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetDeletedCategories(offset, limit, null, null);
-
-		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
-		badRequestResult.Value.Should().Be("offset must be >= 0");
-	}
-
-	[Theory]
-	[InlineData(0, 0)]
-	[InlineData(0, -1)]
-	[InlineData(0, 501)]
-	public async Task GetDeletedCategories_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
-	{
-		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetDeletedCategories(offset, limit, null, null);
-
-		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
-		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
-	}
-
 	[Fact]
 	public async Task GetAllCategories_ThrowsException_WhenMediatorFails()
 	{
@@ -164,40 +139,6 @@ public class CategoriesControllerTests
 			.ThrowsAsync(new Exception());
 
 		Func<Task> act = () => _controller.GetAllCategories(0, 50, null, null);
-
-		await act.Should().ThrowAsync<Exception>();
-	}
-
-	// ── GetDeletedCategories ────────────────────────────────
-
-	[Fact]
-	public async Task GetDeletedCategories_ReturnsOkResult_WithListOfCategories()
-	{
-		List<Category> categories = CategoryGenerator.GenerateList(2);
-		List<CategoryResponse> expectedReturn = [.. categories.Select(_mapper.ToResponse)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetDeletedCategoriesQuery>(q => q.Offset == 0 && q.Limit == 50),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new PagedResult<Category>(categories, categories.Count, 0, 50));
-
-		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetDeletedCategories(0, 50, null, null);
-
-		Ok<CategoryListResponse> result = Assert.IsType<Ok<CategoryListResponse>>(rawResult.Result);
-		CategoryListResponse actualReturn = result.Value!;
-		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
-		actualReturn.Total.Should().Be(categories.Count);
-	}
-
-	[Fact]
-	public async Task GetDeletedCategories_ThrowsException_WhenMediatorFails()
-	{
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<GetDeletedCategoriesQuery>(q => q.Offset == 0 && q.Limit == 50),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception());
-
-		Func<Task> act = () => _controller.GetDeletedCategories(0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}
@@ -357,107 +298,12 @@ public class CategoriesControllerTests
 	public async Task UpdateCategories_ThrowsException_WhenMediatorFails()
 	{
 		List<UpdateCategoryRequest> controllerInput = CategoryDtoGenerator.GenerateUpdateRequestList(2);
-
 		_mediatorMock.Setup(m => m.Send(
 			It.Is<UpdateCategoryCommand>(c => c.Categories.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
 		Func<Task> act = () => _controller.UpdateCategories(controllerInput);
-
-		await act.Should().ThrowAsync<Exception>();
-	}
-
-	// ── DeleteCategories ────────────────────────────────────
-
-	[Fact]
-	public async Task DeleteCategories_ReturnsNoContent_WhenDeleteSucceeds()
-	{
-		List<Guid> ids = [.. CategoryGenerator.GenerateList(2).Select(c => c.Id)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteCategoryCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-
-		Results<NoContent, NotFound> result = await _controller.DeleteCategories(ids);
-
-		Assert.IsType<NoContent>(result.Result);
-	}
-
-	[Fact]
-	public async Task DeleteCategories_ReturnsNotFound_WhenDeleteFails()
-	{
-		List<Guid> ids = [CategoryGenerator.Generate().Id];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteCategoryCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		Results<NoContent, NotFound> result = await _controller.DeleteCategories(ids);
-
-		Assert.IsType<NotFound>(result.Result);
-	}
-
-	[Fact]
-	public async Task DeleteCategories_ThrowsException_WhenMediatorFails()
-	{
-		List<Guid> ids = [.. CategoryGenerator.GenerateList(2).Select(c => c.Id)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteCategoryCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception());
-
-		Func<Task> act = () => _controller.DeleteCategories(ids);
-
-		await act.Should().ThrowAsync<Exception>();
-	}
-
-	// ── RestoreCategory ─────────────────────────────────────
-
-	[Fact]
-	public async Task RestoreCategory_ReturnsNoContent_WhenSuccessful()
-	{
-		Guid id = Guid.NewGuid();
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreCategoryCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-
-		Results<NoContent, NotFound> result = await _controller.RestoreCategory(id);
-
-		Assert.IsType<NoContent>(result.Result);
-	}
-
-	[Fact]
-	public async Task RestoreCategory_ReturnsNotFound_WhenEntityDoesNotExist()
-	{
-		Guid id = Guid.NewGuid();
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreCategoryCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		Results<NoContent, NotFound> result = await _controller.RestoreCategory(id);
-
-		Assert.IsType<NotFound>(result.Result);
-	}
-
-	[Fact]
-	public async Task RestoreCategory_ThrowsException_WhenMediatorFails()
-	{
-		Guid id = Guid.NewGuid();
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreCategoryCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception());
-
-		Func<Task> act = () => _controller.RestoreCategory(id);
 
 		await act.Should().ThrowAsync<Exception>();
 	}

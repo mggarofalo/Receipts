@@ -26,11 +26,6 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 		}
 	}
 
-	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
-	{
-		await repository.DeleteAsync(ids, cancellationToken);
-	}
-
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
 	{
 		return await repository.ExistsAsync(id, cancellationToken);
@@ -40,14 +35,6 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 	{
 		int total = await repository.GetCountAsync(cancellationToken);
 		List<SubcategoryEntity> entities = await repository.GetAllAsync(offset, limit, sort, cancellationToken);
-		List<Subcategory> data = [.. entities.Select(mapper.ToDomain)];
-		return new PagedResult<Subcategory>(data, total, offset, limit);
-	}
-
-	public async Task<PagedResult<Subcategory>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
-	{
-		int total = await repository.GetDeletedCountAsync(cancellationToken);
-		List<SubcategoryEntity> entities = await repository.GetDeletedAsync(offset, limit, sort, cancellationToken);
 		List<Subcategory> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<Subcategory>(data, total, offset, limit);
 	}
@@ -75,10 +62,5 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 	{
 		List<SubcategoryEntity> subcategoryEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(subcategoryEntities, cancellationToken);
-	}
-
-	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
-	{
-		return await repository.RestoreAsync(id, cancellationToken);
 	}
 }
