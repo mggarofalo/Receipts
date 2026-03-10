@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/mggarofalo/Receipts/compare/v0.1.7...v0.1.8) (2026-03-10)
+
+
+### Bug Fixes
+
+* **client:** fix breadcrumb casing inconsistency (MGG-318) ([2ca06da](https://github.com/mggarofalo/Receipts/commit/2ca06dafeac7532aa132d440fa4b7e3c6d937085))
+
 ## [0.1.7](https://github.com/mggarofalo/Receipts/compare/v0.1.6...v0.1.7) (2026-03-10)
 
 
