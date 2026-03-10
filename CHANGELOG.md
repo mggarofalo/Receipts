@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/mggarofalo/Receipts/compare/v0.1.8...v0.1.9) (2026-03-10)
+
+
+### Features
+
+* bugs & UX polish from docker compose testing (MGG-315) ([#159](https://github.com/mggarofalo/Receipts/issues/159)) ([b034506](https://github.com/mggarofalo/Receipts/commit/b034506448f4688077abeb67143b5fdee37f5621))
+
 ## [0.1.8](https://github.com/mggarofalo/Receipts/compare/v0.1.7...v0.1.8) (2026-03-10)
 
 
