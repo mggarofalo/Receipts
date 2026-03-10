@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.7](https://github.com/mggarofalo/Receipts/compare/v0.1.6...v0.1.7) (2026-03-10)
+
+
+### Features
+
+* **client:** add Create Receipt button on dashboard (MGG-317) ([#151](https://github.com/mggarofalo/Receipts/issues/151)) ([2f82c6e](https://github.com/mggarofalo/Receipts/commit/2f82c6e8b4745598d4eed26adb2d5e6a223659d7))
+
+
+### Bug Fixes
+
+* **client:** replace crypto.randomUUID with fallback for non-secure contexts (MGG-323) ([#149](https://github.com/mggarofalo/Receipts/issues/149)) ([140a55b](https://github.com/mggarofalo/Receipts/commit/140a55bce88d6cea9072a3197f430b9445106a43))
+* **client:** use placeholder for zero-value currency fields (MGG-322) ([#148](https://github.com/mggarofalo/Receipts/issues/148)) ([3adbb28](https://github.com/mggarofalo/Receipts/commit/3adbb280f4a3b4df3ff1c1e88847245ad4c24d54))
+* **infra:** ensure generated admin password meets Identity requirements ([#146](https://github.com/mggarofalo/Receipts/issues/146)) ([e366704](https://github.com/mggarofalo/Receipts/commit/e3667044433e17f4df01d100a4be6e132b37ec29))
+* **infrastructure:** fix seeder admin lookup and set CreatedAt (MGG-316, MGG-325) ([#150](https://github.com/mggarofalo/Receipts/issues/150)) ([e7a734a](https://github.com/mggarofalo/Receipts/commit/e7a734a971cbc3b9bf72db8df5e3e42d20f3fd0c))
+
 ## [0.1.6](https://github.com/mggarofalo/Receipts/compare/v0.1.5...v0.1.6) (2026-03-09)
 
 
