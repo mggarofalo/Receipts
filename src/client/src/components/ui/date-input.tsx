@@ -2,6 +2,7 @@ import {
   useState,
   useRef,
   useCallback,
+  useMemo,
   type ComponentProps,
   type Ref,
 } from "react";
@@ -105,16 +106,22 @@ export function DateInput({
   const displayValue = focused ? localText : wireToDisplay(value);
 
   // Parse min/max to Date for calendar and validation
-  const maxDate = max ? (tryParseDate(max) ?? undefined) : undefined;
-  const minDate = min ? (tryParseDate(min) ?? undefined) : undefined;
+  const maxDate = useMemo(
+    () => (max ? (tryParseDate(max) ?? undefined) : undefined),
+    [max],
+  );
+  const minDate = useMemo(
+    () => (min ? (tryParseDate(min) ?? undefined) : undefined),
+    [min],
+  );
 
   // Build calendar disabled matcher combining min and max
-  const calendarDisabled = (() => {
+  const calendarDisabled = useMemo(() => {
     const matchers: Array<{ before: Date } | { after: Date }> = [];
     if (minDate) matchers.push({ before: minDate });
     if (maxDate) matchers.push({ after: maxDate });
     return matchers.length > 0 ? matchers : undefined;
-  })();
+  }, [minDate, maxDate]);
 
   // Callback ref that assigns to both internal and forwarded ref
   const mergedRef = useCallback(
@@ -141,16 +148,22 @@ export function DateInput({
           return;
         }
         setIsInvalid(false);
-        onChange(format(d, WIRE_FORMAT));
+        const wire = format(d, WIRE_FORMAT);
+        // Skip redundant onChange when value hasn't changed (e.g., calendar pick → blur)
+        if (wire !== value) {
+          onChange(wire);
+        }
       } else if (!raw.trim()) {
         setIsInvalid(false);
-        onChange("");
+        if (value !== "") {
+          onChange("");
+        }
       } else {
         // Non-empty but unparseable text — mark invalid
         setIsInvalid(true);
       }
     },
-    [onChange, maxDate, minDate],
+    [onChange, maxDate, minDate, value],
   );
 
   function handleFocus() {
@@ -174,6 +187,8 @@ export function DateInput({
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       commitText(localText);
+      // Blur triggers the normal blur flow which reformats the display
+      internalRef.current?.blur();
     }
   }
 
@@ -186,8 +201,6 @@ export function DateInput({
       setLocalText(format(date, DISPLAY_FORMAT));
     }
     setOpen(false);
-    // Return focus to the text input after picking
-    setTimeout(() => internalRef.current?.focus(), 0);
   }
 
   // Convert wire value to Date for the calendar's `selected` prop
