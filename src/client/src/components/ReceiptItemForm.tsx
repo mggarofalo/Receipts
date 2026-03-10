@@ -29,13 +29,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Form,
   FormControl,
   FormField,
@@ -375,15 +368,16 @@ export function ReceiptItemForm({
             <FormItem>
               <FormLabel>Pricing Mode</FormLabel>
               <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select pricing mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="quantity">Qty x Unit Price</SelectItem>
-                    <SelectItem value="flat">Flat Price</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={[
+                    { value: "quantity", label: "Qty x Unit Price" },
+                    { value: "flat", label: "Flat Price" },
+                  ]}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select pricing mode..."
+                  searchPlaceholder="Search modes..."
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -19,13 +19,6 @@ import { Combobox } from "@/components/ui/combobox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Form,
   FormControl,
   FormField,
@@ -391,23 +384,21 @@ export function Step3Items({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Pricing Mode</FormLabel>
-                  <Select
-                    onValueChange={(v) => {
-                      field.onChange(v);
-                      if (v === "flat") form.setValue("quantity", 1);
-                    }}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="quantity">Quantity</SelectItem>
-                      <SelectItem value="flat">Flat</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Combobox
+                      options={[
+                        { value: "quantity", label: "Quantity" },
+                        { value: "flat", label: "Flat" },
+                      ]}
+                      value={field.value}
+                      onValueChange={(v) => {
+                        field.onChange(v);
+                        if (v === "flat") form.setValue("quantity", 1);
+                      }}
+                      placeholder="Select pricing mode..."
+                      searchPlaceholder="Search modes..."
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

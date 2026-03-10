@@ -48,13 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Form,
   FormControl,
@@ -66,7 +60,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Pencil } from "lucide-react";
 
-const AVAILABLE_ROLES = ["Admin", "User"];
+const ROLE_OPTIONS = [
+  { value: "Admin", label: "Admin" },
+  { value: "User", label: "User" },
+];
 
 const createUserSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -430,23 +427,15 @@ function AdminUsers() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {AVAILABLE_ROLES.map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Combobox
+                        options={ROLE_OPTIONS}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Select a role..."
+                        searchPlaceholder="Search roles..."
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -528,23 +517,15 @@ function AdminUsers() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {AVAILABLE_ROLES.map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Combobox
+                        options={ROLE_OPTIONS}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        placeholder="Select a role..."
+                        searchPlaceholder="Search roles..."
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
