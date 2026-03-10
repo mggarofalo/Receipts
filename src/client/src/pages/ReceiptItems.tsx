@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
   useReceiptItems,
@@ -241,7 +242,7 @@ function ReceiptItems() {
         savedFilters={savedFilters}
         onSaveFilter={(name) =>
           saveFilter({
-            id: crypto.randomUUID(),
+            id: generateId(),
             name,
             entityType: "receiptItems",
             values: filterValues,

@@ -1,4 +1,5 @@
 import { Fragment, useState, useMemo, useEffect } from "react";
+import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
   useSubcategories,
@@ -298,7 +299,7 @@ function Subcategories() {
         savedFilters={savedFilters}
         onSaveFilter={(name) =>
           saveFilter({
-            id: crypto.randomUUID(),
+            id: generateId(),
             name,
             entityType: "subcategories",
             values: filterValues,

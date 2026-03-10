@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -92,7 +93,7 @@ export function Step2Transactions({
   const handleAdd = useCallback(
     (values: TxnFormValues) => {
       const newTxn: WizardTransaction = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         ...values,
       };
       setTransactions((prev) => [...prev, newTxn]);
