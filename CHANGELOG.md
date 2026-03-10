@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.11](https://github.com/mggarofalo/Receipts/compare/v0.1.10...v0.1.11) (2026-03-10)
+
+
+### Bug Fixes
+
+* align pre-commit tsc check with CI build pipeline (MGG-329) ([#163](https://github.com/mggarofalo/Receipts/issues/163)) ([fa630aa](https://github.com/mggarofalo/Receipts/commit/fa630aa48a46f7d3f3bee19e8dfa375f718cc3d5))
+* **ci:** trigger Docker publish only on release tags ([#166](https://github.com/mggarofalo/Receipts/issues/166)) ([6e3a633](https://github.com/mggarofalo/Receipts/commit/6e3a6330a40c66597658c4829dde184af6d0eb14))
+
 ## [0.1.10](https://github.com/mggarofalo/Receipts/compare/v0.1.9...v0.1.10) (2026-03-10)
 
 
