@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+using System.Reflection;
 using System.Text.Json;
 using Application.Interfaces.Services;
 using Common;
@@ -102,6 +104,46 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		public EntityEntry? TrackedEntry { get; } = trackedEntry;
 	}
 
+	// Cached map: parent entity type → list of (childType, fkPropertyName)
+	// Built once via reflection over all types implementing IOwnedBy<T>.
+	private static readonly FrozenDictionary<Type, List<(Type ChildType, string FkPropertyName)>> OwnedChildrenMap = BuildOwnedChildrenMap();
+
+	private static FrozenDictionary<Type, List<(Type ChildType, string FkPropertyName)>> BuildOwnedChildrenMap()
+	{
+		Dictionary<Type, List<(Type, string)>> map = [];
+		Assembly assembly = typeof(ApplicationDbContext).Assembly;
+
+		foreach (Type type in assembly.GetTypes())
+		{
+			if (type.IsAbstract || type.IsInterface || !typeof(ISoftDeletable).IsAssignableFrom(type))
+			{
+				continue;
+			}
+
+			foreach (Type iface in type.GetInterfaces())
+			{
+				if (!iface.IsGenericType || iface.GetGenericTypeDefinition() != typeof(IOwnedBy<>))
+				{
+					continue;
+				}
+
+				Type parentType = iface.GetGenericArguments()[0];
+				string parentName = parentType.Name.Replace("Entity", "");
+				string fkPropertyName = $"{parentName}Id";
+
+				if (!map.TryGetValue(parentType, out List<(Type, string)>? children))
+				{
+					children = [];
+					map[parentType] = children;
+				}
+
+				children.Add((type, fkPropertyName));
+			}
+		}
+
+		return map.ToFrozenDictionary();
+	}
+
 	private void HandleSoftDelete()
 	{
 		IEnumerable<EntityEntry<ISoftDeletable>> entries = ChangeTracker
@@ -117,16 +159,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			entry.Entity.DeletedByUserId = _currentUserAccessor?.UserId;
 			entry.Entity.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
 
-			// Cascade soft delete for Receipt children
-			if (entry.Entity is ReceiptEntity receipt)
+			Type parentType = entry.Entity.GetType();
+			if (OwnedChildrenMap.TryGetValue(parentType, out List<(Type ChildType, string FkPropertyName)>? children))
 			{
-				CollectReceiptChildren(receipt.Id, cascadeTargets);
-			}
-
-			// Cascade soft delete for Category children
-			if (entry.Entity is CategoryEntity category)
-			{
-				CollectCategoryChildren(category.Id, cascadeTargets);
+				PropertyInfo idProperty = parentType.GetProperty("Id")!;
+				Guid parentId = (Guid)idProperty.GetValue(entry.Entity)!;
+				CollectOwnedChildren(parentId, children, cascadeTargets);
 			}
 		}
 
@@ -142,41 +180,26 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		}
 	}
 
-	private void CollectReceiptChildren(Guid receiptId, List<ISoftDeletable> targets)
+	private void CollectOwnedChildren(Guid parentId, List<(Type ChildType, string FkPropertyName)> children, List<ISoftDeletable> targets)
 	{
-		// Find tracked ReceiptItems for this receipt
-		IEnumerable<ReceiptItemEntity> trackedItems = ChangeTracker
-			.Entries<ReceiptItemEntity>()
-			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
-			.Select(e => e.Entity);
+		foreach ((Type childType, string fkPropertyName) in children)
+		{
+			PropertyInfo fkProperty = childType.GetProperty(fkPropertyName)!;
 
-		targets.AddRange(trackedItems);
+			foreach (EntityEntry entry in ChangeTracker.Entries())
+			{
+				if (entry.Entity.GetType() != childType || entry.State == EntityState.Deleted)
+				{
+					continue;
+				}
 
-		// Find tracked Transactions for this receipt
-		IEnumerable<TransactionEntity> trackedTransactions = ChangeTracker
-			.Entries<TransactionEntity>()
-			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
-			.Select(e => e.Entity);
-
-		targets.AddRange(trackedTransactions);
-
-		// Find tracked Adjustments for this receipt
-		IEnumerable<AdjustmentEntity> trackedAdjustments = ChangeTracker
-			.Entries<AdjustmentEntity>()
-			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
-			.Select(e => e.Entity);
-
-		targets.AddRange(trackedAdjustments);
-	}
-
-	private void CollectCategoryChildren(Guid categoryId, List<ISoftDeletable> targets)
-	{
-		IEnumerable<SubcategoryEntity> trackedSubcategories = ChangeTracker
-			.Entries<SubcategoryEntity>()
-			.Where(e => e.Entity.CategoryId == categoryId && e.State != EntityState.Deleted)
-			.Select(e => e.Entity);
-
-		targets.AddRange(trackedSubcategories);
+				Guid fkValue = (Guid)fkProperty.GetValue(entry.Entity)!;
+				if (fkValue == parentId && entry.Entity is ISoftDeletable softDeletable)
+				{
+					targets.Add(softDeletable);
+				}
+			}
+		}
 	}
 
 	private List<AuditEntry> CollectAuditEntries()

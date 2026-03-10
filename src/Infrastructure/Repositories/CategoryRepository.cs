@@ -116,18 +116,7 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 		entity.DeletedByUserId = null;
 		entity.DeletedByApiKeyId = null;
 
-		// Cascade restore subcategories
-		List<SubcategoryEntity> deletedSubcategories = await context.Subcategories
-			.IncludeDeleted()
-			.Where(e => e.CategoryId == id && e.DeletedAt != null)
-			.ToListAsync(cancellationToken);
-
-		foreach (SubcategoryEntity subcategory in deletedSubcategories)
-		{
-			subcategory.DeletedAt = null;
-			subcategory.DeletedByUserId = null;
-			subcategory.DeletedByApiKeyId = null;
-		}
+		await context.RestoreOwnedChildrenAsync<CategoryEntity>(id, cancellationToken);
 
 		await context.SaveChangesAsync(cancellationToken);
 		return true;

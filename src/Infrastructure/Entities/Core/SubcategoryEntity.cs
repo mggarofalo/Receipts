@@ -2,7 +2,7 @@ using Infrastructure.Interfaces;
 
 namespace Infrastructure.Entities.Core;
 
-public class SubcategoryEntity : ISoftDeletable
+public class SubcategoryEntity : ISoftDeletable, IOwnedBy<CategoryEntity>
 {
 	public Guid Id { get; set; }
 	public string Name { get; set; } = string.Empty;

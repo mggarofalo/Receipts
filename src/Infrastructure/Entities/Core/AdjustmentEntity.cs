@@ -3,7 +3,7 @@ using Infrastructure.Interfaces;
 
 namespace Infrastructure.Entities.Core;
 
-public class AdjustmentEntity : ISoftDeletable
+public class AdjustmentEntity : ISoftDeletable, IOwnedBy<ReceiptEntity>
 {
 	public Guid Id { get; set; }
 	public Guid ReceiptId { get; set; }
