@@ -37,15 +37,25 @@ describe("useBreadcrumbs", () => {
     ]);
   });
 
-  it("builds segments for unknown paths", () => {
+  it("builds segments for unknown paths with title casing", () => {
     const { result } = renderHook(() => useBreadcrumbs(), {
       wrapper: createWrapper("/foo/bar"),
     });
     expect(result.current).toEqual([
       { label: "Home", path: "/" },
-      { label: "foo", path: "/foo" },
-      { label: "bar", path: "/foo/bar" },
+      { label: "Foo", path: "/foo" },
+      { label: "Bar", path: "/foo/bar" },
     ]);
+  });
+
+  it("title-cases unknown hyphenated paths", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/some-route"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Some Route",
+      path: "/some-route",
+    });
   });
 
   it("maps receipt-detail correctly", () => {
@@ -55,6 +65,57 @@ describe("useBreadcrumbs", () => {
     expect(result.current[1]).toEqual({
       label: "Receipt Detail",
       path: "/receipt-detail",
+    });
+  });
+
+  it("maps categories correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/categories"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Categories",
+      path: "/categories",
+    });
+  });
+
+  it("maps item-templates correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/item-templates"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Item Templates",
+      path: "/item-templates",
+    });
+  });
+
+  it("builds intermediate segments for nested paths like /receipts/new", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/receipts/new"),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Receipts", path: "/receipts" },
+      { label: "New", path: "/receipts/new" },
+    ]);
+  });
+
+  it("maps login correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/login"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Login",
+      path: "/login",
+    });
+  });
+
+  it("maps change-password correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/change-password"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Change Password",
+      path: "/change-password",
     });
   });
 });
