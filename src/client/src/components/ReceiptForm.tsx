@@ -3,8 +3,10 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useLocationHistory } from "@/hooks/useLocationHistory";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
@@ -41,6 +43,7 @@ export function ReceiptForm({
 }: ReceiptFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { options: locationOptions, add: addLocation } = useLocationHistory();
 
   const form = useForm<ReceiptFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,9 +55,14 @@ export function ReceiptForm({
     },
   });
 
+  const handleSubmit = (values: ReceiptFormValues) => {
+    addLocation(values.location);
+    onSubmit(values);
+  };
+
   return (
     <Form {...form}>
-      <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form ref={formRef} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="location"
@@ -62,7 +70,16 @@ export function ReceiptForm({
             <FormItem>
               <FormLabel>Location</FormLabel>
               <FormControl>
-                <Input aria-required="true" {...field} />
+                <Combobox
+                  options={locationOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select or type a location..."
+                  searchPlaceholder="Search locations..."
+                  emptyMessage="No saved locations."
+                  allowCustom
+                  aria-required="true"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

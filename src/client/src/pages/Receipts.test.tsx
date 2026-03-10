@@ -3,6 +3,21 @@ import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
 import Receipts from "./Receipts";
 
+// Polyfill ResizeObserver and scrollIntoView for radix-ui / cmdk in jsdom
+beforeAll(() => {
+  if (typeof window.ResizeObserver === "undefined") {
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  }
+
+  if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = vi.fn();
+  }
+});
+
 vi.mock("@/hooks/usePageTitle", () => ({
   usePageTitle: vi.fn(),
 }));
@@ -304,9 +319,13 @@ describe("Receipts", () => {
     renderWithProviders(<Receipts />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
 
-    const locationInput = screen.getByLabelText(/location/i);
-    await user.clear(locationInput);
-    await user.type(locationInput, "Target");
+    // Location is now a Combobox — open it, type a new value, and select it
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    const searchInput = screen.getByPlaceholderText("Search locations...");
+    await user.type(searchInput, "Target");
+    await user.click(screen.getByText(/Use "Target"/));
+
     await user.click(screen.getByRole("button", { name: /update receipt/i }));
 
     await vi.waitFor(() => {
@@ -326,7 +345,13 @@ describe("Receipts", () => {
     renderWithProviders(<Receipts />);
     await user.click(screen.getByRole("button", { name: /quick add/i }));
 
-    await user.type(screen.getByLabelText(/location/i), "Walmart");
+    // Location is now a Combobox — open it, type a custom value, and select it
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    const searchInput = screen.getByPlaceholderText("Search locations...");
+    await user.type(searchInput, "Walmart");
+    await user.click(screen.getByText(/Use "Walmart"/));
+
     await user.type(screen.getByLabelText(/date/i), "2024-01-15");
     await user.type(screen.getByLabelText(/tax amount/i), "5.25");
     await user.click(screen.getByRole("button", { name: /create receipt/i }));

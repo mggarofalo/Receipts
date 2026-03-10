@@ -2,15 +2,34 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { Step1TripDetails } from "./Step1TripDetails";
 
+// Polyfill ResizeObserver and scrollIntoView for radix-ui / cmdk in jsdom
+beforeAll(() => {
+  if (typeof window.ResizeObserver === "undefined") {
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  }
+
+  if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = vi.fn();
+  }
+});
+
 describe("Step1TripDetails", () => {
   const defaultProps = {
     data: { location: "", date: "", taxAmount: 0 },
     onNext: vi.fn(),
   };
 
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it("renders the form fields", () => {
     renderWithProviders(<Step1TripDetails {...defaultProps} />);
-    expect(screen.getByLabelText(/location/i)).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
     expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/tax amount/i)).toBeInTheDocument();
   });
@@ -18,7 +37,8 @@ describe("Step1TripDetails", () => {
   it("renders with pre-filled data", () => {
     const data = { location: "Costco", date: "2024-03-15", taxAmount: 7.5 };
     renderWithProviders(<Step1TripDetails {...defaultProps} data={data} />);
-    expect(screen.getByLabelText(/location/i)).toHaveValue("Costco");
+    // Combobox shows raw value as text content when no matching option exists
+    expect(screen.getByRole("combobox")).toHaveTextContent("Costco");
     expect(screen.getByLabelText(/date/i)).toHaveValue("2024-03-15");
   });
 
