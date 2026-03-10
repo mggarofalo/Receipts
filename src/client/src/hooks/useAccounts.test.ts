@@ -23,9 +23,6 @@ import {
   useAccount,
   useCreateAccount,
   useUpdateAccount,
-  useDeleteAccounts,
-  useDeletedAccounts,
-  useRestoreAccount,
 } from "./useAccounts";
 
 function createWrapper() {
@@ -113,48 +110,4 @@ describe("useAccounts", () => {
     expect(toast.success).toHaveBeenCalledWith("Account updated");
   });
 
-  it("delete mutation calls DELETE", async () => {
-    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
-
-    const { result } = renderHook(() => useDeleteAccounts(), {
-      wrapper: createWrapper(),
-    });
-
-    await result.current.mutateAsync(["1", "2"]);
-
-    expect(client.DELETE).toHaveBeenCalledWith("/api/accounts", {
-      body: ["1", "2"],
-    });
-    expect(toast.success).toHaveBeenCalledWith("Account(s) deleted");
-  });
-
-  it("deleted accounts query returns data on success", async () => {
-    const deleted = [{ id: "3", accountCode: "DEL", name: "Old", isActive: false }];
-    (client.GET as Mock).mockResolvedValue({ data: deleted, error: undefined });
-
-    const { result } = renderHook(() => useDeletedAccounts(), {
-      wrapper: createWrapper(),
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual(deleted);
-    expect(client.GET).toHaveBeenCalledWith("/api/accounts/deleted", {
-      params: { query: { offset: 0, limit: 50 } },
-    });
-  });
-
-  it("restore mutation calls POST and shows toast on success", async () => {
-    (client.POST as Mock).mockResolvedValue({ error: undefined });
-
-    const { result } = renderHook(() => useRestoreAccount(), {
-      wrapper: createWrapper(),
-    });
-
-    await result.current.mutateAsync("1");
-
-    expect(client.POST).toHaveBeenCalledWith("/api/accounts/{id}/restore", {
-      params: { path: { id: "1" } },
-    });
-    expect(toast.success).toHaveBeenCalledWith("Account restored");
-  });
 });

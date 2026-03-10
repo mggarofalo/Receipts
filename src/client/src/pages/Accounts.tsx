@@ -4,7 +4,6 @@ import {
   useAccounts,
   useCreateAccount,
   useUpdateAccount,
-  useDeleteAccounts,
 } from "@/hooks/useAccounts";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
@@ -38,7 +37,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { Pencil } from "lucide-react";
 
@@ -69,18 +67,14 @@ function Accounts() {
   const { data: accountsResponse, isLoading } = useAccounts(offset, limit, sortBy, sortDirection);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
-  const deleteAccounts = useDeleteAccounts();
-
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [editAccount, setEditAccount] = useState<AccountResponse | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
     const saved = localStorage.getItem(STATUS_STORAGE_KEY);
     return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
   });
 
-  const anyDialogOpen = createOpen || editAccount !== null || deleteOpen;
+  const anyDialogOpen = createOpen || editAccount !== null;
 
   useEffect(() => {
     function onNewItem() {
@@ -125,34 +119,11 @@ function Accounts() {
     }
   }, [linkParams.highlight, data]);
 
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function toggleAll() {
-    if (selected.size === filteredResults.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(filteredResults.map((a) => a.id)));
-    }
-  }
-
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: filteredResults,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditAccount(a),
-    onDelete: () => setDeleteOpen(true),
-    onSelectAll: () =>
-      setSelected(new Set(filteredResults.map((a) => a.id))),
-    onDeselectAll: () => setSelected(new Set()),
-    onToggleSelect: (a) => toggleSelect(a.id),
-    selected,
   });
 
   if (isLoading) {
@@ -172,14 +143,7 @@ function Accounts() {
           totalCount={totalCount}
           className="max-w-sm"
         />
-        <div className="flex gap-2">
-          {selected.size > 0 && (
-            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
-              Delete ({selected.size})
-            </Button>
-          )}
-          <Button onClick={() => setCreateOpen(true)}>New Account</Button>
-        </div>
+        <Button onClick={() => setCreateOpen(true)}>New Account</Button>
       </div>
 
       <Tabs value={statusFilter} onValueChange={handleStatusChange}>
@@ -217,18 +181,6 @@ function Accounts() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">
-                    <input
-                      type="checkbox"
-                      aria-label="Select all rows"
-                      checked={
-                        selected.size === filteredResults.length &&
-                        filteredResults.length > 0
-                      }
-                      onChange={toggleAll}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                  </TableHead>
                   <SortableTableHead column="accountCode" label="Account Code" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
@@ -249,15 +201,6 @@ function Accounts() {
                         setFocusedIndex(index);
                       }}
                     >
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${account.name}`}
-                          checked={selected.has(account.id)}
-                          onChange={() => toggleSelect(account.id)}
-                          className="h-4 w-4 rounded border-gray-300"
-                        />
-                      </TableCell>
                       <TableCell className="font-mono">
                         <SearchHighlight
                           text={account.accountCode}
@@ -358,36 +301,6 @@ function Accounts() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Accounts</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} account(s)? This
-            action can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteAccounts.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteAccounts.mutate(ids);
-              }}
-            >
-              {deleteAccounts.isPending && <Spinner size="sm" />}
-              {deleteAccounts.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -3,8 +3,6 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Account.Create;
-using Application.Commands.Account.Delete;
-using Application.Commands.Account.Restore;
 using Application.Commands.Account.Update;
 using Application.Models;
 using Application.Queries.Core.Account;
@@ -12,7 +10,6 @@ using Domain.Core;
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
@@ -140,33 +137,6 @@ public class AccountsControllerTests
 	{
 		// Act
 		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetAllAccounts(offset, limit, null, null);
-
-		// Assert
-		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
-		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
-	}
-
-	[Theory]
-	[InlineData(-1, 50)]
-	[InlineData(-100, 50)]
-	public async Task GetDeletedAccounts_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
-	{
-		// Act
-		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetDeletedAccounts(offset, limit, null, null);
-
-		// Assert
-		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
-		badRequestResult.Value.Should().Be("offset must be >= 0");
-	}
-
-	[Theory]
-	[InlineData(0, 0)]
-	[InlineData(0, -1)]
-	[InlineData(0, 501)]
-	public async Task GetDeletedAccounts_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
-	{
-		// Act
-		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetDeletedAccounts(offset, limit, null, null);
 
 		// Assert
 		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
@@ -372,129 +342,6 @@ public class AccountsControllerTests
 
 		// Act
 		Func<Task> act = () => _controller.UpdateAccounts(controllerInput);
-
-		// Assert
-		await act.Should().ThrowAsync<Exception>();
-	}
-
-	[Fact]
-	public async Task DeleteAccounts_ReturnsNoContent_WhenDeleteSucceeds()
-	{
-		// Arrange
-		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-
-		// Act
-		Results<NoContent, NotFound> result = await _controller.DeleteAccounts(ids);
-
-		// Assert
-		Assert.IsType<NoContent>(result.Result);
-	}
-
-	[Fact]
-	public async Task DeleteAccounts_ReturnsNotFound_WhenSingleAccountDeleteFails()
-	{
-		// Arrange
-		List<Guid> ids = [AccountGenerator.Generate().Id];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		// Act
-		Results<NoContent, NotFound> result = await _controller.DeleteAccounts(ids);
-
-		// Assert
-		Assert.IsType<NotFound>(result.Result);
-	}
-
-	[Fact]
-	public async Task DeleteAccounts_ReturnsNotFound_WhenMultipleAccountsDeleteFails()
-	{
-		// Arrange
-		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		// Act
-		Results<NoContent, NotFound> result = await _controller.DeleteAccounts(ids);
-
-		// Assert
-		Assert.IsType<NotFound>(result.Result);
-	}
-
-	[Fact]
-	public async Task DeleteAccounts_ThrowsException_WhenMediatorFails()
-	{
-		// Arrange
-		List<Guid> ids = [.. AccountGenerator.GenerateList(2).Select(a => a.Id)];
-
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteAccountCommand>(c => c.Ids.SequenceEqual(ids)),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception());
-
-		// Act
-		Func<Task> act = () => _controller.DeleteAccounts(ids);
-
-		// Assert
-		await act.Should().ThrowAsync<Exception>();
-	}
-
-	[Fact]
-	public async Task RestoreAccount_ReturnsNoContent_WhenSuccessful()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreAccountCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-
-		// Act
-		Results<NoContent, NotFound> result = await _controller.RestoreAccount(id);
-
-		// Assert
-		Assert.IsType<NoContent>(result.Result);
-	}
-
-	[Fact]
-	public async Task RestoreAccount_ReturnsNotFound_WhenEntityDoesNotExist()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreAccountCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		// Act
-		Results<NoContent, NotFound> result = await _controller.RestoreAccount(id);
-
-		// Assert
-		Assert.IsType<NotFound>(result.Result);
-	}
-
-	[Fact]
-	public async Task RestoreAccount_ThrowsException_WhenMediatorFails()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		_mediatorMock.Setup(m => m.Send(
-			It.Is<RestoreAccountCommand>(c => c.Id == id),
-			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new Exception());
-
-		// Act
-		Func<Task> act = () => _controller.RestoreAccount(id);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

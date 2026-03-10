@@ -4,7 +4,6 @@ import {
   useCategories,
   useCreateCategory,
   useUpdateCategory,
-  useDeleteCategories,
 } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
@@ -37,7 +36,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { Pencil } from "lucide-react";
 
@@ -64,16 +62,12 @@ function Categories() {
   const { data: categoriesResponse, isLoading } = useCategories(offset, limit, sortBy, sortDirection);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
-  const deleteCategories = useDeleteCategories();
-
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<CategoryResponse | null>(
     null,
   );
-  const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const anyDialogOpen = createOpen || editCategory !== null || deleteOpen;
+  const anyDialogOpen = createOpen || editCategory !== null;
 
   useEffect(() => {
     function onNewItem() {
@@ -110,34 +104,11 @@ function Categories() {
     }
   }, [linkParams.highlight, data]);
 
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function toggleAll() {
-    if (selected.size === filteredResults.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(filteredResults.map((a) => a.id)));
-    }
-  }
-
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: filteredResults,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditCategory(a),
-    onDelete: () => setDeleteOpen(true),
-    onSelectAll: () =>
-      setSelected(new Set(filteredResults.map((a) => a.id))),
-    onDeselectAll: () => setSelected(new Set()),
-    onToggleSelect: (a) => toggleSelect(a.id),
-    selected,
   });
 
   if (isLoading) {
@@ -157,14 +128,7 @@ function Categories() {
           totalCount={totalCount}
           className="max-w-sm"
         />
-        <div className="flex gap-2">
-          {selected.size > 0 && (
-            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
-              Delete ({selected.size})
-            </Button>
-          )}
-          <Button onClick={() => setCreateOpen(true)}>New Category</Button>
-        </div>
+        <Button onClick={() => setCreateOpen(true)}>New Category</Button>
       </div>
 
       {filteredResults.length === 0 ? (
@@ -194,18 +158,6 @@ function Categories() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">
-                    <input
-                      type="checkbox"
-                      aria-label="Select all rows"
-                      checked={
-                        selected.size === filteredResults.length &&
-                        filteredResults.length > 0
-                      }
-                      onChange={toggleAll}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                  </TableHead>
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Description</TableHead>
                   <TableHead>Related</TableHead>
@@ -230,15 +182,6 @@ function Categories() {
                         setFocusedIndex(index);
                       }}
                     >
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${category.name}`}
-                          checked={selected.has(category.id)}
-                          onChange={() => toggleSelect(category.id)}
-                          className="h-4 w-4 rounded border-gray-300"
-                        />
-                      </TableCell>
                       <TableCell>
                         <SearchHighlight
                           text={category.name}
@@ -335,36 +278,6 @@ function Categories() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Categories</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} category(ies)? This
-            action can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteCategories.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteCategories.mutate(ids);
-              }}
-            >
-              {deleteCategories.isPending && <Spinner size="sm" />}
-              {deleteCategories.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

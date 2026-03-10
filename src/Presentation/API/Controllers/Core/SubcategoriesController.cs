@@ -2,8 +2,6 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Subcategory.Create;
-using Application.Commands.Subcategory.Delete;
-using Application.Commands.Subcategory.Restore;
 using Application.Commands.Subcategory.Update;
 using Application.Models;
 using Application.Queries.Core.Subcategory;
@@ -29,9 +27,6 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
-	public const string RouteDelete = "";
-	public const string RouteGetDeleted = "deleted";
-	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a subcategory by ID")]
@@ -103,44 +98,6 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		});
 	}
 
-	[HttpGet(RouteGetDeleted)]
-	[EndpointSummary("Get all soft-deleted subcategories")]
-	[EndpointDescription("Returns all subcategories that have been soft-deleted.")]
-	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetDeletedSubcategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
-	{
-		if (offset < 0)
-		{
-			return TypedResults.BadRequest("offset must be >= 0");
-		}
-
-		if (limit <= 0 || limit > 500)
-		{
-			return TypedResults.BadRequest("limit must be between 1 and 500");
-		}
-
-		if (sortBy is not null && !SortableColumns.Subcategory.Contains(sortBy))
-		{
-			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Subcategory)}");
-		}
-
-		if (!SortableColumns.IsValidDirection(sortDirection))
-		{
-			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
-		}
-
-		SortParams sort = new(sortBy, sortDirection);
-		GetDeletedSubcategoriesQuery query = new(offset, limit, sort);
-		PagedResult<Subcategory> result = await mediator.Send(query);
-
-		return TypedResults.Ok(new SubcategoryListResponse
-		{
-			Data = [.. result.Data.Select(mapper.ToResponse)],
-			Total = result.Total,
-			Offset = result.Offset,
-			Limit = result.Limit,
-		});
-	}
-
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single subcategory")]
 	public async Task<Ok<SubcategoryResponse>> CreateSubcategory([FromBody] CreateSubcategoryRequest model)
@@ -192,42 +149,6 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		}
 
 		await notifier.NotifyBulkChanged("subcategory", "updated", models.Select(m => m.Id));
-		return TypedResults.NoContent();
-	}
-
-	[HttpDelete(RouteDelete)]
-	[EndpointSummary("Delete subcategories")]
-	[EndpointDescription("Deletes one or more subcategories by their IDs. Returns 404 if any subcategory is not found.")]
-	public async Task<Results<NoContent, NotFound>> DeleteSubcategories([FromBody] List<Guid> ids)
-	{
-		DeleteSubcategoryCommand command = new(ids);
-		bool result = await mediator.Send(command);
-
-		if (!result)
-		{
-			logger.LogWarning("Subcategories delete failed — not found");
-			return TypedResults.NotFound();
-		}
-
-		await notifier.NotifyBulkChanged("subcategory", "deleted", ids);
-		return TypedResults.NoContent();
-	}
-
-	[HttpPost(RouteRestore)]
-	[EndpointSummary("Restore a soft-deleted subcategory")]
-	[EndpointDescription("Restores a previously soft-deleted subcategory by clearing its DeletedAt timestamp.")]
-	public async Task<Results<NoContent, NotFound>> RestoreSubcategory([FromRoute] Guid id)
-	{
-		RestoreSubcategoryCommand command = new(id);
-		bool result = await mediator.Send(command);
-
-		if (!result)
-		{
-			logger.LogWarning("Subcategory {Id} not found or not deleted for restore", id);
-			return TypedResults.NotFound();
-		}
-
-		await notifier.NotifyUpdated("subcategory", id);
 		return TypedResults.NoContent();
 	}
 }

@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
-import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
+import { mockQueryResult } from "@/test/mock-hooks";
 import Subcategories from "./Subcategories";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -18,10 +18,6 @@ vi.mock("@/hooks/useSubcategories", () => ({
   })),
   useCreateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-  useDeleteSubcategories: vi.fn(() => ({
-    mutate: vi.fn(),
-    isPending: false,
-  })),
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
@@ -264,22 +260,6 @@ describe("Subcategories", () => {
     expect(within(goodsHeader).getByText("(1)")).toBeInTheDocument();
   });
 
-  it("select-all only selects visible (expanded) rows", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    await setupWithData();
-    renderWithProviders(<Subcategories />);
-
-    await user.click(screen.getByTestId("category-header-c1"));
-    await user.click(screen.getByLabelText("Select all rows"));
-
-    expect(screen.getByLabelText("Select Dairy")).toBeChecked();
-    expect(screen.getByLabelText("Select Bakery")).toBeChecked();
-
-    expect(
-      screen.getByRole("button", { name: /delete \(2\)/i }),
-    ).toBeInTheDocument();
-  });
-
   it("opens create dialog when New Subcategory button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithProviders(<Subcategories />);
@@ -289,52 +269,6 @@ describe("Subcategories", () => {
     expect(
       screen.getByRole("heading", { name: /create subcategory/i }),
     ).toBeInTheDocument();
-  });
-
-  it("toggles checkbox selection and shows delete button", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    await setupWithData();
-    renderWithProviders(<Subcategories />);
-
-    await user.click(screen.getByTestId("category-header-c1"));
-    await user.click(screen.getByLabelText("Select Dairy"));
-
-    expect(
-      screen.getByRole("button", { name: /delete/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("opens delete dialog and confirms deletion", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const mockMutate = vi.fn();
-    const { useDeleteSubcategories } = await import(
-      "@/hooks/useSubcategories"
-    );
-    vi.mocked(useDeleteSubcategories).mockReturnValue(
-      mockMutationResult({
-        mutate: mockMutate,
-        isPending: false,
-      }),
-    );
-
-    await setupWithData();
-    renderWithProviders(<Subcategories />);
-
-    await user.click(screen.getByTestId("category-header-c1"));
-    await user.click(screen.getByLabelText("Select Dairy"));
-    await user.click(screen.getByRole("button", { name: /delete/i }));
-
-    expect(
-      screen.getByRole("heading", { name: /delete subcategories/i }),
-    ).toBeInTheDocument();
-
-    const dialogDeleteBtn = screen
-      .getAllByRole("button", { name: /delete/i })
-      .find((btn) => btn.closest("[role='dialog']") !== null);
-    if (dialogDeleteBtn) {
-      await user.click(dialogDeleteBtn);
-      expect(mockMutate).toHaveBeenCalledWith(["1"]);
-    }
   });
 
   it("closes edit dialog when dismissed", async () => {

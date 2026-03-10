@@ -1,6 +1,0 @@
-using Application.Interfaces;
-using Application.Models;
-
-namespace Application.Queries.Core.Subcategory;
-
-public record GetDeletedSubcategoriesQuery(int Offset, int Limit, SortParams Sort) : IQuery<PagedResult<Domain.Core.Subcategory>>;

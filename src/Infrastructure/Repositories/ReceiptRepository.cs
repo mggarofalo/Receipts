@@ -134,31 +134,7 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		entity.DeletedByUserId = null;
 		entity.DeletedByApiKeyId = null;
 
-		// Cascade restore receipt items
-		List<ReceiptItemEntity> deletedItems = await context.ReceiptItems
-			.IncludeDeleted()
-			.Where(e => e.ReceiptId == id && e.DeletedAt != null)
-			.ToListAsync(cancellationToken);
-
-		foreach (ReceiptItemEntity item in deletedItems)
-		{
-			item.DeletedAt = null;
-			item.DeletedByUserId = null;
-			item.DeletedByApiKeyId = null;
-		}
-
-		// Cascade restore transactions
-		List<TransactionEntity> deletedTransactions = await context.Transactions
-			.IncludeDeleted()
-			.Where(e => e.ReceiptId == id && e.DeletedAt != null)
-			.ToListAsync(cancellationToken);
-
-		foreach (TransactionEntity transaction in deletedTransactions)
-		{
-			transaction.DeletedAt = null;
-			transaction.DeletedByUserId = null;
-			transaction.DeletedByApiKeyId = null;
-		}
+		await context.RestoreOwnedChildrenAsync<ReceiptEntity>(id, cancellationToken);
 
 		await context.SaveChangesAsync(cancellationToken);
 		return true;

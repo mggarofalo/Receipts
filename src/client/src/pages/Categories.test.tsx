@@ -11,7 +11,6 @@ vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useCreateCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-  useDeleteCategories: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useFuzzySearch", () => ({
@@ -189,36 +188,6 @@ describe("Categories", () => {
     ).toBeInTheDocument();
   });
 
-  it("toggles checkbox selection and shows delete button", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      { id: "1", name: "Food", description: "Food expenses" },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useCategories } = await import("@/hooks/useCategories");
-    vi.mocked(useCategories).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
-    renderWithProviders(<Categories />);
-    await user.click(screen.getByLabelText("Select Food"));
-
-    expect(
-      screen.getByRole("button", { name: /delete/i }),
-    ).toBeInTheDocument();
-  });
-
   it("submits create form and calls createCategory.mutate", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const mockMutate = vi.fn();
@@ -354,83 +323,6 @@ describe("Categories", () => {
     await vi.waitFor(() => {
       expect(screen.queryByRole("heading", { name: /edit category/i })).not.toBeInTheDocument();
     });
-  });
-
-  it("opens delete dialog and confirms deletion", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const mockMutate = vi.fn();
-    const { useDeleteCategories } = await import("@/hooks/useCategories");
-    vi.mocked(useDeleteCategories).mockReturnValue(mockMutationResult({
-      mutate: mockMutate,
-      isPending: false,
-    }));
-
-    const items = [
-      { id: "1", name: "Food", description: "Food expenses" },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useCategories } = await import("@/hooks/useCategories");
-    vi.mocked(useCategories).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
-    renderWithProviders(<Categories />);
-    await user.click(screen.getByLabelText("Select Food"));
-    await user.click(screen.getByRole("button", { name: /delete/i }));
-
-    expect(
-      screen.getByRole("heading", { name: /delete categories/i }),
-    ).toBeInTheDocument();
-
-    const dialogDeleteBtn = screen
-      .getAllByRole("button", { name: /delete/i })
-      .find((btn) => btn.closest("[role='dialog']") !== null);
-    if (dialogDeleteBtn) {
-      await user.click(dialogDeleteBtn);
-      expect(mockMutate).toHaveBeenCalledWith(["1"]);
-    }
-  });
-
-  it("toggles select all checkbox", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      { id: "1", name: "Food", description: "Food expenses" },
-      { id: "2", name: "Travel", description: null },
-    ];
-
-    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
-    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
-      search: "",
-      setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
-      isSearching: false,
-      clearSearch: vi.fn(),
-    }));
-
-    const { useCategories } = await import("@/hooks/useCategories");
-    vi.mocked(useCategories).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
-    renderWithProviders(<Categories />);
-    await user.click(screen.getByLabelText("Select all rows"));
-
-    expect(
-      screen.getByRole("button", { name: /delete \(2\)/i }),
-    ).toBeInTheDocument();
   });
 
   it("opens create dialog on shortcut:new-item event", async () => {

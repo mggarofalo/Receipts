@@ -1,25 +1,10 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
-import { mockQueryResult } from "@/test/mock-hooks";
+import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
 import RecycleBin from "./RecycleBin";
 
 vi.mock("@/hooks/usePageTitle", () => ({
   usePageTitle: vi.fn(),
-}));
-
-vi.mock("@/hooks/useAccounts", () => ({
-  useDeletedAccounts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
-  useRestoreAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-}));
-
-vi.mock("@/hooks/useCategories", () => ({
-  useDeletedCategories: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
-  useRestoreCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-}));
-
-vi.mock("@/hooks/useSubcategories", () => ({
-  useDeletedSubcategories: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
-  useRestoreSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useReceipts", () => ({
@@ -55,6 +40,15 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
 }));
 
 describe("RecycleBin", () => {
+  beforeEach(async () => {
+    const { useDeletedReceipts, useRestoreReceipt } = await import("@/hooks/useReceipts");
+    vi.mocked(useDeletedReceipts).mockReturnValue(mockQueryResult({
+      data: { data: [], total: 0, offset: 0, limit: 50 },
+      isLoading: false,
+    }));
+    vi.mocked(useRestoreReceipt).mockReturnValue(mockMutationResult());
+  });
+
   it("renders the page heading", () => {
     renderWithProviders(<RecycleBin />);
     expect(
@@ -63,8 +57,8 @@ describe("RecycleBin", () => {
   });
 
   it("renders loading skeleton when data is loading", async () => {
-    const { useDeletedAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
+    const { useDeletedReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useDeletedReceipts).mockReturnValue(mockQueryResult({
       data: undefined,
       isLoading: true,
     }));
@@ -73,13 +67,7 @@ describe("RecycleBin", () => {
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
   });
 
-  it("renders the All tab", async () => {
-    const { useDeletedAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
-      isLoading: false,
-    }));
-
+  it("renders the All tab", () => {
     renderWithProviders(<RecycleBin />);
     expect(
       screen.getByRole("tab", { name: /all/i }),
@@ -101,45 +89,45 @@ describe("RecycleBin", () => {
   });
 
   it("renders deleted items in the table when data exists", async () => {
-    const { useDeletedAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
+    const { useDeletedReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useDeletedReceipts).mockReturnValue(mockQueryResult({
       data: {
-        data: [{ id: "a1", name: "Old Account", accountCode: "ACC-OLD" }],
+        data: [{ id: "r1", location: "Store", date: "2026-01-01" }],
         total: 1, offset: 0, limit: 50,
       },
       isLoading: false,
     }));
 
-    const { useDeletedCategories } = await import("@/hooks/useCategories");
-    vi.mocked(useDeletedCategories).mockReturnValue(mockQueryResult({
+    const { useDeletedItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useDeletedItemTemplates).mockReturnValue(mockQueryResult({
       data: {
-        data: [{ id: "c1", name: "Deleted Category" }],
+        data: [{ id: "it1", name: "Deleted Template" }],
         total: 1, offset: 0, limit: 50,
       },
       isLoading: false,
     }));
 
     renderWithProviders(<RecycleBin />);
-    expect(screen.getByText("Account")).toBeInTheDocument();
-    expect(screen.getByText("Category")).toBeInTheDocument();
-    expect(screen.getByText(/old account/i)).toBeInTheDocument();
-    expect(screen.getByText("Deleted Category")).toBeInTheDocument();
+    expect(screen.getByText("Receipt")).toBeInTheDocument();
+    expect(screen.getByText("Item Template")).toBeInTheDocument();
+    expect(screen.getByText("Store - 2026-01-01")).toBeInTheDocument();
+    expect(screen.getByText("Deleted Template")).toBeInTheDocument();
   });
 
   it("renders entity type tabs when deleted items exist", async () => {
-    const { useDeletedAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useDeletedAccounts).mockReturnValue(mockQueryResult({
+    const { useDeletedReceipts } = await import("@/hooks/useReceipts");
+    vi.mocked(useDeletedReceipts).mockReturnValue(mockQueryResult({
       data: {
-        data: [{ id: "a1", name: "Old Account", accountCode: "ACC-OLD" }],
+        data: [{ id: "r1", location: "Store", date: "2026-01-01" }],
         total: 1, offset: 0, limit: 50,
       },
       isLoading: false,
     }));
 
     renderWithProviders(<RecycleBin />);
-    // Should have an "All" tab and an "Account" tab
+    // Should have an "All" tab and a "Receipt" tab
     expect(screen.getByRole("tab", { name: /all/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /account/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /receipt/i })).toBeInTheDocument();
   });
 
 });

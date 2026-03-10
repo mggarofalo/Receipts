@@ -6,7 +6,6 @@ import {
   useSubcategoriesByCategoryId,
   useCreateSubcategory,
   useUpdateSubcategory,
-  useDeleteSubcategories,
 } from "@/hooks/useSubcategories";
 import { useCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -45,7 +44,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { ChevronDown, ChevronRight, Pencil } from "lucide-react";
 
 interface SubcategoryResponse {
@@ -81,15 +79,11 @@ function Subcategories() {
   const { data: categoriesResponse, isLoading: categoriesLoading } = useCategories();
   const createSubcategory = useCreateSubcategory();
   const updateSubcategory = useUpdateSubcategory();
-  const deleteSubcategories = useDeleteSubcategories();
-
   const isLoading = subcategoriesLoading || categoriesLoading;
 
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
   const [editSubcategory, setEditSubcategory] =
     useState<SubcategoryResponse | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [filterValues, setFilterValues] = useState<FilterValues>({
     categoryId: "all",
   });
@@ -97,7 +91,7 @@ function Subcategories() {
     new Set(),
   );
 
-  const anyDialogOpen = createOpen || editSubcategory !== null || deleteOpen;
+  const anyDialogOpen = createOpen || editSubcategory !== null;
 
   useEffect(() => {
     function onNewItem() {
@@ -217,46 +211,11 @@ function Subcategories() {
     setExpandedCategories(new Set());
   }
 
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  const allVisibleSelected =
-    visibleSubcategories.length > 0 &&
-    visibleSubcategories.every((a) => selected.has(a.id));
-
-  function toggleAll() {
-    if (allVisibleSelected) {
-      setSelected((prev) => {
-        const next = new Set(prev);
-        for (const a of visibleSubcategories) next.delete(a.id);
-        return next;
-      });
-    } else {
-      setSelected((prev) => {
-        const next = new Set(prev);
-        for (const a of visibleSubcategories) next.add(a.id);
-        return next;
-      });
-    }
-  }
-
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: visibleSubcategories,
     getId: (a) => a.id,
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditSubcategory(a),
-    onDelete: () => setDeleteOpen(true),
-    onSelectAll: () =>
-      setSelected(new Set(visibleSubcategories.map((a) => a.id))),
-    onDeselectAll: () => setSelected(new Set()),
-    onToggleSelect: (a) => toggleSelect(a.id),
-    selected,
   });
 
   if (isLoading) {
@@ -283,11 +242,6 @@ function Subcategories() {
           <Button variant="outline" size="sm" onClick={collapseAll}>
             Collapse All
           </Button>
-          {selected.size > 0 && (
-            <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
-              Delete ({selected.size})
-            </Button>
-          )}
           <Button onClick={() => setCreateOpen(true)}>New Subcategory</Button>
         </div>
       </div>
@@ -346,15 +300,6 @@ function Subcategories() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">
-                    <input
-                      type="checkbox"
-                      aria-label="Select all rows"
-                      checked={allVisibleSelected}
-                      onChange={toggleAll}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                  </TableHead>
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
@@ -374,7 +319,7 @@ function Subcategories() {
                         onClick={() => toggleCategory(categoryId)}
                         data-testid={`category-header-${categoryId}`}
                       >
-                        <TableCell colSpan={6}>
+                        <TableCell colSpan={5}>
                           <div className="flex items-center gap-2 font-medium">
                             {isExpanded ? (
                               <ChevronDown className="h-4 w-4" />
@@ -408,15 +353,6 @@ function Subcategories() {
                                 setFocusedIndex(visibleIndex);
                               }}
                             >
-                              <TableCell>
-                                <input
-                                  type="checkbox"
-                                  aria-label={`Select ${subcategory.name}`}
-                                  checked={selected.has(subcategory.id)}
-                                  onChange={() => toggleSelect(subcategory.id)}
-                                  className="h-4 w-4 rounded border-gray-300"
-                                />
-                              </TableCell>
                               <TableCell>
                                 <SearchHighlight
                                   text={subcategory.name}
@@ -527,36 +463,6 @@ function Subcategories() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Subcategories</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete {selected.size} subcategory(ies)?
-            This action can be undone by restoring.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={deleteSubcategories.isPending}
-              onClick={() => {
-                const ids = [...selected];
-                setSelected(new Set());
-                setDeleteOpen(false);
-                deleteSubcategories.mutate(ids);
-              }}
-            >
-              {deleteSubcategories.isPending && <Spinner size="sm" />}
-              {deleteSubcategories.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

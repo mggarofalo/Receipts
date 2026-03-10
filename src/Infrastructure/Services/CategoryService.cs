@@ -26,11 +26,6 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 		}
 	}
 
-	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
-	{
-		await repository.DeleteAsync(ids, cancellationToken);
-	}
-
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
 	{
 		return await repository.ExistsAsync(id, cancellationToken);
@@ -40,14 +35,6 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 	{
 		int total = await repository.GetCountAsync(cancellationToken);
 		List<CategoryEntity> entities = await repository.GetAllAsync(offset, limit, sort, cancellationToken);
-		List<Category> data = [.. entities.Select(mapper.ToDomain)];
-		return new PagedResult<Category>(data, total, offset, limit);
-	}
-
-	public async Task<PagedResult<Category>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
-	{
-		int total = await repository.GetDeletedCountAsync(cancellationToken);
-		List<CategoryEntity> entities = await repository.GetDeletedAsync(offset, limit, sort, cancellationToken);
 		List<Category> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<Category>(data, total, offset, limit);
 	}
@@ -67,10 +54,5 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 	{
 		List<CategoryEntity> categoryEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(categoryEntities, cancellationToken);
-	}
-
-	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
-	{
-		return await repository.RestoreAsync(id, cancellationToken);
 	}
 }

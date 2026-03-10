@@ -31,26 +31,6 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
-	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Subcategories
-			.OnlyDeleted()
-			.AsNoTracking()
-			.ApplySort(sort, AllowedSortColumns, e => e.Name)
-			.Skip(offset)
-			.Take(limit)
-			.ToListAsync(cancellationToken);
-	}
-
-	public async Task<int> GetDeletedCountAsync(CancellationToken cancellationToken)
-	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Subcategories
-			.OnlyDeleted()
-			.CountAsync(cancellationToken);
-	}
-
 	public async Task<List<SubcategoryEntity>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
@@ -96,17 +76,6 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 		await context.SaveChangesAsync(cancellationToken);
 	}
 
-	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
-	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		List<SubcategoryEntity> entities = await context.Subcategories
-			.Where(e => ids.Contains(e.Id))
-			.ToListAsync(cancellationToken);
-
-		context.Subcategories.RemoveRange(entities);
-		await context.SaveChangesAsync(cancellationToken);
-	}
-
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
@@ -117,24 +86,5 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Subcategories.CountAsync(cancellationToken);
-	}
-
-	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
-	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		SubcategoryEntity? entity = await context.Subcategories
-			.IncludeDeleted()
-			.FirstOrDefaultAsync(e => e.Id == id && e.DeletedAt != null, cancellationToken);
-
-		if (entity is null)
-		{
-			return false;
-		}
-
-		entity.DeletedAt = null;
-		entity.DeletedByUserId = null;
-		entity.DeletedByApiKeyId = null;
-		await context.SaveChangesAsync(cancellationToken);
-		return true;
 	}
 }

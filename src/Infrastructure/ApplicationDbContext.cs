@@ -117,16 +117,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			entry.Entity.DeletedByUserId = _currentUserAccessor?.UserId;
 			entry.Entity.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
 
-			// Cascade soft delete for Receipt children
-			if (entry.Entity is ReceiptEntity receipt)
+			Type parentType = entry.Entity.GetType();
+			if (OwnedChildrenMapProvider.Map.TryGetValue(parentType, out OwnedChildrenMapProvider.ParentEntry? parentEntry))
 			{
-				CollectReceiptChildren(receipt.Id, cascadeTargets);
-			}
-
-			// Cascade soft delete for Category children
-			if (entry.Entity is CategoryEntity category)
-			{
-				CollectCategoryChildren(category.Id, cascadeTargets);
+				Guid parentId = (Guid)parentEntry.IdProperty.GetValue(entry.Entity)!;
+				CollectOwnedChildren(parentId, parentEntry.Children, cascadeTargets);
 			}
 		}
 
@@ -142,41 +137,24 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		}
 	}
 
-	private void CollectReceiptChildren(Guid receiptId, List<ISoftDeletable> targets)
+	private void CollectOwnedChildren(Guid parentId, List<OwnedChildrenMapProvider.OwnedChildEntry> children, List<ISoftDeletable> targets)
 	{
-		// Find tracked ReceiptItems for this receipt
-		IEnumerable<ReceiptItemEntity> trackedItems = ChangeTracker
-			.Entries<ReceiptItemEntity>()
-			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
-			.Select(e => e.Entity);
+		foreach (OwnedChildrenMapProvider.OwnedChildEntry child in children)
+		{
+			foreach (EntityEntry entry in ChangeTracker.Entries())
+			{
+				if (entry.Entity.GetType() != child.ChildType || entry.State == EntityState.Deleted)
+				{
+					continue;
+				}
 
-		targets.AddRange(trackedItems);
-
-		// Find tracked Transactions for this receipt
-		IEnumerable<TransactionEntity> trackedTransactions = ChangeTracker
-			.Entries<TransactionEntity>()
-			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
-			.Select(e => e.Entity);
-
-		targets.AddRange(trackedTransactions);
-
-		// Find tracked Adjustments for this receipt
-		IEnumerable<AdjustmentEntity> trackedAdjustments = ChangeTracker
-			.Entries<AdjustmentEntity>()
-			.Where(e => e.Entity.ReceiptId == receiptId && e.State != EntityState.Deleted)
-			.Select(e => e.Entity);
-
-		targets.AddRange(trackedAdjustments);
-	}
-
-	private void CollectCategoryChildren(Guid categoryId, List<ISoftDeletable> targets)
-	{
-		IEnumerable<SubcategoryEntity> trackedSubcategories = ChangeTracker
-			.Entries<SubcategoryEntity>()
-			.Where(e => e.Entity.CategoryId == categoryId && e.State != EntityState.Deleted)
-			.Select(e => e.Entity);
-
-		targets.AddRange(trackedSubcategories);
+				Guid fkValue = (Guid)child.FkProperty.GetValue(entry.Entity)!;
+				if (fkValue == parentId && entry.Entity is ISoftDeletable softDeletable)
+				{
+					targets.Add(softDeletable);
+				}
+			}
+		}
 	}
 
 	private List<AuditEntry> CollectAuditEntries()

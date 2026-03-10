@@ -49,34 +49,6 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<List<AccountEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
-	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Accounts
-			.OnlyDeleted()
-			.AsNoTracking()
-			.ApplySort(sort, AllowedSortColumns, e => e.Name)
-			.Skip(offset)
-			.Take(limit)
-			.Select(a => new AccountEntity
-			{
-				Id = a.Id,
-				AccountCode = a.AccountCode,
-				Name = a.Name,
-				IsActive = a.IsActive,
-				DeletedAt = a.DeletedAt
-			})
-			.ToListAsync(cancellationToken);
-	}
-
-	public async Task<int> GetDeletedCountAsync(CancellationToken cancellationToken)
-	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Accounts
-			.OnlyDeleted()
-			.CountAsync(cancellationToken);
-	}
-
 	public async Task<List<AccountEntity>> CreateAsync(List<AccountEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
@@ -102,17 +74,6 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		await context.SaveChangesAsync(cancellationToken);
 	}
 
-	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
-	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		List<AccountEntity> entities = await context.Accounts
-			.Where(e => ids.Contains(e.Id))
-			.ToListAsync(cancellationToken);
-
-		context.Accounts.RemoveRange(entities);
-		await context.SaveChangesAsync(cancellationToken);
-	}
-
 	public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
@@ -123,24 +84,5 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts.CountAsync(cancellationToken);
-	}
-
-	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
-	{
-		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		AccountEntity? entity = await context.Accounts
-			.IncludeDeleted()
-			.FirstOrDefaultAsync(e => e.Id == id && e.DeletedAt != null, cancellationToken);
-
-		if (entity is null)
-		{
-			return false;
-		}
-
-		entity.DeletedAt = null;
-		entity.DeletedByUserId = null;
-		entity.DeletedByApiKeyId = null;
-		await context.SaveChangesAsync(cancellationToken);
-		return true;
 	}
 }

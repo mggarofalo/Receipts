@@ -13,7 +13,5 @@ public class AccountEntityConfiguration : IEntityTypeConfiguration<AccountEntity
 		builder.Property(e => e.Id)
 			.IsRequired()
 			.ValueGeneratedOnAdd();
-
-		builder.HasQueryFilter(e => e.DeletedAt == null);
 	}
 }

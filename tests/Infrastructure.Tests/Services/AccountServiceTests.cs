@@ -42,19 +42,6 @@ public class AccountServiceTests
 	}
 
 	[Fact]
-	public async Task DeleteAsync_ValidIds_CallsRepositoryDeleteAsync()
-	{
-		// Arrange
-		List<Guid> ids = [Guid.NewGuid(), Guid.NewGuid()];
-
-		// Act
-		await _service.DeleteAsync(ids, CancellationToken.None);
-
-		// Assert
-		_mockRepository.Verify(r => r.DeleteAsync(ids, It.IsAny<CancellationToken>()), Times.Once);
-	}
-
-	[Fact]
 	public async Task ExistsAsync_ValidId_ReturnsExpectedResult()
 	{
 		// Arrange
