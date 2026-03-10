@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
-import { mockQueryResult } from "@/test/mock-hooks";
+import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
 import RecycleBin from "./RecycleBin";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -46,7 +46,7 @@ describe("RecycleBin", () => {
       data: { data: [], total: 0, offset: 0, limit: 50 },
       isLoading: false,
     }));
-    vi.mocked(useRestoreReceipt).mockReturnValue({ mutate: vi.fn(), isPending: false } as ReturnType<typeof useRestoreReceipt>);
+    vi.mocked(useRestoreReceipt).mockReturnValue(mockMutationResult());
   });
 
   it("renders the page heading", () => {
