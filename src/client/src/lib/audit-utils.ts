@@ -56,9 +56,16 @@ export const ACTION_FILTER_VALUES: Record<string, string> = {
 
 export const AUTH_EVENT_TYPES = [
   "Login",
+  "LoginFailed",
   "Logout",
-  "TokenRefresh",
-  "ApiKeyAuth",
+  "ApiKeyUsed",
+  "ApiKeyCreated",
+  "ApiKeyRevoked",
+  "PasswordChanged",
+  "UserRegistered",
+  "AccountDisabled",
+  "TokenRevoked",
+  "RateLimitExceeded",
 ] as const;
 
 export function actionBadgeVariant(

@@ -145,9 +145,16 @@ describe("constants", () => {
   it("AUTH_EVENT_TYPES has expected values", () => {
     expect(AUTH_EVENT_TYPES).toEqual([
       "Login",
+      "LoginFailed",
       "Logout",
-      "TokenRefresh",
-      "ApiKeyAuth",
+      "ApiKeyUsed",
+      "ApiKeyCreated",
+      "ApiKeyRevoked",
+      "PasswordChanged",
+      "UserRegistered",
+      "AccountDisabled",
+      "TokenRevoked",
+      "RateLimitExceeded",
     ]);
   });
 });
