@@ -37,15 +37,25 @@ describe("useBreadcrumbs", () => {
     ]);
   });
 
-  it("builds segments for unknown paths", () => {
+  it("builds segments for unknown paths with title casing", () => {
     const { result } = renderHook(() => useBreadcrumbs(), {
       wrapper: createWrapper("/foo/bar"),
     });
     expect(result.current).toEqual([
       { label: "Home", path: "/" },
-      { label: "foo", path: "/foo" },
-      { label: "bar", path: "/foo/bar" },
+      { label: "Foo", path: "/foo" },
+      { label: "Bar", path: "/foo/bar" },
     ]);
+  });
+
+  it("title-cases unknown hyphenated paths", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/some-route"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Some Route",
+      path: "/some-route",
+    });
   });
 
   it("maps receipt-detail correctly", () => {
@@ -56,5 +66,92 @@ describe("useBreadcrumbs", () => {
       label: "Receipt Detail",
       path: "/receipt-detail",
     });
+  });
+
+  it("maps categories correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/categories"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Categories",
+      path: "/categories",
+    });
+  });
+
+  it("maps item-templates correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/item-templates"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Item Templates",
+      path: "/item-templates",
+    });
+  });
+
+  it("builds intermediate segments for nested paths like /receipts/new", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/receipts/new"),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Receipts", path: "/receipts" },
+      { label: "New", path: "/receipts/new" },
+    ]);
+  });
+
+  it("maps login correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/login"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Login",
+      path: "/login",
+    });
+  });
+
+  it("maps change-password correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/change-password"),
+    });
+    expect(result.current[1]).toEqual({
+      label: "Change Password",
+      path: "/change-password",
+    });
+  });
+
+  it("maps subcategories correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/subcategories"),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Subcategories", path: "/subcategories" },
+    ]);
+  });
+
+  it("produces the same breadcrumbs for trailing-slash paths", () => {
+    // React Router's MemoryRouter normalizes "/accounts/" to "/accounts",
+    // so the hook should produce identical breadcrumbs for both.
+    const withSlash = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/accounts/"),
+    });
+    const withoutSlash = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/accounts"),
+    });
+    expect(withSlash.result.current).toEqual(withoutSlash.result.current);
+  });
+
+  // useLocation().pathname does not include query strings or hash fragments.
+  // For example, navigating to "/accounts?sort=name" yields pathname "/accounts",
+  // so breadcrumbs are never affected by query parameters. This test documents
+  // that behavior.
+  it("is unaffected by query strings (pathname excludes them)", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/accounts?sort=name&order=asc"),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Accounts", path: "/accounts" },
+    ]);
   });
 });

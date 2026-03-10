@@ -3,6 +3,9 @@ import { useLocation } from "react-router";
 const routeLabels: Record<string, string> = {
   "/": "Home",
   "/accounts": "Accounts",
+  "/categories": "Categories",
+  "/subcategories": "Subcategories",
+  "/item-templates": "Item Templates",
   "/receipts": "Receipts",
   "/receipt-items": "Receipt Items",
   "/transactions": "Transactions",
@@ -14,7 +17,16 @@ const routeLabels: Record<string, string> = {
   "/audit": "Audit Log",
   "/trash": "Recycle Bin",
   "/admin/users": "User Management",
+  "/login": "Login",
+  "/change-password": "Change Password",
 };
+
+function toTitleCase(slug: string): string {
+  return slug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 export interface BreadcrumbSegment {
   label: string;
@@ -38,7 +50,7 @@ export function useBreadcrumbs(): BreadcrumbSegment[] {
     let accumulated = "";
     for (const part of parts) {
       accumulated += `/${part}`;
-      const segLabel = routeLabels[accumulated] ?? part;
+      const segLabel = routeLabels[accumulated] ?? toTitleCase(part);
       crumbs.push({ label: segLabel, path: accumulated });
     }
   }
