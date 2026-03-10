@@ -118,4 +118,40 @@ describe("useBreadcrumbs", () => {
       path: "/change-password",
     });
   });
+
+  it("maps subcategories correctly", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/subcategories"),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Subcategories", path: "/subcategories" },
+    ]);
+  });
+
+  it("produces the same breadcrumbs for trailing-slash paths", () => {
+    // React Router's MemoryRouter normalizes "/accounts/" to "/accounts",
+    // so the hook should produce identical breadcrumbs for both.
+    const withSlash = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/accounts/"),
+    });
+    const withoutSlash = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/accounts"),
+    });
+    expect(withSlash.result.current).toEqual(withoutSlash.result.current);
+  });
+
+  // useLocation().pathname does not include query strings or hash fragments.
+  // For example, navigating to "/accounts?sort=name" yields pathname "/accounts",
+  // so breadcrumbs are never affected by query parameters. This test documents
+  // that behavior.
+  it("is unaffected by query strings (pathname excludes them)", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/accounts?sort=name&order=asc"),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Accounts", path: "/accounts" },
+    ]);
+  });
 });
