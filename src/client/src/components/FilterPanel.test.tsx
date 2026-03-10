@@ -203,6 +203,7 @@ describe("FilterPanel", () => {
     await user.click(screen.getByRole("button", { name: /filters/i }));
     const fromInput = screen.getByPlaceholderText("From");
     await user.type(fromInput, "2024-01-15");
+    await user.tab(); // Commit on blur
     expect(onChange).toHaveBeenCalled();
   });
 

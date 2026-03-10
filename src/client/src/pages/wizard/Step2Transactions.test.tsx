@@ -35,6 +35,7 @@ describe("Step2Transactions", () => {
   it("renders the form fields", () => {
     renderWithProviders(<Step2Transactions {...defaultProps} />);
     expect(screen.getByLabelText(/amount/i)).toBeInTheDocument();
+    expect(screen.getByText(/^date$/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText("MM/DD/YYYY")).toBeInTheDocument();
   });
 

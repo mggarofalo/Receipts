@@ -37,7 +37,8 @@ describe("NewReceipt", () => {
   it("renders Step1 (Trip Details) by default", () => {
     renderWithProviders(<NewReceipt />);
     expect(screen.getByLabelText(/location/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
+    expect(screen.getByText(/^date$/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("MM/DD/YYYY")).toBeInTheDocument();
   });
 
   it("renders the cancel button", () => {
