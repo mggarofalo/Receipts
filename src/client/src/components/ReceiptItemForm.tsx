@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Fuse from "fuse.js";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useCategories } from "@/hooks/useCategories";
 import {
@@ -11,6 +12,10 @@ import {
   useCreateSubcategory,
 } from "@/hooks/useSubcategories";
 import { useItemTemplates } from "@/hooks/useItemTemplates";
+import {
+  itemDescriptionHistory,
+  itemCodeHistory,
+} from "@/lib/field-history";
 import { receiptToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +89,10 @@ export function ReceiptItemForm({
 }: ReceiptItemFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { options: descriptionHistoryOptions, add: addDescriptionHistory } =
+    useFieldHistory(itemDescriptionHistory);
+  const { options: itemCodeOptions, add: addItemCodeHistory } =
+    useFieldHistory(itemCodeHistory);
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
   const { data: categoriesResponse } = useCategories();
@@ -188,6 +197,12 @@ export function ReceiptItemForm({
   }, [watchedPricingMode, form]);
 
   async function handleFormSubmit(values: ReceiptItemFormValues) {
+    // Persist field values for future autocomplete before calling onSubmit.
+    // Like location history, these are valid user input regardless of whether
+    // the server mutation succeeds.
+    addDescriptionHistory(values.description);
+    addItemCodeHistory(values.receiptItemCode);
+
     const isCustomSubcategory =
       values.subcategory &&
       !subcategoryOptions.some((opt) => opt.value === values.subcategory);
@@ -224,6 +239,15 @@ export function ReceiptItemForm({
     if (!descriptionInput || descriptionInput.length < 2) return [];
     return fuse.search(descriptionInput, { limit: 5 }).map((r) => r.item);
   }, [fuse, descriptionInput]);
+
+  // Filter description history entries that match the current input
+  const descriptionHistoryMatches = useMemo(() => {
+    if (!descriptionInput) return descriptionHistoryOptions;
+    const lower = descriptionInput.toLowerCase();
+    return descriptionHistoryOptions.filter((opt) =>
+      opt.label.toLowerCase().includes(lower),
+    );
+  }, [descriptionHistoryOptions, descriptionInput]);
 
   function applyTemplate(template: ItemTemplate) {
     form.setValue("description", template.name);
@@ -282,7 +306,16 @@ export function ReceiptItemForm({
             <FormItem>
               <FormLabel>Item Code</FormLabel>
               <FormControl>
-                <Input aria-required="true" {...field} />
+                <Combobox
+                  options={itemCodeOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select or type an item code..."
+                  searchPlaceholder="Search item codes..."
+                  emptyMessage="No saved item codes."
+                  allowCustom
+                  aria-required="true"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -296,7 +329,7 @@ export function ReceiptItemForm({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <Popover
-                open={autocompleteOpen && suggestions.length > 0}
+                open={autocompleteOpen && (suggestions.length > 0 || descriptionHistoryMatches.length > 0)}
                 onOpenChange={setAutocompleteOpen}
               >
                 <PopoverAnchor asChild>
@@ -309,10 +342,10 @@ export function ReceiptItemForm({
                         const val = e.target.value;
                         setDescriptionInput(val);
                         field.onChange(val);
-                        setAutocompleteOpen(val.length >= 2);
+                        setAutocompleteOpen(true);
                       }}
                       onFocus={() => {
-                        if (descriptionInput.length >= 2) {
+                        if (descriptionInput.length >= 2 || descriptionHistoryMatches.length > 0) {
                           setAutocompleteOpen(true);
                         }
                       }}
@@ -328,30 +361,49 @@ export function ReceiptItemForm({
                 >
                   <Command>
                     <CommandList>
-                      <CommandEmpty>No templates found.</CommandEmpty>
-                      <CommandGroup heading="Item Templates">
-                        {suggestions.map((template) => (
-                          <CommandItem
-                            key={template.id}
-                            value={template.name}
-                            onSelect={() => applyTemplate(template)}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {template.name}
-                              </span>
-                              {template.defaultCategory && (
-                                <span className="text-xs text-muted-foreground">
-                                  {template.defaultCategory}
-                                  {template.defaultSubcategory
-                                    ? ` / ${template.defaultSubcategory}`
-                                    : ""}
+                      <CommandEmpty>No suggestions found.</CommandEmpty>
+                      {descriptionHistoryMatches.length > 0 && (
+                        <CommandGroup heading="Recent Descriptions">
+                          {descriptionHistoryMatches.slice(0, 5).map((opt) => (
+                            <CommandItem
+                              key={`history-${opt.value}`}
+                              value={`history: ${opt.label}`}
+                              onSelect={() => {
+                                setDescriptionInput(opt.value);
+                                field.onChange(opt.value);
+                                setAutocompleteOpen(false);
+                              }}
+                            >
+                              <span>{opt.label}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                      {suggestions.length > 0 && (
+                        <CommandGroup heading="Item Templates">
+                          {suggestions.map((template) => (
+                            <CommandItem
+                              key={template.id}
+                              value={template.name}
+                              onSelect={() => applyTemplate(template)}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {template.name}
                                 </span>
-                              )}
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
+                                {template.defaultCategory && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {template.defaultCategory}
+                                    {template.defaultSubcategory
+                                      ? ` / ${template.defaultSubcategory}`
+                                      : ""}
+                                  </span>
+                                )}
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
                     </CommandList>
                   </Command>
                 </PopoverContent>
