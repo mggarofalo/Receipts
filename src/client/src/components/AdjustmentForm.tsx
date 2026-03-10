@@ -3,8 +3,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useFieldHistory } from "@/hooks/useFieldHistory";
+import { adjustmentDescriptionHistory } from "@/lib/field-history";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Combobox } from "@/components/ui/combobox";
 import {
@@ -59,6 +60,8 @@ export function AdjustmentForm({
 }: AdjustmentFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { options: adjustmentDescOptions, add: addAdjustmentDesc } =
+    useFieldHistory(adjustmentDescriptionHistory);
 
   const form = useForm<AdjustmentFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,7 +81,12 @@ export function AdjustmentForm({
     <Form {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit((values) => {
+          if (values.type === "other" && values.description) {
+            addAdjustmentDesc(values.description);
+          }
+          onSubmit(values);
+        })}
         className="space-y-4"
       >
         <FormField
@@ -133,10 +141,15 @@ export function AdjustmentForm({
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Input
+                  <Combobox
+                    options={adjustmentDescOptions}
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
                     placeholder="Describe this adjustment..."
+                    searchPlaceholder="Search descriptions..."
+                    emptyMessage="No saved descriptions."
+                    allowCustom
                     aria-required="true"
-                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
