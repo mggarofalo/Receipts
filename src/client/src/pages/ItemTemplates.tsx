@@ -268,10 +268,10 @@ function ItemTemplates() {
                           <span className="italic">--</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground capitalize">
-                        {template.defaultPricingMode ?? (
-                          <span className="italic">--</span>
-                        )}
+                      <TableCell className="text-muted-foreground">
+                        {template.defaultPricingMode
+                          ? template.defaultPricingMode === "flat" ? "Flat" : "Quantity"
+                          : <span className="italic">--</span>}
                       </TableCell>
                       <TableCell>
                         <Button

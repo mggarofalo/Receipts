@@ -80,16 +80,16 @@ public class ApiKeyControllerTests
 		DateTimeOffset createdAt = DateTimeOffset.UtcNow;
 
 		_apiKeyServiceMock.Setup(s => s.CreateApiKeyAsync("user-123", "my-key", null, It.IsAny<CancellationToken>()))
-			.ReturnsAsync("raw-key-value");
-		_apiKeyServiceMock.Setup(s => s.GetApiKeysForUserAsync("user-123", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new List<ApiKeyInfo> { new(keyId, "my-key", createdAt, null, null, false) });
+			.ReturnsAsync(new CreateApiKeyResult("raw-key-value", keyId, createdAt));
 
 		Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult> result = await _controller.CreateApiKey(
 			new CreateApiKeyRequest { Name = "my-key" });
 
 		Ok<CreateApiKeyResponse> okResult = Assert.IsType<Ok<CreateApiKeyResponse>>(result.Result);
+		okResult.Value!.Id.Should().Be(keyId);
 		okResult.Value!.RawKey.Should().Be("raw-key-value");
 		okResult.Value!.Name.Should().Be("my-key");
+		okResult.Value!.CreatedAt.Should().Be(createdAt);
 	}
 
 	[Fact]

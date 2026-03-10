@@ -55,19 +55,16 @@ public class ApiKeyController(
 			return TypedResults.Unauthorized();
 		}
 
-		string rawKey = await apiKeyService.CreateApiKeyAsync(userId, request.Name, request.ExpiresAt);
+		CreateApiKeyResult created = await apiKeyService.CreateApiKeyAsync(userId, request.Name, request.ExpiresAt);
 
-		IReadOnlyList<ApiKeyInfo> keys = await apiKeyService.GetApiKeysForUserAsync(userId);
-		ApiKeyInfo? created = keys.OrderByDescending(k => k.CreatedAt).FirstOrDefault(k => k.Name == request.Name);
-
-		await LogAuthEventAsync(nameof(AuthEventType.ApiKeyCreated), userId, null, true, null, created?.Id);
+		await LogAuthEventAsync(nameof(AuthEventType.ApiKeyCreated), userId, null, true, null, created.Id);
 
 		return TypedResults.Ok(new CreateApiKeyResponse
 		{
-			Id = created?.Id ?? Guid.Empty,
+			Id = created.Id,
 			Name = request.Name,
-			RawKey = rawKey,
-			CreatedAt = created?.CreatedAt ?? DateTimeOffset.UtcNow,
+			RawKey = created.RawKey,
+			CreatedAt = created.CreatedAt,
 			ExpiresAt = request.ExpiresAt,
 		});
 	}

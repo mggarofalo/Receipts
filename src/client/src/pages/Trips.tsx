@@ -39,6 +39,7 @@ import {
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { formatCurrency } from "@/lib/format";
+import { formatAdjustmentType } from "@/lib/adjustment-types";
 
 interface ReceiptResponse {
   id: string;
@@ -300,7 +301,7 @@ function Trips() {
                       {trip.receipt.adjustments.map((adj: { id: string; type: string; description?: string | null; amount: number }) => (
                         <TableRow key={adj.id}>
                           <TableCell>
-                            <Badge variant="outline">{adj.type}</Badge>
+                            <Badge variant="outline">{formatAdjustmentType(adj.type)}</Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {adj.description ?? "\u2014"}

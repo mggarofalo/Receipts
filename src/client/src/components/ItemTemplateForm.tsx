@@ -10,13 +10,6 @@ import { CurrencyInput } from "@/components/ui/currency-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Form,
   FormControl,
   FormField,
@@ -201,20 +194,18 @@ export function ItemTemplateForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Default Pricing Mode (optional)</FormLabel>
-                <Select
-                  value={field.value ?? ""}
-                  onValueChange={field.onChange}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select pricing mode..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="quantity">Quantity</SelectItem>
-                    <SelectItem value="flat">Flat</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <Combobox
+                    options={[
+                      { value: "quantity", label: "Quantity" },
+                      { value: "flat", label: "Flat" },
+                    ]}
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                    placeholder="Select pricing mode..."
+                    searchPlaceholder="Search modes..."
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

@@ -8,6 +8,7 @@ import {
   AdjustmentForm,
   type AdjustmentFormValues,
 } from "@/components/AdjustmentForm";
+import { formatAdjustmentType } from "@/lib/adjustment-types";
 import {
   parseProblemDetails,
   extractFieldErrors,
@@ -189,7 +190,7 @@ export function AdjustmentsCard({
                         />
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{adj.type}</Badge>
+                        <Badge variant="outline">{formatAdjustmentType(adj.type)}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {adj.description ?? "\u2014"}

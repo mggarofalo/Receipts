@@ -1,10 +1,12 @@
-import { useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocationHistory } from "@/hooks/useLocationHistory";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
+import { DateInput } from "@/components/ui/date-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   Form,
@@ -33,7 +35,13 @@ interface Step1Props {
 }
 
 export function Step1TripDetails({ data, onNext }: Step1Props) {
-  const locationRef = useRef<HTMLInputElement>(null);
+  const locationRef = useRef<HTMLButtonElement>(null);
+  const { options: locationOptions, add: addLocation } = useLocationHistory();
+
+  // Auto-focus the location combobox when the wizard step mounts
+  useEffect(() => {
+    locationRef.current?.focus();
+  }, []);
 
   const form = useForm<TripFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,11 +53,12 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
     },
   });
 
-  useEffect(() => {
-    locationRef.current?.focus();
-  }, []);
-
   const handleSubmit = (values: TripFormValues) => {
+    // Persist location before calling onNext intentionally: the location string
+    // is valid user input regardless of whether the server mutation succeeds.
+    // The user typed a real location name; saving it for future autocomplete
+    // suggestions is correct even if the receipt save ultimately fails.
+    addLocation(values.location);
     onNext(values);
   };
 
@@ -71,16 +80,16 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input
-                      aria-required="true"
+                    <Combobox
+                      ref={locationRef}
+                      options={locationOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
                       placeholder="e.g. Walmart, Target, Costco"
-                      {...field}
-                      ref={(el) => {
-                        field.ref(el);
-                        (
-                          locationRef as React.MutableRefObject<HTMLInputElement | null>
-                        ).current = el;
-                      }}
+                      searchPlaceholder="Search locations..."
+                      emptyMessage="No saved locations."
+                      allowCustom
+                      aria-required="true"
                     />
                   </FormControl>
                   <FormMessage />
@@ -95,8 +104,7 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
                 <FormItem>
                   <FormLabel>Date</FormLabel>
                   <FormControl>
-                    <Input
-                      type="date"
+                    <DateInput
                       aria-required="true"
                       max={new Date().toISOString().split("T")[0]}
                       {...field}

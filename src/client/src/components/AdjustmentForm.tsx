@@ -3,16 +3,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useFieldHistory } from "@/hooks/useFieldHistory";
+import { adjustmentDescriptionHistory } from "@/lib/field-history";
+import { ADJUSTMENT_TYPES } from "@/lib/adjustment-types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Form,
   FormControl,
@@ -22,16 +18,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
-
-const ADJUSTMENT_TYPES = [
-  { value: "tip", label: "Tip" },
-  { value: "discount", label: "Discount" },
-  { value: "rounding", label: "Rounding" },
-  { value: "loyaltyRedemption", label: "Loyalty Redemption" },
-  { value: "coupon", label: "Coupon" },
-  { value: "storeCredit", label: "Store Credit" },
-  { value: "other", label: "Other" },
-] as const;
 
 const adjustmentSchema = z
   .object({
@@ -65,6 +51,8 @@ export function AdjustmentForm({
 }: AdjustmentFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { options: adjustmentDescOptions, add: addAdjustmentDesc } =
+    useFieldHistory(adjustmentDescriptionHistory);
 
   const form = useForm<AdjustmentFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,7 +72,12 @@ export function AdjustmentForm({
     <Form {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit((values) => {
+          if (values.type === "other" && values.description) {
+            addAdjustmentDesc(values.description);
+          }
+          onSubmit(values);
+        })}
         className="space-y-4"
       >
         <FormField
@@ -94,18 +87,13 @@ export function AdjustmentForm({
             <FormItem>
               <FormLabel>Type</FormLabel>
               <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select adjustment type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ADJUSTMENT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={[...ADJUSTMENT_TYPES]}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select adjustment type..."
+                  searchPlaceholder="Search types..."
+                />
               </FormControl>
               <FormMessage />
               {serverErrors?.type && (
@@ -144,10 +132,15 @@ export function AdjustmentForm({
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Input
+                  <Combobox
+                    options={adjustmentDescOptions}
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
                     placeholder="Describe this adjustment..."
+                    searchPlaceholder="Search descriptions..."
+                    emptyMessage="Type to describe this adjustment"
+                    allowCustom
                     aria-required="true"
-                    {...field}
                   />
                 </FormControl>
                 <FormMessage />

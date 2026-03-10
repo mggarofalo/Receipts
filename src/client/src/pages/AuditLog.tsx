@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useRecentAuditLogs } from "@/hooks/useAudit";
@@ -21,13 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
@@ -196,6 +190,25 @@ function AuditLog() {
     [pagination],
   );
 
+  const entityTypeOptions = useMemo(
+    () => [
+      { value: "all", label: "All Types" },
+      ...ENTITY_TYPES.map((t) => ({ value: t, label: ENTITY_TYPE_LABELS[t] })),
+    ],
+    [],
+  );
+
+  const actionOptions = useMemo(
+    () => [
+      { value: "all", label: "All Actions" },
+      ...ACTION_TYPES.map((a) => ({
+        value: ACTION_FILTER_VALUES[a] ?? a,
+        label: a,
+      })),
+    ],
+    [],
+  );
+
   const { data, isLoading } = useRecentAuditLogs({
     offset: pagination.offset,
     limit: pagination.limit,
@@ -236,32 +249,22 @@ function AuditLog() {
           }}
           className="max-w-xs"
         />
-        <Select value={entityTypeFilter} onValueChange={handleEntityTypeChange}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Entity Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {ENTITY_TYPES.map((t) => (
-              <SelectItem key={t} value={t}>
-                {ENTITY_TYPE_LABELS[t]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={actionFilter} onValueChange={handleActionChange}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Action" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Actions</SelectItem>
-            {ACTION_TYPES.map((a) => (
-              <SelectItem key={a} value={ACTION_FILTER_VALUES[a] ?? a}>
-                {a}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Combobox
+          options={entityTypeOptions}
+          value={entityTypeFilter}
+          onValueChange={handleEntityTypeChange}
+          placeholder="Entity Type"
+          searchPlaceholder="Search types..."
+          className="w-[160px]"
+        />
+        <Combobox
+          options={actionOptions}
+          value={actionFilter}
+          onValueChange={handleActionChange}
+          placeholder="Action"
+          searchPlaceholder="Search actions..."
+          className="w-[140px]"
+        />
         <DateRangePicker
           from={dateFrom}
           to={dateTo}

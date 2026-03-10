@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Fuse from "fuse.js";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useCategories } from "@/hooks/useCategories";
 import {
@@ -11,6 +12,10 @@ import {
   useCreateSubcategory,
 } from "@/hooks/useSubcategories";
 import { useItemTemplates } from "@/hooks/useItemTemplates";
+import {
+  itemDescriptionHistory,
+  itemCodeHistory,
+} from "@/lib/field-history";
 import { receiptToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,13 +33,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -91,6 +89,10 @@ export function ReceiptItemForm({
 }: ReceiptItemFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { options: descriptionHistoryOptions, add: addDescriptionHistory } =
+    useFieldHistory(itemDescriptionHistory);
+  const { options: itemCodeOptions, add: addItemCodeHistory } =
+    useFieldHistory(itemCodeHistory);
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
   const { data: categoriesResponse } = useCategories();
@@ -195,6 +197,12 @@ export function ReceiptItemForm({
   }, [watchedPricingMode, form]);
 
   async function handleFormSubmit(values: ReceiptItemFormValues) {
+    // Persist field values for future autocomplete before calling onSubmit.
+    // Like location history, these are valid user input regardless of whether
+    // the server mutation succeeds.
+    addDescriptionHistory(values.description);
+    addItemCodeHistory(values.receiptItemCode);
+
     const isCustomSubcategory =
       values.subcategory &&
       !subcategoryOptions.some((opt) => opt.value === values.subcategory);
@@ -231,6 +239,36 @@ export function ReceiptItemForm({
     if (!descriptionInput || descriptionInput.length < 2) return [];
     return fuse.search(descriptionInput, { limit: 5 }).map((r) => r.item);
   }, [fuse, descriptionInput]);
+
+  // Filter description history entries that match the current input
+  const descriptionHistoryMatches = useMemo(() => {
+    if (!descriptionInput) return descriptionHistoryOptions;
+    const lower = descriptionInput.toLowerCase();
+    return descriptionHistoryOptions.filter((opt) =>
+      opt.label.toLowerCase().includes(lower),
+    );
+  }, [descriptionHistoryOptions, descriptionInput]);
+
+  const descriptionListId = "description-autocomplete-list";
+
+  const isDescriptionPopoverOpen =
+    autocompleteOpen &&
+    (suggestions.length > 0 || descriptionHistoryMatches.length > 0);
+
+  const handleDescriptionKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
+        setAutocompleteOpen(false);
+      } else if (e.key === "ArrowDown" && isDescriptionPopoverOpen) {
+        e.preventDefault();
+        // Move focus into the first item in the CommandList
+        const list = document.getElementById(descriptionListId);
+        const firstItem = list?.querySelector("[cmdk-item]") as HTMLElement | null;
+        firstItem?.focus();
+      }
+    },
+    [isDescriptionPopoverOpen, descriptionListId],
+  );
 
   function applyTemplate(template: ItemTemplate) {
     form.setValue("description", template.name);
@@ -289,13 +327,27 @@ export function ReceiptItemForm({
             <FormItem>
               <FormLabel>Item Code</FormLabel>
               <FormControl>
-                <Input aria-required="true" {...field} />
+                <Combobox
+                  options={itemCodeOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select or type an item code..."
+                  searchPlaceholder="Search item codes..."
+                  emptyMessage="Type to add a new item code"
+                  allowCustom
+                  aria-required="true"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Description uses Input+Popover+Command instead of Combobox because it
+            merges two heterogeneous option groups (recent history entries AND fuzzy-
+            matched item templates) with grouped headings. The Combobox component only
+            supports a single flat option list. Keeping a custom composite here avoids
+            over-engineering Combobox with group support that nothing else needs. */}
         <FormField
           control={form.control}
           name="description"
@@ -303,26 +355,31 @@ export function ReceiptItemForm({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <Popover
-                open={autocompleteOpen && suggestions.length > 0}
+                open={isDescriptionPopoverOpen}
                 onOpenChange={setAutocompleteOpen}
               >
                 <PopoverAnchor asChild>
                   <FormControl>
                     <Input
+                      role="combobox"
                       aria-required="true"
+                      aria-autocomplete="list"
+                      aria-expanded={isDescriptionPopoverOpen}
+                      aria-controls={descriptionListId}
                       {...field}
                       value={descriptionInput}
                       onChange={(e) => {
                         const val = e.target.value;
                         setDescriptionInput(val);
                         field.onChange(val);
-                        setAutocompleteOpen(val.length >= 2);
+                        setAutocompleteOpen(true);
                       }}
                       onFocus={() => {
-                        if (descriptionInput.length >= 2) {
+                        if (descriptionInput.length >= 2 || descriptionHistoryMatches.length > 0) {
                           setAutocompleteOpen(true);
                         }
                       }}
+                      onKeyDown={handleDescriptionKeyDown}
                       autoComplete="off"
                     />
                   </FormControl>
@@ -334,31 +391,50 @@ export function ReceiptItemForm({
                   onInteractOutside={() => setAutocompleteOpen(false)}
                 >
                   <Command>
-                    <CommandList>
-                      <CommandEmpty>No templates found.</CommandEmpty>
-                      <CommandGroup heading="Item Templates">
-                        {suggestions.map((template) => (
-                          <CommandItem
-                            key={template.id}
-                            value={template.name}
-                            onSelect={() => applyTemplate(template)}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {template.name}
-                              </span>
-                              {template.defaultCategory && (
-                                <span className="text-xs text-muted-foreground">
-                                  {template.defaultCategory}
-                                  {template.defaultSubcategory
-                                    ? ` / ${template.defaultSubcategory}`
-                                    : ""}
+                    <CommandList id={descriptionListId}>
+                      <CommandEmpty>No suggestions found.</CommandEmpty>
+                      {descriptionHistoryMatches.length > 0 && (
+                        <CommandGroup heading="Recent Descriptions">
+                          {descriptionHistoryMatches.slice(0, 5).map((opt) => (
+                            <CommandItem
+                              key={`history-${opt.value}`}
+                              value={`history: ${opt.label}`}
+                              onSelect={() => {
+                                setDescriptionInput(opt.value);
+                                field.onChange(opt.value);
+                                setAutocompleteOpen(false);
+                              }}
+                            >
+                              <span>{opt.label}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                      {suggestions.length > 0 && (
+                        <CommandGroup heading="Item Templates">
+                          {suggestions.map((template) => (
+                            <CommandItem
+                              key={template.id}
+                              value={template.name}
+                              onSelect={() => applyTemplate(template)}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {template.name}
                                 </span>
-                              )}
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
+                                {template.defaultCategory && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {template.defaultCategory}
+                                    {template.defaultSubcategory
+                                      ? ` / ${template.defaultSubcategory}`
+                                      : ""}
+                                  </span>
+                                )}
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
                     </CommandList>
                   </Command>
                 </PopoverContent>
@@ -375,15 +451,16 @@ export function ReceiptItemForm({
             <FormItem>
               <FormLabel>Pricing Mode</FormLabel>
               <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select pricing mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="quantity">Qty x Unit Price</SelectItem>
-                    <SelectItem value="flat">Flat Price</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={[
+                    { value: "quantity", label: "Qty x Unit Price" },
+                    { value: "flat", label: "Flat Price" },
+                  ]}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select pricing mode..."
+                  searchPlaceholder="Search modes..."
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

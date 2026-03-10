@@ -3,7 +3,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { useCategories } from "@/hooks/useCategories";
+import { subcategoryNameHistory } from "@/lib/field-history";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -42,6 +44,8 @@ export function SubcategoryForm({
 }: SubcategoryFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { options: subcategoryNameOptions, add: addSubcategoryName } =
+    useFieldHistory(subcategoryNameHistory);
   const { data: categories } = useCategories();
 
   const categoryOptions = (
@@ -66,7 +70,10 @@ export function SubcategoryForm({
     <Form {...form}>
       <form
         ref={formRef}
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit((values) => {
+          addSubcategoryName(values.name);
+          onSubmit(values);
+        })}
         className="space-y-4"
       >
         <FormField
@@ -76,7 +83,16 @@ export function SubcategoryForm({
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input aria-required="true" {...field} />
+                <Combobox
+                  options={subcategoryNameOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select or type a name..."
+                  searchPlaceholder="Search names..."
+                  emptyMessage="Type to add a new subcategory"
+                  allowCustom
+                  aria-required="true"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

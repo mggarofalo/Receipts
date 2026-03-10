@@ -7,7 +7,7 @@ import { useReceipts } from "@/hooks/useReceipts";
 import { useAccounts } from "@/hooks/useAccounts";
 import { receiptToOption, accountToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Combobox } from "@/components/ui/combobox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
@@ -52,13 +52,21 @@ export function TransactionForm({
 
   const receiptOptions = useMemo(
     () =>
-      ((receipts?.data as { id: string; location: string; date: string }[] | undefined) ?? []).map(receiptToOption),
+      (
+        (receipts?.data as
+          | { id: string; location: string; date: string }[]
+          | undefined) ?? []
+      ).map(receiptToOption),
     [receipts],
   );
 
   const accountOptions = useMemo(
     () =>
-      ((accounts?.data as { id: string; name: string; accountCode: string }[] | undefined) ?? []).map(accountToOption),
+      (
+        (accounts?.data as
+          | { id: string; name: string; accountCode: string }[]
+          | undefined) ?? []
+      ).map(accountToOption),
     [accounts],
   );
 
@@ -76,7 +84,11 @@ export function TransactionForm({
 
   return (
     <Form {...form}>
-      <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form
+        ref={formRef}
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-4"
+      >
         <FormField
           control={form.control}
           name="receiptId"
@@ -146,7 +158,7 @@ export function TransactionForm({
             <FormItem>
               <FormLabel>Date</FormLabel>
               <FormControl>
-                <Input type="date" aria-required="true" {...field} />
+                <DateInput aria-required="true" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

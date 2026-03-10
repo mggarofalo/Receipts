@@ -99,7 +99,7 @@ describe("ApiKeys", () => {
 
     renderWithQueryClient(<ApiKeys />);
     expect(screen.getByText("Test Key")).toBeInTheDocument();
-    expect(screen.getByText("active")).toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /revoke/i }),
     ).toBeInTheDocument();
@@ -138,7 +138,7 @@ describe("ApiKeys", () => {
     }));
 
     renderWithQueryClient(<ApiKeys />);
-    expect(screen.getByText("revoked")).toBeInTheDocument();
+    expect(screen.getByText("Revoked")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /revoke/i })).not.toBeInTheDocument();
   });
 
@@ -159,7 +159,7 @@ describe("ApiKeys", () => {
     }));
 
     renderWithQueryClient(<ApiKeys />);
-    expect(screen.getByText("expired")).toBeInTheDocument();
+    expect(screen.getByText("Expired")).toBeInTheDocument();
   });
 
   it("opens revoke confirmation dialog when Revoke button is clicked", async () => {

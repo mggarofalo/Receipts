@@ -1,3 +1,4 @@
+import "@/test/setup-combobox-polyfills";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { Step1TripDetails } from "./Step1TripDetails";
@@ -8,18 +9,24 @@ describe("Step1TripDetails", () => {
     onNext: vi.fn(),
   };
 
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it("renders the form fields", () => {
     renderWithProviders(<Step1TripDetails {...defaultProps} />);
-    expect(screen.getByLabelText(/location/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByText(/^date$/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("MM/DD/YYYY")).toBeInTheDocument();
     expect(screen.getByLabelText(/tax amount/i)).toBeInTheDocument();
   });
 
   it("renders with pre-filled data", () => {
     const data = { location: "Costco", date: "2024-03-15", taxAmount: 7.5 };
     renderWithProviders(<Step1TripDetails {...defaultProps} data={data} />);
-    expect(screen.getByLabelText(/location/i)).toHaveValue("Costco");
-    expect(screen.getByLabelText(/date/i)).toHaveValue("2024-03-15");
+    // Combobox shows raw value as text content when no matching option exists
+    expect(screen.getByRole("combobox")).toHaveTextContent("Costco");
+    expect(screen.getByPlaceholderText("MM/DD/YYYY")).toHaveValue("03/15/2024");
   });
 
   it("renders the Next button", () => {

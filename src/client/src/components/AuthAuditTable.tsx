@@ -31,6 +31,24 @@ interface AuthAuditTableProps {
   onToggleSort?: (column: string) => void;
 }
 
+const AUTH_EVENT_LABELS: Record<string, string> = {
+  Login: "Login",
+  LoginFailed: "Login Failed",
+  Logout: "Logout",
+  ApiKeyUsed: "API Key Used",
+  ApiKeyCreated: "API Key Created",
+  ApiKeyRevoked: "API Key Revoked",
+  PasswordChanged: "Password Changed",
+  UserRegistered: "User Registered",
+  AccountDisabled: "Account Disabled",
+  TokenRevoked: "Token Revoked",
+  RateLimitExceeded: "Rate Limit Exceeded",
+};
+
+function formatAuthEvent(eventType: string): string {
+  return AUTH_EVENT_LABELS[eventType] ?? eventType;
+}
+
 function eventBadgeVariant(
   eventType: string,
   success?: boolean,
@@ -41,7 +59,8 @@ function eventBadgeVariant(
       return "default";
     case "Logout":
       return "secondary";
-    case "TokenRefresh":
+    case "TokenRevoked":
+    case "PasswordChanged":
       return "outline";
     default:
       return "secondary";
@@ -67,7 +86,7 @@ function AuthAuditRow({
           </TableCell>
           <TableCell>
             <Badge variant={eventBadgeVariant(log.eventType, log.success)}>
-              {log.eventType}
+              {formatAuthEvent(log.eventType)}
             </Badge>
           </TableCell>
           {showUsername && (
