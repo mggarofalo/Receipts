@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, formatDecimal, parseCurrencyInput } from "./format";
+import { formatCurrency, formatDecimal, parseCurrencyInput, camelToTitle, capitalize } from "./format";
 
 describe("formatCurrency", () => {
   it("formats a positive number as USD", () => {
@@ -68,5 +68,45 @@ describe("parseCurrencyInput", () => {
 
   it("returns empty string for non-numeric input", () => {
     expect(parseCurrencyInput("abc")).toBe("");
+  });
+});
+
+describe("camelToTitle", () => {
+  it("converts camelCase to Title Case", () => {
+    expect(camelToTitle("taxAmount")).toBe("Tax Amount");
+  });
+
+  it("converts PascalCase to Title Case", () => {
+    expect(camelToTitle("TokenRefresh")).toBe("Token Refresh");
+  });
+
+  it("handles multiple humps", () => {
+    expect(camelToTitle("loyaltyRedemption")).toBe("Loyalty Redemption");
+  });
+
+  it("handles single word", () => {
+    expect(camelToTitle("discount")).toBe("Discount");
+  });
+
+  it("handles already capitalized single word", () => {
+    expect(camelToTitle("Login")).toBe("Login");
+  });
+
+  it("handles consecutive capitals", () => {
+    expect(camelToTitle("apiKeyAuth")).toBe("Api Key Auth");
+  });
+});
+
+describe("capitalize", () => {
+  it("capitalizes lowercase string", () => {
+    expect(capitalize("active")).toBe("Active");
+  });
+
+  it("leaves already capitalized string unchanged", () => {
+    expect(capitalize("Active")).toBe("Active");
+  });
+
+  it("handles empty string", () => {
+    expect(capitalize("")).toBe("");
   });
 });

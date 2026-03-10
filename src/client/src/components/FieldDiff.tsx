@@ -1,4 +1,5 @@
 import DiffMatchPatch from "diff-match-patch";
+import { camelToTitle } from "@/lib/format";
 
 const dmp = new DiffMatchPatch();
 
@@ -55,7 +56,7 @@ export function FieldDiff({ fieldName, oldValue, newValue }: FieldDiffProps) {
   return (
     <div className="flex items-start gap-2 text-sm py-1">
       <span className="min-w-[120px] font-medium text-muted-foreground shrink-0">
-        {fieldName}
+        {camelToTitle(fieldName)}
       </span>
       <div className="flex items-center gap-2 flex-wrap min-w-0">
         {isCreate ? (

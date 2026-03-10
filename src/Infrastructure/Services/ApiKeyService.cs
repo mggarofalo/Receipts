@@ -8,7 +8,7 @@ namespace Infrastructure.Services;
 
 public class ApiKeyService(IDbContextFactory<ApplicationDbContext> dbContextFactory) : IApiKeyService
 {
-	public async Task<string> CreateApiKeyAsync(string userId, string name, DateTimeOffset? expiresAt, CancellationToken cancellationToken = default)
+	public async Task<CreateApiKeyResult> CreateApiKeyAsync(string userId, string name, DateTimeOffset? expiresAt, CancellationToken cancellationToken = default)
 	{
 		string rawKey = GenerateRawKey();
 		string keyHash = HashKey(rawKey);
@@ -27,7 +27,7 @@ public class ApiKeyService(IDbContextFactory<ApplicationDbContext> dbContextFact
 
 		context.ApiKeys.Add(entity);
 		await context.SaveChangesAsync(cancellationToken);
-		return rawKey;
+		return new CreateApiKeyResult(rawKey, entity.Id, entity.CreatedAt);
 	}
 
 	public async Task<IReadOnlyList<ApiKeyInfo>> GetApiKeysForUserAsync(string userId, CancellationToken cancellationToken = default)

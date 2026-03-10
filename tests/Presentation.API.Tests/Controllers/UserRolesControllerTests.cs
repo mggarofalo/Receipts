@@ -35,7 +35,7 @@ public class UserRolesControllerTests
 
 	private static ApplicationUser CreateTestUser(string id = "user-123")
 	{
-		return new ApplicationUser { Id = id, Email = "test@example.com", UserName = "test@example.com" };
+		return new ApplicationUser { Id = id, Email = "test@example.com", UserName = "test@example.com", CreatedAt = DateTimeOffset.UtcNow };
 	}
 
 	// ── GetUserRoles ────────────────────────────────────────

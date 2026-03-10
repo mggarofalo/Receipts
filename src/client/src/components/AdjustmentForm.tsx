@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { adjustmentDescriptionHistory } from "@/lib/field-history";
+import { ADJUSTMENT_TYPES } from "@/lib/adjustment-types";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Combobox } from "@/components/ui/combobox";
@@ -17,16 +18,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
-
-const ADJUSTMENT_TYPES = [
-  { value: "tip", label: "Tip" },
-  { value: "discount", label: "Discount" },
-  { value: "rounding", label: "Rounding" },
-  { value: "loyaltyRedemption", label: "Loyalty Redemption" },
-  { value: "coupon", label: "Coupon" },
-  { value: "storeCredit", label: "Store Credit" },
-  { value: "other", label: "Other" },
-] as const;
 
 const adjustmentSchema = z
   .object({

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import client from "@/lib/api-client";
 import { showSuccess, showError } from "@/lib/toast";
+import { capitalize } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -240,7 +241,7 @@ function ApiKeys() {
                         <TableCell>{formatDate(key.expiresAt)}</TableCell>
                         <TableCell>
                           <Badge variant={statusBadgeVariant(status)}>
-                            {status}
+                            {capitalize(status)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

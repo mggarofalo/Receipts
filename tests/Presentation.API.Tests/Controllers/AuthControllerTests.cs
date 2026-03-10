@@ -72,6 +72,7 @@ public class AuthControllerTests
 			RefreshToken = "valid-refresh-token",
 			RefreshTokenExpiresAt = DateTimeOffset.UtcNow.AddDays(30),
 			MustResetPassword = false,
+			CreatedAt = DateTimeOffset.UtcNow,
 		};
 	}
 
