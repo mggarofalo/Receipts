@@ -25,49 +25,6 @@ export function parseChanges(changesJson: string): FieldChange[] {
   }
 }
 
-export const ENTITY_TYPES = [
-  "Account",
-  "Receipt",
-  "ReceiptItem",
-  "Transaction",
-] as const;
-
-export const ENTITY_TYPE_LABELS: Record<string, string> = {
-  Account: "Account",
-  Receipt: "Receipt",
-  ReceiptItem: "Receipt Item",
-  Transaction: "Transaction",
-};
-
-export const ACTION_TYPES = [
-  "Created",
-  "Updated",
-  "Deleted",
-  "Restored",
-] as const;
-
-/** Maps display action names to the backend AuditAction enum values used for filtering. */
-export const ACTION_FILTER_VALUES: Record<string, string> = {
-  Created: "Create",
-  Updated: "Update",
-  Deleted: "Delete",
-  Restored: "Restore",
-};
-
-export const AUTH_EVENT_TYPES = [
-  "Login",
-  "LoginFailed",
-  "Logout",
-  "ApiKeyUsed",
-  "ApiKeyCreated",
-  "ApiKeyRevoked",
-  "PasswordChanged",
-  "UserRegistered",
-  "AccountDisabled",
-  "TokenRevoked",
-  "RateLimitExceeded",
-] as const;
-
 export function actionBadgeVariant(
   action: string,
 ): "default" | "secondary" | "destructive" | "outline" {

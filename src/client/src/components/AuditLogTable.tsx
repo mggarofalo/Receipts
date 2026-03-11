@@ -4,7 +4,6 @@ import {
   actionBadgeVariant,
   formatAuditTimestamp,
   truncateId,
-  ENTITY_TYPE_LABELS,
 } from "@/lib/audit-utils";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,9 +34,10 @@ interface AuditLogTableProps {
   sortBy?: string | null;
   sortDirection?: "asc" | "desc";
   onToggleSort?: (column: string) => void;
+  entityTypeLabels?: Record<string, string>;
 }
 
-function AuditRow({ log }: { log: AuditLog }) {
+function AuditRow({ log, entityTypeLabels }: { log: AuditLog; entityTypeLabels: Record<string, string> }) {
   const changes = parseChanges(log.changesJson);
   const hasChanges = changes.length > 0;
 
@@ -49,7 +49,7 @@ function AuditRow({ log }: { log: AuditLog }) {
             {formatAuditTimestamp(log.changedAt)}
           </TableCell>
           <TableCell>
-            {ENTITY_TYPE_LABELS[log.entityType] ?? log.entityType}
+            {entityTypeLabels[log.entityType] ?? log.entityType}
           </TableCell>
           <TableCell>
             <Tooltip>
@@ -120,12 +120,15 @@ function AuditRow({ log }: { log: AuditLog }) {
   );
 }
 
+const EMPTY_LABELS: Record<string, string> = {};
+
 export function AuditLogTable({
   logs,
   isLoading,
   sortBy = null,
   sortDirection = "desc",
   onToggleSort,
+  entityTypeLabels = EMPTY_LABELS,
 }: AuditLogTableProps) {
   if (isLoading) {
     return (
@@ -195,7 +198,7 @@ export function AuditLogTable({
         </TableHeader>
         <TableBody>
           {logs.map((log) => (
-            <AuditRow key={log.id} log={log} />
+            <AuditRow key={log.id} log={log} entityTypeLabels={entityTypeLabels} />
           ))}
         </TableBody>
       </Table>

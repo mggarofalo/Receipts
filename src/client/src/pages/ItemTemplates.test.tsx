@@ -7,6 +7,22 @@ vi.mock("@/hooks/usePageTitle", () => ({
   usePageTitle: vi.fn(),
 }));
 
+vi.mock("@/hooks/useEnumMetadata", () => ({
+  useEnumMetadata: vi.fn(() => ({
+    adjustmentTypes: [],
+    authEventTypes: [],
+    pricingModes: [{ value: "quantity", label: "Quantity" }, { value: "flat", label: "Flat" }],
+    auditActions: [],
+    entityTypes: [],
+    adjustmentTypeLabels: {},
+    authEventLabels: {},
+    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
+    auditActionLabels: {},
+    entityTypeLabels: {},
+    isLoading: false,
+  })),
+}));
+
 vi.mock("@/hooks/useItemTemplates", () => ({
   useItemTemplates: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
   useCreateItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),

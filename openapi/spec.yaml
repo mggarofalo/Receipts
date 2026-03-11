@@ -22,6 +22,26 @@ paths:
                 {}
 
   # ──────────────────────────────────────────────
+  # Metadata
+  # ──────────────────────────────────────────────
+
+  /api/metadata/enums:
+    get:
+      operationId: GetEnumMetadata
+      tags: [Metadata]
+      summary: Get all enum values with display labels
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnumMetadataResponse"
+
+  # ──────────────────────────────────────────────
   # Accounts
   # ──────────────────────────────────────────────
 
@@ -3852,6 +3872,40 @@ components:
       properties:
         newPassword:
           type: string
+
+    EnumValuePair:
+      type: object
+      required: [value, label]
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+
+    EnumMetadataResponse:
+      type: object
+      required: [adjustmentTypes, authEventTypes, pricingModes, auditActions, entityTypes]
+      properties:
+        adjustmentTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnumValuePair"
+        authEventTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnumValuePair"
+        pricingModes:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnumValuePair"
+        auditActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnumValuePair"
+        entityTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnumValuePair"
 
   headers:
     X-Resource-Id:

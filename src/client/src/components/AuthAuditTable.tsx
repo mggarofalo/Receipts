@@ -29,24 +29,14 @@ interface AuthAuditTableProps {
   sortBy?: string | null;
   sortDirection?: "asc" | "desc";
   onToggleSort?: (column: string) => void;
+  authEventLabels?: Record<string, string>;
 }
 
-const AUTH_EVENT_LABELS: Record<string, string> = {
-  Login: "Login",
-  LoginFailed: "Login Failed",
-  Logout: "Logout",
-  ApiKeyUsed: "API Key Used",
-  ApiKeyCreated: "API Key Created",
-  ApiKeyRevoked: "API Key Revoked",
-  PasswordChanged: "Password Changed",
-  UserRegistered: "User Registered",
-  AccountDisabled: "Account Disabled",
-  TokenRevoked: "Token Revoked",
-  RateLimitExceeded: "Rate Limit Exceeded",
-};
-
-function formatAuthEvent(eventType: string): string {
-  return AUTH_EVENT_LABELS[eventType] ?? eventType;
+function formatAuthEvent(
+  eventType: string,
+  labels: Record<string, string>,
+): string {
+  return labels[eventType] ?? eventType;
 }
 
 function eventBadgeVariant(
@@ -70,9 +60,11 @@ function eventBadgeVariant(
 function AuthAuditRow({
   log,
   showUsername,
+  authEventLabels,
 }: {
   log: AuthAuditLog;
   showUsername: boolean;
+  authEventLabels: Record<string, string>;
 }) {
   const hasDetails =
     !!log.failureReason || !!log.metadataJson || !!log.userAgent;
@@ -86,7 +78,7 @@ function AuthAuditRow({
           </TableCell>
           <TableCell>
             <Badge variant={eventBadgeVariant(log.eventType, log.success)}>
-              {formatAuthEvent(log.eventType)}
+              {formatAuthEvent(log.eventType, authEventLabels)}
             </Badge>
           </TableCell>
           {showUsername && (
@@ -164,6 +156,8 @@ function AuthAuditRow({
   );
 }
 
+const EMPTY_LABELS: Record<string, string> = {};
+
 export function AuthAuditTable({
   logs,
   isLoading,
@@ -171,6 +165,7 @@ export function AuthAuditTable({
   sortBy,
   sortDirection = "desc",
   onToggleSort,
+  authEventLabels = EMPTY_LABELS,
 }: AuthAuditTableProps) {
   if (isLoading) {
     return (
@@ -220,7 +215,7 @@ export function AuthAuditTable({
         </TableHeader>
         <TableBody>
           {logs.map((log) => (
-            <AuthAuditRow key={log.id} log={log} showUsername={showUsername} />
+            <AuthAuditRow key={log.id} log={log} showUsername={showUsername} authEventLabels={authEventLabels} />
           ))}
         </TableBody>
       </Table>

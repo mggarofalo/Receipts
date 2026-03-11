@@ -41,6 +41,22 @@ vi.mock("@/hooks/useServerPagination", () => ({
   })),
 }));
 
+vi.mock("@/hooks/useEnumMetadata", () => ({
+  useEnumMetadata: vi.fn(() => ({
+    adjustmentTypes: [],
+    authEventTypes: [],
+    pricingModes: [],
+    auditActions: [],
+    entityTypes: [],
+    adjustmentTypeLabels: {},
+    authEventLabels: {},
+    pricingModeLabels: {},
+    auditActionLabels: {},
+    entityTypeLabels: {},
+    isLoading: false,
+  })),
+}));
+
 vi.mock("@/hooks/useServerSort", () => ({
   useServerSort: vi.fn(() => ({
     sortBy: "timestamp",

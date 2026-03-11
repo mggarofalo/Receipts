@@ -8,7 +8,7 @@ import {
   AdjustmentForm,
   type AdjustmentFormValues,
 } from "@/components/AdjustmentForm";
-import { formatAdjustmentType } from "@/lib/adjustment-types";
+import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import {
   parseProblemDetails,
   extractFieldErrors,
@@ -59,6 +59,7 @@ export function AdjustmentsCard({
   adjustments,
   adjustmentTotal,
 }: AdjustmentsCardProps) {
+  const { adjustmentTypeLabels } = useEnumMetadata();
   const createAdjustment = useCreateAdjustment();
   const updateAdjustment = useUpdateAdjustment();
   const deleteAdjustments = useDeleteAdjustments();
@@ -190,7 +191,7 @@ export function AdjustmentsCard({
                         />
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{formatAdjustmentType(adj.type)}</Badge>
+                        <Badge variant="outline">{adjustmentTypeLabels[adj.type] ?? adj.type}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {adj.description ?? "\u2014"}

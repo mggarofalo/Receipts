@@ -3,10 +3,6 @@ import {
   actionBadgeVariant,
   relativeTime,
   truncateId,
-  ENTITY_TYPES,
-  ENTITY_TYPE_LABELS,
-  ACTION_TYPES,
-  AUTH_EVENT_TYPES,
 } from "./audit-utils";
 
 describe("parseChanges", () => {
@@ -119,42 +115,3 @@ describe("truncateId", () => {
   });
 });
 
-describe("constants", () => {
-  it("ENTITY_TYPES has expected values", () => {
-    expect(ENTITY_TYPES).toEqual([
-      "Account",
-      "Receipt",
-      "ReceiptItem",
-      "Transaction",
-    ]);
-  });
-
-  it("ENTITY_TYPE_LABELS maps ReceiptItem to Receipt Item", () => {
-    expect(ENTITY_TYPE_LABELS["ReceiptItem"]).toBe("Receipt Item");
-  });
-
-  it("ACTION_TYPES has expected values", () => {
-    expect(ACTION_TYPES).toEqual([
-      "Created",
-      "Updated",
-      "Deleted",
-      "Restored",
-    ]);
-  });
-
-  it("AUTH_EVENT_TYPES has expected values", () => {
-    expect(AUTH_EVENT_TYPES).toEqual([
-      "Login",
-      "LoginFailed",
-      "Logout",
-      "ApiKeyUsed",
-      "ApiKeyCreated",
-      "ApiKeyRevoked",
-      "PasswordChanged",
-      "UserRegistered",
-      "AccountDisabled",
-      "TokenRevoked",
-      "RateLimitExceeded",
-    ]);
-  });
-});

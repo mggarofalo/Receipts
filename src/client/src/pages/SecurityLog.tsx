@@ -9,6 +9,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { useServerPagination } from "@/hooks/useServerPagination";
 import { useServerSort } from "@/hooks/useServerSort";
 import type { AuthAuditLog } from "@/lib/audit-utils";
+import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import { AuthAuditTable } from "@/components/AuthAuditTable";
 import { Pagination } from "@/components/Pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 function SecurityLog() {
   usePageTitle("Security Log");
   const { isAdmin } = usePermission();
+  const { authEventLabels } = useEnumMetadata();
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "timestamp", defaultSortDirection: "desc" });
 
   const myPagination = useServerPagination();
@@ -58,6 +60,7 @@ function SecurityLog() {
             sortBy={sortBy}
             sortDirection={sortDirection}
             onToggleSort={toggleSort}
+            authEventLabels={authEventLabels}
           />
           <Pagination
             currentPage={myPagination.currentPage}
@@ -78,6 +81,7 @@ function SecurityLog() {
               sortBy={sortBy}
               sortDirection={sortDirection}
               onToggleSort={toggleSort}
+              authEventLabels={authEventLabels}
             />
             <Pagination
               currentPage={recentPagination.currentPage}
@@ -99,6 +103,7 @@ function SecurityLog() {
               sortBy={sortBy}
               sortDirection={sortDirection}
               onToggleSort={toggleSort}
+              authEventLabels={authEventLabels}
             />
             <Pagination
               currentPage={failedPagination.currentPage}

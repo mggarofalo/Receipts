@@ -39,7 +39,7 @@ import {
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { formatCurrency } from "@/lib/format";
-import { formatAdjustmentType } from "@/lib/adjustment-types";
+import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 
 interface ReceiptResponse {
   id: string;
@@ -66,6 +66,7 @@ const FILTER_DEFS: FilterDefinition[] = [
 
 function Trips() {
   usePageTitle("Trips");
+  const { adjustmentTypeLabels } = useEnumMetadata();
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const { data: trip, isLoading: tripLoading, isError } = useTripByReceiptId(receiptId);
 
@@ -301,7 +302,7 @@ function Trips() {
                       {trip.receipt.adjustments.map((adj: { id: string; type: string; description?: string | null; amount: number }) => (
                         <TableRow key={adj.id}>
                           <TableCell>
-                            <Badge variant="outline">{formatAdjustmentType(adj.type)}</Badge>
+                            <Badge variant="outline">{adjustmentTypeLabels[adj.type] ?? adj.type}</Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {adj.description ?? "\u2014"}

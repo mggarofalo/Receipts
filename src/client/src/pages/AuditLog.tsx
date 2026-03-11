@@ -5,12 +5,7 @@ import { useRecentAuditLogs } from "@/hooks/useAudit";
 import { useServerPagination } from "@/hooks/useServerPagination";
 import { useServerSort } from "@/hooks/useServerSort";
 import type { AuditLog as AuditLogEntry } from "@/lib/audit-utils";
-import {
-  ENTITY_TYPES,
-  ENTITY_TYPE_LABELS,
-  ACTION_TYPES,
-  ACTION_FILTER_VALUES,
-} from "@/lib/audit-utils";
+import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import { AuditLogTable } from "@/components/AuditLogTable";
 import { Pagination } from "@/components/Pagination";
 import { Input } from "@/components/ui/input";
@@ -143,6 +138,7 @@ function DateRangePicker({
 
 function AuditLog() {
   usePageTitle("Audit Log");
+  const { entityTypes, entityTypeLabels, auditActions } = useEnumMetadata();
   const [search, setSearch] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
@@ -193,20 +189,20 @@ function AuditLog() {
   const entityTypeOptions = useMemo(
     () => [
       { value: "all", label: "All Types" },
-      ...ENTITY_TYPES.map((t) => ({ value: t, label: ENTITY_TYPE_LABELS[t] })),
+      ...entityTypes.map((t) => ({ value: t.value, label: entityTypeLabels[t.value] ?? t.value })),
     ],
-    [],
+    [entityTypes, entityTypeLabels],
   );
 
   const actionOptions = useMemo(
     () => [
       { value: "all", label: "All Actions" },
-      ...ACTION_TYPES.map((a) => ({
-        value: ACTION_FILTER_VALUES[a] ?? a,
-        label: a,
+      ...auditActions.map((a) => ({
+        value: a.value,
+        label: a.label,
       })),
     ],
-    [],
+    [auditActions],
   );
 
   const { data, isLoading } = useRecentAuditLogs({
@@ -279,6 +275,7 @@ function AuditLog() {
         sortBy={sortBy}
         sortDirection={sortDirection}
         onToggleSort={toggleSort}
+        entityTypeLabels={entityTypeLabels}
       />
 
       <Pagination
