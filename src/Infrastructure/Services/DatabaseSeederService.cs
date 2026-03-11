@@ -86,8 +86,17 @@ public static class DatabaseSeederService
 		}
 		catch when (userCreatedHere)
 		{
-			// Delete orphaned user so the next retry can succeed
-			await userManager.DeleteAsync(adminUser);
+			// Delete orphaned user so the next retry can succeed.
+			// Swallow delete failures to preserve the original exception.
+			try
+			{
+				await userManager.DeleteAsync(adminUser);
+			}
+			catch
+			{
+				// Intentionally swallowed — the original role-assignment exception is more important.
+			}
+
 			throw;
 		}
 	}

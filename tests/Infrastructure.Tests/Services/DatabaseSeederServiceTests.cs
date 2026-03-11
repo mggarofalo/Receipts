@@ -155,6 +155,8 @@ public class DatabaseSeederServiceTests
 			.ReturnsAsync(IdentityResult.Success);
 		_mockUserManager.Setup(u => u.IsInRoleAsync(It.IsAny<ApplicationUser>(), AppRoles.Admin))
 			.ReturnsAsync(false);
+		_mockUserManager.Setup(u => u.IsInRoleAsync(It.IsAny<ApplicationUser>(), AppRoles.User))
+			.ReturnsAsync(false);
 		_mockUserManager.Setup(u => u.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRoles.Admin))
 			.ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "RoleFail", Description = "Admin role assignment failed" }));
 		_mockUserManager.Setup(u => u.DeleteAsync(It.IsAny<ApplicationUser>()))
