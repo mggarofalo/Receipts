@@ -5,6 +5,10 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.VITE_APP_VERSION || "dev"),
+    __COMMIT_HASH__: JSON.stringify(process.env.VITE_COMMIT_HASH || "local"),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

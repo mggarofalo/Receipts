@@ -2,6 +2,11 @@
 FROM node:22-alpine AS client-build
 WORKDIR /app/client
 
+ARG VITE_APP_VERSION=dev
+ARG VITE_COMMIT_HASH=local
+ENV VITE_APP_VERSION=${VITE_APP_VERSION}
+ENV VITE_COMMIT_HASH=${VITE_COMMIT_HASH}
+
 # Copy only files needed for npm install first (layer caching)
 COPY src/client/package.json src/client/package-lock.json ./
 
