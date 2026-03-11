@@ -72,7 +72,7 @@ describe("DateRangeSelector", () => {
     );
   });
 
-  it("renders a dropdown selector for narrow viewports", () => {
+  it("renders a dropdown selector", () => {
     const onChange = vi.fn();
     renderWithProviders(
       <DateRangeSelector value={defaultRange} onChange={onChange} />,

@@ -119,7 +119,6 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
   const handleSelectChange = useCallback(
     (val: string) => {
       if (val === "custom") {
-        setActivePreset("custom");
         setCalendarOpen(true);
       } else {
         handlePreset(val as PresetKey);
@@ -168,6 +167,7 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
             variant={activePreset === "custom" ? "default" : "outline"}
             size="sm"
             className="gap-1.5"
+            aria-label={activePreset === "custom" ? displayLabel : "Custom"}
           >
             <CalendarIcon className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">
