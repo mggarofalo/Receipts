@@ -101,6 +101,9 @@ export function Step2Transactions({
         ...values,
       };
       setTransactions((prev) => [...prev, newTxn]);
+      // Blur before reset so CurrencyInput's handleBlur writes its stale
+      // internal text state first, then form.reset() overwrites it.
+      (document.activeElement as HTMLElement)?.blur?.();
       form.reset({ accountId: "", amount: 0, date: receiptDate });
     },
     [form, receiptDate],

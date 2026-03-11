@@ -106,6 +106,9 @@ describe("Step2Transactions", () => {
     // Verify a new transaction row appears with the account name and formatted amount
     expect(await screen.findByText("Checking")).toBeInTheDocument();
     expect(await screen.findByText("$42.50")).toBeInTheDocument();
+
+    // Verify the amount field was reset (not retaining stale value)
+    expect(amountInput).toHaveValue("");
   });
 
   it("focuses the account combobox after adding a transaction", async () => {
