@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useAccounts } from "@/hooks/useAccounts";
 import { accountToOption } from "@/lib/combobox-options";
 import { formatCurrency } from "@/lib/format";
@@ -55,7 +56,10 @@ export function Step2Transactions({
   onBack,
 }: Step2Props) {
   const [transactions, setTransactions] = useState<WizardTransaction[]>(data);
+  const formRef = useRef<HTMLFormElement>(null);
+  const accountRef = useRef<HTMLButtonElement>(null);
   const { data: accounts } = useAccounts();
+  useFormShortcuts({ formRef });
 
   const accountOptions = useMemo(
     () =>
@@ -102,6 +106,16 @@ export function Step2Transactions({
     [form, receiptDate],
   );
 
+  // Focus the account field after adding a transaction for rapid entry
+  const transactionCount = transactions.length;
+  const prevCountRef = useRef(transactionCount);
+  useEffect(() => {
+    if (transactionCount > prevCountRef.current) {
+      accountRef.current?.focus();
+    }
+    prevCountRef.current = transactionCount;
+  }, [transactionCount]);
+
   const handleRemove = useCallback((id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
   }, []);
@@ -130,6 +144,7 @@ export function Step2Transactions({
       <CardContent className="space-y-6">
         <Form {...form}>
           <form
+            ref={formRef}
             onSubmit={form.handleSubmit(handleAdd)}
             className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-end"
           >
@@ -141,6 +156,7 @@ export function Step2Transactions({
                   <FormLabel>Account</FormLabel>
                   <FormControl>
                     <Combobox
+                      ref={accountRef}
                       options={accountOptions}
                       value={field.value}
                       onValueChange={field.onChange}

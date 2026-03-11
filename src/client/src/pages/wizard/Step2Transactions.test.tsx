@@ -1,7 +1,12 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult } from "@/test/mock-hooks";
+import "@/test/setup-combobox-polyfills";
 import { Step2Transactions } from "./Step2Transactions";
+
+vi.mock("@/hooks/useFormShortcuts", () => ({
+  useFormShortcuts: vi.fn(),
+}));
 
 vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() =>
@@ -78,5 +83,54 @@ describe("Step2Transactions", () => {
     ];
     renderWithProviders(<Step2Transactions {...defaultProps} data={data} />);
     expect(screen.getByText("$25.50")).toBeInTheDocument();
+  });
+
+  it("submits the form when Enter is pressed in the amount field", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithProviders(<Step2Transactions {...defaultProps} />);
+
+    // Select account via combobox
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    const checkingOption = await screen.findByText("Checking");
+    await user.click(checkingOption);
+
+    // Type amount
+    const amountInput = screen.getByLabelText(/amount/i);
+    await user.click(amountInput);
+    await user.type(amountInput, "42.50");
+
+    // Press Enter in the amount field to submit
+    await user.keyboard("{Enter}");
+
+    // Verify a new transaction row appears with the account name and formatted amount
+    expect(await screen.findByText("Checking")).toBeInTheDocument();
+    expect(await screen.findByText("$42.50")).toBeInTheDocument();
+  });
+
+  it("focuses the account combobox after adding a transaction", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithProviders(<Step2Transactions {...defaultProps} />);
+
+    // Select account via combobox
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    const checkingOption = await screen.findByText("Checking");
+    await user.click(checkingOption);
+
+    // Type amount
+    const amountInput = screen.getByLabelText(/amount/i);
+    await user.click(amountInput);
+    await user.type(amountInput, "10");
+
+    // Press Enter to submit
+    await user.keyboard("{Enter}");
+
+    // Wait for the transaction to appear (useEffect fires after re-render)
+    expect(await screen.findByText("$10.00")).toBeInTheDocument();
+
+    // The useEffect should have focused the combobox trigger
+    const comboboxAfter = screen.getByRole("combobox");
+    expect(document.activeElement).toBe(comboboxAfter);
   });
 });
