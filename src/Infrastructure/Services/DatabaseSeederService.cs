@@ -50,8 +50,19 @@ public static class DatabaseSeederService
 		IdentityResult result = await userManager.CreateAsync(adminUser, adminPassword);
 		if (result.Succeeded)
 		{
-			await userManager.AddToRoleAsync(adminUser, AppRoles.Admin);
-			await userManager.AddToRoleAsync(adminUser, AppRoles.User);
+			IdentityResult addAdmin = await userManager.AddToRoleAsync(adminUser, AppRoles.Admin);
+			if (!addAdmin.Succeeded)
+			{
+				throw new InvalidOperationException(
+					$"Failed to assign Admin role: {string.Join(", ", addAdmin.Errors.Select(e => e.Description))}");
+			}
+
+			IdentityResult addUser = await userManager.AddToRoleAsync(adminUser, AppRoles.User);
+			if (!addUser.Succeeded)
+			{
+				throw new InvalidOperationException(
+					$"Failed to assign User role: {string.Join(", ", addUser.Errors.Select(e => e.Description))}");
+			}
 		}
 	}
 }
