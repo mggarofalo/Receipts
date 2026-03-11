@@ -330,11 +330,11 @@ export function Layout() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    aria-label={`User menu for ${user.email}`}
+                    aria-label={`User menu for ${user.email || "current user"}`}
                   >
                     <span className="hidden md:inline">{user.email}</span>
                     <span className="md:hidden text-xs font-semibold">
-                      {user.email[0].toUpperCase()}
+                      {user.email ? user.email[0].toUpperCase() : "?"}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
