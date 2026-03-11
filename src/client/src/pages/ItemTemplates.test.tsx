@@ -80,11 +80,11 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
 
 // Mocks needed by ItemTemplateForm (rendered inside dialogs)
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({ data: [], isLoading: false })),
+  useCategories: vi.fn(() => ({ data: { data: [] }, isLoading: false })),
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useSubcategoriesByCategoryId: vi.fn(() => ({ data: [], isLoading: false })),
+  useSubcategoriesByCategoryId: vi.fn(() => ({ data: { data: [] }, isLoading: false })),
 }));
 
 vi.mock("@/hooks/usePagination", () => ({

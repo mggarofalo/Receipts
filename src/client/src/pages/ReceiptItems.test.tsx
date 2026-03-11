@@ -81,21 +81,21 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
 
 // Mocks needed by ReceiptItemForm (rendered inside dialogs)
 vi.mock("@/hooks/useReceipts", () => ({
-  useReceipts: vi.fn(() => ({ data: [], isLoading: false })),
+  useReceipts: vi.fn(() => ({ data: { data: [] }, isLoading: false })),
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({ data: [], isLoading: false })),
+  useCategories: vi.fn(() => ({ data: { data: [] }, isLoading: false })),
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useSubcategories: vi.fn(() => ({ data: [], isLoading: false })),
-  useSubcategoriesByCategoryId: vi.fn(() => ({ data: [], isLoading: false })),
+  useSubcategories: vi.fn(() => ({ data: { data: [] }, isLoading: false })),
+  useSubcategoriesByCategoryId: vi.fn(() => ({ data: { data: [] }, isLoading: false })),
   useCreateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useItemTemplates", () => ({
-  useItemTemplates: vi.fn(() => ({ data: [], isLoading: false })),
+  useItemTemplates: vi.fn(() => ({ data: { data: [] }, isLoading: false })),
 }));
 
 vi.mock("@/hooks/usePagination", () => ({
