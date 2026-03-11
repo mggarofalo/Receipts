@@ -64,7 +64,7 @@ export function Step2Transactions({
   const accountOptions = useMemo(
     () =>
       (
-        (accounts?.data as
+        (accounts as
           | { id: string; name: string; accountCode: string }[]
           | undefined) ?? []
       ).map(accountToOption),

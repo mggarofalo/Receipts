@@ -77,7 +77,7 @@ function Receipts() {
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "date", defaultSortDirection: "desc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
-  const { data: receiptsResponse, isLoading } = useReceipts(offset, limit, sortBy, sortDirection);
+  const { data: receiptsData, total: serverTotal, isLoading } = useReceipts(offset, limit, sortBy, sortDirection);
   const createReceipt = useCreateReceipt();
   const updateReceipt = useUpdateReceipt();
   const deleteReceipts = useDeleteReceipts();
@@ -100,8 +100,7 @@ function Receipts() {
 
   useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
-  const data = (receiptsResponse?.data as ReceiptResponse[] | undefined) ?? [];
-  const serverTotal = receiptsResponse?.total ?? 0;
+  const data = (receiptsData as ReceiptResponse[] | undefined) ?? [];
 
   const {
     filters: savedFilters,

@@ -186,7 +186,7 @@ function RecycleBin() {
   const allItems = useMemo(() => {
     const items: DeletedItem[] = [];
 
-    for (const r of receipts.data?.data ?? []) {
+    for (const r of receipts.data ?? []) {
       items.push({
         entityType: "Receipt",
         entityTypeLabel: "Receipt",
@@ -194,7 +194,7 @@ function RecycleBin() {
         label: `${r.location} - ${r.date}`,
       });
     }
-    for (const ri of receiptItems.data?.data ?? []) {
+    for (const ri of receiptItems.data ?? []) {
       items.push({
         entityType: "ReceiptItem",
         entityTypeLabel: "Receipt Item",
@@ -202,7 +202,7 @@ function RecycleBin() {
         label: `${ri.description} (${ri.receiptItemCode ?? "N/A"})`,
       });
     }
-    for (const t of transactions.data?.data ?? []) {
+    for (const t of transactions.data ?? []) {
       items.push({
         entityType: "Transaction",
         entityTypeLabel: "Transaction",
@@ -210,7 +210,7 @@ function RecycleBin() {
         label: `$${t.amount.toFixed(2)} - ${t.date}`,
       });
     }
-    for (const it of itemTemplates.data?.data ?? []) {
+    for (const it of itemTemplates.data ?? []) {
       items.push({
         entityType: "ItemTemplate",
         entityTypeLabel: "Item Template",

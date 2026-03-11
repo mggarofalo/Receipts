@@ -32,7 +32,7 @@ vi.mock("@/hooks/useTrips", () => ({
 }));
 
 vi.mock("@/hooks/useReceipts", () => ({
-  useReceipts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 25 }, isLoading: false })),
+  useReceipts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
 }));
 
 vi.mock("@/hooks/useFuzzySearch", () => ({
@@ -117,7 +117,8 @@ describe("Trips", () => {
 
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 10000 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -140,7 +141,8 @@ describe("Trips", () => {
   it("renders empty state when no receipts found", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 25 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 
@@ -163,7 +165,8 @@ describe("Trips", () => {
   it("renders no-results state when search yields nothing but receipts exist", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: [{ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }], total: 1, offset: 0, limit: 10000 },
+      data: [{ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }],
+      total: 1,
       isLoading: false,
     }));
 
@@ -184,7 +187,8 @@ describe("Trips", () => {
   it("shows empty state when searching with zero receipts in database", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 10000 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 

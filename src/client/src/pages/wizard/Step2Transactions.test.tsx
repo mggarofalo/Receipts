@@ -11,12 +11,11 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
 vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() =>
     mockQueryResult({
-      data: {
-        data: [
-          { id: "acct-1", name: "Checking", accountCode: "CHK" },
-          { id: "acct-2", name: "Credit Card", accountCode: "CC" },
-        ],
-      },
+      data: [
+        { id: "acct-1", name: "Checking", accountCode: "CHK" },
+        { id: "acct-2", name: "Credit Card", accountCode: "CC" },
+      ],
+      total: 2,
       isLoading: false,
       isSuccess: true,
     }),

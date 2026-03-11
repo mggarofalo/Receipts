@@ -97,18 +97,17 @@ export function ReceiptItemForm({
     useFieldHistory(itemCodeHistory);
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
-  const { data: categoriesResponse } = useCategories();
-  const categories = categoriesResponse?.data as { id: string; name: string }[] | undefined;
+  const { data: categories } = useCategories();
   const { data: itemTemplatesData } = useItemTemplates();
   const templates = useMemo(
-    () => (itemTemplatesData?.data as ItemTemplate[] | undefined) ?? [],
+    () => (itemTemplatesData as ItemTemplate[] | undefined) ?? [],
     [itemTemplatesData],
   );
 
   const receiptOptions = useMemo(
     () =>
       (
-        (receipts?.data as
+        (receipts as
           | {
               id: string;
               location: string;
@@ -161,7 +160,7 @@ export function ReceiptItemForm({
   const subcategoryOptions = useMemo(
     () =>
       (
-        (subcategoriesData?.data as { id: string; name: string }[] | undefined) ?? []
+        (subcategoriesData as { id: string; name: string }[] | undefined) ?? []
       ).map((s) => ({
         value: s.name,
         label: s.name,

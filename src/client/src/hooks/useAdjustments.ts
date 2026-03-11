@@ -3,7 +3,7 @@ import client from "@/lib/api-client";
 import { toast } from "sonner";
 
 export function useAdjustments(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["adjustments", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/adjustments", {
@@ -13,6 +13,7 @@ export function useAdjustments(offset = 0, limit = 50, sortBy?: string | null, s
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useAdjustment(id: string | null) {
@@ -30,7 +31,7 @@ export function useAdjustment(id: string | null) {
 }
 
 export function useAdjustmentsByReceiptId(receiptId: string | null, offset = 0, limit = 200, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["adjustments", "by-receipt", receiptId, offset, limit, sortBy, sortDirection],
     enabled: !!receiptId,
     queryFn: async () => {
@@ -41,6 +42,7 @@ export function useAdjustmentsByReceiptId(receiptId: string | null, offset = 0, 
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useCreateAdjustment() {
@@ -147,7 +149,7 @@ export function useDeleteAdjustments() {
 }
 
 export function useDeletedAdjustments(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["adjustments", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/adjustments/deleted", {
@@ -157,6 +159,7 @@ export function useDeletedAdjustments(offset = 0, limit = 50, sortBy?: string | 
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useRestoreAdjustment() {

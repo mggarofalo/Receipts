@@ -15,7 +15,8 @@ vi.mock("@/hooks/useAuth", () => ({
 
 vi.mock("@/hooks/useUsers", () => ({
   useUsers: vi.fn(() => ({
-    data: { data: [], total: 0, offset: 0, limit: 20 },
+    data: [],
+    total: 0,
     isLoading: false,
   })),
   useCreateUser: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
@@ -74,7 +75,8 @@ describe("AdminUsers", () => {
   it("renders loading skeleton when data is loading", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 20 },
+      data: [],
+      total: 0,
       isLoading: true,
     }));
 
@@ -85,7 +87,8 @@ describe("AdminUsers", () => {
   it("renders empty state when no users exist", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 20 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 
@@ -96,21 +99,19 @@ describe("AdminUsers", () => {
   it("renders user table when users exist", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            email: "test@example.com",
-            firstName: "John",
-            lastName: "Doe",
-            roles: ["Admin"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: "John",
+          lastName: "Doe",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -133,21 +134,19 @@ describe("AdminUsers", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            email: "test@example.com",
-            firstName: "John",
-            lastName: "Doe",
-            roles: ["Admin"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: "John",
+          lastName: "Doe",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -163,21 +162,19 @@ describe("AdminUsers", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            email: "test@example.com",
-            firstName: "John",
-            lastName: "Doe",
-            roles: ["Admin"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: "John",
+          lastName: "Doe",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -195,21 +192,19 @@ describe("AdminUsers", () => {
   it("disables Disable button for the current user", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            email: "admin@example.com",
-            firstName: "Admin",
-            lastName: "User",
-            roles: ["Admin"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "1",
+          email: "admin@example.com",
+          firstName: "Admin",
+          lastName: "User",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -220,21 +215,19 @@ describe("AdminUsers", () => {
   it("disables Disable button for already disabled users", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "2",
-            email: "disabled@example.com",
-            firstName: "Disabled",
-            lastName: "User",
-            roles: ["User"],
-            isDisabled: true,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "2",
+          email: "disabled@example.com",
+          firstName: "Disabled",
+          lastName: "User",
+          roles: ["User"],
+          isDisabled: true,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -246,21 +239,19 @@ describe("AdminUsers", () => {
   it("shows user name formatted from first and last name", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            email: "test@example.com",
-            firstName: "John",
-            lastName: "Doe",
-            roles: ["Admin"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: "John",
+          lastName: "Doe",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -271,21 +262,19 @@ describe("AdminUsers", () => {
   it("shows dash when user has no first or last name", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            email: "test@example.com",
-            firstName: null,
-            lastName: null,
-            roles: ["User"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: null,
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: null,
+          lastName: null,
+          roles: ["User"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: null,
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -310,19 +299,17 @@ describe("AdminUsers", () => {
 
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: Array.from({ length: 20 }, (_, i) => ({
-          id: String(i + 1),
-          email: `user${i + 1}@example.com`,
-          firstName: `User`,
-          lastName: `${i + 1}`,
-          roles: ["User"],
-          isDisabled: false,
-          createdAt: "2024-01-01",
-          lastLoginAt: null,
-        })),
-        total: 25, offset: 0, limit: 20,
-      },
+      data: Array.from({ length: 20 }, (_, i) => ({
+        id: String(i + 1),
+        email: `user${i + 1}@example.com`,
+        firstName: `User`,
+        lastName: `${i + 1}`,
+        roles: ["User"],
+        isDisabled: false,
+        createdAt: "2024-01-01",
+        lastLoginAt: null,
+      })),
+      total: 25,
       isLoading: false,
     }));
 
@@ -353,19 +340,17 @@ describe("AdminUsers", () => {
 
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: Array.from({ length: 20 }, (_, i) => ({
-          id: String(i + 1),
-          email: `user${i + 1}@example.com`,
-          firstName: `User`,
-          lastName: `${i + 1}`,
-          roles: ["User"],
-          isDisabled: false,
-          createdAt: "2024-01-01",
-          lastLoginAt: null,
-        })),
-        total: 25, offset: 0, limit: 20,
-      },
+      data: Array.from({ length: 20 }, (_, i) => ({
+        id: String(i + 1),
+        email: `user${i + 1}@example.com`,
+        firstName: `User`,
+        lastName: `${i + 1}`,
+        roles: ["User"],
+        isDisabled: false,
+        createdAt: "2024-01-01",
+        lastLoginAt: null,
+      })),
+      total: 25,
       isLoading: false,
     }));
 
@@ -380,21 +365,19 @@ describe("AdminUsers", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            email: "test@example.com",
-            firstName: "John",
-            lastName: "Doe",
-            roles: ["Admin"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: "John",
+          lastName: "Doe",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -412,21 +395,19 @@ describe("AdminUsers", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            email: "test@example.com",
-            firstName: "John",
-            lastName: "Doe",
-            roles: ["Admin"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: "John",
+          lastName: "Doe",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -449,21 +430,19 @@ describe("AdminUsers", () => {
       isPending: false,
     } as unknown as ReturnType<typeof useDeleteUser>);
     vi.mocked(useUsers).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "2",
-            email: "other@example.com",
-            firstName: "Other",
-            lastName: "User",
-            roles: ["User"],
-            isDisabled: false,
-            createdAt: "2024-01-01",
-            lastLoginAt: "2024-01-15",
-          },
-        ],
-        total: 1, offset: 0, limit: 20,
-      },
+      data: [
+        {
+          id: "2",
+          email: "other@example.com",
+          firstName: "Other",
+          lastName: "User",
+          roles: ["User"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 

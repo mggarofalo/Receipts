@@ -9,7 +9,7 @@ export function useEntityAuditHistory(
   sortBy?: string | null,
   sortDirection?: string | null,
 ) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["audit", "entity", entityType, entityId, offset, limit, sortBy, sortDirection],
     enabled: !!entityType && !!entityId,
     queryFn: async () => {
@@ -29,6 +29,7 @@ export function useEntityAuditHistory(
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export interface AuditLogFilters {
@@ -56,7 +57,7 @@ export function useRecentAuditLogs(filters: AuditLogFilters = {}) {
     dateTo,
   } = filters;
 
-  return useQuery({
+  const query = useQuery({
     queryKey: [
       "audit",
       "recent",
@@ -93,4 +94,5 @@ export function useRecentAuditLogs(filters: AuditLogFilters = {}) {
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }

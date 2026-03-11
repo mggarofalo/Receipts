@@ -43,7 +43,7 @@ beforeEach(() => {
 describe("useUsers", () => {
   it("fetches paginated users with page and pageSize", async () => {
     const mockUsers = [{ id: "1", email: "a@b.com" }];
-    (client.GET as Mock).mockResolvedValue({ data: mockUsers, error: null });
+    (client.GET as Mock).mockResolvedValue({ data: { data: mockUsers, total: 1, offset: 0, limit: 10 }, error: null });
 
     const { result } = renderHook(() => useUsers(0, 10), {
       wrapper: createWrapper(),

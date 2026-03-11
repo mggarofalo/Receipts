@@ -9,12 +9,11 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
 
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "cat-1", name: "Groceries" },
-        { id: "cat-2", name: "Utilities" },
-      ],
-    },
+    data: [
+      { id: "cat-1", name: "Groceries" },
+      { id: "cat-2", name: "Utilities" },
+    ],
+    total: 2,
   })),
 }));
 

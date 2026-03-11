@@ -75,8 +75,8 @@ function Subcategories() {
   const allSubcatQuery = useSubcategories(offset, limit, sortBy, sortDirection);
   const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit, sortBy, sortDirection);
   const activeSubcatQuery = linkParams.categoryId ? filteredSubcatQuery : allSubcatQuery;
-  const { data: subcategoriesResponse, isLoading: subcategoriesLoading } = activeSubcatQuery;
-  const { data: categoriesResponse, isLoading: categoriesLoading } = useCategories();
+  const { data: subcategoriesData, total: serverTotal, isLoading: subcategoriesLoading } = activeSubcatQuery;
+  const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   const createSubcategory = useCreateSubcategory();
   const updateSubcategory = useUpdateSubcategory();
   const isLoading = subcategoriesLoading || categoriesLoading;
@@ -103,12 +103,11 @@ function Subcategories() {
 
   useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
-  const data = (subcategoriesResponse?.data as SubcategoryResponse[] | undefined) ?? [];
-  const serverTotal = subcategoriesResponse?.total ?? 0;
+  const data = (subcategoriesData as SubcategoryResponse[] | undefined) ?? [];
 
   const categoryList = useMemo(
-    () => (categoriesResponse?.data as CategoryResponse[] | undefined) ?? [],
-    [categoriesResponse?.data],
+    () => (categoriesData as CategoryResponse[] | undefined) ?? [],
+    [categoriesData],
   );
 
   const categoryMap = useMemo(() => {

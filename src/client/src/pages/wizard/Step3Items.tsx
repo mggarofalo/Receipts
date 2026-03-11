@@ -89,7 +89,7 @@ export function Step3Items({
   const categoryOptions = useMemo(
     () =>
       (
-        (categories?.data as
+        (categories as
           | { id: string; name: string }[]
           | undefined) ?? []
       ).map((c) => ({ value: c.name, label: c.name })),
@@ -132,7 +132,7 @@ export function Step3Items({
   const selectedCategoryObj = useMemo(
     () =>
       (
-        (categories?.data as
+        (categories as
           | { id: string; name: string }[]
           | undefined) ?? []
       ).find((c) => c.name === selectedCategory),
@@ -148,7 +148,7 @@ export function Step3Items({
   const subcategoryOptions = useMemo(
     () =>
       (
-        (subcategories?.data as { id: string; name: string }[] | undefined) ?? []
+        (subcategories as { id: string; name: string }[] | undefined) ?? []
       ).map((s) => ({ value: s.name, label: s.name })),
     [subcategories],
   );

@@ -24,30 +24,6 @@ import { useReceipts } from "@/hooks/useReceipts";
 import { useReceiptItems } from "@/hooks/useReceiptItems";
 import { useTransactions } from "@/hooks/useTransactions";
 
-interface AccountResponse {
-  id: string;
-  accountCode: string;
-  name: string;
-}
-
-interface ReceiptResponse {
-  id: string;
-  location: string;
-}
-
-interface ReceiptItemResponse {
-  id: string;
-  receiptItemCode: string;
-  description: string;
-  category: string;
-}
-
-interface TransactionResponse {
-  id: string;
-  amount: number;
-  date: string;
-}
-
 interface GlobalSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -67,15 +43,10 @@ export function GlobalSearchDialog({
   onOpenChange,
 }: GlobalSearchDialogProps) {
   const navigate = useNavigate();
-  const { data: accountsResponse } = useAccounts();
-  const { data: receiptsResponse } = useReceipts();
-  const { data: receiptItemsResponse } = useReceiptItems();
-  const { data: transactionsResponse } = useTransactions();
-
-  const accounts = accountsResponse?.data as AccountResponse[] | undefined;
-  const receipts = receiptsResponse?.data as ReceiptResponse[] | undefined;
-  const receiptItems = receiptItemsResponse?.data as ReceiptItemResponse[] | undefined;
-  const transactions = transactionsResponse?.data as TransactionResponse[] | undefined;
+  const { data: accounts } = useAccounts();
+  const { data: receipts } = useReceipts();
+  const { data: receiptItems } = useReceiptItems();
+  const { data: transactions } = useTransactions();
 
   const toggleOpen = useCallback(() => {
     onOpenChange(!open);

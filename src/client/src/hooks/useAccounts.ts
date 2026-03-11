@@ -5,7 +5,7 @@ import { toast } from "sonner";
 // Note: Accounts are reference entities and cannot be deleted or restored.
 
 export function useAccounts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["accounts", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/accounts", {
@@ -15,6 +15,7 @@ export function useAccounts(offset = 0, limit = 50, sortBy?: string | null, sort
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useAccount(id: string | null) {

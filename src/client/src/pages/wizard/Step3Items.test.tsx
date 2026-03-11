@@ -6,12 +6,11 @@ import { Step3Items } from "./Step3Items";
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() =>
     mockQueryResult({
-      data: {
-        data: [
-          { id: "cat-1", name: "Food" },
-          { id: "cat-2", name: "Transport" },
-        ],
-      },
+      data: [
+        { id: "cat-1", name: "Food" },
+        { id: "cat-2", name: "Transport" },
+      ],
+      total: 2,
       isLoading: false,
       isSuccess: true,
     }),
@@ -21,7 +20,8 @@ vi.mock("@/hooks/useCategories", () => ({
 vi.mock("@/hooks/useSubcategories", () => ({
   useSubcategoriesByCategoryId: vi.fn(() =>
     mockQueryResult({
-      data: { data: [] },
+      data: [],
+      total: 0,
       isLoading: false,
       isSuccess: true,
     }),

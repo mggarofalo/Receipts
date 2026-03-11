@@ -96,9 +96,9 @@ function Transactions() {
   const allTxnQuery = useTransactions(offset, limit, sortBy, sortDirection);
   const filteredTxnQuery = useTransactionsByReceiptId(linkParams.receiptId ?? null, offset, limit, sortBy, sortDirection);
   const activeTxnQuery = linkParams.receiptId ? filteredTxnQuery : allTxnQuery;
-  const { data: transactionsResponse, isLoading } = activeTxnQuery;
-  const { data: accountsResponse } = useAccounts(0, 1000);
-  const { data: receiptsResponse } = useReceipts(0, 1000);
+  const { data: transactionsData, total: serverTotal, isLoading } = activeTxnQuery;
+  const { data: accountsData } = useAccounts(0, 1000);
+  const { data: receiptsData } = useReceipts(0, 1000);
   const createTransaction = useCreateTransaction();
   const updateTransaction = useUpdateTransaction();
   const deleteTransactions = useDeleteTransactions();
@@ -120,26 +120,24 @@ function Transactions() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const serverTotal = transactionsResponse?.total ?? 0;
-
   const accountMap = useMemo(() => {
     const map = new Map<string, string>();
-    const list = (accountsResponse?.data as { id: string; name: string }[] | undefined) ?? [];
+    const list = (accountsData as { id: string; name: string }[] | undefined) ?? [];
     for (const a of list) map.set(a.id, a.name);
     return map;
-  }, [accountsResponse?.data]);
+  }, [accountsData]);
 
   const receiptMap = useMemo(() => {
     const map = new Map<string, ReceiptInfo>();
-    const list = (receiptsResponse?.data as { id: string; location: string; date: string }[] | undefined) ?? [];
+    const list = (receiptsData as { id: string; location: string; date: string }[] | undefined) ?? [];
     for (const r of list) map.set(r.id, { location: r.location, date: r.date });
     return map;
-  }, [receiptsResponse?.data]);
+  }, [receiptsData]);
 
   useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const data: EnrichedTransaction[] = useMemo(() => {
-    const list = (transactionsResponse?.data as TransactionResponse[] | undefined) ?? [];
+    const list = (transactionsData as TransactionResponse[] | undefined) ?? [];
     return list.map((txn) => {
       const receipt = receiptMap.get(txn.receiptId);
       return {
@@ -148,7 +146,7 @@ function Transactions() {
         receiptLocation: receipt?.location,
       };
     });
-  }, [transactionsResponse?.data, accountMap, receiptMap]);
+  }, [transactionsData, accountMap, receiptMap]);
 
   const {
     filters: savedFilters,

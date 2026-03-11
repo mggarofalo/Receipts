@@ -64,7 +64,7 @@ function ItemTemplates() {
   usePageTitle("Item Templates");
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
-  const { data: itemTemplatesResponse, isLoading } = useItemTemplates(offset, limit, sortBy, sortDirection);
+  const { data: itemTemplatesData, total: serverTotal, isLoading } = useItemTemplates(offset, limit, sortBy, sortDirection);
   const createItemTemplate = useCreateItemTemplate();
   const updateItemTemplate = useUpdateItemTemplate();
   const deleteItemTemplates = useDeleteItemTemplates();
@@ -88,8 +88,7 @@ function ItemTemplates() {
 
   useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
-  const data = (itemTemplatesResponse?.data as ItemTemplateResponse[] | undefined) ?? [];
-  const serverTotal = itemTemplatesResponse?.total ?? 0;
+  const data = (itemTemplatesData as ItemTemplateResponse[] | undefined) ?? [];
   useSavedFilters("itemTemplates");
 
   const { search, setSearch, results, totalCount, clearSearch } =

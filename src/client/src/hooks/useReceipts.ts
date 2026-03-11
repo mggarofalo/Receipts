@@ -3,7 +3,7 @@ import client from "@/lib/api-client";
 import { toast } from "sonner";
 
 export function useReceipts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["receipts", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/receipts", {
@@ -13,6 +13,7 @@ export function useReceipts(offset = 0, limit = 50, sortBy?: string | null, sort
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useReceipt(id: string | null) {
@@ -114,7 +115,7 @@ export function useDeleteReceipts() {
 }
 
 export function useDeletedReceipts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["receipts", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/receipts/deleted", {
@@ -124,6 +125,7 @@ export function useDeletedReceipts(offset = 0, limit = 50, sortBy?: string | nul
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useRestoreReceipt() {
