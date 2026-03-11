@@ -18,7 +18,14 @@ public class EmbeddingGenerationService(
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
-		await Task.Delay(InitialDelay, stoppingToken);
+		try
+		{
+			await Task.Delay(InitialDelay, stoppingToken);
+		}
+		catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+		{
+			return;
+		}
 
 		while (!stoppingToken.IsCancellationRequested)
 		{
@@ -39,7 +46,14 @@ public class EmbeddingGenerationService(
 				logger.LogError(ex, "Error during embedding generation cycle");
 			}
 
-			await Task.Delay(Interval, stoppingToken);
+			try
+			{
+				await Task.Delay(Interval, stoppingToken);
+			}
+			catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+			{
+				break;
+			}
 		}
 	}
 
