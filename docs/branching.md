@@ -90,14 +90,36 @@ Only use for non-Linear work like:
 
 ## Directory Isolation
 
-When you need to work on an issue branch without affecting the main repo, use `git clone --local` to create a lightweight local clone:
+Two mechanisms are available for working on issue branches without affecting the main repo:
+
+### Git Worktrees (preferred for AI agents)
+
+`git worktree add` creates a linked working tree sharing the same `.git` directory:
+
+```bash
+git worktree add .claude/worktrees/<branch-name> -b <branch-name>
+```
+
+- Shares git history and refs with the main worktree (no duplication)
+- Requires bootstrapping: `dotnet restore`, `npm install`, `npm install` in `src/client/`
+- Claude Code's `isolation: "worktree"` parameter automates this for subagents
+- Worktrees live in `.claude/worktrees/` (gitignored)
+- See [AGENTS.md](../AGENTS.md#worktree-setup) for bootstrap commands
+
+### Local Clones (alternative)
+
+`git clone --local` creates a lightweight local clone:
 
 ```bash
 git clone --local . .clones/<branch-name>
 ```
 
-- The clone hardlinks objects (fast, no network), and is a fully independent git repo
+- Hardlinks objects (fast, no network), fully independent git repo
 - `cd`, `git commit`, etc. all work normally
 - Clones live in `.clones/` at the repo root (gitignored)
-- Use `/clone <issue-id>` to create an isolated clone for an issue
-- For simple/small changes, it's fine to work directly on the milestone branch without isolation
+
+### When to Use Which
+
+- **Worktrees** — preferred for parallel AI agent work (faster setup, shared git state)
+- **Local clones** — preferred for human developers who want full independence
+- **Neither** — for simple/small changes, it's fine to work directly on the milestone branch

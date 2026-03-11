@@ -1,5 +1,7 @@
 # Paperless Integration Service - Implementation Plan
 
+> **Speculative / Future Feature** — This design document describes a potential future integration that has not been implemented. Some details may not align with current project conventions (e.g., it uses `int` IDs whereas the project uses `Guid`). Open questions remain unresolved. Treat as a starting point for future planning, not a ready-to-implement spec.
+
 ## Overview
 
 This document outlines the implementation plan for integrating Paperless-ngx document management system with the Receipts application. The integration will automatically process receipts from Paperless, extract structured data using AI, and create receipt records in the system.

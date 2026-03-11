@@ -1,5 +1,11 @@
 # Design Document: Implementing a DbContextFactory Pattern for Dependency Injection
 
+> **Historical Design Document** — This document was written during initial architecture planning and reflects the original design intent. Some details are outdated:
+> - The connection string is now configured via five separate environment variables (`POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`) rather than a single `POSTGRES_CONNECTION_STRING`.
+> - The `DesignTimeDbContextFactory` startup project is now `src/Tools/DbMigrator/DbMigrator.csproj`.
+>
+> For current architecture details, see [docs/architecture.md](../architecture.md).
+
 ## Introduction
 
 This document outlines the design for implementing a `DbContextFactory` pattern to facilitate dependency injection of `DbContext` instances in an ASP.NET Core application. The `DbContextFactory` pattern is particularly useful for scenarios where `DbContext` instances are needed outside of the typical request/response lifecycle, such as in background services or during design-time operations. This architecture also ensures that, as `DbContext` instances are registered as scoped services, they will be disposed of after each request and will not conflict with each other, avoiding the situation where one request's `DbContext` is used by another request and throws an exception.

@@ -47,17 +47,20 @@ Every issue has at least one **layer** label and zero or more **type** labels. L
 
 All active issues are assigned to a milestone. Milestones are ordered and represent sequential phases:
 
-| Milestone | Description | Can Start When |
-|-----------|-------------|----------------|
+| Milestone | Description | Status |
+|-----------|-------------|--------|
 | **Phase 0: Housekeeping** | Standalone cleanup (remove Blazor, fix CI) | **COMPLETE** |
 | **Phase 1: OpenAPI Spec-First** | Establish API contract as source of truth | **COMPLETE** |
 | **Phase 2: Backend DTO Generation** | Replace ViewModels with spec-generated DTOs | **COMPLETE** |
-| **Phase 3: Aspire Developer Experience** | Local dev orchestration with .NET Aspire | Immediately |
-| **Phase 4: React Frontend** | Build React/Vite SPA | Phase 0 done (setup), Phase 1 done (codegen) |
-| **Phase 5: Test Coverage** | Code coverage collection, CI reporting, enforcement gate, agent test-writing loop | Phase 3 MVP done |
-| **Phase 6: Docker Deployment** | Containerize and deploy to Raspberry Pi | Phase 4 MVP done |
-| **Phase 7: Correctness Hardening** | Business invariants, receipt coherence validation | Phase 2 done (stable API model) |
-| **Phase 8: Security Automation** | Snyk-to-Linear integration | Phase 2 done |
+| **Phase 3: Aspire Developer Experience** | Local dev orchestration with .NET Aspire | **COMPLETE** |
+| **Phase 4: React Frontend** | Build React/Vite SPA with auth, CRUD, audit, UX polish | **COMPLETE** |
+| **Phase 5: Test Coverage** | Code coverage collection, CI reporting, enforcement gate | **COMPLETE** |
+| **Phase 6: Docker Deployment** | Containerize and deploy to Raspberry Pi | **COMPLETE** |
+| **Phase 7: Correctness Hardening** | Business invariants, receipt coherence validation | **COMPLETE** |
+| **Phase 8: Security Automation** | Snyk-to-Linear integration | **COMPLETE** |
+| **Phase 9: Test Quality & Integration Testing** | Frontend integration tests, backend Testcontainers | Active |
+| **Phase 10: Dashboard** | Graphs, charts, and spending statistics | **COMPLETE** |
+| **Phase 11: Receipt Entry Workflow** | Multi-step receipt entry wizard | **COMPLETE** |
 
 ## Priority Semantics
 
@@ -91,98 +94,42 @@ Epics are parent issues that group related work.
 |------|-----------|--------|
 | **MGG-89** OpenAPI Spec-First API Contract | Phase 1 | Done |
 | **MGG-83** Replace ViewModels with DTOs | Phase 2 | Done |
+| **MGG-109** Core Aspire Orchestration | Phase 3 | Done |
+| **MGG-110** AI-Powered Dev Tooling | Phase 3 | Done |
+| **MGG-111** Frontend Bootstrap & Codegen | Phase 4 | Done |
+| **MGG-112** Authentication System | Phase 4 | Done |
+| **MGG-113** Core CRUD Modules | Phase 4 | Done |
+| **MGG-114** Data Safety & Audit Trail | Phase 4 | Done |
+| **MGG-115** UX Polish & Enhancements | Phase 4 | Done |
+| **MGG-116** Frontend Quality & Documentation | Phase 4 | Done |
+| **MGG-128** Permission System | Phase 4 | Done |
+| **MGG-176** Eliminate All UUID Entry Fields | Phase 4 | Done |
+| **MGG-121** Test Coverage Pipeline | Phase 5 | Done |
+| **MGG-117** Container Architecture & CI | Phase 6 | Done |
+| **MGG-118** Production Operations | Phase 6 | Done |
+| **MGG-119** Deployment Security & Documentation | Phase 6 | Done |
+| **MGG-94** Correctness Hardening | Phase 7 | Done |
+| **MGG-104** Snyk-to-Linear Integration | Phase 8 | Done |
+| **MGG-279** Dashboard | Phase 10 | Done |
+| **MGG-306** Receipt Entry Workflow | Phase 11 | Done |
+| **MGG-315** Bugs & UX Polish (Docker Testing) | — | Done |
 
-### Phase 3: Aspire Developer Experience
+### Active Phase: Phase 9 — Test Quality & Integration Testing
 
-| Epic | Children | MVP? |
-|------|----------|------|
-| **MGG-109** Core Aspire Orchestration | MGG-72, 73, 74, 76, 77, 80 | Yes |
-| **MGG-110** AI-Powered Dev Tooling | MGG-78, 79 | No — follow-up |
-
-### Phase 4: React Frontend
-
-| Epic | Children | MVP? |
-|------|----------|------|
-| **MGG-111** Frontend Bootstrap & Codegen | MGG-33, 36, 75, 48 | Yes |
-| **MGG-112** Authentication System | MGG-34, 35 | Yes |
-| **MGG-113** Core CRUD Modules | MGG-38, 39, 40, 41, 42, 43 | Yes |
-| **MGG-114** Data Safety & Audit Trail | MGG-66, 67, 68, 69 | No — follow-up |
-| **MGG-115** UX Polish & Enhancements | MGG-37, 44, 45, 46, 47 | No — follow-up |
-| **MGG-116** Frontend Quality & Documentation | MGG-49, 50 | No — follow-up |
-
-### Phase 5: Test Coverage
-
-| Epic | Children | MVP? |
-|------|----------|------|
-| **MGG-121** Test Coverage Pipeline | MGG-122, 123, 124, 125, 126, 127 | All MVP |
-
-### Phase 6: Docker Deployment
-
-| Epic | Children | MVP? |
-|------|----------|------|
-| **MGG-117** Container Architecture & CI | MGG-52, 53, 54, 55, 57 | Yes |
-| **MGG-118** Production Operations | MGG-58, 59, 61, 62, 63, 64 | Mixed (58, 59 MVP) |
-| **MGG-119** Deployment Security & Documentation | MGG-56, 60, 65, 70 | No — follow-up |
-
-Dependency chain:
-```
-MGG-122 (coverlet/.NET) ──┐
-                           ├──> MGG-123 (CI report, both stacks) ──> MGG-124 (enforcement gate)
-MGG-126 (Vitest/React) ───┘
-MGG-33  (React app) ──────> MGG-126
-
-MGG-122 ──> MGG-125 (agent loop: .NET)
-MGG-126 ──> MGG-127 (agent loop: React)
-```
-
-### Phase 7: Correctness Hardening
-
-| Epic | Children | MVP? |
-|------|----------|------|
-| **MGG-94** Correctness Hardening | MGG-197, 198, 199, 200, 201, 202, 203 | All MVP |
-
-Dependency chain:
-```
-MGG-197 (validation pipeline) ──┐
-                                 ├──> MGG-199 (hard invariants) ──┐
-MGG-198 (adjustment entity) ────┤                                  ├──> MGG-202 (tests)
-                                 ├──> MGG-200 (soft invariants) ──┤
-                                 │         │                       │
-                                 │         └──> MGG-201 (frontend) ┘
-                                 │              ▲
-                                 └──────────────┘
-
-MGG-203 (docs) — no dependencies, anytime
-```
+| Epic | Description | Status |
+|------|-------------|--------|
+| **MGG-251** Plan and scaffold integration test suite | Frontend integration tests (MSW, realistic API responses) | Backlog |
+| **MGG-260** Backend integration tests with real PostgreSQL (Testcontainers) | Replace InMemory provider with Testcontainers | Backlog |
 
 ### Retired Epics
 
-These monolithic epics were replaced by the focused epics above:
+These monolithic epics were replaced by focused epics:
 
 | Old Epic | Replaced By | Status |
 |----------|-------------|--------|
 | **MGG-71** .NET Aspire AppHost | MGG-109, MGG-110 | Canceled |
 | **MGG-32** React/Vite Frontend | MGG-111–116 | Canceled |
 | **MGG-51** Docker Deployment | MGG-117–119 | Canceled |
-
-## Key Cross-Epic Dependencies
-
-```
-Phase 4 entry points (no blockers):
-  MGG-33 (React setup) — MGG-90 is Done
-  MGG-34 (Backend auth) — no blockers
-
-Phase 4 critical path:
-  MGG-33 ──> MGG-36 (TS codegen) ──> MGG-38–43 (CRUD modules)
-  MGG-33 ──> MGG-75 (Vite in Aspire)
-  MGG-34 ──> MGG-35 (Frontend auth UI)
-  MGG-34 ──> MGG-66, 67, 68 (Data safety)
-
-Phase 6 gate:
-  MGG-111 + MGG-112 + MGG-113 (Phase 4 MVP) ──blocks──> MGG-117 (Containers)
-  MGG-117 ──blocks──> MGG-118 (Operations)
-  MGG-117 ──blocks──> MGG-119 (Security & Docs)
-```
 
 ## Working with Linear Issues
 

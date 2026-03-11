@@ -29,7 +29,7 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
     - `Configuration/` - Service registration extension methods
     - `Hubs/ReceiptsHub.cs` - SignalR hub
   - **Client** (`src/client/`) - React/Vite SPA (TypeScript, TanStack Query/Router, Tailwind CSS, shadcn/ui)
-- **AppHost** (`src/AppHost/`) - .NET Aspire orchestration (API + PostgreSQL + React dev server)
+- **AppHost** (`src/Receipts.AppHost/`) - .NET Aspire orchestration (API + PostgreSQL + React dev server)
 
 ## Key Patterns
 
@@ -41,6 +41,34 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
 - **Service Registration**: Each layer has a static extension method (`RegisterApplicationServices`, `RegisterInfrastructureServices`) for DI setup
 - **Soft Delete**: Entities support soft delete with restore capabilities and trash management
 - **Audit Logging**: All mutations are logged with user/API key attribution
+
+### Adjustment Entity (Phase 7)
+
+The `Adjustment` entity captures receipt-level monetary adjustments (tips, discounts, coupons, rounding):
+
+```csharp
+public class Adjustment
+{
+    public Guid Id { get; set; }
+    public Guid ReceiptId { get; set; }
+    public AdjustmentType Type { get; set; }  // Tip, Discount, Rounding, Coupon, etc.
+    public Money Amount { get; set; }          // Signed: +tip, -coupon
+    public string? Description { get; set; }   // Required when Type == Other
+}
+```
+
+The balance equation enforced across receipts:
+
+```
+sum(item.TotalAmount) + Receipt.TaxAmount + sum(adjustment.Amount) == sum(transaction.Amount)
+```
+
+### Validation Tiers (Phase 7)
+
+- **Hard invariants** (reject if violated): Balance equation, non-negative prices, line-item totals within rounding tolerance
+- **Soft invariants** (warn, don't reject): Tax reasonableness (0–25%), adjustment reasonableness (<10% of subtotal), date consistency
+
+See [docs/design/phase7-correctness-hardening.md](design/phase7-correctness-hardening.md) for the full design document.
 
 ## Database
 
@@ -72,6 +100,8 @@ tests/
 ```
 
 ## Object Mapping with Mapperly
+
+> **See also:** [docs/coding-standards.md](coding-standards.md#mapperly-rules) for the concise rule list. Both documents should stay in sync — code examples live here, rules live there.
 
 This project uses [Mapperly](https://github.com/riok/mapperly) for compile-time object mapping. Mapperly was chosen over AutoMapper for:
 - Zero licensing costs (Apache 2.0 vs AutoMapper's commercial license)
