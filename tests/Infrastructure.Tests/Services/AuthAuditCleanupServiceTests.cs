@@ -38,21 +38,22 @@ public class AuthAuditCleanupServiceTests
 	public async Task ExecuteAsync_CallsCleanupOnService()
 	{
 		// Arrange
-		TaskCompletionSource invoked = new();
+		TaskCompletionSource executed = new();
 		_auditServiceMock
 			.Setup(s => s.CleanupOldEntriesAsync(180, It.IsAny<CancellationToken>()))
 			.Returns<int, CancellationToken>((_, _) =>
 			{
-				invoked.TrySetResult();
+				executed.TrySetResult();
 				return Task.FromResult(5);
 			});
 
 		AuthAuditCleanupService service = new(_scopeFactoryMock.Object, _loggerMock.Object);
 		using CancellationTokenSource cts = new();
 
-		// Act
+		// Act — StartAsync dispatches ExecuteAsync to the thread pool via Task.Run,
+		// so we must wait for the TCS before cancelling to avoid a race.
 		await service.StartAsync(cts.Token);
-		await invoked.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		await executed.Task.WaitAsync(TimeSpan.FromSeconds(5));
 		cts.Cancel();
 		await service.StopAsync(CancellationToken.None);
 
@@ -66,12 +67,12 @@ public class AuthAuditCleanupServiceTests
 	public async Task ExecuteAsync_LogsCleanupStatistics()
 	{
 		// Arrange
-		TaskCompletionSource invoked = new();
+		TaskCompletionSource executed = new();
 		_auditServiceMock
 			.Setup(s => s.CleanupOldEntriesAsync(180, It.IsAny<CancellationToken>()))
 			.Returns<int, CancellationToken>((_, _) =>
 			{
-				invoked.TrySetResult();
+				executed.TrySetResult();
 				return Task.FromResult(42);
 			});
 
@@ -80,7 +81,7 @@ public class AuthAuditCleanupServiceTests
 
 		// Act
 		await service.StartAsync(cts.Token);
-		await invoked.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		await executed.Task.WaitAsync(TimeSpan.FromSeconds(5));
 		cts.Cancel();
 		await service.StopAsync(CancellationToken.None);
 
@@ -99,12 +100,12 @@ public class AuthAuditCleanupServiceTests
 	public async Task ExecuteAsync_ContinuesOnException()
 	{
 		// Arrange
-		TaskCompletionSource invoked = new();
+		TaskCompletionSource executed = new();
 		_auditServiceMock
 			.Setup(s => s.CleanupOldEntriesAsync(180, It.IsAny<CancellationToken>()))
 			.Returns<int, CancellationToken>((_, _) =>
 			{
-				invoked.TrySetResult();
+				executed.TrySetResult();
 				return Task.FromException<int>(new InvalidOperationException("Database error"));
 			});
 
@@ -113,7 +114,7 @@ public class AuthAuditCleanupServiceTests
 
 		// Act — should not throw
 		await service.StartAsync(cts.Token);
-		await invoked.Task.WaitAsync(TimeSpan.FromSeconds(5));
+		await executed.Task.WaitAsync(TimeSpan.FromSeconds(5));
 		cts.Cancel();
 		Func<Task> act = async () => await service.StopAsync(CancellationToken.None);
 
