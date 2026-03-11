@@ -70,6 +70,32 @@ export function useCreateTransaction() {
   });
 }
 
+export function useCreateTransactionsBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      receiptId,
+      body,
+    }: {
+      receiptId: string;
+      body: { amount: number; date: string; accountId: string }[];
+    }) => {
+      const { data, error } = await client.POST(
+        "/api/receipts/{receiptId}/transactions/batch",
+        { params: { path: { receiptId } }, body },
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    },
+    onError: () => {
+      toast.error("Failed to create transactions");
+    },
+  });
+}
+
 export function useUpdateTransaction() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -12,11 +12,11 @@ vi.mock("@/hooks/useReceipts", () => ({
 }));
 
 vi.mock("@/hooks/useTransactions", () => ({
-  useCreateTransaction: vi.fn(() => mockMutationResult()),
+  useCreateTransactionsBatch: vi.fn(() => mockMutationResult()),
 }));
 
 vi.mock("@/hooks/useReceiptItems", () => ({
-  useCreateReceiptItem: vi.fn(() => mockMutationResult()),
+  useCreateReceiptItemsBatch: vi.fn(() => mockMutationResult()),
 }));
 
 describe("NewReceipt", () => {
