@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.12](https://github.com/mggarofalo/Receipts/compare/v0.1.11...v0.1.12) (2026-03-11)
+
+
+### Features
+
+* **api,client:** serve enum metadata via API (MGG-328) ([#164](https://github.com/mggarofalo/Receipts/issues/164)) ([8ef6df8](https://github.com/mggarofalo/Receipts/commit/8ef6df88851f7769d72d5ba041a0434a90d3d75b))
+
+
+### Bug Fixes
+
+* **client:** wrap custom hook returns in useMemo for referential stability (MGG-327) ([#162](https://github.com/mggarofalo/Receipts/issues/162)) ([e1ef7f0](https://github.com/mggarofalo/Receipts/commit/e1ef7f0476b42d94639038da5945f21895442827))
+
 ## [0.1.11](https://github.com/mggarofalo/Receipts/compare/v0.1.10...v0.1.11) (2026-03-10)
 
 
