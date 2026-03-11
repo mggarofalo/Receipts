@@ -92,4 +92,103 @@ describe("Combobox", () => {
 
     expect(screen.getByRole("combobox")).toHaveTextContent("custom-value");
   });
+
+  it("filters options when typing in the search input", async () => {
+    const user = userEvent.setup();
+    render(<Combobox {...defaultProps} />);
+
+    await user.click(screen.getByRole("combobox"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Apple")).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText("Search fruit..."), "app");
+
+    await waitFor(() => {
+      expect(screen.getByText("Apple")).toBeInTheDocument();
+      expect(screen.queryByText("Banana")).not.toBeInTheDocument();
+      expect(screen.queryByText("Cherry")).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows empty message when no options match the search", async () => {
+    const user = userEvent.setup();
+    render(
+      <Combobox {...defaultProps} emptyMessage="Nothing found." />,
+    );
+
+    await user.click(screen.getByRole("combobox"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Apple")).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText("Search fruit..."), "xyz");
+
+    await waitFor(() => {
+      expect(screen.getByText("Nothing found.")).toBeInTheDocument();
+    });
+  });
+
+  it("clears search and shows all options after selecting a filtered item", async () => {
+    const onValueChange = vi.fn();
+    const user = userEvent.setup();
+    render(<Combobox {...defaultProps} onValueChange={onValueChange} />);
+
+    // Open and type to filter
+    await user.click(screen.getByRole("combobox"));
+    await waitFor(() => {
+      expect(screen.getByText("Apple")).toBeInTheDocument();
+    });
+    await user.type(screen.getByPlaceholderText("Search fruit..."), "ban");
+
+    await waitFor(() => {
+      expect(screen.getByText("Banana")).toBeInTheDocument();
+      expect(screen.queryByText("Apple")).not.toBeInTheDocument();
+    });
+
+    // Select the filtered item
+    await user.click(screen.getByText("Banana"));
+    expect(onValueChange).toHaveBeenCalledWith("banana");
+
+    // Reopen — all options should be visible (search was cleared)
+    await user.click(screen.getByRole("combobox"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Apple")).toBeInTheDocument();
+      expect(screen.getByText("Banana")).toBeInTheDocument();
+      expect(screen.getByText("Cherry")).toBeInTheDocument();
+    });
+  });
+
+  it("filters by sublabel when present", async () => {
+    const optionsWithSublabels: ComboboxOption[] = [
+      { value: "milk", label: "Milk", sublabel: "Dairy" },
+      { value: "bread", label: "Bread", sublabel: "Bakery" },
+      { value: "apple", label: "Apple", sublabel: "Produce" },
+    ];
+    const user = userEvent.setup();
+    render(
+      <Combobox
+        {...defaultProps}
+        options={optionsWithSublabels}
+        searchPlaceholder="Search items..."
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox"));
+    await waitFor(() => {
+      expect(screen.getByText("Milk")).toBeInTheDocument();
+    });
+
+    // Type the sublabel text — should match the item with that sublabel
+    await user.type(screen.getByPlaceholderText("Search items..."), "dairy");
+
+    await waitFor(() => {
+      expect(screen.getByText("Milk")).toBeInTheDocument();
+      expect(screen.queryByText("Bread")).not.toBeInTheDocument();
+      expect(screen.queryByText("Apple")).not.toBeInTheDocument();
+    });
+  });
 });
