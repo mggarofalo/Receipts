@@ -225,4 +225,10 @@ describe("Layout", () => {
       expect(screen.getByText("API Keys")).toBeInTheDocument();
     });
   });
+
+  it("does not show version info when version is dev and hash is local", () => {
+    // Default globals from vite.config.ts define block are "dev" and "local"
+    renderLayout();
+    expect(screen.queryByText(/dev/)).not.toBeInTheDocument();
+  });
 });

@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -41,6 +42,12 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+
+const appVersion = __APP_VERSION__;
+const commitHash = __COMMIT_HASH__;
+const showVersion = appVersion !== "dev" && commitHash !== "local";
+const shortHash = commitHash.slice(0, 7);
+const commitUrl = `https://github.com/mggarofalo/Receipts/commit/${commitHash}`;
 
 const connectionStateColors: Record<SignalRConnectionState, string> = {
   connected: "bg-green-500",
@@ -318,6 +325,23 @@ export function Layout() {
                   <DropdownMenuItem onClick={handleLogout}>
                     Logout
                   </DropdownMenuItem>
+                  {showVersion && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                        {appVersion} &middot;{" "}
+                        <a
+                          href={commitUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {shortHash}
+                        </a>
+                      </DropdownMenuLabel>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -414,6 +438,19 @@ export function Layout() {
                   Logout
                 </button>
               </>
+            )}
+            {showVersion && (
+              <p className="px-3 py-2 text-xs text-muted-foreground">
+                {appVersion} &middot;{" "}
+                <a
+                  href={commitUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  {shortHash}
+                </a>
+              </p>
             )}
           </div>
         </SheetContent>
