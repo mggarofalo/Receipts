@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   getSearchHistory,
   addSearchHistoryEntry,
@@ -18,5 +18,8 @@ export function useSearchHistory() {
     setHistory([]);
   }, []);
 
-  return { history, addEntry, clearAll };
+  return useMemo(
+    () => ({ history, addEntry, clearAll }),
+    [history, addEntry, clearAll],
+  );
 }

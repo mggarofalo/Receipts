@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const WARNING_DELAY_MS = 5_000;
 
@@ -31,5 +31,7 @@ export function useSubmitTimeout(isSubmitting: boolean): {
     return () => clearTimeout(timer);
   }, [isSubmitting, submitGeneration]);
 
-  return { isWarning: isSubmitting && warningGeneration === submitGeneration };
+  const isWarning = isSubmitting && warningGeneration === submitGeneration;
+
+  return useMemo(() => ({ isWarning }), [isWarning]);
 }

@@ -25,5 +25,8 @@ export function useEntityLinkParams<T extends string>(recognizedParams: readonly
 
   const hasActiveFilter = Object.keys(params).length > 0;
 
-  return { params, clearParams, hasActiveFilter };
+  return useMemo(
+    () => ({ params, clearParams, hasActiveFilter }),
+    [params, clearParams, hasActiveFilter],
+  );
 }

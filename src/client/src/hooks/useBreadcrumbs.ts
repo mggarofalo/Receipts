@@ -1,4 +1,5 @@
 import { useLocation } from "react-router";
+import { useMemo } from "react";
 
 const routeLabels: Record<string, string> = {
   "/": "Home",
@@ -33,27 +34,31 @@ export interface BreadcrumbSegment {
   path: string;
 }
 
+const EMPTY: BreadcrumbSegment[] = [];
+
 export function useBreadcrumbs(): BreadcrumbSegment[] {
   const { pathname } = useLocation();
 
-  if (pathname === "/") return [];
+  return useMemo(() => {
+    if (pathname === "/") return EMPTY;
 
-  const crumbs: BreadcrumbSegment[] = [{ label: "Home", path: "/" }];
+    const crumbs: BreadcrumbSegment[] = [{ label: "Home", path: "/" }];
 
-  // Handle nested paths like /admin/users
-  const label = routeLabels[pathname];
-  if (label) {
-    crumbs.push({ label, path: pathname });
-  } else {
-    // Build segments for unknown paths
-    const parts = pathname.split("/").filter(Boolean);
-    let accumulated = "";
-    for (const part of parts) {
-      accumulated += `/${part}`;
-      const segLabel = routeLabels[accumulated] ?? toTitleCase(part);
-      crumbs.push({ label: segLabel, path: accumulated });
+    // Handle nested paths like /admin/users
+    const label = routeLabels[pathname];
+    if (label) {
+      crumbs.push({ label, path: pathname });
+    } else {
+      // Build segments for unknown paths
+      const parts = pathname.split("/").filter(Boolean);
+      let accumulated = "";
+      for (const part of parts) {
+        accumulated += `/${part}`;
+        const segLabel = routeLabels[accumulated] ?? toTitleCase(part);
+        crumbs.push({ label: segLabel, path: accumulated });
+      }
     }
-  }
 
-  return crumbs;
+    return crumbs;
+  }, [pathname]);
 }

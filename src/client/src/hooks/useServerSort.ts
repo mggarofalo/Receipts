@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 interface UseServerSortOptions {
   defaultSortBy?: string;
@@ -41,5 +41,8 @@ export function useServerSort({
     [sortBy, sortDirection, setSearchParams],
   );
 
-  return { sortBy, sortDirection, toggleSort };
+  return useMemo(
+    () => ({ sortBy, sortDirection, toggleSort }),
+    [sortBy, sortDirection, toggleSort],
+  );
 }
