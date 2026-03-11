@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
 
 const appVersion = __APP_VERSION__;
 const commitHash = __COMMIT_HASH__;
-const showVersion = !(appVersion === "dev" && commitHash === "local");
+const showVersion = appVersion !== "dev" && commitHash !== "local";
 const shortHash = commitHash.slice(0, 7);
 const commitUrl = `https://github.com/mggarofalo/Receipts/commit/${commitHash}`;
 
