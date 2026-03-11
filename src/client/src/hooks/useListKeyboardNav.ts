@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 
 export interface UseListKeyboardNavOptions<T> {
@@ -136,13 +136,18 @@ export function useListKeyboardNav<T>({
     [selected, items.length, onSelectAll, onDeselectAll],
   );
 
-  return {
-    focusedIndex,
-    setFocusedIndex,
-    tableRef,
-    focusedId:
-      focusedIndex >= 0 && focusedIndex < items.length
-        ? getId(items[focusedIndex])
-        : null,
-  };
+  const focusedId =
+    focusedIndex >= 0 && focusedIndex < items.length
+      ? getId(items[focusedIndex])
+      : null;
+
+  return useMemo(
+    () => ({
+      focusedIndex,
+      setFocusedIndex,
+      tableRef,
+      focusedId,
+    }),
+    [focusedIndex, setFocusedIndex, tableRef, focusedId],
+  );
 }
