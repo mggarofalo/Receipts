@@ -13,6 +13,8 @@
 
 ## Mapperly Rules
 
+See also [docs/architecture.md](architecture.md#object-mapping-with-mapperly) for Mapperly code examples and patterns.
+
 - Use Mapperly, not AutoMapper
 - Use concrete mapper instances in tests — never mock mappers
 - Don't use `[UseMapper(typeof(...))]` — instantiate mapper dependencies as fields and call explicitly
@@ -29,6 +31,32 @@ Prefer **narrow projections** — always select the minimum required fields:
 - Avoid loading full entities when only a subset of fields is required
 - For delete/update-only operations, prefer `ExecuteUpdateAsync`/`ExecuteDeleteAsync` over materializing entities
 - Eliminate N+1 query patterns — use joined queries or batch operations instead of loops
+
+## Frontend / TypeScript
+
+### React Custom Hook Stability
+
+All functions, objects, and arrays returned from custom hooks (`use*`) **must** be referentially stable:
+
+- Wrap returned functions in `useCallback`
+- Wrap returned objects/arrays in `useMemo`
+- Ensure reducers return the same state reference when values haven't changed (bail out with `return state`)
+
+**Why:** Consumers may place hook return values in `useEffect`/`useMemo`/`useCallback` dependency arrays. Unstable references cause infinite render loops that are invisible in static review and pass individual test files but hang the full test suite.
+
+### TypeScript Conventions
+
+- Use strict TypeScript (`strict: true` in `tsconfig.json`)
+- Prefer `interface` over `type` for object shapes (better error messages, extensibility)
+- Use generated API types from `src/client/src/generated/` — never hand-write request/response types
+- Prefer named exports over default exports
+
+### Component Conventions
+
+- Use function components exclusively (no class components)
+- Co-locate component tests with their source files or in `__tests__/` directories
+- Use React Hook Form + Zod for all form handling — no uncontrolled forms
+- Use TanStack Query for all server state — no `useEffect` + `useState` for API calls
 
 ## Validation and Code Quality
 
