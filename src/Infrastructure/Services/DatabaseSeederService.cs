@@ -19,7 +19,12 @@ public static class DatabaseSeederService
 		{
 			if (!await roleManager.RoleExistsAsync(role))
 			{
-				await roleManager.CreateAsync(new IdentityRole(role));
+				IdentityResult roleResult = await roleManager.CreateAsync(new IdentityRole(role));
+				if (!roleResult.Succeeded)
+				{
+					throw new InvalidOperationException(
+						$"Failed to create role '{role}': {string.Join(", ", roleResult.Errors.Select(e => e.Description))}");
+				}
 			}
 		}
 

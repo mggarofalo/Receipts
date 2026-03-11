@@ -44,6 +44,65 @@ public class DatabaseSeederServiceTests
 	}
 
 	[Fact]
+	public async Task SeedRolesAndAdminAsync_ThrowsWhenRoleCreationFails()
+	{
+		// Arrange
+		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
+			.ReturnsAsync(false);
+
+		IdentityError error = new() { Code = "DuplicateRoleName", Description = "Role already exists." };
+		_mockRoleManager.Setup(r => r.CreateAsync(It.IsAny<IdentityRole>()))
+			.ReturnsAsync(IdentityResult.Failed(error));
+
+		// Act
+		Func<Task> act = () => DatabaseSeederService.SeedRolesAndAdminAsync(_serviceProvider);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*Failed to create role*Role already exists.*");
+	}
+
+	[Fact]
+	public async Task SeedRolesAndAdminAsync_CreatesAllRolesWhenNoneExist()
+	{
+		// Arrange
+		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
+			.ReturnsAsync(false);
+		_mockRoleManager.Setup(r => r.CreateAsync(It.IsAny<IdentityRole>()))
+			.ReturnsAsync(IdentityResult.Success);
+
+		_mockUserManager.Setup(u => u.GetUsersInRoleAsync(AppRoles.Admin))
+			.ReturnsAsync(new List<ApplicationUser> { new() });
+
+		// Act
+		await DatabaseSeederService.SeedRolesAndAdminAsync(_serviceProvider);
+
+		// Assert
+		foreach (string role in AppRoles.All)
+		{
+			_mockRoleManager.Verify(r => r.CreateAsync(
+				It.Is<IdentityRole>(ir => ir.Name == role)), Times.Once);
+		}
+	}
+
+	[Fact]
+	public async Task SeedRolesAndAdminAsync_SkipsExistingRoles()
+	{
+		// Arrange
+		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
+			.ReturnsAsync(true);
+
+		_mockUserManager.Setup(u => u.GetUsersInRoleAsync(AppRoles.Admin))
+			.ReturnsAsync(new List<ApplicationUser> { new() });
+
+		// Act
+		await DatabaseSeederService.SeedRolesAndAdminAsync(_serviceProvider);
+
+		// Assert
+		_mockRoleManager.Verify(r => r.CreateAsync(It.IsAny<IdentityRole>()), Times.Never);
+	}
+
+	[Fact]
 	public async Task SeedRolesAndAdminAsync_WhenAddToAdminRoleFails_ThrowsInvalidOperationException()
 	{
 		// Arrange
