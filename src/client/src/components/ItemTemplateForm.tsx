@@ -53,7 +53,7 @@ export function ItemTemplateForm({
 
   const { data: categories } = useCategories();
   const categoryOptions =
-    (categories as { id: string; name: string }[] | undefined)?.map((c) => ({
+    (categories?.data as { id: string; name: string }[] | undefined)?.map((c) => ({
       value: c.name,
       label: c.name,
     })) ?? [];
@@ -77,7 +77,7 @@ export function ItemTemplateForm({
   const watchedCategory = form.watch("defaultCategory");
 
   const selectedCategoryId =
-    (categories as { id: string; name: string }[] | undefined)?.find(
+    (categories?.data as { id: string; name: string }[] | undefined)?.find(
       (c) => c.name === watchedCategory,
     )?.id ?? null;
 
@@ -85,7 +85,7 @@ export function ItemTemplateForm({
     useSubcategoriesByCategoryId(selectedCategoryId);
 
   const subcategoryOptions =
-    (subcategoriesData as { id: string; name: string }[] | undefined)?.map(
+    (subcategoriesData?.data as { id: string; name: string }[] | undefined)?.map(
       (s) => ({
         value: s.name,
         label: s.name,

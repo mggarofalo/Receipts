@@ -49,7 +49,7 @@ export function SubcategoryForm({
   const { data: categories } = useCategories();
 
   const categoryOptions = (
-    categories as { id: string; name: string }[] | undefined
+    categories?.data as { id: string; name: string }[] | undefined
   )?.map((c) => ({
     value: c.id,
     label: c.name,

@@ -101,14 +101,14 @@ export function ReceiptItemForm({
   const categories = categoriesResponse?.data as { id: string; name: string }[] | undefined;
   const { data: itemTemplatesData } = useItemTemplates();
   const templates = useMemo(
-    () => (itemTemplatesData as ItemTemplate[] | undefined) ?? [],
+    () => (itemTemplatesData?.data as ItemTemplate[] | undefined) ?? [],
     [itemTemplatesData],
   );
 
   const receiptOptions = useMemo(
     () =>
       (
-        (receipts as
+        (receipts?.data as
           | {
               id: string;
               location: string;
@@ -161,7 +161,7 @@ export function ReceiptItemForm({
   const subcategoryOptions = useMemo(
     () =>
       (
-        (subcategoriesData as { id: string; name: string }[] | undefined) ?? []
+        (subcategoriesData?.data as { id: string; name: string }[] | undefined) ?? []
       ).map((s) => ({
         value: s.name,
         label: s.name,
