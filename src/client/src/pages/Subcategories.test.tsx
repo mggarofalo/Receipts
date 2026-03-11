@@ -21,7 +21,7 @@ vi.mock("@/hooks/useSubcategories", () => ({
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({ data: [], isLoading: false })),
+  useCategories: vi.fn(() => ({ data: { data: [] }, isLoading: false })),
 }));
 
 vi.mock("@/hooks/useFuzzySearch", () => ({
@@ -122,12 +122,9 @@ async function setupWithData(items = ITEMS, categories = CATEGORIES) {
   );
 
   const { useCategories } = await import("@/hooks/useCategories");
-  // Use Object.assign to create an array with a .data property so both
-  // the page (accesses .data) and SubcategoryForm (iterates directly) work.
-  const catData = Object.assign([...categories], { data: categories });
   vi.mocked(useCategories).mockReturnValue(
     mockQueryResult({
-      data: catData,
+      data: { data: categories },
       isLoading: false,
     }),
   );

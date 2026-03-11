@@ -129,7 +129,7 @@ export function Step3Items({
   const subcategoryOptions = useMemo(
     () =>
       (
-        (subcategories as { id: string; name: string }[] | undefined) ?? []
+        (subcategories?.data as { id: string; name: string }[] | undefined) ?? []
       ).map((s) => ({ value: s.name, label: s.name })),
     [subcategories],
   );

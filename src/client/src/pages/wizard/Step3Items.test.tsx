@@ -21,7 +21,7 @@ vi.mock("@/hooks/useCategories", () => ({
 vi.mock("@/hooks/useSubcategories", () => ({
   useSubcategoriesByCategoryId: vi.fn(() =>
     mockQueryResult({
-      data: [],
+      data: { data: [] },
       isLoading: false,
       isSuccess: true,
     }),
