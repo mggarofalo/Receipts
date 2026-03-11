@@ -71,4 +71,12 @@ describe("DateRangeSelector", () => {
       }),
     );
   });
+
+  it("renders a dropdown selector", () => {
+    const onChange = vi.fn();
+    renderWithProviders(
+      <DateRangeSelector value={defaultRange} onChange={onChange} />,
+    );
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+  });
 });
