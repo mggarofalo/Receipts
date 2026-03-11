@@ -78,6 +78,40 @@ export function useCreateReceiptItem() {
   });
 }
 
+export function useCreateReceiptItemsBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      receiptId,
+      body,
+    }: {
+      receiptId: string;
+      body: {
+        receiptItemCode: string;
+        description: string;
+        quantity: number;
+        unitPrice: number;
+        category: string;
+        subcategory: string;
+        pricingMode: "quantity" | "flat";
+      }[];
+    }) => {
+      const { data, error } = await client.POST(
+        "/api/receipts/{receiptId}/receipt-items/batch",
+        { params: { path: { receiptId } }, body },
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receipt-items"] });
+    },
+    onError: () => {
+      toast.error("Failed to create receipt items");
+    },
+  });
+}
+
 export function useUpdateReceiptItem() {
   const queryClient = useQueryClient();
   return useMutation({
