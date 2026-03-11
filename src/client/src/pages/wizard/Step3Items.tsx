@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useId } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -83,7 +83,7 @@ export function Step3Items({
 }: Step3Props) {
   const [items, setItems] = useState<WizardReceiptItem[]>(data);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestionsListId = useId();
+  const suggestionsListId = "step3-suggestions-list";
   const { data: categories } = useCategories();
 
   const categoryOptions = useMemo(
@@ -328,7 +328,7 @@ export function Step3Items({
                       onOpenAutoFocus={(e) => e.preventDefault()}
                       onInteractOutside={() => setShowSuggestions(false)}
                     >
-                      <Command>
+                      <Command shouldFilter={false}>
                         <CommandList id={suggestionsListId}>
                           <CommandEmpty>No similar items found</CommandEmpty>
                           {similarItems?.map((item) => (
