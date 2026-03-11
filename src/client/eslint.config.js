@@ -29,6 +29,7 @@ export default defineConfig([
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      "react-hook-stability/require-stable-hook-returns": "error",
     },
   },
   {
