@@ -39,23 +39,21 @@ vi.mock("@/hooks/useEnumMetadata", () => ({
 
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "cat-1", name: "Groceries" },
-        { id: "cat-2", name: "Electronics" },
-      ],
-    },
+    data: [
+      { id: "cat-1", name: "Groceries" },
+      { id: "cat-2", name: "Electronics" },
+    ],
+    total: 2,
   })),
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
   useSubcategoriesByCategoryId: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "sub-1", name: "Dairy" },
-        { id: "sub-2", name: "Bakery" },
-      ],
-    },
+    data: [
+      { id: "sub-1", name: "Dairy" },
+      { id: "sub-2", name: "Bakery" },
+    ],
+    total: 2,
   })),
 }));
 

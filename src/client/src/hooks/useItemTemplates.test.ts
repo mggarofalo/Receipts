@@ -55,7 +55,7 @@ describe("useItemTemplates", () => {
         defaultItemCode: "GRO",
       },
     ];
-    (client.GET as Mock).mockResolvedValue({ data: templates, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: templates, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useItemTemplates(), {
       wrapper: createWrapper(),
@@ -158,7 +158,7 @@ describe("useItemTemplates", () => {
 
   it("deleted item templates query returns data on success", async () => {
     const deleted = [{ id: "3", name: "Old Template", description: null }];
-    (client.GET as Mock).mockResolvedValue({ data: deleted, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: deleted, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useDeletedItemTemplates(), {
       wrapper: createWrapper(),

@@ -70,16 +70,16 @@ function Trips() {
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const { data: trip, isLoading: tripLoading, isError } = useTripByReceiptId(receiptId);
 
-  const { data: receiptsResponse, isLoading: receiptsLoading } = useReceipts(0, 10000);
+  const { data: receiptsData, isLoading: receiptsLoading } = useReceipts(0, 10000);
 
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
   const data = useMemo(() => {
-    const list = (receiptsResponse?.data as ReceiptResponse[] | undefined) ?? [];
+    const list = (receiptsData as ReceiptResponse[] | undefined) ?? [];
     return [...list].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-  }, [receiptsResponse?.data]);
+  }, [receiptsData]);
 
   const {
     filters: savedFilters,

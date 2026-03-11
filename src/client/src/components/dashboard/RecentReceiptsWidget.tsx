@@ -19,7 +19,7 @@ function formatCurrency(value: number | string | undefined): string {
 export function RecentReceiptsWidget({ className }: RecentReceiptsWidgetProps) {
   const { data, isLoading } = useReceipts(0, 5, "date", "desc");
 
-  const receipts = useMemo(() => data?.data ?? [], [data?.data]);
+  const receipts = useMemo(() => data ?? [], [data]);
 
   return (
     <ChartCard

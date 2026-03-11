@@ -43,7 +43,7 @@ describe("useAccounts", () => {
     const accounts = [
       { id: "1", accountCode: "ACC1", name: "Checking", isActive: true },
     ];
-    (client.GET as Mock).mockResolvedValue({ data: accounts, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: accounts, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useAccounts(), {
       wrapper: createWrapper(),

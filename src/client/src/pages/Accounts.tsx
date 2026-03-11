@@ -64,7 +64,7 @@ function Accounts() {
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
-  const { data: accountsResponse, isLoading } = useAccounts(offset, limit, sortBy, sortDirection);
+  const { data: accountsData, total: serverTotal, isLoading } = useAccounts(offset, limit, sortBy, sortDirection);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const [createOpen, setCreateOpen] = useState(false);
@@ -86,8 +86,7 @@ function Accounts() {
 
   useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
-  const data = (accountsResponse?.data as AccountResponse[] | undefined) ?? [];
-  const serverTotal = accountsResponse?.total ?? 0;
+  const data = (accountsData as AccountResponse[] | undefined) ?? [];
 
   const { search, setSearch, results, totalCount, clearSearch } =
     useFuzzySearch({ data, config: SEARCH_CONFIG });

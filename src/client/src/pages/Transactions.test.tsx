@@ -8,8 +8,8 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useTransactions", () => ({
-  useTransactions: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
-  useTransactionsByReceiptId: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 200 }, isLoading: false })),
+  useTransactions: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useTransactionsByReceiptId: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useCreateTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteTransactions: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -66,26 +66,22 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
 // Mocks needed by TransactionForm (rendered inside dialogs) and receipt/account lookups
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "r1", location: "Whole Foods", date: "2024-01-14" },
-        { id: "r2", location: "Target Store", date: "2024-01-19" },
-      ],
-      total: 2, offset: 0, limit: 1000,
-    },
+    data: [
+      { id: "r1", location: "Whole Foods", date: "2024-01-14" },
+      { id: "r2", location: "Target Store", date: "2024-01-19" },
+    ],
+    total: 2,
     isLoading: false,
   })),
 }));
 
 vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "a1", name: "Chase Checking" },
-        { id: "a2", name: "Amex Gold" },
-      ],
-      total: 2, offset: 0, limit: 1000,
-    },
+    data: [
+      { id: "a1", name: "Chase Checking" },
+      { id: "a2", name: "Amex Gold" },
+    ],
+    total: 2,
     isLoading: false,
   })),
 }));
@@ -124,7 +120,8 @@ describe("Transactions", () => {
   it("renders empty state when no transactions exist", async () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 
@@ -166,7 +163,8 @@ describe("Transactions", () => {
 
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -199,7 +197,8 @@ describe("Transactions", () => {
 
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -350,7 +349,8 @@ describe("Transactions", () => {
 
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -387,7 +387,8 @@ describe("Transactions", () => {
 
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -427,7 +428,8 @@ describe("Transactions", () => {
 
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 

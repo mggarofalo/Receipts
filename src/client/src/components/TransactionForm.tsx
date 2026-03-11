@@ -53,7 +53,7 @@ export function TransactionForm({
   const receiptOptions = useMemo(
     () =>
       (
-        (receipts?.data as
+        (receipts as
           | { id: string; location: string; date: string }[]
           | undefined) ?? []
       ).map(receiptToOption),
@@ -63,7 +63,7 @@ export function TransactionForm({
   const accountOptions = useMemo(
     () =>
       (
-        (accounts?.data as
+        (accounts as
           | { id: string; name: string; accountCode: string }[]
           | undefined) ?? []
       ).map(accountToOption),

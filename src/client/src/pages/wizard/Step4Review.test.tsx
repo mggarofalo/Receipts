@@ -7,12 +7,11 @@ import type { WizardState } from "./wizardReducer";
 vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() =>
     mockQueryResult({
-      data: {
-        data: [
-          { id: "acct-1", name: "Checking" },
-          { id: "acct-2", name: "Credit Card" },
-        ],
-      },
+      data: [
+        { id: "acct-1", name: "Checking" },
+        { id: "acct-2", name: "Credit Card" },
+      ],
+      total: 2,
       isLoading: false,
       isSuccess: true,
     }),

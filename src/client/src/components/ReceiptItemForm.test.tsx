@@ -25,34 +25,31 @@ vi.mock("@/hooks/useEnumMetadata", () => ({
 
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "r-1", location: "Walmart", date: "2024-01-15" },
-      ],
-    },
+    data: [
+      { id: "r-1", location: "Walmart", date: "2024-01-15" },
+    ],
+    total: 1,
     isLoading: false,
   })),
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "cat-1", name: "Groceries" },
-        { id: "cat-2", name: "Electronics" },
-      ],
-    },
+    data: [
+      { id: "cat-1", name: "Groceries" },
+      { id: "cat-2", name: "Electronics" },
+    ],
+    total: 2,
   })),
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
   useSubcategoriesByCategoryId: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "sub-1", name: "Dairy" },
-        { id: "sub-2", name: "Bakery" },
-      ],
-    },
+    data: [
+      { id: "sub-1", name: "Dairy" },
+      { id: "sub-2", name: "Bakery" },
+    ],
+    total: 2,
   })),
   useCreateSubcategory: vi.fn(() => ({
     mutateAsync: vi.fn(),
@@ -61,18 +58,17 @@ vi.mock("@/hooks/useSubcategories", () => ({
 
 vi.mock("@/hooks/useItemTemplates", () => ({
   useItemTemplates: vi.fn(() => ({
-    data: {
-      data: [
-        {
-          id: "tmpl-1",
-          name: "Milk",
-          defaultCategory: "Groceries",
-          defaultSubcategory: "Dairy",
-          defaultUnitPrice: 3.99,
-          defaultItemCode: "MLK-001",
-        },
-      ],
-    },
+    data: [
+      {
+        id: "tmpl-1",
+        name: "Milk",
+        defaultCategory: "Groceries",
+        defaultSubcategory: "Dairy",
+        defaultUnitPrice: 3.99,
+        defaultItemCode: "MLK-001",
+      },
+    ],
+    total: 1,
   })),
 }));
 

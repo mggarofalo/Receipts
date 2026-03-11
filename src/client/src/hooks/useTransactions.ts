@@ -3,7 +3,7 @@ import client from "@/lib/api-client";
 import { toast } from "sonner";
 
 export function useTransactions(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["transactions", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/transactions", {
@@ -13,6 +13,7 @@ export function useTransactions(offset = 0, limit = 50, sortBy?: string | null, 
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useTransaction(id: string | null) {
@@ -30,7 +31,7 @@ export function useTransaction(id: string | null) {
 }
 
 export function useTransactionsByReceiptId(receiptId: string | null, offset = 0, limit = 200, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["transactions", "by-receipt", receiptId, offset, limit, sortBy, sortDirection],
     enabled: !!receiptId,
     queryFn: async () => {
@@ -41,6 +42,7 @@ export function useTransactionsByReceiptId(receiptId: string | null, offset = 0,
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useCreateTransaction() {
@@ -158,7 +160,7 @@ export function useDeleteTransactions() {
 }
 
 export function useDeletedTransactions(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["transactions", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/transactions/deleted", {
@@ -168,6 +170,7 @@ export function useDeletedTransactions(offset = 0, limit = 50, sortBy?: string |
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useRestoreTransaction() {

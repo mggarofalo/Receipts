@@ -34,9 +34,9 @@ function SecurityLog() {
     failedPagination.resetPage();
   }, [sortBy, sortDirection, myPagination.resetPage, recentPagination.resetPage, failedPagination.resetPage]);
 
-  const myTotal = myLogs.data?.total ?? 0;
-  const recentTotal = recentLogs.data?.total ?? 0;
-  const failedTotal = failedLogs.data?.total ?? 0;
+  const myTotal = myLogs.total;
+  const recentTotal = recentLogs.total;
+  const failedTotal = failedLogs.total;
 
   return (
     <div className="space-y-4">
@@ -55,7 +55,7 @@ function SecurityLog() {
 
         <TabsContent value="my-activity" className="space-y-4">
           <AuthAuditTable
-            logs={(myLogs.data?.data ?? []) as AuthAuditLog[]}
+            logs={(myLogs.data ?? []) as AuthAuditLog[]}
             isLoading={myLogs.isLoading}
             sortBy={sortBy}
             sortDirection={sortDirection}
@@ -75,7 +75,7 @@ function SecurityLog() {
         {isAdmin() && (
           <TabsContent value="all-events" className="space-y-4">
             <AuthAuditTable
-              logs={(recentLogs.data?.data ?? []) as AuthAuditLog[]}
+              logs={(recentLogs.data ?? []) as AuthAuditLog[]}
               isLoading={recentLogs.isLoading}
               showUsername
               sortBy={sortBy}
@@ -97,7 +97,7 @@ function SecurityLog() {
         {isAdmin() && (
           <TabsContent value="failed-logins" className="space-y-4">
             <AuthAuditTable
-              logs={(failedLogs.data?.data ?? []) as AuthAuditLog[]}
+              logs={(failedLogs.data ?? []) as AuthAuditLog[]}
               isLoading={failedLogs.isLoading}
               showUsername
               sortBy={sortBy}

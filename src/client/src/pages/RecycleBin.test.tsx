@@ -8,22 +8,22 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useReceipts", () => ({
-  useDeletedReceipts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useDeletedReceipts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useRestoreReceipt: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useReceiptItems", () => ({
-  useDeletedReceiptItems: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useDeletedReceiptItems: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useRestoreReceiptItem: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useTransactions", () => ({
-  useDeletedTransactions: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useDeletedTransactions: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useRestoreTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useItemTemplates", () => ({
-  useDeletedItemTemplates: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useDeletedItemTemplates: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useRestoreItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
@@ -43,7 +43,8 @@ describe("RecycleBin", () => {
   beforeEach(async () => {
     const { useDeletedReceipts, useRestoreReceipt } = await import("@/hooks/useReceipts");
     vi.mocked(useDeletedReceipts).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
     vi.mocked(useRestoreReceipt).mockReturnValue(mockMutationResult());
@@ -91,19 +92,15 @@ describe("RecycleBin", () => {
   it("renders deleted items in the table when data exists", async () => {
     const { useDeletedReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useDeletedReceipts).mockReturnValue(mockQueryResult({
-      data: {
-        data: [{ id: "r1", location: "Store", date: "2026-01-01" }],
-        total: 1, offset: 0, limit: 50,
-      },
+      data: [{ id: "r1", location: "Store", date: "2026-01-01" }],
+      total: 1,
       isLoading: false,
     }));
 
     const { useDeletedItemTemplates } = await import("@/hooks/useItemTemplates");
     vi.mocked(useDeletedItemTemplates).mockReturnValue(mockQueryResult({
-      data: {
-        data: [{ id: "it1", name: "Deleted Template" }],
-        total: 1, offset: 0, limit: 50,
-      },
+      data: [{ id: "it1", name: "Deleted Template" }],
+      total: 1,
       isLoading: false,
     }));
 
@@ -117,10 +114,8 @@ describe("RecycleBin", () => {
   it("renders entity type tabs when deleted items exist", async () => {
     const { useDeletedReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useDeletedReceipts).mockReturnValue(mockQueryResult({
-      data: {
-        data: [{ id: "r1", location: "Store", date: "2026-01-01" }],
-        total: 1, offset: 0, limit: 50,
-      },
+      data: [{ id: "r1", location: "Store", date: "2026-01-01" }],
+      total: 1,
       isLoading: false,
     }));
 

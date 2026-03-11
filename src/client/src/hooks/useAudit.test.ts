@@ -36,7 +36,7 @@ describe("useEntityAuditHistory", () => {
   it("fetches audit history when both entityType and entityId are provided", async () => {
     const mockHistory = [{ id: "a1", action: "Created" }];
     (client.GET as Mock).mockResolvedValue({
-      data: mockHistory,
+      data: { data: mockHistory, total: 1, offset: 0, limit: 50 },
       error: null,
     });
 
@@ -108,7 +108,8 @@ describe("useRecentAuditLogs", () => {
         },
       },
     });
-    expect(result.current.data).toEqual(mockResponse);
+    expect(result.current.data).toEqual(mockResponse.data);
+    expect(result.current.total).toBe(1);
   });
 
   it("fetches recent audit logs with custom filters", async () => {

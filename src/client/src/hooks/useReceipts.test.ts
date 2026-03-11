@@ -46,7 +46,7 @@ describe("useReceipts", () => {
     const receipts = [
       { id: "1", location: "Walmart", date: "2025-01-01", taxAmount: 5.0 },
     ];
-    (client.GET as Mock).mockResolvedValue({ data: receipts, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: receipts, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useReceipts(), {
       wrapper: createWrapper(),
@@ -140,7 +140,7 @@ describe("useReceipts", () => {
 
   it("deleted receipts query returns data on success", async () => {
     const deleted = [{ id: "3", location: "Old Store", date: "2024-01-01", taxAmount: 0 }];
-    (client.GET as Mock).mockResolvedValue({ data: deleted, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: deleted, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useDeletedReceipts(), {
       wrapper: createWrapper(),

@@ -25,7 +25,8 @@ vi.mock("@/hooks/useEnumMetadata", () => ({
 
 vi.mock("@/hooks/useAudit", () => ({
   useRecentAuditLogs: vi.fn(() => ({
-    data: { data: [], total: 0, offset: 0, limit: 50 },
+    data: [],
+    total: 0,
     isLoading: false,
   })),
 }));
@@ -109,24 +110,20 @@ describe("AuditLog", () => {
   it("passes server-returned logs to AuditLogTable", async () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
     vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            entityType: "Account",
-            entityId: "abc-123",
-            action: "Create",
-            changedAt: "2024-01-15T10:00:00Z",
-            changedByUserId: "user-1",
-            changedByApiKeyId: null,
-            ipAddress: "127.0.0.1",
-            changesJson: "{}",
-          },
-        ],
-        total: 1,
-        offset: 0,
-        limit: 50,
-      },
+      data: [
+        {
+          id: "1",
+          entityType: "Account",
+          entityId: "abc-123",
+          action: "Create",
+          changedAt: "2024-01-15T10:00:00Z",
+          changedByUserId: "user-1",
+          changedByApiKeyId: null,
+          ipAddress: "127.0.0.1",
+          changesJson: "{}",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -137,24 +134,20 @@ describe("AuditLog", () => {
   it("enables Export CSV button when logs exist", async () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
     vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            entityType: "Account",
-            entityId: "abc-123",
-            action: "Create",
-            changedAt: "2024-01-15T10:00:00Z",
-            changedByUserId: "user-1",
-            changedByApiKeyId: null,
-            ipAddress: "127.0.0.1",
-            changesJson: "{}",
-          },
-        ],
-        total: 1,
-        offset: 0,
-        limit: 50,
-      },
+      data: [
+        {
+          id: "1",
+          entityType: "Account",
+          entityId: "abc-123",
+          action: "Create",
+          changedAt: "2024-01-15T10:00:00Z",
+          changedByUserId: "user-1",
+          changedByApiKeyId: null,
+          ipAddress: "127.0.0.1",
+          changesJson: "{}",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -168,24 +161,20 @@ describe("AuditLog", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
     vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
-      data: {
-        data: [
-          {
-            id: "1",
-            entityType: "Account",
-            entityId: "abc-123",
-            action: "Create",
-            changedAt: "2024-01-15T10:00:00Z",
-            changedByUserId: "user-1",
-            changedByApiKeyId: null,
-            ipAddress: "127.0.0.1",
-            changesJson: "{}",
-          },
-        ],
-        total: 1,
-        offset: 0,
-        limit: 50,
-      },
+      data: [
+        {
+          id: "1",
+          entityType: "Account",
+          entityId: "abc-123",
+          action: "Create",
+          changedAt: "2024-01-15T10:00:00Z",
+          changedByUserId: "user-1",
+          changedByApiKeyId: null,
+          ipAddress: "127.0.0.1",
+          changesJson: "{}",
+        },
+      ],
+      total: 1,
       isLoading: false,
     }));
 
@@ -237,7 +226,8 @@ describe("AuditLog", () => {
     const { useRecentAuditLogs } = await import("@/hooks/useAudit");
     const mockFn = vi.mocked(useRecentAuditLogs);
     mockFn.mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 

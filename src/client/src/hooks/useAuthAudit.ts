@@ -7,7 +7,7 @@ export function useMyAuthAuditLog(
   sortBy?: string | null,
   sortDirection?: string | null,
 ) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["auth-audit", "me", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/auth/audit/me", {
@@ -24,6 +24,7 @@ export function useMyAuthAuditLog(
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useRecentAuthAuditLogs(
@@ -32,7 +33,7 @@ export function useRecentAuthAuditLogs(
   sortBy?: string | null,
   sortDirection?: string | null,
 ) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["auth-audit", "recent", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/auth/audit/recent", {
@@ -49,6 +50,7 @@ export function useRecentAuthAuditLogs(
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useFailedAuthAttempts(
@@ -57,7 +59,7 @@ export function useFailedAuthAttempts(
   sortBy?: string | null,
   sortDirection?: string | null,
 ) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["auth-audit", "failed", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/auth/audit/failed", {
@@ -74,4 +76,5 @@ export function useFailedAuthAttempts(
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }

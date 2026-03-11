@@ -47,7 +47,7 @@ describe("useAdjustments", () => {
     const adjustments = [
       { id: "1", type: "discount", amount: 5.0, description: "Coupon" },
     ];
-    (client.GET as Mock).mockResolvedValue({ data: adjustments, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: adjustments, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useAdjustments(), {
       wrapper: createWrapper(),
@@ -72,7 +72,7 @@ describe("useAdjustments", () => {
 
   it("by-receipt query returns data when receiptId is provided", async () => {
     const items = [{ id: "1", type: "discount", amount: 5.0 }];
-    (client.GET as Mock).mockResolvedValue({ data: items, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: items, total: 1, offset: 0, limit: 200 }, error: undefined });
 
     const { result } = renderHook(() => useAdjustmentsByReceiptId("r-1"), {
       wrapper: createWrapper(),
@@ -152,7 +152,7 @@ describe("useAdjustments", () => {
 
   it("deleted adjustments query returns data on success", async () => {
     const deleted = [{ id: "3", type: "discount", amount: 1.0 }];
-    (client.GET as Mock).mockResolvedValue({ data: deleted, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: deleted, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useDeletedAdjustments(), {
       wrapper: createWrapper(),
