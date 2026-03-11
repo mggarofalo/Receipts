@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useId } from "react";
 import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -16,6 +16,17 @@ import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverAnchor,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Combobox } from "@/components/ui/combobox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Badge } from "@/components/ui/badge";
@@ -72,8 +83,7 @@ export function Step3Items({
 }: Step3Props) {
   const [items, setItems] = useState<WizardReceiptItem[]>(data);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedSuggestionIdx, setSelectedSuggestionIdx] = useState(-1);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const suggestionsListId = useId();
   const { data: categories } = useCategories();
 
   const categoryOptions = useMemo(
@@ -105,6 +115,15 @@ export function Step3Items({
 
   const { data: similarItems, isFetching: isFetchingSimilar } =
     useSimilarItems(description, { enabled: showSuggestions });
+
+  const hasResults = similarItems && similarItems.length > 0;
+  const hasNoResultsMessage =
+    description.length >= 2 &&
+    !isFetchingSimilar &&
+    similarItems &&
+    similarItems.length === 0;
+  const isSuggestionsOpen =
+    showSuggestions && (hasResults || hasNoResultsMessage);
 
   const { data: categoryRecs } = useCategoryRecommendations(description, {
     enabled: description.length >= 2 && !selectedCategory,
@@ -170,7 +189,6 @@ export function Step3Items({
         form.setValue("receiptItemCode", suggestion.defaultItemCode);
       }
       setShowSuggestions(false);
-      setSelectedSuggestionIdx(-1);
     },
     [form],
   );
@@ -186,28 +204,19 @@ export function Step3Items({
   );
 
   const handleDescriptionKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (!showSuggestions || !similarItems?.length) return;
-
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedSuggestionIdx((prev) =>
-          prev < similarItems.length - 1 ? prev + 1 : 0,
-        );
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedSuggestionIdx((prev) =>
-          prev > 0 ? prev - 1 : similarItems.length - 1,
-        );
-      } else if (e.key === "Enter" && selectedSuggestionIdx >= 0) {
-        e.preventDefault();
-        applySuggestion(similarItems[selectedSuggestionIdx]);
-      } else if (e.key === "Escape") {
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
         setShowSuggestions(false);
-        setSelectedSuggestionIdx(-1);
+      } else if (e.key === "ArrowDown" && isSuggestionsOpen) {
+        e.preventDefault();
+        const list = document.getElementById(suggestionsListId);
+        const firstItem = list?.querySelector(
+          "[cmdk-item]",
+        ) as HTMLElement | null;
+        firstItem?.focus();
       }
     },
-    [showSuggestions, similarItems, selectedSuggestionIdx, applySuggestion],
+    [isSuggestionsOpen, suggestionsListId],
   );
 
   const handleAdd = useCallback(
@@ -233,7 +242,6 @@ export function Step3Items({
         subcategory: "",
       });
       setShowSuggestions(false);
-      setSelectedSuggestionIdx(-1);
     },
     [form],
   );
@@ -287,93 +295,85 @@ export function Step3Items({
               control={form.control}
               name="description"
               render={({ field }) => (
-                <FormItem className="relative">
+                <FormItem>
                   <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        placeholder="Item description"
-                        aria-required="true"
-                        autoComplete="off"
-                        {...field}
-                        onFocus={() => setShowSuggestions(true)}
-                        onBlur={() => {
-                          // Delay to allow click on suggestion
-                          setTimeout(() => setShowSuggestions(false), 200);
-                        }}
-                        onKeyDown={handleDescriptionKeyDown}
-                      />
-                      {isFetchingSimilar && description.length >= 2 && (
-                        <Loader2 className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                      )}
-                    </div>
-                  </FormControl>
-                  {showSuggestions &&
-                    similarItems &&
-                    similarItems.length > 0 && (
-                      <div
-                        ref={suggestionsRef}
-                        className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg"
-                        role="listbox"
-                      >
-                        {similarItems.map((item, idx) => (
-                          <button
-                            key={`${item.name}-${item.source}`}
-                            type="button"
-                            role="option"
-                            aria-selected={idx === selectedSuggestionIdx}
-                            className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent ${
-                              idx === selectedSuggestionIdx ? "bg-accent" : ""
-                            } ${idx === 0 ? "rounded-t-md" : ""} ${
-                              idx === similarItems.length - 1
-                                ? "rounded-b-md"
-                                : ""
-                            }`}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              applySuggestion(item);
-                            }}
-                          >
-                            <div className="flex flex-col gap-0.5">
-                              <span className="font-medium">{item.name}</span>
-                              {item.defaultCategory && (
-                                <span className="text-xs text-muted-foreground">
-                                  {item.defaultCategory}
-                                  {item.defaultSubcategory
-                                    ? ` / ${item.defaultSubcategory}`
-                                    : ""}
-                                  {item.defaultUnitPrice != null
-                                    ? ` · ${formatCurrency(item.defaultUnitPrice)}`
-                                    : ""}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0"
-                              >
-                                {item.source === "template"
-                                  ? "Template"
-                                  : "History"}
-                              </Badge>
-                              <span className="text-[10px] text-muted-foreground">
-                                {Math.round(item.combinedScore * 100)}%
-                              </span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  {showSuggestions &&
-                    description.length >= 2 &&
-                    !isFetchingSimilar &&
-                    similarItems &&
-                    similarItems.length === 0 && (
-                      <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover p-3 text-center text-sm text-muted-foreground shadow-lg">
-                        No similar items found
-                      </div>
-                    )}
+                  <Popover
+                    open={isSuggestionsOpen}
+                    onOpenChange={setShowSuggestions}
+                  >
+                    <PopoverAnchor asChild>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            role="combobox"
+                            placeholder="Item description"
+                            aria-required="true"
+                            aria-autocomplete="list"
+                            aria-expanded={isSuggestionsOpen}
+                            aria-controls={suggestionsListId}
+                            autoComplete="off"
+                            {...field}
+                            onFocus={() => setShowSuggestions(true)}
+                            onKeyDown={handleDescriptionKeyDown}
+                          />
+                          {isFetchingSimilar && description.length >= 2 && (
+                            <Loader2 className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
+                      </FormControl>
+                    </PopoverAnchor>
+                    <PopoverContent
+                      className="w-[--radix-popover-trigger-width] p-0"
+                      align="start"
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                      onInteractOutside={() => setShowSuggestions(false)}
+                    >
+                      <Command>
+                        <CommandList id={suggestionsListId}>
+                          <CommandEmpty>No similar items found</CommandEmpty>
+                          {similarItems?.map((item) => (
+                            <CommandItem
+                              key={`${item.name}-${item.source}`}
+                              value={`${item.name} ${item.source}`}
+                              onSelect={() => applySuggestion(item)}
+                            >
+                              <div className="flex w-full items-center justify-between">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="font-medium">
+                                    {item.name}
+                                  </span>
+                                  {item.defaultCategory && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {item.defaultCategory}
+                                      {item.defaultSubcategory
+                                        ? ` / ${item.defaultSubcategory}`
+                                        : ""}
+                                      {item.defaultUnitPrice != null
+                                        ? ` · ${formatCurrency(item.defaultUnitPrice)}`
+                                        : ""}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0"
+                                  >
+                                    {item.source === "template"
+                                      ? "Template"
+                                      : "History"}
+                                  </Badge>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {Math.round(item.combinedScore * 100)}%
+                                  </span>
+                                </div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
