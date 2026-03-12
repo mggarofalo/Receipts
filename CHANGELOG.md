@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.14](https://github.com/mggarofalo/Receipts/compare/v0.1.13...v0.1.14) (2026-03-12)
+
+
+### Bug Fixes
+
+* **client:** align component test mocks with unwrapped hook return shape (MGG-248) ([428f1c5](https://github.com/mggarofalo/Receipts/commit/428f1c5515796af8121fa48c175f2cb4d5948539))
+* **client:** align component test mocks with unwrapped hook return shape (MGG-248) ([661d1fc](https://github.com/mggarofalo/Receipts/commit/661d1fc1c66b350a5320e40c2e8ab5d08b6c40b9))
+
 ## [0.1.13](https://github.com/mggarofalo/Receipts/compare/v0.1.12...v0.1.13) (2026-03-12)
 
 
