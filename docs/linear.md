@@ -1,0 +1,162 @@
+# LINEAR.md
+
+Guidance for AI agents working with the Linear workspace for this project.
+
+## Workspace Structure
+
+- **Team:** Mggarofalo (ID: `a4aff05d-41e6-45dc-b670-cdb485fef765`)
+- **Project:** Receipts (ID: `06199e4e-d3a8-4f98-9edf-e1e02efb6cee`)
+- **Execution Roadmap:** A Linear document attached to the Receipts project with full phase-by-phase ordering, label reference, and decision rules. Query it with `get_document` using slug `0c391490ba60`.
+
+## Labels
+
+Every issue has at least one **layer** label and zero or more **type** labels. Labels tell agents what skills/tools are needed and what kind of work the issue represents.
+
+### Layer Labels (where the work happens)
+
+| Label | Meaning |
+|-------|---------|
+| `backend` | .NET layers: Domain, Application, Infrastructure, API |
+| `frontend` | React/TypeScript SPA |
+| `infra` | Docker, CI/CD, Aspire, deployment, build config |
+| `docs` | Documentation only — no code changes |
+
+### Type Labels (what kind of work)
+
+| Label | Meaning |
+|-------|---------|
+| `Feature` | New user-facing functionality |
+| `Improvement` | Enhancement to existing functionality |
+| `Bug` | Defect fix |
+| `cleanup` | Removal, housekeeping, dead code |
+| `security` | Auth, hardening, rate limiting, audit |
+| `codegen` | Code generation from OpenAPI spec |
+| `dx` | Developer experience, tooling, local dev |
+| `testing` | Test infrastructure, test suites |
+| `epic` | **Parent issue — do NOT work directly, work its children** |
+
+### Label Rules for New Issues
+
+- Always assign at least one layer label (`backend`, `frontend`, `infra`, or `docs`)
+- Add type labels as appropriate (can have multiple)
+- Mark parent issues with `epic` — agents will skip these and work children
+- Use `codegen` for any work involving OpenAPI spec generation
+- Use `security` for anything touching auth, audit, or hardening
+
+## Milestones (Execution Phases)
+
+All active issues are assigned to a milestone. Milestones are ordered and represent sequential phases:
+
+| Milestone | Description | Status |
+|-----------|-------------|--------|
+| **Phase 0: Housekeeping** | Standalone cleanup (remove Blazor, fix CI) | **COMPLETE** |
+| **Phase 1: OpenAPI Spec-First** | Establish API contract as source of truth | **COMPLETE** |
+| **Phase 2: Backend DTO Generation** | Replace ViewModels with spec-generated DTOs | **COMPLETE** |
+| **Phase 3: Aspire Developer Experience** | Local dev orchestration with .NET Aspire | **COMPLETE** |
+| **Phase 4: React Frontend** | Build React/Vite SPA with auth, CRUD, audit, UX polish | **COMPLETE** |
+| **Phase 5: Test Coverage** | Code coverage collection, CI reporting, enforcement gate | **COMPLETE** |
+| **Phase 6: Docker Deployment** | Containerize and deploy to Raspberry Pi | **COMPLETE** |
+| **Phase 7: Correctness Hardening** | Business invariants, receipt coherence validation | **COMPLETE** |
+| **Phase 8: Security Automation** | Snyk-to-Linear integration | **COMPLETE** |
+| **Phase 9: Test Quality & Integration Testing** | Frontend integration tests, backend Testcontainers | Active |
+| **Phase 10: Dashboard** | Graphs, charts, and spending statistics | **COMPLETE** |
+| **Phase 11: Receipt Entry Workflow** | Multi-step receipt entry wizard | **COMPLETE** |
+
+## Priority Semantics
+
+Priority reflects **execution readiness**, not importance:
+
+| Priority | Meaning | Agent Action |
+|----------|---------|--------------|
+| **Urgent (1)** | Ready to start now, critical path | Pick these first |
+| **High (2)** | Ready or blocked by one step | Pick when blockers clear |
+| **Medium (3)** | Blocked by 2+ steps | Do not attempt yet |
+| **Low (4)** | Far future | Ignore until predecessors are done |
+
+## How to Determine "What's Next"
+
+1. **Query:** `list_issues` with `team: "Mggarofalo"`, `state: "backlog"` (or "todo")
+2. **Filter:** Exclude Done, Canceled, and Duplicate statuses
+3. **Skip epics:** If the issue has label `epic`, skip it and work its children instead
+4. **Check blockers:** For each issue, use `get_issue` with `includeRelations: true` and inspect `blockedBy`. If ANY blocker is not Done, the issue cannot start.
+5. **Sort:** Among unblocked issues, sort by priority (Urgent > High > Medium > Low)
+6. **Pick:** The first unblocked issue at the highest priority is "what's next"
+7. **Label check:** Use layer labels to verify you have the right tools/context (e.g., `frontend` = Node.js/React, `backend` = .NET/C#, `infra` = Docker/CI)
+8. **Parallel work:** Multiple unblocked issues at the same priority can be worked in parallel
+
+## Epics (Parent Issues)
+
+Epics are parent issues that group related work.
+
+### Completed Phases
+
+| Epic | Milestone | Status |
+|------|-----------|--------|
+| **MGG-89** OpenAPI Spec-First API Contract | Phase 1 | Done |
+| **MGG-83** Replace ViewModels with DTOs | Phase 2 | Done |
+| **MGG-109** Core Aspire Orchestration | Phase 3 | Done |
+| **MGG-110** AI-Powered Dev Tooling | Phase 3 | Done |
+| **MGG-111** Frontend Bootstrap & Codegen | Phase 4 | Done |
+| **MGG-112** Authentication System | Phase 4 | Done |
+| **MGG-113** Core CRUD Modules | Phase 4 | Done |
+| **MGG-114** Data Safety & Audit Trail | Phase 4 | Done |
+| **MGG-115** UX Polish & Enhancements | Phase 4 | Done |
+| **MGG-116** Frontend Quality & Documentation | Phase 4 | Done |
+| **MGG-128** Permission System | Phase 4 | Done |
+| **MGG-176** Eliminate All UUID Entry Fields | Phase 4 | Done |
+| **MGG-121** Test Coverage Pipeline | Phase 5 | Done |
+| **MGG-117** Container Architecture & CI | Phase 6 | Done |
+| **MGG-118** Production Operations | Phase 6 | Done |
+| **MGG-119** Deployment Security & Documentation | Phase 6 | Done |
+| **MGG-94** Correctness Hardening | Phase 7 | Done |
+| **MGG-104** Snyk-to-Linear Integration | Phase 8 | Done |
+| **MGG-279** Dashboard | Phase 10 | Done |
+| **MGG-306** Receipt Entry Workflow | Phase 11 | Done |
+| **MGG-315** Bugs & UX Polish (Docker Testing) | — | Done |
+
+### Active Phase: Phase 9 — Test Quality & Integration Testing
+
+| Epic | Description | Status |
+|------|-------------|--------|
+| **MGG-251** Plan and scaffold integration test suite | Frontend integration tests (MSW, realistic API responses) | Backlog |
+| **MGG-260** Backend integration tests with real PostgreSQL (Testcontainers) | Replace InMemory provider with Testcontainers | Backlog |
+
+### Retired Epics
+
+These monolithic epics were replaced by focused epics:
+
+| Old Epic | Replaced By | Status |
+|----------|-------------|--------|
+| **MGG-71** .NET Aspire AppHost | MGG-109, MGG-110 | Canceled |
+| **MGG-32** React/Vite Frontend | MGG-111–116 | Canceled |
+| **MGG-51** Docker Deployment | MGG-117–119 | Canceled |
+
+## Working with Linear Issues
+
+### Before starting work
+1. Find the issue using the decision rules above
+2. Read the full issue description with `get_issue`
+3. Check `blockedBy` relations — do not start blocked work
+4. Move the issue status to "In Progress" with `update_issue`
+5. Use the `gitBranchName` from the issue for your feature branch
+
+### After completing work
+1. Move the issue status to "Done" with `update_issue`
+2. Check if completing this issue unblocks downstream work
+3. Update any downstream issues if their blockers are now all resolved
+
+### Creating new issues
+- Always assign to team "Mggarofalo" and project "Receipts"
+- Set milestone to the appropriate phase
+- Set priority based on readiness (see Priority Semantics above)
+- Add `blockedBy` relations if the issue depends on other work
+- Add `blocks` relations if other issues depend on this one
+
+## Linear View (UI)
+
+A "Receipts Roadmap" view should exist in the Mggarofalo team configured as:
+- **Filter:** Project = Receipts, exclude Done/Canceled/Duplicate
+- **Grouping:** Milestone
+- **Ordering:** Priority
+- **Sub-issues:** Shown
+- **Display properties:** Status, Priority, Labels, Milestone
