@@ -9,7 +9,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useReceipts", () => ({
-  useReceipts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useReceipts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useCreateReceipt: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateReceipt: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteReceipts: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -97,7 +97,8 @@ describe("Receipts", () => {
   it("renders empty state when no receipts exist", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 
@@ -139,7 +140,8 @@ describe("Receipts", () => {
 
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -226,7 +228,8 @@ describe("Receipts", () => {
 
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -256,7 +259,8 @@ describe("Receipts", () => {
 
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -395,7 +399,8 @@ describe("Receipts", () => {
 
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -435,7 +440,8 @@ describe("Receipts", () => {
 
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
