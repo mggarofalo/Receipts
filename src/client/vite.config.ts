@@ -20,6 +20,7 @@ export default defineConfig({
     pool: "threads",
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    exclude: ["src/**/*.integration.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
       reporter: ["text", "cobertura", "html"],

@@ -8,7 +8,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useAccounts", () => ({
-  useAccounts: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useAccounts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useCreateAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
@@ -91,7 +91,8 @@ describe("Accounts", () => {
   it("renders empty state when no accounts exist", async () => {
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 
@@ -133,7 +134,8 @@ describe("Accounts", () => {
 
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -172,7 +174,8 @@ describe("Accounts", () => {
 
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -355,7 +358,8 @@ describe("Accounts", () => {
 
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -374,7 +378,8 @@ describe("Accounts", () => {
 
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 
@@ -404,7 +409,8 @@ describe("Accounts", () => {
 
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 

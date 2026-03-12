@@ -8,7 +8,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
+  useCategories: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useCreateCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
@@ -95,7 +95,8 @@ describe("Categories", () => {
   it("renders empty state when no categories exist", async () => {
     const { useCategories } = await import("@/hooks/useCategories");
     vi.mocked(useCategories).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 
@@ -137,7 +138,8 @@ describe("Categories", () => {
 
     const { useCategories } = await import("@/hooks/useCategories");
     vi.mocked(useCategories).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -176,7 +178,8 @@ describe("Categories", () => {
 
     const { useCategories } = await import("@/hooks/useCategories");
     vi.mocked(useCategories).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ export function useAdjustments(offset = 0, limit = 50, sortBy?: string | null, s
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useAdjustment(id: string | null) {
@@ -42,7 +43,7 @@ export function useAdjustmentsByReceiptId(receiptId: string | null, offset = 0, 
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useCreateAdjustment() {
@@ -159,7 +160,7 @@ export function useDeletedAdjustments(offset = 0, limit = 50, sortBy?: string | 
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useRestoreAdjustment() {
