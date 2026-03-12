@@ -14,7 +14,12 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Applicatio
 {
 	public ApplicationDbContext CreateDbContext(string[] args)
 	{
-		NpgsqlDataSourceBuilder dataSourceBuilder = new(Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING"));
+		string connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING")
+			?? throw new InvalidOperationException(
+				"POSTGRES_CONNECTION_STRING environment variable is not set. "
+				+ "Set it before running EF Core design-time commands.");
+
+		NpgsqlDataSourceBuilder dataSourceBuilder = new(connectionString);
 		dataSourceBuilder.UseVector();
 		NpgsqlDataSource dataSource = dataSourceBuilder.Build();
 
