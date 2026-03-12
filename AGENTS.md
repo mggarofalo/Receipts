@@ -7,9 +7,9 @@ This file provides guidance to AI agents when working with code in this reposito
 - **.NET 10 SDK** — build, test, and run the API
 - **Node.js 18+** and **npm** — OpenAPI spec linting (`@stoplight/spectral-cli`) and semantic drift detection (`js-yaml`)
 - **PostgreSQL** — runtime database (connection via environment variables)
-- **ONNX model** — `all-MiniLM-L6-v2` for local embeddings (downloaded via `bash scripts/download-onnx-model.sh`)
+- **ONNX model** — `all-MiniLM-L6-v2` for local embeddings (downloaded via `dotnet run scripts/download-onnx-model.cs`)
 
-After cloning, run `dotnet restore Receipts.slnx` then `npm install`. Run `bash scripts/download-onnx-model.sh` to download the ONNX embedding model (~90MB, required at runtime but not for building or CI).
+After cloning, run `dotnet restore Receipts.slnx` then `npm install`. Run `dotnet run scripts/download-onnx-model.cs` to download the ONNX embedding model (~90MB, required at runtime but not for building or CI).
 
 ## Worktree Setup
 
@@ -32,13 +32,13 @@ When working in a git worktree (e.g., created by Claude Code's `/worktree` or `g
 
 ### Bootstrap commands
 
-Run these in order (or use `scripts/worktree-setup.sh` to run them all):
+Run these in order (or use `dotnet run scripts/worktree-setup.cs` to run them all):
 
 ```bash
 dotnet restore Receipts.slnx          # NuGet packages + configures git hooks
 npm install                            # Root tooling (Spectral, js-yaml, cross-env)
 cd src/client && npm install && cd -   # React client dependencies
-bash scripts/download-onnx-model.sh    # Download ONNX embedding model (~90MB)
+dotnet run scripts/download-onnx-model.cs  # Download ONNX embedding model (~90MB)
 dotnet build Receipts.slnx             # Compiles + generates DTOs and openapi/generated/API.json
 cd src/client && npm run generate:types && cd -  # TypeScript types from OpenAPI spec
 ```
@@ -113,7 +113,7 @@ Validates the commit message against the Conventional Commits convention using `
 ### `pre-commit` hook
 
 **Pipeline (runs on every `git commit`):**
-0. `bash scripts/worktree-setup.sh --check` — prerequisite verification
+0. `dotnet run scripts/worktree-setup.cs -- --check` — prerequisite verification
 1. `npx spectral lint openapi/spec.yaml` — OpenAPI spec linting
 2. `dotnet format --verify-no-changes` — code formatting check
 3. `dotnet build -p:TreatWarningsAsErrors=true` — build (also regenerates DTOs and `openapi/generated/API.json`)

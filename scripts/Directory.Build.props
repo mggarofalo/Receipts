@@ -1,0 +1,3 @@
+<Project>
+  <!-- Isolate file-based apps from the repo-root Directory.Build.props -->
+</Project>

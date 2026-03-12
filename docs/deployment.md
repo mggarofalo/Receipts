@@ -168,8 +168,8 @@ If NPM runs on the same host, add the NPM container to the `receipts-net` networ
 ### Update to a new version
 
 ```bash
-bash scripts/update.sh              # Update to latest
-bash scripts/update.sh v1.2.3       # Update to specific version
+dotnet run scripts/update.cs              # Update to latest
+dotnet run scripts/update.cs -- v1.2.3    # Update to specific version
 ```
 
 The update script automatically backs up the database before updating and rolls back if the health check fails.
@@ -177,16 +177,16 @@ The update script automatically backs up the database before updating and rolls 
 ### Roll back
 
 ```bash
-bash scripts/rollback.sh v1.1.0     # Roll back to a specific tag
-bash scripts/rollback.sh sha-abc123 # Roll back to a specific build
+dotnet run scripts/rollback.cs -- v1.1.0     # Roll back to a specific tag
+dotnet run scripts/rollback.cs -- sha-abc123 # Roll back to a specific build
 ```
 
 ### Backup and restore
 
 ```bash
-bash scripts/backup.sh              # Backup to ./backups/
-bash scripts/backup.sh /mnt/usb     # Backup to external drive
-bash scripts/restore.sh backups/receipts_20260308_120000.sql.gz
+dotnet run scripts/backup.cs              # Backup to ./backups/
+dotnet run scripts/backup.cs -- /mnt/usb  # Backup to external drive
+dotnet run scripts/restore.cs -- backups/receipts_20260308_120000.sql.gz
 ```
 
 Backups older than 7 days are automatically pruned. For automated daily backups, add a cron job:
@@ -194,7 +194,7 @@ Backups older than 7 days are automatically pruned. For automated daily backups,
 ```bash
 crontab -e
 # Add:
-0 3 * * * cd /home/pi/Receipts && bash scripts/backup.sh >> /var/log/receipts-backup.log 2>&1
+0 3 * * * cd /home/pi/Receipts && dotnet run scripts/backup.cs >> /var/log/receipts-backup.log 2>&1
 ```
 
 ### View logs

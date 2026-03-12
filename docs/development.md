@@ -32,7 +32,7 @@ dotnet restore Receipts.slnx
 npm install
 
 # Download the ONNX embedding model (~90MB, required at runtime)
-bash scripts/download-onnx-model.sh
+dotnet run scripts/download-onnx-model.cs
 ```
 
 ## F5 Debugging (Recommended)
@@ -139,7 +139,7 @@ Examples:
 
 Every `git commit` runs the full quality pipeline automatically:
 
-0. **Prerequisites** — `bash scripts/worktree-setup.sh --check`
+0. **Prerequisites** — `dotnet run scripts/worktree-setup.cs -- --check`
 1. **OpenAPI spec lint** — `npx spectral lint openapi/spec.yaml`
 2. **Code format check** — `dotnet format --verify-no-changes`
 3. **Build with warnings-as-errors** — also regenerates DTOs and `openapi/generated/API.json`
