@@ -3,18 +3,21 @@ using FluentAssertions;
 using Infrastructure.Entities;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Infrastructure.Tests.Services;
 
-public class DatabaseSeederServiceTests
+public class DatabaseSeederServiceTests : IDisposable
 {
 	private readonly Mock<RoleManager<IdentityRole>> _mockRoleManager;
 	private readonly Mock<UserManager<ApplicationUser>> _mockUserManager;
 	private readonly IConfiguration _configuration;
-	private readonly IServiceProvider _serviceProvider;
+	private readonly ServiceProvider _serviceProvider;
+	private readonly ApplicationDbContext _dbContext;
 
 	public DatabaseSeederServiceTests()
 	{
@@ -40,7 +43,28 @@ public class DatabaseSeederServiceTests
 		services.AddSingleton(_mockRoleManager.Object);
 		services.AddSingleton(_mockUserManager.Object);
 		services.AddSingleton(_configuration);
+		services.AddSingleton<ILoggerFactory>(new LoggerFactory());
+
+		DbContextOptions<ApplicationDbContext> dbOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+			.UseInMemoryDatabase(Guid.NewGuid().ToString())
+			.Options;
+		_dbContext = new ApplicationDbContext(dbOptions);
+		services.AddScoped(_ => new ApplicationDbContext(dbOptions));
+
 		_serviceProvider = services.BuildServiceProvider();
+	}
+
+	public void Dispose()
+	{
+		_dbContext.Dispose();
+		_serviceProvider.Dispose();
+		GC.SuppressFinalize(this);
+	}
+
+	private void SetupRolesExist()
+	{
+		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
+			.ReturnsAsync(true);
 	}
 
 	private void SetupFullySeedableUser()
@@ -53,6 +77,62 @@ public class DatabaseSeederServiceTests
 			.ReturnsAsync(false);
 		_mockUserManager.Setup(u => u.AddToRoleAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
 			.ReturnsAsync(IdentityResult.Success);
+	}
+
+	private async Task MarkSeedAsApplied()
+	{
+		_dbContext.SeedHistory.Add(new SeedHistoryEntry
+		{
+			SeedId = "RolesAndAdmin_v1",
+			AppliedAt = DateTimeOffset.UtcNow,
+		});
+		await _dbContext.SaveChangesAsync();
+	}
+
+	[Fact]
+	public async Task SeedRolesAndAdminAsync_WhenAlreadySeeded_SkipsEntireOperation()
+	{
+		// Arrange
+		await MarkSeedAsApplied();
+
+		// Act
+		await DatabaseSeederService.SeedRolesAndAdminAsync(_serviceProvider);
+
+		// Assert — nothing was touched
+		_mockRoleManager.Verify(r => r.RoleExistsAsync(It.IsAny<string>()), Times.Never);
+		_mockRoleManager.Verify(r => r.CreateAsync(It.IsAny<IdentityRole>()), Times.Never);
+		_mockUserManager.Verify(u => u.FindByEmailAsync(It.IsAny<string>()), Times.Never);
+		_mockUserManager.Verify(u => u.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task SeedRolesAndAdminAsync_WhenSuccessful_RecordsSeedHistory()
+	{
+		// Arrange
+		SetupRolesExist();
+		SetupFullySeedableUser();
+
+		// Act
+		await DatabaseSeederService.SeedRolesAndAdminAsync(_serviceProvider);
+
+		// Assert
+		bool recorded = await _dbContext.SeedHistory.AnyAsync(s => s.SeedId == "RolesAndAdmin_v1");
+		recorded.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task SeedRolesAndAdminAsync_WhenSuccessful_SecondCallSkips()
+	{
+		// Arrange
+		SetupRolesExist();
+		SetupFullySeedableUser();
+
+		// Act — run twice
+		await DatabaseSeederService.SeedRolesAndAdminAsync(_serviceProvider);
+		await DatabaseSeederService.SeedRolesAndAdminAsync(_serviceProvider);
+
+		// Assert — user creation happened only once
+		_mockUserManager.Verify(u => u.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()), Times.Once);
 	}
 
 	[Fact]
@@ -72,6 +152,23 @@ public class DatabaseSeederServiceTests
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
 			.WithMessage("*Failed to create role*Role already exists.*");
+	}
+
+	[Fact]
+	public async Task SeedRolesAndAdminAsync_WhenRoleCreationFails_DoesNotRecordSeedHistory()
+	{
+		// Arrange
+		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
+			.ReturnsAsync(false);
+		_mockRoleManager.Setup(r => r.CreateAsync(It.IsAny<IdentityRole>()))
+			.ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "Fail", Description = "Fail" }));
+
+		// Act
+		try { await DatabaseSeederService.SeedRolesAndAdminAsync(_serviceProvider); } catch { }
+
+		// Assert
+		bool recorded = await _dbContext.SeedHistory.AnyAsync(s => s.SeedId == "RolesAndAdmin_v1");
+		recorded.Should().BeFalse();
 	}
 
 	[Fact]
@@ -104,8 +201,7 @@ public class DatabaseSeederServiceTests
 	public async Task SeedRolesAndAdminAsync_SkipsExistingRoles()
 	{
 		// Arrange
-		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
-			.ReturnsAsync(true);
+		SetupRolesExist();
 
 		ApplicationUser existingUser = new() { Email = "admin@test.com" };
 		_mockUserManager.Setup(u => u.FindByEmailAsync("admin@test.com"))
@@ -124,8 +220,7 @@ public class DatabaseSeederServiceTests
 	public async Task SeedRolesAndAdminAsync_WhenUserCreationFails_ThrowsInvalidOperationException()
 	{
 		// Arrange
-		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
-			.ReturnsAsync(true);
+		SetupRolesExist();
 
 		_mockUserManager.Setup(u => u.FindByEmailAsync("admin@test.com"))
 			.ReturnsAsync((ApplicationUser?)null);
@@ -146,8 +241,7 @@ public class DatabaseSeederServiceTests
 	public async Task SeedRolesAndAdminAsync_WhenAddToAdminRoleFails_ThrowsAndDeletesUser()
 	{
 		// Arrange
-		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
-			.ReturnsAsync(true);
+		SetupRolesExist();
 
 		_mockUserManager.Setup(u => u.FindByEmailAsync("admin@test.com"))
 			.ReturnsAsync((ApplicationUser?)null);
@@ -175,8 +269,7 @@ public class DatabaseSeederServiceTests
 	public async Task SeedRolesAndAdminAsync_WhenAddToUserRoleFails_ThrowsAndDeletesUser()
 	{
 		// Arrange
-		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
-			.ReturnsAsync(true);
+		SetupRolesExist();
 
 		_mockUserManager.Setup(u => u.FindByEmailAsync("admin@test.com"))
 			.ReturnsAsync((ApplicationUser?)null);
@@ -206,9 +299,7 @@ public class DatabaseSeederServiceTests
 	public async Task SeedRolesAndAdminAsync_WhenBothRoleAssignmentsSucceed_DoesNotThrow()
 	{
 		// Arrange
-		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
-			.ReturnsAsync(true);
-
+		SetupRolesExist();
 		SetupFullySeedableUser();
 
 		// Act
@@ -225,8 +316,7 @@ public class DatabaseSeederServiceTests
 	public async Task SeedRolesAndAdminAsync_WhenExistingUserHasAllRoles_SkipsRoleAssignment()
 	{
 		// Arrange
-		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
-			.ReturnsAsync(true);
+		SetupRolesExist();
 
 		ApplicationUser existingUser = new() { Email = "admin@test.com" };
 		_mockUserManager.Setup(u => u.FindByEmailAsync("admin@test.com"))
@@ -246,8 +336,7 @@ public class DatabaseSeederServiceTests
 	public async Task SeedRolesAndAdminAsync_WhenExistingUserLacksRoles_AssignsRolesWithoutCreating()
 	{
 		// Arrange — simulates orphaned user from a previous partial failure
-		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
-			.ReturnsAsync(true);
+		SetupRolesExist();
 
 		ApplicationUser orphanedUser = new() { Email = "admin@test.com" };
 		_mockUserManager.Setup(u => u.FindByEmailAsync("admin@test.com"))
@@ -270,8 +359,7 @@ public class DatabaseSeederServiceTests
 	public async Task SeedRolesAndAdminAsync_WhenRoleAssignmentFailsForOrphanedUser_DoesNotDeleteUser()
 	{
 		// Arrange — orphaned user from a previous run; role assignment fails again
-		_mockRoleManager.Setup(r => r.RoleExistsAsync(It.IsAny<string>()))
-			.ReturnsAsync(true);
+		SetupRolesExist();
 
 		ApplicationUser orphanedUser = new() { Email = "admin@test.com" };
 		_mockUserManager.Setup(u => u.FindByEmailAsync("admin@test.com"))
