@@ -12,9 +12,6 @@ Local development uses **.NET Aspire** to orchestrate all services — API, Post
 | [Node.js](https://nodejs.org) | 18+ | OpenAPI spec linting and drift detection |
 | [VS Code](https://code.visualstudio.com) | Any | Recommended IDE |
 | [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) | Any | VS Code C# support |
-| [uv](https://docs.astral.sh/uv/) | Any | MCP server runtime (for Plane integration) |
-
-> **MCP servers** — AI agents need `.mcp.json` configured for Plane and Aspire access. See **[docs/mcp-setup.md](mcp-setup.md)** for setup instructions.
 
 > **Docker is required** — Aspire provisions PostgreSQL as a container automatically. You don't need to manage the database manually.
 
@@ -35,7 +32,7 @@ dotnet restore Receipts.slnx
 npm install
 
 # Download the ONNX embedding model (~90MB, required at runtime)
-bash scripts/download-onnx-model.sh
+dotnet run scripts/download-onnx-model.cs
 ```
 
 ## F5 Debugging (Recommended)
@@ -142,7 +139,7 @@ Examples:
 
 Every `git commit` runs the full quality pipeline automatically:
 
-0. **Prerequisites** — `bash scripts/worktree-setup.sh --check`
+0. **Prerequisites** — `dotnet run scripts/worktree-setup.cs -- --check`
 1. **OpenAPI spec lint** — `npx spectral lint openapi/spec.yaml`
 2. **Code format check** — `dotnet format --verify-no-changes`
 3. **Build with warnings-as-errors** — also regenerates DTOs and `openapi/generated/API.json`

@@ -323,7 +323,7 @@ src/client/coverage/
 # MCP server config (contains API keys)
 .mcp.json
 
-# ONNX model binary (~90MB, downloaded via scripts/download-onnx-model.sh).
+# ONNX model binary (~90MB, downloaded via scripts/download-onnx-model.cs).
 # vocab.txt (227KB) is committed intentionally — it's small, required at runtime,
 # and keeping it in-tree avoids network dependencies for CI and local builds.
 src/Infrastructure/Models/AllMiniLmL6V2/model.onnx

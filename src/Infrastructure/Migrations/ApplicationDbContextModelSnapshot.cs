@@ -731,6 +731,20 @@ namespace Infrastructure.Migrations
                     b.ToTable("Transactions");
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.SeedHistoryEntry", b =>
+                {
+                    b.Property<string>("SeedId")
+                        .HasMaxLength(150)
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("AppliedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.HasKey("SeedId");
+
+                    b.ToTable("__SeedHistory", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")

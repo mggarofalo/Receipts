@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ export function useReceipts(offset = 0, limit = 50, sortBy?: string | null, sort
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useReceipt(id: string | null) {
@@ -125,7 +126,7 @@ export function useDeletedReceipts(offset = 0, limit = 50, sortBy?: string | nul
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useRestoreReceipt() {

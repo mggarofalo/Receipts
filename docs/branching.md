@@ -16,7 +16,7 @@ One per phase, named `milestone/phase-N` (e.g., `milestone/phase-0`):
 ### Parent Branches (for epics)
 
 When an epic has multiple child issues:
-- Create a parent branch using the epic's identifier (e.g., `mggarofalo/mgg-83-description`)
+- Create a parent branch using the epic's `gitBranchName`
 - Parent branch is created off `main` (or the milestone branch if one exists)
 - Child issue branches are created off the parent branch and squash-merge back into it
 - When all children are complete, the parent branch gets a PR to `main`
@@ -24,9 +24,9 @@ When an epic has multiple child issues:
 
 ### Issue Branches
 
-One per tracked issue:
+One per Linear issue:
 - Branch off the parent branch (if epic) or milestone branch, NOT `main`
-- Use the issue identifier to form a branch name (e.g., `mggarofalo/mgg-123-short-description`)
+- Use the `gitBranchName` from the Linear issue
 - Merge locally into the parent/milestone branch via squash merge (no PR needed)
 - Delete the issue branch after merge
 
@@ -81,12 +81,12 @@ git pull   # update main with the merged PR
 
 ## Direct Commits to Main
 
-Only use for non-tracked work like:
+Only use for non-Linear work like:
 - Trivial typo fixes
 - Documentation updates
 - Tooling/build configuration
 
-**NEVER** commit tracked-issue work directly to main. When in doubt, create a branch.
+**NEVER** commit Linear-based work directly to main. When in doubt, create a branch.
 
 ## Directory Isolation
 

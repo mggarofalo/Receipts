@@ -68,7 +68,7 @@ In Nginx Proxy Manager, create a proxy host:
 Manual backup:
 
 ```bash
-bash scripts/backup.sh
+dotnet run scripts/backup.cs
 ```
 
 Automated daily backup via cron:
@@ -76,23 +76,23 @@ Automated daily backup via cron:
 ```bash
 crontab -e
 # Add:
-0 2 * * * cd /path/to/receipts && bash scripts/backup.sh >> /var/log/receipts-backup.log 2>&1
+0 2 * * * cd /path/to/receipts && dotnet run scripts/backup.cs >> /var/log/receipts-backup.log 2>&1
 ```
 
 ### Restore from backup
 
 ```bash
-bash scripts/restore.sh backups/receipts_20260101_020000.sql.gz
+dotnet run scripts/restore.cs -- backups/receipts_20260101_020000.sql.gz
 ```
 
 ### Update to new version
 
 ```bash
 # Update to latest
-bash scripts/update.sh
+dotnet run scripts/update.cs
 
 # Update to specific version
-bash scripts/update.sh v1.2.3
+dotnet run scripts/update.cs -- v1.2.3
 ```
 
 The update script automatically creates a backup and rolls back if the health check fails.
@@ -100,7 +100,7 @@ The update script automatically creates a backup and rolls back if the health ch
 ### Manual rollback
 
 ```bash
-bash scripts/rollback.sh v1.1.0
+dotnet run scripts/rollback.cs -- v1.1.0
 ```
 
 ### View logs
@@ -113,7 +113,7 @@ docker compose logs -f db      # Database logs
 ### Check volume usage
 
 ```bash
-bash scripts/volume-inspect.sh
+dotnet run scripts/volume-inspect.cs
 ```
 
 ## Troubleshooting

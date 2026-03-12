@@ -54,4 +54,17 @@ public class DesignTimeDbContextFactoryTests
 		Assert.Contains("testdb", actualConnectionString);
 		Assert.Contains("testuser", actualConnectionString);
 	}
+
+	[Fact]
+	public void CreateDbContext_ThrowsWhenEnvironmentVariableNotSet()
+	{
+		// Arrange
+		DesignTimeDbContextFactory factory = new();
+		Environment.SetEnvironmentVariable("POSTGRES_CONNECTION_STRING", null);
+
+		// Act & Assert
+		InvalidOperationException ex = Assert.Throws<InvalidOperationException>(
+			() => factory.CreateDbContext([]));
+		Assert.Contains("POSTGRES_CONNECTION_STRING", ex.Message);
+	}
 }

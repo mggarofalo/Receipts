@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 
@@ -24,7 +25,7 @@ export function useMyAuthAuditLog(
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useRecentAuthAuditLogs(
@@ -50,7 +51,7 @@ export function useRecentAuthAuditLogs(
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useFailedAuthAttempts(
@@ -76,5 +77,5 @@ export function useFailedAuthAttempts(
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }

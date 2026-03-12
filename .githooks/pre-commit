@@ -18,9 +18,9 @@ next_step() {
 }
 
 next_step "Checking prerequisites..."
-if ! bash scripts/worktree-setup.sh --check 2>/dev/null; then
-  echo "  -> Auto-fixing: running worktree-setup.sh..."
-  bash scripts/worktree-setup.sh
+if ! dotnet run scripts/worktree-setup.cs -- --check 2>/dev/null; then
+  echo "  -> Auto-fixing: running worktree-setup.cs..."
+  dotnet run scripts/worktree-setup.cs
 fi
 
 if [ "${PRECOMMIT_QUICK:-}" != "1" ]; then

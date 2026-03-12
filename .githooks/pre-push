@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Prevent direct pushes to main and master branches.
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+	if [[ "$remote_ref" == "refs/heads/main" || "$remote_ref" == "refs/heads/master" ]]; then
+		echo "ERROR: Direct push to ${remote_ref#refs/heads/} is not allowed. Use a pull request."
+		exit 1
+	fi
+done
+
+exit 0
