@@ -24,7 +24,7 @@ completedAt: "2026-02-15T11:48:54.081Z"
 
 ## Context
 
-After MGG-88 replaces ViewModels with NSwag-generated DTOs from the OpenAPI spec, the mapping layer between Domain entities and generated DTOs becomes a critical integration point. If the spec changes (adding/removing/renaming fields), the generated DTOs change automatically — but the Mapperly mappers and underlying controllers/services/entities may silently fall out of sync.
+After [MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md) replaces ViewModels with NSwag-generated DTOs from the OpenAPI spec, the mapping layer between Domain entities and generated DTOs becomes a critical integration point. If the spec changes (adding/removing/renaming fields), the generated DTOs change automatically — but the Mapperly mappers and underlying controllers/services/entities may silently fall out of sync.
 
 ## Goal
 
@@ -129,4 +129,4 @@ tests/Presentation.API.Tests/Mapping/
 
 ## Dependencies
 
-* **Blocked by**: MGG-88 (generated DTOs and new mappers must exist first)
+* **Blocked by**: [MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md) (generated DTOs and new mappers must exist first)

@@ -24,7 +24,7 @@ completedAt: "2026-02-25T13:19:50.216Z"
 
 ## Context
 
-Follow-up from MGG-46 and MGG-47 code review. These gaps were discovered during QA of PR #27.
+Follow-up from [MGG-46](./mgg-46-accessibility-audit-wcag-2-1-aa-compliance.md) and [MGG-47](./mgg-47-animations-transitions-loading-states.md) code review. These gaps were discovered during QA of PR #27.
 
 ## Tasks
 

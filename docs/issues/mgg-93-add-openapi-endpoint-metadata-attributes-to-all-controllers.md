@@ -28,7 +28,7 @@ Add `[EndpointSummary]` and `[EndpointDescription]` attributes to all controller
 
 ## Context
 
-MGG-14 replaced Swashbuckle with `Microsoft.AspNetCore.OpenApi` and Scalar. The existing controllers have `/// <summary>` XML doc comments on some actions, but `GenerateDocumentationFile` was intentionally not enabled because it produces CS1591 warnings for every undocumented public type, breaking the pre-commit hook (`TreatWarningsAsErrors=true`).
+[MGG-14](./mgg-14-verify-swagger-openapi-baseline-output.md) replaced Swashbuckle with `Microsoft.AspNetCore.OpenApi` and Scalar. The existing controllers have `/// <summary>` XML doc comments on some actions, but `GenerateDocumentationFile` was intentionally not enabled because it produces CS1591 warnings for every undocumented public type, breaking the pre-commit hook (`TreatWarningsAsErrors=true`).
 
 Instead, the .NET 10 approach is to use endpoint metadata attributes which flow directly into the OpenAPI spec without requiring XML documentation generation:
 

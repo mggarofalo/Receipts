@@ -42,6 +42,6 @@ Migrate the API from code-first Swashbuckle to a spec-first OpenAPI 3.1 workflow
 
 This epic blocks:
 
-* MGG-83 (Replace ViewModels with spec-generated DTOs)
-* MGG-36 (Generate TypeScript types from spec)
-* MGG-88 (Generate .NET DTOs from spec)
+* [MGG-83](./mgg-83-replace-viewmodels-with-spec-generated-dtos.md) (Replace ViewModels with spec-generated DTOs)
+* [MGG-36](./mgg-36-generate-typescript-types-and-api-client-from-openapi-spec.md) (Generate TypeScript types from spec)
+* [MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md) (Generate .NET DTOs from spec)

@@ -25,14 +25,14 @@ completedAt: "2026-02-27T13:46:26.770Z"
 
 Set up Vitest as the test runner and coverage collector for the React/Vite frontend. Vitest is the correct choice for Vite projects — it shares the Vite config, has a Jest-compatible API, and natively outputs Cobertura XML for CI consumption.
 
-**Note:** Test data factories from MGG-49 (`src/test/factories.ts`) are available for reuse. Playwright E2E infrastructure is also in place.
+**Note:** Test data factories from [MGG-49](./mgg-49-testing-suite-unit-integration-e2e-tests.md) (`src/test/factories.ts`) are available for reuse. Playwright E2E infrastructure is also in place.
 
 ## Why Vitest over Jest
 
 * Shares `vite.config.ts` — no separate babel/transform config needed
 * Jest-compatible API (`describe`, `it`, `expect`, `vi.fn()` = `jest.fn()`)
 * `@vitest/coverage-v8` uses Node's built-in V8 coverage — fast, no extra instrumentation
-* Outputs Cobertura XML out of the box, compatible with MGG-123's CI workflow
+* Outputs Cobertura XML out of the box, compatible with [MGG-123](./mgg-123-publish-code-coverage-report-to-github-via-ci.md)'s CI workflow
 
 ## Acceptance Criteria
 
@@ -61,5 +61,5 @@ Set up Vitest as the test runner and coverage collector for the React/Vite front
 ## Notes
 
 * Requires the React app to exist (MGG-33)
-* Output path `coverage/cobertura-coverage.xml` must match what MGG-123's CI step expects for the frontend artifact
-* Reuse test data factories from MGG-49 (`src/test/factories.ts`)
+* Output path `coverage/cobertura-coverage.xml` must match what [MGG-123](./mgg-123-publish-code-coverage-report-to-github-via-ci.md)'s CI step expects for the frontend artifact
+* Reuse test data factories from [MGG-49](./mgg-49-testing-suite-unit-integration-e2e-tests.md) (`src/test/factories.ts`)

@@ -40,7 +40,7 @@ Ensure the application meets WCAG 2.1 AA accessibility standards.
 - [ ] Test with screen reader (NVDA/JAWS/VoiceOver) — **Requires manual verification**
 - [X] Add skip navigation links
 - [X] Ensure all images have alt text — N/A (no `<img>` elements; icons are Lucide SVG with `aria-hidden`)
-- [ ] Test keyboard-only navigation — **Overlaps with MGG-45 scope**
+- [ ] Test keyboard-only navigation — **Overlaps with [MGG-45](./mgg-45-keyboard-navigation-shortcuts-system.md) scope**
 - [X] Add live regions for dynamic content (ARIA live)
 - [X] Create accessible error messages (ARIA invalid, describedby)
 - [ ] Test with browser zoom (200%, 400%) — **Requires manual verification**

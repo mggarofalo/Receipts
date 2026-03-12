@@ -146,7 +146,7 @@ export function useCreateAccount() {
 
 ## Pre-commit Hook Integration
 
-The pre-commit hook (defined in MGG-21) handles TypeScript type validation:
+The pre-commit hook (defined in [MGG-21](./mgg-21-establish-openapi-spec-as-authoritative-api-contract.md)) handles TypeScript type validation:
 
 ```bash
 # Step 3 of .husky/pre-commit:
@@ -189,7 +189,7 @@ Alternative: `.gitignore` generated files and regenerate in CI. Tradeoff: no con
 - [ ] Install `openapi-fetch` 0.13.0+
 - [ ] Create `src/lib/api-client.ts` with `createClient<paths>()`
 - [ ] Configure base URL from `VITE_API_URL` environment variable
-- [ ] Add auth token interceptor (when MGG-35 is implemented)
+- [ ] Add auth token interceptor (when [MGG-35](./mgg-35-frontend-authentication-ui-protected-routes.md) is implemented)
 
 ### TanStack Query Hooks
 
@@ -216,13 +216,13 @@ Alternative: `.gitignore` generated files and regenerate in CI. Tradeoff: no con
 ### Validation
 
 - [ ] Verify generated types match .NET DTOs (both from same spec)
-- [ ] Pre-commit hook validates staleness (via MGG-21 hook pipeline)
+- [ ] Pre-commit hook validates staleness (via [MGG-21](./mgg-21-establish-openapi-spec-as-authoritative-api-contract.md) hook pipeline)
 
 ## Dependencies
 
-* **Blocked by**: MGG-21 (OpenAPI spec + pre-commit hooks must exist first)
-* **Blocked by** (implicit): MGG-33 (React project must be scaffolded to have a `package.json`)
-* **Blocks**: MGG-38 through MGG-43 (all frontend UI modules need the API client)
+* **Blocked by**: [MGG-21](./mgg-21-establish-openapi-spec-as-authoritative-api-contract.md) (OpenAPI spec + pre-commit hooks must exist first)
+* **Blocked by** (implicit): [MGG-33](./mgg-33-project-setup-react-vite-typescript-shadcn-ui.md) (React project must be scaffolded to have a `package.json`)
+* **Blocks**: [MGG-38](./mgg-38-receipts-module-full-crud-with-search-filters.md) through [MGG-43](./mgg-43-aggregate-views-receiptwithitems-transactionaccount.md) (all frontend UI modules need the API client)
 
 ## Acceptance Criteria
 

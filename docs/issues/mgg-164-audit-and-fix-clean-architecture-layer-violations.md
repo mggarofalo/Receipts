@@ -28,7 +28,7 @@ Controllers in the Presentation layer are directly injecting `ApplicationDbConte
 
 ### Known violation
 
-* `UsersController.cs` injects `ApplicationDbContext` directly and runs a `UserRoles`+`Roles` join query (introduced in PR #22, MGG-160 fix)
+* `UsersController.cs` injects `ApplicationDbContext` directly and runs a `UserRoles`+`Roles` join query (introduced in PR #22, [MGG-160](./mgg-160-fix-n-1-query-in-userscontroller-listusers.md) fix)
 
 ### Scope
 

@@ -30,7 +30,7 @@ attachments:
 
 Role-based authorization system spanning backend (role definitions, JWT role claims, per-endpoint policies) and frontend (conditional UI based on user roles/permissions).
 
-Built on top of the JWT + API key auth foundation from MGG-34. Distinct from authentication (who you are) — this is authorization (what you can do).
+Built on top of the JWT + API key auth foundation from [MGG-34](./mgg-34-backend-asp-net-identity-jwt-authentication.md). Distinct from authentication (who you are) — this is authorization (what you can do).
 
 **Children:**
 

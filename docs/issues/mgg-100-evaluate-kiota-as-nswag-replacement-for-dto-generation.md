@@ -24,7 +24,7 @@ completedAt: "2026-02-14T21:17:25.185Z"
 
 ## Context
 
-NSwag is currently the planned tool for generating C# DTOs from the OpenAPI spec ([MGG-88](https://linear.app/mggarofalo/issue/MGG-88/generate-net-requestresponse-dtos-from-openapi-spec)). However, NSwag has a single-maintainer risk and already lags behind .NET versions (using `Net90` target for .NET 10).
+NSwag is currently the planned tool for generating C# DTOs from the OpenAPI spec ([MGG-88](https://linear.app/mggarofalo/issue/[MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md)/generate-net-requestresponse-dtos-from-openapi-spec)). However, NSwag has a single-maintainer risk and already lags behind .NET versions (using `Net90` target for .NET 10).
 
 **Key insight:** DTOs are transport models — identical on client and server side. A tool that generates "client" model classes produces the same POCOs that the server needs to receive and map. There's no fundamental difference between a "client DTO" and a "server DTO" for the same schema.
 
@@ -49,7 +49,7 @@ NSwag is currently the planned tool for generating C# DTOs from the OpenAPI spec
 | Mapperly compatibility | Yes (plain POCOs) | Poor |
 | OpenAPI 3.1 | Partial (works for 3.0-compat specs) | Full |
 
-**Decision: Proceed with NSwag for MGG-88.**
+**Decision: Proceed with NSwag for [MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md).**
 
 The single-maintainer risk is manageable — NSwag has been maintained since 2015, and the generated POCO output is simple enough that migrating away would be straightforward if needed.
 

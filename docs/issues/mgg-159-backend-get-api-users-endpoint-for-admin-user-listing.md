@@ -34,4 +34,4 @@ Add a `GET /api/users` endpoint (admin-only) that returns a list of users with t
 * Return `UserResponse[]` with `id`, `email`, `roles`
 * Support optional query parameters for pagination (`page`, `pageSize`)
 
-**Follow-up from:** MGG-132 (Frontend: Admin Permissions Manager)
+**Follow-up from:** [MGG-132](./mgg-132-frontend-admin-permissions-manager.md) (Frontend: Admin Permissions Manager)

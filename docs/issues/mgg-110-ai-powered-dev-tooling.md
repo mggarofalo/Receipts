@@ -22,4 +22,4 @@ completedAt: "2026-02-18T11:05:08.069Z"
 
 # AI-Powered Dev Tooling
 
-Integrate AI agent tooling into the Aspire dev environment — MCP server for dashboard access and agent-browser for automated testing.\\n\\n**Children:**\\n- MGG-78: Aspire MCP Server integration\\n- MGG-79: Agent Browser for AI-powered testing\\n\\n**Post-MVP follow-up.** Nice-to-have DX enhancement, not needed for core local dev.
+Integrate AI agent tooling into the Aspire dev environment — MCP server for dashboard access and agent-browser for automated testing.\\n\\n**Children:**\\n- [MGG-78](./mgg-78-integrate-aspire-mcp-server-for-ai-agent-access.md): Aspire MCP Server integration\\n- [MGG-79](./mgg-79-setup-agent-browser-for-ai-powered-testing.md): Agent Browser for AI-powered testing\\n\\n**Post-MVP follow-up.** Nice-to-have DX enhancement, not needed for core local dev.

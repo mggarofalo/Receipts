@@ -29,12 +29,12 @@ Fail the CI check (and block PR merge) if overall line coverage drops below defi
 
 **Backend (.NET)**
 
-* Minimum line coverage threshold (start at 60%, raise as tests are added via MGG-125)
+* Minimum line coverage threshold (start at 60%, raise as tests are added via [MGG-125](./mgg-125-agent-test-writing-loop-read-coverage-report-and-fill-gaps-iteratively.md))
 * Parses `coverage.cobertura.xml` and fails CI with a clear message if below threshold
 
 **Frontend (React/Vitest)**
 
-* Separate minimum line coverage threshold (start at 60%, raise as tests are added via MGG-127)
+* Separate minimum line coverage threshold (start at 60%, raise as tests are added via [MGG-127](./mgg-127-agent-test-writing-loop-react-frontend-coverage-gap-filling.md))
 * Parses `coverage/cobertura-coverage.xml` and fails CI with a clear message if below threshold
 
 **Shared**
@@ -47,4 +47,4 @@ Fail the CI check (and block PR merge) if overall line coverage drops below defi
 
 * Can reuse the same GitHub Action as the reporting step (MGG-123) if it supports fail-on-threshold; otherwise add a lightweight parse step
 * Initial thresholds should be set at or slightly below **current** coverage so existing PRs are not immediately blocked; raise incrementally
-* Requires MGG-122 (.NET collection), MGG-126 (Vitest setup), and MGG-123 (reporting) to be in place
+* Requires [MGG-122](./mgg-122-configure-code-coverage-collection-with-coverlet-and-cobertura-report-output.md) (.NET collection), [MGG-126](./mgg-126-configure-vitest-with-coverage-v8-cobertura-output-in-the-react-app.md) (Vitest setup), and [MGG-123](./mgg-123-publish-code-coverage-report-to-github-via-ci.md) (reporting) to be in place
