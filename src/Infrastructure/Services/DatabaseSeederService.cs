@@ -1,16 +1,29 @@
 using Common;
 using Infrastructure.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 
 public static class DatabaseSeederService
 {
+	private const string RolesAndAdminSeedId = "RolesAndAdmin_v1";
+
 	public static async Task SeedRolesAndAdminAsync(IServiceProvider services)
 	{
 		using IServiceScope scope = services.CreateScope();
+		ApplicationDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+		ILogger logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(nameof(DatabaseSeederService));
+
+		if (await dbContext.SeedHistory.AnyAsync(s => s.SeedId == RolesAndAdminSeedId))
+		{
+			logger.LogInformation("Seed operation '{SeedId}' already applied — skipping.", RolesAndAdminSeedId);
+			return;
+		}
+
 		RoleManager<IdentityRole> roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 		UserManager<ApplicationUser> userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 		IConfiguration configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
@@ -99,5 +112,14 @@ public static class DatabaseSeederService
 
 			throw;
 		}
+
+		dbContext.SeedHistory.Add(new SeedHistoryEntry
+		{
+			SeedId = RolesAndAdminSeedId,
+			AppliedAt = DateTimeOffset.UtcNow,
+		});
+		await dbContext.SaveChangesAsync();
+
+		logger.LogInformation("Seed operation '{SeedId}' completed and recorded.", RolesAndAdminSeedId);
 	}
 }
