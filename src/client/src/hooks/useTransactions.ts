@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ export function useTransactions(offset = 0, limit = 50, sortBy?: string | null, 
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useTransaction(id: string | null) {
@@ -42,7 +43,7 @@ export function useTransactionsByReceiptId(receiptId: string | null, offset = 0,
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useCreateTransaction() {
@@ -170,7 +171,7 @@ export function useDeletedTransactions(offset = 0, limit = 50, sortBy?: string |
       return data;
     },
   });
-  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
 export function useRestoreTransaction() {

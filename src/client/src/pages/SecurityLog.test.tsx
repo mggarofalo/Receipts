@@ -15,15 +15,18 @@ vi.mock("@/hooks/usePermission", () => ({
 
 vi.mock("@/hooks/useAuthAudit", () => ({
   useMyAuthAuditLog: vi.fn(() => ({
-    data: { data: [], total: 0, offset: 0, limit: 50 },
+    data: [],
+    total: 0,
     isLoading: false,
   })),
   useRecentAuthAuditLogs: vi.fn(() => ({
-    data: { data: [], total: 0, offset: 0, limit: 50 },
+    data: [],
+    total: 0,
     isLoading: false,
   })),
   useFailedAuthAttempts: vi.fn(() => ({
-    data: { data: [], total: 0, offset: 0, limit: 50 },
+    data: [],
+    total: 0,
     isLoading: false,
   })),
 }));
