@@ -35,7 +35,7 @@ export function Step4Review({
 
   const accountNameMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const acct of (accounts?.data as { id: string; name: string }[] | undefined) ?? []) {
+    for (const acct of (accounts as { id: string; name: string }[] | undefined) ?? []) {
       map.set(acct.id, acct.name);
     }
     return map;

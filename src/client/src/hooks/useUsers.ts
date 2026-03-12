@@ -7,7 +7,7 @@ import client from "@/lib/api-client";
 import { toast } from "sonner";
 
 export function useUsers(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["users", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/users", {
@@ -17,6 +17,7 @@ export function useUsers(offset = 0, limit = 50, sortBy?: string | null, sortDir
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useUser(userId: string | null) {

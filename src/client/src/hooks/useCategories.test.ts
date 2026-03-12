@@ -41,7 +41,7 @@ beforeEach(() => {
 describe("useCategories", () => {
   it("list query returns data on success", async () => {
     const categories = [{ id: "1", name: "Food", description: "Groceries" }];
-    (client.GET as Mock).mockResolvedValue({ data: categories, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: categories, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useCategories(), {
       wrapper: createWrapper(),

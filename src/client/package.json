@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@mggarofalo/eslint-plugin-react-hook-stability": "^0.1.4",
+    "@mggarofalo/eslint-plugin-react-hook-stability": "^0.2.0",
     "@tailwindcss/vite": "^4.2.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

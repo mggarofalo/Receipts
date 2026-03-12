@@ -376,6 +376,49 @@ public class EmbeddingGenerationServiceTests
 			Times.AtLeastOnce());
 	}
 
+	[Fact]
+	public async Task ExecuteAsync_CancellationDuringInitialDelay_DoesNotThrow()
+	{
+		// Arrange — cancel immediately so the 10-second initial delay is interrupted
+		EmbeddingGenerationService service = new(_scopeFactoryMock.Object, _loggerMock.Object);
+		using CancellationTokenSource cts = new();
+
+		// Act — start and cancel right away; the service should be sitting in the initial delay
+		await service.StartAsync(cts.Token);
+		cts.Cancel();
+		Func<Task> act = async () => await service.StopAsync(CancellationToken.None);
+
+		// Assert — the OperationCanceledException from Task.Delay should be caught internally
+		await act.Should().NotThrowAsync();
+	}
+
+	[Fact]
+	public async Task ExecuteAsync_CancellationDuringLoopDelay_DoesNotThrow()
+	{
+		// Arrange — let ProcessPendingEmbeddingsAsync run once (short-circuit via IsConfigured=false),
+		// then cancel during the 30-second loop delay.
+		TaskCompletionSource processed = new();
+		_embeddingServiceMock
+			.Setup(e => e.IsConfigured)
+			.Returns(() =>
+			{
+				processed.TrySetResult();
+				return false;
+			});
+
+		EmbeddingGenerationService service = new(_scopeFactoryMock.Object, _loggerMock.Object);
+		using CancellationTokenSource cts = new();
+
+		// Act — wait for the first processing cycle to complete, then cancel
+		await service.StartAsync(cts.Token);
+		await processed.Task.WaitAsync(TimeSpan.FromSeconds(15));
+		cts.Cancel();
+		Func<Task> act = async () => await service.StopAsync(CancellationToken.None);
+
+		// Assert — the OperationCanceledException from the loop Task.Delay should be caught internally
+		await act.Should().NotThrowAsync();
+	}
+
 	private static float[] CreateFakeEmbedding()
 	{
 		float[] embedding = new float[OnnxEmbeddingService.EmbeddingDimension];

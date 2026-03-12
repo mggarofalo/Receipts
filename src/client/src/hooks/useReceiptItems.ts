@@ -3,7 +3,7 @@ import client from "@/lib/api-client";
 import { toast } from "sonner";
 
 export function useReceiptItems(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["receipt-items", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/receipt-items", {
@@ -13,6 +13,7 @@ export function useReceiptItems(offset = 0, limit = 50, sortBy?: string | null, 
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useReceiptItem(id: string | null) {
@@ -30,7 +31,7 @@ export function useReceiptItem(id: string | null) {
 }
 
 export function useReceiptItemsByReceiptId(receiptId: string | null, offset = 0, limit = 200, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["receipt-items", "by-receipt", receiptId, offset, limit, sortBy, sortDirection],
     enabled: !!receiptId,
     queryFn: async () => {
@@ -41,6 +42,7 @@ export function useReceiptItemsByReceiptId(receiptId: string | null, offset = 0,
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useCreateReceiptItem() {
@@ -74,6 +76,40 @@ export function useCreateReceiptItem() {
     },
     onError: () => {
       toast.error("Failed to create receipt item");
+    },
+  });
+}
+
+export function useCreateReceiptItemsBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      receiptId,
+      body,
+    }: {
+      receiptId: string;
+      body: {
+        receiptItemCode: string;
+        description: string;
+        quantity: number;
+        unitPrice: number;
+        category: string;
+        subcategory: string;
+        pricingMode: "quantity" | "flat";
+      }[];
+    }) => {
+      const { data, error } = await client.POST(
+        "/api/receipts/{receiptId}/receipt-items/batch",
+        { params: { path: { receiptId } }, body },
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receipt-items"] });
+    },
+    onError: () => {
+      toast.error("Failed to create receipt items");
     },
   });
 }
@@ -149,7 +185,7 @@ export function useDeleteReceiptItems() {
 }
 
 export function useDeletedReceiptItems(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["receipt-items", "deleted", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/receipt-items/deleted", {
@@ -159,6 +195,7 @@ export function useDeletedReceiptItems(offset = 0, limit = 50, sortBy?: string |
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useRestoreReceiptItem() {

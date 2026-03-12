@@ -8,28 +8,20 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
 
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "r-1", location: "Walmart", date: "2024-01-15" },
-      ],
-      total: 1,
-      offset: 0,
-      limit: 50,
-    },
+    data: [
+      { id: "r-1", location: "Walmart", date: "2024-01-15" },
+    ],
+    total: 1,
     isLoading: false,
   })),
 }));
 
 vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() => ({
-    data: {
-      data: [
-        { id: "a-1", name: "Checking", accountCode: "CHK-001" },
-      ],
-      total: 1,
-      offset: 0,
-      limit: 50,
-    },
+    data: [
+      { id: "a-1", name: "Checking", accountCode: "CHK-001" },
+    ],
+    total: 1,
     isLoading: false,
   })),
 }));

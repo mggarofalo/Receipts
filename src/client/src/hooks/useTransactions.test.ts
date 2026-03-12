@@ -47,7 +47,7 @@ describe("useTransactions", () => {
     const transactions = [
       { id: "1", amount: 100, date: "2025-01-01" },
     ];
-    (client.GET as Mock).mockResolvedValue({ data: transactions, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: transactions, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useTransactions(), {
       wrapper: createWrapper(),
@@ -72,7 +72,7 @@ describe("useTransactions", () => {
 
   it("by-receipt query returns data when receiptId is provided", async () => {
     const items = [{ id: "1", amount: 50, date: "2025-01-01" }];
-    (client.GET as Mock).mockResolvedValue({ data: items, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: items, total: 1, offset: 0, limit: 200 }, error: undefined });
 
     const { result } = renderHook(() => useTransactionsByReceiptId("r-1"), {
       wrapper: createWrapper(),
@@ -152,7 +152,7 @@ describe("useTransactions", () => {
 
   it("deleted transactions query returns data on success", async () => {
     const deleted = [{ id: "3", amount: 10, date: "2024-01-01" }];
-    (client.GET as Mock).mockResolvedValue({ data: deleted, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: deleted, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useDeletedTransactions(), {
       wrapper: createWrapper(),

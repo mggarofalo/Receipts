@@ -205,7 +205,7 @@ function AuditLog() {
     [auditActions],
   );
 
-  const { data, isLoading } = useRecentAuditLogs({
+  const { data, total, isLoading } = useRecentAuditLogs({
     offset: pagination.offset,
     limit: pagination.limit,
     sortBy,
@@ -217,8 +217,7 @@ function AuditLog() {
     dateTo: dateTo ? dateTo.toISOString() : null,
   });
 
-  const logs = (data?.data ?? []) as AuditLogEntry[];
-  const total = data?.total ?? 0;
+  const logs = (data ?? []) as AuditLogEntry[];
 
   return (
     <div className="space-y-4">

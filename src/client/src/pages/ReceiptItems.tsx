@@ -86,8 +86,8 @@ function ReceiptItems() {
   const allItemsQuery = useReceiptItems(offset, limit, sortBy, sortDirection);
   const filteredItemsQuery = useReceiptItemsByReceiptId(linkParams.receiptId ?? null, offset, limit, sortBy, sortDirection);
   const activeItemsQuery = linkParams.receiptId ? filteredItemsQuery : allItemsQuery;
-  const { data: itemsResponse, isLoading } = activeItemsQuery;
-  const { data: receiptsResponse } = useReceipts(0, 1000);
+  const { data: itemsData, total: serverTotal, isLoading } = activeItemsQuery;
+  const { data: receiptsData } = useReceipts(0, 1000);
   const createItem = useCreateReceiptItem();
   const updateItem = useUpdateReceiptItem();
   const deleteItems = useDeleteReceiptItems();
@@ -113,10 +113,9 @@ function ReceiptItems() {
   useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
   const data = useMemo(
-    () => (itemsResponse?.data as ReceiptItemResponse[] | undefined) ?? [],
-    [itemsResponse?.data],
+    () => (itemsData as ReceiptItemResponse[] | undefined) ?? [],
+    [itemsData],
   );
-  const serverTotal = itemsResponse?.total ?? 0;
 
   const categories = useMemo(
     () => [...new Set(data.map((i) => i.category))].sort(),
@@ -138,10 +137,10 @@ function ReceiptItems() {
 
   const receiptMap = useMemo(() => {
     const map = new Map<string, string>();
-    const list = (receiptsResponse?.data as { id: string; location: string }[] | undefined) ?? [];
+    const list = (receiptsData as { id: string; location: string }[] | undefined) ?? [];
     for (const r of list) map.set(r.id, r.location);
     return map;
-  }, [receiptsResponse?.data]);
+  }, [receiptsData]);
 
   const {
     filters: savedFilters,

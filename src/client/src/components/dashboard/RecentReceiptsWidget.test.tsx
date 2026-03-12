@@ -12,27 +12,23 @@ const mockUseReceipts = vi.mocked(useReceipts);
 describe("RecentReceiptsWidget", () => {
   it("renders recent receipts", () => {
     mockUseReceipts.mockReturnValue({
-      data: {
-        data: [
-          {
-            id: "1",
-            location: "Grocery Store",
-            date: "2024-01-15",
-            taxAmount: 45.99,
-            description: null,
-          },
-          {
-            id: "2",
-            location: "Gas Station",
-            date: "2024-01-14",
-            taxAmount: 32.5,
-            description: null,
-          },
-        ],
-        total: 2,
-        offset: 0,
-        limit: 5,
-      },
+      data: [
+        {
+          id: "1",
+          location: "Grocery Store",
+          date: "2024-01-15",
+          taxAmount: 45.99,
+          description: null,
+        },
+        {
+          id: "2",
+          location: "Gas Station",
+          date: "2024-01-14",
+          taxAmount: 32.5,
+          description: null,
+        },
+      ],
+      total: 2,
       isLoading: false,
     } as unknown as ReturnType<typeof useReceipts>);
 
@@ -45,7 +41,8 @@ describe("RecentReceiptsWidget", () => {
 
   it("renders View all link", () => {
     mockUseReceipts.mockReturnValue({
-      data: { data: [], total: 0, offset: 0, limit: 5 },
+      data: [],
+      total: 0,
       isLoading: false,
     } as unknown as ReturnType<typeof useReceipts>);
 
@@ -65,7 +62,8 @@ describe("RecentReceiptsWidget", () => {
 
   it("shows empty state when no receipts", () => {
     mockUseReceipts.mockReturnValue({
-      data: { data: [], total: 0, offset: 0, limit: 5 },
+      data: [],
+      total: 0,
       isLoading: false,
     } as unknown as ReturnType<typeof useReceipts>);
 

@@ -33,7 +33,14 @@ public class AuthAuditCleanupService(
 				logger.LogError(ex, "Error during auth audit cleanup");
 			}
 
-			await Task.Delay(Interval, stoppingToken);
+			try
+			{
+				await Task.Delay(Interval, stoppingToken);
+			}
+			catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+			{
+				break;
+			}
 		}
 	}
 }

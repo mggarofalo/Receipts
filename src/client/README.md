@@ -1,73 +1,52 @@
-# React + TypeScript + Vite
+# Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite SPA (TypeScript) — the browser-based frontend for the Receipts application.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+| Technology | Purpose |
+|------------|---------|
+| React 19 | UI framework |
+| Vite | Build tool and dev server |
+| TypeScript | Type safety |
+| TanStack Query | Server state management and caching |
+| React Router | Client-side routing |
+| React Hook Form + Zod | Form handling and validation |
+| Tailwind CSS 4 | Utility-first styling |
+| shadcn/ui + Radix UI | Accessible component primitives |
+| Vitest | Unit testing |
+| Playwright | E2E testing |
 
-## React Compiler
+## Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **`components/`** — Reusable UI components (forms, tables, dialogs, layout)
+- **`pages/`** — Route-level page components
+- **`hooks/`** — Custom React hooks (API queries, form state, UI state)
+- **`contexts/`** — React context providers (auth, theme)
+- **`generated/`** — TypeScript types and API client generated from `openapi/spec.yaml` (gitignored)
+- **`lib/`** — Utility functions and shared configuration
+- **`types/`** — Shared TypeScript type definitions
+- **`test/`** — Test utilities and setup
 
-## Expanding the ESLint configuration
+## Custom Hook Conventions
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+All functions, objects, and arrays returned from custom hooks (`use*`) **must** be referentially stable:
 
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
+- Wrap returned functions in `useCallback`
+- Wrap returned objects/arrays in `useMemo`
+- Ensure reducers return the same state reference when values haven't changed
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Unstable references cause infinite render loops that pass individual tests but hang the full suite.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+## Development
+
+```bash
+npm install                    # Install dependencies
+npm run dev                    # Start Vite dev server
+npm run generate:types         # Regenerate types from OpenAPI spec
+npm run test                   # Run Vitest unit tests
+npm run lint                   # Run ESLint
+npx tsc -b --noEmit            # Type check
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
-
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
+The dev server is automatically started by Aspire when using F5 debugging.

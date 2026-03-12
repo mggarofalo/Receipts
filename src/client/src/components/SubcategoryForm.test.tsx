@@ -13,6 +13,7 @@ vi.mock("@/hooks/useCategories", () => ({
       { id: "cat-1", name: "Groceries" },
       { id: "cat-2", name: "Utilities" },
     ],
+    total: 2,
   })),
 }));
 

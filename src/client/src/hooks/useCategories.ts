@@ -3,7 +3,7 @@ import client from "@/lib/api-client";
 import { toast } from "sonner";
 
 export function useCategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["categories", "list", offset, limit, sortBy, sortDirection],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/categories", {
@@ -13,6 +13,7 @@ export function useCategories(offset = 0, limit = 50, sortBy?: string | null, so
       return data;
     },
   });
+  return { ...query, data: query.data?.data, total: query.data?.total ?? 0 };
 }
 
 export function useCategory(id: string | null) {

@@ -2,8 +2,8 @@ import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCreateReceipt } from "@/hooks/useReceipts";
-import { useCreateTransaction } from "@/hooks/useTransactions";
-import { useCreateReceiptItem } from "@/hooks/useReceiptItems";
+import { useCreateTransactionsBatch } from "@/hooks/useTransactions";
+import { useCreateReceiptItemsBatch } from "@/hooks/useReceiptItems";
 import { useWizard } from "./useWizard";
 import { WizardStepper } from "./WizardStepper";
 import { Step1TripDetails } from "./Step1TripDetails";
@@ -43,8 +43,8 @@ export default function NewReceipt() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { mutateAsync: createReceiptAsync } = useCreateReceipt();
-  const { mutateAsync: createTransactionAsync } = useCreateTransaction();
-  const { mutateAsync: createReceiptItemAsync } = useCreateReceiptItem();
+  const { mutateAsync: createTransactionsBatchAsync } = useCreateTransactionsBatch();
+  const { mutateAsync: createReceiptItemsBatchAsync } = useCreateReceiptItemsBatch();
 
   const hasData =
     state.receipt.location !== "" ||
@@ -87,27 +87,27 @@ export default function NewReceipt() {
 
       const receiptId = (receipt as { id: string }).id;
 
-      // 2. Create transactions sequentially
-      for (const txn of state.transactions) {
-        await createTransactionAsync(
+      // 2. Create transactions in batch
+      if (state.transactions.length > 0) {
+        await createTransactionsBatchAsync(
           {
             receiptId,
-            body: {
+            body: state.transactions.map((txn) => ({
               accountId: txn.accountId,
               amount: txn.amount,
               date: txn.date,
-            },
+            })),
           },
           { onSuccess: undefined, onError: undefined },
         );
       }
 
-      // 3. Create receipt items sequentially
-      for (const item of state.items) {
-        await createReceiptItemAsync(
+      // 3. Create receipt items in batch
+      if (state.items.length > 0) {
+        await createReceiptItemsBatchAsync(
           {
             receiptId,
-            body: {
+            body: state.items.map((item) => ({
               receiptItemCode: item.receiptItemCode,
               description: item.description,
               quantity: item.quantity,
@@ -115,7 +115,7 @@ export default function NewReceipt() {
               category: item.category,
               subcategory: item.subcategory,
               pricingMode: item.pricingMode,
-            },
+            })),
           },
           { onSuccess: undefined, onError: undefined },
         );
@@ -134,8 +134,8 @@ export default function NewReceipt() {
   }, [
     state,
     createReceiptAsync,
-    createTransactionAsync,
-    createReceiptItemAsync,
+    createTransactionsBatchAsync,
+    createReceiptItemsBatchAsync,
     reset,
     navigate,
   ]);

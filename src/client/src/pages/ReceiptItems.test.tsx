@@ -24,8 +24,8 @@ vi.mock("@/hooks/useEnumMetadata", () => ({
 }));
 
 vi.mock("@/hooks/useReceiptItems", () => ({
-  useReceiptItems: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 50 }, isLoading: false })),
-  useReceiptItemsByReceiptId: vi.fn(() => ({ data: { data: [], total: 0, offset: 0, limit: 200 }, isLoading: false })),
+  useReceiptItems: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useReceiptItemsByReceiptId: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useCreateReceiptItem: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateReceiptItem: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteReceiptItems: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -81,21 +81,21 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
 
 // Mocks needed by ReceiptItemForm (rendered inside dialogs)
 vi.mock("@/hooks/useReceipts", () => ({
-  useReceipts: vi.fn(() => ({ data: [], isLoading: false })),
+  useReceipts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({ data: [], isLoading: false })),
+  useCategories: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useSubcategories: vi.fn(() => ({ data: [], isLoading: false })),
-  useSubcategoriesByCategoryId: vi.fn(() => ({ data: [], isLoading: false })),
+  useSubcategories: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useSubcategoriesByCategoryId: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useCreateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useItemTemplates", () => ({
-  useItemTemplates: vi.fn(() => ({ data: [], isLoading: false })),
+  useItemTemplates: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
 }));
 
 vi.mock("@/hooks/usePagination", () => ({
@@ -132,7 +132,8 @@ describe("ReceiptItems", () => {
   it("renders empty state when no receipt items exist", async () => {
     const { useReceiptItems } = await import("@/hooks/useReceiptItems");
     vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
-      data: { data: [], total: 0, offset: 0, limit: 50 },
+      data: [],
+      total: 0,
       isLoading: false,
     }));
 
@@ -173,7 +174,8 @@ describe("ReceiptItems", () => {
 
     const { useReceiptItems } = await import("@/hooks/useReceiptItems");
     vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -321,7 +323,8 @@ describe("ReceiptItems", () => {
 
     const { useReceiptItems } = await import("@/hooks/useReceiptItems");
     vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -358,7 +361,8 @@ describe("ReceiptItems", () => {
 
     const { useReceiptItems } = await import("@/hooks/useReceiptItems");
     vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 
@@ -398,7 +402,8 @@ describe("ReceiptItems", () => {
 
     const { useReceiptItems } = await import("@/hooks/useReceiptItems");
     vi.mocked(useReceiptItems).mockReturnValue(mockQueryResult({
-      data: { data: items, total: items.length, offset: 0, limit: 50 },
+      data: items,
+      total: items.length,
       isLoading: false,
     }));
 

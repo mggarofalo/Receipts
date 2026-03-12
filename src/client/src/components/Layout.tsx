@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -41,6 +42,12 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+
+const appVersion = __APP_VERSION__;
+const commitHash = __COMMIT_HASH__;
+const showVersion = appVersion !== "dev" && commitHash !== "local";
+const shortHash = commitHash.slice(0, 7);
+const commitUrl = `https://github.com/mggarofalo/Receipts/commit/${commitHash}`;
 
 const connectionStateColors: Record<SignalRConnectionState, string> = {
   connected: "bg-green-500",
@@ -171,7 +178,7 @@ export function Layout() {
     return (
       <NavigationMenuItem key={group.label}>
         <NavigationMenuTrigger
-          className={cn(groupActive && "text-accent-foreground")}
+          className={cn("px-2 md:px-4", groupActive && "text-accent-foreground")}
         >
           {group.label}
         </NavigationMenuTrigger>
@@ -226,8 +233,8 @@ export function Layout() {
       </a>
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          {/* Mobile: hamburger + brand */}
-          <div className="flex items-center gap-2 lg:hidden">
+          {/* Phone: hamburger + brand (below sm only) */}
+          <div className="flex items-center gap-2 sm:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -242,12 +249,12 @@ export function Layout() {
             </Link>
           </div>
 
-          {/* Desktop: full nav */}
+          {/* Horizontal nav (visible sm+) */}
           <nav
-            className="hidden lg:flex items-center gap-2"
+            className="hidden sm:flex items-center gap-1 md:gap-2"
             aria-label="Main navigation"
           >
-            <Link to="/" className="font-semibold text-lg mr-2">
+            <Link to="/" className="font-semibold text-lg mr-1 md:mr-2">
               Receipts
             </Link>
             <Separator orientation="vertical" className="h-6" />
@@ -259,6 +266,7 @@ export function Layout() {
                       to="/"
                       className={cn(
                         navigationMenuTriggerStyle(),
+                        "px-2 md:px-4",
                         isLinkActive("/") &&
                           "bg-accent/50 text-accent-foreground",
                       )}
@@ -273,12 +281,21 @@ export function Layout() {
             </NavigationMenu>
           </nav>
 
-          {/* Desktop: right-side actions */}
-          <div className="hidden lg:flex items-center gap-3">
+          {/* Right-side actions (sm+: responsive layout) */}
+          <div className="hidden sm:flex items-center gap-1 md:gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 md:hidden"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-muted-foreground"
+              className="hidden md:inline-flex gap-1.5 text-muted-foreground"
               onClick={() => setSearchOpen(true)}
             >
               <Search className="h-3.5 w-3.5" />
@@ -291,12 +308,16 @@ export function Layout() {
               className="flex items-center gap-1.5"
               role="status"
               aria-live="polite"
+              title={connectionStateLabels[connectionState]}
             >
               <span
                 className={`h-2 w-2 rounded-full ${connectionStateColors[connectionState]}`}
                 aria-hidden="true"
               />
-              <span className="text-xs text-muted-foreground">
+              <span className="hidden md:inline text-xs text-muted-foreground">
+                {connectionStateLabels[connectionState]}
+              </span>
+              <span className="sr-only md:hidden">
                 {connectionStateLabels[connectionState]}
               </span>
             </div>
@@ -306,8 +327,15 @@ export function Layout() {
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    {user.email}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`User menu for ${user.email || "current user"}`}
+                  >
+                    <span className="hidden md:inline">{user.email}</span>
+                    <span className="md:hidden text-xs font-semibold">
+                      {user.email ? user.email[0].toUpperCase() : "?"}
+                    </span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -318,13 +346,30 @@ export function Layout() {
                   <DropdownMenuItem onClick={handleLogout}>
                     Logout
                   </DropdownMenuItem>
+                  {showVersion && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                        {appVersion} &middot;{" "}
+                        <a
+                          href={commitUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {shortHash}
+                        </a>
+                      </DropdownMenuLabel>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
           </div>
 
-          {/* Mobile: compact actions */}
-          <div className="flex items-center gap-1 lg:hidden">
+          {/* Phone-only: compact actions */}
+          <div className="flex items-center gap-1 sm:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -359,7 +404,7 @@ export function Layout() {
         </div>
       </main>
 
-      {/* Mobile navigation drawer */}
+      {/* Phone navigation drawer (below sm only) */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-72">
           <SheetHeader>
@@ -414,6 +459,19 @@ export function Layout() {
                   Logout
                 </button>
               </>
+            )}
+            {showVersion && (
+              <p className="px-3 py-2 text-xs text-muted-foreground">
+                {appVersion} &middot;{" "}
+                <a
+                  href={commitUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  {shortHash}
+                </a>
+              </p>
             )}
           </div>
         </SheetContent>

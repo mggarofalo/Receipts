@@ -39,7 +39,7 @@ beforeEach(() => {
 describe("useMyAuthAuditLog", () => {
   it("fetches my auth audit logs with default params", async () => {
     const mockLogs = [{ id: "log1", event: "Login" }];
-    (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
+    (client.GET as Mock).mockResolvedValue({ data: { data: mockLogs, total: 1, offset: 0, limit: 50 }, error: null });
 
     const { result } = renderHook(() => useMyAuthAuditLog(), {
       wrapper: createWrapper(),
@@ -62,7 +62,7 @@ describe("useMyAuthAuditLog", () => {
 
   it("fetches my auth audit logs with custom offset and limit", async () => {
     const mockLogs = [{ id: "log1" }];
-    (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
+    (client.GET as Mock).mockResolvedValue({ data: { data: mockLogs, total: 1, offset: 10, limit: 25 }, error: null });
 
     const { result } = renderHook(() => useMyAuthAuditLog(10, 25), {
       wrapper: createWrapper(),
@@ -86,7 +86,7 @@ describe("useMyAuthAuditLog", () => {
 describe("useRecentAuthAuditLogs", () => {
   it("fetches recent auth audit logs with default params", async () => {
     const mockLogs = [{ id: "log2", event: "Logout" }];
-    (client.GET as Mock).mockResolvedValue({ data: mockLogs, error: null });
+    (client.GET as Mock).mockResolvedValue({ data: { data: mockLogs, total: 1, offset: 0, limit: 50 }, error: null });
 
     const { result } = renderHook(() => useRecentAuthAuditLogs(), {
       wrapper: createWrapper(),
@@ -108,7 +108,7 @@ describe("useRecentAuthAuditLogs", () => {
   });
 
   it("fetches recent auth audit logs with custom offset and limit", async () => {
-    (client.GET as Mock).mockResolvedValue({ data: [], error: null });
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 5, limit: 20 }, error: null });
 
     const { result } = renderHook(() => useRecentAuthAuditLogs(5, 20), {
       wrapper: createWrapper(),
@@ -133,7 +133,7 @@ describe("useFailedAuthAttempts", () => {
   it("fetches failed auth attempts with default params", async () => {
     const mockAttempts = [{ id: "f1", reason: "InvalidPassword" }];
     (client.GET as Mock).mockResolvedValue({
-      data: mockAttempts,
+      data: { data: mockAttempts, total: 1, offset: 0, limit: 50 },
       error: null,
     });
 
@@ -157,7 +157,7 @@ describe("useFailedAuthAttempts", () => {
   });
 
   it("fetches failed auth attempts with custom offset and limit", async () => {
-    (client.GET as Mock).mockResolvedValue({ data: [], error: null });
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 100, limit: 10 }, error: null });
 
     const { result } = renderHook(() => useFailedAuthAttempts(100, 10), {
       wrapper: createWrapper(),
@@ -178,7 +178,7 @@ describe("useFailedAuthAttempts", () => {
   });
 
   it("fetches failed auth attempts with sort params", async () => {
-    (client.GET as Mock).mockResolvedValue({ data: [], error: null });
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 0, limit: 50 }, error: null });
 
     const { result } = renderHook(
       () => useFailedAuthAttempts(0, 50, "timestamp", "asc"),

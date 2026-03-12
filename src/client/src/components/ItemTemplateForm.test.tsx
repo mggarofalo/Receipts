@@ -1,6 +1,21 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi, describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { ItemTemplateForm } from "./ItemTemplateForm";
+
+// Polyfill ResizeObserver and scrollIntoView for radix-ui / cmdk in jsdom
+beforeAll(() => {
+  if (typeof window.ResizeObserver === "undefined") {
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  }
+  if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = vi.fn();
+  }
+});
 
 vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
@@ -28,6 +43,7 @@ vi.mock("@/hooks/useCategories", () => ({
       { id: "cat-1", name: "Groceries" },
       { id: "cat-2", name: "Electronics" },
     ],
+    total: 2,
   })),
 }));
 
@@ -37,6 +53,7 @@ vi.mock("@/hooks/useSubcategories", () => ({
       { id: "sub-1", name: "Dairy" },
       { id: "sub-2", name: "Bakery" },
     ],
+    total: 2,
   })),
 }));
 
@@ -135,5 +152,40 @@ describe("ItemTemplateForm", () => {
     expect(screen.getByText("Default Unit Price (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Pricing Mode (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Item Code (optional)")).toBeInTheDocument();
+  });
+
+  it("filters category options via typeahead and selects a filtered result", async () => {
+    const onSubmit = vi.fn();
+    const user = userEvent.setup();
+    render(<ItemTemplateForm {...defaultProps} onSubmit={onSubmit} />);
+
+    // Open the category combobox
+    const categoryCombobox = screen.getByRole("combobox", { name: /^default category/i });
+    await user.click(categoryCombobox);
+
+    // Both categories should be visible
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+      expect(screen.getByText("Electronics")).toBeInTheDocument();
+    });
+
+    // Type to filter — only "Electronics" should match
+    await user.type(
+      screen.getByPlaceholderText("Search categories..."),
+      "elec",
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Electronics")).toBeInTheDocument();
+      expect(screen.queryByText("Groceries")).not.toBeInTheDocument();
+    });
+
+    // Select the filtered result
+    await user.click(screen.getByText("Electronics"));
+
+    // Verify the combobox now shows the selected value
+    await waitFor(() => {
+      expect(categoryCombobox).toHaveTextContent("Electronics");
+    });
   });
 });

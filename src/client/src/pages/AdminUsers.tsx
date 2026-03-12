@@ -97,7 +97,7 @@ function AdminUsers() {
 
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "email", defaultSortDirection: "asc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ defaultPageSize: 20 });
-  const { data: usersResponse, isLoading } = useUsers(offset, limit, sortBy, sortDirection);
+  const { data: usersData, total: serverTotal, isLoading } = useUsers(offset, limit, sortBy, sortDirection);
 
   useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
 
@@ -121,8 +121,7 @@ function AdminUsers() {
     email: string;
   } | null>(null);
 
-  const items = usersResponse?.data ?? [];
-  const serverTotal = usersResponse?.total ?? 0;
+  const items = usersData ?? [];
 
   const listItems = items.map((u) => ({ id: u.id }));
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({

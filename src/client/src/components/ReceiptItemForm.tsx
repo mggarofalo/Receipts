@@ -97,8 +97,7 @@ export function ReceiptItemForm({
     useFieldHistory(itemCodeHistory);
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
-  const { data: categoriesResponse } = useCategories();
-  const categories = categoriesResponse?.data as { id: string; name: string }[] | undefined;
+  const { data: categories } = useCategories();
   const { data: itemTemplatesData } = useItemTemplates();
   const templates = useMemo(
     () => (itemTemplatesData as ItemTemplate[] | undefined) ?? [],

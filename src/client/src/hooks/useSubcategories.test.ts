@@ -45,7 +45,7 @@ describe("useSubcategories", () => {
       { id: "1", name: "Produce", categoryId: "cat-1", description: null },
     ];
     (client.GET as Mock).mockResolvedValue({
-      data: subcategories,
+      data: { data: subcategories, total: 1, offset: 0, limit: 50 },
       error: undefined,
     });
 
@@ -87,7 +87,7 @@ describe("useSubcategories", () => {
 
   it("by-category query returns data when categoryId is provided", async () => {
     const items = [{ id: "1", name: "Produce", categoryId: "cat-1" }];
-    (client.GET as Mock).mockResolvedValue({ data: items, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: items, total: 1, offset: 0, limit: 200 }, error: undefined });
 
     const { result } = renderHook(() => useSubcategoriesByCategoryId("cat-1"), {
       wrapper: createWrapper(),

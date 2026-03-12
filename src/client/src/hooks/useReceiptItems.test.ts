@@ -56,7 +56,7 @@ describe("useReceiptItems", () => {
         pricingMode: "quantity",
       },
     ];
-    (client.GET as Mock).mockResolvedValue({ data: items, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: items, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useReceiptItems(), {
       wrapper: createWrapper(),
@@ -81,7 +81,7 @@ describe("useReceiptItems", () => {
 
   it("by-receipt query returns data when receiptId is provided", async () => {
     const items = [{ id: "1", receiptItemCode: "RI-1", description: "Apples" }];
-    (client.GET as Mock).mockResolvedValue({ data: items, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: items, total: 1, offset: 0, limit: 200 }, error: undefined });
 
     const { result } = renderHook(() => useReceiptItemsByReceiptId("r-1"), {
       wrapper: createWrapper(),
@@ -173,7 +173,7 @@ describe("useReceiptItems", () => {
 
   it("deleted receipt items query returns data on success", async () => {
     const deleted = [{ id: "3", receiptItemCode: "DEL", description: "Old item" }];
-    (client.GET as Mock).mockResolvedValue({ data: deleted, error: undefined });
+    (client.GET as Mock).mockResolvedValue({ data: { data: deleted, total: 1, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useDeletedReceiptItems(), {
       wrapper: createWrapper(),

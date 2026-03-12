@@ -16,7 +16,7 @@ One per phase, named `milestone/phase-N` (e.g., `milestone/phase-0`):
 ### Parent Branches (for epics)
 
 When an epic has multiple child issues:
-- Create a parent branch using the epic's `gitBranchName`
+- Create a parent branch using the epic's identifier (e.g., `mggarofalo/mgg-83-description`)
 - Parent branch is created off `main` (or the milestone branch if one exists)
 - Child issue branches are created off the parent branch and squash-merge back into it
 - When all children are complete, the parent branch gets a PR to `main`
@@ -24,9 +24,9 @@ When an epic has multiple child issues:
 
 ### Issue Branches
 
-One per Linear issue:
+One per tracked issue:
 - Branch off the parent branch (if epic) or milestone branch, NOT `main`
-- Use the `gitBranchName` from the Linear issue
+- Use the issue identifier to form a branch name (e.g., `mggarofalo/mgg-123-short-description`)
 - Merge locally into the parent/milestone branch via squash merge (no PR needed)
 - Delete the issue branch after merge
 
@@ -81,23 +81,45 @@ git pull   # update main with the merged PR
 
 ## Direct Commits to Main
 
-Only use for non-Linear work like:
+Only use for non-tracked work like:
 - Trivial typo fixes
 - Documentation updates
 - Tooling/build configuration
 
-**NEVER** commit Linear-based work directly to main. When in doubt, create a branch.
+**NEVER** commit tracked-issue work directly to main. When in doubt, create a branch.
 
 ## Directory Isolation
 
-When you need to work on an issue branch without affecting the main repo, use `git clone --local` to create a lightweight local clone:
+Two mechanisms are available for working on issue branches without affecting the main repo:
+
+### Git Worktrees (preferred for AI agents)
+
+`git worktree add` creates a linked working tree sharing the same `.git` directory:
+
+```bash
+git worktree add .claude/worktrees/<branch-name> -b <branch-name>
+```
+
+- Shares git history and refs with the main worktree (no duplication)
+- Requires bootstrapping: `dotnet restore`, `npm install`, `npm install` in `src/client/`
+- Claude Code's `isolation: "worktree"` parameter automates this for subagents
+- Worktrees live in `.claude/worktrees/` (gitignored)
+- See [AGENTS.md](../AGENTS.md#worktree-setup) for bootstrap commands
+
+### Local Clones (alternative)
+
+`git clone --local` creates a lightweight local clone:
 
 ```bash
 git clone --local . .clones/<branch-name>
 ```
 
-- The clone hardlinks objects (fast, no network), and is a fully independent git repo
+- Hardlinks objects (fast, no network), fully independent git repo
 - `cd`, `git commit`, etc. all work normally
 - Clones live in `.clones/` at the repo root (gitignored)
-- Use `/clone <issue-id>` to create an isolated clone for an issue
-- For simple/small changes, it's fine to work directly on the milestone branch without isolation
+
+### When to Use Which
+
+- **Worktrees** — preferred for parallel AI agent work (faster setup, shared git state)
+- **Local clones** — preferred for human developers who want full independence
+- **Neither** — for simple/small changes, it's fine to work directly on the milestone branch

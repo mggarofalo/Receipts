@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAccessToken, parseJwtPayload } from "@/lib/auth";
@@ -170,5 +170,5 @@ export function useSignalR(enabled: boolean) {
     };
   }, [enabled, queryClient]);
 
-  return { connectionState };
+  return useMemo(() => ({ connectionState }), [connectionState]);
 }

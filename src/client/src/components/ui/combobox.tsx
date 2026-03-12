@@ -89,6 +89,7 @@ const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
         <PopoverContent
           className="w-[--radix-popover-trigger-width] p-0"
           align="start"
+          aria-describedby={undefined}
         >
           <Command>
             <CommandInput
