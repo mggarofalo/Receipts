@@ -30,7 +30,7 @@ public sealed class OnnxEmbeddingService : IEmbeddingService, IDisposable
 		{
 			throw new FileNotFoundException(
 				$"ONNX model files not found at {Path.GetDirectoryName(modelPath)}. " +
-				"Run scripts/download-onnx-model.sh to download them.");
+				"Run scripts/download-onnx-model.cs to download them.");
 		}
 
 		SessionOptions options = new();

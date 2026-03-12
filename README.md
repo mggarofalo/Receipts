@@ -174,7 +174,7 @@ The OpenAPI spec is generated at build time to `openapi/generated/API.json`. Thi
 
 Native Git hooks (`.githooks/`) run an eight-step pipeline on every `git commit`:
 
-0. **Prerequisites** - `bash scripts/worktree-setup.sh --check`
+0. **Prerequisites** - `dotnet run scripts/worktree-setup.cs -- --check`
 1. **OpenAPI spec lint** - `npx spectral lint openapi/spec.yaml`
 2. **Format check** - `dotnet format --verify-no-changes`
 3. **Build** - `dotnet build -p:TreatWarningsAsErrors=true` (also regenerates DTOs and `openapi/generated/API.json`)
