@@ -37,7 +37,8 @@
       "mcp__aspire__*",
       "mcp__linear__*",
       "Bash(xargs cat:*)",
-      "mcp__plugin_linear_linear__*"
+      "mcp__plugin_linear_linear__*",
+      "Bash(plane issue:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
