@@ -45,11 +45,11 @@ Establish an OpenAPI 3.1 specification as the **single source of truth** for the
 * Enables future clients (mobile, CLI) with zero additional work
 * OpenAPI linting catches design issues early
 
-## Notes from MGG-14 (Baseline)
+## Notes from [MGG-14](./mgg-14-verify-swagger-openapi-baseline-output.md) (Baseline)
 
 ### `Microsoft.Extensions.ApiDescription.Server` behavior
 
-MGG-14 added this package for build-time spec export. It works by **bootstrapping the full application** (including DI container) to discover endpoints — it is *not* a static analysis tool. `InfrastructureService` and `Program.cs` were updated to handle missing DB env vars gracefully so the generator can run without a database.
+[MGG-14](./mgg-14-verify-swagger-openapi-baseline-output.md) added this package for build-time spec export. It works by **bootstrapping the full application** (including DI container) to discover endpoints — it is *not* a static analysis tool. `InfrastructureService` and `Program.cs` were updated to handle missing DB env vars gracefully so the generator can run without a database.
 
 ### Decision point for this issue
 
@@ -62,7 +62,7 @@ If kept for drift detection, the generated file should move from `openapi/API.js
 
 ### No `GenerateDocumentationFile`
 
-MGG-14 intentionally did not enable `<GenerateDocumentationFile>` because CS1591 warnings for every undocumented public type break the pre-commit hook (`TreatWarningsAsErrors=true`). MGG-93 was created to add `[EndpointSummary]`/`[EndpointDescription]` attributes instead, which flow into the OpenAPI spec without XML doc generation.
+[MGG-14](./mgg-14-verify-swagger-openapi-baseline-output.md) intentionally did not enable `<GenerateDocumentationFile>` because CS1591 warnings for every undocumented public type break the pre-commit hook (`TreatWarningsAsErrors=true`). [MGG-93](./mgg-93-add-openapi-endpoint-metadata-attributes-to-all-controllers.md) was created to add `[EndpointSummary]`/`[EndpointDescription]` attributes instead, which flow into the OpenAPI spec without XML doc generation.
 
 ## Technology Stack
 
@@ -90,7 +90,7 @@ Receipts/
 │   │   └── API/
 │   │       └── Generated/
 │   │           └── Dtos.g.cs  ← NSwag-generated C# DTOs from spec.yaml
-│   └── client/                ← React app (under MGG-33)
+│   └── client/                ← React app (under [MGG-33](./mgg-33-project-setup-react-vite-typescript-shadcn-ui.md))
 │       └── src/
 │           └── generated/
 │               └── api.d.ts   ← openapi-typescript-generated TS types
@@ -212,8 +212,8 @@ dotnet test Receipts.sln --no-build --verbosity quiet
 - [ ] Canonical OpenAPI 3.1 `spec.yaml` exists in `openapi/` directory
 - [ ] `.spectral.yaml` config with enforced rules
 - [ ] `npx spectral lint` passes with zero warnings
-- [ ] NSwag configured to generate .NET DTOs from spec (see MGG-88)
-- [ ] openapi-typescript configured to generate TS types from spec (see MGG-36)
+- [ ] NSwag configured to generate .NET DTOs from spec (see [MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md))
+- [ ] openapi-typescript configured to generate TS types from spec (see [MGG-36](./mgg-36-generate-typescript-types-and-api-client-from-openapi-spec.md))
 - [ ] Husky pre-commit hook orchestrates: lint → regen → stale check → test
 - [ ] Build-time drift detection (exported spec vs canonical spec)
 - [ ] Developer documentation explains the spec-first workflow and hook pipeline
@@ -222,6 +222,6 @@ dotnet test Receipts.sln --no-build --verbosity quiet
 
 This issue blocks:
 
-* MGG-88 (Generate .NET DTOs from spec)
-* MGG-36 (Generate TypeScript types from spec)
-* MGG-83 (Replace ViewModels epic)
+* [MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md) (Generate .NET DTOs from spec)
+* [MGG-36](./mgg-36-generate-typescript-types-and-api-client-from-openapi-spec.md) (Generate TypeScript types from spec)
+* [MGG-83](./mgg-83-replace-viewmodels-with-spec-generated-dtos.md) (Replace ViewModels epic)

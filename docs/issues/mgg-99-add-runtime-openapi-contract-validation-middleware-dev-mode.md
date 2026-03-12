@@ -75,5 +75,5 @@ The middleware:
 
 ## Dependencies
 
-* Should follow MGG-88 (spec must be in Request/Response format)
+* Should follow [MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md) (spec must be in Request/Response format)
 * Benefits from semantic drift detection being in place

@@ -57,7 +57,7 @@ function usePermission() {
 
 * `<AdminOnly>` guard component: renders children only when `isAdmin()` is true
 * Hide/show navigation items, action buttons, and management pages based on role
-* Admin-only sections: user role management UI (assign/remove roles per user, backed by the `/api/users/{userId}/roles` endpoints from MGG-130)
+* Admin-only sections: user role management UI (assign/remove roles per user, backed by the `/api/users/{userId}/roles` endpoints from [MGG-130](./mgg-130-backend-role-based-authorization-policies.md))
 
 ### Graceful degradation
 

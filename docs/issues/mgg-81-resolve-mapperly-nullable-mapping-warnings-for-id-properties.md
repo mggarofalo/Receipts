@@ -34,7 +34,7 @@ Domain entities have nullable ID properties (`Guid? Id`), but Infrastructure ent
 
 ## Scope (Revised)
 
-**Domain entities only.** ViewModels are being deprecated in favor of DTOs (see MGG-82), so we leave VM nullability as-is.
+**Domain entities only.** ViewModels are being deprecated in favor of DTOs (see [MGG-82](./mgg-82-update-github-actions-workflow-to-net-10-and-add-comprehensive-ci-steps.md)), so we leave VM nullability as-is.
 
 ## Acceptance Criteria
 
@@ -44,4 +44,4 @@ Domain entities have nullable ID properties (`Guid? Id`), but Infrastructure ent
 - [ ] Update Domain unit tests: replace `Constructor_NullId_*` tests with `Constructor_EmptyId_*` tests
 - [ ] Verify no Mapperly nullable mapping warnings remain in LSP
 - [ ] Run all tests to ensure no regressions
-- [ ] Do NOT modify ViewModels — they will be replaced by DTOs in MGG-82
+- [ ] Do NOT modify ViewModels — they will be replaced by DTOs in [MGG-82](./mgg-82-update-github-actions-workflow-to-net-10-and-add-comprehensive-ci-steps.md)

@@ -24,4 +24,4 @@ completedAt: "2026-02-26T13:06:20.354Z"
 
 # Frontend Quality & Documentation
 
-Comprehensive test suite (unit, integration, E2E) and developer documentation for the React frontend.\\n\\n**Children:**\\n- MGG-49: Testing Suite\\n- MGG-50: Documentation & Developer Guide\\n\\n**Post-MVP follow-up.** Should be done before production hardening.
+Comprehensive test suite (unit, integration, E2E) and developer documentation for the React frontend.\\n\\n**Children:**\\n- [MGG-49](./mgg-49-testing-suite-unit-integration-e2e-tests.md): Testing Suite\\n- [MGG-50](./mgg-50-documentation-developer-guide.md): Documentation & Developer Guide\\n\\n**Post-MVP follow-up.** Should be done before production hardening.

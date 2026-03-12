@@ -22,4 +22,4 @@ completedAt: "2026-02-26T02:50:48.343Z"
 
 # Fix focus outline on table row click
 
-After MGG-178 added click-to-select on table rows, clicking a row shows a large browser focus outline/ring. The outline should be suppressed since the `bg-accent` highlight already provides visual feedback for the selected state.\\n\\n## Requirements\\n\\n\* Remove the default browser focus outline on clicked table rows\\n\* Keep the existing `bg-accent` selection highlight as the visual indicator\\n\* Ensure keyboard focus indicators are still accessible (only suppress for mouse clicks)
+After [MGG-178](./mgg-178-click-to-select-row-in-data-tables.md) added click-to-select on table rows, clicking a row shows a large browser focus outline/ring. The outline should be suppressed since the `bg-accent` highlight already provides visual feedback for the selected state.\\n\\n## Requirements\\n\\n\* Remove the default browser focus outline on clicked table rows\\n\* Keep the existing `bg-accent` selection highlight as the visual indicator\\n\* Ensure keyboard focus indicators are still accessible (only suppress for mouse clicks)

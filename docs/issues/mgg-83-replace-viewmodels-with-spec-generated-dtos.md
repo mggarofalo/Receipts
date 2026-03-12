@@ -42,15 +42,15 @@ The old `*VM` classes in `Shared/ViewModels/` are hand-written DTOs. They'll be 
 
 This epic covers:
 
-1. **MGG-88**: Generate .NET Request/Response DTOs from the OpenAPI spec, update controllers/mappers/tests, remove old VMs
-2. **MGG-87**: Update documentation to reflect the new architecture
+1. **[MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md)**: Generate .NET Request/Response DTOs from the OpenAPI spec, update controllers/mappers/tests, remove old VMs
+2. **[MGG-87](./mgg-87-update-documentation-to-reflect-viewmodel-dto-rename.md)**: Update documentation to reflect the new architecture
 
 ## Dependencies
 
-* **Blocked by**: MGG-21 (OpenAPI spec must be established first)
+* **Blocked by**: [MGG-21](./mgg-21-establish-openapi-spec-as-authoritative-api-contract.md) (OpenAPI spec must be established first)
 * The blocking relationship with MGG-32 (React rewrite) is removed — the spec work can proceed independently since it's a backend concern
 
 ## Sub-Issues
 
-* **MGG-88** — Generate .NET DTOs from spec, replace VMs in API layer
-* **MGG-87** — Update documentation
+* **[MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md)** — Generate .NET DTOs from spec, replace VMs in API layer
+* **[MGG-87](./mgg-87-update-documentation-to-reflect-viewmodel-dto-rename.md)** — Update documentation

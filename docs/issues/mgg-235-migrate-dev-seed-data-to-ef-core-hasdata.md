@@ -28,7 +28,7 @@ Replace the custom `DevelopmentDataSeeder` service with EF Core's built-in `HasD
 
 ## Motivation
 
-MGG-233 identified that the `DevelopmentDataSeeder` crashes the API on restart due to fragile idempotency logic. Rather than patching the seeder, this replaces the entire approach with the canonical EF Core pattern.
+[MGG-233](./mgg-233-dev-data-seeder-crashes-api-on-restart-duplicate-key-constraint.md) identified that the `DevelopmentDataSeeder` crashes the API on restart due to fragile idempotency logic. Rather than patching the seeder, this replaces the entire approach with the canonical EF Core pattern.
 
 ## Checklist
 

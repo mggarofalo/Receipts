@@ -22,4 +22,4 @@ completedAt: "2026-02-22T01:50:28.679Z"
 
 # Fix Clean Architecture violation: UsersController bypasses service layer
 
-`UsersController` injects `ApplicationDbContext` directly, violating Clean Architecture — Presentation must never reference Infrastructure internals.\\n\\n**Fix:** Extract the batch role query into an `IUserService` interface (Application layer) with an `Infrastructure` implementation, and have the controller call through the interface.\\n\\n**Introduced in:** MGG-160
+`UsersController` injects `ApplicationDbContext` directly, violating Clean Architecture — Presentation must never reference Infrastructure internals.\\n\\n**Fix:** Extract the batch role query into an `IUserService` interface (Application layer) with an `Infrastructure` implementation, and have the controller call through the interface.\\n\\n**Introduced in:** [MGG-160](./mgg-160-fix-n-1-query-in-userscontroller-listusers.md)

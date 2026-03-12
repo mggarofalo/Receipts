@@ -38,7 +38,7 @@ Replace the name-level drift check with a semantic OpenAPI diff tool that compar
 | `openapi-diff` | Lightweight, focused on diff | Less maintained |
 | `oasdiff` (Go binary) | Fast, breaking change detection built-in, CLI-friendly | Requires Go binary or Docker |
 
-**Recommendation:** `oasdiff` — it does both drift detection AND breaking change detection (covers MGG-97 too), is fast, and has a single binary with no runtime dependencies. Available via npm (`oasdiff`), Docker, or direct download.
+**Recommendation:** `oasdiff` — it does both drift detection AND breaking change detection (covers [MGG-97](./mgg-97-add-breaking-change-detection-to-ci-pipeline.md) too), is fast, and has a single binary with no runtime dependencies. Available via npm (`oasdiff`), Docker, or direct download.
 
 ## Implementation
 
@@ -59,4 +59,4 @@ Replace the name-level drift check with a semantic OpenAPI diff tool that compar
 
 ## Dependencies
 
-* **Blocked by**: MGG-88 (spec must be refactored to Request/Response first)
+* **Blocked by**: [MGG-88](./mgg-88-generate-net-request-response-dtos-from-openapi-spec.md) (spec must be refactored to Request/Response first)

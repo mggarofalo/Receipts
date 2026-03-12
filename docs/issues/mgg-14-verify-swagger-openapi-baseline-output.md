@@ -67,8 +67,8 @@ Verify that the existing Swagger/OpenAPI configuration produces a correct and co
 - [X] Scalar API docs UI accessible in development
 - [X] Build-time `openapi/API.json` generated to `openapi/` directory
 - [X] All endpoints documented with correct request/response schemas
-- [ ] Gap analysis documented → deferred to MGG-21 (spec authoring)
+- [ ] Gap analysis documented → deferred to [MGG-21](./mgg-21-establish-openapi-spec-as-authoritative-api-contract.md) (spec authoring)
 
 ## Blocking
 
-This issue blocks MGG-21 (Establish OpenAPI spec as authoritative API contract)
+This issue blocks [MGG-21](./mgg-21-establish-openapi-spec-as-authoritative-api-contract.md) (Establish OpenAPI spec as authoritative API contract)

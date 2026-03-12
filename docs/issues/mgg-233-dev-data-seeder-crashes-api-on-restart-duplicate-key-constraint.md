@@ -40,7 +40,7 @@ The API crashes on startup with an unhandled `DbUpdateException` when `Developme
 
 ## Resolution
 
-Replacing the custom `DevelopmentDataSeeder` entirely with EF Core's built-in `HasData()` mechanism in MGG-235. `HasData()` is idempotent by design — seed data is tracked via migrations, eliminating both the guard logic and the crash vector.
+Replacing the custom `DevelopmentDataSeeder` entirely with EF Core's built-in `HasData()` mechanism in [MGG-235](./mgg-235-migrate-dev-seed-data-to-ef-core-hasdata.md). `HasData()` is idempotent by design — seed data is tracked via migrations, eliminating both the guard logic and the crash vector.
 
 ## Observed in
 

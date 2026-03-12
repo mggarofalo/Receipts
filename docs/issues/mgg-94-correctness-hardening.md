@@ -50,13 +50,13 @@ sum(item.TotalAmount) + Receipt.TaxAmount + sum(adjustment.Amount) == sum(transa
 
 | \# | Issue | Title | Priority | Blocked by |
 | -- | -- | -- | -- | -- |
-| C1 | MGG-197 | Wire up FluentValidation + MediatR validation pipeline | Urgent | — |
-| C2 | MGG-198 | Add Adjustment entity, AdjustmentType enum, and evolve domain aggregates | Urgent | — |
-| C3 | MGG-199 | Enforce Tier 1 hard invariants | High | C1, C2 |
-| C4 | MGG-200 | Add Tier 2 soft invariant warnings | High | C2 |
-| C5 | MGG-201 | Frontend — Adjustment management and validation display | Medium | C2, C4 |
-| C6 | MGG-202 | Comprehensive test suite for correctness hardening | Medium | C3, C4, C5 |
-| C7 | MGG-203 | Update documentation and Linear workspace for Phase 7 | Low | — |
+| C1 | [MGG-197](./mgg-197-wire-up-fluentvalidation-mediatr-validation-pipeline.md) | Wire up FluentValidation + MediatR validation pipeline | Urgent | — |
+| C2 | [MGG-198](./mgg-198-add-adjustment-entity-adjustmenttype-enum-and-evolve-domain-aggregates.md) | Add Adjustment entity, AdjustmentType enum, and evolve domain aggregates | Urgent | — |
+| C3 | [MGG-199](./mgg-199-enforce-tier-1-hard-invariants.md) | Enforce Tier 1 hard invariants | High | C1, C2 |
+| C4 | [MGG-200](./mgg-200-add-tier-2-soft-invariant-warnings.md) | Add Tier 2 soft invariant warnings | High | C2 |
+| C5 | [MGG-201](./mgg-201-frontend-adjustment-management-and-validation-display.md) | Frontend — Adjustment management and validation display | Medium | C2, C4 |
+| C6 | [MGG-202](./mgg-202-comprehensive-test-suite-for-correctness-hardening.md) | Comprehensive test suite for correctness hardening | Medium | C3, C4, C5 |
+| C7 | [MGG-203](./mgg-203-update-documentation-and-linear-workspace-for-phase-7.md) | Update documentation and Linear workspace for Phase 7 | Low | — |
 
 ### Execution Waves
 

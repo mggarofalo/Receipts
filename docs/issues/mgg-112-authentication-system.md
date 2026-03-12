@@ -24,4 +24,4 @@ completedAt: "2026-02-21T18:46:44.051Z"
 
 # Authentication System
 
-Implement the full authentication stack — backend JWT/API key auth with [ASP.NET](<http://ASP.NET>) Identity, and the frontend login UI with protected routes.\\n\\n**Children:**\\n- MGG-34: Backend [ASP.NET](<http://ASP.NET>) Identity + JWT Authentication\\n- MGG-35: Frontend Authentication UI & Protected Routes\\n\\n**MVP — required before any authenticated API usage.**
+Implement the full authentication stack — backend JWT/API key auth with [ASP.NET](<http://ASP.NET>) Identity, and the frontend login UI with protected routes.\\n\\n**Children:**\\n- [MGG-34](./mgg-34-backend-asp-net-identity-jwt-authentication.md): Backend [ASP.NET](<http://ASP.NET>) Identity + JWT Authentication\\n- [MGG-35](./mgg-35-frontend-authentication-ui-protected-routes.md): Frontend Authentication UI & Protected Routes\\n\\n**MVP — required before any authenticated API usage.**

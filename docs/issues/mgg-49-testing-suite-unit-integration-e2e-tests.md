@@ -26,7 +26,7 @@ completedAt: "2026-02-26T13:06:12.104Z"
 
 Establish E2E testing coverage and test data factories for the React frontend.
 
-**Scope note:** Unit and integration tests (Vitest) are deferred to Phase 8 (MGG-126 + MGG-127). This issue focuses exclusively on Playwright E2E tests, MSW mock handlers, and reusable test data factories.
+**Scope note:** Unit and integration tests (Vitest) are deferred to Phase 8 (MGG-126 + [MGG-127](./mgg-127-agent-test-writing-loop-react-frontend-coverage-gap-filling.md)). This issue focuses exclusively on Playwright E2E tests, MSW mock handlers, and reusable test data factories.
 
 ## Completed
 
@@ -48,7 +48,7 @@ Establish E2E testing coverage and test data factories for the React frontend.
 
 ## Acceptance Criteria
 
-* ~~> 70% code coverage~~ → Deferred to MGG-126
+* ~~> 70% code coverage~~ → Deferred to [MGG-126](./mgg-126-configure-vitest-with-coverage-v8-cobertura-output-in-the-react-app.md)
 * All critical user journeys tested via E2E
 * E2E tests pass consistently (48/48)
 * Tests run in CI/CD (frontend-e2e job)
