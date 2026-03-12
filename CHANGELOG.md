@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.13](https://github.com/mggarofalo/Receipts/compare/v0.1.12...v0.1.13) (2026-03-12)
+
+
+### Features
+
+* **client:** show version and commit hash in UI (MGG-340) ([#169](https://github.com/mggarofalo/Receipts/issues/169)) ([1a65fd1](https://github.com/mggarofalo/Receipts/commit/1a65fd19da2406adac34d78b0ad7091a5a530303))
+
+
+### Bug Fixes
+
+* **client:** add Enter key submission and focus-after-add in wizard Step 2 (MGG-335) ([#179](https://github.com/mggarofalo/Receipts/issues/179)) ([66336aa](https://github.com/mggarofalo/Receipts/commit/66336aadcea3c4375848473710647bf413c741a0))
+* **client:** crash on category select — paginated response treated as array (MGG-338) ([#168](https://github.com/mggarofalo/Receipts/issues/168)) ([bf870c8](https://github.com/mggarofalo/Receipts/commit/bf870c8cdc63578ef969c493e330185328b9fb9f))
+* **client:** move useFormField guard before context access ([0c61608](https://github.com/mggarofalo/Receipts/commit/0c6160808b406b03c0d643bb96929ff5922fd734))
+* **client:** replace date range button row with responsive dropdown (MGG-333) ([#172](https://github.com/mggarofalo/Receipts/issues/172)) ([803b28d](https://github.com/mggarofalo/Receipts/commit/803b28da32c7c2ef74289d0f544580de7c5eb45c))
+* **client:** replace mobile nav drawer with condensed hoverable menus (MGG-334) ([#177](https://github.com/mggarofalo/Receipts/issues/177)) ([878ee52](https://github.com/mggarofalo/Receipts/commit/878ee52e0fd0c58c215345b410cc3fd11faffead))
+* **client:** use batch endpoints for wizard receipt creation (MGG-337) ([#173](https://github.com/mggarofalo/Receipts/issues/173)) ([ae8404e](https://github.com/mggarofalo/Receipts/commit/ae8404e3526c993501c591e570c432b1ef41e99b))
+* **client:** use Popover for suggestions dropdown in wizard Step 3 (MGG-336) ([#170](https://github.com/mggarofalo/Receipts/issues/170)) ([584e67d](https://github.com/mggarofalo/Receipts/commit/584e67df802ffc5d45450e6ecbfeb3ce28c904fd))
+* **infrastructure:** add rollback and retry recovery to database seeder (MGG-342) ([#182](https://github.com/mggarofalo/Receipts/issues/182)) ([ec6b0d1](https://github.com/mggarofalo/Receipts/commit/ec6b0d1cae7e3882dbc2bbf680007d561bddd7de))
+* **infrastructure:** check AddToRoleAsync return values in database seeder (MGG-281) ([#174](https://github.com/mggarofalo/Receipts/issues/174)) ([6cbe8f1](https://github.com/mggarofalo/Receipts/commit/6cbe8f19c44115ed899a60d4fd76ae90f702c4e1))
+* **infrastructure:** check IdentityResult from role creation in database seeder (MGG-280) ([#176](https://github.com/mggarofalo/Receipts/issues/176)) ([0cc33d6](https://github.com/mggarofalo/Receipts/commit/0cc33d6e0327a8c54572dfd41daa43f6a74ed0b1))
+* **infrastructure:** handle Task.Delay cancellation in cleanup service and stabilize tests (MGG-282) ([#175](https://github.com/mggarofalo/Receipts/issues/175)) ([223dda3](https://github.com/mggarofalo/Receipts/commit/223dda353022edd6b07ba2198940029ba385791d))
+* **infrastructure:** handle Task.Delay cancellation in EmbeddingGenerationService (MGG-343) ([#183](https://github.com/mggarofalo/Receipts/issues/183)) ([36d6217](https://github.com/mggarofalo/Receipts/commit/36d6217c80ad65f387f1870e6c093e820147981d))
+
 ## [0.1.12](https://github.com/mggarofalo/Receipts/compare/v0.1.11...v0.1.12) (2026-03-11)
 
 
