@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.15](https://github.com/mggarofalo/Receipts/compare/v0.1.14...v0.1.15) (2026-03-12)
+
+
+### Features
+
+* **infra:** infrastructure tooling and test setup ([8b7ccbb](https://github.com/mggarofalo/Receipts/commit/8b7ccbb1c58ebd8d9c6f060aeabaf770a79abdc6))
+* **infra:** rewrite shell/Python scripts as C# file-based apps (RECEIPTS-350) ([c8d11e5](https://github.com/mggarofalo/Receipts/commit/c8d11e5e4c50e92eae42f21b6dfb1de785d8a815))
+* **infrastructure:** add __SeedHistory table for precise seeder tracking (RECEIPTS-348) ([9ce03a7](https://github.com/mggarofalo/Receipts/commit/9ce03a7ca85cdea27e6892db9efa7db919a2bba5))
+
+
+### Bug Fixes
+
+* **infrastructure:** fall back to dummy connection string in design-time factory (RECEIPTS-349) ([0847074](https://github.com/mggarofalo/Receipts/commit/08470741911bf7722802290619b577946671924f))
+
 ## [0.1.14](https://github.com/mggarofalo/Receipts/compare/v0.1.13...v0.1.14) (2026-03-12)
 
 
