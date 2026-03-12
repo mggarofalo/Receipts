@@ -12,6 +12,9 @@ Local development uses **.NET Aspire** to orchestrate all services — API, Post
 | [Node.js](https://nodejs.org) | 18+ | OpenAPI spec linting and drift detection |
 | [VS Code](https://code.visualstudio.com) | Any | Recommended IDE |
 | [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) | Any | VS Code C# support |
+| [uv](https://docs.astral.sh/uv/) | Any | MCP server runtime (for Plane integration) |
+
+> **MCP servers** — AI agents need `.mcp.json` configured for Plane and Aspire access. See **[docs/mcp-setup.md](mcp-setup.md)** for setup instructions.
 
 > **Docker is required** — Aspire provisions PostgreSQL as a container automatically. You don't need to manage the database manually.
 

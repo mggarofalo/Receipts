@@ -35,13 +35,14 @@
       "WebFetch(domain:github.com)",
       "WebSearch",
       "mcp__aspire__*",
-      "mcp__linear__*",
-      "Bash(xargs cat:*)",
-      "mcp__plugin_linear_linear__*"
+      "mcp__plane__*",
+      "Bash(xargs cat:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "aspire"
+    "qmd",
+    "aspire",
+    "plane"
   ]
 }
