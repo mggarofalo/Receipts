@@ -14,6 +14,7 @@ public class EntityChangeNotifierTests : IDisposable
 	private readonly Mock<IHubContext<EntityHub, IEntityHubClient>> _hubContextMock;
 	private readonly Mock<IEntityHubClient> _clientMock;
 	private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
+	private readonly Mock<ISignalRConnectionTracker> _connectionTrackerMock;
 	private readonly EntityChangeNotifier _notifier;
 
 	public EntityChangeNotifierTests()
@@ -31,8 +32,11 @@ public class EntityChangeNotifierTests : IDisposable
 		_httpContextAccessorMock = new Mock<IHttpContextAccessor>();
 		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns((HttpContext?)null);
 
+		_connectionTrackerMock = new Mock<ISignalRConnectionTracker>();
+		_connectionTrackerMock.Setup(t => t.IsConnectionOwnedBy(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
 		// Use a very long flush interval so the timer never fires during tests
-		_notifier = new EntityChangeNotifier(_hubContextMock.Object, _httpContextAccessorMock.Object, TimeSpan.FromHours(1));
+		_notifier = new EntityChangeNotifier(_hubContextMock.Object, _httpContextAccessorMock.Object, _connectionTrackerMock.Object, TimeSpan.FromHours(1));
 	}
 
 	public void Dispose()
@@ -223,7 +227,8 @@ public class EntityChangeNotifierTests : IDisposable
 		hubContextMock.Setup(h => h.Clients).Returns(hubClientsMock.Object);
 		Mock<IHttpContextAccessor> httpContextAccessorMock = new();
 		httpContextAccessorMock.Setup(a => a.HttpContext).Returns((HttpContext?)null);
-		var notifier = new EntityChangeNotifier(hubContextMock.Object, httpContextAccessorMock.Object, TimeSpan.FromHours(1));
+		Mock<ISignalRConnectionTracker> trackerMock = new();
+		var notifier = new EntityChangeNotifier(hubContextMock.Object, httpContextAccessorMock.Object, trackerMock.Object, TimeSpan.FromHours(1));
 
 		Guid id = Guid.NewGuid();
 		await notifier.NotifyCreated("receipt", id);
@@ -357,5 +362,47 @@ public class EntityChangeNotifierTests : IDisposable
 				n.UserId == "user-B")),
 			Times.Once);
 		_clientMock.Verify(c => c.EntityChanged(It.IsAny<EntityChangeNotification>()), Times.Exactly(2));
+	}
+
+	[Fact]
+	public async Task NotifyCreated_WithSpoofedConnectionId_SetsConnectionIdToNull()
+	{
+		// Arrange — tracker says this connection does NOT belong to the user
+		var context = CreateJwtHttpContext("user-123", "spoofed-conn");
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns(context);
+		_connectionTrackerMock.Setup(t => t.IsConnectionOwnedBy("spoofed-conn", "user-123")).Returns(false);
+
+		// Act
+		await _notifier.NotifyCreated("receipt", Guid.NewGuid());
+		await _notifier.FlushAsync();
+
+		// Assert
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.UserId == "user-123" &&
+				n.AuthMethod == "jwt" &&
+				n.ConnectionId == null)),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task NotifyCreated_UnauthenticatedUserWithConnectionIdHeader_SetsConnectionIdToNull()
+	{
+		// Arrange — HttpContext exists with no user claims but has the connection ID header
+		var context = new DefaultHttpContext();
+		context.Request.Headers["X-SignalR-Connection-Id"] = "conn-abc";
+		_httpContextAccessorMock.Setup(a => a.HttpContext).Returns(context);
+
+		// Act
+		await _notifier.NotifyCreated("receipt", Guid.NewGuid());
+		await _notifier.FlushAsync();
+
+		// Assert
+		_clientMock.Verify(c => c.EntityChanged(
+			It.Is<EntityChangeNotification>(n =>
+				n.UserId == null &&
+				n.AuthMethod == null &&
+				n.ConnectionId == null)),
+			Times.Once);
 	}
 }

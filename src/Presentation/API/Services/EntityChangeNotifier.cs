@@ -10,20 +10,22 @@ public sealed class EntityChangeNotifier : IEntityChangeNotifier, IDisposable
 {
 	private readonly IHubContext<EntityHub, IEntityHubClient> _hubContext;
 	private readonly IHttpContextAccessor _httpContextAccessor;
+	private readonly ISignalRConnectionTracker _connectionTracker;
 	private readonly ConcurrentDictionary<(string EntityType, string ChangeType, string? UserId, string? AuthMethod, string? ConnectionId), NotificationBucket> _pending = new();
 	private readonly Timer _flushTimer;
 	private readonly TimeSpan _flushInterval;
 	private int _disposed;
 
-	public EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubContext, IHttpContextAccessor httpContextAccessor)
-		: this(hubContext, httpContextAccessor, TimeSpan.FromSeconds(1))
+	public EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubContext, IHttpContextAccessor httpContextAccessor, ISignalRConnectionTracker connectionTracker)
+		: this(hubContext, httpContextAccessor, connectionTracker, TimeSpan.FromSeconds(1))
 	{
 	}
 
-	internal EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubContext, IHttpContextAccessor httpContextAccessor, TimeSpan flushInterval)
+	internal EntityChangeNotifier(IHubContext<EntityHub, IEntityHubClient> hubContext, IHttpContextAccessor httpContextAccessor, ISignalRConnectionTracker connectionTracker, TimeSpan flushInterval)
 	{
 		_hubContext = hubContext;
 		_httpContextAccessor = httpContextAccessor;
+		_connectionTracker = connectionTracker;
 		_flushInterval = flushInterval;
 		_flushTimer = new Timer(_ => _ = FlushAsync(), null, _flushInterval, _flushInterval);
 	}
@@ -90,9 +92,13 @@ public sealed class EntityChangeNotifier : IEntityChangeNotifier, IDisposable
 			: authType is not null
 				? "jwt"
 				: null;
-		// connectionId is client-supplied and untrusted; spoofing suppresses a toast
-		// but does not affect data integrity or query invalidation.
 		var connectionId = httpContext.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
+
+		// Validate that the claimed connection ID actually belongs to this user.
+		if (connectionId is not null && (userId is null || !_connectionTracker.IsConnectionOwnedBy(connectionId, userId)))
+		{
+			connectionId = null;
+		}
 
 		return new NotificationOrigin(userId, authMethod, connectionId);
 	}

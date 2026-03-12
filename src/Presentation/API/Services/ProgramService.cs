@@ -30,6 +30,7 @@ public static class ProgramService
 		services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationLoggingHandler>();
 
 		services.AddSignalR();
+		services.AddSingleton<ISignalRConnectionTracker, SignalRConnectionTracker>();
 		services.AddSingleton<IEntityChangeNotifier, EntityChangeNotifier>();
 
 		return services;
