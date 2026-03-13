@@ -60,6 +60,9 @@ public class DashboardControllerTests
 	public async Task GetDashboardSummary_UsesDefaultDates_WhenNullDatesProvided()
 	{
 		// Arrange
+		DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+		DateOnly expectedStart = today.AddDays(-30);
+
 		DashboardSummaryResult summaryResult = new(
 			TotalReceipts: 0,
 			TotalSpent: 0m,
@@ -80,8 +83,8 @@ public class DashboardControllerTests
 		Assert.IsType<Ok<DashboardSummaryResponse>>(result.Result);
 		_mediatorMock.Verify(m => m.Send(
 			It.Is<GetDashboardSummaryQuery>(q =>
-				q.StartDate == DateOnly.FromDateTime(DateTime.Today.AddDays(-30))
-				&& q.EndDate == DateOnly.FromDateTime(DateTime.Today)),
+				q.StartDate == expectedStart
+				&& q.EndDate == today),
 			It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -470,6 +473,9 @@ public class DashboardControllerTests
 	public async Task GetSpendingByAccount_UsesDefaultDates_WhenNullDatesProvided()
 	{
 		// Arrange
+		DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+		DateOnly expectedStart = today.AddDays(-30);
+
 		SpendingByAccountResult accountResult = new([]);
 
 		_mediatorMock.Setup(m => m.Send(
@@ -485,8 +491,8 @@ public class DashboardControllerTests
 		Assert.IsType<Ok<SpendingByAccountResponse>>(result.Result);
 		_mediatorMock.Verify(m => m.Send(
 			It.Is<GetSpendingByAccountQuery>(q =>
-				q.StartDate == DateOnly.FromDateTime(DateTime.Today.AddDays(-30))
-				&& q.EndDate == DateOnly.FromDateTime(DateTime.Today)),
+				q.StartDate == expectedStart
+				&& q.EndDate == today),
 			It.IsAny<CancellationToken>()), Times.Once);
 	}
 
