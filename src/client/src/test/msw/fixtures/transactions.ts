@@ -7,7 +7,7 @@ export const transactions: TransactionResponse[] = [
     id: "cccc1111-1111-1111-1111-111111111111",
     receiptId: "aaaa1111-1111-1111-1111-111111111111",
     accountId: "11111111-1111-1111-1111-111111111111",
-    amount: 12.48,
+    amount: 17.73,
     date: "2025-01-15",
   },
   {

@@ -44,11 +44,11 @@ export const transactionHandlers = [
     });
   }),
 
-  http.put("*/api/transactions/:id", () => {
+  http.put("*/api/transactions/batch", () => {
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.put("*/api/transactions/batch", () => {
+  http.put("*/api/transactions/:id", () => {
     return new HttpResponse(null, { status: 204 });
   }),
 

@@ -29,11 +29,11 @@ export const accountHandlers = [
     });
   }),
 
-  http.put("*/api/accounts/:id", () => {
+  http.put("*/api/accounts/batch", () => {
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.put("*/api/accounts/batch", () => {
+  http.put("*/api/accounts/:id", () => {
     return new HttpResponse(null, { status: 204 });
   }),
 ];

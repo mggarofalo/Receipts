@@ -44,11 +44,11 @@ export const receiptItemHandlers = [
     });
   }),
 
-  http.put("*/api/receipt-items/:id", () => {
+  http.put("*/api/receipt-items/batch", () => {
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.put("*/api/receipt-items/batch", () => {
+  http.put("*/api/receipt-items/:id", () => {
     return new HttpResponse(null, { status: 204 });
   }),
 
