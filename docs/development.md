@@ -120,20 +120,25 @@ dotnet test tests/Application.Tests/Application.Tests.csproj
 
 Git hooks are installed automatically by `dotnet restore` (or `bash .githooks/setup.sh`). Two hooks run on every commit:
 
-### `commit-msg` hook
+### Commit Convention
 
-Validates your commit message follows [Conventional Commits](https://www.conventionalcommits.org/) format using [commitlint](https://commitlint.js.org/). Invalid messages are rejected before the commit is created.
-
-Format: `<type>(<scope>): <description>`
+All commits follow [Conventional Commits](https://www.conventionalcommits.org/) format: `<type>(<scope>): <description>`
 
 | Types | `feat`, `fix`, `docs`, `refactor`, `test`, `chore` |
 |-------|-----------------------------------------------------|
 | Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `infra`, `common`, `shared`, `ci`, `hooks` |
 
+Multiple scopes are allowed with a comma separator (e.g., `feat(api,client): add pagination`).
+
 Examples:
 - `feat(api): add pagination to receipts endpoint`
 - `fix(client): prevent infinite re-render in TransactionForm`
 - `chore: update dependencies`
+
+**Enforcement:**
+- **Local:** `commit-msg` hook runs `commitlint` on every commit (see `.githooks/commit-msg`)
+- **CI:** PR title validation via `amannn/action-semantic-pull-request` (squash-merge means the PR title becomes the commit on `main`)
+- **Config:** `commitlint.config.mjs` at the repo root defines allowed types, scopes, and header length (100 chars max)
 
 ### `pre-commit` hook
 
@@ -162,7 +167,7 @@ All API changes follow a spec-first workflow:
 3. `dotnet build` — regenerates DTOs and the built output
 4. `npm run check:drift` — verify spec and implementation stay in sync
 
-See [AGENTS.md](../AGENTS.md) for the full workflow details.
+See **[docs/api-guidelines.md](api-guidelines.md)** for the full spec-first workflow details.
 
 ## Troubleshooting
 
