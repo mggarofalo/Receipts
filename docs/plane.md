@@ -22,7 +22,7 @@ Issues labeled `epic` are parent containers — skip and work their children.
 
 ## Modules
 
-Phases are tracked as Plane **modules**. Use `plane module list --all -p RECEIPTS` to discover them. Completed phases: 0–8, 10–11. Active: Phase 9 (Test Quality). Planned: Phase 12 (Sentry).
+Phases are tracked as Plane **modules**. Use `plane module list --all -p RECEIPTS` to discover them. Completed phases: 0–8, 10–11. Active: Phase 9 (Test Quality). Planned: Phase 12 (Sentry), Phase 13 (Paperless Integration).
 
 ## Priority
 
