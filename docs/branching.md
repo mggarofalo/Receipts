@@ -24,9 +24,9 @@ When an epic has multiple child issues:
 
 ### Issue Branches
 
-One per Linear issue:
+One per Plane issue:
 - Branch off the parent branch (if epic) or milestone branch, NOT `main`
-- Use the `gitBranchName` from the Linear issue
+- Use a descriptive branch name matching the issue (e.g., `feat/receipts-123-short-title`)
 - Merge locally into the parent/milestone branch via squash merge (no PR needed)
 - Delete the issue branch after merge
 
@@ -81,12 +81,12 @@ git pull   # update main with the merged PR
 
 ## Direct Commits to Main
 
-Only use for non-Linear work like:
+Only use for trivial work like:
 - Trivial typo fixes
 - Documentation updates
 - Tooling/build configuration
 
-**NEVER** commit Linear-based work directly to main. When in doubt, create a branch.
+**NEVER** commit issue-based work directly to main. When in doubt, create a branch.
 
 ## Directory Isolation
 

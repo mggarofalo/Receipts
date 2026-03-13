@@ -45,22 +45,22 @@ cd src/client && npm run generate:types && cd -  # TypeScript types from OpenAPI
 
 ### Branch naming in worktrees
 
-Use the same convention as issue branches (Linear's `gitBranchName`). Worktrees are just an isolation mechanism — the branch name should reflect the work, not the worktree.
+Use the same convention as issue branches. Worktrees are just an isolation mechanism — the branch name should reflect the work, not the worktree.
 
 ### Permission settings
 
-The file `.claude/settings.local.json` pre-approves read operations, MCP tools (Linear), git commands, and build tools so agents don't face excessive approval prompts. This file is gitignored (`.local.json` suffix) so it's per-user. Copy it from the main worktree if it's missing.
+The file `.claude/settings.local.json` pre-approves read operations, MCP tools, git commands, and build tools so agents don't face excessive approval prompts. This file is gitignored (`.local.json` suffix) so it's per-user. Copy it from the main worktree if it's missing.
 
 ## Workflow Rules
 
-### Linear
+### Plane
 
-All issue work is tracked in Linear. See **[docs/linear.md](docs/linear.md)** for workspace structure, milestone phases, priority semantics, label conventions, and the "what's next" decision process.
+All issue work is tracked in Plane. Use the `plane` CLI tool to read and update issues (e.g., `plane issue get-by-sequence-id --identifier RECEIPTS-162`).
 
-- Team: "Mggarofalo" (ID: `a4aff05d-41e6-45dc-b670-cdb485fef765`), Project: "Receipts"
-- All issues assigned to a milestone (Phase 0-8) with at least one layer label (`backend`, `frontend`, `infra`, `docs`)
+- Project: "Receipts" (ID: `aaac8dc9-bc4c-42db-ac99-eee7864c78e9`)
+- All issues assigned to a milestone with at least one layer label (`backend`, `frontend`, `infra`, `docs`)
 - Issues labeled `epic` are parent containers — skip and work their children
-- **Issue lookup fallback:** If you cannot find an issue via the Linear MCP (e.g., API error, deleted, or archived), check `docs/issues/` — Linear issues are archived there as Markdown files named by issue ID (e.g., `mgg-123-short-title.md`)
+- Use `plane issue get-by-sequence-id --identifier RECEIPTS-<number>` to fetch issue details
 
 ### Branching
 
@@ -72,7 +72,7 @@ Two-tier hierarchical model: milestone branches for CI/PR gating, issue branches
 
 | Types | `feat`, `fix`, `docs`, `refactor`, `test`, `chore` |
 |-------|-----------------------------------------------------|
-| Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `infra`, `common`, `shared`, `ci`, `hooks` |
+| Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `infra`, `common`, `shared`, `ci`, `docs`, `hooks` |
 
 Enforced by:
 - **Local:** `commit-msg` hook runs `commitlint` on every commit (see `.githooks/commit-msg`)
