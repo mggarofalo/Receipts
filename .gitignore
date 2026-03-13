@@ -309,8 +309,9 @@ src/client/coverage/
 # Local clones for branch isolation
 .clones/
 
-# Claude Code worktrees
+# Claude Code worktrees and local settings
 .claude/worktrees/
+.claude/settings.local.json
 
 # Windows NUL device files
 [Nn][Uu][Ll]
