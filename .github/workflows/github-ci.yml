@@ -41,6 +41,7 @@ jobs:
             common
             shared
             ci
+            docs
             hooks
           subjectPattern: ^[a-z].*$
           subjectPatternError: |
