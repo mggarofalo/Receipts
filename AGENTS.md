@@ -72,7 +72,7 @@ Two-tier hierarchical model: milestone branches for CI/PR gating, issue branches
 
 | Types | `feat`, `fix`, `docs`, `refactor`, `test`, `chore` |
 |-------|-----------------------------------------------------|
-| Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `infra`, `common`, `shared`, `ci`, `hooks` |
+| Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `infra`, `common`, `shared`, `ci`, `docs`, `hooks` |
 
 Enforced by:
 - **Local:** `commit-msg` hook runs `commitlint` on every commit (see `.githooks/commit-msg`)
