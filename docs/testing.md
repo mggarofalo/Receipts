@@ -123,6 +123,186 @@ Configured in `src/client/vite.config.ts` under `test.coverage.exclude`:
 - **No snapshot tests** (brittle, low coverage signal)
 - Test files: `*.test.ts` / `*.test.tsx` colocated with source
 
+### Mock Fidelity Rules
+
+Mock data must match the real API response shape. When tests use simplified or incorrect mock shapes, they pass in isolation but hide integration bugs that surface at runtime.
+
+**Core principle:** If the real API returns `{ data: T[], total, offset, limit }`, the mock must return that same envelope. Never mock a paginated endpoint as a bare array.
+
+#### Paginated Response Shape
+
+All list endpoints return a paginated envelope:
+
+```typescript
+// Real API response shape (from OpenAPI-generated types)
+{
+  data: T[],       // the array of items
+  total: number,   // total count across all pages
+  offset: number,  // current page offset
+  limit: number,   // page size
+}
+```
+
+Hooks like `useAccounts()` unwrap this: they return `{ ...query, data: query.data?.data, total: query.data?.total ?? 0 }`. But the **mock at the API client level** must still use the full envelope.
+
+#### Correct vs Incorrect Mocks (Case Study)
+
+A real bug occurred when hook-level tests mocked `client.GET` with a bare array instead of the paginated envelope. The hook's `query.data?.data` destructuring returned `undefined` at runtime because the mock shape didn't match reality.
+
+```typescript
+// WRONG: bare array -- hook's .data?.data unwrap returns undefined
+(client.GET as Mock).mockResolvedValue({
+  data: [{ id: "1", name: "Checking" }],
+  error: undefined,
+});
+
+// CORRECT: paginated envelope matching real API shape
+(client.GET as Mock).mockResolvedValue({
+  data: { data: [{ id: "1", name: "Checking" }], total: 1, offset: 0, limit: 50 },
+  error: undefined,
+});
+```
+
+The same principle applies to single-entity endpoints (no envelope) and mutation responses. Match the real shape.
+
+#### mockQueryResult and mockMutationResult
+
+When testing **components** that consume hooks (not testing hooks themselves), use the helpers in `src/client/src/test/mock-hooks.ts`:
+
+- `mockQueryResult(overrides)` -- creates a full `UseQueryResult` with all TanStack Query fields (`isSuccess`, `isPending`, `isFetching`, etc.). Pass overrides for the fields your test cares about.
+- `mockMutationResult(overrides)` -- creates a full `UseMutationResult` with `mutate`, `mutateAsync`, `isPending`, etc.
+
+**Why these exist:** Casting mocks with `as ReturnType<typeof useHook>` fails `tsc -b` because it misses required properties. These helpers provide type-safe defaults.
+
+```typescript
+// Component-level test: mock the hook return value
+import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
+
+vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+  data: [{ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }],
+  total: 1,
+  isLoading: false,
+}));
+
+vi.mocked(useCreateAccount).mockReturnValue(mockMutationResult({
+  mutate: mockMutate,
+  isPending: false,
+}));
+```
+
+**When NOT to use them:** Hook-level tests (files like `useAccounts.test.ts`) that call `renderHook()` and test the hook directly. Those tests mock `client.GET`/`POST`/`PUT`/`DELETE` at the API client level and let the real hook execute.
+
+#### mockApiSuccess and mockApiError
+
+For hook-level tests that mock `client.GET`/`POST`/etc., use the helpers in `src/client/src/test/mock-api-client.ts`:
+
+```typescript
+import mockClient, { mockApiSuccess, mockApiError, resetMockClient } from "@/test/mock-api-client";
+
+// Shorthand for { data: <value>, error: undefined }
+mockClient.GET.mockResolvedValue(mockApiSuccess({ data: accounts, total: 1, offset: 0, limit: 50 }));
+
+// Shorthand for { data: undefined, error: <value> }
+mockClient.GET.mockResolvedValue(mockApiError({ message: "Not found" }));
+```
+
+### Test Layers
+
+Frontend tests fall into two layers with different mocking strategies:
+
+#### Hook-Level Tests (`useX.test.ts`)
+
+Test the hook in isolation. Mock at the **API client boundary**.
+
+- Mock `@/lib/api-client` with `vi.mock()` so `client.GET`/`POST`/etc. are `vi.fn()`
+- Mock `sonner` for toast assertions
+- Use `renderHook()` with a `QueryClientProvider` wrapper
+- Assert on the hook's return values (`data`, `isSuccess`, `isError`)
+- Assert on the API client calls (`client.GET` called with correct path and params)
+
+```typescript
+vi.mock("@/lib/api-client", () => ({
+  default: { GET: vi.fn(), POST: vi.fn(), PUT: vi.fn(), DELETE: vi.fn() },
+}));
+
+vi.mock("sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
+// Then in the test:
+(client.GET as Mock).mockResolvedValue({
+  data: { data: accounts, total: 1, offset: 0, limit: 50 },
+  error: undefined,
+});
+
+const { result } = renderHook(() => useAccounts(), { wrapper: createWrapper() });
+await waitFor(() => expect(result.current.isSuccess).toBe(true));
+```
+
+#### Component-Level Tests (`Page.test.tsx`)
+
+Test the rendered UI. Mock at the **hook boundary**.
+
+- Mock the entire hook module with `vi.mock("@/hooks/useX", ...)`
+- Use `mockQueryResult()`/`mockMutationResult()` for hook return values
+- Use `renderWithProviders()` or `renderWithQueryClient()` from `@/test/test-utils`
+- Assert on rendered DOM elements (`screen.getByRole`, `screen.getByText`)
+- Assert on user interactions (`userEvent.click`, `userEvent.type`)
+
+```typescript
+vi.mock("@/hooks/useAccounts", () => ({
+  useAccounts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useCreateAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useUpdateAccount: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
+
+// Override for specific test:
+vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+  data: items,
+  total: items.length,
+  isLoading: false,
+}));
+```
+
+#### Integration Tests (MSW)
+
+Test hooks against a mock HTTP server for higher-fidelity validation.
+
+- Use MSW (Mock Service Worker) with `setupServer()` from `msw/node`
+- Setup file: `src/client/src/test/setup.integration.ts` starts and resets the server
+- Test files: `*.integration.test.ts` (colocated with hook tests)
+- Response bodies must match the real API response shape exactly
+
+```typescript
+import { http, HttpResponse } from "msw";
+import { server } from "@/test/msw/server";
+
+server.use(
+  http.get("*/api/accounts", () => {
+    return HttpResponse.json({
+      data: [
+        { id: "11111111-1111-1111-1111-111111111111", accountCode: "1000", name: "Cash", isActive: true },
+      ],
+      total: 1,
+      offset: 0,
+      limit: 50,
+    });
+  }),
+);
+```
+
+### Test Utilities Reference
+
+| File | Purpose |
+|------|---------|
+| `src/client/src/test/test-utils.tsx` | `renderWithProviders()`, `renderWithQueryClient()`, `createWrapper()`, `createQueryWrapper()`, `createQueryClient()` |
+| `src/client/src/test/mock-hooks.ts` | `mockQueryResult()`, `mockMutationResult()` for component-level tests |
+| `src/client/src/test/mock-api-client.ts` | `mockApiSuccess()`, `mockApiError()`, `resetMockClient()` for hook-level tests |
+| `src/client/src/test/setup.ts` | Global setup: imports `@testing-library/jest-dom`, polyfills `localStorage` |
+| `src/client/src/test/setup.integration.ts` | Integration test setup: starts MSW server, resets handlers between tests |
+| `src/client/src/test/setup-combobox-polyfills.ts` | Polyfills `ResizeObserver` and `scrollIntoView` for radix-ui/cmdk components |
+| `src/client/src/test/msw/server.ts` | MSW server instance (`setupServer()`) |
+
 ## CI Coverage Reporting
 
 Both stacks report coverage on every PR via GitHub Actions (`.github/workflows/github-ci.yml`):
