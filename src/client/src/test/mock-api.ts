@@ -119,9 +119,9 @@ export function mockSubcategoryResponse(
   overrides?: Partial<SubcategoryResponse>,
 ): SubcategoryResponse {
   return {
-    id: nextId(),
+    id: overrides?.id ?? nextId(),
     name: "Test Subcategory",
-    categoryId: nextId(),
+    categoryId: overrides?.categoryId ?? nextId(),
     description: null,
     ...overrides,
   };
@@ -145,8 +145,8 @@ export function mockReceiptItemResponse(
   overrides?: Partial<ReceiptItemResponse>,
 ): ReceiptItemResponse {
   return {
-    id: nextId(),
-    receiptId: nextId(),
+    id: overrides?.id ?? nextId(),
+    receiptId: overrides?.receiptId ?? nextId(),
     receiptItemCode: null,
     description: "Test Item",
     quantity: 1,
@@ -163,9 +163,9 @@ export function mockTransactionResponse(
   overrides?: Partial<TransactionResponse>,
 ): TransactionResponse {
   return {
-    id: nextId(),
-    receiptId: nextId(),
-    accountId: nextId(),
+    id: overrides?.id ?? nextId(),
+    receiptId: overrides?.receiptId ?? nextId(),
+    accountId: overrides?.accountId ?? nextId(),
     amount: 25.0,
     date: "2025-01-15",
     ...overrides,
@@ -177,8 +177,8 @@ export function mockAdjustmentResponse(
   overrides?: Partial<AdjustmentResponse>,
 ): AdjustmentResponse {
   return {
-    id: nextId(),
-    receiptId: nextId(),
+    id: overrides?.id ?? nextId(),
+    receiptId: overrides?.receiptId ?? nextId(),
     type: "tip",
     amount: 5.0,
     description: null,

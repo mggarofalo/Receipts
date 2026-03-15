@@ -246,7 +246,8 @@ const list2 = mockAccountListResponse([
 ]);
 
 // Override pagination metadata
-const page2 = mockAccountListResponse(items, { offset: 50, total: 200 });
+const customItems = [mockAccountResponse({ name: "Business" })];
+const page2 = mockAccountListResponse(customItems, { offset: 50, total: 200 });
 ```
 
 **Generic paginated helper** for custom types:
