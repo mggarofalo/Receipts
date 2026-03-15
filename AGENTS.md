@@ -149,6 +149,20 @@ All functions, objects, and arrays returned from custom hooks (`use*`) **must** 
 
 **Why:** Consumers may place hook return values in `useEffect`/`useMemo`/`useCallback` dependency arrays. Unstable references cause infinite render loops that are invisible in static review and pass individual test files but hang the full test suite.
 
+## Testing
+
+Full details in **[docs/testing.md](docs/testing.md)** — covers both .NET and React testing, coverage thresholds, and CI reporting.
+
+### Frontend Mock Fidelity
+
+**All API hook mocks must use the real response shape.** List endpoints return `{ data: T[], total, offset, limit }` — never mock them as bare arrays. Incorrect mock shapes hide integration bugs that only surface at runtime.
+
+- **Hook-level tests** (`useX.test.ts`): mock `client.GET`/`POST`/`PUT`/`DELETE` with the full API response envelope
+- **Component-level tests** (`Page.test.tsx`): mock hook modules with `mockQueryResult()`/`mockMutationResult()` from `@/test/mock-hooks.ts`
+- **Never cast** mock return values with `as ReturnType<typeof useHook>` — use the helper functions instead
+
+See [docs/testing.md](docs/testing.md#mock-fidelity-rules) for correct vs incorrect examples and the full test utilities reference.
+
 ## Agent Workflow Rules
 
 ### Tests and Code Review
