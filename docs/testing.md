@@ -211,6 +211,58 @@ mockClient.GET.mockResolvedValue(mockApiError({ message: "Not found" }));
 
 **Note:** Most existing hook tests use an inline `vi.mock` pattern instead (see the Hook-Level Tests section below). Either approach works — the key requirement is that `vi.mock("@/lib/api-client", ...)` is called so the mock is actually wired into the module system.
 
+#### Mock Factories (mock-api.ts)
+
+Reusable factory functions in `src/client/src/test/mock-api.ts` produce correctly-shaped API response objects matching the OpenAPI-generated DTOs. They make the correct mock shape the easy path and prevent shape mismatches that cause silent test failures.
+
+**Item factories** create a single response object with sensible defaults. Pass a `Partial<T>` to override any field:
+
+```typescript
+import { mockAccountResponse, mockReceiptResponse, mockTransactionResponse } from "@/test/mock-api";
+
+// Minimal: all required fields filled with defaults
+const account = mockAccountResponse();
+
+// Override specific fields for your test scenario
+const checking = mockAccountResponse({ name: "Checking", accountCode: "ACC-001" });
+const receipt = mockReceiptResponse({ location: "Walmart", taxAmount: 5.25 });
+const txn = mockTransactionResponse({ amount: 42.00, date: "2025-03-01" });
+```
+
+Available item factories: `mockAccountResponse`, `mockCategoryResponse`, `mockSubcategoryResponse`, `mockReceiptResponse`, `mockReceiptItemResponse`, `mockTransactionResponse`, `mockAdjustmentResponse`, `mockItemTemplateResponse`.
+
+**List factories** wrap items in the paginated envelope (`{ data, total, offset, limit }`):
+
+```typescript
+import { mockAccountListResponse, mockAccountResponse } from "@/test/mock-api";
+
+// Default: one item with default values
+const list = mockAccountListResponse();
+
+// Custom items
+const list2 = mockAccountListResponse([
+  mockAccountResponse({ name: "Checking" }),
+  mockAccountResponse({ name: "Savings", isActive: false }),
+]);
+
+// Override pagination metadata
+const customItems = [mockAccountResponse({ name: "Business" })];
+const page2 = mockAccountListResponse(customItems, { offset: 50, total: 200 });
+```
+
+**Generic paginated helper** for custom types:
+
+```typescript
+import { mockPaginatedResponse } from "@/test/mock-api";
+
+const response = mockPaginatedResponse([{ custom: "data" }], { total: 100 });
+// → { data: [{ custom: "data" }], total: 100, offset: 0, limit: 50 }
+```
+
+**ID generation**: Each factory call generates a unique deterministic ID. Call `resetMockIds()` in `beforeEach` if your tests depend on specific ID values.
+
+**When to use**: In component-level tests alongside `mockQueryResult`/`mockMutationResult`, and in hook-level tests with `mockApiSuccess` to build realistic response payloads.
+
 ### Test Layers
 
 Frontend tests fall into two layers with different mocking strategies:
@@ -302,6 +354,7 @@ server.use(
 |------|---------|
 | `src/client/src/test/test-utils.tsx` | `renderWithProviders()`, `renderWithQueryClient()`, `createWrapper()`, `createQueryWrapper()`, `createQueryClient()` |
 | `src/client/src/test/mock-hooks.ts` | `mockQueryResult()`, `mockMutationResult()` for component-level tests |
+| `src/client/src/test/mock-api.ts` | `mockAccountResponse()`, `mockReceiptResponse()`, etc. -- type-safe factories for API response shapes |
 | `src/client/src/test/mock-api-client.ts` | `mockApiSuccess()`, `mockApiError()`, `resetMockClient()` for hook-level tests |
 | `src/client/src/test/setup.ts` | Global setup: imports `@testing-library/jest-dom`, polyfills `localStorage` |
 | `src/client/src/test/setup.integration.ts` | Integration test setup: starts MSW server, resets handlers between tests |
