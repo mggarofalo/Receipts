@@ -194,17 +194,22 @@ vi.mocked(useCreateAccount).mockReturnValue(mockMutationResult({
 
 #### mockApiSuccess and mockApiError
 
-For hook-level tests that mock `client.GET`/`POST`/etc., use the helpers in `src/client/src/test/mock-api-client.ts`:
+For hook-level tests that mock `client.GET`/`POST`/etc., optional helpers in `src/client/src/test/mock-api-client.ts` provide shorthand for success/error response shapes. To use them, you must wire the mock client into the module system with `vi.mock`:
 
 ```typescript
 import mockClient, { mockApiSuccess, mockApiError, resetMockClient } from "@/test/mock-api-client";
 
-// Shorthand for { data: <value>, error: undefined }
-mockClient.GET.mockResolvedValue(mockApiSuccess({ data: accounts, total: 1, offset: 0, limit: 50 }));
+// REQUIRED: wire mockClient as the module that hooks import
+vi.mock("@/lib/api-client", () => ({ default: mockClient }));
 
-// Shorthand for { data: undefined, error: <value> }
+beforeEach(() => resetMockClient());
+
+// Then in tests:
+mockClient.GET.mockResolvedValue(mockApiSuccess({ data: accounts, total: 1, offset: 0, limit: 50 }));
 mockClient.GET.mockResolvedValue(mockApiError({ message: "Not found" }));
 ```
+
+**Note:** Most existing hook tests use an inline `vi.mock` pattern instead (see the Hook-Level Tests section below). Either approach works — the key requirement is that `vi.mock("@/lib/api-client", ...)` is called so the mock is actually wired into the module system.
 
 ### Test Layers
 
