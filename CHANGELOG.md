@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.16](https://github.com/mggarofalo/Receipts/compare/v0.1.15...v0.1.16) (2026-03-15)
+
+
+### Features
+
+* **client:** add shared mock factories for API response shapes ([#202](https://github.com/mggarofalo/Receipts/issues/202)) ([4f6cfcd](https://github.com/mggarofalo/Receipts/commit/4f6cfcd64bf93888d5d30a17a5dd3a02af106da7))
+
 ## [0.1.15](https://github.com/mggarofalo/Receipts/compare/v0.1.14...v0.1.15) (2026-03-12)
 
 
