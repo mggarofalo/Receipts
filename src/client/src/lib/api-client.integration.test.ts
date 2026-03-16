@@ -119,20 +119,23 @@ describe("auth middleware (integration)", () => {
     const listener = vi.fn();
     const unsubscribe = addPasswordChangeRequiredListener(listener);
 
-    server.use(
-      http.get("*/api/accounts", () => {
-        return HttpResponse.json(
-          { detail: "Password change required" },
-          { status: 403 },
-        );
-      }),
-    );
+    try {
+      server.use(
+        http.get("*/api/accounts", () => {
+          return HttpResponse.json(
+            { detail: "Password change required" },
+            { status: 403 },
+          );
+        }),
+      );
 
-    setTokens("valid-token", "valid-refresh");
-    await client.GET("/api/accounts");
+      setTokens("valid-token", "valid-refresh");
+      await client.GET("/api/accounts");
 
-    expect(listener).toHaveBeenCalledOnce();
-    unsubscribe();
+      expect(listener).toHaveBeenCalledOnce();
+    } finally {
+      unsubscribe();
+    }
   });
 
   it("produces a TimeoutError when the request times out", async () => {
@@ -181,27 +184,34 @@ describe("auth middleware (integration)", () => {
       configurable: true,
     });
 
-    server.use(
-      http.get("*/api/accounts", () => {
-        return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
-      }),
-      http.post("*/api/auth/refresh", () => {
-        return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
-      }),
-    );
+    try {
+      server.use(
+        http.get("*/api/accounts", () => {
+          return HttpResponse.json(
+            { message: "Unauthorized" },
+            { status: 401 },
+          );
+        }),
+        http.post("*/api/auth/refresh", () => {
+          return HttpResponse.json(
+            { message: "Unauthorized" },
+            { status: 401 },
+          );
+        }),
+      );
 
-    setTokens("expired-token", "expired-refresh-token");
-    await client.GET("/api/accounts");
+      setTokens("expired-token", "expired-refresh-token");
+      await client.GET("/api/accounts");
 
-    expect(getAccessToken()).toBeNull();
-    expect(getRefreshToken()).toBeNull();
-    expect(fakeLocation.href).toBe("/login");
-
-    // Restore original window.location
-    Object.defineProperty(window, "location", {
-      value: originalLocation,
-      writable: true,
-      configurable: true,
-    });
+      expect(getAccessToken()).toBeNull();
+      expect(getRefreshToken()).toBeNull();
+      expect(fakeLocation.href).toBe("/login");
+    } finally {
+      Object.defineProperty(window, "location", {
+        value: originalLocation,
+        writable: true,
+        configurable: true,
+      });
+    }
   });
 });
