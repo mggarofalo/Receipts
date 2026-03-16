@@ -105,11 +105,6 @@ FluentValidation validators are connected to the request pipeline at two levels:
 
 Soft warnings are returned as a `warnings` array in the response, not as validation errors.
 
-## Execution Waves
+## Execution Tracking
 
-| Wave | Issues | Dependency |
-|------|--------|------------|
-| 1 | MGG-197 (validation pipeline), MGG-198 (adjustment entity), MGG-203 (docs) | None |
-| 2 | MGG-199 (hard invariants), MGG-200 (soft warnings) | Wave 1 |
-| 3 | MGG-201 (frontend adjustment management) | MGG-198, MGG-200 |
-| 4 | MGG-202 (comprehensive tests) | Waves 2 + 3 |
+See the **Phase 7: Correctness Hardening** module in Plane for execution tracking.

@@ -109,31 +109,53 @@ dotnet build Receipts.slnx
 # Run unit tests (same as CI)
 dotnet test Receipts.slnx --filter "Category!=Integration"
 
-# Run all tests including integration (requires ONNX model)
+# Run all tests including integration (requires Docker + ONNX model)
 dotnet test Receipts.slnx
+
+# Run integration tests only (requires Docker)
+dotnet test tests/Infrastructure.IntegrationTests --filter "Category=Integration"
 
 # Run tests for a specific project
 dotnet test tests/Application.Tests/Application.Tests.csproj
 ```
 
+### Integration Tests (Testcontainers)
+
+The `Infrastructure.IntegrationTests` project runs EF Core against a real PostgreSQL instance via [Testcontainers](https://dotnet.testcontainers.org/). These tests catch bugs that InMemory unit tests cannot, such as:
+
+- **DateTimeOffset UTC validation** — Npgsql rejects non-UTC offsets for `timestamptz` columns
+- **Column type mapping** — `decimal(18,2)`, `uuid`, `text`, `date`, enum-to-string, pgvector
+- **Soft-delete cascades** — parent deletion cascades `DeletedAt` to owned children via real SQL
+- **Audit logging** — full `SaveChangesAsync` pipeline with real database round-trips
+- **Query filters** — `HasQueryFilter` generates real SQL `WHERE` clauses
+
+**Requirements:** Docker must be running. The tests automatically start and stop a PostgreSQL container — no manual database setup needed.
+
+**CI note:** Integration tests are tagged `[Trait("Category", "Integration")]` and excluded from the CI unit test step (`--filter "Category!=Integration"`). They run locally or in CI environments with Docker available.
+
 ## Git Hooks
 
 Git hooks are installed automatically by `dotnet restore` (or `bash .githooks/setup.sh`). Two hooks run on every commit:
 
-### `commit-msg` hook
+### Commit Convention
 
-Validates your commit message follows [Conventional Commits](https://www.conventionalcommits.org/) format using [commitlint](https://commitlint.js.org/). Invalid messages are rejected before the commit is created.
-
-Format: `<type>(<scope>): <description>`
+All commits follow [Conventional Commits](https://www.conventionalcommits.org/) format: `<type>(<scope>): <description>`
 
 | Types | `feat`, `fix`, `docs`, `refactor`, `test`, `chore` |
 |-------|-----------------------------------------------------|
 | Scopes | `api`, `client`, `domain`, `application`, `infrastructure`, `infra`, `common`, `shared`, `ci`, `hooks` |
 
+Multiple scopes are allowed with a comma separator (e.g., `feat(api,client): add pagination`).
+
 Examples:
 - `feat(api): add pagination to receipts endpoint`
 - `fix(client): prevent infinite re-render in TransactionForm`
 - `chore: update dependencies`
+
+**Enforcement:**
+- **Local:** `commit-msg` hook runs `commitlint` on every commit (see `.githooks/commit-msg`)
+- **CI:** PR title validation via `amannn/action-semantic-pull-request` (squash-merge means the PR title becomes the commit on `main`)
+- **Config:** `commitlint.config.mjs` at the repo root defines allowed types, scopes, and header length (100 chars max)
 
 ### `pre-commit` hook
 
@@ -162,7 +184,7 @@ All API changes follow a spec-first workflow:
 3. `dotnet build` — regenerates DTOs and the built output
 4. `npm run check:drift` — verify spec and implementation stay in sync
 
-See [AGENTS.md](../AGENTS.md) for the full workflow details.
+See **[docs/api-guidelines.md](api-guidelines.md)** for the full spec-first workflow details.
 
 ## Troubleshooting
 
