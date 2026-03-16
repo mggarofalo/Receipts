@@ -10,6 +10,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 vi.mock("@/hooks/useListKeyboardNav", () => ({
   useListKeyboardNav: vi.fn(() => ({
     focusedId: null,
+    focusedIndex: -1,
     setFocusedIndex: vi.fn(),
     tableRef: { current: null },
   })),
@@ -399,5 +400,343 @@ describe("ApiKeys", () => {
     const cells = screen.getAllByRole("cell");
     const dashCells = cells.filter((c) => c.textContent === "-");
     expect(dashCells.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("calls setFocusedIndex when a table row is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockSetFocusedIndex = vi.fn();
+    const { useListKeyboardNav } = await import("@/hooks/useListKeyboardNav");
+    vi.mocked(useListKeyboardNav).mockReturnValue({
+      focusedId: null,
+      focusedIndex: -1,
+      setFocusedIndex: mockSetFocusedIndex,
+      tableRef: { current: null },
+    });
+    const { useQuery } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "key-1",
+          name: "Click Row Key",
+          createdAt: "2024-01-01T00:00:00Z",
+          lastUsedAt: null,
+          expiresAt: null,
+          isRevoked: false,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByText("Click Row Key"));
+
+    expect(mockSetFocusedIndex).toHaveBeenCalledWith(0);
+  });
+
+  it("shows error toast when clipboard copy fails", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+    const { showError } = await import("@/lib/toast");
+
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn().mockRejectedValue(new Error("copy failed")) },
+      writable: true,
+      configurable: true,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn((values: unknown) => {
+        if (opts?.onSuccess) {
+          opts.onSuccess({ rawKey: "fail-copy-key" }, values, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+    await user.type(screen.getByPlaceholderText(/paperless integration/i), "Fail Copy");
+    await user.click(screen.getByRole("button", { name: /create key/i }));
+
+    await screen.findByRole("heading", { name: /api key created/i });
+    await user.click(screen.getByRole("button", { name: /copy to clipboard/i }));
+
+    await vi.waitFor(() => {
+      expect(showError).toHaveBeenCalledWith("Failed to copy to clipboard.");
+    });
+  });
+
+  it("shows error toast when create mutation fails", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+    const { showError } = await import("@/lib/toast");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn(() => {
+        if (opts?.onError) {
+          opts.onError(new Error("fail"), undefined, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+    await user.type(screen.getByPlaceholderText(/paperless integration/i), "Error Key");
+    await user.click(screen.getByRole("button", { name: /create key/i }));
+
+    await vi.waitFor(() => {
+      expect(showError).toHaveBeenCalledWith("Failed to create API key.");
+    });
+  });
+
+  it("shows error toast when revoke mutation fails", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useQuery, useMutation } = await import("@tanstack/react-query");
+    const { showError } = await import("@/lib/toast");
+
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "key-1",
+          name: "Revoke Fail Key",
+          createdAt: "2024-01-01T00:00:00Z",
+          lastUsedAt: null,
+          expiresAt: null,
+          isRevoked: false,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn(() => {
+        if (opts?.onError) {
+          opts.onError(new Error("fail"), undefined, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /^revoke$/i }));
+
+    const dialogButtons = screen.getAllByRole("button", { name: /revoke/i });
+    const confirmButton = dialogButtons.find(
+      (btn) => btn.closest("[role='dialog']") !== null,
+    );
+    if (confirmButton) {
+      await user.click(confirmButton);
+      await vi.waitFor(() => {
+        expect(showError).toHaveBeenCalledWith("Failed to revoke API key.");
+      });
+    }
+  });
+
+  it("closes created key dialog when dismissed", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn((values: unknown) => {
+        if (opts?.onSuccess) {
+          opts.onSuccess({ rawKey: "dismiss-key" }, values, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+    await user.type(screen.getByPlaceholderText(/paperless integration/i), "Dismiss Test");
+    await user.click(screen.getByRole("button", { name: /create key/i }));
+
+    await screen.findByRole("heading", { name: /api key created/i });
+    await user.keyboard("{Escape}");
+
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /api key created/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("does not show created key dialog when create mutation returns no data", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn((values: unknown) => {
+        if (opts?.onSuccess) {
+          opts.onSuccess(undefined, values, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+    await user.type(screen.getByPlaceholderText(/paperless integration/i), "No Data Key");
+    await user.click(screen.getByRole("button", { name: /create key/i }));
+
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /api key created/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows success toast when revoke mutation succeeds", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useQuery, useMutation } = await import("@tanstack/react-query");
+    const { showSuccess } = await import("@/lib/toast");
+
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [{
+        id: "key-1", name: "Success Revoke Key", createdAt: "2024-01-01T00:00:00Z",
+        lastUsedAt: null, expiresAt: null, isRevoked: false,
+      }],
+      isLoading: false,
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn(() => {
+        if (opts?.onSuccess) {
+          opts.onSuccess(undefined, undefined, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /^revoke$/i }));
+
+    const dialogButtons = screen.getAllByRole("button", { name: /revoke/i });
+    const confirmButton = dialogButtons.find(
+      (btn) => btn.closest("[role='dialog']") !== null,
+    );
+    await user.click(confirmButton!);
+
+    await vi.waitFor(() => {
+      expect(showSuccess).toHaveBeenCalledWith("API key revoked.");
+    });
+  });
+
+  it("closes revoke dialog via Escape key", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useQuery } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [{
+        id: "key-1", name: "Esc Key", createdAt: "2024-01-01T00:00:00Z",
+        lastUsedAt: null, expiresAt: null, isRevoked: false,
+      }],
+      isLoading: false,
+    }));
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /^revoke$/i }));
+    expect(screen.getByRole("heading", { name: /revoke api key/i })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /revoke api key/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("highlights focused row with bg-accent class", async () => {
+    const { useListKeyboardNav } = await import("@/hooks/useListKeyboardNav");
+    vi.mocked(useListKeyboardNav).mockReturnValue({
+      focusedId: "key-1",
+      focusedIndex: 0,
+      setFocusedIndex: vi.fn(),
+      tableRef: { current: null },
+    });
+    const { useQuery } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [{
+        id: "key-1", name: "Focused Key", createdAt: "2024-01-01T00:00:00Z",
+        lastUsedAt: null, expiresAt: null, isRevoked: false,
+      }],
+      isLoading: false,
+    }));
+
+    renderWithQueryClient(<ApiKeys />);
+    const row = screen.getByText("Focused Key").closest("tr");
+    expect(row?.className).toContain("bg-accent");
+  });
+
+  it("selects text in created key input when clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+    const mockSelect = vi.fn();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(useMutation).mockImplementation(((opts: any) => ({
+      mutate: vi.fn((values: unknown) => {
+        if (opts?.onSuccess) {
+          opts.onSuccess({ rawKey: "select-key" }, values, undefined);
+        }
+      }),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+    await user.type(screen.getByPlaceholderText(/paperless integration/i), "Select Test");
+    await user.click(screen.getByRole("button", { name: /create key/i }));
+
+    await screen.findByRole("heading", { name: /api key created/i });
+
+    const keyInput = screen.getByDisplayValue("select-key");
+    // Mock select on the input element
+    (keyInput as HTMLInputElement).select = mockSelect;
+    await user.click(keyInput);
+
+    expect(mockSelect).toHaveBeenCalled();
+  });
+
+  it("shows Creating state when create mutation is pending", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+    vi.mocked(useMutation).mockImplementation((() => ({
+      mutate: vi.fn(),
+      isPending: true,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+
+    expect(screen.getByRole("button", { name: /creating/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /creating/i })).toBeDisabled();
+  });
+
+  it("shows Revoking state when revoke mutation is pending", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useQuery, useMutation } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [{
+        id: "key-1", name: "Pending Revoke", createdAt: "2024-01-01T00:00:00Z",
+        lastUsedAt: null, expiresAt: null, isRevoked: false,
+      }],
+      isLoading: false,
+    }));
+    vi.mocked(useMutation).mockImplementation((() => ({
+      mutate: vi.fn(),
+      isPending: true,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    // Click the table Revoke button to open the dialog
+    await user.click(screen.getByRole("button", { name: /^revoke$/i }));
+
+    // The confirm button in the dialog should show "Revoking..."
+    const dialogButtons = screen.getAllByRole("button", { name: /revoking/i });
+    const confirmButton = dialogButtons.find(
+      (btn) => btn.closest("[role='dialog']") !== null,
+    );
+    expect(confirmButton).toBeDefined();
+    expect(confirmButton).toBeDisabled();
   });
 });
