@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
+import { mockTransactionResponse } from "@/test/mock-api";
 import Transactions from "./Transactions";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -147,8 +148,8 @@ describe("Transactions", () => {
 
   it("renders table with transactions when data exists", async () => {
     const items = [
-      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
-      { id: "t2", receiptId: "r2", accountId: "a2", amount: 100.00, date: "2024-01-20" },
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
+      mockTransactionResponse({ id: "t2", receiptId: "r2", accountId: "a2", amount: 100.00, date: "2024-01-20" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -181,8 +182,8 @@ describe("Transactions", () => {
 
   it("renders receipt location and receipt date columns", async () => {
     const items = [
-      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
-      { id: "t2", receiptId: "r2", accountId: "a2", amount: 100.00, date: "2024-01-20" },
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
+      mockTransactionResponse({ id: "t2", receiptId: "r2", accountId: "a2", amount: 100.00, date: "2024-01-20" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -229,7 +230,7 @@ describe("Transactions", () => {
   it("closes edit dialog when dismissed", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -278,7 +279,7 @@ describe("Transactions", () => {
   it("renders NoResults when search returns no matches", async () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
-      data: [{ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }],
+      data: [mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" })],
       isLoading: false,
     }));
 
@@ -299,7 +300,7 @@ describe("Transactions", () => {
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -334,7 +335,7 @@ describe("Transactions", () => {
   it("toggles checkbox selection and shows delete button", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -372,7 +373,7 @@ describe("Transactions", () => {
     }));
 
     const items = [
-      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -412,8 +413,8 @@ describe("Transactions", () => {
   it("toggles select all checkbox", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" },
-      { id: "t2", receiptId: "r2", accountId: "a2", amount: 100.00, date: "2024-01-20" },
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
+      mockTransactionResponse({ id: "t2", receiptId: "r2", accountId: "a2", amount: 100.00, date: "2024-01-20" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");

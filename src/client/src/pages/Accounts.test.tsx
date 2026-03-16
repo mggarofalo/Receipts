@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
+import { mockAccountResponse } from "@/test/mock-api";
 import Accounts from "./Accounts";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -118,8 +119,8 @@ describe("Accounts", () => {
 
   it("renders table with accounts when data exists", async () => {
     const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
-      { id: "2", accountCode: "ACC-002", name: "Savings", isActive: true },
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking" }),
+      mockAccountResponse({ id: "2", accountCode: "ACC-002", name: "Savings" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -159,7 +160,7 @@ describe("Accounts", () => {
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -202,7 +203,7 @@ describe("Accounts", () => {
   it("closes edit dialog when dismissed", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -281,7 +282,7 @@ describe("Accounts", () => {
     }));
 
     const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking" }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -321,7 +322,7 @@ describe("Accounts", () => {
   it("renders NoResults when search returns no matches", async () => {
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: [{ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }],
+      data: [mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking" })],
       isLoading: false,
     }));
 
@@ -340,10 +341,9 @@ describe("Accounts", () => {
   });
 
   it("defaults to showing only active accounts", async () => {
-
     const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
-      { id: "2", accountCode: "ACC-002", name: "Savings", isActive: false },
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }),
+      mockAccountResponse({ id: "2", accountCode: "ACC-002", name: "Savings", isActive: false }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -390,11 +390,10 @@ describe("Accounts", () => {
   });
 
   it("shows inactive accounts when Inactive tab is selected", async () => {
-
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", accountCode: "ACC-001", name: "Checking", isActive: true },
-      { id: "2", accountCode: "ACC-002", name: "Savings", isActive: false },
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }),
+      mockAccountResponse({ id: "2", accountCode: "ACC-002", name: "Savings", isActive: false }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");

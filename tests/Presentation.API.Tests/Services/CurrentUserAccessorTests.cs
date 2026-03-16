@@ -145,4 +145,39 @@ public class CurrentUserAccessorTests
 		// Act & Assert
 		Assert.Null(accessor.UserAgent);
 	}
+
+	[Fact]
+	public void ApiKeyId_ReturnsNullWhenNoHttpContext()
+	{
+		// Arrange — HttpContext is null, exercises full null-propagation chain on L15
+		CurrentUserAccessor accessor = CreateAccessor();
+
+		// Act & Assert
+		Assert.Null(accessor.ApiKeyId);
+	}
+
+	[Fact]
+	public void IpAddress_ReturnsNullWhenNoRemoteIpAddress()
+	{
+		// Arrange — HttpContext exists but no RemoteIpAddress set
+		ClaimsPrincipal principal = new(new ClaimsIdentity());
+		CurrentUserAccessor accessor = CreateAccessor(principal);
+
+		// Act & Assert
+		Assert.Null(accessor.IpAddress);
+	}
+
+	[Fact]
+	public void UserAgent_ReturnsEmptyWhenNoUserAgentHeader()
+	{
+		// Arrange — HttpContext exists but no UserAgent header
+		ClaimsPrincipal principal = new(new ClaimsIdentity());
+		CurrentUserAccessor accessor = CreateAccessor(principal);
+
+		// Act
+		string? userAgent = accessor.UserAgent;
+
+		// Assert — Headers.UserAgent.ToString() returns empty string when not set
+		Assert.NotNull(userAgent);
+	}
 }

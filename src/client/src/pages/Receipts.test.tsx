@@ -2,6 +2,7 @@ import "@/test/setup-combobox-polyfills";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
+import { mockReceiptResponse } from "@/test/mock-api";
 import Receipts from "./Receipts";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -124,8 +125,8 @@ describe("Receipts", () => {
 
   it("renders table with receipts when data exists", async () => {
     const items = [
-      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
-      { id: "2", location: "Target", date: "2024-01-20", taxAmount: 3.50 },
+      mockReceiptResponse({ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }),
+      mockReceiptResponse({ id: "2", location: "Target", date: "2024-01-20", taxAmount: 3.50 }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -164,7 +165,7 @@ describe("Receipts", () => {
   it("closes edit dialog when dismissed", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      mockReceiptResponse({ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -213,7 +214,7 @@ describe("Receipts", () => {
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      mockReceiptResponse({ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -244,7 +245,7 @@ describe("Receipts", () => {
   it("toggles checkbox selection and shows delete button", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      mockReceiptResponse({ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -282,7 +283,7 @@ describe("Receipts", () => {
     }));
 
     const items = [
-      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      mockReceiptResponse({ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -356,7 +357,7 @@ describe("Receipts", () => {
   it("renders NoResults when search returns no matches", async () => {
     const { useReceipts } = await import("@/hooks/useReceipts");
     vi.mocked(useReceipts).mockReturnValue(mockQueryResult({
-      data: [{ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }],
+      data: [mockReceiptResponse({ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 })],
       isLoading: false,
     }));
 
@@ -384,7 +385,7 @@ describe("Receipts", () => {
     }));
 
     const items = [
-      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
+      mockReceiptResponse({ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -424,8 +425,8 @@ describe("Receipts", () => {
   it("toggles select all checkbox", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 },
-      { id: "2", location: "Chipotle", date: "2024-01-20", taxAmount: 1.50 },
+      mockReceiptResponse({ id: "1", location: "Walmart", date: "2024-01-15", taxAmount: 5.25 }),
+      mockReceiptResponse({ id: "2", location: "Chipotle", date: "2024-01-20", taxAmount: 1.50 }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");

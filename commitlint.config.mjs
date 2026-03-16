@@ -23,6 +23,7 @@ export default {
         "common",
         "shared",
         "ci",
+        "docs",
         "hooks",
       ],
     ],
