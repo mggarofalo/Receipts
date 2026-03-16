@@ -109,12 +109,29 @@ dotnet build Receipts.slnx
 # Run unit tests (same as CI)
 dotnet test Receipts.slnx --filter "Category!=Integration"
 
-# Run all tests including integration (requires ONNX model)
+# Run all tests including integration (requires Docker + ONNX model)
 dotnet test Receipts.slnx
+
+# Run integration tests only (requires Docker)
+dotnet test tests/Infrastructure.IntegrationTests --filter "Category=Integration"
 
 # Run tests for a specific project
 dotnet test tests/Application.Tests/Application.Tests.csproj
 ```
+
+### Integration Tests (Testcontainers)
+
+The `Infrastructure.IntegrationTests` project runs EF Core against a real PostgreSQL instance via [Testcontainers](https://dotnet.testcontainers.org/). These tests catch bugs that InMemory unit tests cannot, such as:
+
+- **DateTimeOffset UTC validation** — Npgsql rejects non-UTC offsets for `timestamptz` columns
+- **Column type mapping** — `decimal(18,2)`, `uuid`, `text`, `date`, enum-to-string, pgvector
+- **Soft-delete cascades** — parent deletion cascades `DeletedAt` to owned children via real SQL
+- **Audit logging** — full `SaveChangesAsync` pipeline with real database round-trips
+- **Query filters** — `HasQueryFilter` generates real SQL `WHERE` clauses
+
+**Requirements:** Docker must be running. The tests automatically start and stop a PostgreSQL container — no manual database setup needed.
+
+**CI note:** Integration tests are tagged `[Trait("Category", "Integration")]` and excluded from the CI unit test step (`--filter "Category!=Integration"`). They run locally or in CI environments with Docker available.
 
 ## Git Hooks
 

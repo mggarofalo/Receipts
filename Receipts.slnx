@@ -18,6 +18,7 @@
     <Project Path="tests/Application.Tests/Application.Tests.csproj" />
     <Project Path="tests/Common.Tests/Common.Tests.csproj" />
     <Project Path="tests/Domain.Tests/Domain.Tests.csproj" />
+    <Project Path="tests/Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.csproj" />
     <Project Path="tests/Infrastructure.Tests/Infrastructure.Tests.csproj" />
     <Project Path="tests/Presentation.API.Tests/Presentation.API.Tests.csproj" />
     <Project Path="tests/SampleData/SampleData.csproj" />
