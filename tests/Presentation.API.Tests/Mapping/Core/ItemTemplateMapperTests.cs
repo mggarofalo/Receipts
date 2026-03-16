@@ -141,4 +141,44 @@ public class ItemTemplateMapperTests
 		Assert.Null(actual.DefaultUnitPrice);
 		Assert.Null(actual.DefaultUnitPriceCurrency);
 	}
+
+	[Fact]
+	public void ToDomain_FromUpdateRequest_NullDefaultUnitPrice_MapsToNull()
+	{
+		// Arrange
+		Guid expected = Guid.NewGuid();
+		UpdateItemTemplateRequest request = new()
+		{
+			Id = expected,
+			Name = "No Price Update",
+		};
+
+		// Act
+		ItemTemplate actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Equal(expected, actual.Id);
+		Assert.Null(actual.DefaultUnitPrice);
+	}
+
+	[Fact]
+	public void ToDomain_FromUpdateRequest_WithDefaultUnitPrice_MapsMoney()
+	{
+		// Arrange
+		Guid expected = Guid.NewGuid();
+		UpdateItemTemplateRequest request = new()
+		{
+			Id = expected,
+			Name = "Price Update",
+			DefaultUnitPrice = 25.50,
+		};
+
+		// Act
+		ItemTemplate actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Equal(expected, actual.Id);
+		Assert.NotNull(actual.DefaultUnitPrice);
+		Assert.Equal(25.50m, actual.DefaultUnitPrice.Amount);
+	}
 }
