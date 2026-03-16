@@ -221,10 +221,9 @@ describe("ApiKeys", () => {
     const confirmButton = dialogButtons.find(
       (btn) => btn.closest("[role='dialog']") !== null,
     );
-    if (confirmButton) {
-      await user.click(confirmButton);
-      expect(mockMutate).toHaveBeenCalledWith("key-1");
-    }
+    expect(confirmButton).toBeDefined();
+    await user.click(confirmButton!);
+    expect(mockMutate).toHaveBeenCalledWith("key-1");
   });
 
   it("opens create dialog on shortcut:new-item event", async () => {
@@ -300,6 +299,7 @@ describe("ApiKeys", () => {
   it("copies key to clipboard when Copy to Clipboard button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useMutation } = await import("@tanstack/react-query");
+    const originalClipboard = navigator.clipboard;
     const mockWriteText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: mockWriteText },
@@ -326,6 +326,12 @@ describe("ApiKeys", () => {
     await user.click(screen.getByRole("button", { name: /copy to clipboard/i }));
 
     expect(mockWriteText).toHaveBeenCalledWith("copy-me-key");
+
+    Object.defineProperty(navigator, "clipboard", {
+      value: originalClipboard,
+      writable: true,
+      configurable: true,
+    });
   });
 
   it("cancels revoke dialog when Cancel button is clicked", async () => {
@@ -437,6 +443,7 @@ describe("ApiKeys", () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useMutation } = await import("@tanstack/react-query");
     const { showError } = await import("@/lib/toast");
+    const originalClipboard = navigator.clipboard;
 
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: vi.fn().mockRejectedValue(new Error("copy failed")) },
@@ -464,6 +471,12 @@ describe("ApiKeys", () => {
 
     await vi.waitFor(() => {
       expect(showError).toHaveBeenCalledWith("Failed to copy to clipboard.");
+    });
+
+    Object.defineProperty(navigator, "clipboard", {
+      value: originalClipboard,
+      writable: true,
+      configurable: true,
     });
   });
 
@@ -528,12 +541,11 @@ describe("ApiKeys", () => {
     const confirmButton = dialogButtons.find(
       (btn) => btn.closest("[role='dialog']") !== null,
     );
-    if (confirmButton) {
-      await user.click(confirmButton);
-      await vi.waitFor(() => {
-        expect(showError).toHaveBeenCalledWith("Failed to revoke API key.");
-      });
-    }
+    expect(confirmButton).toBeDefined();
+    await user.click(confirmButton!);
+    await vi.waitFor(() => {
+      expect(showError).toHaveBeenCalledWith("Failed to revoke API key.");
+    });
   });
 
   it("closes created key dialog when dismissed", async () => {
