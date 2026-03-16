@@ -355,4 +355,74 @@ public class ReceiptItemMapperTests
 		// Assert
 		Assert.Equal("flat", actual.PricingMode);
 	}
+
+	[Fact]
+	public void ToDomain_FromCreateRequest_InvalidPricingMode_DefaultsToQuantity()
+	{
+		// Arrange
+		CreateReceiptItemRequest request = new()
+		{
+			ReceiptItemCode = "ITEM-INV-001",
+			Description = "Invalid PricingMode Item",
+			Quantity = 1.0,
+			UnitPrice = 5.00,
+			Category = "Test",
+			Subcategory = "Invalid",
+			PricingMode = "nonexistent_mode"
+		};
+
+		// Act
+		ReceiptItem actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
+	}
+
+	[Fact]
+	public void ToDomain_FromUpdateRequest_InvalidPricingMode_DefaultsToQuantity()
+	{
+		// Arrange
+		Guid expectedId = Guid.NewGuid();
+		UpdateReceiptItemRequest request = new()
+		{
+			Id = expectedId,
+			ReceiptItemCode = "ITEM-INV-UPD-001",
+			Description = "Invalid PricingMode Update",
+			Quantity = 1.0,
+			UnitPrice = 5.00,
+			Category = "Test",
+			Subcategory = "Invalid",
+			PricingMode = "nonexistent_mode"
+		};
+
+		// Act
+		ReceiptItem actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
+		Assert.Equal(expectedId, actual.Id);
+	}
+
+	[Fact]
+	public void ToDomain_FromUpdateRequest_NullPricingMode_DefaultsToQuantity()
+	{
+		// Arrange
+		Guid expectedId = Guid.NewGuid();
+		UpdateReceiptItemRequest request = new()
+		{
+			Id = expectedId,
+			ReceiptItemCode = "ITEM-NULL-UPD-001",
+			Description = "Null PricingMode Update",
+			Quantity = 2.0,
+			UnitPrice = 5.00,
+			Category = "Test",
+			Subcategory = "Default"
+		};
+
+		// Act
+		ReceiptItem actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
+	}
 }
