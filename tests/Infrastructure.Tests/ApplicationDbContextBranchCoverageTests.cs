@@ -143,11 +143,14 @@ public class ApplicationDbContextBranchCoverageTests
 	}
 
 	[Fact]
-	public async Task SoftDelete_Receipt_SkipsAlreadyDeletedChildren()
+	public async Task SoftDelete_Receipt_SkipsChildrenAlreadyMarkedDeleted()
 	{
-		// Arrange — create a receipt with a child that's already soft-deleted
-		// This covers the entry.State == EntityState.Deleted continue branch in CollectOwnedChildren
-		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		// Arrange — delete both a receipt and its child item in the same save operation.
+		// HandleSoftDelete processes ISoftDeletable entries sequentially. When the receipt
+		// is processed first, CollectOwnedChildren iterates all tracked entries. The child
+		// item is still in EntityState.Deleted at that point (not yet processed by the
+		// foreach), so the entry.State == EntityState.Deleted continue branch (L147) fires.
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
 
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		ReceiptItemEntity item1 = ReceiptItemEntityGenerator.Generate(receipt.Id);
@@ -160,25 +163,21 @@ public class ApplicationDbContextBranchCoverageTests
 			await context.SaveChangesAsync();
 		}
 
-		// Soft-delete item1 first
-		using (ApplicationDbContext context = contextFactory.CreateDbContext())
-		{
-			ReceiptItemEntity loaded = await context.ReceiptItems.FirstAsync(i => i.Id == item1.Id);
-			context.ReceiptItems.Remove(loaded);
-			await context.SaveChangesAsync();
-		}
-
-		// Act — now delete the receipt; item1 is already soft-deleted
+		// Act — delete both the receipt and item1 in the same save operation
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			ReceiptEntity r = await context.Receipts.FirstAsync();
-			// Load remaining items into tracker
+			// Load all items into tracker
 			await context.ReceiptItems.Where(i => i.ReceiptId == receipt.Id).LoadAsync();
+			ReceiptItemEntity trackedItem1 = await context.ReceiptItems.FirstAsync(i => i.Id == item1.Id);
+
+			// Remove both — item1 will be Deleted when CollectOwnedChildren runs for receipt
+			context.ReceiptItems.Remove(trackedItem1);
 			context.Receipts.Remove(r);
 			await context.SaveChangesAsync();
 		}
 
-		// Assert — both should be soft-deleted
+		// Assert — both items should be soft-deleted (item1 via direct Remove, item2 via cascade)
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			List<ReceiptItemEntity> allItems = await context.ReceiptItems.IgnoreQueryFilters().ToListAsync();
@@ -760,8 +759,9 @@ public class ApplicationDbContextBranchCoverageTests
 	[Fact]
 	public async Task Audit_ModifiedEntity_SkipsFieldsWhereOldEqualsNew()
 	{
-		// Covers the oldValue != newValue check in GetFieldChanges
-		// When a property is marked as modified but the value hasn't actually changed
+		// Covers the oldValue != newValue check in GetFieldChanges (L274)
+		// Force a property into IsModified = true while keeping the same value,
+		// so the audit system sees it as modified but the serialized old/new values are equal.
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
 		AccountEntity entity = AccountEntityGenerator.Generate();
 
@@ -771,29 +771,24 @@ public class ApplicationDbContextBranchCoverageTests
 			await context.SaveChangesAsync();
 		}
 
-		// Act — set property to the same value (mark as modified with identical value)
+		// Act — force IsModified on Name without changing its value
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			AccountEntity account = await context.Accounts.FirstAsync();
-			string originalName = account.Name;
-			account.Name = "Temporarily Changed";
-			account.Name = originalName; // Set back to original
+			// Force the property to be marked as modified even though the value is unchanged
+			context.Entry(account).Property(nameof(AccountEntity.Name)).IsModified = true;
 			await context.SaveChangesAsync();
 		}
 
-		// Assert — no Update audit should be created (or if it is, it shouldn't have Name changes)
+		// Assert — no Update audit should be created because oldValue == newValue for all fields
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			List<AuditLogEntity> updateLogs = await context.AuditLogs
 				.Where(a => a.Action == AuditAction.Update)
 				.ToListAsync();
 
-			// Either no update log (changes.Count == 0) or the log doesn't contain Name
-			if (updateLogs.Count > 0)
-			{
-				List<FieldChange> changes = updateLogs[0].GetChanges();
-				changes.Should().NotContain(c => c.FieldName == "Name");
-			}
+			// The changes.Count == 0 check at L192 should skip creating an audit entry
+			updateLogs.Should().BeEmpty("no audit entry should be created when all modified fields have identical old and new values");
 		}
 
 		contextFactory.ResetDatabase();
