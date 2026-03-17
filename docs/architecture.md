@@ -68,7 +68,7 @@ sum(item.TotalAmount) + Receipt.TaxAmount + sum(adjustment.Amount) == sum(transa
 - **Hard invariants** (reject if violated): Balance equation, non-negative prices, line-item totals within rounding tolerance
 - **Soft invariants** (warn, don't reject): Tax reasonableness (0–25%), adjustment reasonableness (<10% of subtotal), date consistency
 
-See [docs/design/phase7-correctness-hardening.md](design/phase7-correctness-hardening.md) for the full design document.
+See the "Design: Phase 7 — Correctness Hardening" page in Plane for the full design document.
 
 ## Database
 
