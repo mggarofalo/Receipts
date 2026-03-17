@@ -19,7 +19,7 @@ All issue work is tracked in Plane. Project: "Receipts" (identifier: `RECEIPTS`)
 
 ### Branching
 
-Two-tier model: module branches for CI/PR gating, issue branches for individual work. See **[docs/branching.md](docs/branching.md)** for strategy, merge procedures, worktree setup, and directory isolation.
+Two-tier model: module branches for CI/PR gating, issue branches for individual work. **PRs target `develop`, not `main`** — only `develop`, `release-please--*`, and `hotfix/*` branches may merge to `main` (enforced by CI). See **[docs/branching.md](docs/branching.md)** for strategy, merge procedures, worktree setup, and directory isolation.
 
 ### Commits
 

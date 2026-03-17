@@ -14,6 +14,29 @@ env:
   NODE_VERSION: "20"
 
 jobs:
+  source-branch-check:
+    name: Source Branch Policy
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check source branch
+        run: |
+          SOURCE="${{ github.head_ref }}"
+          if [[ "$SOURCE" == "develop" || "$SOURCE" == release-please--* || "$SOURCE" == hotfix/* ]]; then
+            echo "✅ Branch '$SOURCE' is allowed to merge to main."
+          else
+            echo "::error::Branch '$SOURCE' is not allowed to merge directly to main."
+            echo ""
+            echo "Only these branches may target main:"
+            echo "  - develop"
+            echo "  - release-please--*"
+            echo "  - hotfix/*"
+            echo ""
+            echo "Please retarget your PR to 'develop' instead."
+            exit 1
+          fi
+
   pr-title:
     name: Conventional Commits
     if: github.event_name == 'pull_request'
