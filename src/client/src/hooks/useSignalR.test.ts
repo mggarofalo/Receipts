@@ -22,7 +22,7 @@ vi.mock("@microsoft/signalr", () => ({
   HubConnectionBuilder: vi.fn().mockImplementation(function () {
     return mockBuilder;
   }),
-  LogLevel: { Debug: 1, None: 5 },
+  LogLevel: { Debug: 1, Critical: 5, None: 6 },
 }));
 
 vi.mock("@tanstack/react-query", () => ({
@@ -567,7 +567,7 @@ describe("useSignalR", () => {
       await renderEnabled();
 
       // configureLogging should still be called (with LogLevel.None via ternary false branch)
-      expect(mockBuilder.configureLogging).toHaveBeenCalledWith(5); // LogLevel.None
+      expect(mockBuilder.configureLogging).toHaveBeenCalledWith(6); // LogLevel.None
       // No debug output in production
       expect(debugSpy).not.toHaveBeenCalled();
 
