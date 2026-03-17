@@ -87,7 +87,17 @@ return 0;
 
 static async Task<int> RunAsync(string command, string[] arguments, string workingDirectory)
 {
-    ProcessStartInfo psi = new(command, arguments)
+    // On Windows, .cmd/.bat scripts (like npm) require shell execution
+    // since Process.Start with UseShellExecute=false can't resolve them.
+    bool isWindows = OperatingSystem.IsWindows();
+    string resolvedCommand = isWindows && !Path.HasExtension(command) && command != "dotnet" && command != "git"
+        ? "cmd"
+        : command;
+    string[] resolvedArgs = resolvedCommand == "cmd"
+        ? ["/c", command, .. arguments]
+        : arguments;
+
+    ProcessStartInfo psi = new(resolvedCommand, resolvedArgs)
     {
         WorkingDirectory = workingDirectory,
         UseShellExecute = false,
