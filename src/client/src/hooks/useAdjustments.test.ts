@@ -222,10 +222,9 @@ describe("useAdjustments", () => {
       { id: "1", type: "discount" },
       { id: "2", type: "surcharge" },
     ];
-    queryClient.setQueryData(
-      ["adjustments", "list", 0, 50, undefined, undefined],
-      { data: adjustments, total: 2, offset: 0, limit: 50 },
-    );
+    const cacheKey = ["adjustments", "list", 0, 50, undefined, undefined];
+    const cacheValue = { data: adjustments, total: 2, offset: 0, limit: 50 };
+    queryClient.setQueryData(cacheKey, cacheValue);
     setQueryDataSpy.mockClear();
 
     (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
@@ -239,8 +238,8 @@ describe("useAdjustments", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to delete adjustment(s)");
 
-    // Verify rollback was attempted
-    expect(setQueryDataSpy).toHaveBeenCalled();
+    // Verify rollback restored the original data (not just the optimistic update from onMutate)
+    expect(setQueryDataSpy).toHaveBeenCalledWith(cacheKey, cacheValue);
   });
 
   it("delete optimistic update handles undefined cache gracefully", async () => {

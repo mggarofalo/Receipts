@@ -228,10 +228,9 @@ describe("useItemTemplates", () => {
       { id: "1", name: "A" },
       { id: "2", name: "B" },
     ];
-    queryClient.setQueryData(
-      ["itemTemplates", "list", 0, 50, undefined, undefined],
-      { data: templates, total: 2, offset: 0, limit: 50 },
-    );
+    const cacheKey = ["itemTemplates", "list", 0, 50, undefined, undefined];
+    const cacheValue = { data: templates, total: 2, offset: 0, limit: 50 };
+    queryClient.setQueryData(cacheKey, cacheValue);
     setQueryDataSpy.mockClear();
 
     (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
@@ -245,8 +244,8 @@ describe("useItemTemplates", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to delete item template(s)");
 
-    // Verify rollback was attempted
-    expect(setQueryDataSpy).toHaveBeenCalled();
+    // Verify rollback restored the original data (not just the optimistic update from onMutate)
+    expect(setQueryDataSpy).toHaveBeenCalledWith(cacheKey, cacheValue);
   });
 
   it("delete optimistic update handles undefined cache gracefully", async () => {

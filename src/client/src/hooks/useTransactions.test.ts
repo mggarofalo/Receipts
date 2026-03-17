@@ -258,10 +258,9 @@ describe("useTransactions", () => {
       { id: "1", amount: 100 },
       { id: "2", amount: 200 },
     ];
-    queryClient.setQueryData(
-      ["transactions", "list", 0, 50, undefined, undefined],
-      { data: transactions, total: 2, offset: 0, limit: 50 },
-    );
+    const cacheKey = ["transactions", "list", 0, 50, undefined, undefined];
+    const cacheValue = { data: transactions, total: 2, offset: 0, limit: 50 };
+    queryClient.setQueryData(cacheKey, cacheValue);
     setQueryDataSpy.mockClear();
 
     (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
@@ -275,8 +274,8 @@ describe("useTransactions", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to delete transaction(s)");
 
-    // Verify rollback was attempted
-    expect(setQueryDataSpy).toHaveBeenCalled();
+    // Verify rollback restored the original data (not just the optimistic update from onMutate)
+    expect(setQueryDataSpy).toHaveBeenCalledWith(cacheKey, cacheValue);
   });
 
   it("delete optimistic update handles undefined cache gracefully", async () => {

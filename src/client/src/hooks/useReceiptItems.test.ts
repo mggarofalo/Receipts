@@ -296,8 +296,8 @@ describe("useReceiptItems", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to delete receipt item(s)");
 
-    // Verify rollback was attempted (setQueryData called during onError to restore previous data)
-    expect(setQueryDataSpy).toHaveBeenCalled();
+    // Verify rollback restored the original data (not just the optimistic update from onMutate)
+    expect(setQueryDataSpy).toHaveBeenCalledWith(cacheKey, cacheValue);
   });
 
   it("delete optimistic update handles undefined cache gracefully", async () => {
