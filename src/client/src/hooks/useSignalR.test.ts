@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 
 const mockConnection = {
@@ -60,7 +60,7 @@ import { toast } from "sonner";
 import { bufferToast } from "@/lib/signalr-toast-buffer";
 import { act } from "@testing-library/react";
 import { setConnectionId, getConnectionId } from "@/lib/signalr-connection";
-import { parseJwtPayload } from "@/lib/auth";
+import { getAccessToken, parseJwtPayload } from "@/lib/auth";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -151,6 +151,57 @@ describe("useSignalR", () => {
 
     expect(mockConnection.stop).toHaveBeenCalled();
     expect(setConnectionId).toHaveBeenCalledWith(null);
+  });
+
+  describe("accessTokenFactory", () => {
+    it("returns token when getAccessToken returns a value", () => {
+      renderHook(() => useSignalR(true));
+
+      const withUrlCall = mockBuilder.withUrl.mock.calls[0];
+      const options = withUrlCall[1] as { accessTokenFactory: () => string };
+      const result = options.accessTokenFactory();
+
+      expect(result).toBe("mock-token");
+    });
+
+    it("returns empty string when getAccessToken returns null", () => {
+      vi.mocked(getAccessToken).mockReturnValueOnce(null);
+
+      renderHook(() => useSignalR(true));
+
+      const withUrlCall = mockBuilder.withUrl.mock.calls[0];
+      const options = withUrlCall[1] as { accessTokenFactory: () => string };
+      const result = options.accessTokenFactory();
+
+      expect(result).toBe("");
+    });
+  });
+
+  describe("connectionId nullish coalescing", () => {
+    it("sets connectionId to null when connection.connectionId is undefined on start", async () => {
+      mockConnection.connectionId = undefined as unknown as string;
+
+      await renderEnabled();
+
+      expect(setConnectionId).toHaveBeenCalledWith(null);
+    });
+
+    it("sets connectionId to null when connection.connectionId is null on reconnect", async () => {
+      await renderEnabled();
+
+      // Clear previous calls
+      vi.mocked(setConnectionId).mockClear();
+
+      // Set connectionId to null for reconnect
+      mockConnection.connectionId = null as unknown as string;
+
+      const reconnectedCb = mockConnection.onreconnected.mock.calls[0][0] as () => void;
+      act(() => {
+        reconnectedCb();
+      });
+
+      expect(setConnectionId).toHaveBeenCalledWith(null);
+    });
   });
 
   describe("EntityChanged handler", () => {
@@ -323,6 +374,79 @@ describe("useSignalR", () => {
       expect(bufferToast).toHaveBeenCalledWith("receipt", "deleted", 1, "other-user");
     });
 
+    it("skips query invalidation for unknown entity type", async () => {
+      const mockQueryClient = vi.mocked(useQueryClient)();
+
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "unknown-entity", changeType: "created", id: "abc", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
+      });
+
+      // No query invalidation since entity type is not in queryKeyMap
+      expect(mockQueryClient.invalidateQueries).not.toHaveBeenCalled();
+      // But toast still fires with entityType as display name (fallback)
+      expect(bufferToast).toHaveBeenCalledWith("unknown-entity", "created", 1, "other-user");
+    });
+
+    it("uses entityType as display name for unmapped entity type", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "custom-widget", changeType: "deleted", id: "abc", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
+      });
+
+      expect(bufferToast).toHaveBeenCalledWith("custom-widget", "deleted", 1, "other-user");
+    });
+
+    it("defaults count to 1 when notification.count is undefined", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "created", id: "abc", userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
+      });
+
+      expect(bufferToast).toHaveBeenCalledWith("receipt", "created", 1, "other-user");
+    });
+
+    it("classifies as other-user when getAccessToken returns null", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      vi.mocked(getAccessToken).mockReturnValueOnce(null);
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "created", id: "abc", count: 1, userId: "current-user-id", authMethod: "jwt", connectionId: "different-conn" });
+      });
+
+      // When token is null, parseJwtPayload is not called, myUserId is null → other-user
+      expect(bufferToast).toHaveBeenCalledWith("receipt", "created", 1, "other-user");
+    });
+
+    it("classifies as other-user when notification has null userId and null connectionId", async () => {
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "created", id: "abc", count: 1, userId: null, authMethod: null, connectionId: null });
+      });
+
+      expect(bufferToast).toHaveBeenCalledWith("receipt", "created", 1, "other-user");
+    });
+
     it("classifies as other-user when parseJwtPayload returns null", async () => {
       vi.mocked(parseJwtPayload).mockReturnValueOnce(null);
 
@@ -384,6 +508,33 @@ describe("useSignalR", () => {
 
       expect(result.current.connectionState).toBe("disconnected");
     });
+
+    it("clears connectionId when onclose fires", async () => {
+      await renderEnabled();
+
+      vi.mocked(setConnectionId).mockClear();
+
+      const closeCb = mockConnection.onclose.mock.calls[0][0] as () => void;
+      act(() => {
+        closeCb();
+      });
+
+      expect(setConnectionId).toHaveBeenCalledWith(null);
+    });
+
+    it("updates connectionId on reconnect", async () => {
+      await renderEnabled();
+
+      vi.mocked(setConnectionId).mockClear();
+      mockConnection.connectionId = "new-conn-id";
+
+      const reconnectedCb = mockConnection.onreconnected.mock.calls[0][0] as () => void;
+      act(() => {
+        reconnectedCb();
+      });
+
+      expect(setConnectionId).toHaveBeenCalledWith("new-conn-id");
+    });
   });
 
   describe("error handling", () => {
@@ -396,6 +547,100 @@ describe("useSignalR", () => {
       await act(async () => {});
 
       expect(result.current.connectionState).toBe("disconnected");
+    });
+  });
+
+  describe("production mode (DEV=false)", () => {
+    const originalDev = import.meta.env.DEV;
+
+    beforeEach(() => {
+      import.meta.env.DEV = false;
+    });
+
+    afterEach(() => {
+      import.meta.env.DEV = originalDev;
+    });
+
+    it("uses LogLevel.None and suppresses console.debug on start", async () => {
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+
+      await renderEnabled();
+
+      // configureLogging should still be called (with LogLevel.None via ternary false branch)
+      expect(mockBuilder.configureLogging).toHaveBeenCalledWith(5); // LogLevel.None
+      // No debug output in production
+      expect(debugSpy).not.toHaveBeenCalled();
+
+      debugSpy.mockRestore();
+    });
+
+    it("suppresses console.debug on reconnecting", async () => {
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+
+      await renderEnabled();
+
+      const reconnectingCb = mockConnection.onreconnecting.mock.calls[0][0] as () => void;
+      act(() => {
+        reconnectingCb();
+      });
+
+      expect(debugSpy).not.toHaveBeenCalled();
+      debugSpy.mockRestore();
+    });
+
+    it("suppresses console.debug on reconnected", async () => {
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+
+      await renderEnabled();
+
+      const reconnectedCb = mockConnection.onreconnected.mock.calls[0][0] as () => void;
+      act(() => {
+        reconnectedCb();
+      });
+
+      expect(debugSpy).not.toHaveBeenCalled();
+      debugSpy.mockRestore();
+    });
+
+    it("suppresses console.debug on close", async () => {
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+
+      await renderEnabled();
+
+      const closeCb = mockConnection.onclose.mock.calls[0][0] as () => void;
+      act(() => {
+        closeCb();
+      });
+
+      expect(debugSpy).not.toHaveBeenCalled();
+      debugSpy.mockRestore();
+    });
+
+    it("suppresses console.debug on EntityChanged", async () => {
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+
+      await renderEnabled();
+
+      const handler = getOnHandler("EntityChanged");
+      expect(handler).toBeDefined();
+
+      act(() => {
+        handler!({ entityType: "receipt", changeType: "created", id: "abc", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
+      });
+
+      expect(debugSpy).not.toHaveBeenCalled();
+      debugSpy.mockRestore();
+    });
+
+    it("suppresses console.debug on start() error", async () => {
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+      mockConnection.start.mockRejectedValueOnce(new Error("Connection failed"));
+
+      renderHook(() => useSignalR(true));
+      await act(async () => {});
+
+      expect(debugSpy).not.toHaveBeenCalled();
+      debugSpy.mockRestore();
     });
   });
 });
