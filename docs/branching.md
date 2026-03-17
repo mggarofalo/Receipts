@@ -1,15 +1,31 @@
 # Branching Strategy
 
-This project uses a hierarchical branching model: **module branches** for CI/PR gating, optional **parent branches** for epics, and **issue branches** for individual work items.
+This project uses a hierarchical branching model with `develop` as the integration branch. Feature work merges into `develop`, and `develop` is promoted to `main` via release cycles.
+
+## Merge Flow
+
+```
+feature/issue branches → develop → main
+                                    ↑
+                          hotfix/* ──┘  (emergency only)
+```
+
+**CI enforces** that only `develop`, `release-please--*`, and `hotfix/*` branches can open PRs to `main`. All other branches must target `develop`.
 
 ## Branch Types
+
+### `develop` — Integration Branch
+
+- All feature/module/parent branches merge into `develop` via PR
+- `develop` is promoted to `main` when a release is cut (via release-please or manual PR)
+- After a release merges to `main`, an automated workflow creates a sync PR (`main → develop`) to keep `develop` up to date
 
 ### Module Branches
 
 One per phase, named `module/phase-N` (e.g., `module/phase-0`):
 - Created when work on a module begins
 - All issue work within that phase merges locally into the module branch
-- When the module is complete, open a **PR from the module branch to `main`**
+- When the module is complete, open a **PR from the module branch to `develop`**
 - The PR triggers CI — this is the safety net that catches issues the agent may have missed
 - After PR merge, delete the module branch
 
@@ -17,28 +33,39 @@ One per phase, named `module/phase-N` (e.g., `module/phase-0`):
 
 When an epic has multiple child issues:
 - Create a parent branch using the epic's identifier (e.g., `feat/receipts-83-description`)
-- Parent branch is created off `main` (or the module branch if one exists)
+- Parent branch is created off `develop` (or the module branch if one exists)
 - Child issue branches are created off the parent branch and squash-merge back into it
-- When all children are complete, the parent branch gets a PR to `main`
-- This keeps related changes grouped and avoids polluting `main` with intermediate work
+- When all children are complete, the parent branch gets a PR to `develop`
+- This keeps related changes grouped and avoids polluting `develop` with intermediate work
 
 ### Issue Branches
 
 One per tracked issue:
-- Branch off the parent branch (if epic) or module branch, NOT `main`
+- Branch off the parent branch (if epic) or module branch, NOT `develop` or `main`
 - Use the issue identifier to form a branch name (e.g., `feat/receipts-123-short-description`)
 - Merge locally into the parent/module branch via squash merge (no PR needed)
 - Delete the issue branch after merge
+
+### Hotfix Branches
+
+For emergency fixes that must bypass `develop`:
+- Branch off `main` as `hotfix/<description>` (e.g., `hotfix/fix-auth-crash`)
+- Open a PR directly to `main`
+- After merge, the sync workflow creates a PR to bring the fix back into `develop`
 
 ### Diagram
 
 ```
 main
-  ├── module/phase-0                                  (PR → main)
+  │
+  ├── (release-please PR from develop)
+  │
+develop
+  ├── module/phase-0                                  (PR → develop)
   │     ├── chore/receipts-90-remove-blazor          (squash-merge into module)
   │     └── fix/receipts-82-update-ci                (squash-merge into module)
   │
-  └── feat/receipts-83-replace-viewmodels            (epic parent, PR → main)
+  └── feat/receipts-83-replace-viewmodels            (epic parent, PR → develop)
         ├── feat/receipts-88-generate-dtos           (squash-merge into parent)
         └── docs/receipts-87-update-docs             (squash-merge into parent)
 ```
@@ -60,33 +87,41 @@ If using a clone for the issue, delete it after merge:
 rm -rf .clones/<branch-name>
 ```
 
-## PR: Parent/Module to Main
+## PR: Parent/Module to develop
 
-When all issues are complete, push the branch and open a PR:
+When all issues are complete, push the branch and open a PR **to `develop`**:
 
 ```bash
 git push -u origin feat/receipts-83-replace-viewmodels
-gh pr create --title "Replace ViewModels with spec-generated DTOs" --body "..."
+gh pr create --base develop --title "Replace ViewModels with spec-generated DTOs" --body "..."
 ```
 
 The PR triggers CI (build + test) — this is the checkpoint that surfaces issues.
 
-After CI passes and the PR is approved, merge into `main`:
+After CI passes and the PR is approved, merge into `develop`:
 
 ```bash
 git branch -d feat/receipts-83-replace-viewmodels
 git push origin --delete feat/receipts-83-replace-viewmodels
-git pull   # update main with the merged PR
+git pull   # update develop with the merged PR
 ```
+
+## Promoting develop to main
+
+When ready for a release:
+1. Release-please (or a manual PR) opens a PR from `develop` to `main`
+2. CI runs; after merge, the `sync-develop` workflow auto-creates a PR to sync any release commits back to `develop`
 
 ## Direct Commits to Main
 
-Only use for non-tracked work like:
+**Do not commit directly to main.** All changes flow through `develop` (or `hotfix/*` for emergencies).
+
+Direct commits to `develop` are acceptable only for non-tracked work like:
 - Trivial typo fixes
 - Documentation updates
 - Tooling/build configuration
 
-**NEVER** commit tracked issue work directly to main. When in doubt, create a branch.
+**NEVER** commit tracked issue work directly to `develop` or `main`. When in doubt, create a branch.
 
 ## Directory Isolation
 
