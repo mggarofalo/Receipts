@@ -28,7 +28,11 @@ function createWrapper() {
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
   return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(QueryClientProvider, { client: queryClient }, children);
+    return createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      children,
+    );
   };
 }
 
@@ -47,10 +51,9 @@ describe("useReceiptWithItems", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(client.GET).toHaveBeenCalledWith(
-      "/api/receipts-with-items",
-      { params: { query: { receiptId: "r1" } } },
-    );
+    expect(client.GET).toHaveBeenCalledWith("/api/receipts-with-items", {
+      params: { query: { receiptId: "r1" } },
+    });
     expect(result.current.data).toEqual(mockData);
   });
 
@@ -61,6 +64,21 @@ describe("useReceiptWithItems", () => {
 
     expect(result.current.fetchStatus).toBe("idle");
     expect(client.GET).not.toHaveBeenCalled();
+  });
+
+  it("throws when API returns an error", async () => {
+    const apiError = { message: "Not found" };
+    (client.GET as Mock).mockResolvedValue({
+      data: undefined,
+      error: apiError,
+    });
+
+    const { result } = renderHook(() => useReceiptWithItems("r1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toEqual(apiError);
   });
 });
 
@@ -75,10 +93,9 @@ describe("useTransactionAccount", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(client.GET).toHaveBeenCalledWith(
-      "/api/transaction-accounts",
-      { params: { query: { transactionId: "t1" } } },
-    );
+    expect(client.GET).toHaveBeenCalledWith("/api/transaction-accounts", {
+      params: { query: { transactionId: "t1" } },
+    });
     expect(result.current.data).toEqual(mockData);
   });
 
@@ -89,6 +106,21 @@ describe("useTransactionAccount", () => {
 
     expect(result.current.fetchStatus).toBe("idle");
     expect(client.GET).not.toHaveBeenCalled();
+  });
+
+  it("throws when API returns an error", async () => {
+    const apiError = { message: "Not found" };
+    (client.GET as Mock).mockResolvedValue({
+      data: undefined,
+      error: apiError,
+    });
+
+    const { result } = renderHook(() => useTransactionAccount("t1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toEqual(apiError);
   });
 });
 
@@ -104,10 +136,9 @@ describe("useTransactionAccountsByReceiptId", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(client.GET).toHaveBeenCalledWith(
-      "/api/transaction-accounts",
-      { params: { query: { receiptId: "r1" } } },
-    );
+    expect(client.GET).toHaveBeenCalledWith("/api/transaction-accounts", {
+      params: { query: { receiptId: "r1" } },
+    });
     expect(result.current.data).toEqual(mockData);
   });
 
@@ -119,5 +150,21 @@ describe("useTransactionAccountsByReceiptId", () => {
 
     expect(result.current.fetchStatus).toBe("idle");
     expect(client.GET).not.toHaveBeenCalled();
+  });
+
+  it("throws when API returns an error", async () => {
+    const apiError = { message: "Not found" };
+    (client.GET as Mock).mockResolvedValue({
+      data: undefined,
+      error: apiError,
+    });
+
+    const { result } = renderHook(
+      () => useTransactionAccountsByReceiptId("r1"),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toEqual(apiError);
   });
 });

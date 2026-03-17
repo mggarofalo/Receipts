@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult } from "@/test/mock-hooks";
+import "@/test/setup-combobox-polyfills";
 import AuditLog from "./AuditLog";
 
 vi.mock("@/hooks/usePageTitle", () => ({
@@ -66,9 +67,9 @@ vi.mock("@/components/AuditLogTable", () => ({
 }));
 
 vi.mock("@/components/Pagination", () => ({
-  Pagination: function MockPagination() {
+  Pagination: vi.fn(function MockPagination() {
     return <div data-testid="pagination">Pagination</div>;
-  },
+  }),
 }));
 
 describe("AuditLog", () => {
@@ -240,5 +241,287 @@ describe("AuditLog", () => {
         limit: expect.any(Number),
       }),
     );
+  });
+
+  it("renders entity type and action options when enum data exists", async () => {
+    const { useEnumMetadata } = await import("@/hooks/useEnumMetadata");
+    vi.mocked(useEnumMetadata).mockReturnValue({
+      adjustmentTypes: [],
+      authEventTypes: [],
+      pricingModes: [],
+      auditActions: [{ value: "Create", label: "Create" }, { value: "Update", label: "Update" }],
+      entityTypes: [{ value: "Account", label: "Account" }, { value: "Receipt", label: "Receipt" }],
+      adjustmentTypeLabels: {},
+      authEventLabels: {},
+      pricingModeLabels: {},
+      auditActionLabels: {},
+      entityTypeLabels: { Account: "Account", Receipt: "Receipt" },
+      isLoading: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    renderWithProviders(<AuditLog />);
+    // Combobox triggers should be present for entity type and action filters
+    const triggers = screen.getAllByRole("combobox");
+    expect(triggers.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("resets pagination when search input changes", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockResetPage = vi.fn();
+    const { useServerPagination } = await import("@/hooks/useServerPagination");
+    vi.mocked(useServerPagination).mockReturnValue({
+      offset: 0,
+      limit: 50,
+      currentPage: 1,
+      pageSize: 50,
+      totalPages: () => 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+      resetPage: mockResetPage,
+    });
+
+    renderWithProviders(<AuditLog />);
+    const searchInput = screen.getByLabelText(/search audit log/i);
+    await user.type(searchInput, "test");
+
+    expect(mockResetPage).toHaveBeenCalled();
+  });
+
+  it("disables Export CSV button when no logs exist", () => {
+    renderWithProviders(<AuditLog />);
+    expect(screen.getByRole("button", { name: /export csv/i })).toBeDisabled();
+  });
+
+  it("handles CSV export with special characters in data", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useRecentAuditLogs } = await import("@/hooks/useAudit");
+    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "1",
+          entityType: "Account",
+          entityId: "has,comma",
+          action: 'has"quote',
+          changedAt: "2024-01-15T10:00:00Z",
+          changedByUserId: "user-1",
+          changedByApiKeyId: null,
+          ipAddress: "127.0.0.1",
+          changesJson: '{"key":"value"}',
+        },
+      ],
+      total: 1,
+      isLoading: false,
+    }));
+
+    const mockClick = vi.fn();
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, "createElement").mockImplementation((tag: string, options?: ElementCreationOptions) => {
+      if (tag === "a") {
+        return { href: "", download: "", click: mockClick } as unknown as HTMLAnchorElement;
+      }
+      return originalCreateElement(tag, options);
+    });
+    const mockCreateObjectURL = vi.fn(() => "blob:csv-url");
+    const mockRevokeObjectURL = vi.fn();
+    const origCreate = URL.createObjectURL;
+    const origRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = mockCreateObjectURL;
+    URL.revokeObjectURL = mockRevokeObjectURL;
+
+    renderWithProviders(<AuditLog />);
+    await user.click(screen.getByRole("button", { name: /export csv/i }));
+
+    expect(mockClick).toHaveBeenCalled();
+    expect(mockCreateObjectURL).toHaveBeenCalled();
+
+    URL.createObjectURL = origCreate;
+    URL.revokeObjectURL = origRevoke;
+    vi.restoreAllMocks();
+  });
+
+  it("exports CSV with null fields correctly", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useRecentAuditLogs } = await import("@/hooks/useAudit");
+    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "1",
+          entityType: "Account",
+          entityId: "abc-123",
+          action: "Create",
+          changedAt: "2024-01-15T10:00:00Z",
+          changedByUserId: null,
+          changedByApiKeyId: "apikey-1",
+          ipAddress: null,
+          changesJson: "{}",
+        },
+      ],
+      total: 1,
+      isLoading: false,
+    }));
+
+    const mockClick = vi.fn();
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, "createElement").mockImplementation((tag: string, options?: ElementCreationOptions) => {
+      if (tag === "a") {
+        return { href: "", download: "", click: mockClick } as unknown as HTMLAnchorElement;
+      }
+      return originalCreateElement(tag, options);
+    });
+    const mockCreateObjectURL = vi.fn(() => "blob:null-url");
+    const mockRevokeObjectURL = vi.fn();
+    const origCreate = URL.createObjectURL;
+    const origRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = mockCreateObjectURL;
+    URL.revokeObjectURL = mockRevokeObjectURL;
+
+    renderWithProviders(<AuditLog />);
+    await user.click(screen.getByRole("button", { name: /export csv/i }));
+
+    expect(mockClick).toHaveBeenCalled();
+    expect(mockCreateObjectURL).toHaveBeenCalled();
+
+    URL.createObjectURL = origCreate;
+    URL.revokeObjectURL = origRevoke;
+    vi.restoreAllMocks();
+  });
+
+  it("filters by entity type when combobox option is selected", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockResetPage = vi.fn();
+    const { useServerPagination } = await import("@/hooks/useServerPagination");
+    vi.mocked(useServerPagination).mockReturnValue({
+      offset: 0,
+      limit: 50,
+      currentPage: 1,
+      pageSize: 50,
+      totalPages: () => 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+      resetPage: mockResetPage,
+    });
+
+    const { useEnumMetadata } = await import("@/hooks/useEnumMetadata");
+    vi.mocked(useEnumMetadata).mockReturnValue({
+      adjustmentTypes: [],
+      authEventTypes: [],
+      pricingModes: [],
+      auditActions: [{ value: "Create", label: "Create" }],
+      entityTypes: [{ value: "Account", label: "Account" }],
+      adjustmentTypeLabels: {},
+      authEventLabels: {},
+      pricingModeLabels: {},
+      auditActionLabels: {},
+      entityTypeLabels: { Account: "Account" },
+      isLoading: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    renderWithProviders(<AuditLog />);
+
+    // Click the entity type combobox trigger (first combobox)
+    const triggers = screen.getAllByRole("combobox");
+    await user.click(triggers[0]);
+
+    // Select "Account" option
+    const accountOption = await screen.findByRole("option", { name: "Account" });
+    await user.click(accountOption);
+
+    // handleEntityTypeChange should call resetPage
+    expect(mockResetPage).toHaveBeenCalled();
+  });
+
+  it("filters by action when combobox option is selected", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockResetPage = vi.fn();
+    const { useServerPagination } = await import("@/hooks/useServerPagination");
+    vi.mocked(useServerPagination).mockReturnValue({
+      offset: 0,
+      limit: 50,
+      currentPage: 1,
+      pageSize: 50,
+      totalPages: () => 1,
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+      resetPage: mockResetPage,
+    });
+
+    const { useEnumMetadata } = await import("@/hooks/useEnumMetadata");
+    vi.mocked(useEnumMetadata).mockReturnValue({
+      adjustmentTypes: [],
+      authEventTypes: [],
+      pricingModes: [],
+      auditActions: [{ value: "Create", label: "Create" }, { value: "Update", label: "Update" }],
+      entityTypes: [{ value: "Account", label: "Account" }],
+      adjustmentTypeLabels: {},
+      authEventLabels: {},
+      pricingModeLabels: {},
+      auditActionLabels: {},
+      entityTypeLabels: { Account: "Account" },
+      isLoading: false,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    renderWithProviders(<AuditLog />);
+
+    // Click the action combobox trigger (second combobox)
+    const triggers = screen.getAllByRole("combobox");
+    await user.click(triggers[1]);
+
+    // Select "Create" option
+    const createOption = await screen.findByRole("option", { name: "Create" });
+    await user.click(createOption);
+
+    // handleActionChange should call resetPage
+    expect(mockResetPage).toHaveBeenCalled();
+  });
+
+  it("calls setPage when pagination page changes", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockSetPage = vi.fn();
+    const { useServerPagination } = await import("@/hooks/useServerPagination");
+    vi.mocked(useServerPagination).mockReturnValue({
+      offset: 0,
+      limit: 50,
+      currentPage: 1,
+      pageSize: 50,
+      totalPages: () => 2,
+      setPage: mockSetPage,
+      setPageSize: vi.fn(),
+      resetPage: vi.fn(),
+    });
+
+    const { useRecentAuditLogs } = await import("@/hooks/useAudit");
+    vi.mocked(useRecentAuditLogs).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "1",
+          entityType: "Account",
+          entityId: "abc-123",
+          action: "Create",
+          changedAt: "2024-01-15T10:00:00Z",
+          changedByUserId: "user-1",
+          changedByApiKeyId: null,
+          ipAddress: "127.0.0.1",
+          changesJson: "{}",
+        },
+      ],
+      total: 100,
+      isLoading: false,
+    }));
+
+    const { Pagination } = await import("@/components/Pagination");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(Pagination).mockImplementation(({ onPageChange }: any) => (
+      <div data-testid="pagination">
+        <button data-testid="next-page" onClick={() => onPageChange(2)}>Next</button>
+      </div>
+    ));
+
+    renderWithProviders(<AuditLog />);
+    await user.click(screen.getByTestId("next-page"));
+
+    expect(mockSetPage).toHaveBeenCalledWith(2, 100);
   });
 });

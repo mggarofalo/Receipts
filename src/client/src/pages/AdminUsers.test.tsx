@@ -52,6 +52,7 @@ vi.mock("@/hooks/useServerSort", () => ({
 vi.mock("@/hooks/useListKeyboardNav", () => ({
   useListKeyboardNav: vi.fn(() => ({
     focusedId: null,
+    focusedIndex: -1,
     setFocusedIndex: vi.fn(),
     tableRef: { current: null },
   })),
@@ -456,5 +457,200 @@ describe("AdminUsers", () => {
     await vi.waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith("2");
     });
+  });
+
+  it("submits create user form with correct payload", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutateAsync = vi.fn().mockResolvedValue(undefined);
+    const { useCreateUser } = await import("@/hooks/useUsers");
+    vi.mocked(useCreateUser).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useCreateUser>);
+
+    renderWithProviders(<AdminUsers />);
+    await user.click(screen.getByRole("button", { name: /create user/i }));
+
+    await user.type(screen.getByPlaceholderText("name@example.com"), "new@example.com");
+    await user.type(screen.getByPlaceholderText("At least 8 characters"), "password123");
+
+    const submitButtons = screen.getAllByRole("button", { name: /create user/i });
+    const dialogSubmit = submitButtons.find((btn) => btn.closest("[role='dialog']") !== null);
+    await user.click(dialogSubmit!);
+
+    await vi.waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: "new@example.com",
+          password: "password123",
+          role: "User",
+        }),
+      );
+    });
+  });
+
+  it("submits edit user form with correct payload", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutateAsync = vi.fn().mockResolvedValue(undefined);
+    const { useUsers, useUpdateUser } = await import("@/hooks/useUsers");
+    vi.mocked(useUpdateUser).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateUser>);
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: "John",
+          lastName: "Doe",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const emailInput = screen.getByDisplayValue("test@example.com");
+    await user.clear(emailInput);
+    await user.type(emailInput, "updated@example.com");
+
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "1",
+          body: expect.objectContaining({ email: "updated@example.com" }),
+        }),
+      );
+    });
+  });
+
+  it("submits reset password form", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutateAsync = vi.fn().mockResolvedValue(undefined);
+    const { useUsers, useResetUserPassword } = await import("@/hooks/useUsers");
+    vi.mocked(useResetUserPassword).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useResetUserPassword>);
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "1",
+          email: "test@example.com",
+          firstName: "John",
+          lastName: "Doe",
+          roles: ["Admin"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: "2024-01-15",
+        },
+      ],
+      total: 1,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    await user.click(screen.getByRole("button", { name: /reset pw/i }));
+
+    await user.type(screen.getByPlaceholderText("At least 8 characters"), "newpassword123");
+    await user.click(screen.getByRole("button", { name: /^reset password$/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        userId: "1",
+        newPassword: "newpassword123",
+      });
+    });
+  });
+
+  it("calls setFocusedIndex when a table row is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockSetFocusedIndex = vi.fn();
+    const { useListKeyboardNav } = await import("@/hooks/useListKeyboardNav");
+    vi.mocked(useListKeyboardNav).mockReturnValue({
+      focusedId: null,
+      focusedIndex: -1,
+      setFocusedIndex: mockSetFocusedIndex,
+      tableRef: { current: null },
+    });
+    const { useUsers } = await import("@/hooks/useUsers");
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "1",
+          email: "click@example.com",
+          firstName: "Click",
+          lastName: "Test",
+          roles: ["User"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: null,
+        },
+      ],
+      total: 1,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    await user.click(screen.getByText("click@example.com"));
+
+    expect(mockSetFocusedIndex).toHaveBeenCalledWith(0);
+  });
+
+  it("shows just first name when last name is null", async () => {
+    const { useUsers } = await import("@/hooks/useUsers");
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "1",
+          email: "jane@example.com",
+          firstName: "Jane",
+          lastName: null,
+          roles: ["User"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: null,
+        },
+      ],
+      total: 1,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    const cells = screen.getAllByRole("cell");
+    expect(cells[0].textContent).toBe("Jane");
+  });
+
+  it("shows secondary badge variant for non-Admin role", async () => {
+    const { useUsers } = await import("@/hooks/useUsers");
+    vi.mocked(useUsers).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "1",
+          email: "user@example.com",
+          firstName: "Regular",
+          lastName: "User",
+          roles: ["User"],
+          isDisabled: false,
+          createdAt: "2024-01-01",
+          lastLoginAt: null,
+        },
+      ],
+      total: 1,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<AdminUsers />);
+    const roleBadge = screen.getByText("User", { selector: "[data-slot='badge']" });
+    expect(roleBadge).toBeInTheDocument();
   });
 });

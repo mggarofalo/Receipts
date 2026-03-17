@@ -455,4 +455,186 @@ describe("Transactions", () => {
       screen.getByRole("heading", { name: /create transaction/i }),
     ).toBeInTheDocument();
   });
+
+  it("shows ActiveFilterBanner when receiptId link param is present", async () => {
+    const { useTransactionsByReceiptId } = await import("@/hooks/useTransactions");
+    const items = [
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
+    ];
+
+    vi.mocked(useTransactionsByReceiptId).mockReturnValue(mockQueryResult({
+      data: items,
+      total: 1,
+      isLoading: false,
+    }));
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    renderWithProviders(<Transactions />, { route: "/transactions?receiptId=r1" });
+
+    expect(screen.getByText(/showing transactions for receipt/i)).toBeInTheDocument();
+  });
+
+  it('shows "Unknown" for transaction with unresolved account', async () => {
+    const items = [
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "unknown-acc", amount: 25.50, date: "2024-01-15" }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Transactions />);
+    expect(screen.getByText("Unknown")).toBeInTheDocument();
+  });
+
+  it('shows "Receipt" fallback for transaction with unresolved receipt', async () => {
+    const items = [
+      mockTransactionResponse({ id: "t1", receiptId: "unknown-rcpt", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Transactions />);
+    // The receipt link shows "Receipt" when receiptId is not in receiptMap
+    const receiptLink = screen.getByRole("link", { name: "Receipt" });
+    expect(receiptLink).toBeInTheDocument();
+    expect(receiptLink).toHaveAttribute("href", "/receipts?highlight=unknown-rcpt");
+  });
+
+  it("deselects all when select-all is toggled off", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
+      mockTransactionResponse({ id: "t2", receiptId: "r2", accountId: "a2", amount: 100.00, date: "2024-01-20" }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Transactions />);
+
+    // Select all
+    await user.click(screen.getByLabelText("Select all rows"));
+    expect(screen.getByRole("button", { name: /delete \(2\)/i })).toBeInTheDocument();
+
+    // Deselect all
+    await user.click(screen.getByLabelText("Select all rows"));
+
+    // Delete button should disappear
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+  });
+
+  it("closes delete dialog when Cancel is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Transactions />);
+    await user.click(screen.getByLabelText("Select transaction t1"));
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+
+    expect(screen.getByRole("heading", { name: /delete transactions/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("heading", { name: /delete transactions/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows ActiveFilterBanner with account filter message", async () => {
+    const items = [
+      mockTransactionResponse({ id: "t1", receiptId: "r1", accountId: "a1", amount: 25.50, date: "2024-01-15" }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useTransactions } = await import("@/hooks/useTransactions");
+    vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Transactions />, { route: "/transactions?accountId=a1" });
+
+    expect(screen.getByText(/showing transactions for account/i)).toBeInTheDocument();
+  });
 });
