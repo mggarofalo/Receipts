@@ -270,6 +270,276 @@ describe("AuthProvider", () => {
     expect(screen.getByTestId("error-type")).toHaveTextContent("Failed to fetch");
   });
 
+  it("token refresh listener updates user when new token is available", () => {
+    let capturedRefreshListener: (() => void) | undefined;
+    mockedAuth.addTokenRefreshListener.mockImplementation((cb: () => void) => {
+      capturedRefreshListener = cb;
+      return vi.fn();
+    });
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("user")).toHaveTextContent("null");
+
+    // Simulate token refresh: new token now available in storage
+    const token = makeJwt("refreshed@test.com", "User");
+    mockedAuth.getAccessToken.mockReturnValue(token);
+    mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "refreshed-id",
+      email: "refreshed@test.com",
+      roles: ["User"],
+      mustResetPassword: false,
+    });
+
+    act(() => {
+      capturedRefreshListener!();
+    });
+
+    expect(screen.getByTestId("user")).toHaveTextContent("refreshed@test.com");
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("false");
+  });
+
+  it("token refresh listener clears user when no token is available", () => {
+    let capturedRefreshListener: (() => void) | undefined;
+    mockedAuth.addTokenRefreshListener.mockImplementation((cb: () => void) => {
+      capturedRefreshListener = cb;
+      return vi.fn();
+    });
+
+    // Start with a valid user
+    const token = makeJwt("user@test.com", "User");
+    mockedAuth.isAuthenticated.mockReturnValue(true);
+    mockedAuth.getAccessToken.mockReturnValue(token);
+    mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "user-id",
+      email: "user@test.com",
+      roles: ["User"],
+      mustResetPassword: false,
+    });
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("user")).toHaveTextContent("user@test.com");
+
+    // Simulate token refresh failure: no token available
+    mockedAuth.getAccessToken.mockReturnValue(null);
+    mockedAuth.parseJwtPayload.mockReturnValue(null);
+
+    act(() => {
+      capturedRefreshListener!();
+    });
+
+    expect(screen.getByTestId("user")).toHaveTextContent("null");
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("false");
+  });
+
+  it("token refresh listener updates mustResetPassword from new token", () => {
+    let capturedRefreshListener: (() => void) | undefined;
+    mockedAuth.addTokenRefreshListener.mockImplementation((cb: () => void) => {
+      capturedRefreshListener = cb;
+      return vi.fn();
+    });
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("false");
+
+    // Simulate token refresh with mustResetPassword = true
+    const token = makeJwt("user@test.com", "User");
+    mockedAuth.getAccessToken.mockReturnValue(token);
+    mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "user-id",
+      email: "user@test.com",
+      roles: ["User"],
+      mustResetPassword: true,
+    });
+
+    act(() => {
+      capturedRefreshListener!();
+    });
+
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("true");
+  });
+
+  it("login throws when API returns error in response", async () => {
+    const apiError = { message: "Invalid credentials", status: 401 };
+    mockedClient.POST.mockResolvedValueOnce({
+      data: undefined,
+      error: apiError,
+    });
+
+    function ErrorCapture() {
+      const ctx = useContext(AuthContext);
+      const [error, setError] = useState<string>("none");
+      return (
+        <div>
+          <span data-testid="error-msg">{error}</span>
+          <button
+            data-testid="login-catch"
+            onClick={() =>
+              ctx!.login("a@b.com", "pw").catch((e: unknown) => {
+                const err = e as { message: string };
+                setError(err.message ?? "caught");
+              })
+            }
+          />
+        </div>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <ErrorCapture />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      screen.getByTestId("login-catch").click();
+    });
+
+    expect(screen.getByTestId("error-msg")).toHaveTextContent(
+      "Invalid credentials",
+    );
+    expect(mockedAuth.setTokens).not.toHaveBeenCalled();
+  });
+
+  it("changePassword throws when API returns error in response", async () => {
+    const apiError = { message: "Current password is incorrect", status: 400 };
+    mockedClient.POST.mockResolvedValueOnce({
+      data: undefined,
+      error: apiError,
+    });
+
+    function ErrorCapture() {
+      const ctx = useContext(AuthContext);
+      const [error, setError] = useState<string>("none");
+      return (
+        <div>
+          <span data-testid="error-msg">{error}</span>
+          <button
+            data-testid="change-pw-catch"
+            onClick={() =>
+              ctx!.changePassword("old", "new").catch((e: unknown) => {
+                const err = e as { message: string };
+                setError(err.message ?? "caught");
+              })
+            }
+          />
+        </div>
+      );
+    }
+
+    render(
+      <AuthProvider>
+        <ErrorCapture />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      screen.getByTestId("change-pw-catch").click();
+    });
+
+    expect(screen.getByTestId("error-msg")).toHaveTextContent(
+      "Current password is incorrect",
+    );
+    expect(mockedAuth.setTokens).not.toHaveBeenCalled();
+  });
+
+  it("logout clears tokens even when POST /api/auth/logout rejects", async () => {
+    const token = makeJwt("user@test.com", "User");
+    mockedAuth.isAuthenticated.mockReturnValue(true);
+    mockedAuth.getAccessToken.mockReturnValue(token);
+    mockedAuth.parseJwtPayload.mockReturnValue({
+      userId: "user-id",
+      email: "user@test.com",
+      roles: ["User"],
+      mustResetPassword: false,
+    });
+    mockedClient.POST.mockRejectedValueOnce(new Error("Network error"));
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("user")).toHaveTextContent("user@test.com");
+
+    await act(async () => {
+      screen.getByTestId("logout").click();
+    });
+
+    expect(mockedAuth.clearTokens).toHaveBeenCalled();
+    expect(screen.getByTestId("user")).toHaveTextContent("null");
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("false");
+  });
+
+  it("provides null user when isAuthenticated but getAccessToken returns null", () => {
+    mockedAuth.isAuthenticated.mockReturnValue(true);
+    mockedAuth.getAccessToken.mockReturnValue(null);
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("user")).toHaveTextContent("null");
+    expect(screen.getByTestId("must-reset")).toHaveTextContent("false");
+  });
+
+  it("login does not set tokens when API returns neither error nor data", async () => {
+    mockedClient.POST.mockResolvedValueOnce({
+      data: undefined,
+      error: undefined,
+    });
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      screen.getByTestId("login").click();
+    });
+
+    expect(mockedAuth.setTokens).not.toHaveBeenCalled();
+    expect(screen.getByTestId("user")).toHaveTextContent("null");
+  });
+
+  it("changePassword does not set tokens when API returns neither error nor data", async () => {
+    mockedClient.POST.mockResolvedValueOnce({
+      data: undefined,
+      error: undefined,
+    });
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      screen.getByTestId("change-pw").click();
+    });
+
+    expect(mockedAuth.setTokens).not.toHaveBeenCalled();
+    expect(screen.getByTestId("user")).toHaveTextContent("null");
+  });
+
   it("changePassword calls POST /api/auth/change-password and updates user", async () => {
     const newToken = makeJwt("a@b.com", "User");
     mockedClient.POST.mockResolvedValueOnce({
