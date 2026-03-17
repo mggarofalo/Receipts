@@ -23,6 +23,7 @@ import {
   useTransaction,
   useTransactionsByReceiptId,
   useCreateTransaction,
+  useCreateTransactionsBatch,
   useUpdateTransaction,
   useDeleteTransactions,
   useDeletedTransactions,
@@ -178,5 +179,196 @@ describe("useTransactions", () => {
       params: { path: { id: "1" } },
     });
     expect(toast.success).toHaveBeenCalledWith("Transaction restored");
+  });
+
+  // --- Branch coverage: error callbacks ---
+
+  it("create mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useCreateTransaction(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ receiptId: "r-1", body: { amount: 100, date: "2025-01-01", accountId: "acc-1" } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to create transaction");
+  });
+
+  it("batch create mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useCreateTransactionsBatch(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ receiptId: "r-1", body: [{ amount: 100, date: "2025-01-01", accountId: "acc-1" }] });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to create transactions");
+  });
+
+  it("batch create mutation invalidates cache on success", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.POST as Mock).mockResolvedValue({ data: [{ id: "1" }], error: undefined });
+
+    const { result } = renderHook(() => useCreateTransactionsBatch(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate({ receiptId: "r-1", body: [{ amount: 100, date: "2025-01-01", accountId: "acc-1" }] });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["transactions"] });
+  });
+
+  it("update mutation shows error toast on failure", async () => {
+    (client.PUT as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useUpdateTransaction(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ body: { id: "1", amount: 100, date: "2025-01-01", accountId: "acc-1" } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to update transaction");
+  });
+
+  it("delete mutation shows error toast and rolls back cache on failure", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    const transactions = [
+      { id: "1", amount: 100 },
+      { id: "2", amount: 200 },
+    ];
+    queryClient.setQueryData(
+      ["transactions", "list", 0, 50, undefined, undefined],
+      { data: transactions, total: 2, offset: 0, limit: 50 },
+    );
+    setQueryDataSpy.mockClear();
+
+    (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useDeleteTransactions(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to delete transaction(s)");
+
+    // Verify rollback was attempted
+    expect(setQueryDataSpy).toHaveBeenCalled();
+  });
+
+  it("delete optimistic update handles undefined cache gracefully", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    queryClient.setQueryData(["transactions", "list", 0, 50, undefined, undefined], undefined);
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteTransactions(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(toast.success).toHaveBeenCalledWith("Transaction(s) deleted");
+  });
+
+  it("restore mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useRestoreTransaction(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate("1");
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to restore transaction");
+  });
+
+  it("list query throws on API error", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useTransactions(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it("list query passes sort parameters", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useTransactions(0, 50, "amount", "desc"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/transactions", {
+      params: { query: { offset: 0, limit: 50, sortBy: "amount", sortDirection: "desc" } },
+    });
+  });
+
+  it("list query returns total of 0 when data is undefined", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "err" } });
+
+    const { result } = renderHook(() => useTransactions(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.total).toBe(0);
+  });
+
+  it("delete mutation invalidates both list and deleted query keys on settled", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteTransactions(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["transactions"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["transactions", "deleted"] });
   });
 });

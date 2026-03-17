@@ -179,4 +179,162 @@ describe("useAdjustments", () => {
     });
     expect(toast.success).toHaveBeenCalledWith("Adjustment restored");
   });
+
+  // --- Branch coverage: error callbacks ---
+
+  it("create mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useCreateAdjustment(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ receiptId: "r-1", body: { type: "discount", amount: 5.0 } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to create adjustment");
+  });
+
+  it("update mutation shows error toast on failure", async () => {
+    (client.PUT as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useUpdateAdjustment(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ body: { id: "1", type: "discount", amount: 5.0 } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to update adjustment");
+  });
+
+  it("delete mutation shows error toast and rolls back cache on failure", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    const adjustments = [
+      { id: "1", type: "discount" },
+      { id: "2", type: "surcharge" },
+    ];
+    queryClient.setQueryData(
+      ["adjustments", "list", 0, 50, undefined, undefined],
+      { data: adjustments, total: 2, offset: 0, limit: 50 },
+    );
+    setQueryDataSpy.mockClear();
+
+    (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useDeleteAdjustments(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to delete adjustment(s)");
+
+    // Verify rollback was attempted
+    expect(setQueryDataSpy).toHaveBeenCalled();
+  });
+
+  it("delete optimistic update handles undefined cache gracefully", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    queryClient.setQueryData(["adjustments", "list", 0, 50, undefined, undefined], undefined);
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteAdjustments(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(toast.success).toHaveBeenCalledWith("Adjustment(s) deleted");
+  });
+
+  it("restore mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useRestoreAdjustment(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate("1");
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to restore adjustment");
+  });
+
+  it("list query throws on API error", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useAdjustments(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it("list query passes sort parameters", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useAdjustments(0, 50, "amount", "asc"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/adjustments", {
+      params: { query: { offset: 0, limit: 50, sortBy: "amount", sortDirection: "asc" } },
+    });
+  });
+
+  it("list query returns total of 0 when data is undefined", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "err" } });
+
+    const { result } = renderHook(() => useAdjustments(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.total).toBe(0);
+  });
+
+  it("delete mutation invalidates adjustments, deleted, receipts-with-items, and trips on settled", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteAdjustments(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["adjustments"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["adjustments", "deleted"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["receipts-with-items"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["trips"] });
+  });
 });
