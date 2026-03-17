@@ -27,7 +27,7 @@ jobs:
       - name: Create sync PR
         if: steps.check.outputs.behind != '0'
         run: |
-          EXISTING=$(gh pr list --base develop --head main --state open --json number --jq '.[0].number')
+          EXISTING=$(gh pr list --base develop --head main --state open --json number --jq 'if length > 0 then .[0].number | tostring else empty end')
           if [ -n "$EXISTING" ]; then
             echo "Sync PR #$EXISTING already exists — skipping."
           else

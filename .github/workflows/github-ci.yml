@@ -21,8 +21,9 @@ jobs:
 
     steps:
       - name: Check source branch
+        env:
+          SOURCE: ${{ github.head_ref }}
         run: |
-          SOURCE="${{ github.head_ref }}"
           if [[ "$SOURCE" == "develop" || "$SOURCE" == release-please--* || "$SOURCE" == hotfix/* ]]; then
             echo "✅ Branch '$SOURCE' is allowed to merge to main."
           else
