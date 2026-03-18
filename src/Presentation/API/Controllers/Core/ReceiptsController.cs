@@ -183,6 +183,16 @@ public class ReceiptsController(
 		};
 
 		await notifier.NotifyCreated("receipt", result.Receipt.Id);
+		if (result.Transactions.Count > 0)
+		{
+			await notifier.NotifyBulkChanged("transaction", "created", result.Transactions.Select(t => t.Id));
+		}
+
+		if (result.Items.Count > 0)
+		{
+			await notifier.NotifyBulkChanged("receipt-item", "created", result.Items.Select(i => i.Id));
+		}
+
 		return TypedResults.Ok(response);
 	}
 

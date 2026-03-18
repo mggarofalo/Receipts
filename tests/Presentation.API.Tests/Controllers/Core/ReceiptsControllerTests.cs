@@ -525,6 +525,8 @@ public class ReceiptsControllerTests
 		response.Transactions.Should().HaveCount(1);
 		response.Items.Should().HaveCount(1);
 		_notifierMock.Verify(n => n.NotifyCreated("receipt", receipt.Id), Times.Once);
+		_notifierMock.Verify(n => n.NotifyBulkChanged("transaction", "created", It.IsAny<IEnumerable<Guid>>()), Times.Once);
+		_notifierMock.Verify(n => n.NotifyBulkChanged("receipt-item", "created", It.IsAny<IEnumerable<Guid>>()), Times.Once);
 	}
 
 	[Fact]
