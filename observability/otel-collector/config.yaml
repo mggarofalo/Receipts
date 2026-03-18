@@ -30,8 +30,8 @@ processors:
   resource:
     attributes:
       - key: deployment.environment
-        from_attribute: deployment.environment
-        action: upsert
+        value: production
+        action: insert
 
 service:
   pipelines:

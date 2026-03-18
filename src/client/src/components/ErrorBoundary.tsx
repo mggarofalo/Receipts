@@ -68,7 +68,6 @@ export function ErrorBoundary({ children, fallback }: Props) {
               />
             )
       }
-      showDialog
     >
       {children}
     </Sentry.ErrorBoundary>
