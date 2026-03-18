@@ -11,11 +11,18 @@ RUN npm ci
 COPY openapi/spec.yaml /openapi/spec.yaml
 COPY src/client/ ./
 
-# Inject version info after npm ci so the install layer stays cached
+# Inject version info and Sentry config after npm ci so the install layer stays cached
 ARG VITE_APP_VERSION=dev
 ARG VITE_COMMIT_HASH=local
+ARG VITE_SENTRY_DSN=
+ARG VITE_SENTRY_ENVIRONMENT=production
+ARG SENTRY_AUTH_TOKEN=
+ARG SENTRY_ORG=
+ARG SENTRY_PROJECT=
 ENV VITE_APP_VERSION=${VITE_APP_VERSION}
 ENV VITE_COMMIT_HASH=${VITE_COMMIT_HASH}
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+ENV VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT}
 
 RUN npm run build
 

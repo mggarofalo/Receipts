@@ -1,6 +1,21 @@
 /// <reference types="vitest/globals" />
 import "@testing-library/jest-dom/vitest";
 
+// Polyfill matchMedia for jsdom (used by useIsTouchDevice hook)
+if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList;
+}
+
 // Polyfill localStorage for jsdom environments where it's not properly initialized
 if (typeof globalThis.localStorage === 'undefined' || typeof globalThis.localStorage.setItem !== 'function') {
   const store: Record<string, string> = {};

@@ -129,6 +129,34 @@ export function useDeletedReceipts(offset = 0, limit = 50, sortBy?: string | nul
   return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
 }
 
+export function useCreateCompleteReceipt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      receipt: { location: string; date: string; taxAmount: number };
+      transactions: { amount: number; date: string; accountId: string }[];
+      items: {
+        receiptItemCode: string;
+        description: string;
+        quantity: number;
+        unitPrice: number;
+        category: string;
+        subcategory: string;
+        pricingMode: "quantity" | "flat";
+      }[];
+    }) => {
+      const { data, error } = await client.POST("/api/receipts/complete", { body });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["receipt-items"] });
+    },
+  });
+}
+
 export function useRestoreReceipt() {
   const queryClient = useQueryClient();
   return useMutation({

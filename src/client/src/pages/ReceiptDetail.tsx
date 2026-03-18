@@ -1,13 +1,10 @@
-import { useState } from "react";
+import { useSearchParams, Navigate } from "react-router";
 import { useReceiptWithItems } from "@/hooks/useAggregates";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { ValidationWarnings } from "@/components/ValidationWarnings";
 import { BalanceSummaryCard } from "@/components/BalanceSummaryCard";
 import { ReceiptItemsCard } from "@/components/ReceiptItemsCard";
 import { AdjustmentsCard } from "@/components/AdjustmentsCard";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -21,43 +18,29 @@ import { formatCurrency } from "@/lib/format";
 
 function ReceiptDetail() {
   usePageTitle("Receipt Detail");
-  const [inputId, setInputId] = useState("");
-  const [receiptId, setReceiptId] = useState<string | null>(null);
-  const { data, isLoading, isError } = useReceiptWithItems(receiptId);
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get("id");
 
-  function handleLookup() {
-    const trimmed = inputId.trim();
-    if (trimmed) setReceiptId(trimmed);
+  const { data, isLoading, isError } = useReceiptWithItems(id);
+
+  if (!id) {
+    return <Navigate to="/receipts" replace />;
   }
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Receipt Details</h1>
-      <div className="flex items-end gap-4">
-        <div className="flex-1 max-w-md space-y-2">
-          <Label htmlFor="receiptId">Receipt ID</Label>
-          <Input
-            id="receiptId"
-            placeholder="Enter receipt UUID..."
-            value={inputId}
-            onChange={(e) => setInputId(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-          />
-        </div>
-        <Button onClick={handleLookup} disabled={!inputId.trim()}>
-          Look Up
-        </Button>
-      </div>
 
       {isLoading && (
-        <div className="space-y-4">
+        <div role="status" aria-live="polite" className="space-y-4">
+          <span className="sr-only">Loading receipt details...</span>
           <CardSkeleton lines={2} />
           <CardSkeleton lines={4} />
         </div>
       )}
 
-      {isError && receiptId && (
-        <div className="py-12 text-center text-muted-foreground">
+      {isError && (
+        <div role="alert" className="py-12 text-center text-muted-foreground">
           No receipt found for this ID.
         </div>
       )}
@@ -95,7 +78,7 @@ function ReceiptDetail() {
           />
 
           <AdjustmentsCard
-            receiptId={receiptId!}
+            receiptId={id}
             adjustments={data.adjustments}
             adjustmentTotal={data.adjustmentTotal}
           />
@@ -105,7 +88,7 @@ function ReceiptDetail() {
               <CardTitle>Change History</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChangeHistory entityType="Receipt" entityId={receiptId!} />
+              <ChangeHistory entityType="Receipt" entityId={id} />
             </CardContent>
           </Card>
         </>

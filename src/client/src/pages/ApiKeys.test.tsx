@@ -16,6 +16,14 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
   })),
 }));
 
+vi.mock("@/hooks/usePermission", () => ({
+  usePermission: vi.fn(() => ({
+    roles: ["User"],
+    hasRole: (role: string) => role === "User",
+    isAdmin: () => false,
+  })),
+}));
+
 vi.mock("@tanstack/react-query", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@tanstack/react-query")>();
@@ -655,6 +663,28 @@ describe("ApiKeys", () => {
     await vi.waitFor(() => {
       expect(screen.queryByRole("heading", { name: /revoke api key/i })).not.toBeInTheDocument();
     });
+  });
+
+  it("does not show bypass checkbox for non-admin users", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+
+    expect(screen.queryByLabelText(/bypass rate limiting/i)).not.toBeInTheDocument();
+  });
+
+  it("shows bypass checkbox for admin users", async () => {
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: (role: string) => role === "Admin",
+      isAdmin: () => true,
+    });
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /create api key/i }));
+
+    expect(screen.getByLabelText(/bypass rate limiting/i)).toBeInTheDocument();
   });
 
   it("highlights focused row with bg-accent class", async () => {

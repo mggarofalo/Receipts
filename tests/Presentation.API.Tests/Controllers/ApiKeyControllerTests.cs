@@ -2,6 +2,7 @@ using System.Security.Claims;
 using API.Controllers;
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Common;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -35,9 +36,14 @@ public class ApiKeyControllerTests
 		};
 	}
 
-	private void SetupUserClaims(string userId)
+	private void SetupUserClaims(string userId, params string[] roles)
 	{
 		List<Claim> claims = [new Claim(ClaimTypes.NameIdentifier, userId)];
+		foreach (string role in roles)
+		{
+			claims.Add(new Claim(ClaimTypes.Role, role));
+		}
+
 		ClaimsIdentity identity = new(claims, "TestAuth");
 		ClaimsPrincipal principal = new(identity);
 		_controller.ControllerContext.HttpContext.User = principal;
@@ -51,8 +57,8 @@ public class ApiKeyControllerTests
 		SetupUserClaims("user-123");
 		List<ApiKeyInfo> keys =
 		[
-			new(Guid.NewGuid(), "key-1", DateTimeOffset.UtcNow, null, null, false),
-			new(Guid.NewGuid(), "key-2", DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow.AddDays(30), false),
+			new(Guid.NewGuid(), "key-1", DateTimeOffset.UtcNow, null, null, false, false),
+			new(Guid.NewGuid(), "key-2", DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow.AddDays(30), false, true),
 		];
 		_apiKeyServiceMock.Setup(s => s.GetApiKeysForUserAsync("user-123", It.IsAny<CancellationToken>())).ReturnsAsync(keys);
 
@@ -60,6 +66,7 @@ public class ApiKeyControllerTests
 
 		Ok<List<ApiKeyResponse>> okResult = Assert.IsType<Ok<List<ApiKeyResponse>>>(result.Result);
 		okResult.Value.Should().HaveCount(2);
+		okResult.Value![1].BypassRateLimit.Should().BeTrue();
 	}
 
 	[Fact]
@@ -79,10 +86,10 @@ public class ApiKeyControllerTests
 		Guid keyId = Guid.NewGuid();
 		DateTimeOffset createdAt = DateTimeOffset.UtcNow;
 
-		_apiKeyServiceMock.Setup(s => s.CreateApiKeyAsync("user-123", "my-key", null, It.IsAny<CancellationToken>()))
+		_apiKeyServiceMock.Setup(s => s.CreateApiKeyAsync("user-123", "my-key", null, false, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new CreateApiKeyResult("raw-key-value", keyId, createdAt));
 
-		Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult> result = await _controller.CreateApiKey(
+		Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult, ForbidHttpResult> result = await _controller.CreateApiKey(
 			new CreateApiKeyRequest { Name = "my-key" });
 
 		Ok<CreateApiKeyResponse> okResult = Assert.IsType<Ok<CreateApiKeyResponse>>(result.Result);
@@ -90,15 +97,44 @@ public class ApiKeyControllerTests
 		okResult.Value!.RawKey.Should().Be("raw-key-value");
 		okResult.Value!.Name.Should().Be("my-key");
 		okResult.Value!.CreatedAt.Should().Be(createdAt);
+		okResult.Value!.BypassRateLimit.Should().BeFalse();
 	}
 
 	[Fact]
 	public async Task CreateApiKey_ReturnsUnauthorized_WhenNoClaims()
 	{
-		Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult> result = await _controller.CreateApiKey(
+		Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult, ForbidHttpResult> result = await _controller.CreateApiKey(
 			new CreateApiKeyRequest { Name = "my-key" });
 
 		Assert.IsType<UnauthorizedHttpResult>(result.Result);
+	}
+
+	[Fact]
+	public async Task CreateApiKey_WithBypass_ReturnsOk_WhenAdmin()
+	{
+		SetupUserClaims("admin-123", AppRoles.Admin);
+		Guid keyId = Guid.NewGuid();
+		DateTimeOffset createdAt = DateTimeOffset.UtcNow;
+
+		_apiKeyServiceMock.Setup(s => s.CreateApiKeyAsync("admin-123", "bypass-key", null, true, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new CreateApiKeyResult("raw-key-value", keyId, createdAt));
+
+		Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult, ForbidHttpResult> result = await _controller.CreateApiKey(
+			new CreateApiKeyRequest { Name = "bypass-key", BypassRateLimit = true });
+
+		Ok<CreateApiKeyResponse> okResult = Assert.IsType<Ok<CreateApiKeyResponse>>(result.Result);
+		okResult.Value!.BypassRateLimit.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task CreateApiKey_WithBypass_ReturnsForbid_WhenNotAdmin()
+	{
+		SetupUserClaims("user-123");
+
+		Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult, ForbidHttpResult> result = await _controller.CreateApiKey(
+			new CreateApiKeyRequest { Name = "bypass-key", BypassRateLimit = true });
+
+		Assert.IsType<ForbidHttpResult>(result.Result);
 	}
 
 	// ── RevokeApiKey ────────────────────────────────────────

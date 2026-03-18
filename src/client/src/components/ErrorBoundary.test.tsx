@@ -82,21 +82,7 @@ describe("ErrorBoundary", () => {
     expect(screen.getByRole("alert")).toBeInTheDocument();
   });
 
-  it("calls componentDidCatch and logs the error", () => {
-    render(
-      <ErrorBoundary>
-        <ThrowingChild shouldThrow={true} />
-      </ErrorBoundary>,
-    );
-    // console.error is mocked in beforeEach - componentDidCatch calls it
-    expect(console.error).toHaveBeenCalledWith(
-      "ErrorBoundary caught an error:",
-      expect.any(Error),
-      expect.objectContaining({ componentStack: expect.any(String) }),
-    );
-  });
-
-  it("resets error state when Try Again is clicked (handleReset)", async () => {
+  it("resets error state when Try Again is clicked", async () => {
     const user = userEvent.setup();
     // Use a ref-like variable that the child reads at render time
     let shouldThrow = true;

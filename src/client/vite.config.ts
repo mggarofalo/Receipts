@@ -1,10 +1,32 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  build: {
+    sourcemap: true,
+  },
+  plugins: [
+    react(),
+    tailwindcss(),
+    // Upload source maps to Sentry during production builds (CI only).
+    // Requires SENTRY_AUTH_TOKEN, SENTRY_ORG, and SENTRY_PROJECT env vars.
+    process.env.SENTRY_AUTH_TOKEN
+      ? sentryVitePlugin({
+          org: process.env.SENTRY_ORG,
+          project: process.env.SENTRY_PROJECT,
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+          release: {
+            name: `receipts-frontend@${process.env.VITE_APP_VERSION || "dev"}`,
+          },
+          sourcemaps: {
+            filesToDeleteAfterUpload: ["./dist/**/*.map"],
+          },
+        })
+      : null,
+  ].filter(Boolean),
   define: {
     __APP_VERSION__: JSON.stringify(process.env.VITE_APP_VERSION || "dev"),
     __COMMIT_HASH__: JSON.stringify(process.env.VITE_COMMIT_HASH || "local"),

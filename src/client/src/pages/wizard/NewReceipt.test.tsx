@@ -10,25 +10,11 @@ vi.mock("@/hooks/usePageTitle", () => ({
   usePageTitle: vi.fn(),
 }));
 
-const mockCreateReceiptAsync = vi.fn();
-const mockCreateTransactionsBatchAsync = vi.fn();
-const mockCreateReceiptItemsBatchAsync = vi.fn();
+const mockCreateCompleteReceiptAsync = vi.fn();
 
 vi.mock("@/hooks/useReceipts", () => ({
-  useCreateReceipt: vi.fn(() =>
-    mockMutationResult({ mutateAsync: mockCreateReceiptAsync }),
-  ),
-}));
-
-vi.mock("@/hooks/useTransactions", () => ({
-  useCreateTransactionsBatch: vi.fn(() =>
-    mockMutationResult({ mutateAsync: mockCreateTransactionsBatchAsync }),
-  ),
-}));
-
-vi.mock("@/hooks/useReceiptItems", () => ({
-  useCreateReceiptItemsBatch: vi.fn(() =>
-    mockMutationResult({ mutateAsync: mockCreateReceiptItemsBatchAsync }),
+  useCreateCompleteReceipt: vi.fn(() =>
+    mockMutationResult({ mutateAsync: mockCreateCompleteReceiptAsync }),
   ),
 }));
 
@@ -145,9 +131,11 @@ vi.mock("./Step4Review", () => ({
 describe("NewReceipt", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCreateReceiptAsync.mockResolvedValue({ id: "receipt-123" });
-    mockCreateTransactionsBatchAsync.mockResolvedValue([]);
-    mockCreateReceiptItemsBatchAsync.mockResolvedValue([]);
+    mockCreateCompleteReceiptAsync.mockResolvedValue({
+      receipt: { id: "receipt-123" },
+      transactions: [],
+      items: [],
+    });
     // Reset configurable mock data
     step2TransactionData = [
       { id: "t1", accountId: "acct-1", amount: 55, date: "2024-01-15" },
@@ -337,41 +325,31 @@ describe("NewReceipt", () => {
     await user.click(screen.getByText("Submit Receipt"));
 
     await vi.waitFor(() => {
-      expect(mockCreateReceiptAsync).toHaveBeenCalledWith(
+      expect(mockCreateCompleteReceiptAsync).toHaveBeenCalledWith(
         {
-          location: "Walmart",
-          date: "2024-01-15",
-          taxAmount: 5,
+          receipt: {
+            location: "Walmart",
+            date: "2024-01-15",
+            taxAmount: 5,
+          },
+          transactions: [
+            { accountId: "acct-1", amount: 55, date: "2024-01-15" },
+          ],
+          items: [
+            {
+              receiptItemCode: "",
+              description: "Milk",
+              quantity: 1,
+              unitPrice: 50,
+              category: "Food",
+              subcategory: "",
+              pricingMode: "quantity",
+            },
+          ],
         },
         { onSuccess: undefined, onError: undefined },
       );
     });
-
-    expect(mockCreateTransactionsBatchAsync).toHaveBeenCalledWith(
-      {
-        receiptId: "receipt-123",
-        body: [{ accountId: "acct-1", amount: 55, date: "2024-01-15" }],
-      },
-      { onSuccess: undefined, onError: undefined },
-    );
-
-    expect(mockCreateReceiptItemsBatchAsync).toHaveBeenCalledWith(
-      {
-        receiptId: "receipt-123",
-        body: [
-          {
-            receiptItemCode: "",
-            description: "Milk",
-            quantity: 1,
-            unitPrice: 50,
-            category: "Food",
-            subcategory: "",
-            pricingMode: "quantity",
-          },
-        ],
-      },
-      { onSuccess: undefined, onError: undefined },
-    );
 
     expect(toast.success).toHaveBeenCalledWith(
       "Receipt created successfully!",
@@ -383,7 +361,9 @@ describe("NewReceipt", () => {
 
   it("shows error toast when submission fails", async () => {
     const { toast } = await import("sonner");
-    mockCreateReceiptAsync.mockRejectedValueOnce(new Error("Server error"));
+    mockCreateCompleteReceiptAsync.mockRejectedValueOnce(
+      new Error("Server error"),
+    );
     const user = userEvent.setup();
     renderWithProviders(<NewReceipt />);
 
@@ -397,12 +377,12 @@ describe("NewReceipt", () => {
 
     await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
-        "Failed to create receipt. The receipt may have been partially created — check the receipts list.",
+        "Failed to create receipt.",
       );
     });
   });
 
-  it("skips transaction batch when no transactions", async () => {
+  it("sends empty transactions array when no transactions", async () => {
     const user = userEvent.setup();
 
     // Configure Step2 to return empty transactions
@@ -416,14 +396,14 @@ describe("NewReceipt", () => {
     await user.click(screen.getByText("Submit Receipt"));
 
     await vi.waitFor(() => {
-      expect(mockCreateReceiptAsync).toHaveBeenCalled();
+      expect(mockCreateCompleteReceiptAsync).toHaveBeenCalled();
     });
 
-    // Transaction batch should NOT be called since there are no transactions
-    expect(mockCreateTransactionsBatchAsync).not.toHaveBeenCalled();
+    const call = mockCreateCompleteReceiptAsync.mock.calls[0][0];
+    expect(call.transactions).toEqual([]);
   });
 
-  it("skips item batch when no items", async () => {
+  it("sends empty items array when no items", async () => {
     const user = userEvent.setup();
 
     // Configure Step3 to return empty items
@@ -437,16 +417,16 @@ describe("NewReceipt", () => {
     await user.click(screen.getByText("Submit Receipt"));
 
     await vi.waitFor(() => {
-      expect(mockCreateReceiptAsync).toHaveBeenCalled();
+      expect(mockCreateCompleteReceiptAsync).toHaveBeenCalled();
     });
 
-    // Items batch should NOT be called since there are no items
-    expect(mockCreateReceiptItemsBatchAsync).not.toHaveBeenCalled();
+    const call = mockCreateCompleteReceiptAsync.mock.calls[0][0];
+    expect(call.items).toEqual([]);
   });
 
   it("disables submit button while submitting", async () => {
     // Make the receipt creation hang
-    mockCreateReceiptAsync.mockImplementation(
+    mockCreateCompleteReceiptAsync.mockImplementation(
       () => new Promise(() => {}), // Never resolves
     );
     const user = userEvent.setup();
