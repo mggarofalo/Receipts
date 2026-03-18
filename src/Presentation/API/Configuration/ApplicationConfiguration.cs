@@ -66,14 +66,21 @@ public static class ApplicationConfiguration
 		services.AddRateLimiter(options =>
 		{
 			options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-				RateLimitPartition.GetSlidingWindowLimiter(
+			{
+				if (context.User.FindFirst("BypassRateLimit")?.Value == "true")
+				{
+					return RateLimitPartition.GetNoLimiter<string>("bypass");
+				}
+
+				return RateLimitPartition.GetSlidingWindowLimiter(
 					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
 					_ => new SlidingWindowRateLimiterOptions
 					{
 						PermitLimit = rateLimitConfig.Global.PermitLimit,
 						Window = TimeSpan.FromMinutes(rateLimitConfig.Global.WindowMinutes),
 						SegmentsPerWindow = rateLimitConfig.Global.SegmentsPerWindow,
-					}));
+					});
+			});
 
 			options.AddPolicy("auth", context =>
 				RateLimitPartition.GetFixedWindowLimiter(
@@ -94,13 +101,20 @@ public static class ApplicationConfiguration
 					}));
 
 			options.AddPolicy("api-key", context =>
-				RateLimitPartition.GetFixedWindowLimiter(
+			{
+				if (context.User.FindFirst("BypassRateLimit")?.Value == "true")
+				{
+					return RateLimitPartition.GetNoLimiter<string>("bypass");
+				}
+
+				return RateLimitPartition.GetFixedWindowLimiter(
 					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
 					_ => new FixedWindowRateLimiterOptions
 					{
 						PermitLimit = rateLimitConfig.ApiKey.PermitLimit,
 						Window = TimeSpan.FromMinutes(rateLimitConfig.ApiKey.WindowMinutes),
-					}));
+					});
+			});
 
 			options.OnRejected = async (context, cancellationToken) =>
 			{
@@ -183,7 +197,6 @@ public static class ApplicationConfiguration
 		}
 
 		app.UseRouting();
-		app.UseRateLimiter();
 
 		return app;
 	}

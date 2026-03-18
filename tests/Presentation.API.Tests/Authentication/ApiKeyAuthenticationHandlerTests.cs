@@ -68,7 +68,7 @@ public class ApiKeyAuthenticationHandlerTests
 		context.Request.Headers["X-API-Key"] = "invalid-key";
 
 		_apiKeyServiceMock.Setup(s => s.GetUserIdByApiKeyAsync("invalid-key", It.IsAny<CancellationToken>()))
-			.ReturnsAsync((string?)null);
+			.ReturnsAsync((ApiKeyValidationResult?)null);
 
 		ApiKeyAuthenticationHandler handler = await CreateHandlerAsync(context);
 
@@ -85,13 +85,14 @@ public class ApiKeyAuthenticationHandlerTests
 	{
 		// Arrange
 		string userId = Guid.NewGuid().ToString();
+		Guid keyId = Guid.NewGuid();
 		ApplicationUser user = new() { Id = userId, Email = "test@example.com" };
 
 		DefaultHttpContext context = new();
 		context.Request.Headers["X-API-Key"] = "valid-key";
 
 		_apiKeyServiceMock.Setup(s => s.GetUserIdByApiKeyAsync("valid-key", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(userId);
+			.ReturnsAsync(new ApiKeyValidationResult(userId, keyId, false));
 		_userManagerMock.Setup(u => u.FindByIdAsync(userId))
 			.ReturnsAsync(user);
 		_userManagerMock.Setup(u => u.GetRolesAsync(user))
@@ -108,6 +109,33 @@ public class ApiKeyAuthenticationHandlerTests
 		principal.FindFirst(ClaimTypes.NameIdentifier)!.Value.Should().Be(userId);
 		principal.FindFirst(ClaimTypes.Email)!.Value.Should().Be("test@example.com");
 		principal.FindFirst(ClaimTypes.Role)!.Value.Should().Be("Admin");
+		principal.FindFirst("ApiKeyId")!.Value.Should().Be(keyId.ToString());
+		principal.FindFirst("BypassRateLimit")!.Value.Should().Be("false");
+	}
+
+	[Fact]
+	public async Task HandleAuthenticateAsync_SetsBypassRateLimitClaim_WhenKeyHasBypass()
+	{
+		// Arrange
+		string userId = Guid.NewGuid().ToString();
+		Guid keyId = Guid.NewGuid();
+
+		DefaultHttpContext context = new();
+		context.Request.Headers["X-API-Key"] = "valid-key";
+
+		_apiKeyServiceMock.Setup(s => s.GetUserIdByApiKeyAsync("valid-key", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new ApiKeyValidationResult(userId, keyId, true));
+		_userManagerMock.Setup(u => u.FindByIdAsync(userId))
+			.ReturnsAsync((ApplicationUser?)null);
+
+		ApiKeyAuthenticationHandler handler = await CreateHandlerAsync(context);
+
+		// Act
+		AuthenticateResult result = await handler.AuthenticateAsync();
+
+		// Assert
+		result.Succeeded.Should().BeTrue();
+		result.Principal!.FindFirst("BypassRateLimit")!.Value.Should().Be("true");
 	}
 
 	[Fact]
@@ -115,13 +143,14 @@ public class ApiKeyAuthenticationHandlerTests
 	{
 		// Arrange
 		string userId = Guid.NewGuid().ToString();
+		Guid keyId = Guid.NewGuid();
 		ApplicationUser user = new() { Id = userId, Email = null };
 
 		DefaultHttpContext context = new();
 		context.Request.Headers["X-API-Key"] = "valid-key";
 
 		_apiKeyServiceMock.Setup(s => s.GetUserIdByApiKeyAsync("valid-key", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(userId);
+			.ReturnsAsync(new ApiKeyValidationResult(userId, keyId, false));
 		_userManagerMock.Setup(u => u.FindByIdAsync(userId))
 			.ReturnsAsync(user);
 		_userManagerMock.Setup(u => u.GetRolesAsync(user))
@@ -138,16 +167,17 @@ public class ApiKeyAuthenticationHandlerTests
 	}
 
 	[Fact]
-	public async Task HandleAuthenticateAsync_OnlyHasNameIdentifier_WhenUserNotFound()
+	public async Task HandleAuthenticateAsync_OnlyHasNameIdentifierAndApiKeyClaims_WhenUserNotFound()
 	{
 		// Arrange
 		string userId = Guid.NewGuid().ToString();
+		Guid keyId = Guid.NewGuid();
 
 		DefaultHttpContext context = new();
 		context.Request.Headers["X-API-Key"] = "valid-key";
 
 		_apiKeyServiceMock.Setup(s => s.GetUserIdByApiKeyAsync("valid-key", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(userId);
+			.ReturnsAsync(new ApiKeyValidationResult(userId, keyId, false));
 		_userManagerMock.Setup(u => u.FindByIdAsync(userId))
 			.ReturnsAsync((ApplicationUser?)null);
 
@@ -160,21 +190,23 @@ public class ApiKeyAuthenticationHandlerTests
 		result.Succeeded.Should().BeTrue();
 		ClaimsPrincipal principal = result.Principal!;
 		principal.FindFirst(ClaimTypes.NameIdentifier)!.Value.Should().Be(userId);
+		principal.FindFirst("ApiKeyId")!.Value.Should().Be(keyId.ToString());
 		principal.FindFirst(ClaimTypes.Email).Should().BeNull();
 		principal.FindFirst(ClaimTypes.Role).Should().BeNull();
 	}
 
 	[Fact]
-	public async Task HandleAuthenticateAsync_CallsAuditLog_WhenValidKey()
+	public async Task HandleAuthenticateAsync_CallsAuditLog_WithKeyId_WhenValidKey()
 	{
 		// Arrange
 		string userId = Guid.NewGuid().ToString();
+		Guid keyId = Guid.NewGuid();
 
 		DefaultHttpContext context = new();
 		context.Request.Headers["X-API-Key"] = "valid-key";
 
 		_apiKeyServiceMock.Setup(s => s.GetUserIdByApiKeyAsync("valid-key", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(userId);
+			.ReturnsAsync(new ApiKeyValidationResult(userId, keyId, false));
 		_userManagerMock.Setup(u => u.FindByIdAsync(userId))
 			.ReturnsAsync((ApplicationUser?)null);
 
@@ -187,6 +219,7 @@ public class ApiKeyAuthenticationHandlerTests
 		_authAuditServiceMock.Verify(a => a.LogAsync(
 			It.Is<AuthAuditEntryDto>(e =>
 				e.UserId == userId
+				&& e.ApiKeyId == keyId
 				&& e.EventType == "ApiKeyUsed"
 				&& e.Success),
 			It.IsAny<CancellationToken>()), Times.Once);
@@ -197,12 +230,13 @@ public class ApiKeyAuthenticationHandlerTests
 	{
 		// Arrange
 		string userId = Guid.NewGuid().ToString();
+		Guid keyId = Guid.NewGuid();
 
 		DefaultHttpContext context = new();
 		context.Request.Headers["X-API-Key"] = "valid-key";
 
 		_apiKeyServiceMock.Setup(s => s.GetUserIdByApiKeyAsync("valid-key", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(userId);
+			.ReturnsAsync(new ApiKeyValidationResult(userId, keyId, false));
 		_userManagerMock.Setup(u => u.FindByIdAsync(userId))
 			.ReturnsAsync((ApplicationUser?)null);
 		_authAuditServiceMock.Setup(a => a.LogAsync(It.IsAny<AuthAuditEntryDto>(), It.IsAny<CancellationToken>()))
