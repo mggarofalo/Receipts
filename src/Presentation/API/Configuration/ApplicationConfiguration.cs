@@ -66,14 +66,21 @@ public static class ApplicationConfiguration
 		services.AddRateLimiter(options =>
 		{
 			options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-				RateLimitPartition.GetSlidingWindowLimiter(
+			{
+				if (context.User.FindFirst("BypassRateLimit")?.Value == "true")
+				{
+					return RateLimitPartition.GetNoLimiter<string>("bypass");
+				}
+
+				return RateLimitPartition.GetSlidingWindowLimiter(
 					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
 					_ => new SlidingWindowRateLimiterOptions
 					{
 						PermitLimit = rateLimitConfig.Global.PermitLimit,
 						Window = TimeSpan.FromMinutes(rateLimitConfig.Global.WindowMinutes),
 						SegmentsPerWindow = rateLimitConfig.Global.SegmentsPerWindow,
-					}));
+					});
+			});
 
 			options.AddPolicy("auth", context =>
 				RateLimitPartition.GetFixedWindowLimiter(
