@@ -63,6 +63,8 @@ jobs:
           build-args: |
             VITE_APP_VERSION=${{ github.ref_name }}
             VITE_COMMIT_HASH=${{ github.sha }}
+            VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            VITE_SENTRY_ENVIRONMENT=production
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=build-${{ matrix.platform_pair }}
           cache-to: type=gha,mode=min,scope=build-${{ matrix.platform_pair }}
