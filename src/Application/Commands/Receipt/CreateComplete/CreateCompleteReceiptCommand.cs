@@ -8,8 +8,6 @@ public record CreateCompleteReceiptCommand : ICommand<CreateCompleteReceiptResul
 	public IReadOnlyList<Domain.Core.Transaction> Transactions { get; }
 	public IReadOnlyList<Domain.Core.ReceiptItem> Items { get; }
 
-	public const string ReceiptCannotBeNull = "Receipt cannot be null.";
-
 	public CreateCompleteReceiptCommand(
 		Domain.Core.Receipt receipt,
 		List<Domain.Core.Transaction> transactions,
