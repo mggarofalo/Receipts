@@ -11,4 +11,5 @@ public class ApiKeyEntity
 	public DateTimeOffset? LastUsedAt { get; set; }
 	public DateTimeOffset? ExpiresAt { get; set; }
 	public bool IsRevoked { get; set; }
+	public bool BypassRateLimit { get; set; }
 }

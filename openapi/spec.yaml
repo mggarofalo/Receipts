@@ -3652,10 +3652,13 @@ components:
             - string
             - "null"
           format: date-time
+        bypassRateLimit:
+          type: boolean
+          default: false
 
     ApiKeyResponse:
       type: object
-      required: [id, name, createdAt, isRevoked]
+      required: [id, name, createdAt, isRevoked, bypassRateLimit]
       properties:
         id:
           type: string
@@ -3677,10 +3680,12 @@ components:
           format: date-time
         isRevoked:
           type: boolean
+        bypassRateLimit:
+          type: boolean
 
     CreateApiKeyResponse:
       type: object
-      required: [id, name, rawKey, createdAt]
+      required: [id, name, rawKey, createdAt, bypassRateLimit]
       properties:
         id:
           type: string
@@ -3697,6 +3702,8 @@ components:
             - string
             - "null"
           format: date-time
+        bypassRateLimit:
+          type: boolean
 
     UserSummaryResponse:
       type: object

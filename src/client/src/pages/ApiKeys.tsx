@@ -104,6 +104,7 @@ function ApiKeys() {
         body: {
           name: values.name,
           expiresAt: values.expiresAt || undefined,
+          bypassRateLimit: false,
         },
       });
       if (error) throw error;

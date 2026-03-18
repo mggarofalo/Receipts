@@ -8,7 +8,7 @@ namespace Infrastructure.Services;
 
 public class ApiKeyService(IDbContextFactory<ApplicationDbContext> dbContextFactory) : IApiKeyService
 {
-	public async Task<CreateApiKeyResult> CreateApiKeyAsync(string userId, string name, DateTimeOffset? expiresAt, CancellationToken cancellationToken = default)
+	public async Task<CreateApiKeyResult> CreateApiKeyAsync(string userId, string name, DateTimeOffset? expiresAt, bool bypassRateLimit = false, CancellationToken cancellationToken = default)
 	{
 		string rawKey = GenerateRawKey();
 		string keyHash = HashKey(rawKey);
@@ -23,6 +23,7 @@ public class ApiKeyService(IDbContextFactory<ApplicationDbContext> dbContextFact
 			CreatedAt = DateTimeOffset.UtcNow,
 			ExpiresAt = expiresAt,
 			IsRevoked = false,
+			BypassRateLimit = bypassRateLimit,
 		};
 
 		context.ApiKeys.Add(entity);
@@ -35,7 +36,7 @@ public class ApiKeyService(IDbContextFactory<ApplicationDbContext> dbContextFact
 		await using ApplicationDbContext context = await dbContextFactory.CreateDbContextAsync(cancellationToken);
 		return await context.ApiKeys
 			.Where(k => k.UserId == userId && !k.IsRevoked)
-			.Select(k => new ApiKeyInfo(k.Id, k.Name, k.CreatedAt, k.LastUsedAt, k.ExpiresAt, k.IsRevoked))
+			.Select(k => new ApiKeyInfo(k.Id, k.Name, k.CreatedAt, k.LastUsedAt, k.ExpiresAt, k.IsRevoked, k.BypassRateLimit))
 			.ToListAsync(cancellationToken);
 	}
 
@@ -50,7 +51,7 @@ public class ApiKeyService(IDbContextFactory<ApplicationDbContext> dbContextFact
 		await context.SaveChangesAsync(cancellationToken);
 	}
 
-	public async Task<string?> GetUserIdByApiKeyAsync(string rawKey, CancellationToken cancellationToken = default)
+	public async Task<ApiKeyValidationResult?> GetUserIdByApiKeyAsync(string rawKey, CancellationToken cancellationToken = default)
 	{
 		string keyHash = HashKey(rawKey);
 
@@ -67,7 +68,7 @@ public class ApiKeyService(IDbContextFactory<ApplicationDbContext> dbContextFact
 
 		key.LastUsedAt = DateTimeOffset.UtcNow;
 		await context.SaveChangesAsync(cancellationToken);
-		return key.UserId;
+		return new ApiKeyValidationResult(key.UserId, key.Id, key.BypassRateLimit);
 	}
 
 	private static string GenerateRawKey()

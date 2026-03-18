@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using API.Generated.Dtos;
 using Application.Interfaces.Services;
 using Asp.Versioning;
@@ -40,6 +41,7 @@ public class ApiKeyController(
 			LastUsedAt = k.LastUsedAt,
 			ExpiresAt = k.ExpiresAt,
 			IsRevoked = k.IsRevoked,
+			BypassRateLimit = k.BypassRateLimit,
 		})];
 
 		return TypedResults.Ok(response);
@@ -47,7 +49,7 @@ public class ApiKeyController(
 
 	[HttpPost]
 	[EndpointSummary("Create a new API key")]
-	public async Task<Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult>> CreateApiKey([FromBody] CreateApiKeyRequest request)
+	public async Task<Results<Ok<CreateApiKeyResponse>, UnauthorizedHttpResult, ForbidHttpResult>> CreateApiKey([FromBody] CreateApiKeyRequest request)
 	{
 		string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		if (userId is null)
@@ -55,9 +57,16 @@ public class ApiKeyController(
 			return TypedResults.Unauthorized();
 		}
 
-		CreateApiKeyResult created = await apiKeyService.CreateApiKeyAsync(userId, request.Name, request.ExpiresAt);
+		bool bypassRateLimit = request.BypassRateLimit;
+		if (bypassRateLimit && !User.IsInRole(AppRoles.Admin))
+		{
+			return TypedResults.Forbid();
+		}
 
-		await LogAuthEventAsync(nameof(AuthEventType.ApiKeyCreated), userId, null, true, null, created.Id);
+		CreateApiKeyResult created = await apiKeyService.CreateApiKeyAsync(userId, request.Name, request.ExpiresAt, bypassRateLimit);
+
+		await LogAuthEventAsync(nameof(AuthEventType.ApiKeyCreated), userId, null, true, null, created.Id,
+			JsonSerializer.Serialize(new { bypassRateLimit }));
 
 		return TypedResults.Ok(new CreateApiKeyResponse
 		{
@@ -66,6 +75,7 @@ public class ApiKeyController(
 			RawKey = created.RawKey,
 			CreatedAt = created.CreatedAt,
 			ExpiresAt = request.ExpiresAt,
+			BypassRateLimit = bypassRateLimit,
 		});
 	}
 
@@ -84,7 +94,7 @@ public class ApiKeyController(
 		return TypedResults.NoContent();
 	}
 
-	private async Task LogAuthEventAsync(string eventType, string? userId, string? username, bool success, string? failureReason = null, Guid? apiKeyId = null)
+	private async Task LogAuthEventAsync(string eventType, string? userId, string? username, bool success, string? failureReason = null, Guid? apiKeyId = null, string? metadataJson = null)
 	{
 		try
 		{
@@ -99,7 +109,7 @@ public class ApiKeyController(
 				HttpContext.Connection.RemoteIpAddress?.ToString(),
 				Request.Headers.UserAgent.ToString(),
 				DateTimeOffset.UtcNow,
-				null));
+				metadataJson));
 		}
 		catch (Exception ex)
 		{
