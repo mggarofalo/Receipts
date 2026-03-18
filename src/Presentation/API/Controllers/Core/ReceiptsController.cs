@@ -2,6 +2,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Receipt.Create;
+using Application.Commands.Receipt.CreateComplete;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
 using Application.Commands.Receipt.Update;
@@ -24,12 +25,15 @@ namespace API.Controllers.Core;
 public class ReceiptsController(
 	IMediator mediator,
 	ReceiptMapper mapper,
+	TransactionMapper transactionMapper,
+	ReceiptItemMapper receiptItemMapper,
 	ILogger<ReceiptsController> logger,
 	IEntityChangeNotifier notifier) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
 	public const string RouteCreate = "";
+	public const string RouteCreateComplete = "complete";
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
@@ -138,6 +142,36 @@ public class ReceiptsController(
 		List<Receipt> receipts = await mediator.Send(command);
 		ReceiptResponse response = mapper.ToResponse(receipts[0]);
 		await notifier.NotifyCreated("receipt", receipts[0].Id);
+		return TypedResults.Ok(response);
+	}
+
+	[HttpPost(RouteCreateComplete)]
+	[EndpointSummary("Create a receipt with transactions and items atomically")]
+	[EndpointDescription("Creates a receipt along with its transactions and items in a single atomic operation. If any part fails, nothing is persisted.")]
+	public async Task<Ok<CompleteReceiptResponse>> CreateCompleteReceipt([FromBody] CreateCompleteReceiptRequest model)
+	{
+		Receipt receipt = mapper.ToDomain(model.Receipt);
+
+		List<Transaction> transactions = [.. model.Transactions.Select(m =>
+		{
+			Transaction t = transactionMapper.ToDomain(m);
+			t.AccountId = m.AccountId;
+			return t;
+		})];
+
+		List<ReceiptItem> items = [.. model.Items.Select(receiptItemMapper.ToDomain)];
+
+		CreateCompleteReceiptCommand command = new(receipt, transactions, items);
+		CreateCompleteReceiptResult result = await mediator.Send(command);
+
+		CompleteReceiptResponse response = new()
+		{
+			Receipt = mapper.ToResponse(result.Receipt),
+			Transactions = [.. result.Transactions.Select(transactionMapper.ToResponse)],
+			Items = [.. result.Items.Select(receiptItemMapper.ToResponse)],
+		};
+
+		await notifier.NotifyCreated("receipt", result.Receipt.Id);
 		return TypedResults.Ok(response);
 	}
 

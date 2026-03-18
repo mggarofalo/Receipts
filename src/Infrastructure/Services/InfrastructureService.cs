@@ -119,6 +119,7 @@ public static class InfrastructureService
 			.AddScoped<ITransactionService, TransactionService>()
 			.AddScoped<IAdjustmentService, AdjustmentService>()
 			.AddScoped<IReceiptItemService, ReceiptItemService>()
+			.AddScoped<ICompleteReceiptService, CompleteReceiptService>()
 			.AddScoped<IItemTemplateService, ItemTemplateService>()
 			.AddScoped<IItemTemplateSimilarityService, ItemTemplateSimilarityService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
