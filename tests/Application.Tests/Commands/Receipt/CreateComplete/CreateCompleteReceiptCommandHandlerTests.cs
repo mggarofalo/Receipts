@@ -107,11 +107,34 @@ public class CreateCompleteReceiptCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_WithTransactionsButNoItems_DelegatesToService()
+	public async Task Handle_WithTransactionsButNoItems_Unbalanced_ThrowsValidationException()
 	{
-		// Arrange: transactions but no items — balance check skipped since no items
-		Domain.Core.Receipt receipt = ReceiptGenerator.Generate();
-		List<Domain.Core.Transaction> transactions = TransactionGenerator.GenerateList(1);
+		// Arrange: no items means ExpectedTotal = TaxAmount ($10), but transaction is $100
+		Domain.Core.Receipt receipt = ReceiptGenerator.Generate(); // TaxAmount = $10
+		List<Domain.Core.Transaction> transactions = TransactionGenerator.GenerateList(1); // Amount = $100
+
+		CreateCompleteReceiptCommand command = new(receipt, transactions, []);
+
+		// Act & Assert — $100 != $10, should throw
+		await Assert.ThrowsAsync<ValidationException>(() =>
+			_handler.Handle(command, CancellationToken.None));
+
+		_mockService.Verify(s => s.CreateAsync(
+			It.IsAny<Domain.Core.Receipt>(),
+			It.IsAny<List<Domain.Core.Transaction>>(),
+			It.IsAny<List<Domain.Core.ReceiptItem>>(),
+			It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task Handle_WithTransactionsMatchingTaxOnly_NoItems_DelegatesToService()
+	{
+		// Arrange: no items, so ExpectedTotal = TaxAmount ($10); transaction matches
+		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10));
+		List<Domain.Core.Transaction> transactions =
+		[
+			new Domain.Core.Transaction(Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now))
+		];
 		CreateCompleteReceiptResult expectedResult = new(receipt, transactions, []);
 
 		_mockService.Setup(s => s.CreateAsync(

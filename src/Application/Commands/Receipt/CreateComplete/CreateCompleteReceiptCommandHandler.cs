@@ -11,7 +11,7 @@ public class CreateCompleteReceiptCommandHandler(
 {
 	public async Task<CreateCompleteReceiptResult> Handle(CreateCompleteReceiptCommand request, CancellationToken cancellationToken)
 	{
-		if (request.Transactions.Count > 0 && request.Items.Count > 0)
+		if (request.Transactions.Count > 0)
 		{
 			ReceiptWithItems receiptWithItems = new()
 			{
