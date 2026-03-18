@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { usePermission } from "@/hooks/usePermission";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -49,6 +50,7 @@ import { Spinner } from "@/components/ui/spinner";
 const createKeySchema = z.object({
   name: z.string().min(1, "Name is required"),
   expiresAt: z.string().optional(),
+  bypassRateLimit: z.boolean(),
 });
 
 type CreateKeyFormValues = z.infer<typeof createKeySchema>;
@@ -83,6 +85,7 @@ function formatDate(dateStr: string | null | undefined): string {
 function ApiKeys() {
   usePageTitle("API Keys");
   const queryClient = useQueryClient();
+  const { isAdmin } = usePermission();
   const [createOpen, setCreateOpen] = useState(false);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [revokeId, setRevokeId] = useState<string | null>(null);
@@ -104,7 +107,7 @@ function ApiKeys() {
         body: {
           name: values.name,
           expiresAt: values.expiresAt || undefined,
-          bypassRateLimit: false,
+          bypassRateLimit: values.bypassRateLimit,
         },
       });
       if (error) throw error;
@@ -141,7 +144,7 @@ function ApiKeys() {
 
   const createForm = useForm<CreateKeyFormValues>({
     resolver: zodResolver(createKeySchema),
-    defaultValues: { name: "", expiresAt: "" },
+    defaultValues: { name: "", expiresAt: "", bypassRateLimit: false },
   });
 
   const handleCreateOpen = useCallback(() => {
@@ -309,6 +312,27 @@ function ApiKeys() {
                   </FormItem>
                 )}
               />
+              {isAdmin() && (
+                <FormField
+                  control={createForm.control}
+                  name="bypassRateLimit"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="h-4 w-4 rounded border-input"
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0">
+                        Bypass rate limiting
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+              )}
               <Button
                 type="submit"
                 className="w-full"
