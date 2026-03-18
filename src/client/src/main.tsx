@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router";
+import { RouterProvider } from "react-router";
 import {
   MutationCache,
   QueryCache,
@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { showApiError, showNetworkError } from "@/lib/toast";
 import { isTimeoutError } from "@/lib/api-client";
+import { sentryCreateBrowserRouter } from "@/lib/sentry";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -17,7 +18,7 @@ import { ShortcutsProvider } from "@/contexts/ShortcutsContext";
 import { routeConfig } from "./App.tsx";
 import "./index.css";
 
-const router = createBrowserRouter(routeConfig);
+const router = sentryCreateBrowserRouter(routeConfig);
 
 function handleGlobalError(error: unknown) {
   if (isTimeoutError(error)) {
