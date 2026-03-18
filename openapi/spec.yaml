@@ -947,6 +947,32 @@ paths:
               schema:
                 type: string
 
+  /api/receipts/complete:
+    post:
+      operationId: CreateCompleteReceipt
+      tags: [Receipts]
+      summary: Create a receipt with transactions and items in a single atomic operation
+      description: >-
+        Creates a receipt along with its transactions and items in a single
+        database transaction. If any part fails, nothing is persisted —
+        preventing orphan records.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompleteReceiptRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCompleteReceiptResponse"
+
   /api/receipts/{id}/restore:
     post:
       operationId: RestoreReceipt
@@ -3162,6 +3188,36 @@ components:
         limit:
           type: integer
           format: int32
+
+    CreateCompleteReceiptRequest:
+      type: object
+      required: [receipt, transactions, items]
+      properties:
+        receipt:
+          $ref: "#/components/schemas/CreateReceiptRequest"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateTransactionRequest"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateReceiptItemRequest"
+
+    CreateCompleteReceiptResponse:
+      type: object
+      required: [receipt, transactions, items]
+      properties:
+        receipt:
+          $ref: "#/components/schemas/ReceiptResponse"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionResponse"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReceiptItemResponse"
 
     # ── Receipt Item ─────────────────────────────
 

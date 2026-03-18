@@ -80,6 +80,44 @@ export function useUpdateReceipt() {
   });
 }
 
+export function useCreateCompleteReceipt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      receipt: {
+        location: string;
+        date: string;
+        taxAmount: number;
+      };
+      transactions: {
+        amount: number;
+        date: string;
+        accountId: string;
+      }[];
+      items: {
+        receiptItemCode?: string | null;
+        description: string;
+        quantity: number;
+        unitPrice: number;
+        category: string;
+        subcategory?: string | null;
+        pricingMode: string;
+      }[];
+    }) => {
+      const { data, error } = await client.POST("/api/receipts/complete", { body });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
+      toast.success("Receipt created");
+    },
+    onError: () => {
+      toast.error("Failed to create receipt");
+    },
+  });
+}
+
 export function useDeleteReceipts() {
   const queryClient = useQueryClient();
   return useMutation({

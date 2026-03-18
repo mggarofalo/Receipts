@@ -3,6 +3,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Receipt.Create;
+using Application.Commands.Receipt.CreateComplete;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
 using Application.Commands.Receipt.Update;
@@ -23,6 +24,8 @@ namespace Presentation.API.Tests.Controllers.Core;
 public class ReceiptsControllerTests
 {
 	private readonly ReceiptMapper _mapper;
+	private readonly TransactionMapper _transactionMapper;
+	private readonly ReceiptItemMapper _itemMapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<ReceiptsController>> _loggerMock;
 	private readonly Mock<IEntityChangeNotifier> _notifierMock;
@@ -32,10 +35,12 @@ public class ReceiptsControllerTests
 	{
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new ReceiptMapper();
+		_transactionMapper = new TransactionMapper();
+		_itemMapper = new ReceiptItemMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<ReceiptsController>();
 		_notifierMock = new Mock<IEntityChangeNotifier>();
 
-		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
+		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _transactionMapper, _itemMapper, _loggerMock.Object, _notifierMock.Object);
 	}
 
 	[Fact]
@@ -486,6 +491,55 @@ public class ReceiptsControllerTests
 
 		// Act
 		Func<Task> act = () => _controller.RestoreReceipt(id);
+
+		// Assert
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	[Fact]
+	public async Task CreateCompleteReceipt_ReturnsOkResult_WithCompositeResponse()
+	{
+		// Arrange
+		Receipt receipt = ReceiptGenerator.Generate();
+		List<Domain.Core.Transaction> transactions = SampleData.Domain.Core.TransactionGenerator.GenerateList(1);
+		transactions[0].AccountId = Guid.NewGuid();
+		transactions[0].ReceiptId = receipt.Id;
+		List<Domain.Core.ReceiptItem> items = SampleData.Domain.Core.ReceiptItemGenerator.GenerateList(1);
+		items[0].ReceiptId = receipt.Id;
+
+		CreateCompleteReceiptResult mediatorResult = new(receipt, transactions, items);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<CreateCompleteReceiptCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(mediatorResult);
+
+		CreateCompleteReceiptRequest input = SampleData.Dtos.Core.CompleteReceiptDtoGenerator.GenerateCreateRequest();
+
+		// Act
+		Ok<CreateCompleteReceiptResponse> result = await _controller.CreateCompleteReceipt(input);
+
+		// Assert
+		CreateCompleteReceiptResponse response = result.Value!;
+		response.Receipt.Should().NotBeNull();
+		response.Transactions.Should().HaveCount(1);
+		response.Items.Should().HaveCount(1);
+		_notifierMock.Verify(n => n.NotifyCreated("receipt", receipt.Id), Times.Once);
+	}
+
+	[Fact]
+	public async Task CreateCompleteReceipt_ThrowsException_WhenMediatorFails()
+	{
+		// Arrange
+		CreateCompleteReceiptRequest input = SampleData.Dtos.Core.CompleteReceiptDtoGenerator.GenerateCreateRequest();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<CreateCompleteReceiptCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		Func<Task> act = () => _controller.CreateCompleteReceipt(input);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

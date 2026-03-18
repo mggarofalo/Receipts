@@ -2,6 +2,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Receipt.Create;
+using Application.Commands.Receipt.CreateComplete;
 using Application.Commands.Receipt.Delete;
 using Application.Commands.Receipt.Restore;
 using Application.Commands.Receipt.Update;
@@ -24,6 +25,8 @@ namespace API.Controllers.Core;
 public class ReceiptsController(
 	IMediator mediator,
 	ReceiptMapper mapper,
+	TransactionMapper transactionMapper,
+	ReceiptItemMapper itemMapper,
 	ILogger<ReceiptsController> logger,
 	IEntityChangeNotifier notifier) : ControllerBase
 {
@@ -36,6 +39,7 @@ public class ReceiptsController(
 	public const string RouteDelete = "";
 	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
+	public const string RouteCreateComplete = "complete";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a receipt by ID")]
@@ -150,6 +154,36 @@ public class ReceiptsController(
 		List<ReceiptResponse> responses = receipts.Select(mapper.ToResponse).ToList();
 		await notifier.NotifyBulkChanged("receipt", "created", receipts.Select(r => r.Id));
 		return TypedResults.Ok(responses);
+	}
+
+	[HttpPost(RouteCreateComplete)]
+	[EndpointSummary("Create a receipt with transactions and items atomically")]
+	[EndpointDescription("Creates a receipt along with its transactions and items in a single database transaction. If any part fails, nothing is persisted.")]
+	public async Task<Ok<CreateCompleteReceiptResponse>> CreateCompleteReceipt([FromBody] CreateCompleteReceiptRequest model)
+	{
+		Receipt receipt = mapper.ToDomain(model.Receipt);
+
+		List<Transaction> transactions = [.. model.Transactions.Select(t =>
+		{
+			Transaction txn = transactionMapper.ToDomain(t);
+			txn.AccountId = t.AccountId;
+			return txn;
+		})];
+
+		List<ReceiptItem> items = [.. model.Items.Select(itemMapper.ToDomain)];
+
+		CreateCompleteReceiptCommand command = new(receipt, transactions, items);
+		CreateCompleteReceiptResult result = await mediator.Send(command);
+
+		CreateCompleteReceiptResponse response = new()
+		{
+			Receipt = mapper.ToResponse(result.Receipt),
+			Transactions = [.. result.Transactions.Select(transactionMapper.ToResponse)],
+			Items = [.. result.Items.Select(itemMapper.ToResponse)],
+		};
+
+		await notifier.NotifyCreated("receipt", result.Receipt.Id);
+		return TypedResults.Ok(response);
 	}
 
 	[HttpPut(RouteUpdate)]
