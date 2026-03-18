@@ -7,7 +7,7 @@ services:
     command:
       - -c
       - |
-        for secret in pg_password jwt_key admin_password; do
+        for secret in pg_password jwt_key admin_password grafana_password; do
           if [ ! -f "/secrets/$${secret}" ]; then
             tr -dc 'A-Za-z0-9+/' < /dev/urandom | head -c 48 > "/secrets/$${secret}"
             if [ "$${secret}" = "admin_password" ]; then
@@ -236,18 +236,24 @@ services:
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/secrets/grafana_password
     ports:
       - "3000:3000"
     volumes:
+      - secrets:/secrets:ro
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     depends_on:
-      - prometheus
-      - tempo
-      - loki
+      init:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_started
+      tempo:
+        condition: service_started
+      loki:
+        condition: service_started
     deploy:
       resources:
         limits:
