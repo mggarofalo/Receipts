@@ -32,14 +32,15 @@ function ReceiptDetail() {
       <h1 className="text-2xl font-semibold tracking-tight">Receipt Details</h1>
 
       {isLoading && (
-        <div className="space-y-4">
+        <div role="status" aria-live="polite" className="space-y-4">
+          <span className="sr-only">Loading receipt details...</span>
           <CardSkeleton lines={2} />
           <CardSkeleton lines={4} />
         </div>
       )}
 
       {isError && (
-        <div className="py-12 text-center text-muted-foreground">
+        <div role="alert" className="py-12 text-center text-muted-foreground">
           No receipt found for this ID.
         </div>
       )}

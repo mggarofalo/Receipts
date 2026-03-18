@@ -94,7 +94,7 @@ describe("ReceiptDetail", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders loading skeleton when data is loading", async () => {
+  it("renders loading skeleton with accessible status when data is loading", async () => {
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
     vi.mocked(useReceiptWithItems).mockReturnValue(mockQueryResult({
       data: undefined,
@@ -104,6 +104,8 @@ describe("ReceiptDetail", () => {
 
     const { container } = renderWithRoutes("/receipt-detail?id=some-uuid");
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByText(/loading receipt details/i)).toBeInTheDocument();
   });
 
   it("renders receipt data when loaded", async () => {
@@ -132,7 +134,7 @@ describe("ReceiptDetail", () => {
     expect(screen.getByText(/2024-01-15/)).toBeInTheDocument();
   });
 
-  it("renders error state when receipt is not found", async () => {
+  it("renders error state with alert role when receipt is not found", async () => {
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
     vi.mocked(useReceiptWithItems).mockReturnValue(mockQueryResult({
       data: undefined,
@@ -141,8 +143,6 @@ describe("ReceiptDetail", () => {
     }));
 
     renderWithRoutes("/receipt-detail?id=bad-id");
-    expect(
-      screen.getByText(/no receipt found for this id/i),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(/no receipt found for this id/i);
   });
 });
