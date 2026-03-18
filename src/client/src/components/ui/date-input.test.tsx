@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createRef, useState } from "react";
@@ -32,8 +32,26 @@ describe("DateInput", () => {
     onChange: vi.fn(),
   };
 
+  let originalMatchMedia: typeof window.matchMedia;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    originalMatchMedia = window.matchMedia;
+    // Default: desktop (pointer: fine) — existing tests rely on this
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: false,
+      media: "(pointer: coarse)",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
   });
 
   it("renders with placeholder when value is empty", () => {
@@ -426,5 +444,98 @@ describe("DateInput", () => {
     await user.tab();
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  describe("touch / mobile path", () => {
+    let originalMatchMedia: typeof window.matchMedia;
+
+    beforeEach(() => {
+      originalMatchMedia = window.matchMedia;
+      window.matchMedia = vi.fn().mockReturnValue({
+        matches: true,
+        media: "(pointer: coarse)",
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      });
+    });
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia;
+    });
+
+    it("renders a native date input on touch devices", () => {
+      render(<DateInput {...defaultProps} />);
+
+      const input = screen.getByDisplayValue("");
+      expect(input).toHaveAttribute("type", "date");
+    });
+
+    it("does not render the Popover/Calendar button on touch devices", () => {
+      render(<DateInput {...defaultProps} />);
+
+      expect(
+        screen.queryByRole("button", { name: "Pick a date" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("passes value through as wire format", () => {
+      render(<DateInput {...defaultProps} value="2024-03-15" />);
+
+      const input = screen.getByDisplayValue("2024-03-15");
+      expect(input).toHaveAttribute("type", "date");
+    });
+
+    it("calls onChange with the native input value", () => {
+      const onChange = vi.fn();
+      render(<DateInput value="" onChange={onChange} />);
+
+      const input = document.querySelector('input[type="date"]')!;
+      fireEvent.change(input, { target: { value: "2024-06-15" } });
+
+      expect(onChange).toHaveBeenCalledWith("2024-06-15");
+    });
+
+    it("passes min and max to the native input", () => {
+      render(
+        <DateInput
+          {...defaultProps}
+          min="2024-01-01"
+          max="2024-12-31"
+        />,
+      );
+
+      const input = document.querySelector('input[type="date"]')!;
+      expect(input).toHaveAttribute("min", "2024-01-01");
+      expect(input).toHaveAttribute("max", "2024-12-31");
+    });
+
+    it("disables the native input when disabled", () => {
+      render(<DateInput {...defaultProps} disabled />);
+
+      const input = document.querySelector('input[type="date"]')!;
+      expect(input).toBeDisabled();
+    });
+
+    it("fires onBlur on the native input", () => {
+      const onBlur = vi.fn();
+      render(<DateInput {...defaultProps} onBlur={onBlur} />);
+
+      const input = document.querySelector('input[type="date"]')!;
+      fireEvent.blur(input);
+
+      expect(onBlur).toHaveBeenCalledTimes(1);
+    });
+
+    it("forwards ref to the native date input", () => {
+      const ref = createRef<HTMLInputElement>();
+      render(<DateInput {...defaultProps} ref={ref} />);
+
+      expect(ref.current).toBeInstanceOf(HTMLInputElement);
+      expect(ref.current?.type).toBe("date");
+    });
   });
 });
