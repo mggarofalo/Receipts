@@ -23,6 +23,7 @@ import {
   useReceiptItem,
   useReceiptItemsByReceiptId,
   useCreateReceiptItem,
+  useCreateReceiptItemsBatch,
   useUpdateReceiptItem,
   useDeleteReceiptItems,
   useDeletedReceiptItems,
@@ -199,5 +200,197 @@ describe("useReceiptItems", () => {
       params: { path: { id: "1" } },
     });
     expect(toast.success).toHaveBeenCalledWith("Receipt item restored");
+  });
+
+  // --- Branch coverage: error callbacks ---
+
+  it("create mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useCreateReceiptItem(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ receiptId: "r-1", body: { receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S", pricingMode: "quantity" as const } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to create receipt item");
+  });
+
+  it("batch create mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useCreateReceiptItemsBatch(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ receiptId: "r-1", body: [{ receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S", pricingMode: "quantity" as const }] });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to create receipt items");
+  });
+
+  it("batch create mutation invalidates cache on success", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.POST as Mock).mockResolvedValue({ data: [{ id: "1" }], error: undefined });
+
+    const { result } = renderHook(() => useCreateReceiptItemsBatch(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate({ receiptId: "r-1", body: [{ receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S", pricingMode: "quantity" as const }] });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["receipt-items"] });
+  });
+
+  it("update mutation shows error toast on failure", async () => {
+    (client.PUT as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useUpdateReceiptItem(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ body: { id: "1", receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S", pricingMode: "quantity" as const } });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to update receipt item");
+  });
+
+  it("delete mutation shows error toast and rolls back cache on failure", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    // Pre-populate cache with list data
+    const items = [
+      { id: "1", description: "A" },
+      { id: "2", description: "B" },
+    ];
+    const cacheKey = ["receipt-items", "list", 0, 50, undefined, undefined];
+    const cacheValue = { data: items, total: 2, offset: 0, limit: 50 };
+    queryClient.setQueryData(cacheKey, cacheValue);
+    setQueryDataSpy.mockClear();
+
+    (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useDeleteReceiptItems(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to delete receipt item(s)");
+
+    // Verify rollback restored the original data (not just the optimistic update from onMutate)
+    expect(setQueryDataSpy).toHaveBeenCalledWith(cacheKey, cacheValue);
+  });
+
+  it("delete optimistic update handles undefined cache gracefully", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    // Set cache to undefined (simulating no prior fetch)
+    queryClient.setQueryData(["receipt-items", "list", 0, 50, undefined, undefined], undefined);
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteReceiptItems(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(toast.success).toHaveBeenCalledWith("Receipt item(s) deleted");
+  });
+
+  it("restore mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useRestoreReceiptItem(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate("1");
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to restore receipt item");
+  });
+
+  it("list query throws on API error", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useReceiptItems(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it("list query passes sort parameters", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useReceiptItems(0, 50, "description", "asc"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/receipt-items", {
+      params: { query: { offset: 0, limit: 50, sortBy: "description", sortDirection: "asc" } },
+    });
+  });
+
+  it("list query returns total of 0 when data is undefined", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "err" } });
+
+    const { result } = renderHook(() => useReceiptItems(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.total).toBe(0);
+  });
+
+  it("delete mutation invalidates both list and deleted query keys on settled", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteReceiptItems(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["receipt-items"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["receipt-items", "deleted"] });
   });
 });

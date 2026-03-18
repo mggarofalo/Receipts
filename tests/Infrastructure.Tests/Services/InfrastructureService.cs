@@ -1,6 +1,7 @@
 using Application.Interfaces;
 using Application.Interfaces.Services;
 using Common;
+using FluentAssertions;
 using Infrastructure.Mapping;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -8,67 +9,301 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 
 namespace Infrastructure.Tests.Services;
 
 public class InfrastructureServiceTests
 {
+	#region IsDatabaseConfigured
+
 	[Fact]
-	public void RegisterInfrastructureServices_RegistersRequiredServices()
+	public void IsDatabaseConfigured_AspireConnectionStringPresent_ReturnsTrue()
+	{
+		// Arrange
+		Dictionary<string, string?> config = new()
+		{
+			[$"ConnectionStrings:{ConfigurationVariables.AspireConnectionStringName}"] = "Host=db;Database=receiptsdb"
+		};
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
+
+		// Act
+		bool result = InfrastructureService.IsDatabaseConfigured(configuration);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsDatabaseConfigured_AllPostgresVarsPresent_ReturnsTrue()
+	{
+		// Arrange
+		IConfiguration configuration = BuildPostgresConfiguration();
+
+		// Act
+		bool result = InfrastructureService.IsDatabaseConfigured(configuration);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsDatabaseConfigured_NoConfigAtAll_ReturnsFalse()
+	{
+		// Arrange
+		Dictionary<string, string?> config = new();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
+
+		// Act
+		bool result = InfrastructureService.IsDatabaseConfigured(configuration);
+
+		// Assert
+		result.Should().BeFalse();
+	}
+
+	[Theory]
+	[InlineData(ConfigurationVariables.PostgresHost)]
+	[InlineData(ConfigurationVariables.PostgresPort)]
+	[InlineData(ConfigurationVariables.PostgresUser)]
+	[InlineData(ConfigurationVariables.PostgresPassword)]
+	[InlineData(ConfigurationVariables.PostgresDb)]
+	public void IsDatabaseConfigured_IndividualPostgresVarMissing_ReturnsFalse(string missingKey)
+	{
+		// Arrange — all vars present except the one being tested
+		Dictionary<string, string?> config = new()
+		{
+			[ConfigurationVariables.PostgresHost] = "localhost",
+			[ConfigurationVariables.PostgresPort] = "5432",
+			[ConfigurationVariables.PostgresUser] = "user",
+			[ConfigurationVariables.PostgresPassword] = "password",
+			[ConfigurationVariables.PostgresDb] = "database"
+		};
+		config.Remove(missingKey);
+
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
+
+		// Act
+		bool result = InfrastructureService.IsDatabaseConfigured(configuration);
+
+		// Assert
+		result.Should().BeFalse();
+	}
+
+	[Theory]
+	[InlineData(ConfigurationVariables.PostgresHost)]
+	[InlineData(ConfigurationVariables.PostgresPort)]
+	[InlineData(ConfigurationVariables.PostgresUser)]
+	[InlineData(ConfigurationVariables.PostgresPassword)]
+	[InlineData(ConfigurationVariables.PostgresDb)]
+	public void IsDatabaseConfigured_IndividualPostgresVarEmpty_ReturnsFalse(string emptyKey)
+	{
+		// Arrange — all vars present but one is empty string
+		Dictionary<string, string?> config = new()
+		{
+			[ConfigurationVariables.PostgresHost] = "localhost",
+			[ConfigurationVariables.PostgresPort] = "5432",
+			[ConfigurationVariables.PostgresUser] = "user",
+			[ConfigurationVariables.PostgresPassword] = "password",
+			[ConfigurationVariables.PostgresDb] = "database"
+		};
+		config[emptyKey] = "";
+
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
+
+		// Act
+		bool result = InfrastructureService.IsDatabaseConfigured(configuration);
+
+		// Assert
+		result.Should().BeFalse();
+	}
+
+	[Fact]
+	public void IsDatabaseConfigured_AspireConnectionStringEmpty_FallsBackToPostgresVars()
+	{
+		// Arrange — Aspire string is empty but Postgres vars are present
+		Dictionary<string, string?> config = new()
+		{
+			[$"ConnectionStrings:{ConfigurationVariables.AspireConnectionStringName}"] = "",
+			[ConfigurationVariables.PostgresHost] = "localhost",
+			[ConfigurationVariables.PostgresPort] = "5432",
+			[ConfigurationVariables.PostgresUser] = "user",
+			[ConfigurationVariables.PostgresPassword] = "password",
+			[ConfigurationVariables.PostgresDb] = "database"
+		};
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
+
+		// Act
+		bool result = InfrastructureService.IsDatabaseConfigured(configuration);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	#endregion
+
+	#region GetConnectionString
+
+	[Fact]
+	public void GetConnectionString_AspireConnectionStringPresent_ReturnsAspireString()
+	{
+		// Arrange
+		const string expectedConnectionString = "Host=aspire-db;Database=receiptsdb;Username=admin;Password=secret";
+		Dictionary<string, string?> config = new()
+		{
+			[$"ConnectionStrings:{ConfigurationVariables.AspireConnectionStringName}"] = expectedConnectionString
+		};
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
+
+		// Act
+		string result = InfrastructureService.GetConnectionString(configuration);
+
+		// Assert
+		result.Should().Be(expectedConnectionString);
+	}
+
+	[Fact]
+	public void GetConnectionString_NoAspire_BuildsFromPostgresVars()
+	{
+		// Arrange
+		IConfiguration configuration = BuildPostgresConfiguration();
+
+		// Act
+		string result = InfrastructureService.GetConnectionString(configuration);
+
+		// Assert
+		result.Should().Contain("Host=localhost");
+		result.Should().Contain("Port=5432");
+		result.Should().Contain("Username=user");
+		result.Should().Contain("Password=password");
+		result.Should().Contain("Database=testdb");
+	}
+
+	[Fact]
+	public void GetConnectionString_AspireConnectionStringEmpty_BuildsFromPostgresVars()
+	{
+		// Arrange — Aspire string is empty, falls back to Postgres vars
+		Dictionary<string, string?> config = new()
+		{
+			[$"ConnectionStrings:{ConfigurationVariables.AspireConnectionStringName}"] = "",
+			[ConfigurationVariables.PostgresHost] = "fallback-host",
+			[ConfigurationVariables.PostgresPort] = "5433",
+			[ConfigurationVariables.PostgresUser] = "fallback-user",
+			[ConfigurationVariables.PostgresPassword] = "fallback-pass",
+			[ConfigurationVariables.PostgresDb] = "fallback-db"
+		};
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
+
+		// Act
+		string result = InfrastructureService.GetConnectionString(configuration);
+
+		// Assert
+		result.Should().Contain("Host=fallback-host");
+		result.Should().Contain("Port=5433");
+		result.Should().Contain("Username=fallback-user");
+		result.Should().Contain("Password=fallback-pass");
+		result.Should().Contain("Database=fallback-db");
+	}
+
+	#endregion
+
+	#region RegisterInfrastructureServices
+
+	[Fact]
+	public void RegisterInfrastructureServices_DatabaseConfigured_RegistersRequiredServices()
 	{
 		// Arrange
 		ServiceCollection services = new();
 		services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
-		Mock<IConfiguration> mockConfiguration = SetupMockConfiguration();
+		IConfiguration configuration = BuildPostgresConfiguration();
 
 		// Act
-		services.RegisterInfrastructureServices(mockConfiguration.Object);
+		services.RegisterInfrastructureServices(configuration);
 		ServiceProvider serviceProvider = services.BuildServiceProvider();
 
 		// Assert
-		AssertThatDbContextFactoryIsRegistered(serviceProvider);
-		AssertThatRepositoriesAreRegistered(serviceProvider);
-		AssertThatDatabaseMigratorIsRegistered(serviceProvider);
-		AssertThatMappersAreRegistered(serviceProvider);
+		serviceProvider.GetService<IDbContextFactory<ApplicationDbContext>>().Should().NotBeNull();
+		serviceProvider.GetService<IReceiptService>().Should().NotBeNull();
+		serviceProvider.GetService<IAccountService>().Should().NotBeNull();
+		serviceProvider.GetService<ITransactionService>().Should().NotBeNull();
+		serviceProvider.GetService<IReceiptItemService>().Should().NotBeNull();
+		serviceProvider.GetService<IDatabaseMigratorService>().Should().NotBeNull();
+		serviceProvider.GetService<AccountMapper>().Should().NotBeNull();
+		serviceProvider.GetService<ReceiptMapper>().Should().NotBeNull();
+		serviceProvider.GetService<ReceiptItemMapper>().Should().NotBeNull();
+		serviceProvider.GetService<TransactionMapper>().Should().NotBeNull();
 	}
 
-	private static Mock<IConfiguration> SetupMockConfiguration()
+	[Fact]
+	public void RegisterInfrastructureServices_DatabaseNotConfigured_RegistersFallbackServices()
 	{
-		Mock<IConfiguration> mockConfiguration = new();
+		// Arrange — no database config at all, triggers the unconfigured (else) branch
+		ServiceCollection services = new();
+		services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
+		Dictionary<string, string?> config = new();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
 
-		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresHost]).Returns("localhost");
-		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresPort]).Returns("5432");
-		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresUser]).Returns("user");
-		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresPassword]).Returns("password");
-		mockConfiguration.SetupGet(c => c[ConfigurationVariables.PostgresDb]).Returns("database");
+		// Act
+		services.RegisterInfrastructureServices(configuration);
+		ServiceProvider serviceProvider = services.BuildServiceProvider();
 
-		return mockConfiguration;
+		// Assert — DbContextFactory is still registered (via the unconfigured Npgsql path)
+		serviceProvider.GetService<IDbContextFactory<ApplicationDbContext>>().Should().NotBeNull();
+		// All services and mappers are still registered regardless of DB config
+		serviceProvider.GetService<IReceiptService>().Should().NotBeNull();
+		serviceProvider.GetService<IAccountService>().Should().NotBeNull();
+		serviceProvider.GetService<IDatabaseMigratorService>().Should().NotBeNull();
+		serviceProvider.GetService<AccountMapper>().Should().NotBeNull();
+		serviceProvider.GetService<ReceiptMapper>().Should().NotBeNull();
 	}
 
-	private static void AssertThatDbContextFactoryIsRegistered(ServiceProvider serviceProvider)
+	[Fact]
+	public void RegisterInfrastructureServices_ReturnsServiceCollection()
 	{
-		Assert.NotNull(serviceProvider.GetService<IDbContextFactory<ApplicationDbContext>>());
+		// Arrange
+		ServiceCollection services = new();
+		services.AddSingleton<ILoggerFactory>(NullLoggerFactory.Instance);
+		IConfiguration configuration = BuildPostgresConfiguration();
+
+		// Act
+		IServiceCollection result = services.RegisterInfrastructureServices(configuration);
+
+		// Assert
+		result.Should().BeSameAs(services);
 	}
 
-	private static void AssertThatRepositoriesAreRegistered(ServiceProvider serviceProvider)
+	#endregion
+
+	#region Helpers
+
+	private static IConfiguration BuildPostgresConfiguration()
 	{
-		Assert.NotNull(serviceProvider.GetService<IReceiptService>());
-		Assert.NotNull(serviceProvider.GetService<IAccountService>());
-		Assert.NotNull(serviceProvider.GetService<ITransactionService>());
-		Assert.NotNull(serviceProvider.GetService<IReceiptItemService>());
+		Dictionary<string, string?> config = new()
+		{
+			[ConfigurationVariables.PostgresHost] = "localhost",
+			[ConfigurationVariables.PostgresPort] = "5432",
+			[ConfigurationVariables.PostgresUser] = "user",
+			[ConfigurationVariables.PostgresPassword] = "password",
+			[ConfigurationVariables.PostgresDb] = "testdb"
+		};
+		return new ConfigurationBuilder()
+			.AddInMemoryCollection(config)
+			.Build();
 	}
 
-	private static void AssertThatDatabaseMigratorIsRegistered(ServiceProvider serviceProvider)
-	{
-		Assert.NotNull(serviceProvider.GetService<IDatabaseMigratorService>());
-	}
-
-	private static void AssertThatMappersAreRegistered(ServiceProvider serviceProvider)
-	{
-		Assert.NotNull(serviceProvider.GetService<AccountMapper>());
-		Assert.NotNull(serviceProvider.GetService<ReceiptMapper>());
-		Assert.NotNull(serviceProvider.GetService<ReceiptItemMapper>());
-		Assert.NotNull(serviceProvider.GetService<TransactionMapper>());
-	}
+	#endregion
 }

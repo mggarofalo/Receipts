@@ -185,4 +185,159 @@ describe("useItemTemplates", () => {
     });
     expect(toast.success).toHaveBeenCalledWith("Item template restored");
   });
+
+  // --- Branch coverage: error callbacks ---
+
+  it("create mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useCreateItemTemplate(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ name: "Template", description: null });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to create item template");
+  });
+
+  it("update mutation shows error toast on failure", async () => {
+    (client.PUT as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useUpdateItemTemplate(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({ id: "1", name: "Template", description: null });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to update item template");
+  });
+
+  it("delete mutation shows error toast and rolls back cache on failure", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    const templates = [
+      { id: "1", name: "A" },
+      { id: "2", name: "B" },
+    ];
+    const cacheKey = ["itemTemplates", "list", 0, 50, undefined, undefined];
+    const cacheValue = { data: templates, total: 2, offset: 0, limit: 50 };
+    queryClient.setQueryData(cacheKey, cacheValue);
+    setQueryDataSpy.mockClear();
+
+    (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useDeleteItemTemplates(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to delete item template(s)");
+
+    // Verify rollback restored the original data (not just the optimistic update from onMutate)
+    expect(setQueryDataSpy).toHaveBeenCalledWith(cacheKey, cacheValue);
+  });
+
+  it("delete optimistic update handles undefined cache gracefully", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    queryClient.setQueryData(["itemTemplates", "list", 0, 50, undefined, undefined], undefined);
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteItemTemplates(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(toast.success).toHaveBeenCalledWith("Item template(s) deleted");
+  });
+
+  it("restore mutation shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useRestoreItemTemplate(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate("1");
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to restore item template");
+  });
+
+  it("list query throws on API error", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useItemTemplates(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it("list query passes sort parameters", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useItemTemplates(0, 50, "name", "asc"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/item-templates", {
+      params: { query: { offset: 0, limit: 50, sortBy: "name", sortDirection: "asc" } },
+    });
+  });
+
+  it("list query returns total of 0 when data is undefined", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "err" } });
+
+    const { result } = renderHook(() => useItemTemplates(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.total).toBe(0);
+  });
+
+  it("delete mutation invalidates both list and deleted query keys on settled", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteItemTemplates(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["itemTemplates"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["itemTemplates", "deleted"] });
+  });
 });
