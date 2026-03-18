@@ -23,6 +23,8 @@ namespace Presentation.API.Tests.Controllers.Core;
 public class ReceiptsControllerTests
 {
 	private readonly ReceiptMapper _mapper;
+	private readonly TransactionMapper _transactionMapper;
+	private readonly ReceiptItemMapper _receiptItemMapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<ReceiptsController>> _loggerMock;
 	private readonly Mock<IEntityChangeNotifier> _notifierMock;
@@ -32,10 +34,12 @@ public class ReceiptsControllerTests
 	{
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new ReceiptMapper();
+		_transactionMapper = new TransactionMapper();
+		_receiptItemMapper = new ReceiptItemMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<ReceiptsController>();
 		_notifierMock = new Mock<IEntityChangeNotifier>();
 
-		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
+		_controller = new ReceiptsController(_mediatorMock.Object, _mapper, _transactionMapper, _receiptItemMapper, _loggerMock.Object, _notifierMock.Object);
 	}
 
 	[Fact]

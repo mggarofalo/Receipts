@@ -1,9 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { useCreateReceipt } from "@/hooks/useReceipts";
-import { useCreateTransactionsBatch } from "@/hooks/useTransactions";
-import { useCreateReceiptItemsBatch } from "@/hooks/useReceiptItems";
+import { useCreateCompleteReceipt } from "@/hooks/useReceipts";
 import { useWizard } from "./useWizard";
 import { WizardStepper } from "./WizardStepper";
 import { Step1TripDetails } from "./Step1TripDetails";
@@ -42,9 +40,7 @@ export default function NewReceipt() {
   const [showDiscard, setShowDiscard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { mutateAsync: createReceiptAsync } = useCreateReceipt();
-  const { mutateAsync: createTransactionsBatchAsync } = useCreateTransactionsBatch();
-  const { mutateAsync: createReceiptItemsBatchAsync } = useCreateReceiptItemsBatch();
+  const { mutateAsync: createCompleteReceiptAsync } = useCreateCompleteReceipt();
 
   const hasData =
     state.receipt.location !== "" ||
@@ -75,70 +71,42 @@ export default function NewReceipt() {
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      // 1. Create the receipt
-      const receipt = await createReceiptAsync(
+      const result = await createCompleteReceiptAsync(
         {
-          location: state.receipt.location,
-          date: state.receipt.date,
-          taxAmount: state.receipt.taxAmount,
+          receipt: {
+            location: state.receipt.location,
+            date: state.receipt.date,
+            taxAmount: state.receipt.taxAmount,
+          },
+          transactions: state.transactions.map((txn) => ({
+            accountId: txn.accountId,
+            amount: txn.amount,
+            date: txn.date,
+          })),
+          items: state.items.map((item) => ({
+            receiptItemCode: item.receiptItemCode,
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            category: item.category,
+            subcategory: item.subcategory,
+            pricingMode: item.pricingMode,
+          })),
         },
         { onSuccess: undefined, onError: undefined },
       );
 
-      const receiptId = (receipt as { id: string }).id;
-
-      // 2. Create transactions in batch
-      if (state.transactions.length > 0) {
-        await createTransactionsBatchAsync(
-          {
-            receiptId,
-            body: state.transactions.map((txn) => ({
-              accountId: txn.accountId,
-              amount: txn.amount,
-              date: txn.date,
-            })),
-          },
-          { onSuccess: undefined, onError: undefined },
-        );
-      }
-
-      // 3. Create receipt items in batch
-      if (state.items.length > 0) {
-        await createReceiptItemsBatchAsync(
-          {
-            receiptId,
-            body: state.items.map((item) => ({
-              receiptItemCode: item.receiptItemCode,
-              description: item.description,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              category: item.category,
-              subcategory: item.subcategory,
-              pricingMode: item.pricingMode,
-            })),
-          },
-          { onSuccess: undefined, onError: undefined },
-        );
-      }
+      const receiptId = (result as { receipt: { id: string } }).receipt.id;
 
       toast.success("Receipt created successfully!");
       reset();
       navigate(`/receipt-detail?id=${receiptId}&highlight=${receiptId}`);
     } catch {
-      toast.error(
-        "Failed to create receipt. The receipt may have been partially created — check the receipts list.",
-      );
+      toast.error("Failed to create receipt.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    state,
-    createReceiptAsync,
-    createTransactionsBatchAsync,
-    createReceiptItemsBatchAsync,
-    reset,
-    navigate,
-  ]);
+  }, [state, createCompleteReceiptAsync, reset, navigate]);
 
   return (
     <div className="space-y-6">
