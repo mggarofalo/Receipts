@@ -66,16 +66,22 @@ If one already exists, **do not create a new one**. Report the existing PR and s
 
 ## Step 2: Create the release PR
 
-### 2a. Analyze the commits for the PR body
+### 2a. Analyze the commits and determine PR title
 
 Review the commit log from Step 1b. Group commits by type (feat, fix, test, chore, docs, refactor, etc.) for the PR summary.
 
+**Determine the PR title prefix** based on the most significant commit type present. This is critical — the squash merge commit message drives release-please's version bump:
+
+1. If ANY commit has a `!` suffix (e.g. `feat!:`) or `BREAKING CHANGE` footer → `feat!: release develop to main`
+2. If ANY `feat:` commit exists → `feat: release develop to main`
+3. Otherwise → `fix: release develop to main` (guarantees at least a patch bump)
+
+The title must always use a releasable type (`feat`, `fix`, or breaking) so that release-please creates a Release PR after merge.
+
 ### 2b. Create the PR
 
-Use the conventional commit format for the title: `chore: release develop to main`
-
 ```bash
-gh pr create --base main --head develop --title "chore: release develop to main" --body "$(cat <<'EOF'
+gh pr create --base main --head develop --title "<prefix>: release develop to main" --body "$(cat <<'EOF'
 ## Summary
 <grouped bullet points by commit type, e.g.:>
 <- **Features:** ...>
@@ -129,10 +135,10 @@ gh pr checks <PR-NUMBER> --watch
 Once confirmed (interactive only):
 
 ```bash
-gh pr merge <PR-NUMBER> --merge
+gh pr merge <PR-NUMBER> --squash
 ```
 
-Use `--merge` (not `--squash`) to preserve the individual commit history on main — release-please parses individual conventional commits to generate the changelog.
+Use `--squash` so the PR title becomes the commit message on `main`. Since the title is always a releasable conventional commit type (`feat:`, `fix:`, or breaking), release-please will parse it and create a Release PR with the appropriate version bump.
 
 Report the merge result.
 
@@ -186,7 +192,7 @@ Output a summary:
 <commit list from Step 1b>
 
 ### Expected version bump
-<Based on commit types: feat → minor, fix → patch, breaking → major>
+<Based on PR title prefix: feat! → major (minor while on 0.x), feat → minor (patch while on 0.x), anything else → patch>
 ```
 
 **You are done.**
@@ -196,7 +202,8 @@ Output a summary:
 ## Rules
 
 - **Never force-push** — this command does not modify any branches.
-- **Use `--merge` not `--squash`** — release-please needs individual conventional commits to generate the changelog correctly.
+- **Use `--squash` not `--merge`** — the PR title becomes the squash commit message, which release-please parses. A merge commit's message (`chore:`) would not trigger a release.
+- **PR title must always be a releasable type** — `feat:`, `fix:`, or breaking (`feat!:`). Never `chore:`, `test:`, or `docs:` — release-please ignores those.
 - **Do not proceed past blockers** — if pre-flight checks fail, stop and report.
 - **No compound Bash commands** — no `&&`, `||`, `;` in a single Bash call (hook constraint). Use separate sequential calls.
 - **Do not create the PR if one already exists** — pick up the existing one.
