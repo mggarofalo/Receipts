@@ -41,15 +41,20 @@ public class ApiKeyAuthenticationHandler(
 			return AuthenticateResult.NoResult();
 		}
 
-		string? userId = await apiKeyService.GetUserIdByApiKeyAsync(apiKey);
-		if (userId is null)
+		ApiKeyValidationResult? validationResult = await apiKeyService.GetUserIdByApiKeyAsync(apiKey);
+		if (validationResult is null)
 		{
 			return AuthenticateResult.Fail("Invalid API key.");
 		}
 
-		List<Claim> claims = [new Claim(ClaimTypes.NameIdentifier, userId)];
+		List<Claim> claims =
+		[
+			new Claim(ClaimTypes.NameIdentifier, validationResult.UserId),
+			new Claim("ApiKeyId", validationResult.KeyId.ToString()),
+			new Claim("BypassRateLimit", validationResult.BypassRateLimit.ToString().ToLowerInvariant()),
+		];
 
-		ApplicationUser? user = await userManager.FindByIdAsync(userId);
+		ApplicationUser? user = await userManager.FindByIdAsync(validationResult.UserId);
 		if (user is not null)
 		{
 			if (user.Email is not null)
@@ -73,8 +78,8 @@ public class ApiKeyAuthenticationHandler(
 			await authAuditService.LogAsync(new AuthAuditEntryDto(
 				Guid.NewGuid(),
 				nameof(AuthEventType.ApiKeyUsed),
-				userId,
-				null,
+				validationResult.UserId,
+				validationResult.KeyId,
 				user?.Email,
 				true,
 				null,
