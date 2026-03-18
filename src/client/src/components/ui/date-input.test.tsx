@@ -447,10 +447,9 @@ describe("DateInput", () => {
   });
 
   describe("touch / mobile path", () => {
-    let originalMatchMedia: typeof window.matchMedia;
-
+    // Override the outer desktop mock to simulate a touch device.
+    // The outer afterEach restores the real window.matchMedia.
     beforeEach(() => {
-      originalMatchMedia = window.matchMedia;
       window.matchMedia = vi.fn().mockReturnValue({
         matches: true,
         media: "(pointer: coarse)",
@@ -461,10 +460,6 @@ describe("DateInput", () => {
         removeListener: vi.fn(),
         dispatchEvent: vi.fn(),
       });
-    });
-
-    afterEach(() => {
-      window.matchMedia = originalMatchMedia;
     });
 
     it("renders a native date input on touch devices", () => {
