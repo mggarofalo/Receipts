@@ -112,6 +112,8 @@ export function useCreateCompleteReceipt() {
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["receipt-items"] });
+      queryClient.invalidateQueries({ queryKey: ["receipts-with-items"] });
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
       toast.success("Receipt created");
     },
     onError: () => {
