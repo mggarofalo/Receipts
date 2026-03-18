@@ -1,5 +1,5 @@
-import { screen } from "@testing-library/react";
-import { renderWithProviders } from "@/test/test-utils";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter, Routes, Route } from "react-router";
 import { mockQueryResult } from "@/test/mock-hooks";
 import ReceiptDetail from "./ReceiptDetail";
 
@@ -45,36 +45,56 @@ vi.mock("@/components/AdjustmentsCard", () => ({
   },
 }));
 
+function renderWithRoutes(initialRoute: string) {
+  return render(
+    <MemoryRouter initialEntries={[initialRoute]}>
+      <Routes>
+        <Route path="/receipt-detail" element={<ReceiptDetail />} />
+        <Route path="/receipts" element={<div data-testid="receipts-page">Receipts</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
 describe("ReceiptDetail", () => {
-  it("renders the page heading", () => {
-    renderWithProviders(<ReceiptDetail />);
+  it("redirects to /receipts when no id param is present", () => {
+    renderWithRoutes("/receipt-detail");
+    expect(screen.getByTestId("receipts-page")).toBeInTheDocument();
+  });
+
+  it("redirects to /receipts when id param is empty", () => {
+    renderWithRoutes("/receipt-detail?id=");
+    expect(screen.getByTestId("receipts-page")).toBeInTheDocument();
+  });
+
+  it("does not render manual input or Look Up button", () => {
+    renderWithRoutes("/receipt-detail?id=some-uuid");
+    expect(screen.queryByPlaceholderText(/enter receipt uuid/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /look up/i })).not.toBeInTheDocument();
+  });
+
+  it("calls useReceiptWithItems with the id param", async () => {
+    const { useReceiptWithItems } = await import("@/hooks/useAggregates");
+    const mockHook = vi.mocked(useReceiptWithItems);
+    mockHook.mockReturnValue(mockQueryResult({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+    }));
+
+    renderWithRoutes("/receipt-detail?id=some-uuid");
+
+    expect(mockHook).toHaveBeenCalledWith("some-uuid");
+  });
+
+  it("renders the page heading when id is present", () => {
+    renderWithRoutes("/receipt-detail?id=some-uuid");
     expect(
       screen.getByRole("heading", { name: /receipt details/i }),
     ).toBeInTheDocument();
   });
 
-  it("renders the receipt ID input field", () => {
-    renderWithProviders(<ReceiptDetail />);
-    expect(
-      screen.getByPlaceholderText(/enter receipt uuid/i),
-    ).toBeInTheDocument();
-  });
-
-  it("renders the Look Up button", () => {
-    renderWithProviders(<ReceiptDetail />);
-    expect(
-      screen.getByRole("button", { name: /look up/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("disables Look Up button when input is empty", () => {
-    renderWithProviders(<ReceiptDetail />);
-    expect(
-      screen.getByRole("button", { name: /look up/i }),
-    ).toBeDisabled();
-  });
-
-  it("renders loading skeleton when data is loading", async () => {
+  it("renders loading skeleton with accessible status when data is loading", async () => {
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
     vi.mocked(useReceiptWithItems).mockReturnValue(mockQueryResult({
       data: undefined,
@@ -82,58 +102,10 @@ describe("ReceiptDetail", () => {
       isError: false,
     }));
 
-    const { container } = renderWithProviders(<ReceiptDetail />);
+    const { container } = renderWithRoutes("/receipt-detail?id=some-uuid");
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
-  });
-
-  it("enables Look Up button when input has a value", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    renderWithProviders(<ReceiptDetail />);
-
-    const input = screen.getByPlaceholderText(/enter receipt uuid/i);
-    await user.type(input, "some-uuid");
-
-    expect(
-      screen.getByRole("button", { name: /look up/i }),
-    ).not.toBeDisabled();
-  });
-
-  it("triggers lookup when Look Up button is clicked", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const { useReceiptWithItems } = await import("@/hooks/useAggregates");
-    const mockHook = vi.mocked(useReceiptWithItems);
-    mockHook.mockReturnValue(mockQueryResult({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-    }));
-
-    renderWithProviders(<ReceiptDetail />);
-
-    const input = screen.getByPlaceholderText(/enter receipt uuid/i);
-    await user.type(input, "test-receipt-id");
-    await user.click(screen.getByRole("button", { name: /look up/i }));
-
-    // After clicking Look Up, the hook should be called with the receipt ID
-    expect(mockHook).toHaveBeenCalled();
-  });
-
-  it("triggers lookup on Enter key press", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    const { useReceiptWithItems } = await import("@/hooks/useAggregates");
-    const mockHook = vi.mocked(useReceiptWithItems);
-    mockHook.mockReturnValue(mockQueryResult({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-    }));
-
-    renderWithProviders(<ReceiptDetail />);
-
-    const input = screen.getByPlaceholderText(/enter receipt uuid/i);
-    await user.type(input, "test-receipt-id{Enter}");
-
-    expect(mockHook).toHaveBeenCalled();
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByText(/loading receipt details/i)).toBeInTheDocument();
   });
 
   it("renders receipt data when loaded", async () => {
@@ -157,13 +129,12 @@ describe("ReceiptDetail", () => {
       isError: false,
     }));
 
-    renderWithProviders(<ReceiptDetail />);
+    renderWithRoutes("/receipt-detail?id=r1");
     expect(screen.getByText(/walmart/i)).toBeInTheDocument();
     expect(screen.getByText(/2024-01-15/)).toBeInTheDocument();
   });
 
-  it("renders error state when receipt is not found", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
+  it("renders error state with alert role when receipt is not found", async () => {
     const { useReceiptWithItems } = await import("@/hooks/useAggregates");
     vi.mocked(useReceiptWithItems).mockReturnValue(mockQueryResult({
       data: undefined,
@@ -171,15 +142,7 @@ describe("ReceiptDetail", () => {
       isError: true,
     }));
 
-    renderWithProviders(<ReceiptDetail />);
-
-    // Need to trigger a lookup first to set receiptId
-    const input = screen.getByPlaceholderText(/enter receipt uuid/i);
-    await user.type(input, "bad-id");
-    await user.click(screen.getByRole("button", { name: /look up/i }));
-
-    expect(
-      screen.getByText(/no receipt found for this id/i),
-    ).toBeInTheDocument();
+    renderWithRoutes("/receipt-detail?id=bad-id");
+    expect(screen.getByRole("alert")).toHaveTextContent(/no receipt found for this id/i);
   });
 });
