@@ -3,7 +3,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgres")
 	.WithImage("pgvector/pgvector", "pg17")
 	.WithDataVolume()
-	.WithPgAdmin();
+	.WithPgAdmin(pgAdmin => pgAdmin.WithImageTag("9.13"));
 
 IResourceBuilder<PostgresDatabaseResource> db = postgres.AddDatabase("receiptsdb");
 
