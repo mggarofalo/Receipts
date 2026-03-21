@@ -7,23 +7,14 @@ IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgre
 
 IResourceBuilder<PostgresDatabaseResource> db = postgres.AddDatabase("receiptsdb");
 
-// Admin seed parameters (resolved from AppHost user secrets or Aspire dashboard)
-IResourceBuilder<ParameterResource> adminEmail = builder.AddParameter("admin-email");
-IResourceBuilder<ParameterResource> adminPassword = builder.AddParameter("admin-password", secret: true);
-IResourceBuilder<ParameterResource> adminFirstName = builder.AddParameter("admin-first-name");
-IResourceBuilder<ParameterResource> adminLastName = builder.AddParameter("admin-last-name");
 // DbMigrator: applies EF Core migrations, then exits
 IResourceBuilder<ProjectResource> migrator = builder.AddProject<Projects.DbMigrator>("db-migrator")
 	.WithReference(db)
 	.WaitFor(db);
 
-// DbSeeder: seeds roles and admin user, then exits
+// DbSeeder: seeds roles, then exits
 IResourceBuilder<ProjectResource> seeder = builder.AddProject<Projects.DbSeeder>("db-seeder")
 	.WithReference(db)
-	.WithEnvironment("AdminSeed__Email", adminEmail)
-	.WithEnvironment("AdminSeed__Password", adminPassword)
-	.WithEnvironment("AdminSeed__FirstName", adminFirstName)
-	.WithEnvironment("AdminSeed__LastName", adminLastName)
 	.WaitForCompletion(migrator);
 
 // API: starts after seeder completes
