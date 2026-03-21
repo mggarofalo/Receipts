@@ -83,22 +83,36 @@ public static class ApplicationConfiguration
 			});
 
 			options.AddPolicy("auth", context =>
-				RateLimitPartition.GetFixedWindowLimiter(
+			{
+				if (context.User.FindFirst("BypassRateLimit")?.Value == "true")
+				{
+					return RateLimitPartition.GetNoLimiter<string>("bypass");
+				}
+
+				return RateLimitPartition.GetFixedWindowLimiter(
 					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
 					_ => new FixedWindowRateLimiterOptions
 					{
 						PermitLimit = rateLimitConfig.Auth.PermitLimit,
 						Window = TimeSpan.FromMinutes(rateLimitConfig.Auth.WindowMinutes),
-					}));
+					});
+			});
 
 			options.AddPolicy("auth-sensitive", context =>
-				RateLimitPartition.GetFixedWindowLimiter(
+			{
+				if (context.User.FindFirst("BypassRateLimit")?.Value == "true")
+				{
+					return RateLimitPartition.GetNoLimiter<string>("bypass");
+				}
+
+				return RateLimitPartition.GetFixedWindowLimiter(
 					context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
 					_ => new FixedWindowRateLimiterOptions
 					{
 						PermitLimit = rateLimitConfig.AuthSensitive.PermitLimit,
 						Window = TimeSpan.FromMinutes(rateLimitConfig.AuthSensitive.WindowMinutes),
-					}));
+					});
+			});
 
 			options.AddPolicy("api-key", context =>
 			{
