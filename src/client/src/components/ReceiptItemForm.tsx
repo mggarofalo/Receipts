@@ -170,7 +170,7 @@ export function ReceiptItemForm({
 
   const handleCategoryChange = useCallback(
     (value: string) => {
-      form.setValue("category", value);
+      form.setValue("category", value, { shouldValidate: true });
       form.setValue("subcategory", "");
     },
     [form],
@@ -183,7 +183,7 @@ export function ReceiptItemForm({
 
   const handlePricingModeChange = useCallback(
     (value: string) => {
-      form.setValue("pricingMode", value as "flat" | "quantity");
+      form.setValue("pricingMode", value as "flat" | "quantity", { shouldValidate: true });
       if (value === "flat") {
         form.setValue("quantity", 1);
       }
