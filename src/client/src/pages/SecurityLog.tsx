@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import {
   useMyAuthAuditLog,
   useRecentAuthAuditLogs,
@@ -23,11 +24,20 @@ function SecurityLog() {
   const recentPagination = useServerPagination({ sortBy, sortDirection });
   const failedPagination = useServerPagination({ sortBy, sortDirection });
 
+  const { resetPage: resetMyPage } = myPagination;
+  const { resetPage: resetRecentPage } = recentPagination;
+  const { resetPage: resetFailedPage } = failedPagination;
+
   const myLogs = useMyAuthAuditLog(myPagination.offset, myPagination.limit, sortBy, sortDirection);
   const recentLogs = useRecentAuthAuditLogs(recentPagination.offset, recentPagination.limit, sortBy, sortDirection);
   const failedLogs = useFailedAuthAttempts(failedPagination.offset, failedPagination.limit, sortBy, sortDirection);
 
-  const handleSort = toggleSort;
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetMyPage();
+    resetRecentPage();
+    resetFailedPage();
+  }, [toggleSort, resetMyPage, resetRecentPage, resetFailedPage]);
 
   const myTotal = myLogs.total;
   const recentTotal = recentLogs.total;

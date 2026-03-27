@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo, useEffect } from "react";
+import { Fragment, useState, useMemo, useEffect, useCallback } from "react";
 import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
@@ -71,7 +71,7 @@ function Subcategories() {
   usePageTitle("Subcategories");
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination({ sortBy, sortDirection });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const allSubcatQuery = useSubcategories(offset, limit, sortBy, sortDirection);
   const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit, sortBy, sortDirection);
   const activeSubcatQuery = linkParams.categoryId ? filteredSubcatQuery : allSubcatQuery;
@@ -101,7 +101,10 @@ function Subcategories() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const handleSort = toggleSort;
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data = (subcategoriesData as SubcategoryResponse[] | undefined) ?? [];
 

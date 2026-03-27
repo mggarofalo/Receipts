@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link } from "react-router";
 import {
   useAccounts,
@@ -63,7 +63,7 @@ function Accounts() {
   usePageTitle("Accounts");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination({ sortBy, sortDirection });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { data: accountsData, total: serverTotal, isLoading } = useAccounts(offset, limit, sortBy, sortDirection);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
@@ -84,7 +84,10 @@ function Accounts() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const handleSort = toggleSort;
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data = (accountsData as AccountResponse[] | undefined) ?? [];
 
