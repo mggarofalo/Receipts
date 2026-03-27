@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -168,34 +168,28 @@ export function ReceiptItemForm({
     [subcategoriesData],
   );
 
-  // Reset subcategory when category changes (skip when applying a template)
-  const prevCategoryRef = useRef(watchedCategory);
-  const applyingTemplateRef = useRef(false);
-  useEffect(() => {
-    if (prevCategoryRef.current !== watchedCategory) {
-      prevCategoryRef.current = watchedCategory;
-      if (!applyingTemplateRef.current) {
-        form.setValue("subcategory", "");
-      }
-      applyingTemplateRef.current = false;
-    }
-  }, [watchedCategory, form]);
+  const handleCategoryChange = useCallback(
+    (value: string) => {
+      form.setValue("category", value, { shouldValidate: true });
+      form.setValue("subcategory", "");
+    },
+    [form],
+  );
 
   const watchedPricingMode = form.watch("pricingMode");
   const watchedQuantity = form.watch("quantity");
   const watchedUnitPrice = form.watch("unitPrice");
   const isFlat = watchedPricingMode === "flat";
 
-  // Auto-set quantity to 1 when switching to flat mode
-  const prevPricingModeRef = useRef(watchedPricingMode);
-  useEffect(() => {
-    if (prevPricingModeRef.current !== watchedPricingMode) {
-      prevPricingModeRef.current = watchedPricingMode;
-      if (watchedPricingMode === "flat") {
+  const handlePricingModeChange = useCallback(
+    (value: string) => {
+      form.setValue("pricingMode", value as "flat" | "quantity", { shouldValidate: true });
+      if (value === "flat") {
         form.setValue("quantity", 1);
       }
-    }
-  }, [watchedPricingMode, form]);
+    },
+    [form],
+  );
 
   async function handleFormSubmit(values: ReceiptItemFormValues) {
     // Persist field values for future autocomplete before calling onSubmit.
@@ -275,7 +269,6 @@ export function ReceiptItemForm({
     form.setValue("description", template.name);
     setDescriptionInput(template.name);
     if (template.defaultCategory) {
-      applyingTemplateRef.current = true;
       form.setValue("category", template.defaultCategory);
     }
     if (template.defaultSubcategory) {
@@ -455,7 +448,7 @@ export function ReceiptItemForm({
                 <Combobox
                   options={pricingModes}
                   value={field.value}
-                  onValueChange={field.onChange}
+                  onValueChange={handlePricingModeChange}
                   placeholder="Select pricing mode..."
                   searchPlaceholder="Search modes..."
                 />
@@ -518,7 +511,7 @@ export function ReceiptItemForm({
                   <Combobox
                     options={categoryOptions}
                     value={field.value}
-                    onValueChange={field.onChange}
+                    onValueChange={handleCategoryChange}
                     placeholder="Select category..."
                     searchPlaceholder="Search categories..."
                     allowCustom
