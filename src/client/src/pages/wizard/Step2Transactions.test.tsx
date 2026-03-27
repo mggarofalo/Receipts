@@ -110,6 +110,30 @@ describe("Step2Transactions", () => {
     expect(amountInput).toHaveValue("");
   });
 
+  it("shows zero-total warning when transactions sum to zero with tax > 0", () => {
+    const data = [
+      { id: "1", accountId: "acct-1", amount: 0, date: "2024-01-15" },
+    ];
+    renderWithProviders(
+      <Step2Transactions {...defaultProps} data={data} taxAmount={5.25} />,
+    );
+    expect(
+      screen.getByText(/transaction total is \$0\.00 but tax is/i),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show zero-total warning when tax is zero", () => {
+    const data = [
+      { id: "1", accountId: "acct-1", amount: 0, date: "2024-01-15" },
+    ];
+    renderWithProviders(
+      <Step2Transactions {...defaultProps} data={data} taxAmount={0} />,
+    );
+    expect(
+      screen.queryByText(/transaction total is \$0\.00 but tax is/i),
+    ).not.toBeInTheDocument();
+  });
+
   it("focuses the account combobox after adding a transaction", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithProviders(<Step2Transactions {...defaultProps} />);
