@@ -459,7 +459,6 @@ export function Step3Items({
                       placeholder="Select category..."
                       searchPlaceholder="Search categories..."
                       emptyMessage="No categories found."
-                      allowCustom
                       aria-required="true"
                     />
                   </FormControl>

@@ -514,7 +514,6 @@ export function ReceiptItemForm({
                     onValueChange={handleCategoryChange}
                     placeholder="Select category..."
                     searchPlaceholder="Search categories..."
-                    allowCustom
                   />
                 </FormControl>
                 <FormMessage />
