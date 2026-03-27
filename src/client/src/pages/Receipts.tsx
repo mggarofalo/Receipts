@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
@@ -98,7 +98,10 @@ function Receipts() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data = (receiptsData as ReceiptResponse[] | undefined) ?? [];
 
@@ -251,9 +254,9 @@ function Receipts() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
-                  <SortableTableHead column="location" label="Location" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
-                  <SortableTableHead column="date" label="Date" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
-                  <SortableTableHead column="taxAmount" label="Tax Amount" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
+                  <SortableTableHead column="location" label="Location" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
+                  <SortableTableHead column="date" label="Date" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
+                  <SortableTableHead column="taxAmount" label="Tax Amount" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} className="text-right" />
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>

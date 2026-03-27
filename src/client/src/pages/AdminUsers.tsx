@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -99,7 +99,10 @@ function AdminUsers() {
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ defaultPageSize: 20 });
   const { data: usersData, total: serverTotal, isLoading } = useUsers(offset, limit, sortBy, sortDirection);
 
-  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
@@ -240,11 +243,11 @@ function AdminUsers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableTableHead column="firstName" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
-                  <SortableTableHead column="email" label="Email" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="firstName" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
+                  <SortableTableHead column="email" label="Email" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <SortableTableHead column="createdAt" label="Created" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="createdAt" label="Created" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Last Login</TableHead>
                   <TableHead className="w-[200px]">Actions</TableHead>
                 </TableRow>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
@@ -110,7 +110,10 @@ function ReceiptItems() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data = useMemo(
     () => (itemsData as ReceiptItemResponse[] | undefined) ?? [],
@@ -305,12 +308,12 @@ function ReceiptItems() {
                     />
                   </TableHead>
                   <TableHead>Code</TableHead>
-                  <SortableTableHead column="description" label="Description" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="description" label="Description" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Mode</TableHead>
-                  <SortableTableHead column="quantity" label="Qty" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
-                  <SortableTableHead column="unitPrice" label="Unit Price" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
-                  <SortableTableHead column="totalAmount" label="Total" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
-                  <SortableTableHead column="category" label="Category" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="quantity" label="Qty" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} className="text-right" />
+                  <SortableTableHead column="unitPrice" label="Unit Price" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} className="text-right" />
+                  <SortableTableHead column="totalAmount" label="Total" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} className="text-right" />
+                  <SortableTableHead column="category" label="Category" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Subcategory</TableHead>
                   <TableHead>Receipt</TableHead>
                   <TableHead className="w-24">Actions</TableHead>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link } from "react-router";
 import {
   useCategories,
@@ -77,7 +77,10 @@ function Categories() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data = (categoriesData as CategoryResponse[] | undefined) ?? [];
   useSavedFilters("categories");
@@ -157,7 +160,7 @@ function Categories() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Description</TableHead>
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>

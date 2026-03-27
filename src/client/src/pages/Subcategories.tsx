@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo, useEffect } from "react";
+import { Fragment, useState, useMemo, useEffect, useCallback } from "react";
 import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
@@ -101,7 +101,10 @@ function Subcategories() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data = (subcategoriesData as SubcategoryResponse[] | undefined) ?? [];
 
@@ -299,7 +302,7 @@ function Subcategories() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Related</TableHead>

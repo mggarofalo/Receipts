@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
@@ -134,7 +134,10 @@ function Transactions() {
     return map;
   }, [receiptsData]);
 
-  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data: EnrichedTransaction[] = useMemo(() => {
     const list = (transactionsData as TransactionResponse[] | undefined) ?? [];
@@ -304,9 +307,9 @@ function Transactions() {
                   <TableHead>Account</TableHead>
                   <TableHead>Receipt</TableHead>
                   <TableHead>Location</TableHead>
-                  <SortableTableHead column="amount" label="Amount" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} className="text-right" />
+                  <SortableTableHead column="amount" label="Amount" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} className="text-right" />
                   <TableHead>Receipt Date</TableHead>
-                  <SortableTableHead column="date" label="Transaction Date" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="date" label="Transaction Date" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
