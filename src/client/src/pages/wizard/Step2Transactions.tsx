@@ -246,7 +246,7 @@ export function Step2Transactions({
           </Table>
         )}
 
-        {transactions.length > 0 && runningTotal === 0 && taxAmount > 0 && (
+        {transactions.length > 0 && Math.abs(runningTotal) < 0.01 && taxAmount > 0 && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
