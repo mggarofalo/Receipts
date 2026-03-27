@@ -44,8 +44,8 @@ import {
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
-import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info, Pencil } from "lucide-react";
 
 interface ReceiptResponse {
   id: string;
@@ -129,11 +129,8 @@ function Receipts() {
     return map;
   }, [results]);
 
-  useEffect(() => {
-    if (linkParams.highlight && data.length > 0 && !data.some((r) => r.id === linkParams.highlight)) {
-      toast.info("The highlighted item is not on this page.");
-    }
-  }, [linkParams.highlight, data]);
+  const highlightMissing =
+    linkParams.highlight && data.length > 0 && !data.some((r) => r.id === linkParams.highlight);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -214,6 +211,13 @@ function Receipts() {
           setFilterValues(preset.values as FilterValues)
         }
       />
+
+      {highlightMissing && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>The highlighted item is not on this page.</AlertDescription>
+        </Alert>
+      )}
 
       {filteredResults.length === 0 ? (
         search ? (
