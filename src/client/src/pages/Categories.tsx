@@ -58,7 +58,7 @@ function Categories() {
   usePageTitle("Categories");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { data: categoriesData, total: serverTotal, isLoading } = useCategories(offset, limit, sortBy, sortDirection);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();

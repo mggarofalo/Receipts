@@ -63,7 +63,7 @@ function Accounts() {
   usePageTitle("Accounts");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { data: accountsData, total: serverTotal, isLoading } = useAccounts(offset, limit, sortBy, sortDirection);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();

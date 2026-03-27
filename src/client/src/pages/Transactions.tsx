@@ -91,7 +91,7 @@ const FILTER_PARAMS = ["receiptId", "accountId"] as const;
 function Transactions() {
   usePageTitle("Transactions");
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "date", defaultSortDirection: "desc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
   const allTxnQuery = useTransactions(offset, limit, sortBy, sortDirection);
   const filteredTxnQuery = useTransactionsByReceiptId(linkParams.receiptId ?? null, offset, limit, sortBy, sortDirection);

@@ -71,7 +71,7 @@ function Subcategories() {
   usePageTitle("Subcategories");
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const allSubcatQuery = useSubcategories(offset, limit, sortBy, sortDirection);
   const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit, sortBy, sortDirection);
   const activeSubcatQuery = linkParams.categoryId ? filteredSubcatQuery : allSubcatQuery;

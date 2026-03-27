@@ -81,7 +81,7 @@ const FILTER_PARAMS = ["receiptId", "subcategory"] as const;
 function ReceiptItems() {
   usePageTitle("Receipt Items");
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "description", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
   const allItemsQuery = useReceiptItems(offset, limit, sortBy, sortDirection);
   const filteredItemsQuery = useReceiptItemsByReceiptId(linkParams.receiptId ?? null, offset, limit, sortBy, sortDirection);

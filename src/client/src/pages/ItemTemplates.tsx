@@ -63,7 +63,7 @@ const SEARCH_CONFIG: FuseSearchConfig<ItemTemplateResponse> = {
 function ItemTemplates() {
   usePageTitle("Item Templates");
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { data: itemTemplatesData, total: serverTotal, isLoading } = useItemTemplates(offset, limit, sortBy, sortDirection);
   const createItemTemplate = useCreateItemTemplate();
   const updateItemTemplate = useUpdateItemTemplate();

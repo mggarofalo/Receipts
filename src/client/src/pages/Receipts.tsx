@@ -76,7 +76,7 @@ function Receipts() {
   usePageTitle("Receipts");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "date", defaultSortDirection: "desc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { data: receiptsData, total: serverTotal, isLoading } = useReceipts(offset, limit, sortBy, sortDirection);
   const createReceipt = useCreateReceipt();
   const updateReceipt = useUpdateReceipt();

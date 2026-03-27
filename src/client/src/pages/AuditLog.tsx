@@ -147,11 +147,11 @@ function AuditLog() {
 
   const debouncedSearch = useDebouncedValue(search, 300);
 
-  const pagination = useServerPagination();
   const { sortBy, sortDirection, toggleSort } = useServerSort({
     defaultSortBy: "changedAt",
     defaultSortDirection: "desc",
   });
+  const pagination = useServerPagination({ sortBy, sortDirection });
 
   // Reset pagination when filters change
   const handleEntityTypeChange = useCallback(
