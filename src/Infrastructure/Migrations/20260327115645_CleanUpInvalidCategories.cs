@@ -36,20 +36,18 @@ public partial class CleanUpInvalidCategories : Migration
 		string validList = string.Join(", ", Array.ConvertAll(ValidCategoryNames, n => $"'{n.Replace("'", "''")}'"));
 
 		// 2. Reassign receipt items whose Category string doesn't match a valid
-		//    category name to "Uncategorized". Only touch non-soft-deleted items
-		//    to avoid resurrecting audit trails.
+		//    category name to "Uncategorized". Include soft-deleted items so that
+		//    restored receipts don't re-emerge with invalid categories.
 		migrationBuilder.Sql(
 			$"UPDATE \"ReceiptItems\" SET \"Category\" = 'Uncategorized'" +
-			$" WHERE \"Category\" NOT IN ({validList})" +
-			$" AND \"DeletedAt\" IS NULL");
+			$" WHERE \"Category\" NOT IN ({validList})");
 
 		// 3. Reassign item templates whose DefaultCategory doesn't match a valid
-		//    category name.
+		//    category name. Include soft-deleted templates for the same reason.
 		migrationBuilder.Sql(
 			$"UPDATE \"ItemTemplates\" SET \"DefaultCategory\" = 'Uncategorized'" +
 			$" WHERE \"DefaultCategory\" IS NOT NULL" +
-			$" AND \"DefaultCategory\" NOT IN ({validList})" +
-			$" AND \"DeletedAt\" IS NULL");
+			$" AND \"DefaultCategory\" NOT IN ({validList})");
 
 		// 4. Delete subcategories that belong to invalid categories.
 		migrationBuilder.Sql(
@@ -66,10 +64,8 @@ public partial class CleanUpInvalidCategories : Migration
 	{
 		// The data cleanup is not reversible — we cannot restore the original
 		// invalid category names or re-associate receipt items with them.
-		// Only the seed row insertion can be undone.
-		migrationBuilder.DeleteData(
-			table: "Categories",
-			keyColumn: "Id",
-			keyValue: new Guid("f0e7a123-9b56-4d3a-8c1e-2a5b7d9f4e6c"));
+		// Intentionally keeping the "Uncategorized" seed row: deleting it would
+		// leave orphaned references in ReceiptItems and ItemTemplates that were
+		// reassigned to "Uncategorized" during Up().
 	}
 }
