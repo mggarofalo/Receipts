@@ -29,7 +29,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Trash2, AlertTriangle } from "lucide-react";
 import type { WizardTransaction } from "./wizardReducer";
 
 const txnSchema = z.object({
@@ -243,6 +244,16 @@ export function Step2Transactions({
               ))}
             </TableBody>
           </Table>
+        )}
+
+        {transactions.length > 0 && Math.abs(runningTotal) < 0.01 && taxAmount > 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Transaction total is $0.00 but tax is{" "}
+              {formatCurrency(taxAmount)}. The receipt will be unbalanced.
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="flex justify-between pt-4">

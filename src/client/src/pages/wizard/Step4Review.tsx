@@ -6,6 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Table,
   TableBody,
   TableCell,
@@ -223,9 +228,27 @@ export function Step4Review({
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button onClick={onSubmit} disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Submit Receipt"}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-block">
+              <Button
+                onClick={onSubmit}
+                disabled={isSubmitting || !isBalanced}
+                className={!isBalanced ? "pointer-events-none" : ""}
+              >
+                {isSubmitting ? "Submitting..." : "Submit Receipt"}
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!isBalanced && (
+            <TooltipContent>
+              <p>
+                Receipt is unbalanced by {formatCurrency(balanceDiff)}.
+                Adjust transactions or line items so totals match.
+              </p>
+            </TooltipContent>
+          )}
+        </Tooltip>
       </div>
     </div>
   );
