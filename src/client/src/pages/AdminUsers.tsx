@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -96,13 +96,10 @@ function AdminUsers() {
   const { user: currentUser } = useAuth();
 
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "email", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ defaultPageSize: 20 });
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination({ defaultPageSize: 20, sortBy, sortDirection });
   const { data: usersData, total: serverTotal, isLoading } = useUsers(offset, limit, sortBy, sortDirection);
 
-  const handleSort = useCallback((column: string) => {
-    toggleSort(column);
-    resetPage();
-  }, [toggleSort, resetPage]);
+  const handleSort = toggleSort;
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();

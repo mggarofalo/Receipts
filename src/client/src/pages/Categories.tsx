@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import {
   useCategories,
@@ -58,7 +58,7 @@ function Categories() {
   usePageTitle("Categories");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination({ sortBy, sortDirection });
   const { data: categoriesData, total: serverTotal, isLoading } = useCategories(offset, limit, sortBy, sortDirection);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -77,10 +77,7 @@ function Categories() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const handleSort = useCallback((column: string) => {
-    toggleSort(column);
-    resetPage();
-  }, [toggleSort, resetPage]);
+  const handleSort = toggleSort;
 
   const data = (categoriesData as CategoryResponse[] | undefined) ?? [];
   useSavedFilters("categories");

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
@@ -91,7 +91,7 @@ const FILTER_PARAMS = ["receiptId", "accountId"] as const;
 function Transactions() {
   usePageTitle("Transactions");
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "date", defaultSortDirection: "desc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination({ sortBy, sortDirection });
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
   const allTxnQuery = useTransactions(offset, limit, sortBy, sortDirection);
   const filteredTxnQuery = useTransactionsByReceiptId(linkParams.receiptId ?? null, offset, limit, sortBy, sortDirection);
@@ -134,10 +134,7 @@ function Transactions() {
     return map;
   }, [receiptsData]);
 
-  const handleSort = useCallback((column: string) => {
-    toggleSort(column);
-    resetPage();
-  }, [toggleSort, resetPage]);
+  const handleSort = toggleSort;
 
   const data: EnrichedTransaction[] = useMemo(() => {
     const list = (transactionsData as TransactionResponse[] | undefined) ?? [];

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useItemTemplates,
   useCreateItemTemplate,
@@ -63,7 +63,7 @@ const SEARCH_CONFIG: FuseSearchConfig<ItemTemplateResponse> = {
 function ItemTemplates() {
   usePageTitle("Item Templates");
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize } = useServerPagination({ sortBy, sortDirection });
   const { data: itemTemplatesData, total: serverTotal, isLoading } = useItemTemplates(offset, limit, sortBy, sortDirection);
   const createItemTemplate = useCreateItemTemplate();
   const updateItemTemplate = useUpdateItemTemplate();
@@ -86,10 +86,7 @@ function ItemTemplates() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  const handleSort = useCallback((column: string) => {
-    toggleSort(column);
-    resetPage();
-  }, [toggleSort, resetPage]);
+  const handleSort = toggleSort;
 
   const data = (itemTemplatesData as ItemTemplateResponse[] | undefined) ?? [];
   useSavedFilters("itemTemplates");
