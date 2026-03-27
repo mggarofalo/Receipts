@@ -37,8 +37,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info, Pencil } from "lucide-react";
 
 interface AccountResponse {
   id: string;
@@ -112,11 +112,8 @@ function Accounts() {
     return map;
   }, [results]);
 
-  useEffect(() => {
-    if (linkParams.highlight && data.length > 0 && !data.some((a) => a.id === linkParams.highlight)) {
-      toast.info("The highlighted item is not on this page.");
-    }
-  }, [linkParams.highlight, data]);
+  const highlightMissing =
+    linkParams.highlight && data.length > 0 && !data.some((a) => a.id === linkParams.highlight);
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: filteredResults,
@@ -152,6 +149,13 @@ function Accounts() {
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {highlightMissing && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>The highlighted item is not on this page.</AlertDescription>
+        </Alert>
+      )}
 
       {filteredResults.length === 0 ? (
         search ? (
