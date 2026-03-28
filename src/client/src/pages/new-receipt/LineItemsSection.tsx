@@ -421,6 +421,7 @@ export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
                               {
                                 categoryId: selectedCategoryObj.id,
                                 name: v,
+                                isActive: true,
                               },
                               {
                                 onSettled: () => {

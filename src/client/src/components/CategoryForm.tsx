@@ -18,6 +18,7 @@ import {
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
+  isActive: z.boolean(),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -42,7 +43,7 @@ export function CategoryForm({
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
-    defaultValues: defaultValues ?? { name: "", description: "" },
+    defaultValues: defaultValues ?? { name: "", description: "", isActive: true },
   });
 
   return (
@@ -75,6 +76,27 @@ export function CategoryForm({
               <FormControl>
                 <Input {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                </FormControl>
+                <FormLabel>Active</FormLabel>
+              </div>
               <FormMessage />
             </FormItem>
           )}

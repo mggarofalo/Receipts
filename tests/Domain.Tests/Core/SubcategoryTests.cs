@@ -21,6 +21,7 @@ public class SubcategoryTests
 		Assert.Equal(name, subcategory.Name);
 		Assert.Equal(categoryId, subcategory.CategoryId);
 		Assert.Equal(description, subcategory.Description);
+		Assert.True(subcategory.IsActive);
 	}
 
 	[Fact]
@@ -39,6 +40,7 @@ public class SubcategoryTests
 		Assert.Equal(name, subcategory.Name);
 		Assert.Equal(categoryId, subcategory.CategoryId);
 		Assert.Null(subcategory.Description);
+		Assert.True(subcategory.IsActive);
 	}
 
 	[Fact]
@@ -57,6 +59,42 @@ public class SubcategoryTests
 		Assert.Equal(name, subcategory.Name);
 		Assert.Equal(categoryId, subcategory.CategoryId);
 		Assert.Equal(description, subcategory.Description);
+		Assert.True(subcategory.IsActive);
+	}
+
+	[Fact]
+	public void Constructor_DefaultIsActive_CreatesActiveSubcategory()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string name = "Test Subcategory";
+		Guid categoryId = Guid.NewGuid();
+
+		// Act
+		Subcategory subcategory = new(id, name, categoryId);
+
+		// Assert
+		Assert.True(subcategory.IsActive);
+	}
+
+	[Fact]
+	public void Constructor_IsActiveFalse_CreatesInactiveSubcategory()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string name = "Test Subcategory";
+		Guid categoryId = Guid.NewGuid();
+		string description = "Test Description";
+
+		// Act
+		Subcategory subcategory = new(id, name, categoryId, description, false);
+
+		// Assert
+		Assert.Equal(id, subcategory.Id);
+		Assert.Equal(name, subcategory.Name);
+		Assert.Equal(categoryId, subcategory.CategoryId);
+		Assert.Equal(description, subcategory.Description);
+		Assert.False(subcategory.IsActive);
 	}
 
 	[Theory]

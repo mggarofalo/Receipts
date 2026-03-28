@@ -34,7 +34,11 @@ export function useCategory(id: string | null) {
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { name: string; description?: string | null }) => {
+    mutationFn: async (body: {
+      name: string;
+      description?: string | null;
+      isActive: boolean;
+    }) => {
       const { data, error } = await client.POST("/api/categories", { body });
       if (error) throw error;
       return data;
@@ -56,6 +60,7 @@ export function useUpdateCategory() {
       id: string;
       name: string;
       description?: string | null;
+      isActive: boolean;
     }) => {
       const { error } = await client.PUT("/api/categories/{id}", {
         params: { path: { id: body.id } },

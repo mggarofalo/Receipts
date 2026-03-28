@@ -10,7 +10,8 @@ public static class SubcategoryGenerator
 			Guid.NewGuid(),
 			"Test Subcategory",
 			Guid.NewGuid(),
-			"Test Description"
+			"Test Description",
+			true
 		);
 	}
 

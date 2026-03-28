@@ -122,8 +122,8 @@ describe("Categories", () => {
 
   it("renders table with categories when data exists", async () => {
     const items = [
-      { id: "1", name: "Food", description: "Food expenses" },
-      { id: "2", name: "Travel", description: null },
+      { id: "1", name: "Food", description: "Food expenses", isActive: true },
+      { id: "2", name: "Travel", description: null, isActive: true },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -163,7 +163,7 @@ describe("Categories", () => {
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", name: "Food", description: "Food expenses" },
+      { id: "1", name: "Food", description: "Food expenses", isActive: true },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -221,7 +221,7 @@ describe("Categories", () => {
     }));
 
     const items = [
-      { id: "1", name: "Food", description: "Food expenses" },
+      { id: "1", name: "Food", description: "Food expenses", isActive: true },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -294,7 +294,7 @@ describe("Categories", () => {
   it("closes edit dialog when dismissed", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", name: "Food", description: "Food expenses" },
+      { id: "1", name: "Food", description: "Food expenses", isActive: true },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");

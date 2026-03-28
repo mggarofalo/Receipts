@@ -31,7 +31,7 @@ describe("CategoryForm", () => {
       <CategoryForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ name: "Groceries", description: "Food items" }}
+        defaultValues={{ name: "Groceries", description: "Food items", isActive: true }}
       />,
     );
 
@@ -50,7 +50,7 @@ describe("CategoryForm", () => {
 
     await waitFor(() => {
       expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-        { name: "Utilities", description: "Monthly bills" },
+        { name: "Utilities", description: "Monthly bills", isActive: true },
         expect.anything(),
       );
     });

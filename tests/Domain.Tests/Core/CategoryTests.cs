@@ -19,6 +19,7 @@ public class CategoryTests
 		Assert.Equal(id, category.Id);
 		Assert.Equal(name, category.Name);
 		Assert.Equal(description, category.Description);
+		Assert.True(category.IsActive);
 	}
 
 	[Fact]
@@ -35,6 +36,7 @@ public class CategoryTests
 		Assert.Equal(id, category.Id);
 		Assert.Equal(name, category.Name);
 		Assert.Null(category.Description);
+		Assert.True(category.IsActive);
 	}
 
 	[Fact]
@@ -51,6 +53,39 @@ public class CategoryTests
 		Assert.Equal(Guid.Empty, category.Id);
 		Assert.Equal(name, category.Name);
 		Assert.Equal(description, category.Description);
+		Assert.True(category.IsActive);
+	}
+
+	[Fact]
+	public void Constructor_DefaultIsActive_CreatesActiveCategory()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string name = "Test Category";
+
+		// Act
+		Category category = new(id, name);
+
+		// Assert
+		Assert.True(category.IsActive);
+	}
+
+	[Fact]
+	public void Constructor_IsActiveFalse_CreatesInactiveCategory()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string name = "Test Category";
+		string description = "Test Description";
+
+		// Act
+		Category category = new(id, name, description, false);
+
+		// Assert
+		Assert.Equal(id, category.Id);
+		Assert.Equal(name, category.Name);
+		Assert.Equal(description, category.Description);
+		Assert.False(category.IsActive);
 	}
 
 	[Theory]

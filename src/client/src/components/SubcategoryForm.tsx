@@ -23,6 +23,7 @@ const subcategorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   categoryId: z.string().min(1, "Category is required"),
   description: z.string().optional(),
+  isActive: z.boolean(),
 });
 
 type SubcategoryFormValues = z.infer<typeof subcategorySchema>;
@@ -49,11 +50,13 @@ export function SubcategoryForm({
   const { data: categories } = useCategories();
 
   const categoryOptions = (
-    categories as { id: string; name: string }[] | undefined
-  )?.map((c) => ({
-    value: c.id,
-    label: c.name,
-  })) ?? [];
+    categories as { id: string; name: string; isActive: boolean }[] | undefined
+  )
+    ?.filter((c) => c.isActive)
+    .map((c) => ({
+      value: c.id,
+      label: c.name,
+    })) ?? [];
 
   const form = useForm<SubcategoryFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,6 +65,7 @@ export function SubcategoryForm({
       name: "",
       categoryId: "",
       description: "",
+      isActive: true,
       ...defaultValues,
     },
   });
@@ -128,6 +132,27 @@ export function SubcategoryForm({
               <FormControl>
                 <Input {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                </FormControl>
+                <FormLabel>Active</FormLabel>
+              </div>
               <FormMessage />
             </FormItem>
           )}

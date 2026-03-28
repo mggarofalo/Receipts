@@ -2849,6 +2849,8 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     UpdateCategoryRequest:
       type: object
@@ -2863,10 +2865,12 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     CategoryResponse:
       type: object
-      required: [id, name]
+      required: [id, name, isActive]
       properties:
         id:
           type: string
@@ -2877,6 +2881,8 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     CategoryListResponse:
       type: object
@@ -2911,6 +2917,8 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     UpdateSubcategoryRequest:
       type: object
@@ -2928,10 +2936,12 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     SubcategoryResponse:
       type: object
-      required: [id, name, categoryId]
+      required: [id, name, categoryId, isActive]
       properties:
         id:
           type: string
@@ -2945,6 +2955,8 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     SubcategoryListResponse:
       type: object

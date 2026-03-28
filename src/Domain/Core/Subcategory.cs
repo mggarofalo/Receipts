@@ -6,11 +6,12 @@ public class Subcategory
 	public string Name { get; set; }
 	public Guid CategoryId { get; set; }
 	public string? Description { get; set; }
+	public bool IsActive { get; set; }
 
 	public const string NameCannotBeEmpty = "Name cannot be empty";
 	public const string CategoryIdCannotBeEmpty = "Category ID cannot be empty";
 
-	public Subcategory(Guid id, string name, Guid categoryId, string? description = null)
+	public Subcategory(Guid id, string name, Guid categoryId, string? description = null, bool isActive = true)
 	{
 		if (string.IsNullOrWhiteSpace(name))
 		{
@@ -26,5 +27,6 @@ public class Subcategory
 		Name = name;
 		CategoryId = categoryId;
 		Description = description;
+		IsActive = isActive;
 	}
 }

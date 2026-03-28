@@ -3,6 +3,7 @@ using System;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using Pgvector;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328175027_AddIsActiveToCategoriesAndSubcategories")]
+    partial class AddIsActiveToCategoriesAndSubcategories
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -282,9 +285,6 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("CascadeDeletedByParentId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamptz");
 
@@ -421,9 +421,6 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CascadeDeletedByParentId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("DefaultCategory")
                         .HasColumnType("text");
 
@@ -520,9 +517,6 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CascadeDeletedByParentId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
@@ -555,9 +549,6 @@ namespace Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CascadeDeletedByParentId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Category")
@@ -752,9 +743,6 @@ namespace Infrastructure.Migrations
                     b.Property<string>("AmountCurrency")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("CascadeDeletedByParentId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");

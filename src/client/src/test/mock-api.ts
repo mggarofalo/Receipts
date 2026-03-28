@@ -110,6 +110,7 @@ export function mockCategoryResponse(
     id: nextId(),
     name: "Test Category",
     description: null,
+    isActive: true,
     ...overrides,
   };
 }
@@ -123,6 +124,7 @@ export function mockSubcategoryResponse(
     name: "Test Subcategory",
     categoryId: overrides?.categoryId ?? nextId(),
     description: null,
+    isActive: true,
     ...overrides,
   };
 }
