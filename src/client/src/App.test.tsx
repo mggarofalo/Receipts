@@ -25,15 +25,6 @@ vi.mock("@/pages/Subcategories", () => ({
 vi.mock("@/pages/Receipts", () => ({
   default: () => <div data-testid="page-receipts">Receipts</div>,
 }));
-vi.mock("@/pages/ReceiptItems", () => ({
-  default: () => <div data-testid="page-receipt-items">ReceiptItems</div>,
-}));
-vi.mock("@/pages/Transactions", () => ({
-  default: () => <div data-testid="page-transactions">Transactions</div>,
-}));
-vi.mock("@/pages/Trips", () => ({
-  default: () => <div data-testid="page-trips">Trips</div>,
-}));
 vi.mock("@/pages/ItemTemplates", () => ({
   default: () => <div data-testid="page-item-templates">ItemTemplates</div>,
 }));
@@ -42,11 +33,6 @@ vi.mock("@/pages/ReceiptDetail", () => ({
 }));
 vi.mock("@/pages/ReceiptDetailRedirect", () => ({
   default: () => <div data-testid="page-receipt-detail-redirect">Redirect</div>,
-}));
-vi.mock("@/pages/TransactionDetail", () => ({
-  default: () => (
-    <div data-testid="page-transaction-detail">TransactionDetail</div>
-  ),
 }));
 vi.mock("@/pages/ApiKeys", () => ({
   default: () => <div data-testid="page-api-keys">ApiKeys</div>,
