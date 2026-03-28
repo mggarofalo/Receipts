@@ -4,7 +4,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import client from "@/lib/api-client";
+import client, { attemptTokenRefresh } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export function useUsers(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
@@ -59,7 +59,7 @@ export function useCreateUser() {
   });
 }
 
-export function useUpdateUser() {
+export function useUpdateUser(currentUserId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -80,10 +80,14 @@ export function useUpdateUser() {
         body,
       });
       if (error) throw error;
+      return userId;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User updated");
+      if (currentUserId && variables.userId === currentUserId) {
+        attemptTokenRefresh();
+      }
     },
     onError: () => {
       toast.error("Failed to update user");

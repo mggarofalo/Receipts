@@ -10,13 +10,14 @@ vi.mock("@/lib/api-client", () => ({
     PUT: vi.fn(),
     DELETE: vi.fn(),
   },
+  attemptTokenRefresh: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
-import client from "@/lib/api-client";
+import client, { attemptTokenRefresh } from "@/lib/api-client";
 import { toast } from "sonner";
 import {
   useUsers,
@@ -142,6 +143,57 @@ describe("useUpdateUser", () => {
       body: { email: "updated@test.com", role: "Admin", isDisabled: false },
     });
     expect(toast.success).toHaveBeenCalledWith("User updated");
+  });
+
+  it("triggers token refresh when admin updates their own account", async () => {
+    (client.PUT as Mock).mockResolvedValue({ error: null });
+
+    const { result } = renderHook(() => useUpdateUser("u1"), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      userId: "u1",
+      body: { email: "newemail@test.com", role: "Admin", isDisabled: false },
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(attemptTokenRefresh).toHaveBeenCalled();
+  });
+
+  it("does not trigger token refresh when admin updates a different user", async () => {
+    (client.PUT as Mock).mockResolvedValue({ error: null });
+
+    const { result } = renderHook(() => useUpdateUser("admin-id"), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      userId: "other-user-id",
+      body: { email: "other@test.com", role: "User", isDisabled: false },
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(attemptTokenRefresh).not.toHaveBeenCalled();
+  });
+
+  it("does not trigger token refresh when currentUserId is not provided", async () => {
+    (client.PUT as Mock).mockResolvedValue({ error: null });
+
+    const { result } = renderHook(() => useUpdateUser(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate({
+      userId: "u1",
+      body: { email: "updated@test.com", role: "Admin", isDisabled: false },
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(attemptTokenRefresh).not.toHaveBeenCalled();
   });
 });
 
