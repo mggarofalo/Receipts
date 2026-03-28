@@ -37,22 +37,22 @@ export function BalanceSidebar({
           <CardTitle className="text-lg">Balance</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-y-2 text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="text-right">{formatCurrency(subtotal)}</span>
-            <span className="text-muted-foreground">Tax</span>
-            <span className="text-right">{formatCurrency(taxAmount)}</span>
+          <dl className="grid grid-cols-2 gap-y-2 text-sm">
+            <dt className="text-muted-foreground">Subtotal</dt>
+            <dd className="text-right">{formatCurrency(subtotal)}</dd>
+            <dt className="text-muted-foreground">Tax</dt>
+            <dd className="text-right">{formatCurrency(taxAmount)}</dd>
             <Separator className="col-span-2 my-1" />
-            <span className="font-medium">Expected Total</span>
-            <span className="text-right font-medium">
+            <dt className="font-medium">Expected Total</dt>
+            <dd className="text-right font-medium">
               {formatCurrency(expectedTotal)}
-            </span>
-            <span className="font-medium">Transaction Total</span>
-            <span className="text-right font-medium">
+            </dd>
+            <dt className="font-medium">Transaction Total</dt>
+            <dd className="text-right font-medium">
               {formatCurrency(transactionTotal)}
-            </span>
-          </div>
-          <div className="mt-3 text-right">
+            </dd>
+          </dl>
+          <div className="mt-3 text-right" role="status" aria-live="polite">
             <Badge variant={isBalanced ? "default" : "destructive"}>
               {isBalanced
                 ? "Balanced"
@@ -67,7 +67,7 @@ export function BalanceSidebar({
           <TooltipTrigger asChild>
             <span className="inline-block w-full">
               <Button
-                className={`w-full ${!isBalanced ? "pointer-events-none" : ""}`}
+                className="w-full"
                 onClick={onSubmit}
                 disabled={isSubmitting || !isBalanced}
               >

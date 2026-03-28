@@ -26,7 +26,7 @@ vi.mock("@/hooks/useAccounts", () => ({
 describe("TransactionsSection", () => {
   const defaultProps = {
     transactions: [] as { id: string; accountId: string; amount: number; date: string }[],
-    receiptDate: "2024-01-15",
+    defaultDate: "2024-01-15",
     onChange: vi.fn(),
   };
 

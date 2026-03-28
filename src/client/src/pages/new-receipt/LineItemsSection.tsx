@@ -287,7 +287,10 @@ export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
                               onKeyDown={handleDescriptionKeyDown}
                             />
                             {isFetchingSimilar && description.length >= 2 && (
-                              <Loader2 className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                              <>
+                                <Loader2 className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-hidden="true" />
+                                <span className="sr-only" role="status">Loading suggestions...</span>
+                              </>
                             )}
                           </div>
                         </FormControl>
@@ -372,13 +375,13 @@ export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
                     {categoryRecs &&
                       categoryRecs.length > 0 &&
                       !selectedCategory && (
-                        <div className="flex flex-wrap gap-1 pt-1">
-                          <Sparkles className="h-3 w-3 text-muted-foreground mt-0.5" />
+                        <div className="flex flex-wrap gap-1 pt-1" role="group" aria-label="Suggested categories">
+                          <Sparkles className="h-3 w-3 text-muted-foreground mt-1" aria-hidden="true" />
                           {categoryRecs.map((rec) => (
                             <button
                               key={`${rec.category}-${rec.subcategory ?? ""}`}
                               type="button"
-                              className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                              className="inline-flex items-center rounded-full border px-3 py-1 text-xs min-h-[24px] text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                               onClick={() => applyCategoryRec(rec)}
                             >
                               {rec.category}
@@ -422,6 +425,9 @@ export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
                               {
                                 onSettled: () => {
                                   pendingSubcategories.current.delete(v);
+                                },
+                                onError: () => {
+                                  field.onChange("");
                                 },
                               },
                             );
@@ -538,7 +544,9 @@ export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
                 <TableHead>Unit Price</TableHead>
                 <TableHead>Line Total</TableHead>
                 <TableHead>Category</TableHead>
-                <TableHead className="w-12" />
+                <TableHead className="w-12">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

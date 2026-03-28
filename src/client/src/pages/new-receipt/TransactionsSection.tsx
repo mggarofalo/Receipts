@@ -47,13 +47,13 @@ export interface ReceiptTransaction {
 
 interface TransactionsSectionProps {
   transactions: ReceiptTransaction[];
-  receiptDate: string;
+  defaultDate: string;
   onChange: (transactions: ReceiptTransaction[]) => void;
 }
 
 export function TransactionsSection({
   transactions,
-  receiptDate,
+  defaultDate,
   onChange,
 }: TransactionsSectionProps) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -85,7 +85,7 @@ export function TransactionsSection({
     defaultValues: {
       accountId: "",
       amount: 0,
-      date: receiptDate,
+      date: defaultDate,
     },
   });
 
@@ -102,20 +102,19 @@ export function TransactionsSection({
       };
       onChange([...transactions, newTxn]);
       (document.activeElement as HTMLElement)?.blur?.();
-      form.reset({ accountId: "", amount: 0, date: receiptDate });
+      form.reset({ accountId: "", amount: 0, date: defaultDate });
     },
-    [form, receiptDate, transactions, onChange],
+    [form, defaultDate, transactions, onChange],
   );
 
-  // Focus the account field after adding a transaction for rapid entry
-  const transactionCount = transactions.length;
-  const prevCountRef = useRef(transactionCount);
+  // Focus account field after adding a transaction for rapid entry
+  const prevCountRef = useRef(transactions.length);
   useEffect(() => {
-    if (transactionCount > prevCountRef.current) {
+    if (transactions.length > prevCountRef.current) {
       accountRef.current?.focus();
     }
-    prevCountRef.current = transactionCount;
-  }, [transactionCount]);
+    prevCountRef.current = transactions.length;
+  }, [transactions.length]);
 
   const handleRemove = useCallback(
     (id: string) => {
@@ -206,7 +205,9 @@ export function TransactionsSection({
                 <TableHead>Account</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead className="w-12" />
+                <TableHead className="w-12">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

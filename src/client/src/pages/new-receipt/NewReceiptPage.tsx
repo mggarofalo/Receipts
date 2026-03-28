@@ -73,6 +73,7 @@ export default function NewReceiptPage() {
     },
   });
 
+  const location = form.watch("location");
   const taxAmount = form.watch("taxAmount");
   const receiptDate = form.watch("date");
 
@@ -92,9 +93,9 @@ export default function NewReceiptPage() {
   );
 
   const hasData =
-    form.getValues("location") !== "" ||
-    form.getValues("date") !== "" ||
-    form.getValues("taxAmount") !== 0 ||
+    location !== "" ||
+    receiptDate !== "" ||
+    taxAmount !== 0 ||
     transactions.length > 0 ||
     items.length > 0;
 
@@ -132,30 +133,27 @@ export default function NewReceiptPage() {
     try {
       addLocation(headerValues.location);
 
-      const result = await createCompleteReceiptAsync(
-        {
-          receipt: {
-            location: headerValues.location,
-            date: headerValues.date,
-            taxAmount: headerValues.taxAmount,
-          },
-          transactions: transactions.map((txn) => ({
-            accountId: txn.accountId,
-            amount: txn.amount,
-            date: txn.date,
-          })),
-          items: items.map((item) => ({
-            receiptItemCode: item.receiptItemCode,
-            description: item.description,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            category: item.category,
-            subcategory: item.subcategory,
-            pricingMode: item.pricingMode,
-          })),
+      const result = await createCompleteReceiptAsync({
+        receipt: {
+          location: headerValues.location,
+          date: headerValues.date,
+          taxAmount: headerValues.taxAmount,
         },
-        { onSuccess: undefined, onError: undefined },
-      );
+        transactions: transactions.map((txn) => ({
+          accountId: txn.accountId,
+          amount: txn.amount,
+          date: txn.date,
+        })),
+        items: items.map((item) => ({
+          receiptItemCode: item.receiptItemCode,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          category: item.category,
+          subcategory: item.subcategory,
+          pricingMode: item.pricingMode,
+        })),
+      });
 
       const receiptId = (result as { receipt: { id: string } }).receipt.id;
 
@@ -246,20 +244,20 @@ export default function NewReceiptPage() {
           {/* Transactions */}
           <TransactionsSection
             transactions={transactions}
-            receiptDate={receiptDate}
+            defaultDate={receiptDate}
             onChange={setTransactions}
           />
 
           {/* Balance warning between sections */}
           {transactions.length > 0 &&
-            Math.abs(transactionTotal) < 0.01 &&
-            taxAmount > 0 && (
+            items.length > 0 &&
+            Math.abs(subtotal + taxAmount - transactionTotal) >= 0.01 && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  Transaction total is {formatCurrency(transactionTotal)} but
-                  tax is {formatCurrency(taxAmount)}. The receipt will be
-                  unbalanced.
+                  Items + tax total ({formatCurrency(subtotal + taxAmount)}) does
+                  not match transaction total (
+                  {formatCurrency(transactionTotal)}). The receipt is unbalanced.
                 </AlertDescription>
               </Alert>
             )}

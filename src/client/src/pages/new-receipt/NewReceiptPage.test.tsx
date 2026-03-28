@@ -300,7 +300,6 @@ describe("NewReceiptPage", () => {
             }),
           ],
         }),
-        { onSuccess: undefined, onError: undefined },
       );
     });
 
