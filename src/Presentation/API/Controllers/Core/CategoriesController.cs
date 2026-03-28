@@ -146,7 +146,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[EndpointDescription("Permanently deletes a category. Requires the Admin role. Returns 409 Conflict if subcategories or receipt items reference this category.")]
 	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteCategory([FromRoute] Guid id)
 	{
-		Category? category = await mediator.Send(new Application.Queries.Core.Category.GetCategoryByIdQuery(id));
+		Category? category = await mediator.Send(new GetCategoryByIdQuery(id));
 		if (category == null)
 		{
 			logger.LogWarning("Category {Id} not found for deletion", id);
@@ -157,7 +157,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 		if (subcategoryCount > 0)
 		{
 			logger.LogWarning("Category {Id} cannot be deleted — {Count} subcategories reference it", id, subcategoryCount);
-			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {subcategoryCount} subcategorie(s) belong to this category. Delete them first.", subcategoryCount });
+			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {subcategoryCount} subcategories belong to this category. Delete them first.", subcategoryCount });
 		}
 
 		int receiptItemCount = await categoryService.GetReceiptItemCountByCategoryNameAsync(category.Name, HttpContext.RequestAborted);
