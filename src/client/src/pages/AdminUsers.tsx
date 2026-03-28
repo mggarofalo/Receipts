@@ -105,7 +105,7 @@ function AdminUsers() {
   }, [toggleSort, resetPage]);
 
   const createUser = useCreateUser();
-  const updateUser = useUpdateUser();
+  const updateUser = useUpdateUser(currentUser?.userId);
   const deleteUser = useDeleteUser();
   const resetPassword = useResetUserPassword();
 
@@ -298,10 +298,10 @@ function AdminUsers() {
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
                       <TableCell>{formatDate(user.lastLoginAt)}</TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
+                        <div className="flex items-center gap-1">
                           <Button
                             variant="outline"
-                            size="icon"
+                            size="icon-sm"
                             aria-label="Edit"
                             onClick={() => openEdit(user)}
                           >

@@ -411,7 +411,7 @@ export function Layout() {
             <SheetTitle>Receipts</SheetTitle>
           </SheetHeader>
           <nav
-            className="flex flex-col gap-1 px-4"
+            className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-1 px-4"
             aria-label="Mobile navigation"
           >
             {navLinks.map(({ to, label }) => mobileNavLink(to, label))}
