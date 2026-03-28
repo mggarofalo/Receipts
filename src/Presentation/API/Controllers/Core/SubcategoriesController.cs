@@ -2,7 +2,9 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Subcategory.Create;
+using Application.Commands.Subcategory.Delete;
 using Application.Commands.Subcategory.Update;
+using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Subcategory;
 using Asp.Versioning;
@@ -19,7 +21,7 @@ namespace API.Controllers.Core;
 [Route("api/subcategories")]
 [Produces("application/json")]
 [Authorize]
-public class SubcategoriesController(IMediator mediator, SubcategoryMapper mapper, ILogger<SubcategoriesController> logger, IEntityChangeNotifier notifier) : ControllerBase
+public class SubcategoriesController(IMediator mediator, SubcategoryMapper mapper, ILogger<SubcategoriesController> logger, IEntityChangeNotifier notifier, ISubcategoryService subcategoryService) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -27,6 +29,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
+	public const string RouteDelete = "{id}";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a subcategory by ID")]
@@ -149,6 +152,39 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		}
 
 		await notifier.NotifyBulkChanged("subcategory", "updated", models.Select(m => m.Id));
+		return TypedResults.NoContent();
+	}
+
+	[HttpDelete(RouteDelete)]
+	[Authorize(Policy = "RequireAdmin")]
+	[EndpointSummary("Hard-delete a subcategory")]
+	[EndpointDescription("Permanently deletes a subcategory. Requires the Admin role. Returns 409 Conflict if receipt items reference this subcategory.")]
+	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteSubcategory([FromRoute] Guid id)
+	{
+		Subcategory? subcategory = await mediator.Send(new GetSubcategoryByIdQuery(id));
+		if (subcategory == null)
+		{
+			logger.LogWarning("Subcategory {Id} not found for deletion", id);
+			return TypedResults.NotFound();
+		}
+
+		int receiptItemCount = await subcategoryService.GetReceiptItemCountBySubcategoryNameAsync(subcategory.Name, HttpContext.RequestAborted);
+		if (receiptItemCount > 0)
+		{
+			logger.LogWarning("Subcategory {Id} cannot be deleted — {Count} receipt items reference it", id, receiptItemCount);
+			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {receiptItemCount} receipt item(s) use this subcategory", receiptItemCount });
+		}
+
+		DeleteSubcategoryCommand command = new(id);
+		bool result = await mediator.Send(command);
+
+		if (!result)
+		{
+			logger.LogWarning("Subcategory {Id} not found for deletion", id);
+			return TypedResults.NotFound();
+		}
+
+		await notifier.NotifyDeleted("subcategory", id);
 		return TypedResults.NoContent();
 	}
 }

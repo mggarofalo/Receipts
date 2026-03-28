@@ -6,7 +6,9 @@ import {
   useSubcategoriesByCategoryId,
   useCreateSubcategory,
   useUpdateSubcategory,
+  useDeleteSubcategory,
 } from "@/hooks/useSubcategories";
+import { usePermission } from "@/hooks/usePermission";
 import { useCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
@@ -85,6 +87,8 @@ function Subcategories() {
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   const createSubcategory = useCreateSubcategory();
   const updateSubcategory = useUpdateSubcategory();
+  const deleteSubcategory = useDeleteSubcategory();
+  const { isAdmin } = usePermission();
   const isLoading = subcategoriesLoading || categoriesLoading;
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -495,6 +499,13 @@ function Subcategories() {
                   { id: editSubcategory.id, ...values },
                   { onSuccess: () => setEditSubcategory(null) },
                 );
+              }}
+              isAdmin={isAdmin()}
+              isDeleting={deleteSubcategory.isPending}
+              onDelete={() => {
+                deleteSubcategory.mutate(editSubcategory.id, {
+                  onSuccess: () => setEditSubcategory(null),
+                });
               }}
             />
           )}

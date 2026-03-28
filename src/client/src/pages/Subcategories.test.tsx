@@ -20,6 +20,7 @@ vi.mock("@/hooks/useSubcategories", () => ({
   })),
   useCreateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDeleteSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
@@ -43,6 +44,10 @@ vi.mock("@/hooks/useSavedFilters", () => ({
     save: vi.fn(),
     remove: vi.fn(),
   })),
+}));
+
+vi.mock("@/hooks/usePermission", () => ({
+  usePermission: vi.fn(() => ({ isAdmin: vi.fn(() => true) })),
 }));
 
 vi.mock("@/hooks/useServerPagination", () => ({
