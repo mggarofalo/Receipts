@@ -71,7 +71,7 @@ const receiptItemSchema = z.object({
   { message: "Quantity must be 1 for flat pricing", path: ["quantity"] }
 );
 
-type ReceiptItemFormValues = z.output<typeof receiptItemSchema>;
+export type ReceiptItemFormValues = z.output<typeof receiptItemSchema>;
 
 interface ReceiptItemFormProps {
   mode: "create" | "edit";
@@ -79,6 +79,8 @@ interface ReceiptItemFormProps {
   onSubmit: (values: ReceiptItemFormValues) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  serverErrors?: Record<string, string>;
+  hideReceiptField?: boolean;
 }
 
 export function ReceiptItemForm({
@@ -87,6 +89,8 @@ export function ReceiptItemForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  serverErrors,
+  hideReceiptField,
 }: ReceiptItemFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
@@ -295,29 +299,31 @@ export function ReceiptItemForm({
         onSubmit={form.handleSubmit(handleFormSubmit)}
         className="space-y-4"
       >
-        <FormField
-          control={form.control}
-          name="receiptId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Receipt</FormLabel>
-              <FormControl>
-                <Combobox
-                  options={receiptOptions}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  placeholder="Select a receipt..."
-                  searchPlaceholder="Search receipts..."
-                  emptyMessage="No receipts found."
-                  disabled={mode === "edit"}
-                  loading={receiptsLoading}
-                  aria-required="true"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!hideReceiptField && (
+          <FormField
+            control={form.control}
+            name="receiptId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Receipt</FormLabel>
+                <FormControl>
+                  <Combobox
+                    options={receiptOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select a receipt..."
+                    searchPlaceholder="Search receipts..."
+                    emptyMessage="No receipts found."
+                    disabled={mode === "edit"}
+                    loading={receiptsLoading}
+                    aria-required="true"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
@@ -338,6 +344,11 @@ export function ReceiptItemForm({
                 />
               </FormControl>
               <FormMessage />
+              {serverErrors?.receiptItemCode && (
+                <p className="text-sm font-medium text-destructive">
+                  {serverErrors.receiptItemCode}
+                </p>
+              )}
             </FormItem>
           )}
         />
@@ -439,6 +450,11 @@ export function ReceiptItemForm({
                 </PopoverContent>
               </Popover>
               <FormMessage />
+              {serverErrors?.description && (
+                <p className="text-sm font-medium text-destructive">
+                  {serverErrors.description}
+                </p>
+              )}
             </FormItem>
           )}
         />
@@ -481,6 +497,11 @@ export function ReceiptItemForm({
                     />
                   </FormControl>
                   <FormMessage />
+                  {serverErrors?.quantity && (
+                    <p className="text-sm font-medium text-destructive">
+                      {serverErrors.quantity}
+                    </p>
+                  )}
                 </FormItem>
               )}
             />
@@ -496,6 +517,11 @@ export function ReceiptItemForm({
                   <CurrencyInput {...field} />
                 </FormControl>
                 <FormMessage />
+                {serverErrors?.unitPrice && (
+                  <p className="text-sm font-medium text-destructive">
+                    {serverErrors.unitPrice}
+                  </p>
+                )}
               </FormItem>
             )}
           />
@@ -522,6 +548,11 @@ export function ReceiptItemForm({
                   />
                 </FormControl>
                 <FormMessage />
+                {serverErrors?.category && (
+                  <p className="text-sm font-medium text-destructive">
+                    {serverErrors.category}
+                  </p>
+                )}
               </FormItem>
             )}
           />
@@ -544,6 +575,11 @@ export function ReceiptItemForm({
                   />
                 </FormControl>
                 <FormMessage />
+                {serverErrors?.subcategory && (
+                  <p className="text-sm font-medium text-destructive">
+                    {serverErrors.subcategory}
+                  </p>
+                )}
               </FormItem>
             )}
           />

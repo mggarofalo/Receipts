@@ -35,6 +35,12 @@ vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
 }));
 
+vi.mock("@/components/ReceiptItemsCard", () => ({
+  ReceiptItemsCard: function MockReceiptItemsCard(props: { items: unknown[] }) {
+    return <div data-testid="receipt-items-card">Items ({props.items.length})</div>;
+  },
+}));
+
 vi.mock("@/hooks/useFuzzySearch", () => ({
   useFuzzySearch: vi.fn(() => ({
     search: "",

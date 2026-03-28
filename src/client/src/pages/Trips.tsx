@@ -272,6 +272,7 @@ function Trips() {
           </Card>
 
           <ReceiptItemsCard
+            receiptId={receiptId!}
             items={trip.receipt.items}
             subtotal={subtotal}
           />
