@@ -5,6 +5,7 @@ import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import { ValidationWarnings } from "@/components/ValidationWarnings";
 import { BalanceSummaryCard } from "@/components/BalanceSummaryCard";
 import { ReceiptItemsCard } from "@/components/ReceiptItemsCard";
+import { ReceiptTransactionsCard } from "@/components/ReceiptTransactionsCard";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -169,79 +170,11 @@ function ReceiptDetail() {
             </CardContent>
           </Card>
 
-          {/* Transactions Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                Transactions ({trip.transactions.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {trip.transactions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No transactions for this receipt.
-                </p>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Account Code</TableHead>
-                        <TableHead>Account Name</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {trip.transactions.map(
-                        (ta: {
-                          transaction: {
-                            id: string;
-                            amount: number;
-                            date: string;
-                          };
-                          account: {
-                            accountCode: string;
-                            name: string;
-                            isActive: boolean;
-                          };
-                        }) => (
-                          <TableRow key={ta.transaction.id}>
-                            <TableCell className="text-right">
-                              {formatCurrency(ta.transaction.amount)}
-                            </TableCell>
-                            <TableCell>{ta.transaction.date}</TableCell>
-                            <TableCell className="font-mono">
-                              {ta.account.accountCode}
-                            </TableCell>
-                            <TableCell>{ta.account.name}</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  ta.account.isActive ? "default" : "secondary"
-                                }
-                              >
-                                {ta.account.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ),
-                      )}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell className="text-right font-bold">
-                          {formatCurrency(transactionsTotal)}
-                        </TableCell>
-                        <TableCell colSpan={4} />
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ReceiptTransactionsCard
+            receiptId={id}
+            transactions={trip.transactions}
+            transactionsTotal={transactionsTotal}
+          />
 
           <Card>
             <CardHeader>

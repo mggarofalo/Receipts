@@ -65,6 +65,7 @@ export function useCreateTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
       toast.success("Transaction created");
     },
     onError: () => {
@@ -115,6 +116,7 @@ export function useUpdateTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
       toast.success("Transaction updated");
     },
     onError: () => {
@@ -153,6 +155,7 @@ export function useDeleteTransactions() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["transactions", "deleted"] });
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
     },
     onSuccess: () => {
       toast.success("Transaction(s) deleted");
@@ -186,6 +189,7 @@ export function useRestoreTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["transactions", "deleted"] });
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
       toast.success("Transaction restored");
     },
     onError: () => {
