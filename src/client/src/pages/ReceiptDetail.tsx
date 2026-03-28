@@ -101,6 +101,7 @@ function ReceiptDetail() {
           </Card>
 
           <ReceiptItemsCard
+            receiptId={id}
             items={trip.receipt.items}
             subtotal={subtotal}
           />

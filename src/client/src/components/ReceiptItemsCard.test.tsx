@@ -1,8 +1,71 @@
-import { describe, it, expect } from "vitest";
-import { screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReceiptItemsCard } from "./ReceiptItemsCard";
-import { renderWithProviders } from "@/test/test-utils";
+import { renderWithQueryClient } from "@/test/test-utils";
+import { mockMutationResult } from "@/test/mock-hooks";
+
+vi.mock("@/hooks/useEnumMetadata", () => ({
+  useEnumMetadata: vi.fn(() => ({
+    adjustmentTypes: [],
+    authEventTypes: [],
+    pricingModes: [
+      { value: "quantity", label: "Quantity" },
+      { value: "flat", label: "Flat" },
+    ],
+    auditActions: [],
+    entityTypes: [],
+    adjustmentTypeLabels: {},
+    authEventLabels: {},
+    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
+    auditActionLabels: {},
+    entityTypeLabels: {},
+    isLoading: false,
+  })),
+}));
+
+vi.mock("@/hooks/useReceipts", () => ({
+  useReceipts: vi.fn(() => ({
+    data: [],
+    isLoading: false,
+  })),
+}));
+
+vi.mock("@/hooks/useCategories", () => ({
+  useCategories: vi.fn(() => ({
+    data: [
+      { id: "cat-1", name: "Groceries", isActive: true },
+      { id: "cat-2", name: "Electronics", isActive: true },
+    ],
+    total: 2,
+  })),
+}));
+
+vi.mock("@/hooks/useSubcategories", () => ({
+  useSubcategoriesByCategoryId: vi.fn(() => ({
+    data: [
+      { id: "sub-1", name: "Dairy", isActive: true },
+      { id: "sub-2", name: "Bakery", isActive: true },
+    ],
+    total: 2,
+  })),
+  useCreateSubcategory: vi.fn(() => ({
+    mutateAsync: vi.fn(),
+  })),
+}));
+
+vi.mock("@/hooks/useItemTemplates", () => ({
+  useItemTemplates: vi.fn(() => ({
+    data: [],
+    total: 0,
+  })),
+}));
+
+vi.mock("@/hooks/useReceiptItems", () => ({
+  useCreateReceiptItem: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useUpdateReceiptItem: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDeleteReceiptItems: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
 
 const mockItems = [
   {
@@ -13,6 +76,7 @@ const mockItems = [
     unitPrice: 10.5,
     category: "Hardware",
     subcategory: "Fasteners",
+    pricingMode: "quantity",
   },
   {
     id: "item-2",
@@ -22,42 +86,34 @@ const mockItems = [
     unitPrice: 25.0,
     category: "Electronics",
     subcategory: "Components",
+    pricingMode: "quantity",
   },
 ];
 
 describe("ReceiptItemsCard", () => {
   it("renders empty state when there are no items", () => {
-    renderWithProviders(<ReceiptItemsCard items={[]} subtotal={0} />);
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={[]}
+        subtotal={0}
+      />,
+    );
     expect(
       screen.getByText("No items for this receipt."),
     ).toBeInTheDocument();
     expect(screen.getByText("Items (0)")).toBeInTheDocument();
   });
 
-  it("renders items count in the card title", () => {
-    renderWithProviders(
-      <ReceiptItemsCard items={mockItems} subtotal={46} />,
+  it("renders item rows with data", () => {
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
     );
     expect(screen.getByText("Items (2)")).toBeInTheDocument();
-  });
-
-  it("renders table headers", () => {
-    renderWithProviders(
-      <ReceiptItemsCard items={mockItems} subtotal={46} />,
-    );
-    expect(screen.getByText("Code")).toBeInTheDocument();
-    expect(screen.getByText("Description")).toBeInTheDocument();
-    expect(screen.getByText("Qty")).toBeInTheDocument();
-    expect(screen.getByText("Unit Price")).toBeInTheDocument();
-    expect(screen.getByText("Total")).toBeInTheDocument();
-    expect(screen.getByText("Category")).toBeInTheDocument();
-    expect(screen.getByText("Subcategory")).toBeInTheDocument();
-  });
-
-  it("renders item data in table rows", () => {
-    renderWithProviders(
-      <ReceiptItemsCard items={mockItems} subtotal={46} />,
-    );
     expect(screen.getByText("ITEM001")).toBeInTheDocument();
     expect(screen.getByText("Widget A")).toBeInTheDocument();
     expect(screen.getByText("Hardware")).toBeInTheDocument();
@@ -68,55 +124,268 @@ describe("ReceiptItemsCard", () => {
     expect(screen.getByText("Components")).toBeInTheDocument();
   });
 
+  it("renders table headers when items exist", () => {
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    expect(screen.getByText("Code")).toBeInTheDocument();
+    expect(screen.getByText("Description")).toBeInTheDocument();
+    expect(screen.getByText("Qty")).toBeInTheDocument();
+    expect(screen.getByText("Unit Price")).toBeInTheDocument();
+    expect(screen.getByText("Total")).toBeInTheDocument();
+    expect(screen.getByText("Category")).toBeInTheDocument();
+    expect(screen.getByText("Subcategory")).toBeInTheDocument();
+    expect(screen.getByText("Actions")).toBeInTheDocument();
+  });
+
   it("renders the subtotal in the footer", () => {
-    renderWithProviders(
-      <ReceiptItemsCard items={mockItems} subtotal={46} />,
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
     );
     expect(screen.getByText("Subtotal")).toBeInTheDocument();
     expect(screen.getByText("$46.00")).toBeInTheDocument();
   });
 
-  it("clicking a table row calls setFocusedIndex", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(
-      <ReceiptItemsCard items={mockItems} subtotal={46} />,
+  it("renders Add Item button", () => {
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
     );
-    // Click on a cell within the first row
-    const firstRowDesc = screen.getByText("Widget A");
-    await user.click(firstRowDesc);
-    // After clicking, the row should get the bg-accent class (focused)
-    const row = firstRowDesc.closest("tr");
-    expect(row).toHaveClass("bg-accent");
+    expect(
+      screen.getByRole("button", { name: /add item/i }),
+    ).toBeInTheDocument();
   });
 
-  it("clicking a second row moves focus to that row", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(
-      <ReceiptItemsCard items={mockItems} subtotal={46} />,
+  it("renders edit buttons for each item row", () => {
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
     );
-    // Click the first row
-    await user.click(screen.getByText("Widget A"));
-    const firstRow = screen.getByText("Widget A").closest("tr");
-    expect(firstRow).toHaveClass("bg-accent");
-
-    // Click the second row
-    await user.click(screen.getByText("Widget B"));
-    const secondRow = screen.getByText("Widget B").closest("tr");
-    expect(secondRow).toHaveClass("bg-accent");
-    // First row should no longer be focused
-    expect(firstRow).not.toHaveClass("bg-accent");
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    expect(editButtons).toHaveLength(2);
   });
 
-  it("does not change focus when clicking an interactive element inside a row", () => {
-    // Render with a button inside a row by directly testing the guard logic
-    // The component checks for button, input, a, [role='button'] ancestors
-    const { container } = renderWithProviders(
-      <ReceiptItemsCard items={mockItems} subtotal={46} />,
+  it("toggles individual row selection checkbox", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
     );
-    const rows = container.querySelectorAll("tbody tr");
-    expect(rows.length).toBe(2);
-    // Clicking directly on a row cell should work (no interactive element guard)
-    fireEvent.click(rows[0].querySelector("td")!);
-    expect(rows[0]).toHaveClass("bg-accent");
+    const widgetACheckbox = screen.getByLabelText("Select Widget A item");
+    expect(widgetACheckbox).not.toBeChecked();
+    await user.click(widgetACheckbox);
+    expect(widgetACheckbox).toBeChecked();
+    await user.click(widgetACheckbox);
+    expect(widgetACheckbox).not.toBeChecked();
+  });
+
+  it("select-all checkbox selects and deselects all items", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    const selectAll = screen.getByLabelText("Select all items");
+    expect(selectAll).not.toBeChecked();
+    await user.click(selectAll);
+    expect(selectAll).toBeChecked();
+    expect(screen.getByLabelText("Select Widget A item")).toBeChecked();
+    expect(screen.getByLabelText("Select Widget B item")).toBeChecked();
+    await user.click(selectAll);
+    expect(selectAll).not.toBeChecked();
+    expect(screen.getByLabelText("Select Widget A item")).not.toBeChecked();
+    expect(screen.getByLabelText("Select Widget B item")).not.toBeChecked();
+  });
+
+  it("shows Delete button with count when items are selected", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /delete/i }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText("Select Widget A item"));
+    expect(
+      screen.getByRole("button", { name: /delete \(1\)/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens delete confirmation dialog and calls deleteReceiptItems.mutate on confirm", async () => {
+    const { useDeleteReceiptItems } = await import(
+      "@/hooks/useReceiptItems"
+    );
+    const mockDeleteMutate = vi.fn();
+    vi.mocked(useDeleteReceiptItems).mockReturnValue(
+      mockMutationResult({
+        mutate: mockDeleteMutate,
+        isPending: false,
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    await user.click(screen.getByLabelText("Select Widget A item"));
+    await user.click(
+      screen.getByRole("button", { name: /delete \(1\)/i }),
+    );
+    expect(screen.getByText("Delete Items")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /are you sure you want to delete 1 item/i,
+      ),
+    ).toBeInTheDocument();
+    const confirmDelete = screen.getByRole("button", { name: "Delete" });
+    await user.click(confirmDelete);
+    expect(mockDeleteMutate).toHaveBeenCalledWith(
+      ["item-1"],
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+  });
+
+  it("opens create dialog when Add Item is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: /add item/i }),
+    );
+    expect(
+      screen.getByText("Add Item", { selector: "[id]" }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens edit dialog when Edit button is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await user.click(editButtons[0]);
+    expect(screen.getByText("Edit Item")).toBeInTheDocument();
+  });
+
+  it("renders create form with submit button in create dialog", async () => {
+    const { useCreateReceiptItem } = await import(
+      "@/hooks/useReceiptItems"
+    );
+    const mockCreateMutate = vi.fn();
+    vi.mocked(useCreateReceiptItem).mockReturnValue(
+      mockMutationResult({
+        mutate: mockCreateMutate,
+        isPending: false,
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: /add item/i }),
+    );
+    const submitButton = screen.getByRole("button", {
+      name: "Create Item",
+    });
+    expect(submitButton).toBeInTheDocument();
+  });
+
+  it("renders edit form with update button in edit dialog", async () => {
+    const { useUpdateReceiptItem } = await import(
+      "@/hooks/useReceiptItems"
+    );
+    const mockUpdateMutate = vi.fn();
+    vi.mocked(useUpdateReceiptItem).mockReturnValue(
+      mockMutationResult({
+        mutate: mockUpdateMutate,
+        isPending: false,
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await user.click(editButtons[0]);
+    const submitButton = screen.getByRole("button", {
+      name: "Update Item",
+    });
+    expect(submitButton).toBeInTheDocument();
+  });
+
+  it("cancels delete dialog without deleting", async () => {
+    const { useDeleteReceiptItems } = await import(
+      "@/hooks/useReceiptItems"
+    );
+    const mockDeleteMutate = vi.fn();
+    vi.mocked(useDeleteReceiptItems).mockReturnValue(
+      mockMutationResult({
+        mutate: mockDeleteMutate,
+        isPending: false,
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={mockItems}
+        subtotal={46}
+      />,
+    );
+    await user.click(screen.getByLabelText("Select Widget A item"));
+    await user.click(
+      screen.getByRole("button", { name: /delete \(1\)/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(mockDeleteMutate).not.toHaveBeenCalled();
   });
 });
