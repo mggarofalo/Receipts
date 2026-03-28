@@ -12,11 +12,11 @@ public partial class CategoryMapper
 
 	public Category ToDomain(CreateCategoryRequest source)
 	{
-		return new Category(Guid.Empty, source.Name, source.Description);
+		return new Category(Guid.Empty, source.Name, source.Description, source.IsActive);
 	}
 
 	public Category ToDomain(UpdateCategoryRequest source)
 	{
-		return new Category(source.Id, source.Name, source.Description);
+		return new Category(source.Id, source.Name, source.Description, source.IsActive);
 	}
 }

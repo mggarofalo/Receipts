@@ -29,6 +29,8 @@ import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +53,7 @@ interface SubcategoryResponse {
   name: string;
   categoryId: string;
   description?: string | null;
+  isActive: boolean;
 }
 
 interface CategoryResponse {
@@ -64,6 +67,9 @@ const SEARCH_CONFIG: FuseSearchConfig<SubcategoryResponse> = {
     { name: "description", weight: 1 },
   ],
 };
+
+const STATUS_STORAGE_KEY = "subcategories-status-filter";
+type StatusFilter = "all" | "true" | "false";
 
 const FILTER_PARAMS = ["categoryId"] as const;
 
@@ -90,6 +96,10 @@ function Subcategories() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(),
   );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
+    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
+  });
 
   const anyDialogOpen = createOpen || editSubcategory !== null;
 
@@ -152,13 +162,22 @@ function Subcategories() {
   const { search, setSearch, results, totalCount, clearSearch } =
     useFuzzySearch({ data, config: SEARCH_CONFIG });
 
+  function handleStatusChange(value: string) {
+    const v = value as StatusFilter;
+    setStatusFilter(v);
+    localStorage.setItem(STATUS_STORAGE_KEY, v);
+  }
+
   const filteredResults = useMemo(() => {
     const items = results.map((r) => ({
       ...r.item,
       categoryName: categoryMap.get(r.item.categoryId) ?? "",
     }));
-    return applyFilters(items, filterDefs, filterValues);
-  }, [results, filterValues, categoryMap, filterDefs]);
+    const filtered = applyFilters(items, filterDefs, filterValues);
+    if (statusFilter === "all") return filtered;
+    const expected = statusFilter === "true";
+    return filtered.filter((s) => s.isActive === expected);
+  }, [results, filterValues, categoryMap, filterDefs, statusFilter]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -221,7 +240,7 @@ function Subcategories() {
   });
 
   if (isLoading) {
-    return <TableSkeleton columns={4} />;
+    return <TableSkeleton columns={5} />;
   }
 
   return (
@@ -247,6 +266,14 @@ function Subcategories() {
           <Button onClick={() => setCreateOpen(true)}>New Subcategory</Button>
         </div>
       </div>
+
+      <Tabs value={statusFilter} onValueChange={handleStatusChange}>
+        <TabsList>
+          <TabsTrigger value="true">Active</TabsTrigger>
+          <TabsTrigger value="false">Inactive</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <FilterPanel
         fields={filterFields}
@@ -305,6 +332,7 @@ function Subcategories() {
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
+                  <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
@@ -321,7 +349,7 @@ function Subcategories() {
                         onClick={() => toggleCategory(categoryId)}
                         data-testid={`category-header-${categoryId}`}
                       >
-                        <TableCell colSpan={5}>
+                        <TableCell colSpan={6}>
                           <div className="flex items-center gap-2 font-medium">
                             {isExpanded ? (
                               <ChevronDown className="h-4 w-4" />
@@ -378,6 +406,13 @@ function Subcategories() {
                                 ) : (
                                   <span className="italic">--</span>
                                 )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={subcategory.isActive ? "default" : "secondary"}
+                                >
+                                  {subcategory.isActive ? "Active" : "Inactive"}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 <Link to={`/receipt-items?subcategory=${encodeURIComponent(subcategory.name)}`} className="text-sm text-primary hover:underline">
@@ -451,6 +486,7 @@ function Subcategories() {
                 name: editSubcategory.name,
                 categoryId: editSubcategory.categoryId,
                 description: editSubcategory.description ?? "",
+                isActive: editSubcategory.isActive,
               }}
               isSubmitting={updateSubcategory.isPending}
               onCancel={() => setEditSubcategory(null)}

@@ -12,11 +12,11 @@ public partial class SubcategoryMapper
 
 	public Subcategory ToDomain(CreateSubcategoryRequest source)
 	{
-		return new Subcategory(Guid.Empty, source.Name, source.CategoryId, source.Description);
+		return new Subcategory(Guid.Empty, source.Name, source.CategoryId, source.Description, source.IsActive);
 	}
 
 	public Subcategory ToDomain(UpdateSubcategoryRequest source)
 	{
-		return new Subcategory(source.Id, source.Name, source.CategoryId, source.Description);
+		return new Subcategory(source.Id, source.Name, source.CategoryId, source.Description, source.IsActive);
 	}
 }

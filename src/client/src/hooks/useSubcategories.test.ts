@@ -111,7 +111,7 @@ describe("useSubcategories", () => {
   });
 
   it("create mutation calls POST and shows toast on success", async () => {
-    const newSub = { name: "Dairy", categoryId: "cat-1", description: "Milk products" };
+    const newSub = { name: "Dairy", categoryId: "cat-1", description: "Milk products", isActive: true };
     const created = { id: "2", ...newSub };
     (client.POST as Mock).mockResolvedValue({ data: created, error: undefined });
 
@@ -126,7 +126,7 @@ describe("useSubcategories", () => {
   });
 
   it("update mutation calls PUT and shows toast on success", async () => {
-    const updated = { id: "1", name: "Organic Produce", categoryId: "cat-1" };
+    const updated = { id: "1", name: "Organic Produce", categoryId: "cat-1", isActive: true };
     (client.PUT as Mock).mockResolvedValue({ error: undefined });
 
     const { result } = renderHook(() => useUpdateSubcategory(), {

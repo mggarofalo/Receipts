@@ -8,17 +8,20 @@ export const subcategories: SubcategoryResponse[] = [
     name: "Dairy",
     categoryId: "dddd1111-1111-1111-1111-111111111111",
     description: "Milk, cheese, yogurt",
+    isActive: true,
   },
   {
     id: "eeee2222-2222-2222-2222-222222222222",
     name: "Bakery",
     categoryId: "dddd1111-1111-1111-1111-111111111111",
     description: "Bread, pastries",
+    isActive: true,
   },
   {
     id: "eeee3333-3333-3333-3333-333333333333",
     name: "Power Tools",
     categoryId: "dddd2222-2222-2222-2222-222222222222",
     description: null,
+    isActive: true,
   },
 ];

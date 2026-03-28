@@ -53,6 +53,7 @@ export function useCreateSubcategory() {
       name: string;
       categoryId: string;
       description?: string | null;
+      isActive: boolean;
     }) => {
       const { data, error } = await client.POST("/api/subcategories", {
         body,
@@ -80,6 +81,7 @@ export function useUpdateSubcategory() {
       name: string;
       categoryId: string;
       description?: string | null;
+      isActive: boolean;
     }) => {
       const { error } = await client.PUT("/api/subcategories/{id}", {
         params: { path: { id: body.id } },

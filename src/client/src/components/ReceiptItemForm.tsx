@@ -121,11 +121,13 @@ export function ReceiptItemForm({
   const categoryOptions = useMemo(
     () =>
       (
-        categories ?? []
-      ).map((c) => ({
-        value: c.name,
-        label: c.name,
-      })),
+        (categories as { id: string; name: string; isActive: boolean }[] | undefined) ?? []
+      )
+        .filter((c) => c.isActive)
+        .map((c) => ({
+          value: c.name,
+          label: c.name,
+        })),
     [categories],
   );
 
@@ -160,11 +162,13 @@ export function ReceiptItemForm({
   const subcategoryOptions = useMemo(
     () =>
       (
-        (subcategoriesData as { id: string; name: string }[] | undefined) ?? []
-      ).map((s) => ({
-        value: s.name,
-        label: s.name,
-      })),
+        (subcategoriesData as { id: string; name: string; isActive: boolean }[] | undefined) ?? []
+      )
+        .filter((s) => s.isActive)
+        .map((s) => ({
+          value: s.name,
+          label: s.name,
+        })),
     [subcategoriesData],
   );
 
@@ -206,6 +210,7 @@ export function ReceiptItemForm({
       await createSubcategory.mutateAsync({
         name: values.subcategory,
         categoryId: selectedCategoryId,
+        isActive: true,
       });
     }
 

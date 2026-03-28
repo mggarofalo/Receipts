@@ -11,7 +11,8 @@ public static class SubcategoryEntityGenerator
 			Id = Guid.NewGuid(),
 			Name = "Test Subcategory",
 			CategoryId = Guid.NewGuid(),
-			Description = "Test Description"
+			Description = "Test Description",
+			IsActive = true
 		};
 	}
 
