@@ -72,6 +72,7 @@ export function useUpdateReceipt() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
       toast.success("Receipt updated");
     },
     onError: () => {
