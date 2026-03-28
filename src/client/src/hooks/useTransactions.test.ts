@@ -370,4 +370,92 @@ describe("useTransactions", () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["transactions"] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["transactions", "deleted"] });
   });
+
+  it("create mutation invalidates trips query on success", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.POST as Mock).mockResolvedValue({ data: { id: "1" }, error: undefined });
+
+    const { result } = renderHook(() => useCreateTransaction(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate({ receiptId: "r-1", body: { amount: 100, date: "2025-01-01", accountId: "acc-1" } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["trips"] });
+  });
+
+  it("update mutation invalidates trips query on success", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.PUT as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useUpdateTransaction(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate({ body: { id: "1", amount: 100, date: "2025-01-01", accountId: "acc-1" } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["trips"] });
+  });
+
+  it("delete mutation invalidates trips query on settled", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteTransactions(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["trips"] });
+  });
+
+  it("restore mutation invalidates trips query on success", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.POST as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useRestoreTransaction(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate("1");
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["trips"] });
+  });
 });
