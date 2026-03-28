@@ -48,7 +48,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { ChevronDown, ChevronRight, Pencil } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react";
 
 interface SubcategoryResponse {
   id: string;
@@ -424,16 +435,48 @@ function Subcategories() {
                                 </Link>
                               </TableCell>
                               <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Edit"
-                                  onClick={() =>
-                                    setEditSubcategory(subcategory)
-                                  }
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Edit"
+                                    onClick={() =>
+                                      setEditSubcategory(subcategory)
+                                    }
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  {isAdmin() && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          aria-label="Delete"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Subcategory?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This will soft-delete this subcategory. You can restore it from the Recycle Bin.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            variant="destructive"
+                                            onClick={() => deleteSubcategory.mutate(subcategory.id)}
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -499,13 +542,6 @@ function Subcategories() {
                   { id: editSubcategory.id, ...values },
                   { onSuccess: () => setEditSubcategory(null) },
                 );
-              }}
-              isAdmin={isAdmin()}
-              isDeleting={deleteSubcategory.isPending}
-              onDelete={() => {
-                deleteSubcategory.mutate(editSubcategory.id, {
-                  onSuccess: () => setEditSubcategory(null),
-                });
               }}
             />
           )}

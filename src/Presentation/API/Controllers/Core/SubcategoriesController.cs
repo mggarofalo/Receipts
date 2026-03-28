@@ -3,6 +3,7 @@ using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Subcategory.Create;
 using Application.Commands.Subcategory.Delete;
+using Application.Commands.Subcategory.Restore;
 using Application.Commands.Subcategory.Update;
 using Application.Interfaces.Services;
 using Application.Models;
@@ -30,6 +31,8 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
 	public const string RouteDelete = "{id}";
+	public const string RouteGetDeleted = "deleted";
+	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a subcategory by ID")]
@@ -101,6 +104,44 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		});
 	}
 
+	[HttpGet(RouteGetDeleted)]
+	[EndpointSummary("Get all soft-deleted subcategories")]
+	[EndpointDescription("Returns all subcategories that have been soft-deleted.")]
+	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetDeletedSubcategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
+		if (sortBy is not null && !SortableColumns.Subcategory.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Subcategory)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedSubcategoriesQuery query = new(offset, limit, sort);
+		PagedResult<Subcategory> result = await mediator.Send(query);
+
+		return TypedResults.Ok(new SubcategoryListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
+	}
+
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single subcategory")]
 	public async Task<Ok<SubcategoryResponse>> CreateSubcategory([FromBody] CreateSubcategoryRequest model)
@@ -156,9 +197,8 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	}
 
 	[HttpDelete(RouteDelete)]
-	[Authorize(Policy = "RequireAdmin")]
-	[EndpointSummary("Hard-delete a subcategory")]
-	[EndpointDescription("Permanently deletes a subcategory. Requires the Admin role. Returns 409 Conflict if receipt items reference this subcategory.")]
+	[EndpointSummary("Soft-delete a subcategory")]
+	[EndpointDescription("Soft-deletes a subcategory. Returns 409 Conflict if receipt items reference this subcategory.")]
 	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteSubcategory([FromRoute] Guid id)
 	{
 		Subcategory? subcategory = await mediator.Send(new GetSubcategoryByIdQuery(id));
@@ -175,16 +215,28 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {receiptItemCount} receipt item(s) use this subcategory", receiptItemCount });
 		}
 
-		DeleteSubcategoryCommand command = new(id);
+		DeleteSubcategoryCommand command = new([id]);
+		await mediator.Send(command);
+
+		await notifier.NotifyDeleted("subcategory", id);
+		return TypedResults.NoContent();
+	}
+
+	[HttpPost(RouteRestore)]
+	[EndpointSummary("Restore a soft-deleted subcategory")]
+	[EndpointDescription("Restores a previously soft-deleted subcategory by clearing its DeletedAt timestamp.")]
+	public async Task<Results<NoContent, NotFound>> RestoreSubcategory([FromRoute] Guid id)
+	{
+		RestoreSubcategoryCommand command = new(id);
 		bool result = await mediator.Send(command);
 
 		if (!result)
 		{
-			logger.LogWarning("Subcategory {Id} not found for deletion", id);
+			logger.LogWarning("Subcategory {Id} not found or not deleted for restore", id);
 			return TypedResults.NotFound();
 		}
 
-		await notifier.NotifyDeleted("subcategory", id);
+		await notifier.NotifyUpdated("subcategory", id);
 		return TypedResults.NoContent();
 	}
 }

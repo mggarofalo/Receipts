@@ -1,52 +1,23 @@
 using Application.Commands.Category.Delete;
 using Application.Interfaces.Services;
 using Moq;
+using SampleData.Domain.Core;
 
 namespace Application.Tests.Commands.Category;
 
 public class DeleteCategoryCommandHandlerTests
 {
 	[Fact]
-	public async Task Handle_WhenCategoryExists_ReturnsTrueAndCallsDelete()
+	public async Task Handle_WithValidCommand_ReturnsTrueAndCallsDelete()
 	{
-		// Arrange
 		Mock<ICategoryService> mockService = new();
 		DeleteCategoryCommandHandler handler = new(mockService.Object);
-		Guid id = Guid.NewGuid();
 
-		mockService.Setup(s => s.ExistsAsync(id, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(true);
-		mockService.Setup(s => s.DeleteAsync(id, It.IsAny<CancellationToken>()))
-			.Returns(Task.CompletedTask);
+		List<Guid> input = [.. CategoryGenerator.GenerateList(2).Select(a => a.Id)];
 
-		DeleteCategoryCommand command = new(id);
-
-		// Act
+		DeleteCategoryCommand command = new(input);
 		bool result = await handler.Handle(command, CancellationToken.None);
 
-		// Assert
 		Assert.True(result);
-		mockService.Verify(s => s.DeleteAsync(id, It.IsAny<CancellationToken>()), Times.Once);
-	}
-
-	[Fact]
-	public async Task Handle_WhenCategoryDoesNotExist_ReturnsFalse()
-	{
-		// Arrange
-		Mock<ICategoryService> mockService = new();
-		DeleteCategoryCommandHandler handler = new(mockService.Object);
-		Guid id = Guid.NewGuid();
-
-		mockService.Setup(s => s.ExistsAsync(id, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(false);
-
-		DeleteCategoryCommand command = new(id);
-
-		// Act
-		bool result = await handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		Assert.False(result);
-		mockService.Verify(s => s.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 }

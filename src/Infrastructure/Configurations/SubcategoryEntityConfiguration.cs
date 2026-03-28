@@ -15,10 +15,13 @@ public class SubcategoryEntityConfiguration : IEntityTypeConfiguration<Subcatego
 			.ValueGeneratedOnAdd();
 
 		builder.HasIndex(e => new { e.CategoryId, e.Name })
-			.IsUnique();
+			.IsUnique()
+			.HasFilter("\"DeletedAt\" IS NULL");
 
 		builder.Navigation(e => e.Category)
 			.AutoInclude();
+
+		builder.HasQueryFilter(e => e.DeletedAt == null);
 
 		Guid groceries = new("83a7f4ea-f771-40b3-850f-35b90a3bd05e");
 		Guid dining = new("e37ce004-56ea-4a33-8983-55a9552d05be");
