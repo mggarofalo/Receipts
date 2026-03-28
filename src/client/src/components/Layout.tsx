@@ -81,21 +81,6 @@ const navGroups: NavGroup[] = [
         label: "Receipts",
         description: "View and manage receipts",
       },
-      {
-        to: "/receipt-items",
-        label: "Items",
-        description: "Browse receipt line items",
-      },
-      {
-        to: "/transactions",
-        label: "Transactions",
-        description: "Track transactions",
-      },
-      {
-        to: "/trips",
-        label: "Trips",
-        description: "Organize receipts by trip",
-      },
     ],
   },
   {
@@ -213,9 +198,6 @@ export function Layout() {
     { to: "/categories", label: "Categories" },
     { to: "/subcategories", label: "Subcategories" },
     { to: "/receipts", label: "Receipts" },
-    { to: "/receipt-items", label: "Items" },
-    { to: "/transactions", label: "Transactions" },
-    { to: "/trips", label: "Trips" },
     { to: "/item-templates", label: "Item Templates" },
     { to: "/security", label: "Security" },
   ];

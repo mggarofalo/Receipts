@@ -25,15 +25,6 @@ vi.mock("@/pages/Subcategories", () => ({
 vi.mock("@/pages/Receipts", () => ({
   default: () => <div data-testid="page-receipts">Receipts</div>,
 }));
-vi.mock("@/pages/ReceiptItems", () => ({
-  default: () => <div data-testid="page-receipt-items">ReceiptItems</div>,
-}));
-vi.mock("@/pages/Transactions", () => ({
-  default: () => <div data-testid="page-transactions">Transactions</div>,
-}));
-vi.mock("@/pages/Trips", () => ({
-  default: () => <div data-testid="page-trips">Trips</div>,
-}));
 vi.mock("@/pages/ItemTemplates", () => ({
   default: () => <div data-testid="page-item-templates">ItemTemplates</div>,
 }));
@@ -42,11 +33,6 @@ vi.mock("@/pages/ReceiptDetail", () => ({
 }));
 vi.mock("@/pages/ReceiptDetailRedirect", () => ({
   default: () => <div data-testid="page-receipt-detail-redirect">Redirect</div>,
-}));
-vi.mock("@/pages/TransactionDetail", () => ({
-  default: () => (
-    <div data-testid="page-transaction-detail">TransactionDetail</div>
-  ),
 }));
 vi.mock("@/pages/ApiKeys", () => ({
   default: () => <div data-testid="page-api-keys">ApiKeys</div>,
@@ -131,5 +117,25 @@ describe("App router", () => {
   it("renders NotFound for unknown routes", async () => {
     renderRoute("/some/unknown/path");
     expect(await screen.findByTestId("page-not-found")).toBeInTheDocument();
+  });
+
+  it("redirects /receipt-items to /receipts", async () => {
+    renderRoute("/receipt-items");
+    expect(await screen.findByTestId("page-receipts")).toBeInTheDocument();
+  });
+
+  it("redirects /transactions to /receipts", async () => {
+    renderRoute("/transactions");
+    expect(await screen.findByTestId("page-receipts")).toBeInTheDocument();
+  });
+
+  it("redirects /transaction-detail to /receipts", async () => {
+    renderRoute("/transaction-detail");
+    expect(await screen.findByTestId("page-receipts")).toBeInTheDocument();
+  });
+
+  it("redirects /trips to /receipts", async () => {
+    renderRoute("/trips");
+    expect(await screen.findByTestId("page-receipts")).toBeInTheDocument();
   });
 });

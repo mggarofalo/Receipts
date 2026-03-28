@@ -261,7 +261,7 @@ function Receipts() {
                   <SortableTableHead column="location" label="Location" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <SortableTableHead column="date" label="Date" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <SortableTableHead column="taxAmount" label="Tax Amount" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} className="text-right" />
-                  <TableHead>Related</TableHead>
+                  <TableHead>Detail</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -298,14 +298,9 @@ function Receipts() {
                         {formatCurrency(receipt.taxAmount)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Link to={`/receipt-items?receiptId=${receipt.id}`} className="text-sm text-primary hover:underline">
-                            Items
-                          </Link>
-                          <Link to={`/transactions?receiptId=${receipt.id}`} className="text-sm text-primary hover:underline">
-                            Txns
-                          </Link>
-                        </div>
+                        <Link to={`/receipts/${receipt.id}`} className="text-sm text-primary hover:underline">
+                          View
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <Button
