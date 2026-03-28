@@ -24,6 +24,7 @@ import {
   useCreateItemTemplate,
   useUpdateItemTemplate,
   useDeleteItemTemplates,
+  useHideItemTemplate,
   useDeletedItemTemplates,
   useRestoreItemTemplate,
 } from "./useItemTemplates";
@@ -335,6 +336,93 @@ describe("useItemTemplates", () => {
     });
 
     result.current.mutate(["1"]);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["itemTemplates"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["itemTemplates", "deleted"] });
+  });
+
+  // --- useHideItemTemplate ---
+
+  it("hide mutation calls DELETE with single-element array and shows custom toast", async () => {
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useHideItemTemplate(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync("template-1");
+
+    expect(client.DELETE).toHaveBeenCalledWith("/api/item-templates", {
+      body: ["template-1"],
+    });
+    expect(toast.success).toHaveBeenCalledWith(
+      "Template hidden. You can restore it from the recycle bin.",
+    );
+  });
+
+  it("hide mutation shows error toast on failure", async () => {
+    (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useHideItemTemplate(), {
+      wrapper: createWrapper(),
+    });
+
+    result.current.mutate("template-1");
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to hide item template");
+  });
+
+  it("hide mutation rolls back cache on failure", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    const templates = [
+      { id: "template-1", name: "A" },
+      { id: "template-2", name: "B" },
+    ];
+    const cacheKey = ["itemTemplates", "list", 0, 50, undefined, undefined];
+    const cacheValue = { data: templates, total: 2, offset: 0, limit: 50 };
+    queryClient.setQueryData(cacheKey, cacheValue);
+    setQueryDataSpy.mockClear();
+
+    (client.DELETE as Mock).mockResolvedValue({ error: { message: "Server error" } });
+
+    const { result } = renderHook(() => useHideItemTemplate(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate("template-1");
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(toast.error).toHaveBeenCalledWith("Failed to hide item template");
+    expect(setQueryDataSpy).toHaveBeenCalledWith(cacheKey, cacheValue);
+  });
+
+  it("hide mutation invalidates both list and deleted query keys on settled", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useHideItemTemplate(), {
+      wrapper: Wrapper,
+    });
+
+    result.current.mutate("template-1");
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["itemTemplates"] });
