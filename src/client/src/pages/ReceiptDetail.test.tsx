@@ -45,6 +45,18 @@ vi.mock("@/components/ReceiptItemsCard", () => ({
   },
 }));
 
+vi.mock("@/components/ReceiptTransactionsCard", () => ({
+  ReceiptTransactionsCard: function MockReceiptTransactionsCard(props: {
+    transactions: unknown[];
+  }) {
+    return (
+      <div data-testid="receipt-transactions-card">
+        Transactions ({props.transactions.length})
+      </div>
+    );
+  },
+}));
+
 function renderWithRoutes(initialRoute: string) {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>
@@ -148,7 +160,7 @@ describe("ReceiptDetail", () => {
     );
   });
 
-  it("renders transactions section when trip has transactions", async () => {
+  it("renders transactions card when trip has transactions", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
     vi.mocked(useTripByReceiptId).mockReturnValue(
       mockQueryResult({
@@ -171,9 +183,8 @@ describe("ReceiptDetail", () => {
     );
 
     renderWithRoutes("/receipts/r1");
+    expect(screen.getByTestId("receipt-transactions-card")).toBeInTheDocument();
     expect(screen.getByText("Transactions (1)")).toBeInTheDocument();
-    expect(screen.getByText("Checking")).toBeInTheDocument();
-    expect(screen.getByText("1234")).toBeInTheDocument();
   });
 
   it("renders adjustments section when trip has adjustments", async () => {
@@ -206,7 +217,7 @@ describe("ReceiptDetail", () => {
     expect(screen.getByText("10% off")).toBeInTheDocument();
   });
 
-  it("renders empty transactions message when no transactions", async () => {
+  it("renders transactions card when trip has no transactions", async () => {
     const { useTripByReceiptId } = await import("@/hooks/useTrips");
     vi.mocked(useTripByReceiptId).mockReturnValue(
       mockQueryResult({
@@ -217,9 +228,8 @@ describe("ReceiptDetail", () => {
     );
 
     renderWithRoutes("/receipts/r1");
-    expect(
-      screen.getByText(/no transactions for this receipt/i),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-transactions-card")).toBeInTheDocument();
+    expect(screen.getByText("Transactions (0)")).toBeInTheDocument();
   });
 
   it("renders empty adjustments message when no adjustments", async () => {
