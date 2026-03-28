@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-// Note: Accounts are reference entities and cannot be deleted or restored.
+// Note: Accounts are hard-delete entities (no soft-delete/restore).
 
 export function useAccounts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   const query = useQuery({
@@ -76,6 +76,41 @@ export function useUpdateAccount() {
     },
     onError: () => {
       toast.error("Failed to update account");
+    },
+  });
+}
+
+export interface DeleteAccountConflict {
+  message: string;
+  transactionCount: number;
+}
+
+export function useDeleteAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error, response } = await client.DELETE("/api/accounts/{id}", {
+        params: { path: { id } },
+      });
+      if (error) {
+        if (response.status === 409) {
+          const body = error as unknown as DeleteAccountConflict;
+          throw { conflict: true, ...body };
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Account deleted");
+    },
+    onError: (error: unknown) => {
+      const err = error as { conflict?: boolean; message?: string; transactionCount?: number };
+      if (err.conflict) {
+        toast.error(err.message ?? "Cannot delete — transactions reference this account");
+      } else {
+        toast.error("Failed to delete account");
+      }
     },
   });
 }

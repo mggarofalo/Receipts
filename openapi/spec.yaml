@@ -100,6 +100,42 @@ paths:
               $ref: "#/components/headers/X-Resource-Id"
         "404":
           description: Not Found
+    delete:
+      operationId: DeleteAccount
+      tags: [Accounts]
+      summary: Hard-delete an account
+      description: >
+        Permanently deletes an account. Requires the Admin role. Returns 409
+        Conflict if transactions reference this account.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict — transactions reference this account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  transactionCount:
+                    type: integer
+                required:
+                  - message
+                  - transactionCount
 
   /api/accounts:
     get:

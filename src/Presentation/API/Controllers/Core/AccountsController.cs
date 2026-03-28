@@ -2,7 +2,9 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Account.Create;
+using Application.Commands.Account.Delete;
 using Application.Commands.Account.Update;
+using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Account;
 using Asp.Versioning;
@@ -19,7 +21,7 @@ namespace API.Controllers.Core;
 [Route("api/accounts")]
 [Produces("application/json")]
 [Authorize]
-public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier) : ControllerBase
+public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier, IAccountService accountService) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -27,6 +29,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
+	public const string RouteDelete = "{id}";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get an account by ID")]
@@ -134,6 +137,32 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		}
 
 		await notifier.NotifyBulkChanged("account", "updated", models.Select(m => m.Id));
+		return TypedResults.NoContent();
+	}
+
+	[HttpDelete(RouteDelete)]
+	[Authorize(Policy = "RequireAdmin")]
+	[EndpointSummary("Hard-delete an account")]
+	[EndpointDescription("Permanently deletes an account. Requires the Admin role. Returns 409 Conflict if transactions reference this account.")]
+	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteAccount([FromRoute] Guid id)
+	{
+		int transactionCount = await accountService.GetTransactionCountByAccountIdAsync(id, HttpContext.RequestAborted);
+		if (transactionCount > 0)
+		{
+			logger.LogWarning("Account {Id} cannot be deleted — {Count} transactions reference it", id, transactionCount);
+			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {transactionCount} transaction(s) reference this account", transactionCount });
+		}
+
+		DeleteAccountCommand command = new(id);
+		bool result = await mediator.Send(command);
+
+		if (!result)
+		{
+			logger.LogWarning("Account {Id} not found for deletion", id);
+			return TypedResults.NotFound();
+		}
+
+		await notifier.NotifyDeleted("account", id);
 		return TypedResults.NoContent();
 	}
 }

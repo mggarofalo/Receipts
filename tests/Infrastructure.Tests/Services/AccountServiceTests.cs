@@ -163,4 +163,32 @@ public class AccountServiceTests
 		// Assert
 		_mockRepository.Verify(r => r.UpdateAsync(It.IsAny<List<AccountEntity>>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
+
+	[Fact]
+	public async Task DeleteAsync_ValidId_CallsRepositoryDeleteAsync()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+
+		// Act
+		await _service.DeleteAsync(id, CancellationToken.None);
+
+		// Assert
+		_mockRepository.Verify(r => r.DeleteAsync(id, It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetTransactionCountByAccountIdAsync_ReturnsCorrectCount()
+	{
+		// Arrange
+		Guid accountId = Guid.NewGuid();
+		int expected = 3;
+		_mockRepository.Setup(r => r.GetTransactionCountByAccountIdAsync(accountId, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+
+		// Act
+		int actual = await _service.GetTransactionCountByAccountIdAsync(accountId, CancellationToken.None);
+
+		// Assert
+		Assert.Equal(expected, actual);
+	}
 }

@@ -12,4 +12,6 @@ public interface IAccountRepository
 	Task UpdateAsync(List<AccountEntity> entities, CancellationToken cancellationToken);
 	Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken);
 	Task<int> GetCountAsync(CancellationToken cancellationToken);
+	Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+	Task<int> GetTransactionCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken);
 }
