@@ -37,7 +37,7 @@ public static class OwnedChildRestoreExtensions
 		List<TChild> items = await context.Set<TChild>()
 			.IncludeDeleted()
 			.Where(predicate)
-			.Where(e => e.DeletedAt != null)
+			.Where(e => e.DeletedAt != null && e.CascadeDeletedByParentId == parentId)
 			.ToListAsync(cancellationToken);
 
 		foreach (TChild item in items)
@@ -45,6 +45,7 @@ public static class OwnedChildRestoreExtensions
 			item.DeletedAt = null;
 			item.DeletedByUserId = null;
 			item.DeletedByApiKeyId = null;
+			item.CascadeDeletedByParentId = null;
 		}
 	}
 }

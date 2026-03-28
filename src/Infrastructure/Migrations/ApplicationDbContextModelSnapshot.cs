@@ -282,6 +282,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("CascadeDeletedByParentId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamptz");
 
@@ -409,6 +412,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CascadeDeletedByParentId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("DefaultCategory")
                         .HasColumnType("text");
 
@@ -505,6 +511,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CascadeDeletedByParentId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
@@ -537,6 +546,9 @@ namespace Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CascadeDeletedByParentId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Category")
@@ -715,6 +727,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("AmountCurrency")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("CascadeDeletedByParentId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");

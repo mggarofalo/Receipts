@@ -18,6 +18,7 @@ public partial class TransactionMapper
 	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedAt))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedByUserId))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedByApiKeyId))]
+	[MapperIgnoreTarget(nameof(TransactionEntity.CascadeDeletedByParentId))]
 	public partial TransactionEntity ToEntity(Transaction source);
 
 	private Money MapAmount(decimal amount, Currency currency) => new(amount, currency);
@@ -28,5 +29,6 @@ public partial class TransactionMapper
 	[MapperIgnoreSource(nameof(TransactionEntity.DeletedAt))]
 	[MapperIgnoreSource(nameof(TransactionEntity.DeletedByUserId))]
 	[MapperIgnoreSource(nameof(TransactionEntity.DeletedByApiKeyId))]
+	[MapperIgnoreSource(nameof(TransactionEntity.CascadeDeletedByParentId))]
 	public partial Transaction ToDomain(TransactionEntity source);
 }

@@ -102,6 +102,11 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.Where(e => ids.Contains(e.Id))
 			.ToListAsync(cancellationToken);
 
+		// Load owned children into the change tracker so cascade soft-delete fires
+		await context.ReceiptItems.IgnoreAutoIncludes().Where(i => ids.Contains(i.ReceiptId)).LoadAsync(cancellationToken);
+		await context.Transactions.IgnoreAutoIncludes().Where(t => ids.Contains(t.ReceiptId)).LoadAsync(cancellationToken);
+		await context.Adjustments.IgnoreAutoIncludes().Where(a => ids.Contains(a.ReceiptId)).LoadAsync(cancellationToken);
+
 		context.Receipts.RemoveRange(entities);
 		await context.SaveChangesAsync(cancellationToken);
 	}
@@ -133,6 +138,7 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		entity.DeletedAt = null;
 		entity.DeletedByUserId = null;
 		entity.DeletedByApiKeyId = null;
+		entity.CascadeDeletedByParentId = null;
 
 		await context.RestoreOwnedChildrenAsync<ReceiptEntity>(id, cancellationToken);
 
