@@ -121,6 +121,7 @@ export function useDeleteSubcategory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subcategories"] });
+      queryClient.invalidateQueries({ queryKey: ["subcategories", "deleted"] });
       toast.success("Subcategory deleted");
     },
     onError: (error: unknown) => {
@@ -134,3 +135,36 @@ export function useDeleteSubcategory() {
   });
 }
 
+export function useDeletedSubcategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
+  const query = useQuery({
+    queryKey: ["subcategories", "deleted", offset, limit, sortBy, sortDirection],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/subcategories/deleted", {
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+}
+
+export function useRestoreSubcategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await client.POST("/api/subcategories/{id}/restore", {
+        params: { path: { id } },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subcategories"] });
+      queryClient.invalidateQueries({ queryKey: ["subcategories", "deleted"] });
+      toast.success("Subcategory restored");
+    },
+    onError: () => {
+      toast.error("Failed to restore subcategory");
+    },
+  });
+}

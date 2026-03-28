@@ -31,6 +31,34 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 			.ToListAsync(cancellationToken);
 	}
 
+	public async Task<List<CategoryEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Categories
+			.OnlyDeleted()
+			.AsNoTracking()
+			.ApplySort(sort, AllowedSortColumns, e => e.Name)
+			.Skip(offset)
+			.Take(limit)
+			.Select(c => new CategoryEntity
+			{
+				Id = c.Id,
+				Name = c.Name,
+				Description = c.Description,
+				IsActive = c.IsActive,
+				DeletedAt = c.DeletedAt
+			})
+			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<int> GetDeletedCountAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Categories
+			.OnlyDeleted()
+			.CountAsync(cancellationToken);
+	}
+
 	public async Task<List<CategoryEntity>> CreateAsync(List<CategoryEntity> entities, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
@@ -68,15 +96,41 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 		return await context.Categories.CountAsync(cancellationToken);
 	}
 
-	public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		CategoryEntity? entity = await context.Categories.FindAsync([id], cancellationToken);
-		if (entity != null)
+		List<CategoryEntity> entities = await context.Categories
+			.Where(e => ids.Contains(e.Id))
+			.ToListAsync(cancellationToken);
+
+		// Load owned children into the change tracker so cascade soft-delete fires
+		await context.Subcategories.IgnoreAutoIncludes().Where(s => ids.Contains(s.CategoryId)).LoadAsync(cancellationToken);
+
+		context.Categories.RemoveRange(entities);
+		await context.SaveChangesAsync(cancellationToken);
+	}
+
+	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		CategoryEntity? entity = await context.Categories
+			.IncludeDeleted()
+			.FirstOrDefaultAsync(e => e.Id == id && e.DeletedAt != null, cancellationToken);
+
+		if (entity is null)
 		{
-			context.Categories.Remove(entity);
-			await context.SaveChangesAsync(cancellationToken);
+			return false;
 		}
+
+		entity.DeletedAt = null;
+		entity.DeletedByUserId = null;
+		entity.DeletedByApiKeyId = null;
+		entity.CascadeDeletedByParentId = null;
+
+		await context.RestoreOwnedChildrenAsync<CategoryEntity>(id, cancellationToken);
+
+		await context.SaveChangesAsync(cancellationToken);
+		return true;
 	}
 
 	public async Task<int> GetSubcategoryCountAsync(Guid categoryId, CancellationToken cancellationToken)
@@ -92,5 +146,27 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 		return await context.ReceiptItems
 			.IgnoreQueryFilters()
 			.CountAsync(ri => ri.Category == categoryName, cancellationToken);
+	}
+
+	public async Task<List<string>> GetSubcategoryNamesAsync(Guid categoryId, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Subcategories
+			.Where(s => s.CategoryId == categoryId)
+			.Select(s => s.Name)
+			.ToListAsync(cancellationToken);
+	}
+
+	public async Task<int> GetReceiptItemCountBySubcategoryNamesAsync(List<string> subcategoryNames, CancellationToken cancellationToken)
+	{
+		if (subcategoryNames.Count == 0)
+		{
+			return 0;
+		}
+
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.ReceiptItems
+			.IgnoreQueryFilters()
+			.CountAsync(ri => ri.Subcategory != null && subcategoryNames.Contains(ri.Subcategory), cancellationToken);
 	}
 }

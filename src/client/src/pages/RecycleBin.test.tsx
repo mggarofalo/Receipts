@@ -22,6 +22,16 @@ vi.mock("@/hooks/useTransactions", () => ({
   useRestoreTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
+vi.mock("@/hooks/useCategories", () => ({
+  useDeletedCategories: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useRestoreCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
+
+vi.mock("@/hooks/useSubcategories", () => ({
+  useDeletedSubcategories: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useRestoreSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
+
 vi.mock("@/hooks/useItemTemplates", () => ({
   useDeletedItemTemplates: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useRestoreItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),

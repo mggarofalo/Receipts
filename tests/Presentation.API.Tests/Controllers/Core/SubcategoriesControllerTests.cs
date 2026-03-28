@@ -353,7 +353,7 @@ public class SubcategoriesControllerTests
 			.ReturnsAsync(0);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteSubcategoryCommand>(c => c.Id == subcategory.Id),
+			It.Is<DeleteSubcategoryCommand>(c => c.Ids.Contains(subcategory.Id)),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
@@ -418,7 +418,7 @@ public class SubcategoriesControllerTests
 			.ReturnsAsync(0);
 
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteSubcategoryCommand>(c => c.Id == subcategory.Id),
+			It.Is<DeleteSubcategoryCommand>(c => c.Ids.Contains(subcategory.Id)),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 

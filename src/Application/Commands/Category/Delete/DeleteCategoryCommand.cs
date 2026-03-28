@@ -4,17 +4,19 @@ namespace Application.Commands.Category.Delete;
 
 public record DeleteCategoryCommand : ICommand<bool>
 {
-	public Guid Id { get; }
+	public IReadOnlyList<Guid> Ids { get; }
 
-	public const string IdCannotBeEmpty = "Id cannot be empty.";
+	public const string IdsListCannotBeEmpty = "Ids list cannot be empty.";
 
-	public DeleteCategoryCommand(Guid id)
+	public DeleteCategoryCommand(List<Guid> ids)
 	{
-		if (id == Guid.Empty)
+		ArgumentNullException.ThrowIfNull(ids);
+
+		if (ids.Count == 0)
 		{
-			throw new ArgumentException(IdCannotBeEmpty, nameof(id));
+			throw new ArgumentException(IdsListCannotBeEmpty, nameof(ids));
 		}
 
-		Id = id;
+		Ids = ids.AsReadOnly();
 	}
 }
