@@ -2805,7 +2805,7 @@ components:
 
     CreateCategoryRequest:
       type: object
-      required: [name, isActive]
+      required: [name]
       properties:
         name:
           type: string
@@ -2818,7 +2818,7 @@ components:
 
     UpdateCategoryRequest:
       type: object
-      required: [id, name, isActive]
+      required: [id, name]
       properties:
         id:
           type: string
@@ -2870,7 +2870,7 @@ components:
 
     CreateSubcategoryRequest:
       type: object
-      required: [name, categoryId, isActive]
+      required: [name, categoryId]
       properties:
         name:
           type: string
@@ -2886,7 +2886,7 @@ components:
 
     UpdateSubcategoryRequest:
       type: object
-      required: [id, name, categoryId, isActive]
+      required: [id, name, categoryId]
       properties:
         id:
           type: string
