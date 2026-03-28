@@ -1,0 +1,131 @@
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { renderWithProviders } from "@/test/test-utils";
+import { mockQueryResult } from "@/test/mock-hooks";
+import "@/test/setup-combobox-polyfills";
+import { TransactionsSection } from "./TransactionsSection";
+
+vi.mock("@/hooks/useFormShortcuts", () => ({
+  useFormShortcuts: vi.fn(),
+}));
+
+vi.mock("@/hooks/useAccounts", () => ({
+  useAccounts: vi.fn(() =>
+    mockQueryResult({
+      data: [
+        { id: "acct-1", name: "Checking", accountCode: "CHK" },
+        { id: "acct-2", name: "Credit Card", accountCode: "CC" },
+      ],
+      total: 2,
+      isLoading: false,
+      isSuccess: true,
+    }),
+  ),
+}));
+
+describe("TransactionsSection", () => {
+  const defaultProps = {
+    transactions: [] as { id: string; accountId: string; amount: number; date: string }[],
+    defaultDate: "2024-01-15",
+    onChange: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders the card title", () => {
+    renderWithProviders(<TransactionsSection {...defaultProps} />);
+    expect(screen.getByText("Transactions")).toBeInTheDocument();
+  });
+
+  it("renders the form fields", () => {
+    renderWithProviders(<TransactionsSection {...defaultProps} />);
+    expect(screen.getByLabelText(/amount/i)).toBeInTheDocument();
+    expect(screen.getByText(/^date$/i)).toBeInTheDocument();
+  });
+
+  it("renders Add button", () => {
+    renderWithProviders(<TransactionsSection {...defaultProps} />);
+    expect(
+      screen.getByRole("button", { name: /add/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("displays running total", () => {
+    renderWithProviders(<TransactionsSection {...defaultProps} />);
+    expect(screen.getByText("Total: $0.00")).toBeInTheDocument();
+  });
+
+  it("renders existing transactions", () => {
+    const transactions = [
+      { id: "1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
+    ];
+    renderWithProviders(
+      <TransactionsSection {...defaultProps} transactions={transactions} />,
+    );
+    expect(screen.getByText("$25.50")).toBeInTheDocument();
+    expect(screen.getByText("Checking")).toBeInTheDocument();
+  });
+
+  it("calls onChange when a transaction is added via form submit", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderWithProviders(
+      <TransactionsSection {...defaultProps} onChange={onChange} />,
+    );
+
+    // Select account via combobox
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    const checkingOption = await screen.findByText("Checking");
+    await user.click(checkingOption);
+
+    // Type amount
+    const amountInput = screen.getByLabelText(/amount/i);
+    await user.click(amountInput);
+    await user.type(amountInput, "42.50");
+
+    // Press Enter to submit
+    await user.keyboard("{Enter}");
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          accountId: "acct-1",
+          amount: 42.5,
+          date: "2024-01-15",
+        }),
+      ]),
+    );
+  });
+
+  it("calls onChange when a transaction is removed", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const transactions = [
+      { id: "1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
+    ];
+    renderWithProviders(
+      <TransactionsSection
+        {...defaultProps}
+        transactions={transactions}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /remove/i }));
+    expect(onChange).toHaveBeenCalledWith([]);
+  });
+
+  it("displays running total with existing transactions", () => {
+    const transactions = [
+      { id: "1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
+      { id: "2", accountId: "acct-2", amount: 10.0, date: "2024-01-15" },
+    ];
+    renderWithProviders(
+      <TransactionsSection {...defaultProps} transactions={transactions} />,
+    );
+    expect(screen.getByText("Total: $35.50")).toBeInTheDocument();
+  });
+});

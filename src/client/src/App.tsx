@@ -21,7 +21,7 @@ import AdminUsers from "@/pages/AdminUsers";
 import AuditLog from "@/pages/AuditLog";
 import SecurityLog from "@/pages/SecurityLog";
 import RecycleBin from "@/pages/RecycleBin";
-import NewReceipt from "@/pages/wizard/NewReceipt";
+import NewReceipt from "@/pages/new-receipt/NewReceiptPage";
 import NotFound from "@/pages/NotFound";
 
 export const routeConfig = [
