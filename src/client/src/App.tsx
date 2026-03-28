@@ -16,6 +16,7 @@ import Transactions from "@/pages/Transactions";
 import Trips from "@/pages/Trips";
 import ItemTemplates from "@/pages/ItemTemplates";
 import ReceiptDetail from "@/pages/ReceiptDetail";
+import ReceiptDetailRedirect from "@/pages/ReceiptDetailRedirect";
 import TransactionDetail from "@/pages/TransactionDetail";
 import AdminUsers from "@/pages/AdminUsers";
 import AuditLog from "@/pages/AuditLog";
@@ -52,7 +53,8 @@ export const routeConfig = [
           { path: "/transactions", element: <Transactions /> },
           { path: "/trips", element: <Trips /> },
           { path: "/item-templates", element: <ItemTemplates /> },
-          { path: "/receipt-detail", element: <ReceiptDetail /> },
+          { path: "/receipts/:id", element: <ReceiptDetail /> },
+          { path: "/receipt-detail", element: <ReceiptDetailRedirect /> },
           { path: "/transaction-detail", element: <TransactionDetail /> },
           { path: "/api-keys", element: <ApiKeys /> },
           { path: "/security", element: <SecurityLog /> },

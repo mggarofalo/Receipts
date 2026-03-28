@@ -40,6 +40,9 @@ vi.mock("@/pages/ItemTemplates", () => ({
 vi.mock("@/pages/ReceiptDetail", () => ({
   default: () => <div data-testid="page-receipt-detail">ReceiptDetail</div>,
 }));
+vi.mock("@/pages/ReceiptDetailRedirect", () => ({
+  default: () => <div data-testid="page-receipt-detail-redirect">Redirect</div>,
+}));
 vi.mock("@/pages/TransactionDetail", () => ({
   default: () => (
     <div data-testid="page-transaction-detail">TransactionDetail</div>

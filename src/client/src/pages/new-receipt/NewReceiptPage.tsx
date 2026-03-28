@@ -158,7 +158,7 @@ export default function NewReceiptPage() {
       const receiptId = (result as { receipt: { id: string } }).receipt.id;
 
       toast.success("Receipt created successfully!");
-      navigate(`/receipt-detail?id=${receiptId}&highlight=${receiptId}`);
+      navigate(`/receipts/${receiptId}`);
     } catch {
       toast.error("Failed to create receipt.");
     } finally {

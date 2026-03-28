@@ -355,7 +355,7 @@ describe("NewReceipt", () => {
       "Receipt created successfully!",
     );
     expect(mockNavigate).toHaveBeenCalledWith(
-      "/receipt-detail?id=receipt-123&highlight=receipt-123",
+      "/receipts/receipt-123",
     );
   });
 

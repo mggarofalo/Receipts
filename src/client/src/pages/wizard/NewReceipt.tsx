@@ -100,7 +100,7 @@ export default function NewReceipt() {
 
       toast.success("Receipt created successfully!");
       reset();
-      navigate(`/receipt-detail?id=${receiptId}&highlight=${receiptId}`);
+      navigate(`/receipts/${receiptId}`);
     } catch {
       toast.error("Failed to create receipt.");
     } finally {

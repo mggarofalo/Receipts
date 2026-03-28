@@ -11,7 +11,6 @@ const routeLabels: Record<string, string> = {
   "/receipt-items": "Receipt Items",
   "/transactions": "Transactions",
   "/trips": "Trips",
-  "/receipt-detail": "Receipt Detail",
   "/transaction-detail": "Transaction Detail",
   "/api-keys": "API Keys",
   "/security": "Security",
