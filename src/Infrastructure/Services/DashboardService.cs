@@ -87,11 +87,15 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 		switch (granularity.ToLowerInvariant())
 		{
 			case "daily":
-				buckets = await transactionsWithDate
+				// Materialize first — DateOnly.ToString() cannot be translated to SQL by Npgsql.
+				var dailyRaw = await transactionsWithDate.ToListAsync(cancellationToken);
+				buckets = dailyRaw
 					.GroupBy(x => x.Date)
-					.Select(g => new SpendingBucketResult(g.Key.ToString("yyyy-MM-dd"), g.Sum(x => x.Amount)))
-					.OrderBy(b => b.Period)
-					.ToListAsync(cancellationToken);
+					.OrderBy(g => g.Key)
+					.Select(g => new SpendingBucketResult(
+						g.Key.ToString("yyyy-MM-dd"),
+						g.Sum(x => x.Amount)))
+					.ToList();
 				break;
 
 			case "weekly":
