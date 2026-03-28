@@ -162,6 +162,35 @@ describe("Combobox", () => {
     });
   });
 
+  it("clears search when popover closes without selection", async () => {
+    const user = userEvent.setup();
+    render(<Combobox {...defaultProps} />);
+
+    // Open and type to filter
+    await user.click(screen.getByRole("combobox"));
+    await waitFor(() => {
+      expect(screen.getByText("Apple")).toBeInTheDocument();
+    });
+    await user.type(screen.getByPlaceholderText("Search fruit..."), "ban");
+
+    await waitFor(() => {
+      expect(screen.getByText("Banana")).toBeInTheDocument();
+      expect(screen.queryByText("Apple")).not.toBeInTheDocument();
+    });
+
+    // Close without selecting (press Escape)
+    await user.keyboard("{Escape}");
+
+    // Reopen — all options should be visible (search was cleared)
+    await user.click(screen.getByRole("combobox"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Apple")).toBeInTheDocument();
+      expect(screen.getByText("Banana")).toBeInTheDocument();
+      expect(screen.getByText("Cherry")).toBeInTheDocument();
+    });
+  });
+
   it("filters by sublabel when present", async () => {
     const optionsWithSublabels: ComboboxOption[] = [
       { value: "milk", label: "Milk", sublabel: "Dairy" },

@@ -47,6 +47,10 @@ The API does not self-migrate or self-seed. See **[docs/development.md](docs/dev
 
 C# conventions, Mapperly rules, EF Core query guidelines, React hook stability rules. See **[docs/coding-standards.md](docs/coding-standards.md)**.
 
+## React Best Practices
+
+State management, Effects, component patterns, and custom hook conventions for the React client. See **[docs/react/README.md](docs/react/README.md)**.
+
 ## Agent Rules
 
 **All new functionality must include tests.** When implementing a feature, endpoint, command, query, or bug fix, include corresponding unit tests in the same PR. Follow existing conventions (xUnit, Arrange/Act/Assert, FluentAssertions, Moq).

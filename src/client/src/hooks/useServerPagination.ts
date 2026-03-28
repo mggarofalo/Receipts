@@ -1,8 +1,10 @@
-import { useReducer, useMemo, useCallback } from "react";
+import { useReducer, useMemo, useCallback, useRef, useEffect } from "react";
 import { getPersistedPageSize, persistPageSize } from "@/lib/page-size";
 
 interface UseServerPaginationOptions {
   defaultPageSize?: number;
+  sortBy?: string | null;
+  sortDirection?: "asc" | "desc";
 }
 
 interface UseServerPaginationReturn {
@@ -38,11 +40,24 @@ function reducer(state: State, action: Action): State {
 
 export function useServerPagination({
   defaultPageSize = 25,
+  sortBy,
+  sortDirection,
 }: UseServerPaginationOptions = {}): UseServerPaginationReturn {
   const [state, dispatch] = useReducer(reducer, {
     offset: 0,
     limit: getPersistedPageSize() ?? defaultPageSize,
   });
+
+  // Reset to page 1 when sort params change (e.g. browser back/forward).
+  // Skip the initial mount so we don't dispatch a redundant reset.
+  const prevSortRef = useRef({ sortBy, sortDirection });
+  useEffect(() => {
+    const prev = prevSortRef.current;
+    if (prev.sortBy !== sortBy || prev.sortDirection !== sortDirection) {
+      prevSortRef.current = { sortBy, sortDirection };
+      dispatch({ type: "SET_OFFSET", offset: 0 });
+    }
+  }, [sortBy, sortDirection]);
 
   const currentPage = useMemo(
     () => Math.floor(state.offset / state.limit) + 1,

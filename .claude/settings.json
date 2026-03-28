@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/worktree-create.py"
+            "command": "python3 .claude/hooks/worktree-create.py"
           }
         ]
       }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link } from "react-router";
 import {
   useCategories,
@@ -36,8 +36,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info, Pencil } from "lucide-react";
 
 interface CategoryResponse {
   id: string;
@@ -58,7 +58,7 @@ function Categories() {
   usePageTitle("Categories");
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { data: categoriesData, total: serverTotal, isLoading } = useCategories(offset, limit, sortBy, sortDirection);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -77,7 +77,10 @@ function Categories() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data = (categoriesData as CategoryResponse[] | undefined) ?? [];
   useSavedFilters("categories");
@@ -97,11 +100,8 @@ function Categories() {
     return map;
   }, [results]);
 
-  useEffect(() => {
-    if (linkParams.highlight && data.length > 0 && !data.some((c) => c.id === linkParams.highlight)) {
-      toast.info("The highlighted item is not on this page.");
-    }
-  }, [linkParams.highlight, data]);
+  const highlightMissing =
+    linkParams.highlight && data.length > 0 && !data.some((c) => c.id === linkParams.highlight);
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: filteredResults,
@@ -130,6 +130,13 @@ function Categories() {
         <Button onClick={() => setCreateOpen(true)}>New Category</Button>
       </div>
 
+      {highlightMissing && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>The highlighted item is not on this page.</AlertDescription>
+        </Alert>
+      )}
+
       {filteredResults.length === 0 ? (
         search ? (
           <NoResults
@@ -157,7 +164,7 @@ function Categories() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Description</TableHead>
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>

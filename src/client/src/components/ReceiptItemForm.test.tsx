@@ -338,4 +338,22 @@ describe("ReceiptItemForm", () => {
       expect(screen.getByText("ITM-002")).toBeInTheDocument();
     });
   });
+
+  it("does not allow custom category values (no 'Use' option for arbitrary text)", async () => {
+    const user = userEvent.setup();
+    render(<ReceiptItemForm {...defaultProps} />);
+
+    // Open the category combobox
+    const categoryCombobox = screen.getByLabelText("Category");
+    await user.click(categoryCombobox);
+
+    // Type a non-existent category (like a store name)
+    const searchInput = screen.getByPlaceholderText("Search categories...");
+    await user.type(searchInput, "Costco");
+
+    // Should NOT show a "Use" button for arbitrary text
+    await waitFor(() => {
+      expect(screen.queryByText(/use.*costco/i)).not.toBeInTheDocument();
+    });
+  });
 });

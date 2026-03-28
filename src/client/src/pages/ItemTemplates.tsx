@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   useItemTemplates,
   useCreateItemTemplate,
@@ -63,7 +63,7 @@ const SEARCH_CONFIG: FuseSearchConfig<ItemTemplateResponse> = {
 function ItemTemplates() {
   usePageTitle("Item Templates");
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
-  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination();
+  const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
   const { data: itemTemplatesData, total: serverTotal, isLoading } = useItemTemplates(offset, limit, sortBy, sortDirection);
   const createItemTemplate = useCreateItemTemplate();
   const updateItemTemplate = useUpdateItemTemplate();
@@ -86,7 +86,10 @@ function ItemTemplates() {
     return () => window.removeEventListener("shortcut:new-item", onNewItem);
   }, []);
 
-  useEffect(() => { resetPage(); }, [sortBy, sortDirection, resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetPage();
+  }, [toggleSort, resetPage]);
 
   const data = (itemTemplatesData as ItemTemplateResponse[] | undefined) ?? [];
   useSavedFilters("itemTemplates");
@@ -201,7 +204,7 @@ function ItemTemplates() {
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </TableHead>
-                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={toggleSort} />
+                  <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Category</TableHead>
                   <TableHead>Subcategory</TableHead>
                   <TableHead>Unit Price</TableHead>

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback } from "react";
 import {
   useMyAuthAuditLog,
   useRecentAuthAuditLogs,
@@ -20,19 +20,24 @@ function SecurityLog() {
   const { authEventLabels } = useEnumMetadata();
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "timestamp", defaultSortDirection: "desc" });
 
-  const myPagination = useServerPagination();
-  const recentPagination = useServerPagination();
-  const failedPagination = useServerPagination();
+  const myPagination = useServerPagination({ sortBy, sortDirection });
+  const recentPagination = useServerPagination({ sortBy, sortDirection });
+  const failedPagination = useServerPagination({ sortBy, sortDirection });
+
+  const { resetPage: resetMyPage } = myPagination;
+  const { resetPage: resetRecentPage } = recentPagination;
+  const { resetPage: resetFailedPage } = failedPagination;
 
   const myLogs = useMyAuthAuditLog(myPagination.offset, myPagination.limit, sortBy, sortDirection);
   const recentLogs = useRecentAuthAuditLogs(recentPagination.offset, recentPagination.limit, sortBy, sortDirection);
   const failedLogs = useFailedAuthAttempts(failedPagination.offset, failedPagination.limit, sortBy, sortDirection);
 
-  useEffect(() => {
-    myPagination.resetPage();
-    recentPagination.resetPage();
-    failedPagination.resetPage();
-  }, [sortBy, sortDirection, myPagination.resetPage, recentPagination.resetPage, failedPagination.resetPage]);
+  const handleSort = useCallback((column: string) => {
+    toggleSort(column);
+    resetMyPage();
+    resetRecentPage();
+    resetFailedPage();
+  }, [toggleSort, resetMyPage, resetRecentPage, resetFailedPage]);
 
   const myTotal = myLogs.total;
   const recentTotal = recentLogs.total;
@@ -59,7 +64,7 @@ function SecurityLog() {
             isLoading={myLogs.isLoading}
             sortBy={sortBy}
             sortDirection={sortDirection}
-            onToggleSort={toggleSort}
+            onToggleSort={handleSort}
             authEventLabels={authEventLabels}
           />
           <Pagination
@@ -80,7 +85,7 @@ function SecurityLog() {
               showUsername
               sortBy={sortBy}
               sortDirection={sortDirection}
-              onToggleSort={toggleSort}
+              onToggleSort={handleSort}
               authEventLabels={authEventLabels}
             />
             <Pagination
@@ -102,7 +107,7 @@ function SecurityLog() {
               showUsername
               sortBy={sortBy}
               sortDirection={sortDirection}
-              onToggleSort={toggleSort}
+              onToggleSort={handleSort}
               authEventLabels={authEventLabels}
             />
             <Pagination

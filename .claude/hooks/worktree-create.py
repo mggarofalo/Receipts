@@ -23,6 +23,17 @@ def main():
     name = payload["name"]
     cwd = payload["cwd"]
 
+    # If cwd doesn't exist (e.g., stale worktree path), resolve the repo root
+    if not os.path.isdir(cwd):
+        try:
+            cwd = subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                capture_output=True, text=True, check=True,
+            ).stdout.strip()
+        except subprocess.CalledProcessError:
+            print(f"ERROR: cwd {cwd} does not exist and git toplevel not found", file=sys.stderr)
+            sys.exit(1)
+
     worktree_dir = os.path.join(cwd, ".claude", "worktrees", name)
     branch_name = f"worktree-{name}"
 

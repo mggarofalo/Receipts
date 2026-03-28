@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult } from "@/test/mock-hooks";
+import "@/test/setup-combobox-polyfills";
 import { Step4Review } from "./Step4Review";
 import type { WizardState } from "./wizardReducer";
 
@@ -81,9 +82,31 @@ describe("Step4Review", () => {
     ).toBeInTheDocument();
   });
 
+  it("disables Submit button when receipt is unbalanced", () => {
+    // Default state: txn total = 50, expected = 7.98 + 5 = 12.98 → unbalanced
+    renderWithProviders(<Step4Review {...defaultProps} />);
+    expect(
+      screen.getByRole("button", { name: /submit receipt/i }),
+    ).toBeDisabled();
+  });
+
+  it("enables Submit button when receipt is balanced", () => {
+    // items subtotal = 2*3.99 = 7.98, tax = 5, expected = 12.98
+    const state = createState({
+      transactions: [{ id: "t1", accountId: "acct-1", amount: 12.98, date: "2024-01-15" }],
+    });
+    renderWithProviders(<Step4Review {...defaultProps} state={state} />);
+    expect(
+      screen.getByRole("button", { name: /submit receipt/i }),
+    ).not.toBeDisabled();
+  });
+
   it("shows Submitting... when isSubmitting is true", () => {
+    const state = createState({
+      transactions: [{ id: "t1", accountId: "acct-1", amount: 12.98, date: "2024-01-15" }],
+    });
     renderWithProviders(
-      <Step4Review {...defaultProps} isSubmitting={true} />,
+      <Step4Review {...defaultProps} state={state} isSubmitting={true} />,
     );
     expect(
       screen.getByRole("button", { name: /submitting/i }),
@@ -116,12 +139,28 @@ describe("Step4Review", () => {
     expect(onBack).toHaveBeenCalled();
   });
 
-  it("calls onSubmit when Submit is clicked", async () => {
+  it("calls onSubmit when Submit is clicked on a balanced receipt", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const onSubmit = vi.fn();
-    renderWithProviders(<Step4Review {...defaultProps} onSubmit={onSubmit} />);
+    const state = createState({
+      transactions: [{ id: "t1", accountId: "acct-1", amount: 12.98, date: "2024-01-15" }],
+    });
+    renderWithProviders(
+      <Step4Review {...defaultProps} state={state} onSubmit={onSubmit} />,
+    );
     await user.click(screen.getByRole("button", { name: /submit receipt/i }));
     expect(onSubmit).toHaveBeenCalled();
+  });
+
+  it("does not call onSubmit when Submit is clicked on an unbalanced receipt", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const onSubmit = vi.fn();
+    renderWithProviders(
+      <Step4Review {...defaultProps} onSubmit={onSubmit} />,
+    );
+    const btn = screen.getByRole("button", { name: /submit receipt/i });
+    await user.click(btn);
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it("shows balanced status when amounts match", () => {

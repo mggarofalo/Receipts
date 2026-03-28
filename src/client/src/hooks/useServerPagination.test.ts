@@ -95,4 +95,62 @@ describe("useServerPagination", () => {
     expect(localStorage.getItem("table-page-size")).toBe("50");
     expect(result.current.limit).toBe(50);
   });
+
+  it("resets offset when sortBy changes", () => {
+    const { result, rerender } = renderHook(
+      ({ sortBy }) =>
+        useServerPagination({ defaultPageSize: 10, sortBy, sortDirection: "asc" }),
+      { initialProps: { sortBy: "name" } },
+    );
+    act(() => result.current.setPage(3, 100));
+    expect(result.current.offset).toBe(20);
+
+    rerender({ sortBy: "date" });
+    expect(result.current.offset).toBe(0);
+    expect(result.current.currentPage).toBe(1);
+  });
+
+  it("resets offset when sortDirection changes", () => {
+    const { result, rerender } = renderHook(
+      ({ sortDirection }: { sortDirection: "asc" | "desc" }) =>
+        useServerPagination({ defaultPageSize: 10, sortBy: "name", sortDirection }),
+      { initialProps: { sortDirection: "asc" as "asc" | "desc" } },
+    );
+    act(() => result.current.setPage(3, 100));
+    expect(result.current.offset).toBe(20);
+
+    rerender({ sortDirection: "desc" });
+    expect(result.current.offset).toBe(0);
+    expect(result.current.currentPage).toBe(1);
+  });
+
+  it("does not reset offset on initial mount with sort params", () => {
+    const { result } = renderHook(() =>
+      useServerPagination({ defaultPageSize: 10, sortBy: "name", sortDirection: "asc" }),
+    );
+    expect(result.current.offset).toBe(0);
+    expect(result.current.currentPage).toBe(1);
+  });
+
+  it("does not reset offset when sort params stay the same", () => {
+    const { result, rerender } = renderHook(
+      ({ sortBy }) =>
+        useServerPagination({ defaultPageSize: 10, sortBy, sortDirection: "asc" }),
+      { initialProps: { sortBy: "name" } },
+    );
+    act(() => result.current.setPage(3, 100));
+    expect(result.current.offset).toBe(20);
+
+    rerender({ sortBy: "name" });
+    expect(result.current.offset).toBe(20);
+  });
+
+  it("works without sort params (backward compatible)", () => {
+    const { result } = renderHook(() =>
+      useServerPagination({ defaultPageSize: 10 }),
+    );
+    act(() => result.current.setPage(3, 100));
+    expect(result.current.offset).toBe(20);
+    expect(result.current.currentPage).toBe(3);
+  });
 });

@@ -358,6 +358,12 @@ namespace Infrastructure.Migrations
                             Id = new Guid("705da6c5-6fb6-4b3c-aef1-f42e5136a499"),
                             Description = "Electric, water, internet, and phone",
                             Name = "Utilities"
+                        },
+                        new
+                        {
+                            Id = new Guid("f0e7a123-9b56-4d3a-8c1e-2a5b7d9f4e6c"),
+                            Description = "Default category for items without a valid category",
+                            Name = "Uncategorized"
                         });
                 });
 
