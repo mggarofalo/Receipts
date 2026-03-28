@@ -118,4 +118,24 @@ describe("App router", () => {
     renderRoute("/some/unknown/path");
     expect(await screen.findByTestId("page-not-found")).toBeInTheDocument();
   });
+
+  it("redirects /receipt-items to /receipts", async () => {
+    renderRoute("/receipt-items");
+    expect(await screen.findByTestId("page-receipts")).toBeInTheDocument();
+  });
+
+  it("redirects /transactions to /receipts", async () => {
+    renderRoute("/transactions");
+    expect(await screen.findByTestId("page-receipts")).toBeInTheDocument();
+  });
+
+  it("redirects /transaction-detail to /receipts", async () => {
+    renderRoute("/transaction-detail");
+    expect(await screen.findByTestId("page-receipts")).toBeInTheDocument();
+  });
+
+  it("redirects /trips to /receipts", async () => {
+    renderRoute("/trips");
+    expect(await screen.findByTestId("page-receipts")).toBeInTheDocument();
+  });
 });
