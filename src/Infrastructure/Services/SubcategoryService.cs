@@ -63,4 +63,14 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 		List<SubcategoryEntity> subcategoryEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(subcategoryEntities, cancellationToken);
 	}
+
+	public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+	{
+		await repository.DeleteAsync(id, cancellationToken);
+	}
+
+	public async Task<int> GetReceiptItemCountBySubcategoryNameAsync(string subcategoryName, CancellationToken cancellationToken)
+	{
+		return await repository.GetReceiptItemCountBySubcategoryNameAsync(subcategoryName, cancellationToken);
+	}
 }

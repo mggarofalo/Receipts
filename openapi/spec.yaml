@@ -446,6 +446,42 @@ paths:
               $ref: "#/components/headers/X-Resource-Id"
         "404":
           description: Not Found
+    delete:
+      operationId: DeleteSubcategory
+      tags: [Subcategories]
+      summary: Hard-delete a subcategory
+      description: >
+        Permanently deletes a subcategory. Requires the Admin role. Returns 409
+        Conflict if receipt items reference this subcategory.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict — receipt items reference this subcategory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  receiptItemCount:
+                    type: integer
+                required:
+                  - message
+                  - receiptItemCount
 
   /api/subcategories:
     get:

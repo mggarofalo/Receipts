@@ -13,4 +13,6 @@ public interface ISubcategoryRepository
 	Task UpdateAsync(List<SubcategoryEntity> entities, CancellationToken cancellationToken);
 	Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken);
 	Task<int> GetCountAsync(CancellationToken cancellationToken);
+	Task DeleteAsync(Guid id, CancellationToken cancellationToken);
+	Task<int> GetReceiptItemCountBySubcategoryNameAsync(string subcategoryName, CancellationToken cancellationToken);
 }
