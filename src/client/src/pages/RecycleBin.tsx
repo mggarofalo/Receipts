@@ -15,6 +15,14 @@ import {
   useDeletedItemTemplates,
   useRestoreItemTemplate,
 } from "@/hooks/useItemTemplates";
+import {
+  useDeletedCategories,
+  useRestoreCategory,
+} from "@/hooks/useCategories";
+import {
+  useDeletedSubcategories,
+  useRestoreSubcategory,
+} from "@/hooks/useSubcategories";
 import { usePurgeTrash } from "@/hooks/useTrash";
 import { truncateId } from "@/lib/audit-utils";
 import { Button } from "@/components/ui/button";
@@ -64,6 +72,8 @@ function RestoreButton({
   const restoreReceiptItem = useRestoreReceiptItem();
   const restoreTransaction = useRestoreTransaction();
   const restoreItemTemplate = useRestoreItemTemplate();
+  const restoreCategory = useRestoreCategory();
+  const restoreSubcategory = useRestoreSubcategory();
 
   const mutations: Record<
     string,
@@ -73,6 +83,8 @@ function RestoreButton({
     ReceiptItem: restoreReceiptItem,
     Transaction: restoreTransaction,
     ItemTemplate: restoreItemTemplate,
+    Category: restoreCategory,
+    Subcategory: restoreSubcategory,
   };
 
   const mutation = mutations[entityType];
@@ -175,13 +187,17 @@ function RecycleBin() {
   const receiptItems = useDeletedReceiptItems();
   const transactions = useDeletedTransactions();
   const itemTemplates = useDeletedItemTemplates();
+  const categories = useDeletedCategories();
+  const subcategories = useDeletedSubcategories();
   const purgeTrash = usePurgeTrash();
 
   const isLoading =
     receipts.isLoading ||
     receiptItems.isLoading ||
     transactions.isLoading ||
-    itemTemplates.isLoading;
+    itemTemplates.isLoading ||
+    categories.isLoading ||
+    subcategories.isLoading;
 
   const allItems = useMemo(() => {
     const items: DeletedItem[] = [];
@@ -218,6 +234,22 @@ function RecycleBin() {
         label: it.name,
       });
     }
+    for (const c of categories.data ?? []) {
+      items.push({
+        entityType: "Category",
+        entityTypeLabel: "Category",
+        id: c.id,
+        label: c.name,
+      });
+    }
+    for (const s of subcategories.data ?? []) {
+      items.push({
+        entityType: "Subcategory",
+        entityTypeLabel: "Subcategory",
+        id: s.id,
+        label: s.name,
+      });
+    }
 
     return items;
   }, [
@@ -225,6 +257,8 @@ function RecycleBin() {
     receiptItems.data,
     transactions.data,
     itemTemplates.data,
+    categories.data,
+    subcategories.data,
   ]);
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({

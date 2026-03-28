@@ -3,8 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-// Note: Categories are hard-delete entities (no soft-delete/restore).
-
 export function useCategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   const query = useQuery({
     queryKey: ["categories", "list", offset, limit, sortBy, sortDirection],
@@ -82,7 +80,6 @@ export function useUpdateCategory() {
 
 export interface DeleteCategoryConflict {
   message: string;
-  subcategoryCount?: number;
   receiptItemCount?: number;
 }
 
@@ -103,6 +100,7 @@ export function useDeleteCategory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories", "deleted"] });
       toast.success("Category deleted");
     },
     onError: (error: unknown) => {
@@ -116,3 +114,36 @@ export function useDeleteCategory() {
   });
 }
 
+export function useDeletedCategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
+  const query = useQuery({
+    queryKey: ["categories", "deleted", offset, limit, sortBy, sortDirection],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/categories/deleted", {
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+}
+
+export function useRestoreCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await client.POST("/api/categories/{id}/restore", {
+        params: { path: { id } },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories", "deleted"] });
+      toast.success("Category restored");
+    },
+    onError: () => {
+      toast.error("Failed to restore category");
+    },
+  });
+}

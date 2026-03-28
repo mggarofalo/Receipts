@@ -39,6 +39,14 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 		return new PagedResult<Category>(data, total, offset, limit);
 	}
 
+	public async Task<PagedResult<Category>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
+	{
+		int total = await repository.GetDeletedCountAsync(cancellationToken);
+		List<CategoryEntity> entities = await repository.GetDeletedAsync(offset, limit, sort, cancellationToken);
+		List<Category> data = [.. entities.Select(mapper.ToDomain)];
+		return new PagedResult<Category>(data, total, offset, limit);
+	}
+
 	public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
 	{
 		CategoryEntity? categoryEntity = await repository.GetByIdAsync(id, cancellationToken);
@@ -56,9 +64,14 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 		await repository.UpdateAsync(categoryEntities, cancellationToken);
 	}
 
-	public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)
 	{
-		await repository.DeleteAsync(id, cancellationToken);
+		await repository.DeleteAsync(ids, cancellationToken);
+	}
+
+	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
+	{
+		return await repository.RestoreAsync(id, cancellationToken);
 	}
 
 	public async Task<int> GetSubcategoryCountAsync(Guid categoryId, CancellationToken cancellationToken)
@@ -69,5 +82,15 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 	public async Task<int> GetReceiptItemCountByCategoryNameAsync(string categoryName, CancellationToken cancellationToken)
 	{
 		return await repository.GetReceiptItemCountByCategoryNameAsync(categoryName, cancellationToken);
+	}
+
+	public async Task<List<string>> GetSubcategoryNamesAsync(Guid categoryId, CancellationToken cancellationToken)
+	{
+		return await repository.GetSubcategoryNamesAsync(categoryId, cancellationToken);
+	}
+
+	public async Task<int> GetReceiptItemCountBySubcategoryNamesAsync(List<string> subcategoryNames, CancellationToken cancellationToken)
+	{
+		return await repository.GetReceiptItemCountBySubcategoryNamesAsync(subcategoryNames, cancellationToken);
 	}
 }

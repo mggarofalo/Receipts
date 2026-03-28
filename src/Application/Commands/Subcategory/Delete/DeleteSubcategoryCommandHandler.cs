@@ -7,13 +7,7 @@ public class DeleteSubcategoryCommandHandler(ISubcategoryService subcategoryServ
 {
 	public async Task<bool> Handle(DeleteSubcategoryCommand request, CancellationToken cancellationToken)
 	{
-		bool exists = await subcategoryService.ExistsAsync(request.Id, cancellationToken);
-		if (!exists)
-		{
-			return false;
-		}
-
-		await subcategoryService.DeleteAsync(request.Id, cancellationToken);
+		await subcategoryService.DeleteAsync([.. request.Ids], cancellationToken);
 		return true;
 	}
 }

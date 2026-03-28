@@ -7,17 +7,6 @@ import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
   Form,
   FormControl,
   FormField,
@@ -25,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Trash2 } from "lucide-react";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -41,9 +29,6 @@ interface CategoryFormProps {
   onSubmit: (values: CategoryFormValues) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
-  onDelete?: () => void;
-  isDeleting?: boolean;
-  isAdmin?: boolean;
 }
 
 export function CategoryForm({
@@ -52,9 +37,6 @@ export function CategoryForm({
   onSubmit,
   onCancel,
   isSubmitting,
-  onDelete,
-  isDeleting,
-  isAdmin,
 }: CategoryFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
@@ -120,50 +102,15 @@ export function CategoryForm({
           )}
         />
 
-        <div className="flex items-center pt-4">
-          {mode === "edit" && isAdmin && onDelete && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Category?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete this category. This action
-                    cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    variant="destructive"
-                    onClick={onDelete}
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-          <div className="ml-auto flex gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <SubmitButton
-              isSubmitting={isSubmitting ?? false}
-              label={mode === "create" ? "Create Category" : "Update Category"}
-              loadingLabel="Saving..."
-            />
-          </div>
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <SubmitButton
+            isSubmitting={isSubmitting ?? false}
+            label={mode === "create" ? "Create Category" : "Update Category"}
+            loadingLabel="Saving..."
+          />
         </div>
       </form>
     </Form>

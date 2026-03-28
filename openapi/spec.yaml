@@ -294,10 +294,11 @@ paths:
     delete:
       operationId: DeleteCategory
       tags: [Categories]
-      summary: Hard-delete a category
+      summary: Soft-delete a category
       description: >
-        Permanently deletes a category. Requires the Admin role. Returns 409
-        Conflict if subcategories or receipt items reference this category.
+        Soft-deletes a category and cascade soft-deletes its subcategories.
+        Returns 409 Conflict if receipt items reference this category or any
+        of its subcategories.
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -314,7 +315,7 @@ paths:
         "404":
           description: Not Found
         "409":
-          description: Conflict — subcategories or receipt items reference this category
+          description: Conflict — receipt items reference this category or its subcategories
           content:
             application/json:
               schema:
@@ -322,10 +323,59 @@ paths:
                 properties:
                   message:
                     type: string
-                  subcategoryCount:
-                    type: integer
                   receiptItemCount:
                     type: integer
+
+  /api/categories/deleted:
+    get:
+      operationId: GetDeletedCategories
+      tags: [Categories]
+      summary: Get all soft-deleted categories
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/categories/{id}/restore:
+    post:
+      operationId: RestoreCategory
+      tags: [Categories]
+      summary: Restore a soft-deleted category
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
+        "404":
+          description: Not Found
 
   /api/categories:
     get:
@@ -484,10 +534,10 @@ paths:
     delete:
       operationId: DeleteSubcategory
       tags: [Subcategories]
-      summary: Hard-delete a subcategory
+      summary: Soft-delete a subcategory
       description: >
-        Permanently deletes a subcategory. Requires the Admin role. Returns 409
-        Conflict if receipt items reference this subcategory.
+        Soft-deletes a subcategory. Returns 409 Conflict if receipt items
+        reference this subcategory.
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -517,6 +567,57 @@ paths:
                 required:
                   - message
                   - receiptItemCount
+
+  /api/subcategories/deleted:
+    get:
+      operationId: GetDeletedSubcategories
+      tags: [Subcategories]
+      summary: Get all soft-deleted subcategories
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubcategoryListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/subcategories/{id}/restore:
+    post:
+      operationId: RestoreSubcategory
+      tags: [Subcategories]
+      summary: Restore a soft-deleted subcategory
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
+        "404":
+          description: Not Found
 
   /api/subcategories:
     get:

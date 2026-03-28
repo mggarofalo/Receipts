@@ -40,8 +40,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, Pencil } from "lucide-react";
+import { Info, Pencil, Trash2 } from "lucide-react";
 
 interface CategoryResponse {
   id: string;
@@ -249,14 +260,46 @@ function Categories() {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Edit"
-                          onClick={() => setEditCategory(category)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Edit"
+                            onClick={() => setEditCategory(category)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {isAdmin() && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Category?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will soft-delete this category and all its subcategories. You can restore it from the Recycle Bin.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    variant="destructive"
+                                    onClick={() => deleteCategory.mutate(category.id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -318,13 +361,6 @@ function Categories() {
                   { id: editCategory.id, ...values },
                   { onSuccess: () => setEditCategory(null) },
                 );
-              }}
-              isAdmin={isAdmin()}
-              isDeleting={deleteCategory.isPending}
-              onDelete={() => {
-                deleteCategory.mutate(editCategory.id, {
-                  onSuccess: () => setEditCategory(null),
-                });
               }}
             />
           )}

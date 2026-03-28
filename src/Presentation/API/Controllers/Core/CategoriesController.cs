@@ -3,6 +3,7 @@ using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Category.Create;
 using Application.Commands.Category.Delete;
+using Application.Commands.Category.Restore;
 using Application.Commands.Category.Update;
 using Application.Interfaces.Services;
 using Application.Models;
@@ -30,6 +31,8 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
 	public const string RouteDelete = "{id}";
+	public const string RouteGetDeleted = "deleted";
+	public const string RouteRestore = "{id}/restore";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a category by ID")]
@@ -75,6 +78,44 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllCategoriesQuery query = new(offset, limit, sort);
+		PagedResult<Category> result = await mediator.Send(query);
+
+		return TypedResults.Ok(new CategoryListResponse
+		{
+			Data = [.. result.Data.Select(mapper.ToResponse)],
+			Total = result.Total,
+			Offset = result.Offset,
+			Limit = result.Limit,
+		});
+	}
+
+	[HttpGet(RouteGetDeleted)]
+	[EndpointSummary("Get all soft-deleted categories")]
+	[EndpointDescription("Returns all categories that have been soft-deleted.")]
+	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetDeletedCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	{
+		if (offset < 0)
+		{
+			return TypedResults.BadRequest("offset must be >= 0");
+		}
+
+		if (limit <= 0 || limit > 500)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 500");
+		}
+
+		if (sortBy is not null && !SortableColumns.Category.Contains(sortBy))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sortBy}'. Allowed: {string.Join(", ", SortableColumns.Category)}");
+		}
+
+		if (!SortableColumns.IsValidDirection(sortDirection))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
+		}
+
+		SortParams sort = new(sortBy, sortDirection);
+		GetDeletedCategoriesQuery query = new(offset, limit, sort);
 		PagedResult<Category> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new CategoryListResponse
@@ -141,9 +182,8 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	}
 
 	[HttpDelete(RouteDelete)]
-	[Authorize(Policy = "RequireAdmin")]
-	[EndpointSummary("Hard-delete a category")]
-	[EndpointDescription("Permanently deletes a category. Requires the Admin role. Returns 409 Conflict if subcategories or receipt items reference this category.")]
+	[EndpointSummary("Soft-delete a category")]
+	[EndpointDescription("Soft-deletes a category and cascade soft-deletes its subcategories. Returns 409 Conflict if receipt items reference this category or any of its subcategories.")]
 	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteCategory([FromRoute] Guid id)
 	{
 		Category? category = await mediator.Send(new GetCategoryByIdQuery(id));
@@ -153,30 +193,43 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 			return TypedResults.NotFound();
 		}
 
-		int subcategoryCount = await categoryService.GetSubcategoryCountAsync(id, HttpContext.RequestAborted);
-		if (subcategoryCount > 0)
-		{
-			logger.LogWarning("Category {Id} cannot be deleted — {Count} subcategories reference it", id, subcategoryCount);
-			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {subcategoryCount} subcategories belong to this category. Delete them first.", subcategoryCount });
-		}
-
 		int receiptItemCount = await categoryService.GetReceiptItemCountByCategoryNameAsync(category.Name, HttpContext.RequestAborted);
 		if (receiptItemCount > 0)
 		{
-			logger.LogWarning("Category {Id} cannot be deleted — {Count} receipt items reference it", id, receiptItemCount);
+			logger.LogWarning("Category {Id} cannot be deleted — {Count} receipt items reference its category name", id, receiptItemCount);
 			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {receiptItemCount} receipt item(s) use this category", receiptItemCount });
 		}
 
-		DeleteCategoryCommand command = new(id);
+		List<string> subcategoryNames = await categoryService.GetSubcategoryNamesAsync(id, HttpContext.RequestAborted);
+		int subReceiptItemCount = await categoryService.GetReceiptItemCountBySubcategoryNamesAsync(subcategoryNames, HttpContext.RequestAborted);
+		if (subReceiptItemCount > 0)
+		{
+			logger.LogWarning("Category {Id} cannot be deleted — {Count} receipt items reference its subcategories", id, subReceiptItemCount);
+			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {subReceiptItemCount} receipt item(s) use subcategories of this category", receiptItemCount = subReceiptItemCount });
+		}
+
+		DeleteCategoryCommand command = new([id]);
+		await mediator.Send(command);
+
+		await notifier.NotifyDeleted("category", id);
+		return TypedResults.NoContent();
+	}
+
+	[HttpPost(RouteRestore)]
+	[EndpointSummary("Restore a soft-deleted category")]
+	[EndpointDescription("Restores a previously soft-deleted category and its cascade-deleted subcategories.")]
+	public async Task<Results<NoContent, NotFound>> RestoreCategory([FromRoute] Guid id)
+	{
+		RestoreCategoryCommand command = new(id);
 		bool result = await mediator.Send(command);
 
 		if (!result)
 		{
-			logger.LogWarning("Category {Id} not found for deletion", id);
+			logger.LogWarning("Category {Id} not found or not deleted for restore", id);
 			return TypedResults.NotFound();
 		}
 
-		await notifier.NotifyDeleted("category", id);
+		await notifier.NotifyUpdated("category", id);
 		return TypedResults.NoContent();
 	}
 }

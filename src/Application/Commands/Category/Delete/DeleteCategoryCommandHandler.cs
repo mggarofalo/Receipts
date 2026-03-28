@@ -7,13 +7,7 @@ public class DeleteCategoryCommandHandler(ICategoryService categoryService) : IR
 {
 	public async Task<bool> Handle(DeleteCategoryCommand request, CancellationToken cancellationToken)
 	{
-		bool exists = await categoryService.ExistsAsync(request.Id, cancellationToken);
-		if (!exists)
-		{
-			return false;
-		}
-
-		await categoryService.DeleteAsync(request.Id, cancellationToken);
+		await categoryService.DeleteAsync([.. request.Ids], cancellationToken);
 		return true;
 	}
 }

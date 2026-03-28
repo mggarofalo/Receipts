@@ -330,14 +330,17 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(category);
 
-		_categoryServiceMock.Setup(s => s.GetSubcategoryCountAsync(category.Id, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(0);
-
 		_categoryServiceMock.Setup(s => s.GetReceiptItemCountByCategoryNameAsync(category.Name, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(0);
 
+		_categoryServiceMock.Setup(s => s.GetSubcategoryNamesAsync(category.Id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync([]);
+
+		_categoryServiceMock.Setup(s => s.GetReceiptItemCountBySubcategoryNamesAsync(It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteCategoryCommand>(c => c.Id == category.Id),
+			It.Is<DeleteCategoryCommand>(c => c.Ids.Contains(category.Id)),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
@@ -362,7 +365,7 @@ public class CategoriesControllerTests
 	}
 
 	[Fact]
-	public async Task DeleteCategory_ReturnsConflict_WhenSubcategoriesExist()
+	public async Task DeleteCategory_ReturnsConflict_WhenReceiptItemsReferenceCategoryName()
 	{
 		Category category = CategoryGenerator.Generate();
 
@@ -371,8 +374,8 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(category);
 
-		_categoryServiceMock.Setup(s => s.GetSubcategoryCountAsync(category.Id, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(3);
+		_categoryServiceMock.Setup(s => s.GetReceiptItemCountByCategoryNameAsync(category.Name, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(5);
 
 		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteCategory(category.Id);
 
@@ -380,7 +383,7 @@ public class CategoriesControllerTests
 	}
 
 	[Fact]
-	public async Task DeleteCategory_ReturnsConflict_WhenReceiptItemsExist()
+	public async Task DeleteCategory_ReturnsConflict_WhenReceiptItemsReferenceSubcategoryNames()
 	{
 		Category category = CategoryGenerator.Generate();
 
@@ -389,11 +392,14 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(category);
 
-		_categoryServiceMock.Setup(s => s.GetSubcategoryCountAsync(category.Id, It.IsAny<CancellationToken>()))
+		_categoryServiceMock.Setup(s => s.GetReceiptItemCountByCategoryNameAsync(category.Name, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(0);
 
-		_categoryServiceMock.Setup(s => s.GetReceiptItemCountByCategoryNameAsync(category.Name, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(5);
+		_categoryServiceMock.Setup(s => s.GetSubcategoryNamesAsync(category.Id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(["Produce", "Dairy"]);
+
+		_categoryServiceMock.Setup(s => s.GetReceiptItemCountBySubcategoryNamesAsync(It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(3);
 
 		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteCategory(category.Id);
 
@@ -410,14 +416,17 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(category);
 
-		_categoryServiceMock.Setup(s => s.GetSubcategoryCountAsync(category.Id, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(0);
-
 		_categoryServiceMock.Setup(s => s.GetReceiptItemCountByCategoryNameAsync(category.Name, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(0);
 
+		_categoryServiceMock.Setup(s => s.GetSubcategoryNamesAsync(category.Id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync([]);
+
+		_categoryServiceMock.Setup(s => s.GetReceiptItemCountBySubcategoryNamesAsync(It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
 		_mediatorMock.Setup(m => m.Send(
-			It.Is<DeleteCategoryCommand>(c => c.Id == category.Id),
+			It.Is<DeleteCategoryCommand>(c => c.Ids.Contains(category.Id)),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 

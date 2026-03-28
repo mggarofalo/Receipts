@@ -15,7 +15,10 @@ public class CategoryEntityConfiguration : IEntityTypeConfiguration<CategoryEnti
 			.ValueGeneratedOnAdd();
 
 		builder.HasIndex(e => e.Name)
-			.IsUnique();
+			.IsUnique()
+			.HasFilter("\"DeletedAt\" IS NULL");
+
+		builder.HasQueryFilter(e => e.DeletedAt == null);
 
 		builder.HasData(
 			new CategoryEntity { Id = new Guid("83a7f4ea-f771-40b3-850f-35b90a3bd05e"), Name = "Groceries", Description = "Food and household supplies", IsActive = true },
