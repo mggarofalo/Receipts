@@ -154,6 +154,75 @@ describe("ItemTemplateForm", () => {
     expect(screen.getByText("Default Item Code (optional)")).toBeInTheDocument();
   });
 
+  it("renders Hide button in edit mode when onHide is provided", () => {
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="edit"
+        onHide={vi.fn()}
+        defaultValues={{ name: "Test" }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /^hide$/i })).toBeInTheDocument();
+  });
+
+  it("does not render Hide button when onHide is not provided", () => {
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Test" }}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /^hide$/i })).not.toBeInTheDocument();
+  });
+
+  it("does not render Hide button in create mode even when onHide is provided", () => {
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="create"
+        onHide={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /^hide$/i })).not.toBeInTheDocument();
+  });
+
+  it("calls onHide when Hide button is clicked", async () => {
+    const onHide = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="edit"
+        onHide={onHide}
+        defaultValues={{ name: "Test" }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /^hide$/i }));
+
+    expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables Hide button and shows spinner when isHiding is true", () => {
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="edit"
+        onHide={vi.fn()}
+        isHiding={true}
+        defaultValues={{ name: "Test" }}
+      />,
+    );
+
+    const hideButton = screen.getByRole("button", { name: /hiding/i });
+    expect(hideButton).toBeDisabled();
+  });
+
   it("filters category options via typeahead and selects a filtered result", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
