@@ -134,7 +134,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			if (OwnedChildrenMapProvider.Map.TryGetValue(parentType, out OwnedChildrenMapProvider.ParentEntry? parentEntry))
 			{
 				Guid parentId = (Guid)parentEntry.IdProperty.GetValue(entry.Entity)!;
-				CollectOwnedChildren(parentId, parentEntry.Children, entries, cascadeTargets);
+				CollectOwnedChildren(parentId, parentEntry.Children, cascadeTargets);
 			}
 		}
 
@@ -173,25 +173,24 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		}
 	}
 
-	private static void CollectOwnedChildren(
+	private void CollectOwnedChildren(
 		Guid parentId,
 		List<OwnedChildrenMapProvider.OwnedChildEntry> children,
-		List<EntityEntry<ISoftDeletable>> allDeletedEntries,
 		List<(ISoftDeletable Target, Guid ParentId)> targets)
 	{
 		foreach (OwnedChildrenMapProvider.OwnedChildEntry child in children)
 		{
-			foreach (EntityEntry<ISoftDeletable> entry in allDeletedEntries)
+			foreach (EntityEntry entry in ChangeTracker.Entries())
 			{
-				if (entry.Entity.GetType() != child.ChildType)
+				if (entry.Entity.GetType() != child.ChildType || entry.State == EntityState.Detached)
 				{
 					continue;
 				}
 
 				Guid fkValue = (Guid)child.FkProperty.GetValue(entry.Entity)!;
-				if (fkValue == parentId)
+				if (fkValue == parentId && entry.Entity is ISoftDeletable softDeletable)
 				{
-					targets.Add((entry.Entity, parentId));
+					targets.Add((softDeletable, parentId));
 				}
 			}
 		}
