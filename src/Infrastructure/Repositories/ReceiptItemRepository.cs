@@ -92,6 +92,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems
 			.OnlyDeleted()
+			.Where(ri => ri.CascadeDeletedByParentId == null)
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Description)
@@ -121,6 +122,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.ReceiptItems
 			.OnlyDeleted()
+			.Where(ri => ri.CascadeDeletedByParentId == null)
 			.CountAsync(cancellationToken);
 	}
 
@@ -189,6 +191,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 		entity.DeletedAt = null;
 		entity.DeletedByUserId = null;
 		entity.DeletedByApiKeyId = null;
+		entity.CascadeDeletedByParentId = null;
 		await context.SaveChangesAsync(cancellationToken);
 		return true;
 	}

@@ -105,19 +105,31 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
 	private void HandleSoftDelete()
 	{
-		IEnumerable<EntityEntry<ISoftDeletable>> entries = ChangeTracker
+		List<EntityEntry<ISoftDeletable>> entries = ChangeTracker
 			.Entries<ISoftDeletable>()
-			.Where(e => e.State == EntityState.Deleted);
+			.Where(e => e.State == EntityState.Deleted)
+			.ToList();
 
-		List<ISoftDeletable> cascadeTargets = [];
+		if (entries.Count == 0)
+		{
+			return;
+		}
+
+		// Snapshot entities that were already soft-deleted before this save.
+		// EF Core cascade-delete marks ALL tracked children as Deleted — even
+		// those that were independently soft-deleted earlier. We must not tag
+		// those with CascadeDeletedByParentId.
+		HashSet<ISoftDeletable> alreadySoftDeleted = new(
+			entries
+				.Where(e => e.Entity.DeletedAt is not null)
+				.Select(e => e.Entity));
+
+		// Identify cascade targets BEFORE changing any states, so the
+		// collection does not depend on the iteration order of entries.
+		List<(ISoftDeletable Target, Guid ParentId)> cascadeTargets = [];
 
 		foreach (EntityEntry<ISoftDeletable> entry in entries)
 		{
-			entry.State = EntityState.Modified;
-			entry.Entity.DeletedAt = DateTimeOffset.UtcNow;
-			entry.Entity.DeletedByUserId = _currentUserAccessor?.UserId;
-			entry.Entity.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
-
 			Type parentType = entry.Entity.GetType();
 			if (OwnedChildrenMapProvider.Map.TryGetValue(parentType, out OwnedChildrenMapProvider.ParentEntry? parentEntry))
 			{
@@ -126,25 +138,51 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			}
 		}
 
-		foreach (ISoftDeletable target in cascadeTargets)
+		HashSet<ISoftDeletable> cascadeSet = new(cascadeTargets.Select(t => t.Target));
+
+		// Soft-delete all directly-deleted entries.
+		foreach (EntityEntry<ISoftDeletable> entry in entries)
 		{
-			if (target.DeletedAt is null)
+			// Cascade targets are handled below.
+			if (cascadeSet.Contains(entry.Entity))
 			{
-				target.DeletedAt = DateTimeOffset.UtcNow;
-				target.DeletedByUserId = _currentUserAccessor?.UserId;
-				target.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
-				Entry(target).State = EntityState.Modified;
+				continue;
 			}
+
+			entry.State = EntityState.Modified;
+			entry.Entity.DeletedAt = DateTimeOffset.UtcNow;
+			entry.Entity.DeletedByUserId = _currentUserAccessor?.UserId;
+			entry.Entity.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
+		}
+
+		// Soft-delete cascade targets and tag them with the parent ID.
+		foreach ((ISoftDeletable target, Guid parentId) in cascadeTargets)
+		{
+			// Skip children that were independently soft-deleted before this save.
+			if (alreadySoftDeleted.Contains(target))
+			{
+				Entry(target).State = EntityState.Modified;
+				continue;
+			}
+
+			target.DeletedAt = DateTimeOffset.UtcNow;
+			target.DeletedByUserId = _currentUserAccessor?.UserId;
+			target.DeletedByApiKeyId = _currentUserAccessor?.ApiKeyId;
+			target.CascadeDeletedByParentId = parentId;
+			Entry(target).State = EntityState.Modified;
 		}
 	}
 
-	private void CollectOwnedChildren(Guid parentId, List<OwnedChildrenMapProvider.OwnedChildEntry> children, List<ISoftDeletable> targets)
+	private void CollectOwnedChildren(
+		Guid parentId,
+		List<OwnedChildrenMapProvider.OwnedChildEntry> children,
+		List<(ISoftDeletable Target, Guid ParentId)> targets)
 	{
 		foreach (OwnedChildrenMapProvider.OwnedChildEntry child in children)
 		{
 			foreach (EntityEntry entry in ChangeTracker.Entries())
 			{
-				if (entry.Entity.GetType() != child.ChildType || entry.State == EntityState.Deleted)
+				if (entry.Entity.GetType() != child.ChildType || entry.State == EntityState.Detached)
 				{
 					continue;
 				}
@@ -152,7 +190,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 				Guid fkValue = (Guid)child.FkProperty.GetValue(entry.Entity)!;
 				if (fkValue == parentId && entry.Entity is ISoftDeletable softDeletable)
 				{
-					targets.Add(softDeletable);
+					targets.Add((softDeletable, parentId));
 				}
 			}
 		}

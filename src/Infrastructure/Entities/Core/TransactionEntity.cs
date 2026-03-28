@@ -16,4 +16,5 @@ public class TransactionEntity : ISoftDeletable, IOwnedBy<ReceiptEntity>
 	public DateTimeOffset? DeletedAt { get; set; }
 	public string? DeletedByUserId { get; set; }
 	public Guid? DeletedByApiKeyId { get; set; }
+	public Guid? CascadeDeletedByParentId { get; set; }
 }
