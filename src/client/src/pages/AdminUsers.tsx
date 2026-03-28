@@ -105,7 +105,7 @@ function AdminUsers() {
   }, [toggleSort, resetPage]);
 
   const createUser = useCreateUser();
-  const updateUser = useUpdateUser();
+  const updateUser = useUpdateUser(currentUser?.userId);
   const deleteUser = useDeleteUser();
   const resetPassword = useResetUserPassword();
 
