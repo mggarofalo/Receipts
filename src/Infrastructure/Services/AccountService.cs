@@ -51,4 +51,14 @@ public class AccountService(IAccountRepository repository, AccountMapper mapper)
 		List<AccountEntity> accountEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(accountEntities, cancellationToken);
 	}
+
+	public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+	{
+		await repository.DeleteAsync(id, cancellationToken);
+	}
+
+	public async Task<int> GetTransactionCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
+	{
+		return await repository.GetTransactionCountByAccountIdAsync(accountId, cancellationToken);
+	}
 }

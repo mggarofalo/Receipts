@@ -85,4 +85,23 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Accounts.CountAsync(cancellationToken);
 	}
+
+	public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		AccountEntity? entity = await context.Accounts.FindAsync([id], cancellationToken);
+		if (entity != null)
+		{
+			context.Accounts.Remove(entity);
+			await context.SaveChangesAsync(cancellationToken);
+		}
+	}
+
+	public async Task<int> GetTransactionCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Transactions
+			.IgnoreQueryFilters()
+			.CountAsync(t => t.AccountId == accountId, cancellationToken);
+	}
 }
