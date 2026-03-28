@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 
 export interface DateRange {
@@ -9,6 +9,7 @@ export interface DateRange {
 export function useDashboardSummary(dateRange: DateRange) {
   return useQuery({
     queryKey: ["dashboard", "summary", dateRange.startDate, dateRange.endDate],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/dashboard/summary", {
         params: {
@@ -36,6 +37,7 @@ export function useDashboardSpendingOverTime(
       dateRange.endDate,
       granularity,
     ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await client.GET(
         "/api/dashboard/spending-over-time",
@@ -67,6 +69,7 @@ export function useDashboardSpendingByCategory(
       dateRange.endDate,
       limit,
     ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await client.GET(
         "/api/dashboard/spending-by-category",
@@ -94,6 +97,7 @@ export function useDashboardSpendingByAccount(dateRange: DateRange) {
       dateRange.startDate,
       dateRange.endDate,
     ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await client.GET(
         "/api/dashboard/spending-by-account",
