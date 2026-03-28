@@ -291,6 +291,41 @@ paths:
               $ref: "#/components/headers/X-Resource-Id"
         "404":
           description: Not Found
+    delete:
+      operationId: DeleteCategory
+      tags: [Categories]
+      summary: Hard-delete a category
+      description: >
+        Permanently deletes a category. Requires the Admin role. Returns 409
+        Conflict if subcategories or receipt items reference this category.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict — subcategories or receipt items reference this category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  subcategoryCount:
+                    type: integer
+                  receiptItemCount:
+                    type: integer
 
   /api/categories:
     get:

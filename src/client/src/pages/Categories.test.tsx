@@ -11,6 +11,15 @@ vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
   useCreateCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDeleteCategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
+
+vi.mock("@/hooks/usePermission", () => ({
+  usePermission: vi.fn(() => ({
+    roles: ["Admin"],
+    hasRole: (role: string) => role === "Admin",
+    isAdmin: () => true,
+  })),
 }));
 
 vi.mock("@/hooks/useFuzzySearch", () => ({

@@ -4,7 +4,9 @@ import {
   useCategories,
   useCreateCategory,
   useUpdateCategory,
+  useDeleteCategory,
 } from "@/hooks/useCategories";
+import { usePermission } from "@/hooks/usePermission";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
@@ -68,6 +70,8 @@ function Categories() {
   const { data: categoriesData, total: serverTotal, isLoading } = useCategories(offset, limit, sortBy, sortDirection);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+  const { isAdmin } = usePermission();
   const [createOpen, setCreateOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<CategoryResponse | null>(
     null,
@@ -314,6 +318,13 @@ function Categories() {
                   { id: editCategory.id, ...values },
                   { onSuccess: () => setEditCategory(null) },
                 );
+              }}
+              isAdmin={isAdmin()}
+              isDeleting={deleteCategory.isPending}
+              onDelete={() => {
+                deleteCategory.mutate(editCategory.id, {
+                  onSuccess: () => setEditCategory(null),
+                });
               }}
             />
           )}

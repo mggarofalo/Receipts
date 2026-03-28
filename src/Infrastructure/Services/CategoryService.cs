@@ -55,4 +55,19 @@ public class CategoryService(ICategoryRepository repository, CategoryMapper mapp
 		List<CategoryEntity> categoryEntities = [.. models.Select(mapper.ToEntity)];
 		await repository.UpdateAsync(categoryEntities, cancellationToken);
 	}
+
+	public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+	{
+		await repository.DeleteAsync(id, cancellationToken);
+	}
+
+	public async Task<int> GetSubcategoryCountAsync(Guid categoryId, CancellationToken cancellationToken)
+	{
+		return await repository.GetSubcategoryCountAsync(categoryId, cancellationToken);
+	}
+
+	public async Task<int> GetReceiptItemCountByCategoryNameAsync(string categoryName, CancellationToken cancellationToken)
+	{
+		return await repository.GetReceiptItemCountByCategoryNameAsync(categoryName, cancellationToken);
+	}
 }
