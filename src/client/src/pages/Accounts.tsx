@@ -4,7 +4,9 @@ import {
   useAccounts,
   useCreateAccount,
   useUpdateAccount,
+  useDeleteAccount,
 } from "@/hooks/useAccounts";
+import { usePermission } from "@/hooks/usePermission";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
@@ -67,6 +69,8 @@ function Accounts() {
   const { data: accountsData, total: serverTotal, isLoading } = useAccounts(offset, limit, sortBy, sortDirection);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
+  const deleteAccount = useDeleteAccount();
+  const { isAdmin } = usePermission();
   const [createOpen, setCreateOpen] = useState(false);
   const [editAccount, setEditAccount] = useState<AccountResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
@@ -301,6 +305,13 @@ function Accounts() {
                   { id: editAccount.id, ...values },
                   { onSuccess: () => setEditAccount(null) },
                 );
+              }}
+              isAdmin={isAdmin()}
+              isDeleting={deleteAccount.isPending}
+              onDelete={() => {
+                deleteAccount.mutate(editAccount.id, {
+                  onSuccess: () => setEditAccount(null),
+                });
               }}
             />
           )}

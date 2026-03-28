@@ -127,6 +127,45 @@ export function useDeleteItemTemplates() {
   });
 }
 
+export function useHideItemTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await client.DELETE("/api/item-templates", {
+        body: [id],
+      });
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["itemTemplates"] });
+      const previous = queryClient.getQueriesData<{ data: { id: string }[]; total: number }>({ queryKey: ["itemTemplates", "list"] });
+      for (const [key] of previous) {
+        queryClient.setQueryData(key, (old: { data: { id: string }[]; total: number; offset: number; limit: number } | undefined) => {
+          if (!old?.data) return old;
+          const filtered = old.data.filter((item) => item.id !== id);
+          return { ...old, data: filtered, total: old.total - (old.data.length - filtered.length) };
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      for (const [key, data] of context?.previous ?? []) {
+        queryClient.setQueryData(key, data);
+      }
+      toast.error("Failed to hide item template");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["itemTemplates"] });
+      queryClient.invalidateQueries({
+        queryKey: ["itemTemplates", "deleted"],
+      });
+    },
+    onSuccess: () => {
+      toast.success("Template hidden. You can restore it from the recycle bin.");
+    },
+  });
+}
+
 export function useDeletedItemTemplates(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   const query = useQuery({
     queryKey: ["itemTemplates", "deleted", offset, limit, sortBy, sortDirection],

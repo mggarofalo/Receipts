@@ -185,4 +185,104 @@ describe("SubcategoryForm", () => {
     ) as string[];
     expect(stored).toContain("Bakery");
   });
+
+  it("does not show delete button in create mode", () => {
+    render(
+      <SubcategoryForm
+        {...defaultProps}
+        isAdmin={true}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+  });
+
+  it("does not show delete button in edit mode for non-admin users", () => {
+    render(
+      <SubcategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Produce", categoryId: "cat-1", description: "" }}
+        isAdmin={false}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+  });
+
+  it("shows delete button in edit mode for admin users", () => {
+    render(
+      <SubcategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Produce", categoryId: "cat-1", description: "" }}
+        isAdmin={true}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
+  });
+
+  it("shows confirmation dialog when delete button is clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <SubcategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Produce", categoryId: "cat-1", description: "" }}
+        isAdmin={true}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Delete Subcategory?")).toBeInTheDocument();
+      expect(screen.getByText(/permanently delete/i)).toBeInTheDocument();
+    });
+  });
+
+  it("calls onDelete when delete is confirmed", async () => {
+    const onDelete = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <SubcategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Produce", categoryId: "cat-1", description: "" }}
+        isAdmin={true}
+        onDelete={onDelete}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Delete Subcategory?")).toBeInTheDocument();
+    });
+
+    // Click the "Delete" action in the confirmation dialog
+    const confirmButtons = screen.getAllByRole("button", { name: /delete/i });
+    const confirmButton = confirmButtons[confirmButtons.length - 1];
+    await user.click(confirmButton);
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show delete button when onDelete is not provided", () => {
+    render(
+      <SubcategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Produce", categoryId: "cat-1", description: "" }}
+        isAdmin={true}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+  });
 });

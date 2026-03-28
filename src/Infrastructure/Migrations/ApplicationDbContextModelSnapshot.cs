@@ -282,6 +282,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("CascadeDeletedByParentId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamptz");
 
@@ -317,6 +320,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -333,36 +339,42 @@ namespace Infrastructure.Migrations
                         {
                             Id = new Guid("83a7f4ea-f771-40b3-850f-35b90a3bd05e"),
                             Description = "Food and household supplies",
+                            IsActive = true,
                             Name = "Groceries"
                         },
                         new
                         {
                             Id = new Guid("e37ce004-56ea-4a33-8983-55a9552d05be"),
                             Description = "Restaurants, takeout, and delivery",
+                            IsActive = true,
                             Name = "Dining"
                         },
                         new
                         {
                             Id = new Guid("3a131ca1-3300-4cde-b7ee-24704934feea"),
                             Description = "Gas, transit, parking, and rideshare",
+                            IsActive = true,
                             Name = "Transportation"
                         },
                         new
                         {
                             Id = new Guid("92eae007-7d82-492c-9370-ff64873cc63a"),
                             Description = "Clothing, electronics, and general retail",
+                            IsActive = true,
                             Name = "Shopping"
                         },
                         new
                         {
                             Id = new Guid("705da6c5-6fb6-4b3c-aef1-f42e5136a499"),
                             Description = "Electric, water, internet, and phone",
+                            IsActive = true,
                             Name = "Utilities"
                         },
                         new
                         {
                             Id = new Guid("f0e7a123-9b56-4d3a-8c1e-2a5b7d9f4e6c"),
                             Description = "Default category for items without a valid category",
+                            IsActive = true,
                             Name = "Uncategorized"
                         });
                 });
@@ -407,6 +419,9 @@ namespace Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CascadeDeletedByParentId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("DefaultCategory")
@@ -505,6 +520,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CascadeDeletedByParentId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
@@ -537,6 +555,9 @@ namespace Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CascadeDeletedByParentId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Category")
@@ -606,6 +627,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -623,6 +647,7 @@ namespace Infrastructure.Migrations
                             Id = new Guid("bdc5740a-352e-44a9-bd1d-a85f5b0cb833"),
                             CategoryId = new Guid("83a7f4ea-f771-40b3-850f-35b90a3bd05e"),
                             Description = "Fruits and vegetables",
+                            IsActive = true,
                             Name = "Produce"
                         },
                         new
@@ -630,72 +655,84 @@ namespace Infrastructure.Migrations
                             Id = new Guid("d8052b39-045a-4c1f-b0a5-3b94920fe010"),
                             CategoryId = new Guid("83a7f4ea-f771-40b3-850f-35b90a3bd05e"),
                             Description = "Milk, cheese, yogurt",
+                            IsActive = true,
                             Name = "Dairy"
                         },
                         new
                         {
                             Id = new Guid("7bb01875-3807-44a2-b8fb-3459a514d81f"),
                             CategoryId = new Guid("83a7f4ea-f771-40b3-850f-35b90a3bd05e"),
+                            IsActive = true,
                             Name = "Meat & Seafood"
                         },
                         new
                         {
                             Id = new Guid("2e5bef54-3b06-4d8d-8f53-7f94e8d88e99"),
                             CategoryId = new Guid("83a7f4ea-f771-40b3-850f-35b90a3bd05e"),
+                            IsActive = true,
                             Name = "Bakery"
                         },
                         new
                         {
                             Id = new Guid("2ba877ec-9581-4927-aaea-729a778fb8ae"),
                             CategoryId = new Guid("e37ce004-56ea-4a33-8983-55a9552d05be"),
+                            IsActive = true,
                             Name = "Fast Food"
                         },
                         new
                         {
                             Id = new Guid("af940cc4-9838-46ac-8c30-3573d876ae47"),
                             CategoryId = new Guid("e37ce004-56ea-4a33-8983-55a9552d05be"),
+                            IsActive = true,
                             Name = "Sit-Down Restaurant"
                         },
                         new
                         {
                             Id = new Guid("9c90a29d-546c-4ab8-a5f7-4168b675cda8"),
                             CategoryId = new Guid("e37ce004-56ea-4a33-8983-55a9552d05be"),
+                            IsActive = true,
                             Name = "Coffee Shop"
                         },
                         new
                         {
                             Id = new Guid("8fd8809c-7081-4997-925c-49c0a244a4e4"),
                             CategoryId = new Guid("3a131ca1-3300-4cde-b7ee-24704934feea"),
+                            IsActive = true,
                             Name = "Gas"
                         },
                         new
                         {
                             Id = new Guid("079d5267-8091-460b-86d4-7b2565b8bb25"),
                             CategoryId = new Guid("3a131ca1-3300-4cde-b7ee-24704934feea"),
+                            IsActive = true,
                             Name = "Parking"
                         },
                         new
                         {
                             Id = new Guid("ad045a79-d5a1-404e-b7a8-c475680681f1"),
                             CategoryId = new Guid("92eae007-7d82-492c-9370-ff64873cc63a"),
+                            IsActive = true,
                             Name = "Electronics"
                         },
                         new
                         {
                             Id = new Guid("d00f80ca-5e7a-44f8-bf97-b44fccb430b1"),
                             CategoryId = new Guid("92eae007-7d82-492c-9370-ff64873cc63a"),
+                            IsActive = true,
                             Name = "Clothing"
                         },
                         new
                         {
                             Id = new Guid("f7c4d461-ed9f-421c-94d3-32e9a55d6bb0"),
                             CategoryId = new Guid("705da6c5-6fb6-4b3c-aef1-f42e5136a499"),
+                            IsActive = true,
                             Name = "Electric"
                         },
                         new
                         {
                             Id = new Guid("c9205933-8cc6-4dfc-b08f-46ba221036fa"),
                             CategoryId = new Guid("705da6c5-6fb6-4b3c-aef1-f42e5136a499"),
+                            IsActive = true,
                             Name = "Internet"
                         });
                 });
@@ -715,6 +752,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("AmountCurrency")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("CascadeDeletedByParentId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");

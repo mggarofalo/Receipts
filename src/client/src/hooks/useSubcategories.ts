@@ -53,6 +53,7 @@ export function useCreateSubcategory() {
       name: string;
       categoryId: string;
       description?: string | null;
+      isActive: boolean;
     }) => {
       const { data, error } = await client.POST("/api/subcategories", {
         body,
@@ -80,6 +81,7 @@ export function useUpdateSubcategory() {
       name: string;
       categoryId: string;
       description?: string | null;
+      isActive: boolean;
     }) => {
       const { error } = await client.PUT("/api/subcategories/{id}", {
         params: { path: { id: body.id } },
@@ -93,6 +95,41 @@ export function useUpdateSubcategory() {
     },
     onError: () => {
       toast.error("Failed to update subcategory");
+    },
+  });
+}
+
+export interface DeleteSubcategoryConflict {
+  message: string;
+  receiptItemCount: number;
+}
+
+export function useDeleteSubcategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error, response } = await client.DELETE("/api/subcategories/{id}", {
+        params: { path: { id } },
+      });
+      if (error) {
+        if (response.status === 409) {
+          const body = error as unknown as DeleteSubcategoryConflict;
+          throw { conflict: true, ...body };
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subcategories"] });
+      toast.success("Subcategory deleted");
+    },
+    onError: (error: unknown) => {
+      const err = error as { conflict?: boolean; message?: string; receiptItemCount?: number };
+      if (err.conflict) {
+        toast.error(err.message ?? "Cannot delete — receipt items reference this subcategory");
+      } else {
+        toast.error("Failed to delete subcategory");
+      }
     },
   });
 }

@@ -511,6 +511,7 @@ export function Step3Items({
                             {
                               categoryId: selectedCategoryObj.id,
                               name: v,
+                              isActive: true,
                             },
                             {
                               onSettled: () => {

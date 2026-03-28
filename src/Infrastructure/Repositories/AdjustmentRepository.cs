@@ -78,6 +78,7 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.OnlyDeleted()
+			.Where(a => a.CascadeDeletedByParentId == null)
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Type)
@@ -101,6 +102,7 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Adjustments
 			.OnlyDeleted()
+			.Where(a => a.CascadeDeletedByParentId == null)
 			.CountAsync(cancellationToken);
 	}
 
@@ -169,6 +171,7 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 		entity.DeletedAt = null;
 		entity.DeletedByUserId = null;
 		entity.DeletedByApiKeyId = null;
+		entity.CascadeDeletedByParentId = null;
 		await context.SaveChangesAsync(cancellationToken);
 		return true;
 	}

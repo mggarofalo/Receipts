@@ -3,13 +3,17 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Subcategory.Create;
+using Application.Commands.Subcategory.Delete;
 using Application.Commands.Subcategory.Update;
+using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Subcategory;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
@@ -23,6 +27,7 @@ public class SubcategoriesControllerTests
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<SubcategoriesController>> _loggerMock;
 	private readonly Mock<IEntityChangeNotifier> _notifierMock;
+	private readonly Mock<ISubcategoryService> _subcategoryServiceMock;
 	private readonly SubcategoriesController _controller;
 
 	public SubcategoriesControllerTests()
@@ -31,7 +36,9 @@ public class SubcategoriesControllerTests
 		_mapper = new SubcategoryMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<SubcategoriesController>();
 		_notifierMock = new Mock<IEntityChangeNotifier>();
-		_controller = new SubcategoriesController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
+		_subcategoryServiceMock = new Mock<ISubcategoryService>();
+		_controller = new SubcategoriesController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object, _subcategoryServiceMock.Object);
+		_controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 	}
 
 	// ── GetSubcategoryById ──────────────────────────────────
@@ -326,6 +333,99 @@ public class SubcategoriesControllerTests
 
 		Func<Task> act = () => _controller.UpdateSubcategories(controllerInput);
 
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── DeleteSubcategory ──────────────────────────────────
+
+	[Fact]
+	public async Task DeleteSubcategory_ReturnsNoContent_WhenDeleteSucceeds()
+	{
+		// Arrange
+		Subcategory subcategory = SubcategoryGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoryByIdQuery>(q => q.Id == subcategory.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(subcategory);
+
+		_subcategoryServiceMock.Setup(s => s.GetReceiptItemCountBySubcategoryNameAsync(subcategory.Name, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteSubcategoryCommand>(c => c.Id == subcategory.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteSubcategory(subcategory.Id);
+
+		// Assert
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteSubcategory_ReturnsNotFound_WhenSubcategoryDoesNotExist()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoryByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync((Subcategory?)null);
+
+		// Act
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteSubcategory(id);
+
+		// Assert
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteSubcategory_ReturnsConflict_WhenReceiptItemsExist()
+	{
+		// Arrange
+		Subcategory subcategory = SubcategoryGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoryByIdQuery>(q => q.Id == subcategory.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(subcategory);
+
+		_subcategoryServiceMock.Setup(s => s.GetReceiptItemCountBySubcategoryNameAsync(subcategory.Name, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(5);
+
+		// Act
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteSubcategory(subcategory.Id);
+
+		// Assert
+		Assert.IsType<Conflict<object>>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteSubcategory_ThrowsException_WhenMediatorFails()
+	{
+		// Arrange
+		Subcategory subcategory = SubcategoryGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoryByIdQuery>(q => q.Id == subcategory.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(subcategory);
+
+		_subcategoryServiceMock.Setup(s => s.GetReceiptItemCountBySubcategoryNameAsync(subcategory.Name, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteSubcategoryCommand>(c => c.Id == subcategory.Id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		Func<Task> act = () => _controller.DeleteSubcategory(subcategory.Id);
+
+		// Assert
 		await act.Should().ThrowAsync<Exception>();
 	}
 }

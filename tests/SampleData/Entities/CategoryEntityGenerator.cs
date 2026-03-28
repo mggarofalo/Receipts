@@ -10,7 +10,8 @@ public static class CategoryEntityGenerator
 		{
 			Id = Guid.NewGuid(),
 			Name = "Test Category",
-			Description = "Test Description"
+			Description = "Test Description",
+			IsActive = true
 		};
 	}
 

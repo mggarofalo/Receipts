@@ -2,7 +2,9 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Category.Create;
+using Application.Commands.Category.Delete;
 using Application.Commands.Category.Update;
+using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Category;
 using Asp.Versioning;
@@ -19,7 +21,7 @@ namespace API.Controllers.Core;
 [Route("api/categories")]
 [Produces("application/json")]
 [Authorize]
-public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILogger<CategoriesController> logger, IEntityChangeNotifier notifier) : ControllerBase
+public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILogger<CategoriesController> logger, IEntityChangeNotifier notifier, ICategoryService categoryService) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -27,6 +29,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
+	public const string RouteDelete = "{id}";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a category by ID")]
@@ -134,6 +137,46 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 		}
 
 		await notifier.NotifyBulkChanged("category", "updated", models.Select(m => m.Id));
+		return TypedResults.NoContent();
+	}
+
+	[HttpDelete(RouteDelete)]
+	[Authorize(Policy = "RequireAdmin")]
+	[EndpointSummary("Hard-delete a category")]
+	[EndpointDescription("Permanently deletes a category. Requires the Admin role. Returns 409 Conflict if subcategories or receipt items reference this category.")]
+	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteCategory([FromRoute] Guid id)
+	{
+		Category? category = await mediator.Send(new GetCategoryByIdQuery(id));
+		if (category == null)
+		{
+			logger.LogWarning("Category {Id} not found for deletion", id);
+			return TypedResults.NotFound();
+		}
+
+		int subcategoryCount = await categoryService.GetSubcategoryCountAsync(id, HttpContext.RequestAborted);
+		if (subcategoryCount > 0)
+		{
+			logger.LogWarning("Category {Id} cannot be deleted — {Count} subcategories reference it", id, subcategoryCount);
+			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {subcategoryCount} subcategories belong to this category. Delete them first.", subcategoryCount });
+		}
+
+		int receiptItemCount = await categoryService.GetReceiptItemCountByCategoryNameAsync(category.Name, HttpContext.RequestAborted);
+		if (receiptItemCount > 0)
+		{
+			logger.LogWarning("Category {Id} cannot be deleted — {Count} receipt items reference it", id, receiptItemCount);
+			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {receiptItemCount} receipt item(s) use this category", receiptItemCount });
+		}
+
+		DeleteCategoryCommand command = new(id);
+		bool result = await mediator.Send(command);
+
+		if (!result)
+		{
+			logger.LogWarning("Category {Id} not found for deletion", id);
+			return TypedResults.NotFound();
+		}
+
+		await notifier.NotifyDeleted("category", id);
 		return TypedResults.NoContent();
 	}
 }

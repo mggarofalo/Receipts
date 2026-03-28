@@ -89,6 +89,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.OnlyDeleted()
+			.Where(t => t.CascadeDeletedByParentId == null)
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
@@ -112,6 +113,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		return await context.Transactions
 			.OnlyDeleted()
+			.Where(t => t.CascadeDeletedByParentId == null)
 			.CountAsync(cancellationToken);
 	}
 
@@ -180,6 +182,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 		entity.DeletedAt = null;
 		entity.DeletedByUserId = null;
 		entity.DeletedByApiKeyId = null;
+		entity.CascadeDeletedByParentId = null;
 		await context.SaveChangesAsync(cancellationToken);
 		return true;
 	}

@@ -9,7 +9,8 @@ public static class CategoryGenerator
 		return new Category(
 			Guid.NewGuid(),
 			"Test Category",
-			"Test Description"
+			"Test Description",
+			true
 		);
 	}
 

@@ -1,3 +1,4 @@
+import { Navigate } from "react-router";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { Layout } from "@/components/Layout";
@@ -11,12 +12,9 @@ import Accounts from "@/pages/Accounts";
 import Categories from "@/pages/Categories";
 import Subcategories from "@/pages/Subcategories";
 import Receipts from "@/pages/Receipts";
-import ReceiptItems from "@/pages/ReceiptItems";
-import Transactions from "@/pages/Transactions";
-import Trips from "@/pages/Trips";
 import ItemTemplates from "@/pages/ItemTemplates";
 import ReceiptDetail from "@/pages/ReceiptDetail";
-import TransactionDetail from "@/pages/TransactionDetail";
+import ReceiptDetailRedirect from "@/pages/ReceiptDetailRedirect";
 import AdminUsers from "@/pages/AdminUsers";
 import AuditLog from "@/pages/AuditLog";
 import SecurityLog from "@/pages/SecurityLog";
@@ -48,12 +46,13 @@ export const routeConfig = [
           { path: "/subcategories", element: <Subcategories /> },
           { path: "/receipts", element: <Receipts /> },
           { path: "/receipts/new", element: <NewReceipt /> },
-          { path: "/receipt-items", element: <ReceiptItems /> },
-          { path: "/transactions", element: <Transactions /> },
-          { path: "/trips", element: <Trips /> },
+          { path: "/receipt-items", element: <Navigate to="/receipts" replace /> },
+          { path: "/transactions", element: <Navigate to="/receipts" replace /> },
+          { path: "/trips", element: <Navigate to="/receipts" replace /> },
           { path: "/item-templates", element: <ItemTemplates /> },
-          { path: "/receipt-detail", element: <ReceiptDetail /> },
-          { path: "/transaction-detail", element: <TransactionDetail /> },
+          { path: "/receipts/:id", element: <ReceiptDetail /> },
+          { path: "/receipt-detail", element: <ReceiptDetailRedirect /> },
+          { path: "/transaction-detail", element: <Navigate to="/receipts" replace /> },
           { path: "/api-keys", element: <ApiKeys /> },
           { path: "/security", element: <SecurityLog /> },
           {

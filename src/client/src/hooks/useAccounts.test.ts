@@ -23,6 +23,7 @@ import {
   useAccount,
   useCreateAccount,
   useUpdateAccount,
+  useDeleteAccount,
 } from "./useAccounts";
 
 function createWrapper() {
@@ -108,6 +109,57 @@ describe("useAccounts", () => {
       body: updated,
     });
     expect(toast.success).toHaveBeenCalledWith("Account updated");
+  });
+
+  it("delete mutation calls DELETE and shows toast on success", async () => {
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined, response: { status: 204 } });
+
+    const { result } = renderHook(() => useDeleteAccount(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync("1");
+
+    expect(client.DELETE).toHaveBeenCalledWith("/api/accounts/{id}", {
+      params: { path: { id: "1" } },
+    });
+    expect(toast.success).toHaveBeenCalledWith("Account deleted");
+  });
+
+  it("delete mutation shows conflict toast on 409", async () => {
+    (client.DELETE as Mock).mockResolvedValue({
+      error: { message: "Cannot delete — 3 transaction(s) reference this account", transactionCount: 3 },
+      response: { status: 409 },
+    });
+
+    const { result } = renderHook(() => useDeleteAccount(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(result.current.mutateAsync("1")).rejects.toThrow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Cannot delete — 3 transaction(s) reference this account",
+      );
+    });
+  });
+
+  it("delete mutation shows generic error toast on non-409 failure", async () => {
+    (client.DELETE as Mock).mockResolvedValue({
+      error: { message: "Server error" },
+      response: { status: 500 },
+    });
+
+    const { result } = renderHook(() => useDeleteAccount(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(result.current.mutateAsync("1")).rejects.toThrow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to delete account");
+    });
   });
 
 });

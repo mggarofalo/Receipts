@@ -20,6 +20,7 @@ vi.mock("@/hooks/useSubcategories", () => ({
   })),
   useCreateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDeleteSubcategory: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
@@ -43,6 +44,10 @@ vi.mock("@/hooks/useSavedFilters", () => ({
     save: vi.fn(),
     remove: vi.fn(),
   })),
+}));
+
+vi.mock("@/hooks/usePermission", () => ({
+  usePermission: vi.fn(() => ({ isAdmin: vi.fn(() => true) })),
 }));
 
 vi.mock("@/hooks/useServerPagination", () => ({
@@ -87,9 +92,9 @@ vi.mock("@/hooks/usePagination", () => ({
 }));
 
 const ITEMS = [
-  { id: "1", name: "Dairy", categoryId: "c1", description: "Dairy products" },
-  { id: "2", name: "Bakery", categoryId: "c1", description: "Baked goods" },
-  { id: "3", name: "Electronics", categoryId: "c2", description: null },
+  { id: "1", name: "Dairy", categoryId: "c1", description: "Dairy products", isActive: true },
+  { id: "2", name: "Bakery", categoryId: "c1", description: "Baked goods", isActive: true },
+  { id: "3", name: "Electronics", categoryId: "c2", description: null, isActive: true },
 ];
 
 const CATEGORIES = [

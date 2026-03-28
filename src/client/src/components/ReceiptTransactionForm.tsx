@@ -3,9 +3,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
-import { useReceipts } from "@/hooks/useReceipts";
 import { useAccounts } from "@/hooks/useAccounts";
-import { receiptToOption, accountToOption } from "@/lib/combobox-options";
+import { accountToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Combobox } from "@/components/ui/combobox";
@@ -20,45 +19,37 @@ import {
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 
-const transactionSchema = z.object({
-  receiptId: z.string().min(1, "Receipt is required"),
+const receiptTransactionSchema = z.object({
   accountId: z.string().min(1, "Account is required"),
-  amount: z.number(),
+  amount: z.number().refine((v) => v !== 0, "Amount is required"),
   date: z.string().min(1, "Date is required"),
 });
 
-type TransactionFormValues = z.output<typeof transactionSchema>;
+export type ReceiptTransactionFormValues = z.output<
+  typeof receiptTransactionSchema
+>;
 
-interface TransactionFormProps {
+interface ReceiptTransactionFormProps {
   mode: "create" | "edit";
-  defaultValues?: Partial<TransactionFormValues>;
-  onSubmit: (values: TransactionFormValues) => void;
+  defaultValues?: Partial<ReceiptTransactionFormValues>;
+  onSubmit: (values: ReceiptTransactionFormValues) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  serverErrors?: Record<string, string>;
 }
 
-export function TransactionForm({
+export function ReceiptTransactionForm({
   mode,
   defaultValues,
   onSubmit,
   onCancel,
   isSubmitting,
-}: TransactionFormProps) {
+  serverErrors,
+}: ReceiptTransactionFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
-  const { data: receipts, isLoading: receiptsLoading } = useReceipts();
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
-
-  const receiptOptions = useMemo(
-    () =>
-      (
-        (receipts as
-          | { id: string; location: string; date: string }[]
-          | undefined) ?? []
-      ).map(receiptToOption),
-    [receipts],
-  );
 
   const accountOptions = useMemo(
     () =>
@@ -70,11 +61,10 @@ export function TransactionForm({
     [accounts],
   );
 
-  const form = useForm<TransactionFormValues>({
+  const form = useForm<ReceiptTransactionFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(transactionSchema) as any,
+    resolver: zodResolver(receiptTransactionSchema) as any,
     defaultValues: {
-      receiptId: "",
       accountId: "",
       amount: 0,
       date: "",
@@ -91,30 +81,6 @@ export function TransactionForm({
       >
         <FormField
           control={form.control}
-          name="receiptId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Receipt</FormLabel>
-              <FormControl>
-                <Combobox
-                  options={receiptOptions}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  placeholder="Select a receipt..."
-                  searchPlaceholder="Search receipts..."
-                  emptyMessage="No receipts found."
-                  disabled={mode === "edit"}
-                  loading={receiptsLoading}
-                  aria-required="true"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="accountId"
           render={({ field }) => (
             <FormItem>
@@ -127,12 +93,16 @@ export function TransactionForm({
                   placeholder="Select an account..."
                   searchPlaceholder="Search accounts..."
                   emptyMessage="No accounts found."
-                  disabled={mode === "edit"}
                   loading={accountsLoading}
                   aria-required="true"
                 />
               </FormControl>
               <FormMessage />
+              {serverErrors?.accountId && (
+                <p className="text-sm font-medium text-destructive">
+                  {serverErrors.accountId}
+                </p>
+              )}
             </FormItem>
           )}
         />
@@ -147,6 +117,11 @@ export function TransactionForm({
                 <CurrencyInput {...field} />
               </FormControl>
               <FormMessage />
+              {serverErrors?.amount && (
+                <p className="text-sm font-medium text-destructive">
+                  {serverErrors.amount}
+                </p>
+              )}
             </FormItem>
           )}
         />
@@ -161,6 +136,11 @@ export function TransactionForm({
                 <DateInput aria-required="true" {...field} />
               </FormControl>
               <FormMessage />
+              {serverErrors?.date && (
+                <p className="text-sm font-medium text-destructive">
+                  {serverErrors.date}
+                </p>
+              )}
             </FormItem>
           )}
         />
@@ -174,7 +154,7 @@ export function TransactionForm({
             {isSubmitting
               ? "Saving..."
               : mode === "create"
-                ? "Create Transaction"
+                ? "Add Transaction"
                 : "Update Transaction"}
           </Button>
         </div>

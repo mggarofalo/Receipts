@@ -28,6 +28,15 @@ vi.mock("@/hooks/useItemTemplates", () => ({
   useCreateItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteItemTemplates: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useHideItemTemplate: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}));
+
+vi.mock("@/hooks/usePermission", () => ({
+  usePermission: vi.fn(() => ({
+    roles: ["Admin"],
+    hasRole: (role: string) => role === "Admin",
+    isAdmin: () => true,
+  })),
 }));
 
 vi.mock("@/hooks/useFuzzySearch", () => ({
@@ -443,5 +452,124 @@ describe("ItemTemplates", () => {
     expect(
       screen.getByRole("heading", { name: /create item template/i }),
     ).toBeInTheDocument();
+  });
+
+  it("shows Hide button in edit modal when user is admin", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: (role: string) => role === "Admin",
+      isAdmin: () => true,
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(screen.getByRole("heading", { name: /edit item template/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^hide$/i })).toBeInTheDocument();
+  });
+
+  it("does not show Hide button in edit modal when user is not admin", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useItemTemplates } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["User"],
+      hasRole: (role: string) => role === "User",
+      isAdmin: () => false,
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(screen.getByRole("heading", { name: /edit item template/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^hide$/i })).not.toBeInTheDocument();
+  });
+
+  it("calls hideItemTemplate.mutate when Hide button is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+
+    const items = [
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useItemTemplates, useHideItemTemplate } = await import("@/hooks/useItemTemplates");
+    vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+    vi.mocked(useHideItemTemplate).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: (role: string) => role === "Admin",
+      isAdmin: () => true,
+    });
+
+    renderWithProviders(<ItemTemplates />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    await user.click(screen.getByRole("button", { name: /^hide$/i }));
+
+    expect(mockMutate).toHaveBeenCalledWith("1", expect.objectContaining({
+      onSuccess: expect.any(Function),
+    }));
   });
 });

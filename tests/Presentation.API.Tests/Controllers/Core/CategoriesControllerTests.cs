@@ -3,13 +3,17 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Category.Create;
+using Application.Commands.Category.Delete;
 using Application.Commands.Category.Update;
+using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Category;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
@@ -23,6 +27,7 @@ public class CategoriesControllerTests
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<CategoriesController>> _loggerMock;
 	private readonly Mock<IEntityChangeNotifier> _notifierMock;
+	private readonly Mock<ICategoryService> _categoryServiceMock;
 	private readonly CategoriesController _controller;
 
 	public CategoriesControllerTests()
@@ -31,7 +36,12 @@ public class CategoriesControllerTests
 		_mapper = new CategoryMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<CategoriesController>();
 		_notifierMock = new Mock<IEntityChangeNotifier>();
-		_controller = new CategoriesController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
+		_categoryServiceMock = new Mock<ICategoryService>();
+		_controller = new CategoriesController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object, _categoryServiceMock.Object);
+		_controller.ControllerContext = new ControllerContext
+		{
+			HttpContext = new DefaultHttpContext()
+		};
 	}
 
 	// ── GetCategoryById ─────────────────────────────────────
@@ -304,6 +314,114 @@ public class CategoriesControllerTests
 			.ThrowsAsync(new Exception());
 
 		Func<Task> act = () => _controller.UpdateCategories(controllerInput);
+
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	// ── DeleteCategory ──────────────────────────────────────
+
+	[Fact]
+	public async Task DeleteCategory_ReturnsNoContent_WhenDeleteSucceeds()
+	{
+		Category category = CategoryGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetCategoryByIdQuery>(q => q.Id == category.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(category);
+
+		_categoryServiceMock.Setup(s => s.GetSubcategoryCountAsync(category.Id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_categoryServiceMock.Setup(s => s.GetReceiptItemCountByCategoryNameAsync(category.Name, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteCategoryCommand>(c => c.Id == category.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteCategory(category.Id);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteCategory_ReturnsNotFound_WhenCategoryDoesNotExist()
+	{
+		Guid id = Guid.NewGuid();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetCategoryByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync((Category?)null);
+
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteCategory(id);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteCategory_ReturnsConflict_WhenSubcategoriesExist()
+	{
+		Category category = CategoryGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetCategoryByIdQuery>(q => q.Id == category.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(category);
+
+		_categoryServiceMock.Setup(s => s.GetSubcategoryCountAsync(category.Id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(3);
+
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteCategory(category.Id);
+
+		Assert.IsType<Conflict<object>>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteCategory_ReturnsConflict_WhenReceiptItemsExist()
+	{
+		Category category = CategoryGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetCategoryByIdQuery>(q => q.Id == category.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(category);
+
+		_categoryServiceMock.Setup(s => s.GetSubcategoryCountAsync(category.Id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_categoryServiceMock.Setup(s => s.GetReceiptItemCountByCategoryNameAsync(category.Name, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(5);
+
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteCategory(category.Id);
+
+		Assert.IsType<Conflict<object>>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteCategory_ThrowsException_WhenMediatorFails()
+	{
+		Category category = CategoryGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetCategoryByIdQuery>(q => q.Id == category.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(category);
+
+		_categoryServiceMock.Setup(s => s.GetSubcategoryCountAsync(category.Id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_categoryServiceMock.Setup(s => s.GetReceiptItemCountByCategoryNameAsync(category.Name, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteCategoryCommand>(c => c.Id == category.Id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		Func<Task> act = () => _controller.DeleteCategory(category.Id);
 
 		await act.Should().ThrowAsync<Exception>();
 	}

@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
+// Note: Categories are hard-delete entities (no soft-delete/restore).
+
 export function useCategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
   const query = useQuery({
     queryKey: ["categories", "list", offset, limit, sortBy, sortDirection],
@@ -34,7 +36,11 @@ export function useCategory(id: string | null) {
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { name: string; description?: string | null }) => {
+    mutationFn: async (body: {
+      name: string;
+      description?: string | null;
+      isActive: boolean;
+    }) => {
       const { data, error } = await client.POST("/api/categories", { body });
       if (error) throw error;
       return data;
@@ -56,6 +62,7 @@ export function useUpdateCategory() {
       id: string;
       name: string;
       description?: string | null;
+      isActive: boolean;
     }) => {
       const { error } = await client.PUT("/api/categories/{id}", {
         params: { path: { id: body.id } },
@@ -69,6 +76,42 @@ export function useUpdateCategory() {
     },
     onError: () => {
       toast.error("Failed to update category");
+    },
+  });
+}
+
+export interface DeleteCategoryConflict {
+  message: string;
+  subcategoryCount?: number;
+  receiptItemCount?: number;
+}
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error, response } = await client.DELETE("/api/categories/{id}", {
+        params: { path: { id } },
+      });
+      if (error) {
+        if (response.status === 409) {
+          const body = error as unknown as DeleteCategoryConflict;
+          throw { conflict: true, ...body };
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Category deleted");
+    },
+    onError: (error: unknown) => {
+      const err = error as { conflict?: boolean; message?: string };
+      if (err.conflict) {
+        toast.error(err.message ?? "Cannot delete — dependencies reference this category");
+      } else {
+        toast.error("Failed to delete category");
+      }
     },
   });
 }

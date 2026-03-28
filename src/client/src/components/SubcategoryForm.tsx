@@ -11,6 +11,17 @@ import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -18,11 +29,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Trash2 } from "lucide-react";
 
 const subcategorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   categoryId: z.string().min(1, "Category is required"),
   description: z.string().optional(),
+  isActive: z.boolean(),
 });
 
 type SubcategoryFormValues = z.infer<typeof subcategorySchema>;
@@ -33,6 +46,9 @@ interface SubcategoryFormProps {
   onSubmit: (values: SubcategoryFormValues) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  onDelete?: () => void;
+  isDeleting?: boolean;
+  isAdmin?: boolean;
 }
 
 export function SubcategoryForm({
@@ -41,6 +57,9 @@ export function SubcategoryForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  onDelete,
+  isDeleting,
+  isAdmin,
 }: SubcategoryFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
@@ -49,11 +68,13 @@ export function SubcategoryForm({
   const { data: categories } = useCategories();
 
   const categoryOptions = (
-    categories as { id: string; name: string }[] | undefined
-  )?.map((c) => ({
-    value: c.id,
-    label: c.name,
-  })) ?? [];
+    categories as { id: string; name: string; isActive: boolean }[] | undefined
+  )
+    ?.filter((c) => c.isActive)
+    .map((c) => ({
+      value: c.id,
+      label: c.name,
+    })) ?? [];
 
   const form = useForm<SubcategoryFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,6 +83,7 @@ export function SubcategoryForm({
       name: "",
       categoryId: "",
       description: "",
+      isActive: true,
       ...defaultValues,
     },
   });
@@ -133,15 +155,71 @@ export function SubcategoryForm({
           )}
         />
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <SubmitButton
-            isSubmitting={isSubmitting ?? false}
-            label={mode === "create" ? "Create Subcategory" : "Update Subcategory"}
-            loadingLabel="Saving..."
-          />
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                </FormControl>
+                <FormLabel>Active</FormLabel>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex items-center pt-4">
+          {mode === "edit" && isAdmin && onDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Subcategory?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this subcategory. This action
+                    cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={onDelete}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <div className="ml-auto flex gap-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <SubmitButton
+              isSubmitting={isSubmitting ?? false}
+              label={mode === "create" ? "Create Subcategory" : "Update Subcategory"}
+              loadingLabel="Saving..."
+            />
+          </div>
         </div>
       </form>
     </Form>

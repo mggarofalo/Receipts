@@ -5,7 +5,6 @@ import {
   FileText,
   Package,
   ArrowRightLeft,
-  Plane,
   Home,
 } from "lucide-react";
 import {
@@ -33,9 +32,6 @@ const navItems = [
   { label: "Home", path: "/", icon: Home },
   { label: "Accounts", path: "/accounts", icon: Building2 },
   { label: "Receipts", path: "/receipts", icon: FileText },
-  { label: "Receipt Items", path: "/receipt-items", icon: Package },
-  { label: "Transactions", path: "/transactions", icon: ArrowRightLeft },
-  { label: "Trips", path: "/trips", icon: Plane },
 ];
 
 export function GlobalSearchDialog({
@@ -125,7 +121,7 @@ export function GlobalSearchDialog({
                 <CommandItem
                   key={i.id}
                   value={`item:${i.description} ${i.receiptItemCode} ${i.category}`}
-                  onSelect={() => select("/receipt-items")}
+                  onSelect={() => select(`/receipts/${i.receiptId}`)}
                 >
                   <Package className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span>{i.description}</span>
@@ -146,7 +142,7 @@ export function GlobalSearchDialog({
                 <CommandItem
                   key={t.id}
                   value={`txn:${t.date} ${t.amount}`}
-                  onSelect={() => select("/transactions")}
+                  onSelect={() => select(`/receipts/${t.receiptId}`)}
                 >
                   <ArrowRightLeft className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span>{formatCurrency(t.amount)}</span>

@@ -3,13 +3,17 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Account.Create;
+using Application.Commands.Account.Delete;
 using Application.Commands.Account.Update;
+using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Account;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SampleData.Domain.Core;
@@ -23,6 +27,7 @@ public class AccountsControllerTests
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<AccountsController>> _loggerMock;
 	private readonly Mock<IEntityChangeNotifier> _notifierMock;
+	private readonly Mock<IAccountService> _accountServiceMock;
 	private readonly AccountsController _controller;
 
 	public AccountsControllerTests()
@@ -31,7 +36,12 @@ public class AccountsControllerTests
 		_mapper = new AccountMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<AccountsController>();
 		_notifierMock = new Mock<IEntityChangeNotifier>();
-		_controller = new AccountsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object);
+		_accountServiceMock = new Mock<IAccountService>();
+		_controller = new AccountsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object, _accountServiceMock.Object);
+		_controller.ControllerContext = new ControllerContext
+		{
+			HttpContext = new DefaultHttpContext()
+		};
 	}
 
 	[Fact]
@@ -342,6 +352,85 @@ public class AccountsControllerTests
 
 		// Act
 		Func<Task> act = () => _controller.UpdateAccounts(controllerInput);
+
+		// Assert
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	[Fact]
+	public async Task DeleteAccount_ReturnsNoContent_WhenDeleteSucceeds()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+
+		_accountServiceMock.Setup(s => s.GetTransactionCountByAccountIdAsync(id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteAccountCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		// Act
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteAccount(id);
+
+		// Assert
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteAccount_ReturnsNotFound_WhenAccountDoesNotExist()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+
+		_accountServiceMock.Setup(s => s.GetTransactionCountByAccountIdAsync(id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteAccountCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteAccount(id);
+
+		// Assert
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteAccount_ReturnsConflict_WhenTransactionsExist()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+
+		_accountServiceMock.Setup(s => s.GetTransactionCountByAccountIdAsync(id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(5);
+
+		// Act
+		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteAccount(id);
+
+		// Assert
+		Assert.IsType<Conflict<object>>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteAccount_ThrowsException_WhenMediatorFails()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+
+		_accountServiceMock.Setup(s => s.GetTransactionCountByAccountIdAsync(id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<DeleteAccountCommand>(c => c.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		Func<Task> act = () => _controller.DeleteAccount(id);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

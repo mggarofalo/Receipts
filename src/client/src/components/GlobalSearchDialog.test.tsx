@@ -62,8 +62,6 @@ describe("GlobalSearchDialog", () => {
     expect(screen.getByText("Home")).toBeInTheDocument();
     expect(screen.getByText("Accounts")).toBeInTheDocument();
     expect(screen.getByText("Receipts")).toBeInTheDocument();
-    expect(screen.getByText("Transactions")).toBeInTheDocument();
-    expect(screen.getByText("Trips")).toBeInTheDocument();
   });
 
   it("renders account items when accounts data is available", async () => {
@@ -151,6 +149,7 @@ describe("GlobalSearchDialog", () => {
           receiptItemCode: "RI001",
           description: "Test Item",
           category: "Food",
+          receiptId: "r-1",
         },
       ],
       total: 1,
@@ -159,8 +158,8 @@ describe("GlobalSearchDialog", () => {
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
     );
-    // "Receipt Items" appears as both a nav item and a group heading
-    expect(screen.getAllByText("Receipt Items").length).toBeGreaterThanOrEqual(2);
+    // "Receipt Items" appears as a group heading
+    expect(screen.getByText("Receipt Items")).toBeInTheDocument();
     expect(screen.getByText("Test Item")).toBeInTheDocument();
     expect(screen.getByText("RI001")).toBeInTheDocument();
   });
@@ -169,7 +168,7 @@ describe("GlobalSearchDialog", () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
       data: [
-        { id: "txn-1", amount: 42.5, date: "2024-01-15" },
+        { id: "txn-1", amount: 42.5, date: "2024-01-15", receiptId: "r-1" },
       ],
       total: 1,
     }));
@@ -177,8 +176,8 @@ describe("GlobalSearchDialog", () => {
     renderWithQueryClient(
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
     );
-    // "Transactions" appears as both a nav item and a group heading
-    expect(screen.getAllByText("Transactions").length).toBeGreaterThanOrEqual(2);
+    // "Transactions" appears as a group heading
+    expect(screen.getByText("Transactions")).toBeInTheDocument();
     expect(screen.getByText("$42.50")).toBeInTheDocument();
     expect(screen.getByText("2024-01-15")).toBeInTheDocument();
   });
@@ -240,7 +239,7 @@ describe("GlobalSearchDialog", () => {
     const { useTransactions } = await import("@/hooks/useTransactions");
     vi.mocked(useTransactions).mockReturnValue(mockQueryResult({
       data: [
-        { id: "txn-1", amount: 100, date: "2024-06-01" },
+        { id: "txn-1", amount: 100, date: "2024-06-01", receiptId: "r-1" },
       ],
       total: 1,
     }));

@@ -17,6 +17,7 @@ public partial class AdjustmentMapper
 	[MapperIgnoreTarget(nameof(AdjustmentEntity.DeletedAt))]
 	[MapperIgnoreTarget(nameof(AdjustmentEntity.DeletedByUserId))]
 	[MapperIgnoreTarget(nameof(AdjustmentEntity.DeletedByApiKeyId))]
+	[MapperIgnoreTarget(nameof(AdjustmentEntity.CascadeDeletedByParentId))]
 	public partial AdjustmentEntity ToEntity(Adjustment source);
 
 	private Money MapAmount(decimal amount, Currency currency) => new(amount, currency);
@@ -26,5 +27,6 @@ public partial class AdjustmentMapper
 	[MapperIgnoreSource(nameof(AdjustmentEntity.DeletedAt))]
 	[MapperIgnoreSource(nameof(AdjustmentEntity.DeletedByUserId))]
 	[MapperIgnoreSource(nameof(AdjustmentEntity.DeletedByApiKeyId))]
+	[MapperIgnoreSource(nameof(AdjustmentEntity.CascadeDeletedByParentId))]
 	public partial Adjustment ToDomain(AdjustmentEntity source);
 }

@@ -58,14 +58,15 @@ describe("useBreadcrumbs", () => {
     });
   });
 
-  it("maps receipt-detail correctly", () => {
+  it("maps /receipts/:id via segment builder", () => {
     const { result } = renderHook(() => useBreadcrumbs(), {
-      wrapper: createWrapper("/receipt-detail"),
+      wrapper: createWrapper("/receipts/some-uuid"),
     });
-    expect(result.current[1]).toEqual({
-      label: "Receipt Detail",
-      path: "/receipt-detail",
-    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Receipts", path: "/receipts" },
+      { label: "Some Uuid", path: "/receipts/some-uuid" },
+    ]);
   });
 
   it("maps categories correctly", () => {

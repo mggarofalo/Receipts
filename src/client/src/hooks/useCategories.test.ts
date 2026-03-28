@@ -77,7 +77,7 @@ describe("useCategories", () => {
   });
 
   it("create mutation calls POST and shows toast on success", async () => {
-    const newCategory = { name: "Travel", description: "Business travel" };
+    const newCategory = { name: "Travel", description: "Business travel", isActive: true };
     const created = { id: "2", ...newCategory };
     (client.POST as Mock).mockResolvedValue({ data: created, error: undefined });
 
@@ -92,7 +92,7 @@ describe("useCategories", () => {
   });
 
   it("update mutation calls PUT and shows toast on success", async () => {
-    const updated = { id: "1", name: "Food & Drink", description: "Updated" };
+    const updated = { id: "1", name: "Food & Drink", description: "Updated", isActive: true };
     (client.PUT as Mock).mockResolvedValue({ error: undefined });
 
     const { result } = renderHook(() => useUpdateCategory(), {

@@ -31,7 +31,7 @@ describe("CategoryForm", () => {
       <CategoryForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ name: "Groceries", description: "Food items" }}
+        defaultValues={{ name: "Groceries", description: "Food items", isActive: true }}
       />,
     );
 
@@ -50,7 +50,7 @@ describe("CategoryForm", () => {
 
     await waitFor(() => {
       expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-        { name: "Utilities", description: "Monthly bills" },
+        { name: "Utilities", description: "Monthly bills", isActive: true },
         expect.anything(),
       );
     });
@@ -97,5 +97,105 @@ describe("CategoryForm", () => {
         expect.anything(),
       );
     });
+  });
+
+  it("does not show delete button in create mode", () => {
+    render(
+      <CategoryForm
+        {...defaultProps}
+        isAdmin={true}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+  });
+
+  it("does not show delete button in edit mode for non-admin users", () => {
+    render(
+      <CategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Groceries", description: "Food items", isActive: true }}
+        isAdmin={false}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
+  });
+
+  it("shows delete button in edit mode for admin users", () => {
+    render(
+      <CategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Groceries", description: "Food items", isActive: true }}
+        isAdmin={true}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
+  });
+
+  it("shows confirmation dialog when delete button is clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <CategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Groceries", description: "Food items", isActive: true }}
+        isAdmin={true}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Delete Category?")).toBeInTheDocument();
+      expect(screen.getByText(/permanently delete/i)).toBeInTheDocument();
+    });
+  });
+
+  it("calls onDelete when delete is confirmed", async () => {
+    const onDelete = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <CategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Groceries", description: "Food items", isActive: true }}
+        isAdmin={true}
+        onDelete={onDelete}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /delete/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Delete Category?")).toBeInTheDocument();
+    });
+
+    // Click the "Delete" action in the confirmation dialog
+    const confirmButtons = screen.getAllByRole("button", { name: /delete/i });
+    const confirmButton = confirmButtons[confirmButtons.length - 1];
+    await user.click(confirmButton);
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show delete button when onDelete is not provided", () => {
+    render(
+      <CategoryForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Groceries", description: "Food items", isActive: true }}
+        isAdmin={true}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
   });
 });

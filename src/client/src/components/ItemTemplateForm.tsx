@@ -38,6 +38,8 @@ interface ItemTemplateFormProps {
   onSubmit: (values: ItemTemplateFormValues) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  onHide?: () => void;
+  isHiding?: boolean;
 }
 
 export function ItemTemplateForm({
@@ -46,6 +48,8 @@ export function ItemTemplateForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  onHide,
+  isHiding,
 }: ItemTemplateFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
@@ -53,10 +57,12 @@ export function ItemTemplateForm({
 
   const { data: categories } = useCategories();
   const categoryOptions =
-    (categories as { id: string; name: string }[] | undefined)?.map((c) => ({
-      value: c.name,
-      label: c.name,
-    })) ?? [];
+    (categories as { id: string; name: string; isActive: boolean }[] | undefined)
+      ?.filter((c) => c.isActive)
+      .map((c) => ({
+        value: c.name,
+        label: c.name,
+      })) ?? [];
 
   const form = useForm<ItemTemplateFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,7 +83,7 @@ export function ItemTemplateForm({
   const watchedCategory = form.watch("defaultCategory");
 
   const selectedCategoryId =
-    (categories as { id: string; name: string }[] | undefined)?.find(
+    (categories as { id: string; name: string; isActive: boolean }[] | undefined)?.find(
       (c) => c.name === watchedCategory,
     )?.id ?? null;
 
@@ -85,12 +91,12 @@ export function ItemTemplateForm({
     useSubcategoriesByCategoryId(selectedCategoryId);
 
   const subcategoryOptions =
-    (subcategoriesData as { id: string; name: string }[] | undefined)?.map(
-      (s) => ({
+    (subcategoriesData as { id: string; name: string; isActive: boolean }[] | undefined)
+      ?.filter((s) => s.isActive)
+      .map((s) => ({
         value: s.name,
         label: s.name,
-      }),
-    ) ?? [];
+      })) ?? [];
 
   return (
     <Form {...form}>
@@ -224,18 +230,33 @@ export function ItemTemplateForm({
           )}
         />
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Spinner size="sm" />}
-            {isSubmitting
-              ? "Saving..."
-              : mode === "create"
-                ? "Create Template"
-                : "Update Template"}
-          </Button>
+        <div className="flex justify-between gap-2 pt-4">
+          <div>
+            {mode === "edit" && onHide && (
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={isHiding}
+                onClick={onHide}
+              >
+                {isHiding && <Spinner size="sm" />}
+                {isHiding ? "Hiding..." : "Hide"}
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Spinner size="sm" />}
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                  ? "Create Template"
+                  : "Update Template"}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

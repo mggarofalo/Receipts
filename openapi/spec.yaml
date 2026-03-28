@@ -100,6 +100,42 @@ paths:
               $ref: "#/components/headers/X-Resource-Id"
         "404":
           description: Not Found
+    delete:
+      operationId: DeleteAccount
+      tags: [Accounts]
+      summary: Hard-delete an account
+      description: >
+        Permanently deletes an account. Requires the Admin role. Returns 409
+        Conflict if transactions reference this account.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict — transactions reference this account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  transactionCount:
+                    type: integer
+                required:
+                  - message
+                  - transactionCount
 
   /api/accounts:
     get:
@@ -255,6 +291,41 @@ paths:
               $ref: "#/components/headers/X-Resource-Id"
         "404":
           description: Not Found
+    delete:
+      operationId: DeleteCategory
+      tags: [Categories]
+      summary: Hard-delete a category
+      description: >
+        Permanently deletes a category. Requires the Admin role. Returns 409
+        Conflict if subcategories or receipt items reference this category.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict — subcategories or receipt items reference this category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  subcategoryCount:
+                    type: integer
+                  receiptItemCount:
+                    type: integer
 
   /api/categories:
     get:
@@ -410,6 +481,42 @@ paths:
               $ref: "#/components/headers/X-Resource-Id"
         "404":
           description: Not Found
+    delete:
+      operationId: DeleteSubcategory
+      tags: [Subcategories]
+      summary: Hard-delete a subcategory
+      description: >
+        Permanently deletes a subcategory. Requires the Admin role. Returns 409
+        Conflict if receipt items reference this subcategory.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict — receipt items reference this subcategory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  receiptItemCount:
+                    type: integer
+                required:
+                  - message
+                  - receiptItemCount
 
   /api/subcategories:
     get:
@@ -2813,6 +2920,8 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     UpdateCategoryRequest:
       type: object
@@ -2827,10 +2936,12 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     CategoryResponse:
       type: object
-      required: [id, name]
+      required: [id, name, isActive]
       properties:
         id:
           type: string
@@ -2841,6 +2952,8 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     CategoryListResponse:
       type: object
@@ -2875,6 +2988,8 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     UpdateSubcategoryRequest:
       type: object
@@ -2892,10 +3007,12 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     SubcategoryResponse:
       type: object
-      required: [id, name, categoryId]
+      required: [id, name, categoryId, isActive]
       properties:
         id:
           type: string
@@ -2909,6 +3026,8 @@ components:
           type:
             - string
             - "null"
+        isActive:
+          type: boolean
 
     SubcategoryListResponse:
       type: object

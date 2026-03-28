@@ -4,7 +4,9 @@ import {
   useCreateItemTemplate,
   useUpdateItemTemplate,
   useDeleteItemTemplates,
+  useHideItemTemplate,
 } from "@/hooks/useItemTemplates";
+import { usePermission } from "@/hooks/usePermission";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
@@ -68,6 +70,8 @@ function ItemTemplates() {
   const createItemTemplate = useCreateItemTemplate();
   const updateItemTemplate = useUpdateItemTemplate();
   const deleteItemTemplates = useDeleteItemTemplates();
+  const hideItemTemplate = useHideItemTemplate();
+  const { isAdmin } = usePermission();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
@@ -368,6 +372,14 @@ function ItemTemplates() {
                   { onSuccess: () => setEditTemplate(null) },
                 );
               }}
+              {...(isAdmin() ? {
+                onHide: () => {
+                  hideItemTemplate.mutate(editTemplate.id, {
+                    onSuccess: () => setEditTemplate(null),
+                  });
+                },
+                isHiding: hideItemTemplate.isPending,
+              } : {})}
             />
           )}
         </DialogContent>

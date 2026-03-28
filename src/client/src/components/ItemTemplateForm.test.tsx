@@ -40,8 +40,8 @@ vi.mock("@/hooks/useEnumMetadata", () => ({
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() => ({
     data: [
-      { id: "cat-1", name: "Groceries" },
-      { id: "cat-2", name: "Electronics" },
+      { id: "cat-1", name: "Groceries", isActive: true },
+      { id: "cat-2", name: "Electronics", isActive: true },
     ],
     total: 2,
   })),
@@ -50,8 +50,8 @@ vi.mock("@/hooks/useCategories", () => ({
 vi.mock("@/hooks/useSubcategories", () => ({
   useSubcategoriesByCategoryId: vi.fn(() => ({
     data: [
-      { id: "sub-1", name: "Dairy" },
-      { id: "sub-2", name: "Bakery" },
+      { id: "sub-1", name: "Dairy", isActive: true },
+      { id: "sub-2", name: "Bakery", isActive: true },
     ],
     total: 2,
   })),
@@ -152,6 +152,75 @@ describe("ItemTemplateForm", () => {
     expect(screen.getByText("Default Unit Price (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Pricing Mode (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Item Code (optional)")).toBeInTheDocument();
+  });
+
+  it("renders Hide button in edit mode when onHide is provided", () => {
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="edit"
+        onHide={vi.fn()}
+        defaultValues={{ name: "Test" }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /^hide$/i })).toBeInTheDocument();
+  });
+
+  it("does not render Hide button when onHide is not provided", () => {
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{ name: "Test" }}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /^hide$/i })).not.toBeInTheDocument();
+  });
+
+  it("does not render Hide button in create mode even when onHide is provided", () => {
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="create"
+        onHide={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /^hide$/i })).not.toBeInTheDocument();
+  });
+
+  it("calls onHide when Hide button is clicked", async () => {
+    const onHide = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="edit"
+        onHide={onHide}
+        defaultValues={{ name: "Test" }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /^hide$/i }));
+
+    expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables Hide button and shows spinner when isHiding is true", () => {
+    render(
+      <ItemTemplateForm
+        {...defaultProps}
+        mode="edit"
+        onHide={vi.fn()}
+        isHiding={true}
+        defaultValues={{ name: "Test" }}
+      />,
+    );
+
+    const hideButton = screen.getByRole("button", { name: /hiding/i });
+    expect(hideButton).toBeDisabled();
   });
 
   it("filters category options via typeahead and selects a filtered result", async () => {

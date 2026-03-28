@@ -4,7 +4,9 @@ import {
   useCategories,
   useCreateCategory,
   useUpdateCategory,
+  useDeleteCategory,
 } from "@/hooks/useCategories";
+import { usePermission } from "@/hooks/usePermission";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
@@ -21,6 +23,8 @@ import { SortableTableHead } from "@/components/SortableTableHead";
 import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +47,7 @@ interface CategoryResponse {
   id: string;
   name: string;
   description?: string | null;
+  isActive: boolean;
 }
 
 const SEARCH_CONFIG: FuseSearchConfig<CategoryResponse> = {
@@ -51,6 +56,9 @@ const SEARCH_CONFIG: FuseSearchConfig<CategoryResponse> = {
     { name: "description", weight: 1 },
   ],
 };
+
+const STATUS_STORAGE_KEY = "categories-status-filter";
+type StatusFilter = "all" | "true" | "false";
 
 const HIGHLIGHT_PARAMS = ["highlight"] as const;
 
@@ -62,10 +70,16 @@ function Categories() {
   const { data: categoriesData, total: serverTotal, isLoading } = useCategories(offset, limit, sortBy, sortDirection);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+  const { isAdmin } = usePermission();
   const [createOpen, setCreateOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<CategoryResponse | null>(
     null,
   );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
+    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
+  });
 
   const anyDialogOpen = createOpen || editCategory !== null;
 
@@ -88,9 +102,18 @@ function Categories() {
   const { search, setSearch, results, totalCount, clearSearch } =
     useFuzzySearch({ data, config: SEARCH_CONFIG });
 
+  function handleStatusChange(value: string) {
+    const v = value as StatusFilter;
+    setStatusFilter(v);
+    localStorage.setItem(STATUS_STORAGE_KEY, v);
+  }
+
   const filteredResults = useMemo(() => {
-    return results.map((r) => r.item);
-  }, [results]);
+    const items = results.map((r) => r.item);
+    if (statusFilter === "all") return items;
+    const expected = statusFilter === "true";
+    return items.filter((c) => c.isActive === expected);
+  }, [results, statusFilter]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -111,7 +134,7 @@ function Categories() {
   });
 
   if (isLoading) {
-    return <TableSkeleton columns={3} />;
+    return <TableSkeleton columns={4} />;
   }
 
   return (
@@ -129,6 +152,14 @@ function Categories() {
         />
         <Button onClick={() => setCreateOpen(true)}>New Category</Button>
       </div>
+
+      <Tabs value={statusFilter} onValueChange={handleStatusChange}>
+        <TabsList>
+          <TabsTrigger value="true">Active</TabsTrigger>
+          <TabsTrigger value="false">Inactive</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {highlightMissing && (
         <Alert>
@@ -166,6 +197,7 @@ function Categories() {
                 <TableRow>
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Description</TableHead>
+                  <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
@@ -203,6 +235,13 @@ function Categories() {
                         ) : (
                           <span className="italic">--</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={category.isActive ? "default" : "secondary"}
+                        >
+                          {category.isActive ? "Active" : "Inactive"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Link to={`/subcategories?categoryId=${category.id}`} className="text-sm text-primary hover:underline">
@@ -270,6 +309,7 @@ function Categories() {
               defaultValues={{
                 name: editCategory.name,
                 description: editCategory.description ?? "",
+                isActive: editCategory.isActive,
               }}
               isSubmitting={updateCategory.isPending}
               onCancel={() => setEditCategory(null)}
@@ -278,6 +318,13 @@ function Categories() {
                   { id: editCategory.id, ...values },
                   { onSuccess: () => setEditCategory(null) },
                 );
+              }}
+              isAdmin={isAdmin()}
+              isDeleting={deleteCategory.isPending}
+              onDelete={() => {
+                deleteCategory.mutate(editCategory.id, {
+                  onSuccess: () => setEditCategory(null),
+                });
               }}
             />
           )}
