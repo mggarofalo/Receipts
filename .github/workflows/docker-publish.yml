@@ -16,8 +16,10 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - id: set-matrix
+        # arch_suffix is the short architecture name used for platform-specific tags
+        # (e.g., "amd64", "arm64"). Derived from the platform string.
         run: |
-          echo 'matrix={"include":[{"platform":"linux/amd64","runner":"ubuntu-latest","platform_pair":"linux-amd64"},{"platform":"linux/arm64","runner":"ubuntu-latest","platform_pair":"linux-arm64"}]}' >> "$GITHUB_OUTPUT"
+          echo 'matrix={"include":[{"platform":"linux/amd64","runner":"ubuntu-latest","platform_pair":"linux-amd64","arch_suffix":"amd64"},{"platform":"linux/arm64","runner":"ubuntu-latest","platform_pair":"linux-arm64","arch_suffix":"arm64"}]}' >> "$GITHUB_OUTPUT"
 
   build:
     name: Build (${{ matrix.platform_pair }})
@@ -47,19 +49,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
+      # Generate platform-specific tags so each arch image is pullable immediately
+      # after its build job completes, without waiting for the other platform.
+      # Tags produced: <image>:<version>-<arch>, <image>:<major.minor>-<arch>,
+      #                <image>:sha-<sha>-<arch>, <image>:latest-<arch>
+      - name: Extract metadata (platform-specific tags)
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Each tag pattern gets the arch suffix appended so tags are unique per platform.
+          tags: |
+            type=semver,pattern={{version}},suffix=-${{ matrix.arch_suffix }}
+            type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.arch_suffix }}
+            type=sha,suffix=-${{ matrix.arch_suffix }}
+            type=raw,value=latest-${{ matrix.arch_suffix }}
 
-      - name: Build and push by digest
+      # Build and push directly to platform-specific tags (not push-by-digest).
+      # This makes each architecture independently pullable as soon as its job finishes.
+      # The existing GHA cache strategy is preserved per-platform.
+      - name: Build and push platform-specific image
         id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          push: true
           build-args: |
             VITE_APP_VERSION=${{ github.ref_name }}
             VITE_COMMIT_HASH=${{ github.sha }}
@@ -68,40 +85,20 @@ jobs:
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
             SENTRY_ORG=${{ secrets.SENTRY_ORG }}
             SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=build-${{ matrix.platform_pair }}
           cache-to: type=gha,mode=min,scope=build-${{ matrix.platform_pair }}
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-
-      - name: Upload digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ matrix.platform_pair }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
 
   merge:
     name: Merge Manifests
     runs-on: ubuntu-latest
+    # Runs after BOTH platform builds succeed. Creates multi-arch manifest lists
+    # that point the canonical tags at the platform-specific images built above.
     needs: build
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests
-          pattern: digests-*
-          merge-multiple: true
-
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -112,7 +109,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Extract metadata
+      # Generate the final (arch-neutral) tags that consumers pull.
+      # These are the same tags the old workflow published.
+      - name: Extract metadata (final manifest tags)
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -123,11 +122,30 @@ jobs:
             type=sha
             type=raw,value=latest
 
+      # For each final tag, create a multi-arch manifest that references the
+      # two platform-specific images by their arch-suffixed tags.
+      # Uses `docker buildx imagetools create` which stitches existing registry
+      # images into a manifest list without re-pushing layer data.
       - name: Create manifest list and push
-        working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+          # Build the list of -t flags for all final tags
+          tag_flags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+
+          # For each final tag, derive the corresponding arch-specific source tags.
+          # We pick the first tag from metadata as the "base" to derive suffixed sources.
+          # All metadata tags share the same image prefix, so we use the version tag.
+          version=$(jq -cr '.tags[0]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          # Strip the tag portion to get the image ref base (everything before the colon)
+          image_base="${version%:*}"
+
+          # Compute the semver version for source tag references
+          semver_version="${GITHUB_REF_NAME#v}"
+
+          # Source images are the platform-specific tags pushed by the build jobs
+          sources="${image_base}:${semver_version}-amd64 ${image_base}:${semver_version}-arm64"
+
+          # Create the multi-arch manifest list pointing at both platform images
+          docker buildx imagetools create $tag_flags $sources
 
   scan:
     name: Security Scan
