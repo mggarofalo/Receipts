@@ -26,8 +26,8 @@ vi.mock("@/components/dashboard/SpendingByAccountWidget", () => ({
   SpendingByAccountWidget: () => <div data-testid="spending-by-account" />,
 }));
 
-vi.mock("@/components/dashboard/RecentReceiptsWidget", () => ({
-  RecentReceiptsWidget: () => <div data-testid="recent-receipts" />,
+vi.mock("@/components/dashboard/SpendingByStoreWidget", () => ({
+  SpendingByStoreWidget: () => <div data-testid="spending-by-store" />,
 }));
 
 describe("Dashboard", () => {
@@ -49,7 +49,7 @@ describe("Dashboard", () => {
     expect(screen.getByTestId("spending-over-time")).toBeInTheDocument();
     expect(screen.getByTestId("spending-by-category")).toBeInTheDocument();
     expect(screen.getByTestId("spending-by-account")).toBeInTheDocument();
-    expect(screen.getByTestId("recent-receipts")).toBeInTheDocument();
+    expect(screen.getByTestId("spending-by-store")).toBeInTheDocument();
   });
 
   it("calls usePageTitle with Dashboard", async () => {

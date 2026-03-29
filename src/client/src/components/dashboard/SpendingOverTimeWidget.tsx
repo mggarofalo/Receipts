@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { differenceInDays, parseISO } from "date-fns";
 import { ChartCard, AreaTimeChart } from "@/components/charts";
 import { useDashboardSpendingOverTime } from "@/hooks/useDashboard";
 import type { DateRange } from "@/hooks/useDashboard";
@@ -42,20 +43,40 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+function getAutoGranularity(dateRange: DateRange): Granularity {
+  if (!dateRange.startDate || !dateRange.endDate) {
+    return "quarterly";
+  }
+  const days = differenceInDays(
+    parseISO(dateRange.endDate),
+    parseISO(dateRange.startDate),
+  );
+  if (days > 730) return "quarterly";
+  return "monthly";
+}
+
 export function SpendingOverTimeWidget({
   dateRange,
   className,
 }: SpendingOverTimeWidgetProps) {
-  const [granularity, setGranularity] = useState<Granularity>("monthly");
-  const [showTrendline, setShowTrendline] = useState(false);
+  const [granularityOverride, setGranularityOverride] =
+    useState<Granularity | null>(null);
+  const [showTrendline, setShowTrendline] = useState(true);
   const [windowSize, setWindowSize] = useState<WindowSize>("3");
+
+  const autoGranularity = useMemo(
+    () => getAutoGranularity(dateRange),
+    [dateRange],
+  );
+  const granularity = granularityOverride ?? autoGranularity;
+
   const { data, isLoading } = useDashboardSpendingOverTime(
     dateRange,
     granularity,
   );
 
   const handleGranularity = useCallback((g: Granularity) => {
-    setGranularity(g);
+    setGranularityOverride(g);
   }, []);
 
   const handleToggleTrendline = useCallback(() => {

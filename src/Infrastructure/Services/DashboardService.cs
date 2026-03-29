@@ -209,6 +209,44 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 		return new SpendingByAccountResult(items);
 	}
 
+	public async Task<SpendingByStoreResult> GetSpendingByStoreAsync(DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		IQueryable<ReceiptEntity> receiptsInRange = context.Receipts
+			.AsNoTracking()
+			.Where(r => r.Date >= startDate && r.Date <= endDate);
+
+		IQueryable<Guid> receiptIds = receiptsInRange.Select(r => r.Id);
+
+		// Get per-receipt totals (sum of transactions per receipt) with location
+		var receiptTotals = await receiptsInRange
+			.Select(r => new
+			{
+				r.Id,
+				Location = r.Location ?? "Unknown",
+				TransactionTotal = context.Transactions
+					.AsNoTracking()
+					.Where(t => t.ReceiptId == r.Id)
+					.Sum(t => t.Amount)
+			})
+			.ToListAsync(cancellationToken);
+
+		List<SpendingByStoreItemResult> items = receiptTotals
+			.GroupBy(r => r.Location)
+			.Select(g =>
+			{
+				int visitCount = g.Count();
+				decimal totalAmount = g.Sum(r => r.TransactionTotal);
+				decimal averagePerVisit = visitCount > 0 ? Math.Round(totalAmount / visitCount, 2) : 0;
+				return new SpendingByStoreItemResult(g.Key, visitCount, totalAmount, averagePerVisit);
+			})
+			.OrderByDescending(i => i.TotalAmount)
+			.ToList();
+
+		return new SpendingByStoreResult(items);
+	}
+
 	public async Task<int> GetEarliestReceiptYearAsync(CancellationToken cancellationToken)
 	{
 		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);

@@ -104,17 +104,17 @@ describe("SpendingOverTimeWidget", () => {
     ).toBeInTheDocument();
   });
 
-  it("does not show trendline by default", () => {
+  it("shows trendline by default", () => {
     mockHook.mockReturnValue({
       data: { buckets: bucketData },
       isLoading: false,
     } as unknown as ReturnType<typeof useDashboardSpendingOverTime>);
 
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
-    expect(screen.queryByTestId("trendline-area")).not.toBeInTheDocument();
+    expect(screen.getByTestId("trendline-area")).toBeInTheDocument();
   });
 
-  it("shows trendline after clicking toggle", async () => {
+  it("hides trendline after clicking toggle", async () => {
     const user = userEvent.setup();
     mockHook.mockReturnValue({
       data: { buckets: bucketData },
@@ -123,10 +123,10 @@ describe("SpendingOverTimeWidget", () => {
 
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
     await user.click(screen.getByRole("button", { name: "Trendline" }));
-    expect(screen.getByTestId("trendline-area")).toBeInTheDocument();
+    expect(screen.queryByTestId("trendline-area")).not.toBeInTheDocument();
   });
 
-  it("hides trendline after toggling off", async () => {
+  it("shows trendline again after toggling on", async () => {
     const user = userEvent.setup();
     mockHook.mockReturnValue({
       data: { buckets: bucketData },
@@ -136,13 +136,12 @@ describe("SpendingOverTimeWidget", () => {
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
     const trendlineBtn = screen.getByRole("button", { name: "Trendline" });
     await user.click(trendlineBtn);
-    expect(screen.getByTestId("trendline-area")).toBeInTheDocument();
-    await user.click(trendlineBtn);
     expect(screen.queryByTestId("trendline-area")).not.toBeInTheDocument();
+    await user.click(trendlineBtn);
+    expect(screen.getByTestId("trendline-area")).toBeInTheDocument();
   });
 
-  it("shows window size selector only when trendline is enabled", async () => {
-    const user = userEvent.setup();
+  it("shows window size selector when trendline is enabled (default)", () => {
     mockHook.mockReturnValue({
       data: { buckets: bucketData },
       isLoading: false,
@@ -150,16 +149,25 @@ describe("SpendingOverTimeWidget", () => {
 
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
     expect(
-      screen.queryByLabelText("Rolling average window size"),
-    ).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Trendline" }));
-    expect(
       screen.getByLabelText("Rolling average window size"),
     ).toBeInTheDocument();
   });
 
-  it("trendline button has aria-pressed attribute", async () => {
+  it("hides window size selector when trendline is off", async () => {
     const user = userEvent.setup();
+    mockHook.mockReturnValue({
+      data: { buckets: bucketData },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDashboardSpendingOverTime>);
+
+    renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
+    await user.click(screen.getByRole("button", { name: "Trendline" }));
+    expect(
+      screen.queryByLabelText("Rolling average window size"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("trendline button has aria-pressed attribute defaulting to true", () => {
     mockHook.mockReturnValue({
       data: { buckets: bucketData },
       isLoading: false,
@@ -167,8 +175,27 @@ describe("SpendingOverTimeWidget", () => {
 
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
     const btn = screen.getByRole("button", { name: "Trendline" });
-    expect(btn).toHaveAttribute("aria-pressed", "false");
-    await user.click(btn);
     expect(btn).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("auto-selects monthly granularity for short ranges", () => {
+    mockHook.mockReturnValue({
+      data: { buckets: [] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDashboardSpendingOverTime>);
+
+    renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
+    expect(mockHook).toHaveBeenCalledWith(dateRange, "monthly");
+  });
+
+  it("auto-selects quarterly granularity for ranges over 2 years", () => {
+    mockHook.mockReturnValue({
+      data: { buckets: [] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDashboardSpendingOverTime>);
+
+    const longRange = { startDate: "2020-01-01", endDate: "2024-01-01" };
+    renderWithQueryClient(<SpendingOverTimeWidget dateRange={longRange} />);
+    expect(mockHook).toHaveBeenCalledWith(longRange, "quarterly");
   });
 });

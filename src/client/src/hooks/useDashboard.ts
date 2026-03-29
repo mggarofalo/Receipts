@@ -103,6 +103,33 @@ export function useDashboardSpendingByCategory(
   });
 }
 
+export function useDashboardSpendingByStore(dateRange: DateRange) {
+  return useQuery({
+    queryKey: [
+      "dashboard",
+      "spending-by-store",
+      dateRange.startDate,
+      dateRange.endDate,
+    ],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await client.GET(
+        "/api/dashboard/spending-by-store",
+        {
+          params: {
+            query: {
+              startDate: dateRange.startDate,
+              endDate: dateRange.endDate,
+            },
+          },
+        },
+      );
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useDashboardSpendingByAccount(dateRange: DateRange) {
   return useQuery({
     queryKey: [

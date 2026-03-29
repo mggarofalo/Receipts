@@ -2921,6 +2921,44 @@ paths:
               schema:
                 type: string
 
+  /api/dashboard/spending-by-store:
+    get:
+      operationId: GetSpendingByStore
+      tags: [Dashboard]
+      summary: Get spending grouped by store
+      description: Returns spending amounts grouped by receipt location (store), including visit count and average per visit.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to 30 days ago.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to today.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendingByStoreResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
   /api/dashboard/earliest-receipt-year:
     get:
       operationId: GetEarliestReceiptYear
@@ -3083,6 +3121,31 @@ components:
           type: number
           format: double
         percentage:
+          type: number
+          format: double
+
+    SpendingByStoreResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpendingByStoreItem"
+
+    SpendingByStoreItem:
+      type: object
+      required: [location, visitCount, totalAmount, averagePerVisit]
+      properties:
+        location:
+          type: string
+        visitCount:
+          type: integer
+          format: int32
+        totalAmount:
+          type: number
+          format: double
+        averagePerVisit:
           type: number
           format: double
 
