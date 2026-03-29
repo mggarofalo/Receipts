@@ -91,8 +91,13 @@ function Subcategories() {
   const { params: linkParams, clearParams, hasActiveFilter } = useEntityLinkParams(FILTER_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
-  const allSubcatQuery = useSubcategories(offset, limit, sortBy, sortDirection);
-  const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit, sortBy, sortDirection);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
+    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
+  });
+  const isActiveParam = statusFilter === "all" ? undefined : statusFilter === "true";
+  const allSubcatQuery = useSubcategories(offset, limit, sortBy, sortDirection, isActiveParam);
+  const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit, sortBy, sortDirection, isActiveParam);
   const activeSubcatQuery = linkParams.categoryId ? filteredSubcatQuery : allSubcatQuery;
   const { data: subcategoriesData, total: serverTotal, isLoading: subcategoriesLoading } = activeSubcatQuery;
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
@@ -111,10 +116,6 @@ function Subcategories() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(),
   );
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
-    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
-    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
-  });
 
   const anyDialogOpen = createOpen || editSubcategory !== null;
 
@@ -181,6 +182,7 @@ function Subcategories() {
     const v = value as StatusFilter;
     setStatusFilter(v);
     localStorage.setItem(STATUS_STORAGE_KEY, v);
+    resetPage();
   }
 
   const filteredResults = useMemo(() => {
@@ -188,11 +190,8 @@ function Subcategories() {
       ...r.item,
       categoryName: categoryMap.get(r.item.categoryId) ?? "",
     }));
-    const filtered = applyFilters(items, filterDefs, filterValues);
-    if (statusFilter === "all") return filtered;
-    const expected = statusFilter === "true";
-    return filtered.filter((s) => s.isActive === expected);
-  }, [results, filterValues, categoryMap, filterDefs, statusFilter]);
+    return applyFilters(items, filterDefs, filterValues);
+  }, [results, filterValues, categoryMap, filterDefs]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
