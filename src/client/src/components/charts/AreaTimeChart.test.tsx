@@ -5,12 +5,23 @@ vi.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  AreaChart: ({ children, data }: { children: React.ReactNode; data: unknown[] }) => (
+  AreaChart: ({
+    children,
+    data,
+  }: {
+    children: React.ReactNode;
+    data: unknown[];
+  }) => (
     <div data-testid="area-chart" data-count={data.length}>
       {children}
     </div>
   ),
-  Area: () => <div data-testid="area" />,
+  Area: ({ dataKey, strokeDasharray }: { dataKey: string; strokeDasharray?: string }) => (
+    <div
+      data-testid={dataKey === "trendline" ? "trendline-area" : "area"}
+      data-dasharray={strokeDasharray ?? ""}
+    />
+  ),
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
@@ -20,6 +31,12 @@ vi.mock("recharts", () => ({
 const mockData = [
   { period: "Jan", amount: 100 },
   { period: "Feb", amount: 200 },
+  { period: "Mar", amount: 150 },
+];
+
+const mockTrendline = [
+  { period: "Jan", amount: 100 },
+  { period: "Feb", amount: 150 },
   { period: "Mar", amount: 150 },
 ];
 
@@ -41,5 +58,28 @@ describe("AreaTimeChart", () => {
   it("renders with empty data", () => {
     render(<AreaTimeChart data={[]} />);
     expect(screen.getByTestId("area-chart")).toHaveAttribute("data-count", "0");
+  });
+
+  it("does not render trendline when trendlineData is not provided", () => {
+    render(<AreaTimeChart data={mockData} />);
+    expect(screen.queryByTestId("trendline-area")).not.toBeInTheDocument();
+  });
+
+  it("renders trendline area when trendlineData is provided", () => {
+    render(<AreaTimeChart data={mockData} trendlineData={mockTrendline} />);
+    expect(screen.getByTestId("trendline-area")).toBeInTheDocument();
+  });
+
+  it("renders trendline with dashed stroke", () => {
+    render(<AreaTimeChart data={mockData} trendlineData={mockTrendline} />);
+    expect(screen.getByTestId("trendline-area")).toHaveAttribute(
+      "data-dasharray",
+      "5 5",
+    );
+  });
+
+  it("does not render trendline when trendlineData is empty", () => {
+    render(<AreaTimeChart data={mockData} trendlineData={[]} />);
+    expect(screen.queryByTestId("trendline-area")).not.toBeInTheDocument();
   });
 });

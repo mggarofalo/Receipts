@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -10,24 +10,44 @@ import {
 } from "recharts";
 import { CHART_COLORS } from "./chart-colors";
 
+interface DataPoint {
+  period: string;
+  amount: number;
+}
+
 interface AreaTimeChartProps {
-  data: Array<{ period: string; amount: number }>;
+  data: DataPoint[];
+  trendlineData?: DataPoint[];
   height?: number;
   color?: string;
+  trendlineColor?: string;
   formatValue?: (value: number) => string;
 }
 
 export function AreaTimeChart({
   data,
+  trendlineData,
   height = 300,
   color = CHART_COLORS[0],
+  trendlineColor = CHART_COLORS[1],
   formatValue = (v) => v.toLocaleString(),
 }: AreaTimeChartProps) {
   const gradientId = useId();
 
+  const mergedData = useMemo(() => {
+    if (!trendlineData || trendlineData.length === 0) return data;
+    return data.map((point, i) => ({
+      ...point,
+      trendline: trendlineData[i]?.amount,
+    }));
+  }, [data, trendlineData]);
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+      <AreaChart
+        data={mergedData}
+        margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
+      >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={color} stopOpacity={0.3} />
@@ -46,7 +66,10 @@ export function AreaTimeChart({
           tickFormatter={formatValue}
         />
         <Tooltip
-          formatter={(value) => [formatValue(Number(value)), "Amount"]}
+          formatter={(value, name) => [
+            formatValue(Number(value)),
+            name === "trendline" ? "Rolling Avg" : "Amount",
+          ]}
           contentStyle={{
             backgroundColor: "hsl(var(--popover))",
             border: "1px solid hsl(var(--border))",
@@ -61,6 +84,19 @@ export function AreaTimeChart({
           fill={`url(#${gradientId})`}
           strokeWidth={2}
         />
+        {trendlineData && trendlineData.length > 0 && (
+          <Area
+            type="monotone"
+            dataKey="trendline"
+            stroke={trendlineColor}
+            fill="none"
+            strokeWidth={2}
+            strokeDasharray="5 5"
+            strokeOpacity={0.7}
+            dot={false}
+            name="trendline"
+          />
+        )}
       </AreaChart>
     </ResponsiveContainer>
   );
