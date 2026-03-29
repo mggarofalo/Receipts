@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.28](https://github.com/mggarofalo/receipts/compare/v0.1.27...v0.1.28) (2026-03-29)
+
+
+### Bug Fixes
+
+* release develop to main ([#305](https://github.com/mggarofalo/receipts/issues/305)) ([0dfd640](https://github.com/mggarofalo/receipts/commit/0dfd64026b42d3baeb1da82f56ae0fb1cf3572ea))
+
 ## [0.1.27](https://github.com/mggarofalo/receipts/compare/v0.1.26...v0.1.27) (2026-03-29)
 
 
