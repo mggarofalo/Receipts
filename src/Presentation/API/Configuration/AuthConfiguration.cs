@@ -105,9 +105,9 @@ public static class AuthConfiguration
 	public static IApplicationBuilder UseAuthServices(this IApplicationBuilder app)
 	{
 		app.UseAuthentication();
+		app.UseAuthorization();
 		app.UseRateLimiter();
 		app.UseMiddleware<MustResetPasswordMiddleware>();
-		app.UseAuthorization();
 		return app;
 	}
 }

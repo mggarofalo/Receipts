@@ -13,6 +13,14 @@ using Microsoft.Extensions.Hosting;
 
 namespace Presentation.API.Tests.Configuration;
 
+/// <summary>
+/// Tests the rate limiter configuration in isolation — verifies that each rate limit policy
+/// (global, auth, auth-sensitive, api-key) correctly enforces or bypasses limits based on
+/// the BypassRateLimit claim. These tests inject claims via inline middleware before the
+/// rate limiter, so they do NOT test the full auth pipeline ordering. For pipeline ordering
+/// tests, see <see cref="AuthMiddlewareOrderingTests"/> and
+/// <see cref="RateLimitBypassIntegrationTests"/>.
+/// </summary>
 public class RateLimitingConfigurationTests
 {
 	private static readonly Dictionary<string, string?> RateLimitConfig = new()
