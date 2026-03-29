@@ -2917,6 +2917,111 @@ paths:
               schema:
                 type: string
 
+  /api/reports/item-descriptions:
+    get:
+      operationId: GetItemDescriptions
+      tags: [Reports]
+      summary: Search item descriptions for autocomplete
+      description: Returns distinct item descriptions with their category and occurrence count, filtered by a search term (minimum 2 characters). Results are sorted by occurrences descending.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: search
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Search term to filter item descriptions (minimum 2 characters).
+        - name: categoryOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, search and return categories instead of item descriptions.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          description: Maximum number of results to return.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDescriptionsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/reports/item-cost-over-time:
+    get:
+      operationId: GetItemCostOverTime
+      tags: [Reports]
+      summary: Get item cost over time
+      description: Returns time-series cost data for a specific item description or category, optionally filtered by date range and bucketed by granularity.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Item description to filter by. Either description or category is required.
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Item category to filter by. Either description or category is required.
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to no lower bound.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to no upper bound.
+        - name: granularity
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [exact, monthly, yearly]
+            default: exact
+          description: Time bucket granularity. "exact" returns each purchase date.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemCostOverTimeResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
   # ──────────────────────────────────────────────
   # Dashboard
   # ──────────────────────────────────────────────
@@ -3289,6 +3394,46 @@ components:
           type: integer
           format: int32
           description: Number of items updated.
+
+    ItemDescriptionsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemDescriptionItem"
+
+    ItemDescriptionItem:
+      type: object
+      required: [description, category, occurrences]
+      properties:
+        description:
+          type: string
+        category:
+          type: string
+        occurrences:
+          type: integer
+          format: int32
+
+    ItemCostOverTimeResponse:
+      type: object
+      required: [buckets]
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemCostBucket"
+
+    ItemCostBucket:
+      type: object
+      required: [period, amount]
+      properties:
+        period:
+          type: string
+        amount:
+          type: number
+          format: double
 
     # ── Dashboard ──────────────────────────────────
 

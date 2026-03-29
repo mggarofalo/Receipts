@@ -353,5 +353,124 @@ public class ReportService(IDbContextFactory<ApplicationDbContext> contextFactor
 		return updated;
 	}
 
+	public async Task<ItemDescriptionResult> GetItemDescriptionsAsync(
+		string search,
+		bool categoryOnly,
+		int limit,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		string searchLower = search.ToLower();
+
+		if (categoryOnly)
+		{
+			List<ItemDescriptionItem> categories = await context.ReceiptItems
+				.AsNoTracking()
+				.Where(ri => ri.DeletedAt == null && ri.Category.ToLower().Contains(searchLower))
+				.GroupBy(ri => ri.Category)
+				.Select(g => new ItemDescriptionItem(g.Key, g.Key, g.Count()))
+				.OrderByDescending(x => x.Occurrences)
+				.Take(limit)
+				.ToListAsync(cancellationToken);
+
+			return new ItemDescriptionResult(categories);
+		}
+
+		List<ItemDescriptionItem> items = await context.ReceiptItems
+			.AsNoTracking()
+			.Where(ri => ri.DeletedAt == null && ri.Description.ToLower().Contains(searchLower))
+			.GroupBy(ri => new { ri.Description, ri.Category })
+			.Select(g => new ItemDescriptionItem(g.Key.Description, g.Key.Category, g.Count()))
+			.OrderByDescending(x => x.Occurrences)
+			.Take(limit)
+			.ToListAsync(cancellationToken);
+
+		return new ItemDescriptionResult(items);
+	}
+
+	public async Task<ItemCostOverTimeResult> GetItemCostOverTimeAsync(
+		string? description,
+		string? category,
+		DateOnly? startDate,
+		DateOnly? endDate,
+		string granularity,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		var query = context.ReceiptItems
+			.AsNoTracking()
+			.Where(ri => ri.DeletedAt == null)
+			.Join(
+				context.Receipts.AsNoTracking().Where(r => r.DeletedAt == null),
+				ri => ri.ReceiptId,
+				r => r.Id,
+				(ri, r) => new { ri.Description, ri.Category, ri.TotalAmount, ri.Quantity, ri.UnitPrice, r.Date });
+
+		if (!string.IsNullOrEmpty(description))
+		{
+			string descLower = description.ToLower();
+			query = query.Where(x => x.Description.ToLower() == descLower);
+		}
+		else if (!string.IsNullOrEmpty(category))
+		{
+			string catLower = category.ToLower();
+			query = query.Where(x => x.Category.ToLower() == catLower);
+		}
+
+		if (startDate.HasValue)
+		{
+			query = query.Where(x => x.Date >= startDate.Value);
+		}
+
+		if (endDate.HasValue)
+		{
+			query = query.Where(x => x.Date <= endDate.Value);
+		}
+
+		List<ItemCostBucket> buckets;
+
+		switch (granularity.ToLowerInvariant())
+		{
+			case "monthly":
+				var monthlyData = await query
+					.GroupBy(x => new { x.Date.Year, x.Date.Month })
+					.Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Average(x => x.UnitPrice) })
+					.OrderBy(x => x.Year).ThenBy(x => x.Month)
+					.ToListAsync(cancellationToken);
+
+				buckets = monthlyData
+					.Select(x => new ItemCostBucket($"{x.Year}-{x.Month:D2}", x.Amount))
+					.ToList();
+				break;
+
+			case "yearly":
+				var yearlyData = await query
+					.GroupBy(x => x.Date.Year)
+					.Select(g => new { Year = g.Key, Amount = g.Average(x => x.UnitPrice) })
+					.OrderBy(x => x.Year)
+					.ToListAsync(cancellationToken);
+
+				buckets = yearlyData
+					.Select(x => new ItemCostBucket(x.Year.ToString(), x.Amount))
+					.ToList();
+				break;
+
+			default: // "exact"
+				var exactData = await query
+					.Select(x => new { x.Date, x.UnitPrice })
+					.OrderBy(x => x.Date)
+					.ToListAsync(cancellationToken);
+
+				buckets = exactData
+					.Select(x => new ItemCostBucket(x.Date.ToString("yyyy-MM-dd"), x.UnitPrice))
+					.ToList();
+				break;
+		}
+
+		return new ItemCostOverTimeResult(buckets);
+	}
+
 	private record SimilarityEdge(Guid IdA, string DescA, Guid IdB, string DescB, double Score);
 }
