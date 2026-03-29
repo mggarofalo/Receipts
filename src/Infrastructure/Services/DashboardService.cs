@@ -217,8 +217,6 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 			.AsNoTracking()
 			.Where(r => r.Date >= startDate && r.Date <= endDate);
 
-		IQueryable<Guid> receiptIds = receiptsInRange.Select(r => r.Id);
-
 		// Get per-receipt totals (sum of transactions per receipt) with location
 		var receiptTotals = await receiptsInRange
 			.Select(r => new
