@@ -20,11 +20,16 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 		return await context.Subcategories.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
+	public async Task<List<SubcategoryEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Subcategories
-			.AsNoTracking()
+		IQueryable<SubcategoryEntity> query = context.Subcategories.AsNoTracking();
+		if (isActive.HasValue)
+		{
+			query = query.Where(e => e.IsActive == isActive.Value);
+		}
+
+		return await query
 			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
@@ -38,8 +43,6 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 			.OnlyDeleted()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Name)
-			.Skip(offset)
-			.Take(limit)
 			.Select(s => new SubcategoryEntity
 			{
 				Id = s.Id,
@@ -49,6 +52,8 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 				IsActive = s.IsActive,
 				DeletedAt = s.DeletedAt
 			})
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
@@ -60,11 +65,17 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 			.CountAsync(cancellationToken);
 	}
 
-	public async Task<List<SubcategoryEntity>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, SortParams sort, CancellationToken cancellationToken)
+	public async Task<List<SubcategoryEntity>> GetByCategoryIdAsync(Guid categoryId, int offset, int limit, SortParams sort, CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Subcategories
-			.Where(s => s.CategoryId == categoryId)
+		IQueryable<SubcategoryEntity> query = context.Subcategories
+			.Where(s => s.CategoryId == categoryId);
+		if (isActive.HasValue)
+		{
+			query = query.Where(e => e.IsActive == isActive.Value);
+		}
+
+		return await query
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
@@ -72,12 +83,17 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 			.ToListAsync(cancellationToken);
 	}
 
-	public async Task<int> GetByCategoryIdCountAsync(Guid categoryId, CancellationToken cancellationToken)
+	public async Task<int> GetByCategoryIdCountAsync(Guid categoryId, CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Subcategories
-			.Where(s => s.CategoryId == categoryId)
-			.CountAsync(cancellationToken);
+		IQueryable<SubcategoryEntity> query = context.Subcategories
+			.Where(s => s.CategoryId == categoryId);
+		if (isActive.HasValue)
+		{
+			query = query.Where(e => e.IsActive == isActive.Value);
+		}
+
+		return await query.CountAsync(cancellationToken);
 	}
 
 	public async Task<List<SubcategoryEntity>> CreateAsync(List<SubcategoryEntity> entities, CancellationToken cancellationToken)
@@ -111,10 +127,16 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 		return await context.Subcategories.AnyAsync(e => e.Id == id, cancellationToken);
 	}
 
-	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
+	public async Task<int> GetCountAsync(CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Subcategories.CountAsync(cancellationToken);
+		IQueryable<SubcategoryEntity> query = context.Subcategories;
+		if (isActive.HasValue)
+		{
+			query = query.Where(e => e.IsActive == isActive.Value);
+		}
+
+		return await query.CountAsync(cancellationToken);
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)

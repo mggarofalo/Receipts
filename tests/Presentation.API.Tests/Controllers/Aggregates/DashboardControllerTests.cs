@@ -232,7 +232,7 @@ public class DashboardControllerTests
 
 		// Act
 		Results<Ok<SpendingOverTimeResponse>, BadRequest<string>> result =
-			await _controller.GetSpendingOverTime(start, end, "yearly", CancellationToken.None);
+			await _controller.GetSpendingOverTime(start, end, "daily", CancellationToken.None);
 
 		// Assert
 		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
@@ -240,9 +240,10 @@ public class DashboardControllerTests
 	}
 
 	[Theory]
-	[InlineData("daily")]
-	[InlineData("weekly")]
 	[InlineData("monthly")]
+	[InlineData("quarterly")]
+	[InlineData("ytd")]
+	[InlineData("yearly")]
 	public async Task GetSpendingOverTime_AcceptsValidGranularities(string granularity)
 	{
 		// Arrange
@@ -264,9 +265,10 @@ public class DashboardControllerTests
 	}
 
 	[Theory]
-	[InlineData("Daily")]
-	[InlineData("WEEKLY")]
 	[InlineData("Monthly")]
+	[InlineData("QUARTERLY")]
+	[InlineData("Ytd")]
+	[InlineData("YEARLY")]
 	public async Task GetSpendingOverTime_AcceptsCaseInsensitiveGranularity(string granularity)
 	{
 		// Arrange
@@ -301,6 +303,44 @@ public class DashboardControllerTests
 
 		// Act
 		Func<Task> act = () => _controller.GetSpendingOverTime(start, end, "monthly", CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	#endregion
+
+	#region GetEarliestReceiptYear
+
+	[Fact]
+	public async Task GetEarliestReceiptYear_ReturnsOkResult_WithYear()
+	{
+		// Arrange
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetEarliestReceiptYearQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(2022);
+
+		// Act
+		Ok<EarliestReceiptYearResponse> result =
+			await _controller.GetEarliestReceiptYear(CancellationToken.None);
+
+		// Assert
+		EarliestReceiptYearResponse response = result.Value!;
+		response.Year.Should().Be(2022);
+	}
+
+	[Fact]
+	public async Task GetEarliestReceiptYear_ThrowsException_WhenMediatorFails()
+	{
+		// Arrange
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetEarliestReceiptYearQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		Func<Task> act = () => _controller.GetEarliestReceiptYear(CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

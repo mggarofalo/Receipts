@@ -5,12 +5,17 @@ using API.Middleware;
 using API.Services;
 using Application.Services;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 
 // Create builder
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.AddApplicationConfiguration();
+
+// Persist DataProtection keys to the /data volume so they survive container restarts
+builder.Services.AddDataProtection()
+	.PersistKeysToFileSystem(new DirectoryInfo("/data/DataProtection-Keys"));
 
 // Register services
 builder.Services

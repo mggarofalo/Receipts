@@ -107,7 +107,7 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Category>(categories, categories.Count, 0, 50));
 
-		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllCategories(0, 50, null, null);
+		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllCategories(null, 0, 50, null, null);
 
 		Ok<CategoryListResponse> result = Assert.IsType<Ok<CategoryListResponse>>(rawResult.Result);
 		CategoryListResponse actualReturn = result.Value!;
@@ -122,7 +122,7 @@ public class CategoriesControllerTests
 	[InlineData(-100, 50)]
 	public async Task GetAllCategories_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
 	{
-		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetAllCategories(offset, limit, null, null);
+		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetAllCategories(null, offset, limit, null, null);
 
 		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
 		badRequestResult.Value.Should().Be("offset must be >= 0");
@@ -134,10 +134,48 @@ public class CategoriesControllerTests
 	[InlineData(0, 501)]
 	public async Task GetAllCategories_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
 	{
-		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetAllCategories(offset, limit, null, null);
+		Results<Ok<CategoryListResponse>, BadRequest<string>> result = await _controller.GetAllCategories(null, offset, limit, null, null);
 
 		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
 		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task GetAllCategories_PassesIsActiveFilter_ToQuery(bool isActive)
+	{
+		List<Category> categories = CategoryGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllCategoriesQuery>(q => q.IsActive == isActive),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Category>(categories, categories.Count, 0, 50));
+
+		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllCategories(isActive, 0, 50, null, null);
+
+		Ok<CategoryListResponse> result = Assert.IsType<Ok<CategoryListResponse>>(rawResult.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAllCategoriesQuery>(q => q.IsActive == isActive),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetAllCategories_PassesNullIsActive_WhenNotProvided()
+	{
+		List<Category> categories = CategoryGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllCategoriesQuery>(q => q.IsActive == null),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Category>(categories, categories.Count, 0, 50));
+
+		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllCategories(null, 0, 50, null, null);
+
+		Assert.IsType<Ok<CategoryListResponse>>(rawResult.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAllCategoriesQuery>(q => q.IsActive == null),
+			It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -148,7 +186,7 @@ public class CategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
-		Func<Task> act = () => _controller.GetAllCategories(0, 50, null, null);
+		Func<Task> act = () => _controller.GetAllCategories(null, 0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}

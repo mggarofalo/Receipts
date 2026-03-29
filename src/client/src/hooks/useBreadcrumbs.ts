@@ -8,6 +8,7 @@ const routeLabels: Record<string, string> = {
   "/subcategories": "Subcategories",
   "/item-templates": "Item Templates",
   "/receipts": "Receipts",
+  "/reports": "Reports",
   "/api-keys": "API Keys",
   "/security": "Security",
   "/audit": "Audit Log",
@@ -15,6 +16,21 @@ const routeLabels: Record<string, string> = {
   "/admin/users": "User Management",
   "/login": "Login",
   "/change-password": "Change Password",
+};
+
+/** Maps query param keys to breadcrumb label resolvers for specific routes. */
+const queryParamBreadcrumbs: Record<
+  string,
+  { param: string; resolve: (value: string) => string }
+> = {
+  "/reports": {
+    param: "report",
+    resolve: (slug) =>
+      slug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" "),
+  },
 };
 
 function toTitleCase(slug: string): string {
@@ -32,7 +48,7 @@ export interface BreadcrumbSegment {
 const EMPTY: BreadcrumbSegment[] = [];
 
 export function useBreadcrumbs(): BreadcrumbSegment[] {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
 
   return useMemo(() => {
     if (pathname === "/") return EMPTY;
@@ -54,6 +70,19 @@ export function useBreadcrumbs(): BreadcrumbSegment[] {
       }
     }
 
+    // Append query-param-based breadcrumb segment if configured for this route
+    const qpConfig = queryParamBreadcrumbs[pathname];
+    if (qpConfig) {
+      const params = new URLSearchParams(search);
+      const value = params.get(qpConfig.param);
+      if (value) {
+        crumbs.push({
+          label: qpConfig.resolve(value),
+          path: `${pathname}?${qpConfig.param}=${value}`,
+        });
+      }
+    }
+
     return crumbs;
-  }, [pathname]);
+  }, [pathname, search]);
 }

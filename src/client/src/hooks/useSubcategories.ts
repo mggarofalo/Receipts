@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useSubcategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
+export function useSubcategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null, isActive?: boolean | null) {
   const query = useQuery({
-    queryKey: ["subcategories", "list", offset, limit, sortBy, sortDirection],
+    queryKey: ["subcategories", "list", offset, limit, sortBy, sortDirection, isActive],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/subcategories", {
-        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined, isActive: isActive ?? undefined } },
       });
       if (error) throw error;
       return data;
@@ -31,13 +31,13 @@ export function useSubcategory(id: string | null) {
   });
 }
 
-export function useSubcategoriesByCategoryId(categoryId: string | null, offset = 0, limit = 200, sortBy?: string | null, sortDirection?: string | null) {
+export function useSubcategoriesByCategoryId(categoryId: string | null, offset = 0, limit = 200, sortBy?: string | null, sortDirection?: string | null, isActive?: boolean | null) {
   const query = useQuery({
-    queryKey: ["subcategories", "byCategory", categoryId, offset, limit, sortBy, sortDirection],
+    queryKey: ["subcategories", "byCategory", categoryId, offset, limit, sortBy, sortDirection, isActive],
     enabled: !!categoryId,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/subcategories", {
-        params: { query: { categoryId: categoryId!, offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
+        params: { query: { categoryId: categoryId!, offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined, isActive: isActive ?? undefined } },
       });
       if (error) throw error;
       return data;

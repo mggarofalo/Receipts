@@ -9,9 +9,14 @@ services:
       - |
         for secret in pg_password jwt_key admin_password grafana_password; do
           if [ ! -f "/secrets/$${secret}" ]; then
-            tr -dc 'A-Za-z0-9+/' < /dev/urandom | head -c 48 > "/secrets/$${secret}"
             if [ "$${secret}" = "admin_password" ]; then
-              printf '!A1' >> "/secrets/$${secret}"
+              pw=$$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 44)
+              sym=$$(tr -dc '!@#%&*' < /dev/urandom | head -c 2)
+              digit=$$(tr -dc '0-9' < /dev/urandom | head -c 1)
+              upper=$$(tr -dc 'A-Z' < /dev/urandom | head -c 1)
+              printf '%s%s%s%s' "$${pw}" "$${sym}" "$${digit}" "$${upper}" > "/secrets/$${secret}"
+            else
+              tr -dc 'A-Za-z0-9+/' < /dev/urandom | head -c 48 > "/secrets/$${secret}"
             fi
             chmod 644 "/secrets/$${secret}"
             echo "Generated /secrets/$${secret}"

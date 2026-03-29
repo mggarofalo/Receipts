@@ -38,9 +38,10 @@ public class GetSpendingOverTimeQueryHandlerTests
 	}
 
 	[Theory]
-	[InlineData("daily")]
-	[InlineData("weekly")]
 	[InlineData("monthly")]
+	[InlineData("quarterly")]
+	[InlineData("ytd")]
+	[InlineData("yearly")]
 	public async Task Handle_ShouldPassGranularityToService(string granularity)
 	{
 		// Arrange

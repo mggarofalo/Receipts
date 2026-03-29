@@ -48,8 +48,6 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.OnlyDeleted()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
-			.Skip(offset)
-			.Take(limit)
 			.Select(r => new ReceiptEntity
 			{
 				Id = r.Id,
@@ -59,6 +57,8 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 				TaxAmountCurrency = r.TaxAmountCurrency,
 				DeletedAt = r.DeletedAt
 			})
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 

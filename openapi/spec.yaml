@@ -386,6 +386,11 @@ paths:
         - BearerAuth: []
         - ApiKey: []
       parameters:
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/SortBy"
@@ -634,6 +639,11 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/SortBy"
@@ -2678,6 +2688,67 @@ paths:
           description: Not Found
 
   # ──────────────────────────────────────────────
+  # Reports
+  # ──────────────────────────────────────────────
+
+  /api/reports/out-of-balance:
+    get:
+      operationId: GetOutOfBalanceReport
+      tags: [Reports]
+      summary: Get out-of-balance receipts report
+      description: Returns all receipts where item subtotal + tax + adjustments does not equal the transaction total.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [date, difference]
+            default: date
+          description: Column to sort by.
+        - name: sortDirection
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          description: Sort direction.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-based).
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of items per page.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutOfBalanceResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
   # Dashboard
   # ──────────────────────────────────────────────
 
@@ -2748,7 +2819,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [daily, weekly, monthly]
+            enum: [monthly, quarterly, ytd, yearly]
             default: monthly
           description: Time bucket granularity.
       responses:
@@ -2850,8 +2921,73 @@ paths:
               schema:
                 type: string
 
+  /api/dashboard/earliest-receipt-year:
+    get:
+      operationId: GetEarliestReceiptYear
+      tags: [Dashboard]
+      summary: Get the earliest receipt year
+      description: Returns the year of the oldest receipt in the system. Used for populating year dropdowns.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EarliestReceiptYearResponse"
+
 components:
   schemas:
+    # ── Reports ───────────────────────────────────
+
+    OutOfBalanceResponse:
+      type: object
+      required: [totalCount, totalDiscrepancy, items]
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        totalDiscrepancy:
+          type: number
+          format: double
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutOfBalanceItem"
+
+    OutOfBalanceItem:
+      type: object
+      required: [receiptId, location, date, itemSubtotal, taxAmount, adjustmentTotal, expectedTotal, transactionTotal, difference]
+      properties:
+        receiptId:
+          type: string
+          format: uuid
+        location:
+          type: string
+        date:
+          type: string
+          format: date
+        itemSubtotal:
+          type: number
+          format: double
+        taxAmount:
+          type: number
+          format: double
+        adjustmentTotal:
+          type: number
+          format: double
+        expectedTotal:
+          type: number
+          format: double
+        transactionTotal:
+          type: number
+          format: double
+        difference:
+          type: number
+          format: double
+
     # ── Dashboard ──────────────────────────────────
 
     DashboardSummaryResponse:
@@ -2949,6 +3085,14 @@ components:
         percentage:
           type: number
           format: double
+
+    EarliestReceiptYearResponse:
+      type: object
+      required: [year]
+      properties:
+        year:
+          type: integer
+          format: int32
 
     # ── Account ──────────────────────────────────
 

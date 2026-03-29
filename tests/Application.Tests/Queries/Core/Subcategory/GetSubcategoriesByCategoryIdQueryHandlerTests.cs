@@ -16,7 +16,7 @@ public class GetSubcategoriesByCategoryIdQueryHandlerTests
 		Guid categoryId = Guid.NewGuid();
 
 		Mock<ISubcategoryService> mockService = new();
-		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Subcategory>(expected, expected.Count, 0, 50));
+		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, 0, 50, It.IsAny<SortParams>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Subcategory>(expected, expected.Count, 0, 50));
 
 		GetSubcategoriesByCategoryIdQueryHandler handler = new(mockService.Object);
 		GetSubcategoriesByCategoryIdQuery query = new(categoryId, 0, 50, SortParams.Default);
@@ -32,7 +32,7 @@ public class GetSubcategoriesByCategoryIdQueryHandlerTests
 		Guid categoryId = Guid.NewGuid();
 
 		Mock<ISubcategoryService> mockService = new();
-		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, 0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Subcategory>([], 0, 0, 50));
+		mockService.Setup(r => r.GetByCategoryIdAsync(categoryId, 0, 50, It.IsAny<SortParams>(), It.IsAny<bool?>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PagedResult<Domain.Core.Subcategory>([], 0, 0, 50));
 
 		GetSubcategoriesByCategoryIdQueryHandler handler = new(mockService.Object);
 		GetSubcategoriesByCategoryIdQuery query = new(categoryId, 0, 50, SortParams.Default);

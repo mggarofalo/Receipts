@@ -82,8 +82,6 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Type)
-			.Skip(offset)
-			.Take(limit)
 			.Select(a => new AdjustmentEntity
 			{
 				Id = a.Id,
@@ -94,6 +92,8 @@ public class AdjustmentRepository(IDbContextFactory<ApplicationDbContext> contex
 				Description = a.Description,
 				DeletedAt = a.DeletedAt
 			})
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 

@@ -13,6 +13,7 @@ import Categories from "@/pages/Categories";
 import Subcategories from "@/pages/Subcategories";
 import Receipts from "@/pages/Receipts";
 import ItemTemplates from "@/pages/ItemTemplates";
+import Reports from "@/pages/Reports";
 import ReceiptDetail from "@/pages/ReceiptDetail";
 import ReceiptDetailRedirect from "@/pages/ReceiptDetailRedirect";
 import AdminUsers from "@/pages/AdminUsers";
@@ -50,6 +51,7 @@ export const routeConfig = [
           { path: "/transactions", element: <Navigate to="/receipts" replace /> },
           { path: "/trips", element: <Navigate to="/receipts" replace /> },
           { path: "/item-templates", element: <ItemTemplates /> },
+          { path: "/reports", element: <Reports /> },
           { path: "/receipts/:id", element: <ReceiptDetail /> },
           { path: "/receipt-detail", element: <ReceiptDetailRedirect /> },
           { path: "/transaction-detail", element: <Navigate to="/receipts" replace /> },

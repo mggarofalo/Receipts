@@ -104,7 +104,7 @@ public class SubcategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
 
-		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(null, 0, 50, null, null);
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(null, null, 0, 50, null, null);
 
 		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
 		SubcategoryListResponse actualReturn = result.Value!;
@@ -126,7 +126,7 @@ public class SubcategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
 
-		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(categoryId, 0, 50, null, null);
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(categoryId, null, 0, 50, null, null);
 
 		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
 		SubcategoryListResponse actualReturn = result.Value!;
@@ -139,7 +139,7 @@ public class SubcategoriesControllerTests
 	[InlineData(-100, 50)]
 	public async Task GetAllSubcategories_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
 	{
-		Results<Ok<SubcategoryListResponse>, BadRequest<string>> result = await _controller.GetAllSubcategories(null, offset, limit, null, null);
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> result = await _controller.GetAllSubcategories(null, null, offset, limit, null, null);
 
 		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
 		badRequestResult.Value.Should().Be("offset must be >= 0");
@@ -151,10 +151,49 @@ public class SubcategoriesControllerTests
 	[InlineData(0, 501)]
 	public async Task GetAllSubcategories_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
 	{
-		Results<Ok<SubcategoryListResponse>, BadRequest<string>> result = await _controller.GetAllSubcategories(null, offset, limit, null, null);
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> result = await _controller.GetAllSubcategories(null, null, offset, limit, null, null);
 
 		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
 		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
+	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task GetAllSubcategories_PassesIsActiveFilter_ToQuery(bool isActive)
+	{
+		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllSubcategoriesQuery>(q => q.IsActive == isActive),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
+
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(null, isActive, 0, 50, null, null);
+
+		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAllSubcategoriesQuery>(q => q.IsActive == isActive),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetAllSubcategories_WithCategoryId_PassesIsActiveFilter()
+	{
+		Guid categoryId = Guid.NewGuid();
+		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoriesByCategoryIdQuery>(q => q.CategoryId == categoryId && q.IsActive == true),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
+
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(categoryId, true, 0, 50, null, null);
+
+		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetSubcategoriesByCategoryIdQuery>(q => q.CategoryId == categoryId && q.IsActive == true),
+			It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -165,7 +204,7 @@ public class SubcategoriesControllerTests
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
 
-		Func<Task> act = () => _controller.GetAllSubcategories(null, 0, 50, null, null);
+		Func<Task> act = () => _controller.GetAllSubcategories(null, null, 0, 50, null, null);
 
 		await act.Should().ThrowAsync<Exception>();
 	}
