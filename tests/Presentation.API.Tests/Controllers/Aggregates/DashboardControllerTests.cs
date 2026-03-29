@@ -61,7 +61,7 @@ public class DashboardControllerTests
 	{
 		// Arrange
 		DateOnly today = DateOnly.FromDateTime(DateTime.Today);
-		DateOnly expectedStart = today.AddDays(-30);
+		DateOnly expectedStart = DateOnly.MinValue;
 
 		DashboardSummaryResult summaryResult = new(
 			TotalReceipts: 0,
@@ -232,7 +232,7 @@ public class DashboardControllerTests
 
 		// Act
 		Results<Ok<SpendingOverTimeResponse>, BadRequest<string>> result =
-			await _controller.GetSpendingOverTime(start, end, "daily", CancellationToken.None);
+			await _controller.GetSpendingOverTime(start, end, "biweekly", CancellationToken.None);
 
 		// Assert
 		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
@@ -240,9 +240,9 @@ public class DashboardControllerTests
 	}
 
 	[Theory]
+	[InlineData("daily")]
 	[InlineData("monthly")]
 	[InlineData("quarterly")]
-	[InlineData("ytd")]
 	[InlineData("yearly")]
 	public async Task GetSpendingOverTime_AcceptsValidGranularities(string granularity)
 	{
@@ -265,9 +265,9 @@ public class DashboardControllerTests
 	}
 
 	[Theory]
+	[InlineData("Daily")]
 	[InlineData("Monthly")]
 	[InlineData("QUARTERLY")]
-	[InlineData("Ytd")]
 	[InlineData("YEARLY")]
 	public async Task GetSpendingOverTime_AcceptsCaseInsensitiveGranularity(string granularity)
 	{
@@ -514,7 +514,7 @@ public class DashboardControllerTests
 	{
 		// Arrange
 		DateOnly today = DateOnly.FromDateTime(DateTime.Today);
-		DateOnly expectedStart = today.AddDays(-30);
+		DateOnly expectedStart = DateOnly.MinValue;
 
 		SpendingByAccountResult accountResult = new([]);
 
@@ -611,7 +611,7 @@ public class DashboardControllerTests
 	{
 		// Arrange
 		DateOnly today = DateOnly.FromDateTime(DateTime.Today);
-		DateOnly expectedStart = today.AddDays(-30);
+		DateOnly expectedStart = DateOnly.MinValue;
 
 		SpendingByStoreResult storeResult = new([]);
 
