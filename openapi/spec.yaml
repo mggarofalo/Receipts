@@ -2820,6 +2820,104 @@ paths:
                 type: string
 
   # ──────────────────────────────────────────────
+
+  /api/reports/item-similarity:
+    get:
+      operationId: GetItemSimilarityReport
+      tags: [Reports]
+      summary: Get item similarity clusters
+      description: Returns groups of receipt items with similar descriptions using trigram matching. Items are clustered via connected-component analysis.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: threshold
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            minimum: 0.3
+            maximum: 0.95
+            default: 0.7
+          description: Minimum trigram similarity score (0.3 to 0.95).
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [canonicalName, occurrences, maxSimilarity]
+            default: occurrences
+          description: Column to sort by.
+        - name: sortDirection
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort direction.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-based).
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of items per page.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemSimilarityResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/reports/item-similarity/rename:
+    post:
+      operationId: RenameItemSimilarityGroup
+      tags: [Reports]
+      summary: Rename all items in a similarity group
+      description: Updates the description of all specified receipt items to the given canonical name.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemSimilarityRenameRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemSimilarityRenameResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
   # Dashboard
   # ──────────────────────────────────────────────
 
@@ -3127,6 +3225,70 @@ components:
         averagePerVisit:
           type: number
           format: double
+
+
+    ItemSimilarityResponse:
+      type: object
+      required: [totalCount, groups]
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+          description: Total number of similarity groups.
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemSimilarityGroup"
+
+    ItemSimilarityGroup:
+      type: object
+      required: [canonicalName, variants, itemIds, occurrences, maxSimilarity]
+      properties:
+        canonicalName:
+          type: string
+          description: Most frequent description in the cluster (ties broken by longest).
+        variants:
+          type: array
+          items:
+            type: string
+          description: All unique descriptions in the cluster.
+        itemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: IDs of all receipt items in this cluster.
+        occurrences:
+          type: integer
+          format: int32
+          description: Number of receipt items in this cluster.
+        maxSimilarity:
+          type: number
+          format: double
+          description: Highest pairwise similarity score within this cluster.
+
+    ItemSimilarityRenameRequest:
+      type: object
+      required: [itemIds, newDescription]
+      properties:
+        itemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: IDs of receipt items to rename.
+        newDescription:
+          type: string
+          description: The new description to apply to all items.
+
+    ItemSimilarityRenameResponse:
+      type: object
+      required: [updatedCount]
+      properties:
+        updatedCount:
+          type: integer
+          format: int32
+          description: Number of items updated.
 
     # ── Dashboard ──────────────────────────────────
 

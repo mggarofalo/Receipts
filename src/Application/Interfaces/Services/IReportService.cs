@@ -19,4 +19,17 @@ public interface IReportService
 		int page,
 		int pageSize,
 		CancellationToken cancellationToken);
+
+	Task<ItemSimilarityResult> GetItemSimilarityAsync(
+		double threshold,
+		string sortBy,
+		string sortDirection,
+		int page,
+		int pageSize,
+		CancellationToken cancellationToken);
+
+	Task<int> RenameItemsAsync(
+		List<Guid> itemIds,
+		string newDescription,
+		CancellationToken cancellationToken);
 }
