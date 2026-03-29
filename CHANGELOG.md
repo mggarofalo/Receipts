@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.26](https://github.com/mggarofalo/receipts/compare/v0.1.25...v0.1.26) (2026-03-29)
+
+
+### Features
+
+* release develop to main ([#298](https://github.com/mggarofalo/receipts/issues/298)) ([9e9fe8a](https://github.com/mggarofalo/receipts/commit/9e9fe8aa36e0c3fe2c17def4e24a74ce572e6d61))
+
 ## [0.1.25](https://github.com/mggarofalo/receipts/compare/v0.1.24...v0.1.25) (2026-03-29)
 
 
