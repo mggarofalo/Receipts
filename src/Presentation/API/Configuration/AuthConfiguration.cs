@@ -2,6 +2,7 @@ using System.Text;
 using API.Authentication;
 using API.Middleware;
 using Common;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -9,6 +10,8 @@ namespace API.Configuration;
 
 public static class AuthConfiguration
 {
+	public const string PolicySchemeName = "JwtOrApiKey";
+
 	public static IServiceCollection AddAuthServices(this IServiceCollection services, IConfiguration configuration)
 	{
 		string jwtKey = configuration[ConfigurationVariables.JwtKey]
@@ -17,7 +20,14 @@ public static class AuthConfiguration
 		string jwtAudience = configuration[ConfigurationVariables.JwtAudience] ?? "receipts-app";
 
 		services
-			.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+			.AddAuthentication(PolicySchemeName)
+			.AddPolicyScheme(PolicySchemeName, "JWT or API Key", options =>
+			{
+				options.ForwardDefaultSelector = context =>
+					context.Request.Headers.ContainsKey("X-API-Key")
+						? ApiKeyAuthenticationDefaults.AuthenticationScheme
+						: JwtBearerDefaults.AuthenticationScheme;
+			})
 			.AddJwtBearer(options =>
 			{
 				options.TokenValidationParameters = new TokenValidationParameters
@@ -105,9 +115,9 @@ public static class AuthConfiguration
 	public static IApplicationBuilder UseAuthServices(this IApplicationBuilder app)
 	{
 		app.UseAuthentication();
+		app.UseAuthorization();
 		app.UseRateLimiter();
 		app.UseMiddleware<MustResetPasswordMiddleware>();
-		app.UseAuthorization();
 		return app;
 	}
 }
