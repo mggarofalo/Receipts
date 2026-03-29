@@ -38,8 +38,6 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 			.OnlyDeleted()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Name)
-			.Skip(offset)
-			.Take(limit)
 			.Select(s => new SubcategoryEntity
 			{
 				Id = s.Id,
@@ -49,6 +47,8 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 				IsActive = s.IsActive,
 				DeletedAt = s.DeletedAt
 			})
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 

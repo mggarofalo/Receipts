@@ -38,8 +38,6 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 			.OnlyDeleted()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Name)
-			.Skip(offset)
-			.Take(limit)
 			.Select(c => new CategoryEntity
 			{
 				Id = c.Id,
@@ -48,6 +46,8 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 				IsActive = c.IsActive,
 				DeletedAt = c.DeletedAt
 			})
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
