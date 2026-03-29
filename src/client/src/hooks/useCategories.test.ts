@@ -54,6 +54,34 @@ describe("useCategories", () => {
     });
   });
 
+  it("list query passes isActive filter when provided", async () => {
+    const categories = [{ id: "1", name: "Food", description: "Groceries", isActive: true }];
+    (client.GET as Mock).mockResolvedValue({ data: { data: categories, total: 1, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useCategories(0, 50, null, null, true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/categories", {
+      params: { query: { offset: 0, limit: 50, isActive: true } },
+    });
+  });
+
+  it("list query omits isActive when null", async () => {
+    const categories = [{ id: "1", name: "Food", description: "Groceries" }];
+    (client.GET as Mock).mockResolvedValue({ data: { data: categories, total: 1, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useCategories(0, 50, null, null, null), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/categories", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
+  });
+
   it("single query is disabled when id is null", () => {
     const { result } = renderHook(() => useCategory(null), {
       wrapper: createWrapper(),

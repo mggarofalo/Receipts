@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useCategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
+export function useCategories(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null, isActive?: boolean | null) {
   const query = useQuery({
-    queryKey: ["categories", "list", offset, limit, sortBy, sortDirection],
+    queryKey: ["categories", "list", offset, limit, sortBy, sortDirection, isActive],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/categories", {
-        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined, isActive: isActive ?? undefined } },
       });
       if (error) throw error;
       return data;

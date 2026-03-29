@@ -78,7 +78,12 @@ function Categories() {
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
-  const { data: categoriesData, total: serverTotal, isLoading } = useCategories(offset, limit, sortBy, sortDirection);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
+    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
+  });
+  const isActiveParam = statusFilter === "all" ? undefined : statusFilter === "true";
+  const { data: categoriesData, total: serverTotal, isLoading } = useCategories(offset, limit, sortBy, sortDirection, isActiveParam);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
@@ -87,10 +92,6 @@ function Categories() {
   const [editCategory, setEditCategory] = useState<CategoryResponse | null>(
     null,
   );
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
-    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
-    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
-  });
 
   const anyDialogOpen = createOpen || editCategory !== null;
 
@@ -117,14 +118,12 @@ function Categories() {
     const v = value as StatusFilter;
     setStatusFilter(v);
     localStorage.setItem(STATUS_STORAGE_KEY, v);
+    resetPage();
   }
 
   const filteredResults = useMemo(() => {
-    const items = results.map((r) => r.item);
-    if (statusFilter === "all") return items;
-    const expected = statusFilter === "true";
-    return items.filter((c) => c.isActive === expected);
-  }, [results, statusFilter]);
+    return results.map((r) => r.item);
+  }, [results]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();

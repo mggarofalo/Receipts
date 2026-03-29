@@ -20,11 +20,16 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 		return await context.Categories.FindAsync([id], cancellationToken);
 	}
 
-	public async Task<List<CategoryEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
+	public async Task<List<CategoryEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Categories
-			.AsNoTracking()
+		IQueryable<CategoryEntity> query = context.Categories.AsNoTracking();
+		if (isActive.HasValue)
+		{
+			query = query.Where(e => e.IsActive == isActive.Value);
+		}
+
+		return await query
 			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
@@ -90,10 +95,16 @@ public class CategoryRepository(IDbContextFactory<ApplicationDbContext> contextF
 		return await context.Categories.AnyAsync(e => e.Id == id, cancellationToken);
 	}
 
-	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
+	public async Task<int> GetCountAsync(CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Categories.CountAsync(cancellationToken);
+		IQueryable<CategoryEntity> query = context.Categories;
+		if (isActive.HasValue)
+		{
+			query = query.Where(e => e.IsActive == isActive.Value);
+		}
+
+		return await query.CountAsync(cancellationToken);
 	}
 
 	public async Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken)

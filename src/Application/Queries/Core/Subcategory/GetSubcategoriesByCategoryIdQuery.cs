@@ -9,9 +9,10 @@ public record GetSubcategoriesByCategoryIdQuery : IQuery<PagedResult<Domain.Core
 	public int Offset { get; }
 	public int Limit { get; }
 	public SortParams Sort { get; }
+	public bool? IsActive { get; }
 	public const string CategoryIdCannotBeEmptyExceptionMessage = "Category Id cannot be empty.";
 
-	public GetSubcategoriesByCategoryIdQuery(Guid categoryId, int offset, int limit, SortParams sort)
+	public GetSubcategoriesByCategoryIdQuery(Guid categoryId, int offset, int limit, SortParams sort, bool? isActive = null)
 	{
 		if (categoryId == Guid.Empty)
 		{
@@ -22,5 +23,6 @@ public record GetSubcategoriesByCategoryIdQuery : IQuery<PagedResult<Domain.Core
 		Offset = offset;
 		Limit = limit;
 		Sort = sort;
+		IsActive = isActive;
 	}
 }
