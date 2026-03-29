@@ -27,7 +27,7 @@ export function useDashboardSummary(dateRange: DateRange) {
 
 export function useDashboardSpendingOverTime(
   dateRange: DateRange,
-  granularity?: "monthly" | "quarterly" | "ytd" | "yearly",
+  granularity?: "daily" | "monthly" | "quarterly" | "yearly",
 ) {
   return useQuery({
     queryKey: [

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { computeRollingAverage } from "@/lib/rolling-average";
 
-type Granularity = "monthly" | "quarterly" | "ytd" | "yearly";
+type Granularity = "daily" | "monthly" | "quarterly" | "yearly";
 type WindowSize = "3" | "6" | "12";
 
 interface SpendingOverTimeWidgetProps {
@@ -22,9 +22,9 @@ interface SpendingOverTimeWidgetProps {
 }
 
 const granularityOptions: { value: Granularity; label: string }[] = [
+  { value: "daily", label: "Day" },
   { value: "monthly", label: "Month" },
   { value: "quarterly", label: "Quarter" },
-  { value: "ytd", label: "YTD" },
   { value: "yearly", label: "Year" },
 ];
 
@@ -45,14 +45,15 @@ function formatCurrency(value: number): string {
 
 function getAutoGranularity(dateRange: DateRange): Granularity {
   if (!dateRange.startDate || !dateRange.endDate) {
-    return "quarterly";
+    return "yearly";
   }
   const days = differenceInDays(
     parseISO(dateRange.endDate),
     parseISO(dateRange.startDate),
   );
-  if (days > 730) return "quarterly";
-  return "monthly";
+  if (days <= 93) return "daily";
+  if (days <= 730) return "monthly";
+  return "yearly";
 }
 
 export function SpendingOverTimeWidget({

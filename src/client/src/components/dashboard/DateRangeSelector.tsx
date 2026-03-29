@@ -49,7 +49,7 @@ const presets: Record<PresetKey, Preset> = {
     }),
   },
   "12M": {
-    label: "12M",
+    label: "1Y",
     getRange: () => ({
       startDate: format(subMonths(new Date(), 12), "yyyy-MM-dd"),
       endDate: format(new Date(), "yyyy-MM-dd"),
@@ -102,14 +102,10 @@ const presets: Record<PresetKey, Preset> = {
   },
 };
 
-const segmentedPresets: PresetKey[] = [
-  "1M",
-  "3M",
-  "12M",
-  "MTD",
-  "QTD",
-  "YTD",
-  "all",
+const presetGroups: { label: string; keys: PresetKey[] }[] = [
+  { label: "Trailing", keys: ["1M", "3M", "12M", "60M"] },
+  { label: "To Date", keys: ["MTD", "QTD", "YTD"] },
+  { label: "", keys: ["all"] },
 ];
 
 interface DateRangeSelectorProps {
@@ -185,26 +181,35 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
             <SelectValue>{displayLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {segmentedPresets.map((key) => (
-              <SelectItem key={key} value={key}>
-                {presets[key].label}
-              </SelectItem>
-            ))}
+            {presetGroups.map((group) =>
+              group.keys.map((key) => (
+                <SelectItem key={key} value={key}>
+                  {group.label ? `${group.label}: ${presets[key].label}` : presets[key].label}
+                </SelectItem>
+              )),
+            )}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Button row for wider screens */}
+      {/* Button row for wider screens — grouped with separators */}
       <div className="hidden sm:flex items-center gap-1">
-        {segmentedPresets.map((key) => (
-          <Button
-            key={key}
-            variant={activePreset === key ? "default" : "outline"}
-            size="sm"
-            onClick={() => handlePreset(key)}
-          >
-            {presets[key].label}
-          </Button>
+        {presetGroups.map((group, i) => (
+          <div key={group.label || "misc"} className="flex items-center gap-1">
+            {i > 0 && (
+              <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+            )}
+            {group.keys.map((key) => (
+              <Button
+                key={key}
+                variant={activePreset === key ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePreset(key)}
+              >
+                {presets[key].label}
+              </Button>
+            ))}
+          </div>
         ))}
       </div>
 
