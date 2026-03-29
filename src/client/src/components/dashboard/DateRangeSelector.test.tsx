@@ -28,7 +28,8 @@ describe("DateRangeSelector", () => {
     );
     expect(screen.getByRole("button", { name: "1M" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "3M" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "12M" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1Y" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "5Y" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "MTD" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "QTD" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "YTD" })).toBeInTheDocument();

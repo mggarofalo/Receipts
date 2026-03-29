@@ -52,11 +52,11 @@ describe("SpendingOverTimeWidget", () => {
     } as unknown as ReturnType<typeof useDashboardSpendingOverTime>);
 
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
+    expect(screen.getByRole("button", { name: "Day" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Month" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Quarter" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "YTD" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Year" })).toBeInTheDocument();
   });
 
@@ -178,17 +178,17 @@ describe("SpendingOverTimeWidget", () => {
     expect(btn).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("auto-selects monthly granularity for short ranges", () => {
+  it("auto-selects daily granularity for short ranges", () => {
     mockHook.mockReturnValue({
       data: { buckets: [] },
       isLoading: false,
     } as unknown as ReturnType<typeof useDashboardSpendingOverTime>);
 
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
-    expect(mockHook).toHaveBeenCalledWith(dateRange, "monthly");
+    expect(mockHook).toHaveBeenCalledWith(dateRange, "daily");
   });
 
-  it("auto-selects quarterly granularity for ranges over 2 years", () => {
+  it("auto-selects yearly granularity for ranges over 2 years", () => {
     mockHook.mockReturnValue({
       data: { buckets: [] },
       isLoading: false,
@@ -196,6 +196,6 @@ describe("SpendingOverTimeWidget", () => {
 
     const longRange = { startDate: "2020-01-01", endDate: "2024-01-01" };
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={longRange} />);
-    expect(mockHook).toHaveBeenCalledWith(longRange, "quarterly");
+    expect(mockHook).toHaveBeenCalledWith(longRange, "yearly");
   });
 });
