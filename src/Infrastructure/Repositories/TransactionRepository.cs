@@ -93,8 +93,6 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
-			.Skip(offset)
-			.Take(limit)
 			.Select(t => new TransactionEntity
 			{
 				Id = t.Id,
@@ -105,6 +103,8 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 				Date = t.Date,
 				DeletedAt = t.DeletedAt
 			})
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 

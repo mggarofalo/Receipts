@@ -96,8 +96,6 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 			.IgnoreAutoIncludes()
 			.AsNoTracking()
 			.ApplySort(sort, AllowedSortColumns, e => e.Description)
-			.Skip(offset)
-			.Take(limit)
 			.Select(ri => new ReceiptItemEntity
 			{
 				Id = ri.Id,
@@ -114,6 +112,8 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 				PricingMode = ri.PricingMode,
 				DeletedAt = ri.DeletedAt
 			})
+			.Skip(offset)
+			.Take(limit)
 			.ToListAsync(cancellationToken);
 	}
 
