@@ -137,7 +137,8 @@ public static class InfrastructureService
 			.AddScoped<IAuthAuditService, AuthAuditService>()
 			.AddScoped<IUserService, UserService>()
 			.AddScoped<ITrashService, TrashService>()
-			.AddScoped<IDashboardService, DashboardService>();
+			.AddScoped<IDashboardService, DashboardService>()
+			.AddScoped<IReportService, ReportService>();
 
 		// Embedding services (local ONNX model — always available)
 		services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
