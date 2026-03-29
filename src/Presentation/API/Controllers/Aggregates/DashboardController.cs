@@ -24,7 +24,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		[FromQuery] DateOnly? endDate,
 		CancellationToken cancellationToken)
 	{
-		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly start = startDate ?? DateOnly.MinValue;
 		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 
 		if (start > end)
@@ -62,7 +62,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		[FromQuery] string? granularity,
 		CancellationToken cancellationToken)
 	{
-		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly start = startDate ?? DateOnly.MinValue;
 		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 		string gran = granularity ?? "monthly";
 
@@ -71,10 +71,10 @@ public class DashboardController(IMediator mediator) : ControllerBase
 			return TypedResults.BadRequest("startDate must be before or equal to endDate");
 		}
 
-		string[] validGranularities = ["monthly", "quarterly", "ytd", "yearly"];
+		string[] validGranularities = ["daily", "monthly", "quarterly", "yearly"];
 		if (!validGranularities.Contains(gran.ToLowerInvariant()))
 		{
-			return TypedResults.BadRequest($"Invalid granularity '{gran}'. Allowed: monthly, quarterly, ytd, yearly");
+			return TypedResults.BadRequest($"Invalid granularity '{gran}'. Allowed: daily, monthly, quarterly, yearly");
 		}
 
 		GetSpendingOverTimeQuery query = new(start, end, gran);
@@ -114,7 +114,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		[FromQuery] int limit = 10,
 		CancellationToken cancellationToken = default)
 	{
-		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly start = startDate ?? DateOnly.MinValue;
 		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 
 		if (start > end)
@@ -149,7 +149,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		[FromQuery] DateOnly? endDate,
 		CancellationToken cancellationToken)
 	{
-		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly start = startDate ?? DateOnly.MinValue;
 		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 
 		if (start > end)
@@ -180,7 +180,7 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		[FromQuery] DateOnly? endDate,
 		CancellationToken cancellationToken)
 	{
-		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly start = startDate ?? DateOnly.MinValue;
 		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
 
 		if (start > end)
