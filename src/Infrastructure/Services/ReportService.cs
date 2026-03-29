@@ -1,6 +1,7 @@
 using Application.Interfaces.Services;
 using Application.Models.Reports;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Infrastructure.Services;
 

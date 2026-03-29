@@ -1,4 +1,5 @@
 using API.Generated.Dtos;
+using Application.Commands.Reports;
 using Application.Queries.Aggregates.Reports;
 using Asp.Versioning;
 using MediatR;
