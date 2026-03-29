@@ -1,5 +1,4 @@
 using System.Net;
-using System.Security.Claims;
 using API.Configuration;
 using Application.Interfaces.Services;
 using FluentAssertions;
@@ -17,14 +16,17 @@ namespace Presentation.API.Tests.Configuration;
 
 /// <summary>
 /// Integration tests that verify the full auth + rate limiting pipeline works end-to-end.
-/// These test the actual <see cref="AuthConfiguration.UseAuthServices"/> method with a
-/// simulated API key identity to verify that rate limit bypass works through the real
-/// middleware pipeline (not in isolation). Unlike <see cref="RateLimitingConfigurationTests"/>,
-/// these tests exercise the actual middleware ordering.
+/// These send actual <c>X-API-Key</c> headers through the real <see cref="AuthConfiguration"/>
+/// pipeline (PolicyScheme → ApiKeyAuthenticationHandler → rate limiter) to prove that
+/// the <c>BypassRateLimit</c> claim is available when the rate limiter evaluates.
 /// </summary>
 [Trait("Category", "Integration")]
 public class RateLimitBypassIntegrationTests
 {
+	private const string BypassApiKey = "bypass-test-key";
+	private const string NormalApiKey = "normal-test-key";
+	private const string TestUserId = "test-user-id";
+
 	private static readonly Dictionary<string, string?> TestConfig = new()
 	{
 		// Very low rate limits to make bypass observable
@@ -46,20 +48,17 @@ public class RateLimitBypassIntegrationTests
 	[Fact]
 	public async Task ApiKeyWithBypass_ExceedsGlobalLimit_AllRequestsSucceed()
 	{
-		// Arrange: Full pipeline with a bypass API key
-		using IHost host = CreateHostWithFullPipeline(bypassRateLimit: true);
+		using IHost host = CreateHost();
 		await host.StartAsync();
 		HttpClient client = host.GetTestClient();
+		client.DefaultRequestHeaders.Add("X-API-Key", BypassApiKey);
 
-		// Act: Send more requests than the global rate limit (permit = 2)
 		List<HttpResponseMessage> responses = [];
 		for (int i = 0; i < 5; i++)
 		{
 			responses.Add(await client.GetAsync("/api/test"));
 		}
 
-		// Assert: All requests should succeed because the BypassRateLimit claim
-		// was available to the rate limiter (authorization ran before rate limiting)
 		responses.Should().AllSatisfy(r =>
 			r.StatusCode.Should().Be(HttpStatusCode.OK,
 				"API key with BypassRateLimit=true should bypass the global rate limit"));
@@ -68,19 +67,17 @@ public class RateLimitBypassIntegrationTests
 	[Fact]
 	public async Task ApiKeyWithoutBypass_ExceedsGlobalLimit_Gets429()
 	{
-		// Arrange: Full pipeline with a non-bypass API key
-		using IHost host = CreateHostWithFullPipeline(bypassRateLimit: false);
+		using IHost host = CreateHost();
 		await host.StartAsync();
 		HttpClient client = host.GetTestClient();
+		client.DefaultRequestHeaders.Add("X-API-Key", NormalApiKey);
 
-		// Act: Send more requests than the global rate limit (permit = 2)
 		List<HttpResponseMessage> responses = [];
 		for (int i = 0; i < 5; i++)
 		{
 			responses.Add(await client.GetAsync("/api/test"));
 		}
 
-		// Assert: First 2 should succeed, then rate limiting kicks in
 		responses.Take(2).Should().AllSatisfy(r =>
 			r.StatusCode.Should().Be(HttpStatusCode.OK));
 		responses.Skip(2).Should().Contain(r =>
@@ -91,19 +88,16 @@ public class RateLimitBypassIntegrationTests
 	[Fact]
 	public async Task AnonymousRequest_ExceedsGlobalLimit_Gets429()
 	{
-		// Arrange: Full pipeline with no authentication
-		using IHost host = CreateHostWithFullPipeline(bypassRateLimit: null);
+		using IHost host = CreateHost();
 		await host.StartAsync();
 		HttpClient client = host.GetTestClient();
 
-		// Act: Send more requests than the global rate limit (permit = 2)
 		List<HttpResponseMessage> responses = [];
 		for (int i = 0; i < 5; i++)
 		{
 			responses.Add(await client.GetAsync("/api/test-anon"));
 		}
 
-		// Assert: First 2 should succeed, then rate limiting kicks in
 		responses.Take(2).Should().AllSatisfy(r =>
 			r.StatusCode.Should().Be(HttpStatusCode.OK));
 		responses.Skip(2).Should().Contain(r =>
@@ -111,7 +105,7 @@ public class RateLimitBypassIntegrationTests
 			"Anonymous requests should still be rate limited");
 	}
 
-	private static IHost CreateHostWithFullPipeline(bool? bypassRateLimit)
+	private static IHost CreateHost()
 	{
 		IConfiguration configuration = new ConfigurationBuilder()
 			.AddInMemoryCollection(TestConfig)
@@ -120,45 +114,31 @@ public class RateLimitBypassIntegrationTests
 		WebApplicationBuilder appBuilder = WebApplication.CreateBuilder();
 		appBuilder.WebHost.UseTestServer();
 
-		// Register the real auth services (JWT + ApiKey schemes + authorization policies)
+		// Register the real auth + rate limiting services
 		appBuilder.Services.AddAuthServices(configuration);
-
-		// Register the real rate limiting services
 		appBuilder.Services.AddApplicationServices(configuration);
 
-		// Register mock dependencies required by ApiKeyAuthenticationHandler
-		appBuilder.Services.AddSingleton(new Mock<IApiKeyService>().Object);
+		// Mock IApiKeyService to return bypass/non-bypass results based on the key
+		Mock<IApiKeyService> apiKeyService = new();
+		apiKeyService
+			.Setup(s => s.GetUserIdByApiKeyAsync(BypassApiKey))
+			.ReturnsAsync(new ApiKeyValidationResult(TestUserId, Guid.NewGuid(), true));
+		apiKeyService
+			.Setup(s => s.GetUserIdByApiKeyAsync(NormalApiKey))
+			.ReturnsAsync(new ApiKeyValidationResult(TestUserId, Guid.NewGuid(), false));
+		appBuilder.Services.AddSingleton(apiKeyService.Object);
+
+		// Mock other dependencies required by ApiKeyAuthenticationHandler
 		appBuilder.Services.AddSingleton(new Mock<IAuthAuditService>().Object);
 		appBuilder.Services.AddSingleton(CreateMockUserManager());
 
 		WebApplication app = appBuilder.Build();
 
-		// Inject a test identity that simulates what ApiKeyAuthenticationHandler would set.
-		// This runs BEFORE the auth pipeline so context.User is populated before
-		// UseAuthentication/UseAuthorization/UseRateLimiter.
-		if (bypassRateLimit.HasValue)
-		{
-			app.Use(async (context, next) =>
-			{
-				ClaimsIdentity identity = new("TestApiKey");
-				identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, "test-user-id"));
-				identity.AddClaim(new Claim("BypassRateLimit",
-					bypassRateLimit.Value.ToString().ToLowerInvariant()));
-				context.User = new ClaimsPrincipal(identity);
-				await next();
-			});
-		}
-
-		// Use the actual auth pipeline under test — this is the code we're verifying
+		// Use the actual auth pipeline under test
 		app.UseAuthServices();
 
-		// Test endpoint — AllowAnonymous so authorization doesn't reject, but the full
-		// auth pipeline still runs. The key test is whether the rate limiter sees the
-		// BypassRateLimit claim that was set before the pipeline.
 		app.MapGet("/api/test", () => Results.Ok("OK"))
 			.AllowAnonymous();
-
-		// Separate anonymous endpoint for the anonymous rate limiting test
 		app.MapGet("/api/test-anon", () => Results.Ok("OK"))
 			.AllowAnonymous();
 
@@ -168,7 +148,14 @@ public class RateLimitBypassIntegrationTests
 	private static UserManager<ApplicationUser> CreateMockUserManager()
 	{
 		Mock<IUserStore<ApplicationUser>> store = new();
-		return new UserManager<ApplicationUser>(
+		Mock<UserManager<ApplicationUser>> manager = new(
 			store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
+		manager
+			.Setup(m => m.FindByIdAsync(TestUserId))
+			.ReturnsAsync(new ApplicationUser { Id = TestUserId, Email = "test@test.com" });
+		manager
+			.Setup(m => m.GetRolesAsync(It.IsAny<ApplicationUser>()))
+			.ReturnsAsync(new List<string> { "Admin" });
+		return manager.Object;
 	}
 }
