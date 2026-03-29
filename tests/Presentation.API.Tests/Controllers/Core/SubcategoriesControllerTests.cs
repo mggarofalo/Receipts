@@ -157,6 +157,45 @@ public class SubcategoriesControllerTests
 		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
 	}
 
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task GetAllSubcategories_PassesIsActiveFilter_ToQuery(bool isActive)
+	{
+		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllSubcategoriesQuery>(q => q.IsActive == isActive),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
+
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(null, isActive, 0, 50, null, null);
+
+		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAllSubcategoriesQuery>(q => q.IsActive == isActive),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetAllSubcategories_WithCategoryId_PassesIsActiveFilter()
+	{
+		Guid categoryId = Guid.NewGuid();
+		List<Subcategory> subcategories = SubcategoryGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSubcategoriesByCategoryIdQuery>(q => q.CategoryId == categoryId && q.IsActive == true),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Subcategory>(subcategories, subcategories.Count, 0, 50));
+
+		Results<Ok<SubcategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllSubcategories(categoryId, true, 0, 50, null, null);
+
+		Ok<SubcategoryListResponse> result = Assert.IsType<Ok<SubcategoryListResponse>>(rawResult.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetSubcategoriesByCategoryIdQuery>(q => q.CategoryId == categoryId && q.IsActive == true),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
 	[Fact]
 	public async Task GetAllSubcategories_ThrowsException_WhenMediatorFails()
 	{

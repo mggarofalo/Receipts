@@ -60,6 +60,25 @@ describe("useSubcategories", () => {
     });
   });
 
+  it("list query passes isActive filter when provided", async () => {
+    const subcategories = [
+      { id: "1", name: "Produce", categoryId: "cat-1", description: null, isActive: true },
+    ];
+    (client.GET as Mock).mockResolvedValue({
+      data: { data: subcategories, total: 1, offset: 0, limit: 50 },
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => useSubcategories(0, 50, null, null, false), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/subcategories", {
+      params: { query: { offset: 0, limit: 50, isActive: false } },
+    });
+  });
+
   it("single query is disabled when id is null", () => {
     const { result } = renderHook(() => useSubcategory(null), {
       wrapper: createWrapper(),

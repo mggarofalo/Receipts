@@ -140,6 +140,44 @@ public class CategoriesControllerTests
 		badRequestResult.Value.Should().Be("limit must be between 1 and 500");
 	}
 
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task GetAllCategories_PassesIsActiveFilter_ToQuery(bool isActive)
+	{
+		List<Category> categories = CategoryGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllCategoriesQuery>(q => q.IsActive == isActive),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Category>(categories, categories.Count, 0, 50));
+
+		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllCategories(isActive, 0, 50, null, null);
+
+		Ok<CategoryListResponse> result = Assert.IsType<Ok<CategoryListResponse>>(rawResult.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAllCategoriesQuery>(q => q.IsActive == isActive),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetAllCategories_PassesNullIsActive_WhenNotProvided()
+	{
+		List<Category> categories = CategoryGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllCategoriesQuery>(q => q.IsActive == null),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Category>(categories, categories.Count, 0, 50));
+
+		Results<Ok<CategoryListResponse>, BadRequest<string>> rawResult = await _controller.GetAllCategories(null, 0, 50, null, null);
+
+		Assert.IsType<Ok<CategoryListResponse>>(rawResult.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAllCategoriesQuery>(q => q.IsActive == null),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
 	[Fact]
 	public async Task GetAllCategories_ThrowsException_WhenMediatorFails()
 	{
