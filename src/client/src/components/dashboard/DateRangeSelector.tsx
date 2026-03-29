@@ -1,5 +1,11 @@
 import { useState, useCallback, useMemo } from "react";
-import { format, subDays, startOfYear } from "date-fns";
+import {
+  format,
+  subMonths,
+  startOfMonth,
+  startOfQuarter,
+  startOfYear,
+} from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -11,7 +17,16 @@ import {
 import type { DateRange } from "@/hooks/useDashboard";
 import { useDashboardEarliestReceiptYear } from "@/hooks/useDashboard";
 
-type PresetKey = "30d" | "90d" | "ytd" | "year" | "all";
+export type PresetKey =
+  | "1M"
+  | "3M"
+  | "12M"
+  | "60M"
+  | "MTD"
+  | "QTD"
+  | "YTD"
+  | "all"
+  | "year";
 
 interface Preset {
   label: string;
@@ -19,25 +34,60 @@ interface Preset {
 }
 
 const presets: Record<PresetKey, Preset> = {
-  "30d": {
-    label: "30 days",
+  "1M": {
+    label: "1M",
     getRange: () => ({
-      startDate: format(subDays(new Date(), 30), "yyyy-MM-dd"),
+      startDate: format(subMonths(new Date(), 1), "yyyy-MM-dd"),
       endDate: format(new Date(), "yyyy-MM-dd"),
     }),
   },
-  "90d": {
-    label: "90 days",
+  "3M": {
+    label: "3M",
     getRange: () => ({
-      startDate: format(subDays(new Date(), 90), "yyyy-MM-dd"),
+      startDate: format(subMonths(new Date(), 3), "yyyy-MM-dd"),
       endDate: format(new Date(), "yyyy-MM-dd"),
     }),
   },
-  ytd: {
+  "12M": {
+    label: "1Y",
+    getRange: () => ({
+      startDate: format(subMonths(new Date(), 12), "yyyy-MM-dd"),
+      endDate: format(new Date(), "yyyy-MM-dd"),
+    }),
+  },
+  "60M": {
+    label: "5Y",
+    getRange: () => ({
+      startDate: format(subMonths(new Date(), 60), "yyyy-MM-dd"),
+      endDate: format(new Date(), "yyyy-MM-dd"),
+    }),
+  },
+  MTD: {
+    label: "MTD",
+    getRange: () => ({
+      startDate: format(startOfMonth(new Date()), "yyyy-MM-dd"),
+      endDate: format(new Date(), "yyyy-MM-dd"),
+    }),
+  },
+  QTD: {
+    label: "QTD",
+    getRange: () => ({
+      startDate: format(startOfQuarter(new Date()), "yyyy-MM-dd"),
+      endDate: format(new Date(), "yyyy-MM-dd"),
+    }),
+  },
+  YTD: {
     label: "YTD",
     getRange: () => ({
       startDate: format(startOfYear(new Date()), "yyyy-MM-dd"),
       endDate: format(new Date(), "yyyy-MM-dd"),
+    }),
+  },
+  all: {
+    label: "All",
+    getRange: () => ({
+      startDate: undefined,
+      endDate: undefined,
     }),
   },
   year: {
@@ -50,14 +100,13 @@ const presets: Record<PresetKey, Preset> = {
       };
     },
   },
-  all: {
-    label: "All time",
-    getRange: () => ({
-      startDate: undefined,
-      endDate: undefined,
-    }),
-  },
 };
+
+const presetGroups: { label: string; keys: PresetKey[] }[] = [
+  { label: "Trailing", keys: ["1M", "3M", "12M", "60M"] },
+  { label: "To Date", keys: ["MTD", "QTD", "YTD"] },
+  { label: "", keys: ["all"] },
+];
 
 interface DateRangeSelectorProps {
   value: DateRange;
@@ -65,7 +114,7 @@ interface DateRangeSelectorProps {
 }
 
 export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
-  const [activePreset, setActivePreset] = useState<PresetKey>("30d");
+  const [activePreset, setActivePreset] = useState<PresetKey>("1M");
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear(),
   );
@@ -123,10 +172,6 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
     [handlePreset],
   );
 
-  const nonYearPresets = (
-    Object.keys(presets) as PresetKey[]
-  ).filter((k) => k !== "year");
-
   return (
     <div className="flex items-center gap-2">
       {/* Dropdown for narrow screens */}
@@ -136,27 +181,35 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
             <SelectValue>{displayLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {nonYearPresets.map((key) => (
-              <SelectItem key={key} value={key}>
-                {presets[key].label}
-              </SelectItem>
-            ))}
-            <SelectItem value="year">Year</SelectItem>
+            {presetGroups.map((group) =>
+              group.keys.map((key) => (
+                <SelectItem key={key} value={key}>
+                  {group.label ? `${group.label}: ${presets[key].label}` : presets[key].label}
+                </SelectItem>
+              )),
+            )}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Button row for wider screens */}
-      <div className="hidden sm:flex items-center gap-2">
-        {nonYearPresets.map((key) => (
-          <Button
-            key={key}
-            variant={activePreset === key ? "default" : "outline"}
-            size="sm"
-            onClick={() => handlePreset(key)}
-          >
-            {presets[key].label}
-          </Button>
+      {/* Button row for wider screens — grouped with separators */}
+      <div className="hidden sm:flex items-center gap-1">
+        {presetGroups.map((group, i) => (
+          <div key={group.label || "misc"} className="flex items-center gap-1">
+            {i > 0 && (
+              <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+            )}
+            {group.keys.map((key) => (
+              <Button
+                key={key}
+                variant={activePreset === key ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePreset(key)}
+              >
+                {presets[key].label}
+              </Button>
+            ))}
+          </div>
         ))}
       </div>
 

@@ -290,4 +290,113 @@ public class DashboardServiceTests
 
 		contextFactory.ResetDatabase();
 	}
+
+	[Fact]
+	public async Task GetSpendingByStoreAsync_GroupsByLocation_ReturnsCorrectResults()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId1 = Guid.NewGuid();
+		Guid receiptId2 = Guid.NewGuid();
+		Guid receiptId3 = Guid.NewGuid();
+		Guid accountId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Receipts.AddRange(
+				new ReceiptEntity { Id = receiptId1, Location = "Walmart", Date = new DateOnly(2025, 3, 1), TaxAmount = 0 },
+				new ReceiptEntity { Id = receiptId2, Location = "Walmart", Date = new DateOnly(2025, 3, 15), TaxAmount = 0 },
+				new ReceiptEntity { Id = receiptId3, Location = "Target", Date = new DateOnly(2025, 3, 10), TaxAmount = 0 });
+
+			context.Transactions.AddRange(
+				new TransactionEntity { Id = Guid.NewGuid(), ReceiptId = receiptId1, AccountId = accountId, Amount = 50.00m, Date = new DateOnly(2025, 3, 1) },
+				new TransactionEntity { Id = Guid.NewGuid(), ReceiptId = receiptId2, AccountId = accountId, Amount = 75.00m, Date = new DateOnly(2025, 3, 15) },
+				new TransactionEntity { Id = Guid.NewGuid(), ReceiptId = receiptId3, AccountId = accountId, Amount = 100.00m, Date = new DateOnly(2025, 3, 10) });
+
+			await context.SaveChangesAsync();
+		}
+
+		DashboardService service = new(contextFactory);
+
+		// Act
+		SpendingByStoreResult result = await service.GetSpendingByStoreAsync(
+			new DateOnly(2025, 3, 1),
+			new DateOnly(2025, 3, 31),
+			CancellationToken.None);
+
+		// Assert
+		result.Items.Should().HaveCount(2);
+		result.Items[0].Location.Should().Be("Walmart");
+		result.Items[0].VisitCount.Should().Be(2);
+		result.Items[0].TotalAmount.Should().Be(125.00m);
+		result.Items[0].AveragePerVisit.Should().Be(62.50m);
+		result.Items[1].Location.Should().Be("Target");
+		result.Items[1].VisitCount.Should().Be(1);
+		result.Items[1].TotalAmount.Should().Be(100.00m);
+		result.Items[1].AveragePerVisit.Should().Be(100.00m);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetSpendingByStoreAsync_EmptyRange_ReturnsEmptyItems()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		DashboardService service = new(contextFactory);
+
+		// Act
+		SpendingByStoreResult result = await service.GetSpendingByStoreAsync(
+			new DateOnly(2025, 1, 1),
+			new DateOnly(2025, 1, 31),
+			CancellationToken.None);
+
+		// Assert
+		result.Items.Should().BeEmpty();
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetSpendingByStoreAsync_OrdersByTotalAmountDescending()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId1 = Guid.NewGuid();
+		Guid receiptId2 = Guid.NewGuid();
+		Guid accountId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Receipts.AddRange(
+				new ReceiptEntity { Id = receiptId1, Location = "Small Store", Date = new DateOnly(2025, 3, 1), TaxAmount = 0 },
+				new ReceiptEntity { Id = receiptId2, Location = "Big Store", Date = new DateOnly(2025, 3, 10), TaxAmount = 0 });
+
+			context.Transactions.AddRange(
+				new TransactionEntity { Id = Guid.NewGuid(), ReceiptId = receiptId1, AccountId = accountId, Amount = 10.00m, Date = new DateOnly(2025, 3, 1) },
+				new TransactionEntity { Id = Guid.NewGuid(), ReceiptId = receiptId2, AccountId = accountId, Amount = 500.00m, Date = new DateOnly(2025, 3, 10) });
+
+			await context.SaveChangesAsync();
+		}
+
+		DashboardService service = new(contextFactory);
+
+		// Act
+		SpendingByStoreResult result = await service.GetSpendingByStoreAsync(
+			new DateOnly(2025, 3, 1),
+			new DateOnly(2025, 3, 31),
+			CancellationToken.None);
+
+		// Assert
+		result.Items.Should().HaveCount(2);
+		result.Items[0].Location.Should().Be("Big Store");
+		result.Items[0].TotalAmount.Should().Be(500.00m);
+		result.Items[1].Location.Should().Be("Small Store");
+		result.Items[1].TotalAmount.Should().Be(10.00m);
+
+		contextFactory.ResetDatabase();
+	}
 }

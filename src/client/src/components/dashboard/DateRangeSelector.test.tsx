@@ -26,16 +26,14 @@ describe("DateRangeSelector", () => {
     renderWithProviders(
       <DateRangeSelector value={defaultRange} onChange={onChange} />,
     );
-    expect(
-      screen.getByRole("button", { name: "30 days" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "90 days" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1M" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "3M" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1Y" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "5Y" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "MTD" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "QTD" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "YTD" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "All time" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
   });
 
   it("renders a year dropdown", () => {
@@ -53,7 +51,7 @@ describe("DateRangeSelector", () => {
       <DateRangeSelector value={defaultRange} onChange={onChange} />,
     );
 
-    await user.click(screen.getByRole("button", { name: "30 days" }));
+    await user.click(screen.getByRole("button", { name: "1M" }));
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
         startDate: expect.any(String),
@@ -62,14 +60,14 @@ describe("DateRangeSelector", () => {
     );
   });
 
-  it("calls onChange with undefined dates for All time", async () => {
+  it("calls onChange with undefined dates for All", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     renderWithProviders(
       <DateRangeSelector value={defaultRange} onChange={onChange} />,
     );
 
-    await user.click(screen.getByRole("button", { name: "All time" }));
+    await user.click(screen.getByRole("button", { name: "All" }));
     expect(onChange).toHaveBeenCalledWith({
       startDate: undefined,
       endDate: undefined,
@@ -84,5 +82,21 @@ describe("DateRangeSelector", () => {
     // There should be at least one combobox (the narrow screen dropdown or the year dropdown)
     const comboboxes = screen.getAllByRole("combobox");
     expect(comboboxes.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("calls onChange when 3M is clicked", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderWithProviders(
+      <DateRangeSelector value={defaultRange} onChange={onChange} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "3M" }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: expect.any(String),
+        endDate: expect.any(String),
+      }),
+    );
   });
 });

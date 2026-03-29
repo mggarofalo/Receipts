@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { differenceInDays, parseISO } from "date-fns";
 import { ChartCard, AreaTimeChart } from "@/components/charts";
 import { useDashboardSpendingOverTime } from "@/hooks/useDashboard";
 import type { DateRange } from "@/hooks/useDashboard";
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { computeRollingAverage } from "@/lib/rolling-average";
 
-type Granularity = "monthly" | "quarterly" | "ytd" | "yearly";
+type Granularity = "daily" | "monthly" | "quarterly" | "yearly";
 type WindowSize = "3" | "6" | "12";
 
 interface SpendingOverTimeWidgetProps {
@@ -21,9 +22,9 @@ interface SpendingOverTimeWidgetProps {
 }
 
 const granularityOptions: { value: Granularity; label: string }[] = [
+  { value: "daily", label: "Day" },
   { value: "monthly", label: "Month" },
   { value: "quarterly", label: "Quarter" },
-  { value: "ytd", label: "YTD" },
   { value: "yearly", label: "Year" },
 ];
 
@@ -42,20 +43,41 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+function getAutoGranularity(dateRange: DateRange): Granularity {
+  if (!dateRange.startDate || !dateRange.endDate) {
+    return "yearly";
+  }
+  const days = differenceInDays(
+    parseISO(dateRange.endDate),
+    parseISO(dateRange.startDate),
+  );
+  if (days <= 93) return "daily";
+  if (days <= 730) return "monthly";
+  return "yearly";
+}
+
 export function SpendingOverTimeWidget({
   dateRange,
   className,
 }: SpendingOverTimeWidgetProps) {
-  const [granularity, setGranularity] = useState<Granularity>("monthly");
-  const [showTrendline, setShowTrendline] = useState(false);
+  const [granularityOverride, setGranularityOverride] =
+    useState<Granularity | null>(null);
+  const [showTrendline, setShowTrendline] = useState(true);
   const [windowSize, setWindowSize] = useState<WindowSize>("3");
+
+  const autoGranularity = useMemo(
+    () => getAutoGranularity(dateRange),
+    [dateRange],
+  );
+  const granularity = granularityOverride ?? autoGranularity;
+
   const { data, isLoading } = useDashboardSpendingOverTime(
     dateRange,
     granularity,
   );
 
   const handleGranularity = useCallback((g: Granularity) => {
-    setGranularity(g);
+    setGranularityOverride(g);
   }, []);
 
   const handleToggleTrendline = useCallback(() => {

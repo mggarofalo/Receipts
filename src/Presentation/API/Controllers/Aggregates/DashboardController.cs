@@ -141,6 +141,37 @@ public class DashboardController(IMediator mediator) : ControllerBase
 		});
 	}
 
+	[HttpGet("spending-by-store")]
+	[EndpointSummary("Get spending grouped by store")]
+	[EndpointDescription("Returns spending amounts grouped by receipt location (store), including visit count and average per visit.")]
+	public async Task<Results<Ok<SpendingByStoreResponse>, BadRequest<string>>> GetSpendingByStore(
+		[FromQuery] DateOnly? startDate,
+		[FromQuery] DateOnly? endDate,
+		CancellationToken cancellationToken)
+	{
+		DateOnly start = startDate ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
+
+		if (start > end)
+		{
+			return TypedResults.BadRequest("startDate must be before or equal to endDate");
+		}
+
+		GetSpendingByStoreQuery query = new(start, end);
+		SpendingByStoreResult result = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new SpendingByStoreResponse
+		{
+			Items = result.Items.Select(i => new SpendingByStoreItem
+			{
+				Location = i.Location,
+				VisitCount = i.VisitCount,
+				TotalAmount = (double)i.TotalAmount,
+				AveragePerVisit = (double)i.AveragePerVisit
+			}).ToList()
+		});
+	}
+
 	[HttpGet("spending-by-account")]
 	[EndpointSummary("Get spending grouped by account")]
 	[EndpointDescription("Returns spending amounts grouped by payment account.")]
