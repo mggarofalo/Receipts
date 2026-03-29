@@ -5,6 +5,7 @@ import {
   useDashboardSpendingOverTime,
   useDashboardSpendingByCategory,
   useDashboardSpendingByAccount,
+  useDashboardEarliestReceiptYear,
 } from "./useDashboard";
 
 vi.mock("@/lib/api-client", () => ({
@@ -121,7 +122,7 @@ describe("useDashboard hooks", () => {
       } as any);
 
       const { result } = renderHook(
-        () => useDashboardSpendingOverTime(dateRange, "daily"),
+        () => useDashboardSpendingOverTime(dateRange, "quarterly"),
         { wrapper: createQueryWrapper() },
       );
 
@@ -267,6 +268,47 @@ describe("useDashboard hooks", () => {
 
       const { result } = renderHook(
         () => useDashboardSpendingByAccount(dateRange),
+        { wrapper: createQueryWrapper() },
+      );
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      expect(result.current.error).toEqual(apiError);
+    });
+  });
+
+  describe("useDashboardEarliestReceiptYear", () => {
+    it("fetches earliest receipt year", async () => {
+      const mockData = { year: 2020 };
+      mockClient.GET.mockResolvedValue({
+        data: mockData,
+        error: undefined,
+        response: {} as Response,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+
+      const { result } = renderHook(
+        () => useDashboardEarliestReceiptYear(),
+        { wrapper: createQueryWrapper() },
+      );
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(result.current.data).toEqual(mockData);
+      expect(mockClient.GET).toHaveBeenCalledWith(
+        "/api/dashboard/earliest-receipt-year",
+      );
+    });
+
+    it("throws when API returns an error", async () => {
+      const apiError = { message: "Server error" };
+      mockClient.GET.mockResolvedValue({
+        data: undefined,
+        error: apiError,
+        response: {} as Response,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+
+      const { result } = renderHook(
+        () => useDashboardEarliestReceiptYear(),
         { wrapper: createQueryWrapper() },
       );
 

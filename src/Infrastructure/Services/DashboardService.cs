@@ -86,26 +86,38 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 
 		switch (granularity.ToLowerInvariant())
 		{
-			case "daily":
-				// Materialize first — DateOnly.ToString() cannot be translated to SQL by Npgsql.
-				var dailyRaw = await transactionsWithDate.ToListAsync(cancellationToken);
-				buckets = dailyRaw
-					.GroupBy(x => x.Date)
-					.OrderBy(g => g.Key)
-					.Select(g => new SpendingBucketResult(
-						g.Key.ToString("yyyy-MM-dd"),
-						g.Sum(x => x.Amount)))
+			case "quarterly":
+				var quarterlyRaw = await transactionsWithDate
+					.GroupBy(x => new { x.Date.Year, Quarter = (x.Date.Month - 1) / 3 + 1 })
+					.Select(g => new { g.Key.Year, g.Key.Quarter, Amount = g.Sum(x => x.Amount) })
+					.OrderBy(g => g.Year)
+					.ThenBy(g => g.Quarter)
+					.ToListAsync(cancellationToken);
+				buckets = quarterlyRaw
+					.Select(q => new SpendingBucketResult($"{q.Year} Q{q.Quarter}", q.Amount))
 					.ToList();
 				break;
 
-			case "weekly":
-				// Materialize first — DayOfWeek arithmetic cannot be translated to SQL by EF Core.
-				// Then group by the Monday of each ISO week in memory.
-				var weeklyRaw = await transactionsWithDate.ToListAsync(cancellationToken);
-				buckets = weeklyRaw
-					.GroupBy(x => x.Date.AddDays(-(((int)x.Date.DayOfWeek + 6) % 7)))
-					.OrderBy(g => g.Key)
-					.Select(g => new SpendingBucketResult(g.Key.ToString("yyyy-MM-dd"), g.Sum(x => x.Amount)))
+			case "ytd":
+				var ytdRaw = await transactionsWithDate
+					.GroupBy(x => new { x.Date.Year, x.Date.Month })
+					.Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(x => x.Amount) })
+					.OrderBy(g => g.Year)
+					.ThenBy(g => g.Month)
+					.ToListAsync(cancellationToken);
+				buckets = ytdRaw
+					.Select(m => new SpendingBucketResult($"{m.Year}-{m.Month:D2}", m.Amount))
+					.ToList();
+				break;
+
+			case "yearly":
+				var yearlyRaw = await transactionsWithDate
+					.GroupBy(x => x.Date.Year)
+					.Select(g => new { Year = g.Key, Amount = g.Sum(x => x.Amount) })
+					.OrderBy(g => g.Year)
+					.ToListAsync(cancellationToken);
+				buckets = yearlyRaw
+					.Select(y => new SpendingBucketResult(y.Year.ToString(), y.Amount))
 					.ToList();
 				break;
 
@@ -195,5 +207,18 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 			.ToList();
 
 		return new SpendingByAccountResult(items);
+	}
+
+	public async Task<int> GetEarliestReceiptYearAsync(CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		DateOnly? earliestDate = await context.Receipts
+			.AsNoTracking()
+			.OrderBy(r => r.Date)
+			.Select(r => (DateOnly?)r.Date)
+			.FirstOrDefaultAsync(cancellationToken);
+
+		return earliestDate?.Year ?? DateTime.Today.Year;
 	}
 }

@@ -4,7 +4,7 @@ import { useDashboardSpendingOverTime } from "@/hooks/useDashboard";
 import type { DateRange } from "@/hooks/useDashboard";
 import { Button } from "@/components/ui/button";
 
-type Granularity = "daily" | "weekly" | "monthly";
+type Granularity = "monthly" | "quarterly" | "ytd" | "yearly";
 
 interface SpendingOverTimeWidgetProps {
   dateRange: DateRange;
@@ -12,9 +12,10 @@ interface SpendingOverTimeWidgetProps {
 }
 
 const granularityOptions: { value: Granularity; label: string }[] = [
-  { value: "daily", label: "Day" },
-  { value: "weekly", label: "Week" },
   { value: "monthly", label: "Month" },
+  { value: "quarterly", label: "Quarter" },
+  { value: "ytd", label: "YTD" },
+  { value: "yearly", label: "Year" },
 ];
 
 function formatCurrency(value: number): string {
