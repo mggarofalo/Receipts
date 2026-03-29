@@ -144,8 +144,8 @@ describe("useBreadcrumbs", () => {
 
   // useLocation().pathname does not include query strings or hash fragments.
   // For example, navigating to "/accounts?sort=name" yields pathname "/accounts",
-  // so breadcrumbs are never affected by query parameters. This test documents
-  // that behavior.
+  // so breadcrumbs are never affected by query parameters (unless the route has
+  // explicit query-param breadcrumb configuration).
   it("is unaffected by query strings (pathname excludes them)", () => {
     const { result } = renderHook(() => useBreadcrumbs(), {
       wrapper: createWrapper("/accounts?sort=name&order=asc"),
@@ -154,5 +154,39 @@ describe("useBreadcrumbs", () => {
       { label: "Home", path: "/" },
       { label: "Accounts", path: "/accounts" },
     ]);
+  });
+
+  it("appends report name breadcrumb from query param on /reports", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/reports?report=out-of-balance"),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Reports", path: "/reports" },
+      {
+        label: "Out Of Balance",
+        path: "/reports?report=out-of-balance",
+      },
+    ]);
+  });
+
+  it("shows only Home > Reports when no report query param", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/reports"),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Reports", path: "/reports" },
+    ]);
+  });
+
+  it("title-cases multi-word report slugs in breadcrumb", () => {
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/reports?report=item-cost-over-time"),
+    });
+    expect(result.current[2]).toEqual({
+      label: "Item Cost Over Time",
+      path: "/reports?report=item-cost-over-time",
+    });
   });
 });
