@@ -32,4 +32,18 @@ public interface IReportService
 		List<Guid> itemIds,
 		string newDescription,
 		CancellationToken cancellationToken);
+
+	Task<ItemDescriptionResult> GetItemDescriptionsAsync(
+		string search,
+		bool categoryOnly,
+		int limit,
+		CancellationToken cancellationToken);
+
+	Task<ItemCostOverTimeResult> GetItemCostOverTimeAsync(
+		string? description,
+		string? category,
+		DateOnly? startDate,
+		DateOnly? endDate,
+		string granularity,
+		CancellationToken cancellationToken);
 }

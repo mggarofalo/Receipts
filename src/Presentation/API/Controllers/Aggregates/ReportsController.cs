@@ -223,4 +223,79 @@ public class ReportsController(IMediator mediator) : ControllerBase
 			UpdatedCount = updatedCount
 		});
 	}
+
+	[HttpGet("item-descriptions")]
+	[EndpointSummary("Search item descriptions for autocomplete")]
+	[EndpointDescription("Returns distinct item descriptions with their category and occurrence count, filtered by a search term (minimum 2 characters).")]
+	public async Task<Results<Ok<ItemDescriptionsResponse>, BadRequest<string>>> GetItemDescriptions(
+		[FromQuery] string? search,
+		[FromQuery] bool? categoryOnly,
+		[FromQuery] int? limit,
+		CancellationToken cancellationToken)
+	{
+		if (string.IsNullOrWhiteSpace(search) || search.Length < 2)
+		{
+			return TypedResults.BadRequest("search must be at least 2 characters");
+		}
+
+		int lim = limit ?? 20;
+		if (lim < 1 || lim > 50)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 50");
+		}
+
+		GetItemDescriptionsQuery query = new(search, categoryOnly ?? false, lim);
+		AppReports.ItemDescriptionResult result = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new ItemDescriptionsResponse
+		{
+			Items = result.Items.Select(i => new ItemDescriptionItem
+			{
+				Description = i.Description,
+				Category = i.Category,
+				Occurrences = i.Occurrences
+			}).ToList()
+		});
+	}
+
+	[HttpGet("item-cost-over-time")]
+	[EndpointSummary("Get item cost over time")]
+	[EndpointDescription("Returns time-series cost data for a specific item description or category.")]
+	public async Task<Results<Ok<ItemCostOverTimeResponse>, BadRequest<string>>> GetItemCostOverTime(
+		[FromQuery] string? description,
+		[FromQuery] string? category,
+		[FromQuery] DateOnly? startDate,
+		[FromQuery] DateOnly? endDate,
+		[FromQuery] string? granularity,
+		CancellationToken cancellationToken)
+	{
+		if (string.IsNullOrEmpty(description) && string.IsNullOrEmpty(category))
+		{
+			return TypedResults.BadRequest("Either description or category is required");
+		}
+
+		string gran = granularity ?? "exact";
+		string[] validGranularities = ["exact", "monthly", "yearly"];
+		if (!validGranularities.Contains(gran.ToLowerInvariant()))
+		{
+			return TypedResults.BadRequest($"Invalid granularity '{gran}'. Allowed: exact, monthly, yearly");
+		}
+
+		if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+		{
+			return TypedResults.BadRequest("startDate must be before or equal to endDate");
+		}
+
+		GetItemCostOverTimeQuery query = new(description, category, startDate, endDate, gran);
+		AppReports.ItemCostOverTimeResult result = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new ItemCostOverTimeResponse
+		{
+			Buckets = result.Buckets.Select(b => new ItemCostBucket
+			{
+				Period = b.Period,
+				Amount = (double)b.Amount
+			}).ToList()
+		});
+	}
 }
