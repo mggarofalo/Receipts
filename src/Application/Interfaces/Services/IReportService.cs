@@ -10,4 +10,13 @@ public interface IReportService
 		int page,
 		int pageSize,
 		CancellationToken cancellationToken);
+
+	Task<SpendingByLocationResult> GetSpendingByLocationAsync(
+		DateOnly? startDate,
+		DateOnly? endDate,
+		string sortBy,
+		string sortDirection,
+		int page,
+		int pageSize,
+		CancellationToken cancellationToken);
 }

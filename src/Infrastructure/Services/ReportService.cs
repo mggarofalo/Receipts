@@ -76,4 +76,69 @@ public class ReportService(IDbContextFactory<ApplicationDbContext> contextFactor
 
 		return new OutOfBalanceResult(pagedItems, totalCount, totalDiscrepancy);
 	}
+
+	public async Task<SpendingByLocationResult> GetSpendingByLocationAsync(
+		DateOnly? startDate,
+		DateOnly? endDate,
+		string sortBy,
+		string sortDirection,
+		int page,
+		int pageSize,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		var receiptsQuery = context.Receipts.AsNoTracking()
+			.Where(r => r.DeletedAt == null);
+
+		if (startDate.HasValue)
+		{
+			receiptsQuery = receiptsQuery.Where(r => r.Date >= startDate.Value);
+		}
+
+		if (endDate.HasValue)
+		{
+			receiptsQuery = receiptsQuery.Where(r => r.Date <= endDate.Value);
+		}
+
+		var baseQuery = from r in receiptsQuery
+						let transactionTotal = context.Transactions
+							.Where(t => t.ReceiptId == r.Id && t.DeletedAt == null)
+							.Sum(t => (decimal?)t.Amount) ?? 0m
+						group new { TransactionTotal = transactionTotal } by (r.Location ?? "") into g
+						select new
+						{
+							Location = g.Key == "" ? "(No Location)" : g.Key,
+							Visits = g.Count(),
+							Total = g.Sum(x => x.TransactionTotal),
+						};
+
+		var allItems = await baseQuery.ToListAsync(cancellationToken);
+		int totalCount = allItems.Count;
+		decimal grandTotal = allItems.Sum(x => x.Total);
+
+		var sorted = (sortBy.ToLowerInvariant(), sortDirection.ToLowerInvariant()) switch
+		{
+			("location", "asc") => allItems.OrderBy(x => x.Location).AsEnumerable(),
+			("location", "desc") => allItems.OrderByDescending(x => x.Location).AsEnumerable(),
+			("visits", "asc") => allItems.OrderBy(x => x.Visits).AsEnumerable(),
+			("visits", "desc") => allItems.OrderByDescending(x => x.Visits).AsEnumerable(),
+			("averagepervisit", "asc") => allItems.OrderBy(x => x.Visits > 0 ? x.Total / x.Visits : 0).AsEnumerable(),
+			("averagepervisit", "desc") => allItems.OrderByDescending(x => x.Visits > 0 ? x.Total / x.Visits : 0).AsEnumerable(),
+			("total", "asc") => allItems.OrderBy(x => x.Total).AsEnumerable(),
+			_ => allItems.OrderByDescending(x => x.Total).AsEnumerable(), // default: total desc
+		};
+
+		List<SpendingByLocationItem> pagedItems = sorted
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.Select(x => new SpendingByLocationItem(
+				x.Location,
+				x.Visits,
+				x.Total,
+				x.Visits > 0 ? Math.Round(x.Total / x.Visits, 2) : 0m))
+			.ToList();
+
+		return new SpendingByLocationResult(pagedItems, totalCount, grandTotal);
+	}
 }

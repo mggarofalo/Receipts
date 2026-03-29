@@ -74,4 +74,65 @@ public class ReportsController(IMediator mediator) : ControllerBase
 			}).ToList()
 		});
 	}
+
+	[HttpGet("spending-by-location")]
+	[EndpointSummary("Get spending by location report")]
+	[EndpointDescription("Returns spending aggregated by store location with visit count, total, and average per visit.")]
+	public async Task<Results<Ok<SpendingByLocationResponse>, BadRequest<string>>> GetSpendingByLocation(
+		[FromQuery] DateOnly? startDate,
+		[FromQuery] DateOnly? endDate,
+		[FromQuery] string? sortBy,
+		[FromQuery] string? sortDirection,
+		[FromQuery] int? page,
+		[FromQuery] int? pageSize,
+		CancellationToken cancellationToken)
+	{
+		string sort = sortBy ?? "total";
+		string direction = sortDirection ?? "desc";
+		int pg = page ?? 1;
+		int ps = pageSize ?? 50;
+
+		string[] validSortColumns = ["location", "visits", "total", "averagepervisit"];
+		if (!validSortColumns.Contains(sort.ToLowerInvariant()))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sort}'. Allowed: location, visits, total, averagePerVisit");
+		}
+
+		string[] validDirections = ["asc", "desc"];
+		if (!validDirections.Contains(direction.ToLowerInvariant()))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{direction}'. Allowed: asc, desc");
+		}
+
+		if (pg < 1)
+		{
+			return TypedResults.BadRequest("page must be at least 1");
+		}
+
+		if (ps < 1 || ps > 100)
+		{
+			return TypedResults.BadRequest("pageSize must be between 1 and 100");
+		}
+
+		if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+		{
+			return TypedResults.BadRequest("startDate must be before or equal to endDate");
+		}
+
+		GetSpendingByLocationReportQuery query = new(startDate, endDate, sort, direction, pg, ps);
+		AppReports.SpendingByLocationResult result = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new SpendingByLocationResponse
+		{
+			TotalCount = result.TotalCount,
+			GrandTotal = (double)result.GrandTotal,
+			Items = result.Items.Select(i => new SpendingByLocationItem
+			{
+				Location = i.Location,
+				Visits = i.Visits,
+				Total = (double)i.Total,
+				AveragePerVisit = (double)i.AveragePerVisit
+			}).ToList()
+		});
+	}
 }
