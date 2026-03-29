@@ -556,4 +556,101 @@ public class DashboardControllerTests
 	}
 
 	#endregion
+
+	#region GetSpendingByStore
+
+	[Fact]
+	public async Task GetSpendingByStore_ReturnsOkResult_WithValidDates()
+	{
+		// Arrange
+		DateOnly start = new(2024, 1, 1);
+		DateOnly end = new(2024, 1, 31);
+		SpendingByStoreResult storeResult = new(
+		[
+			new SpendingByStoreItemResult("Walmart", 5, 250m, 50m),
+			new SpendingByStoreItemResult("Target", 3, 150m, 50m),
+		]);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSpendingByStoreQuery>(q => q.StartDate == start && q.EndDate == end),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(storeResult);
+
+		// Act
+		Results<Ok<SpendingByStoreResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByStore(start, end, CancellationToken.None);
+
+		// Assert
+		Ok<SpendingByStoreResponse> okResult = Assert.IsType<Ok<SpendingByStoreResponse>>(result.Result);
+		SpendingByStoreResponse response = okResult.Value!;
+		response.Items.Should().HaveCount(2);
+		response.Items.First().Location.Should().Be("Walmart");
+		response.Items.First().VisitCount.Should().Be(5);
+		response.Items.First().TotalAmount.Should().Be(250);
+		response.Items.First().AveragePerVisit.Should().Be(50);
+	}
+
+	[Fact]
+	public async Task GetSpendingByStore_ReturnsBadRequest_WhenInvalidDates()
+	{
+		// Arrange
+		DateOnly start = new(2024, 2, 1);
+		DateOnly end = new(2024, 1, 1);
+
+		// Act
+		Results<Ok<SpendingByStoreResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByStore(start, end, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Be("startDate must be before or equal to endDate");
+	}
+
+	[Fact]
+	public async Task GetSpendingByStore_UsesDefaultDates_WhenNullDatesProvided()
+	{
+		// Arrange
+		DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+		DateOnly expectedStart = today.AddDays(-30);
+
+		SpendingByStoreResult storeResult = new([]);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetSpendingByStoreQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(storeResult);
+
+		// Act
+		Results<Ok<SpendingByStoreResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByStore(null, null, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<Ok<SpendingByStoreResponse>>(result.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetSpendingByStoreQuery>(q =>
+				q.StartDate == expectedStart
+				&& q.EndDate == today),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetSpendingByStore_ThrowsException_WhenMediatorFails()
+	{
+		// Arrange
+		DateOnly start = new(2024, 1, 1);
+		DateOnly end = new(2024, 1, 31);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetSpendingByStoreQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new Exception());
+
+		// Act
+		Func<Task> act = () => _controller.GetSpendingByStore(start, end, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<Exception>();
+	}
+
+	#endregion
 }

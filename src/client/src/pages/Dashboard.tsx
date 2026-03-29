@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router";
-import { format, subDays } from "date-fns";
+import { format, subMonths } from "date-fns";
 import { Plus } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import type { DateRange } from "@/hooks/useDashboard";
@@ -10,12 +10,12 @@ import { SummaryStats } from "@/components/dashboard/SummaryStats";
 import { SpendingOverTimeWidget } from "@/components/dashboard/SpendingOverTimeWidget";
 import { SpendingByCategoryWidget } from "@/components/dashboard/SpendingByCategoryWidget";
 import { SpendingByAccountWidget } from "@/components/dashboard/SpendingByAccountWidget";
-import { RecentReceiptsWidget } from "@/components/dashboard/RecentReceiptsWidget";
+import { SpendingByStoreWidget } from "@/components/dashboard/SpendingByStoreWidget";
 
 function getDefaultRange(): DateRange {
   const now = new Date();
   return {
-    startDate: format(subDays(now, 30), "yyyy-MM-dd"),
+    startDate: format(subMonths(now, 1), "yyyy-MM-dd"),
     endDate: format(now, "yyyy-MM-dd"),
   };
 }
@@ -55,7 +55,7 @@ function Dashboard() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <SpendingByAccountWidget dateRange={dateRange} />
-        <RecentReceiptsWidget />
+        <SpendingByStoreWidget dateRange={dateRange} />
       </div>
     </div>
   );
