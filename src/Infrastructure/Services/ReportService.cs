@@ -1,6 +1,7 @@
 using Application.Interfaces.Services;
 using Application.Models.Reports;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Infrastructure.Services;
 
@@ -141,4 +142,216 @@ public class ReportService(IDbContextFactory<ApplicationDbContext> contextFactor
 
 		return new SpendingByLocationResult(pagedItems, totalCount, grandTotal);
 	}
+
+	public async Task<ItemSimilarityResult> GetItemSimilarityAsync(
+		double threshold,
+		string sortBy,
+		string sortDirection,
+		int page,
+		int pageSize,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		// Step 1: Find all similar pairs using pg_trgm similarity self-join.
+		// The GIN index on "Description" accelerates this query.
+		const string sql = """
+			SELECT
+				a."Id" AS "IdA",
+				a."Description" AS "DescA",
+				b."Id" AS "IdB",
+				b."Description" AS "DescB",
+				similarity(a."Description", b."Description") AS "Score"
+			FROM "ReceiptItems" a
+			JOIN "ReceiptItems" b
+				ON a."Id" < b."Id"
+				AND a."DeletedAt" IS NULL
+				AND b."DeletedAt" IS NULL
+				AND similarity(a."Description", b."Description") >= @threshold
+			WHERE a."DeletedAt" IS NULL
+			""";
+
+		List<SimilarityEdge> edges = [];
+
+		await using (NpgsqlConnection connection = (NpgsqlConnection)context.Database.GetDbConnection())
+		{
+			await connection.OpenAsync(cancellationToken);
+
+			await using NpgsqlCommand command = new(sql, connection);
+			command.Parameters.AddWithValue("@threshold", threshold);
+
+			await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+			while (await reader.ReadAsync(cancellationToken))
+			{
+				edges.Add(new SimilarityEdge(
+					reader.GetGuid(0),
+					reader.GetString(1),
+					reader.GetGuid(2),
+					reader.GetString(3),
+					reader.GetDouble(4)));
+			}
+		}
+
+		if (edges.Count == 0)
+		{
+			return new ItemSimilarityResult([], 0);
+		}
+
+		// Step 2: Build connected components via union-find.
+		// Collect all unique item IDs and their descriptions.
+		Dictionary<Guid, string> itemDescriptions = [];
+		foreach (SimilarityEdge edge in edges)
+		{
+			itemDescriptions.TryAdd(edge.IdA, edge.DescA);
+			itemDescriptions.TryAdd(edge.IdB, edge.DescB);
+		}
+
+		Dictionary<Guid, Guid> parent = [];
+		Dictionary<Guid, int> rank = [];
+
+		foreach (Guid id in itemDescriptions.Keys)
+		{
+			parent[id] = id;
+			rank[id] = 0;
+		}
+
+		Guid Find(Guid x)
+		{
+			while (parent[x] != x)
+			{
+				parent[x] = parent[parent[x]]; // path compression
+				x = parent[x];
+			}
+			return x;
+		}
+
+		void Union(Guid x, Guid y)
+		{
+			Guid rx = Find(x);
+			Guid ry = Find(y);
+			if (rx == ry)
+			{
+				return;
+			}
+
+			if (rank[rx] < rank[ry])
+			{
+				parent[rx] = ry;
+			}
+			else if (rank[rx] > rank[ry])
+			{
+				parent[ry] = rx;
+			}
+			else
+			{
+				parent[ry] = rx;
+				rank[rx]++;
+			}
+		}
+
+		// Track max similarity per pair of roots for each cluster
+		Dictionary<Guid, double> clusterMaxSimilarity = [];
+
+		foreach (SimilarityEdge edge in edges)
+		{
+			Union(edge.IdA, edge.IdB);
+		}
+
+		// Step 3: Build clusters from the union-find structure.
+		Dictionary<Guid, List<Guid>> clusters = [];
+		foreach (Guid id in itemDescriptions.Keys)
+		{
+			Guid root = Find(id);
+			if (!clusters.TryGetValue(root, out List<Guid>? members))
+			{
+				members = [];
+				clusters[root] = members;
+			}
+			members.Add(id);
+		}
+
+		// Compute max similarity per cluster
+		foreach (SimilarityEdge edge in edges)
+		{
+			Guid root = Find(edge.IdA);
+			if (!clusterMaxSimilarity.TryGetValue(root, out double current) || edge.Score > current)
+			{
+				clusterMaxSimilarity[root] = edge.Score;
+			}
+		}
+
+		// Step 4: Build result groups.
+		List<ItemSimilarityGroup> groups = [];
+		foreach ((Guid root, List<Guid> members) in clusters)
+		{
+			if (members.Count < 2)
+			{
+				continue; // single items are not "similar" clusters
+			}
+
+			// Count frequency of each description
+			Dictionary<string, int> descFrequency = [];
+			foreach (Guid id in members)
+			{
+				string desc = itemDescriptions[id];
+				descFrequency[desc] = descFrequency.GetValueOrDefault(desc) + 1;
+			}
+
+			// Canonical = most frequent, ties broken by longest string
+			string canonical = descFrequency
+				.OrderByDescending(kv => kv.Value)
+				.ThenByDescending(kv => kv.Key.Length)
+				.First()
+				.Key;
+
+			List<string> variants = descFrequency.Keys.OrderBy(d => d).ToList();
+			double maxSim = clusterMaxSimilarity.GetValueOrDefault(root, 0.0);
+
+			groups.Add(new ItemSimilarityGroup(
+				canonical,
+				variants,
+				members,
+				members.Count,
+				maxSim));
+		}
+
+		// Step 5: Sort
+		IEnumerable<ItemSimilarityGroup> sorted = (sortBy.ToLowerInvariant(), sortDirection.ToLowerInvariant()) switch
+		{
+			("canonicalname", "asc") => groups.OrderBy(g => g.CanonicalName),
+			("canonicalname", "desc") => groups.OrderByDescending(g => g.CanonicalName),
+			("occurrences", "asc") => groups.OrderBy(g => g.Occurrences),
+			("maxsimilarity", "asc") => groups.OrderBy(g => g.MaxSimilarity),
+			("maxsimilarity", "desc") => groups.OrderByDescending(g => g.MaxSimilarity),
+			_ => groups.OrderByDescending(g => g.Occurrences), // default: occurrences desc
+		};
+
+		int totalCount = groups.Count;
+
+		// Step 6: Paginate
+		List<ItemSimilarityGroup> pagedGroups = sorted
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.ToList();
+
+		return new ItemSimilarityResult(pagedGroups, totalCount);
+	}
+
+	public async Task<int> RenameItemsAsync(
+		List<Guid> itemIds,
+		string newDescription,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		int updated = await context.ReceiptItems
+			.Where(ri => itemIds.Contains(ri.Id) && ri.DeletedAt == null)
+			.ExecuteUpdateAsync(
+				s => s.SetProperty(ri => ri.Description, newDescription),
+				cancellationToken);
+
+		return updated;
+	}
+
+	private record SimilarityEdge(Guid IdA, string DescA, Guid IdB, string DescB, double Score);
 }
