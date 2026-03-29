@@ -27,7 +27,7 @@ export function useDashboardSummary(dateRange: DateRange) {
 
 export function useDashboardSpendingOverTime(
   dateRange: DateRange,
-  granularity?: "daily" | "weekly" | "monthly",
+  granularity?: "monthly" | "quarterly" | "ytd" | "yearly",
 ) {
   return useQuery({
     queryKey: [
@@ -50,6 +50,20 @@ export function useDashboardSpendingOverTime(
             },
           },
         },
+      );
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useDashboardEarliestReceiptYear() {
+  return useQuery({
+    queryKey: ["dashboard", "earliest-receipt-year"],
+    staleTime: Infinity,
+    queryFn: async () => {
+      const { data, error } = await client.GET(
+        "/api/dashboard/earliest-receipt-year",
       );
       if (error) throw error;
       return data;

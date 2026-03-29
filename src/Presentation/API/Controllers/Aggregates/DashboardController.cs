@@ -71,10 +71,10 @@ public class DashboardController(IMediator mediator) : ControllerBase
 			return TypedResults.BadRequest("startDate must be before or equal to endDate");
 		}
 
-		string[] validGranularities = ["daily", "weekly", "monthly"];
+		string[] validGranularities = ["monthly", "quarterly", "ytd", "yearly"];
 		if (!validGranularities.Contains(gran.ToLowerInvariant()))
 		{
-			return TypedResults.BadRequest($"Invalid granularity '{gran}'. Allowed: daily, weekly, monthly");
+			return TypedResults.BadRequest($"Invalid granularity '{gran}'. Allowed: monthly, quarterly, ytd, yearly");
 		}
 
 		GetSpendingOverTimeQuery query = new(start, end, gran);
@@ -87,6 +87,21 @@ public class DashboardController(IMediator mediator) : ControllerBase
 				Period = b.Period,
 				Amount = (double)b.Amount
 			}).ToList()
+		});
+	}
+
+	[HttpGet("earliest-receipt-year")]
+	[EndpointSummary("Get the earliest receipt year")]
+	[EndpointDescription("Returns the year of the oldest receipt in the system. Used for populating year dropdowns.")]
+	public async Task<Ok<EarliestReceiptYearResponse>> GetEarliestReceiptYear(
+		CancellationToken cancellationToken)
+	{
+		GetEarliestReceiptYearQuery query = new();
+		int year = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new EarliestReceiptYearResponse
+		{
+			Year = year
 		});
 	}
 

@@ -34,9 +34,12 @@ describe("SpendingOverTimeWidget", () => {
     } as unknown as ReturnType<typeof useDashboardSpendingOverTime>);
 
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
-    expect(screen.getByRole("button", { name: "Day" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Week" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Month" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Quarter" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "YTD" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Year" })).toBeInTheDocument();
   });
 
   it("renders chart with data", () => {
@@ -72,7 +75,7 @@ describe("SpendingOverTimeWidget", () => {
     } as unknown as ReturnType<typeof useDashboardSpendingOverTime>);
 
     renderWithQueryClient(<SpendingOverTimeWidget dateRange={dateRange} />);
-    await user.click(screen.getByRole("button", { name: "Day" }));
-    expect(mockHook).toHaveBeenCalledWith(dateRange, "daily");
+    await user.click(screen.getByRole("button", { name: "Quarter" }));
+    expect(mockHook).toHaveBeenCalledWith(dateRange, "quarterly");
   });
 });

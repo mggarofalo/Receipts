@@ -2758,7 +2758,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [daily, weekly, monthly]
+            enum: [monthly, quarterly, ytd, yearly]
             default: monthly
           description: Time bucket granularity.
       responses:
@@ -2860,6 +2860,23 @@ paths:
               schema:
                 type: string
 
+  /api/dashboard/earliest-receipt-year:
+    get:
+      operationId: GetEarliestReceiptYear
+      tags: [Dashboard]
+      summary: Get the earliest receipt year
+      description: Returns the year of the oldest receipt in the system. Used for populating year dropdowns.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EarliestReceiptYearResponse"
+
 components:
   schemas:
     # ── Dashboard ──────────────────────────────────
@@ -2959,6 +2976,14 @@ components:
         percentage:
           type: number
           format: double
+
+    EarliestReceiptYearResponse:
+      type: object
+      required: [year]
+      properties:
+        year:
+          type: integer
+          format: int32
 
     # ── Account ──────────────────────────────────
 

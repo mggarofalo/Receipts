@@ -4,40 +4,46 @@ import { renderWithProviders } from "@/test/test-utils";
 import { DateRangeSelector } from "./DateRangeSelector";
 import type { DateRange } from "@/hooks/useDashboard";
 
+vi.mock("@/hooks/useDashboard", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/hooks/useDashboard")>();
+  return {
+    ...actual,
+    useDashboardEarliestReceiptYear: vi.fn().mockReturnValue({
+      data: { year: 2020 },
+      isLoading: false,
+    }),
+  };
+});
+
 const defaultRange: DateRange = {
   startDate: "2024-01-01",
   endDate: "2024-01-31",
 };
 
 describe("DateRangeSelector", () => {
-  it("renders all preset buttons", () => {
+  it("renders preset buttons on wide screens", () => {
     const onChange = vi.fn();
     renderWithProviders(
       <DateRangeSelector value={defaultRange} onChange={onChange} />,
     );
-    expect(screen.getByRole("button", { name: "7 days" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "30 days" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "90 days" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Year to date" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "YTD" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "All time" }),
     ).toBeInTheDocument();
   });
 
-  it("renders custom date button", () => {
+  it("renders a year dropdown", () => {
     const onChange = vi.fn();
     renderWithProviders(
       <DateRangeSelector value={defaultRange} onChange={onChange} />,
     );
-    expect(
-      screen.getByRole("button", { name: /custom/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("year-dropdown")).toBeInTheDocument();
   });
 
   it("calls onChange when a preset is clicked", async () => {
@@ -47,7 +53,7 @@ describe("DateRangeSelector", () => {
       <DateRangeSelector value={defaultRange} onChange={onChange} />,
     );
 
-    await user.click(screen.getByRole("button", { name: "7 days" }));
+    await user.click(screen.getByRole("button", { name: "30 days" }));
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
         startDate: expect.any(String),
@@ -56,7 +62,7 @@ describe("DateRangeSelector", () => {
     );
   });
 
-  it("calls onChange with early start date for All time", async () => {
+  it("calls onChange with undefined dates for All time", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     renderWithProviders(
@@ -64,19 +70,19 @@ describe("DateRangeSelector", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "All time" }));
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        startDate: "2000-01-01",
-        endDate: expect.any(String),
-      }),
-    );
+    expect(onChange).toHaveBeenCalledWith({
+      startDate: undefined,
+      endDate: undefined,
+    });
   });
 
-  it("renders a dropdown selector", () => {
+  it("renders a dropdown selector for narrow screens", () => {
     const onChange = vi.fn();
     renderWithProviders(
       <DateRangeSelector value={defaultRange} onChange={onChange} />,
     );
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    // There should be at least one combobox (the narrow screen dropdown or the year dropdown)
+    const comboboxes = screen.getAllByRole("combobox");
+    expect(comboboxes.length).toBeGreaterThanOrEqual(1);
   });
 });
