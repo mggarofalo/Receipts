@@ -1,6 +1,7 @@
 using API.Controllers.Core;
 using API.Generated.Dtos;
 using Application.Commands.Receipt.Scan;
+using Application.Exceptions;
 using Application.Models.Ocr;
 using FluentAssertions;
 using MediatR;
@@ -28,7 +29,7 @@ public class ReceiptScanControllerTests
 	public async Task ScanReceipt_NullFile_ReturnsBadRequest()
 	{
 		// Act
-		var actual = await _controller.ScanReceipt(null);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(null);
 
 		// Assert
 		actual.Result.Should().BeOfType<BadRequest<string>>()
@@ -43,7 +44,7 @@ public class ReceiptScanControllerTests
 		fileMock.Setup(f => f.Length).Returns(0);
 
 		// Act
-		var actual = await _controller.ScanReceipt(fileMock.Object);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(fileMock.Object);
 
 		// Assert
 		actual.Result.Should().BeOfType<BadRequest<string>>()
@@ -59,7 +60,7 @@ public class ReceiptScanControllerTests
 		fileMock.Setup(f => f.ContentType).Returns("image/jpeg");
 
 		// Act
-		var actual = await _controller.ScanReceipt(fileMock.Object);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(fileMock.Object);
 
 		// Assert
 		actual.Result.Should().BeOfType<BadRequest<string>>()
@@ -81,7 +82,7 @@ public class ReceiptScanControllerTests
 		fileMock.Setup(f => f.ContentType).Returns(contentType);
 
 		// Act
-		var actual = await _controller.ScanReceipt(fileMock.Object);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(fileMock.Object);
 
 		// Assert
 		actual.Result.Should().BeOfType<StatusCodeHttpResult>()
@@ -96,10 +97,10 @@ public class ReceiptScanControllerTests
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new InvalidOperationException("OCR returned no readable text from the image."));
+			.ThrowsAsync(new OcrNoTextException("OCR returned no readable text from the image."));
 
 		// Act
-		var actual = await _controller.ScanReceipt(file);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
 
 		// Assert
 		actual.Result.Should().BeOfType<UnprocessableEntity<string>>()
@@ -117,7 +118,7 @@ public class ReceiptScanControllerTests
 			.ThrowsAsync(new InvalidOperationException("The uploaded file is not a supported image format."));
 
 		// Act
-		var actual = await _controller.ScanReceipt(file);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
 
 		// Assert
 		actual.Result.Should().BeOfType<UnprocessableEntity<string>>()
@@ -158,7 +159,7 @@ public class ReceiptScanControllerTests
 			.ReturnsAsync(scanResult);
 
 		// Act
-		var actual = await _controller.ScanReceipt(file);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
 
 		// Assert
 		Ok<ProposedReceiptResponse> okResult = actual.Result.Should().BeOfType<Ok<ProposedReceiptResponse>>().Subject;
@@ -205,7 +206,7 @@ public class ReceiptScanControllerTests
 			.ReturnsAsync(scanResult);
 
 		// Act
-		var actual = await _controller.ScanReceipt(file);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
 
 		// Assert
 		actual.Result.Should().BeOfType<Ok<ProposedReceiptResponse>>();
@@ -233,7 +234,7 @@ public class ReceiptScanControllerTests
 			.ReturnsAsync(new ScanReceiptResult(parsedReceipt, "text", 0.1f));
 
 		// Act
-		var actual = await _controller.ScanReceipt(file);
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
 
 		// Assert
 		actual.Result.Should().BeOfType<Ok<ProposedReceiptResponse>>();

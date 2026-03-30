@@ -1,5 +1,6 @@
 using API.Generated.Dtos;
 using Application.Commands.Receipt.Scan;
+using Application.Exceptions;
 using Application.Models.Ocr;
 using Asp.Versioning;
 using MediatR;
@@ -31,6 +32,7 @@ public class ReceiptScanController(
 	[RequestSizeLimit(20 * 1024 * 1024)]
 	[EndpointSummary("Scan a receipt image and return a proposed receipt")]
 	[EndpointDescription("Accepts a JPEG or PNG image, runs preprocessing, OCR, and parsing, then returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted.")]
+	[ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
 	public async Task<Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>>> ScanReceipt(
 		IFormFile? file)
 	{
@@ -71,7 +73,7 @@ public class ReceiptScanController(
 		{
 			result = await mediator.Send(command);
 		}
-		catch (InvalidOperationException ex) when (ex.Message.Contains("OCR returned no readable text"))
+		catch (OcrNoTextException ex)
 		{
 			logger.LogWarning(ex, "OCR returned no text for scanned receipt image");
 			return TypedResults.UnprocessableEntity("The image could not be read or OCR returned no text.");

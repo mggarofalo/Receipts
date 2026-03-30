@@ -1,4 +1,5 @@
 using Application.Commands.Receipt.Scan;
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ocr;
 using FluentAssertions;
@@ -171,7 +172,7 @@ public class ScanReceiptCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_OcrReturnsEmptyText_ThrowsInvalidOperationException()
+	public async Task Handle_OcrReturnsEmptyText_ThrowsOcrNoTextException()
 	{
 		// Arrange
 		byte[] imageBytes = [0xFF, 0xD8];
@@ -191,7 +192,7 @@ public class ScanReceiptCommandHandlerTests
 		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		await act.Should().ThrowAsync<InvalidOperationException>()
+		await act.Should().ThrowAsync<OcrNoTextException>()
 			.WithMessage("*OCR returned no readable text*");
 
 		_mockReceiptParsingService.Verify(
@@ -200,7 +201,7 @@ public class ScanReceiptCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_OcrReturnsWhitespaceText_ThrowsInvalidOperationException()
+	public async Task Handle_OcrReturnsWhitespaceText_ThrowsOcrNoTextException()
 	{
 		// Arrange
 		byte[] imageBytes = [0xFF, 0xD8];
@@ -220,7 +221,7 @@ public class ScanReceiptCommandHandlerTests
 		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		await act.Should().ThrowAsync<InvalidOperationException>()
+		await act.Should().ThrowAsync<OcrNoTextException>()
 			.WithMessage("*OCR returned no readable text*");
 	}
 

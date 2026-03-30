@@ -1,3 +1,4 @@
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using MediatR;
 
@@ -23,7 +24,7 @@ public class ScanReceiptCommandHandler(
 
 		if (string.IsNullOrWhiteSpace(ocrResult.Text))
 		{
-			throw new InvalidOperationException("OCR returned no readable text from the image.");
+			throw new OcrNoTextException("OCR returned no readable text from the image.");
 		}
 
 		string ocrText = ocrResult.Text.Length > MaxOcrTextLength
