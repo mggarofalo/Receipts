@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Application.Interfaces.Services;
 using Application.Models.Reports;
 using Microsoft.EntityFrameworkCore;
@@ -5,8 +6,10 @@ using Npgsql;
 
 namespace Infrastructure.Services;
 
-public class ReportService(IDbContextFactory<ApplicationDbContext> contextFactory) : IReportService
+public partial class ReportService(IDbContextFactory<ApplicationDbContext> contextFactory) : IReportService
 {
+	[GeneratedRegex(@"\s+")]
+	private static partial Regex WhitespaceRegex();
 	public async Task<OutOfBalanceResult> GetOutOfBalanceAsync(
 		string sortBy,
 		string sortDirection,
@@ -471,6 +474,108 @@ public class ReportService(IDbContextFactory<ApplicationDbContext> contextFactor
 
 		return new ItemCostOverTimeResult(buckets);
 	}
+
+	public async Task<DuplicateDetectionResult> GetDuplicatesAsync(
+		string matchOn,
+		string locationTolerance,
+		decimal totalTolerance,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		List<ReceiptSnapshot> receipts = await (from r in context.Receipts.AsNoTracking()
+												where r.DeletedAt == null
+												let transactionTotal = context.Transactions
+													.Where(t => t.ReceiptId == r.Id && t.DeletedAt == null)
+													.Sum(t => (decimal?)t.Amount) ?? 0m
+												select new ReceiptSnapshot(
+													r.Id,
+													r.Location,
+													r.Date,
+													transactionTotal
+												)).ToListAsync(cancellationToken);
+
+		bool normalized = locationTolerance.Equals("normalized", StringComparison.OrdinalIgnoreCase);
+
+		string NormalizeLocation(string location)
+		{
+			string trimmed = location.Trim().ToLowerInvariant();
+			return WhitespaceRegex().Replace(trimmed, " ");
+		}
+
+		bool TotalsMatch(decimal a, decimal b) => Math.Abs(a - b) <= totalTolerance;
+
+		List<DuplicateGroup> groups = matchOn.ToLowerInvariant() switch
+		{
+			"dateandlocation" => receipts
+				.GroupBy(r => (r.Date, Location: normalized ? NormalizeLocation(r.Location) : r.Location))
+				.Where(g => g.Count() > 1)
+				.Select(g => new DuplicateGroup(
+					$"{g.Key.Date:yyyy-MM-dd} @ {g.First().Location}",
+					g.Select(ToSummary).ToList()))
+				.ToList(),
+
+			"dateandtotal" => ClusterByTotal(
+				receipts.GroupBy(r => r.Date),
+				TotalsMatch,
+				dateGroup => dateGroup.Key,
+				(date, seed) => $"{date:yyyy-MM-dd} — ${seed.TransactionTotal:F2}"),
+
+			_ => ClusterByTotal(
+				receipts.GroupBy(r => (r.Date, Location: normalized ? NormalizeLocation(r.Location) : r.Location)),
+				TotalsMatch,
+				locDateGroup => locDateGroup.Key,
+				(key, seed) => $"{key.Date:yyyy-MM-dd} @ {seed.Location} — ${seed.TransactionTotal:F2}")
+		};
+
+		int totalDuplicateReceipts = groups.Sum(g => g.Receipts.Count);
+		return new DuplicateDetectionResult(groups, groups.Count, totalDuplicateReceipts);
+	}
+
+	private static List<DuplicateGroup> ClusterByTotal<TKey>(
+		IEnumerable<IGrouping<TKey, ReceiptSnapshot>> groupedReceipts,
+		Func<decimal, decimal, bool> totalsMatch,
+		Func<IGrouping<TKey, ReceiptSnapshot>, TKey> keySelector,
+		Func<TKey, ReceiptSnapshot, string> formatMatchKey)
+	{
+		List<DuplicateGroup> result = [];
+
+		foreach (IGrouping<TKey, ReceiptSnapshot> group in groupedReceipts)
+		{
+			List<ReceiptSnapshot> remaining = [.. group];
+			TKey key = keySelector(group);
+
+			while (remaining.Count > 0)
+			{
+				ReceiptSnapshot seed = remaining[0];
+				List<ReceiptSnapshot> cluster = [seed];
+				remaining.RemoveAt(0);
+
+				for (int i = remaining.Count - 1; i >= 0; i--)
+				{
+					if (totalsMatch(seed.TransactionTotal, remaining[i].TransactionTotal))
+					{
+						cluster.Add(remaining[i]);
+						remaining.RemoveAt(i);
+					}
+				}
+
+				if (cluster.Count > 1)
+				{
+					result.Add(new DuplicateGroup(
+						formatMatchKey(key, seed),
+						cluster.Select(ToSummary).ToList()));
+				}
+			}
+		}
+
+		return result;
+	}
+
+	private static DuplicateReceiptSummary ToSummary(ReceiptSnapshot r) =>
+		new(r.Id, r.Location, r.Date, r.TransactionTotal);
+
+	private sealed record ReceiptSnapshot(Guid Id, string Location, DateOnly Date, decimal TransactionTotal);
 
 	private record SimilarityEdge(Guid IdA, string DescA, Guid IdB, string DescB, double Score);
 }
