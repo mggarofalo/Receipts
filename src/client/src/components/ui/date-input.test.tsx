@@ -153,6 +153,13 @@ describe("DateInput", () => {
     expect(input).toHaveAttribute("aria-required", "true");
   });
 
+  it("disables browser autofill with autoComplete='off'", () => {
+    render(<DateInput {...defaultProps} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY");
+    expect(input).toHaveAttribute("autocomplete", "off");
+  });
+
   it("updates display when controlled value changes externally", () => {
     const { rerender } = render(
       <DateInput value="2024-01-01" onChange={vi.fn()} />,
@@ -467,6 +474,13 @@ describe("DateInput", () => {
 
       const input = screen.getByDisplayValue("");
       expect(input).toHaveAttribute("type", "date");
+    });
+
+    it("disables browser autofill with autoComplete='off' on touch devices", () => {
+      render(<DateInput {...defaultProps} />);
+
+      const input = document.querySelector('input[type="date"]')!;
+      expect(input).toHaveAttribute("autocomplete", "off");
     });
 
     it("does not render the Popover/Calendar button on touch devices", () => {
