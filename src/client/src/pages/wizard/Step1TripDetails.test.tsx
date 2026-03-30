@@ -3,6 +3,10 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { Step1TripDetails } from "./Step1TripDetails";
 
+vi.mock("@/hooks/useReceipts", () => ({
+  useLocationSuggestions: vi.fn(() => ({ data: undefined })),
+}));
+
 describe("Step1TripDetails", () => {
   const defaultProps = {
     data: { location: "", date: "", taxAmount: 0 },

@@ -1,9 +1,19 @@
+import "@/test/setup-combobox-polyfills";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReceiptHeaderForm } from "./ReceiptHeaderForm";
 
 vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
+}));
+
+vi.mock("@/hooks/useLocationHistory", () => ({
+  useLocationHistory: vi.fn(() => ({
+    locations: [],
+    options: [],
+    add: vi.fn(),
+    clear: vi.fn(),
+  })),
 }));
 
 describe("ReceiptHeaderForm", () => {
@@ -18,7 +28,7 @@ describe("ReceiptHeaderForm", () => {
 
   it("renders all form fields", () => {
     render(<ReceiptHeaderForm {...defaultProps} />);
-    expect(screen.getByLabelText(/location/i)).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /^date$/i })).toBeInTheDocument();
     expect(screen.getByText(/tax amount/i)).toBeInTheDocument();
   });
@@ -34,7 +44,7 @@ describe("ReceiptHeaderForm", () => {
         }}
       />,
     );
-    expect(screen.getByLabelText(/location/i)).toHaveValue("Walmart");
+    expect(screen.getByRole("combobox")).toHaveTextContent("Walmart");
   });
 
   it("calls onCancel when cancel button is clicked", async () => {
@@ -47,7 +57,10 @@ describe("ReceiptHeaderForm", () => {
   it("shows validation errors for empty required fields on submit", async () => {
     const user = userEvent.setup();
     render(<ReceiptHeaderForm {...defaultProps} />);
-    await user.click(screen.getByRole("button", { name: /update receipt/i }));
+    // Find submit button -- exclude the combobox trigger
+    const buttons = screen.getAllByRole("button");
+    const submitButton = buttons.find((b) => /update receipt/i.test(b.textContent ?? ""));
+    await user.click(submitButton!);
     expect(await screen.findByText(/location is required/i)).toBeInTheDocument();
   });
 

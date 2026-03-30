@@ -3,10 +3,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useLocationHistory } from "@/hooks/useLocationHistory";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Form,
   FormControl,
@@ -42,6 +43,7 @@ export function ReceiptHeaderForm({
 }: ReceiptHeaderFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { options: locationOptions } = useLocationHistory();
 
   const form = useForm<ReceiptHeaderFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,10 +70,15 @@ export function ReceiptHeaderForm({
             <FormItem>
               <FormLabel>Location</FormLabel>
               <FormControl>
-                <Input
+                <Combobox
+                  options={locationOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
                   placeholder="Store name or location"
+                  searchPlaceholder="Search locations..."
+                  emptyMessage="No saved locations."
+                  allowCustom
                   aria-required="true"
-                  {...field}
                 />
               </FormControl>
               <FormMessage />

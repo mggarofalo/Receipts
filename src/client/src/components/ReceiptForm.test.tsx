@@ -7,6 +7,10 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
 }));
 
+vi.mock("@/hooks/useReceipts", () => ({
+  useLocationSuggestions: vi.fn(() => ({ data: undefined })),
+}));
+
 describe("ReceiptForm", () => {
   const defaultProps = {
     mode: "create" as const,
