@@ -126,6 +126,29 @@ public class AccountsControllerTests
 		actualReturn.Limit.Should().Be(50);
 	}
 
+	[Fact]
+	public async Task GetAllAccounts_PassesIsActiveToQuery()
+	{
+		// Arrange
+		List<Account> accounts = AccountGenerator.GenerateList(1);
+		List<AccountResponse> expectedReturn = [.. accounts.Select(_mapper.ToResponse)];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllAccountsQuery>(q => q.Offset == 0 && q.Limit == 50 && q.IsActive == true),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Account>(accounts, accounts.Count, 0, 50));
+
+		// Act
+		Results<Ok<AccountListResponse>, BadRequest<string>> rawResult = await _controller.GetAllAccounts(true, 0, 50, null, null);
+
+		// Assert
+		Ok<AccountListResponse> result = Assert.IsType<Ok<AccountListResponse>>(rawResult.Result);
+		AccountListResponse actualReturn = result.Value!;
+
+		actualReturn.Data.Should().BeEquivalentTo(expectedReturn);
+		actualReturn.Total.Should().Be(accounts.Count);
+	}
+
 	[Theory]
 	[InlineData(-1, 50)]
 	[InlineData(-100, 50)]
