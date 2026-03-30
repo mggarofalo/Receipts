@@ -371,4 +371,27 @@ describe("Subcategories", () => {
       screen.getByRole("heading", { name: /create subcategory/i }),
     ).toBeInTheDocument();
   });
+
+  it("does not render receipt-items links in expanded rows", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    await user.click(screen.getByRole("button", { name: /expand all/i }));
+
+    const links = screen.getAllByRole("link");
+    const receiptItemLinks = links.filter((link) =>
+      link.getAttribute("href")?.includes("/receipt-items"),
+    );
+    expect(receiptItemLinks).toHaveLength(0);
+  });
+
+  it("renders 5 table columns (no Related column)", async () => {
+    await setupWithData();
+    renderWithProviders(<Subcategories />);
+
+    const columnHeaders = screen.getAllByRole("columnheader");
+    expect(columnHeaders).toHaveLength(5);
+    expect(screen.queryByText("Related")).not.toBeInTheDocument();
+  });
 });
