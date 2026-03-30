@@ -2748,6 +2748,441 @@ paths:
               schema:
                 type: string
 
+  /api/reports/spending-by-location:
+    get:
+      operationId: GetSpendingByLocationReport
+      tags: [Reports]
+      summary: Get spending by location report
+      description: Returns spending aggregated by store location with visit count, total, and average per visit.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to all time when omitted.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to all time when omitted.
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [location, visits, total, averagePerVisit]
+            default: total
+          description: Column to sort by.
+        - name: sortDirection
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort direction.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-based).
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of items per page.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendingByLocationResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
+
+  /api/reports/item-similarity:
+    get:
+      operationId: GetItemSimilarityReport
+      tags: [Reports]
+      summary: Get item similarity clusters
+      description: Returns groups of receipt items with similar descriptions using trigram matching. Items are clustered via connected-component analysis.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: threshold
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            minimum: 0.3
+            maximum: 0.95
+            default: 0.7
+          description: Minimum trigram similarity score (0.3 to 0.95).
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [canonicalName, occurrences, maxSimilarity]
+            default: occurrences
+          description: Column to sort by.
+        - name: sortDirection
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort direction.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-based).
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of items per page.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemSimilarityResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/reports/item-similarity/rename:
+    post:
+      operationId: RenameItemSimilarityGroup
+      tags: [Reports]
+      summary: Rename all items in a similarity group
+      description: Updates the description of all specified receipt items to the given canonical name.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemSimilarityRenameRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemSimilarityRenameResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/reports/item-descriptions:
+    get:
+      operationId: GetItemDescriptions
+      tags: [Reports]
+      summary: Search item descriptions for autocomplete
+      description: Returns distinct item descriptions with their category and occurrence count, filtered by a search term (minimum 2 characters). Results are sorted by occurrences descending.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: search
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          description: Search term to filter item descriptions (minimum 2 characters).
+        - name: categoryOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, search and return categories instead of item descriptions.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          description: Maximum number of results to return.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDescriptionsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/reports/item-cost-over-time:
+    get:
+      operationId: GetItemCostOverTime
+      tags: [Reports]
+      summary: Get item cost over time
+      description: Returns time-series cost data for a specific item description or category, optionally filtered by date range and bucketed by granularity.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Item description to filter by. Either description or category is required.
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Item category to filter by. Either description or category is required.
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to no lower bound.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to no upper bound.
+        - name: granularity
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [exact, monthly, yearly]
+            default: exact
+          description: Time bucket granularity. "exact" returns each purchase date.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemCostOverTimeResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/reports/duplicates:
+    get:
+      operationId: GetDuplicateDetectionReport
+      tags: [Reports]
+      summary: Get duplicate receipt detection report
+      description: Finds receipts that share the same date+location, date+total, or all three fields and may be double entries.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: matchOn
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [DateAndLocation, DateAndTotal, DateAndLocationAndTotal]
+            default: DateAndLocation
+          description: Which fields to compare when detecting duplicates.
+        - name: locationTolerance
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [exact, normalized]
+            default: exact
+          description: "How to compare locations: exact (case-sensitive) or normalized (trimmed, lowercased, whitespace-collapsed)."
+        - name: totalTolerance
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            default: 0
+            minimum: 0
+          description: Maximum difference between transaction totals to still consider them matching. Default 0 (exact match).
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuplicatesResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/reports/category-trends:
+    get:
+      operationId: GetCategoryTrendsReport
+      tags: [Reports]
+      summary: Get category spending trends over time
+      description: Returns time-series spending data broken down by category. Categories beyond the topN threshold are collapsed into "Other". Buckets are dense and zero-filled.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to all time.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to today.
+        - name: granularity
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, monthly, quarterly, yearly]
+            default: monthly
+          description: Time bucket granularity.
+        - name: topN
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 7
+          description: Number of top categories to show. Remaining categories are collapsed into "Other".
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryTrendsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/reports/uncategorized-items:
+    get:
+      operationId: GetUncategorizedItemsReport
+      tags: [Reports]
+      summary: Get uncategorized items report
+      description: Returns all receipt items where the category is "Uncategorized".
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [description, total, itemCode]
+            default: description
+          description: Column to sort by.
+        - name: sortDirection
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          description: Sort direction.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-based).
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of items per page.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UncategorizedItemsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
   # ──────────────────────────────────────────────
   # Dashboard
   # ──────────────────────────────────────────────
@@ -3025,6 +3460,254 @@ components:
         difference:
           type: number
           format: double
+
+    SpendingByLocationResponse:
+      type: object
+      required: [totalCount, grandTotal, items]
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        grandTotal:
+          type: number
+          format: double
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpendingByLocationItem"
+
+    SpendingByLocationItem:
+      type: object
+      required: [location, visits, total, averagePerVisit]
+      properties:
+        location:
+          type: string
+        visits:
+          type: integer
+          format: int32
+        total:
+          type: number
+          format: double
+        averagePerVisit:
+          type: number
+          format: double
+
+
+    ItemSimilarityResponse:
+      type: object
+      required: [totalCount, groups]
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+          description: Total number of similarity groups.
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemSimilarityGroup"
+
+    ItemSimilarityGroup:
+      type: object
+      required: [canonicalName, variants, itemIds, occurrences, maxSimilarity]
+      properties:
+        canonicalName:
+          type: string
+          description: Most frequent description in the cluster (ties broken by longest).
+        variants:
+          type: array
+          items:
+            type: string
+          description: All unique descriptions in the cluster.
+        itemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: IDs of all receipt items in this cluster.
+        occurrences:
+          type: integer
+          format: int32
+          description: Number of receipt items in this cluster.
+        maxSimilarity:
+          type: number
+          format: double
+          description: Highest pairwise similarity score within this cluster.
+
+    ItemSimilarityRenameRequest:
+      type: object
+      required: [itemIds, newDescription]
+      properties:
+        itemIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: IDs of receipt items to rename.
+        newDescription:
+          type: string
+          description: The new description to apply to all items.
+
+    ItemSimilarityRenameResponse:
+      type: object
+      required: [updatedCount]
+      properties:
+        updatedCount:
+          type: integer
+          format: int32
+          description: Number of items updated.
+
+    ItemDescriptionsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemDescriptionItem"
+
+    ItemDescriptionItem:
+      type: object
+      required: [description, category, occurrences]
+      properties:
+        description:
+          type: string
+        category:
+          type: string
+        occurrences:
+          type: integer
+          format: int32
+
+    ItemCostOverTimeResponse:
+      type: object
+      required: [buckets]
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemCostBucket"
+
+    ItemCostBucket:
+      type: object
+      required: [period, amount]
+      properties:
+        period:
+          type: string
+        amount:
+          type: number
+          format: double
+
+    DuplicatesResponse:
+      type: object
+      required: [groupCount, totalDuplicateReceipts, groups]
+      properties:
+        groupCount:
+          type: integer
+          format: int32
+        totalDuplicateReceipts:
+          type: integer
+          format: int32
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/DuplicateGroup"
+
+    DuplicateGroup:
+      type: object
+      required: [matchKey, receipts]
+      properties:
+        matchKey:
+          type: string
+          description: Human-readable description of what these receipts have in common.
+        receipts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DuplicateReceipt"
+
+    DuplicateReceipt:
+      type: object
+      required: [receiptId, location, date, transactionTotal]
+      properties:
+        receiptId:
+          type: string
+          format: uuid
+        location:
+          type: string
+        date:
+          type: string
+          format: date
+        transactionTotal:
+          type: number
+          format: double
+
+    CategoryTrendsResponse:
+      type: object
+      required: [categories, buckets]
+      properties:
+        categories:
+          type: array
+          items:
+            type: string
+          description: Ordered list of category names. The amounts array in each bucket parallels this list.
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryTrendsBucket"
+
+    CategoryTrendsBucket:
+      type: object
+      required: [period, amounts]
+      properties:
+        period:
+          type: string
+          description: Time period label (e.g. "2024-01", "2024 Q1", "2024").
+        amounts:
+          type: array
+          items:
+            type: number
+            format: double
+          description: Spending amounts parallel to the categories array. Zero-filled for missing data.
+
+    UncategorizedItemsResponse:
+      type: object
+      required: [totalCount, items]
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UncategorizedItem"
+
+    UncategorizedItem:
+      type: object
+      required: [id, receiptId, description, quantity, unitPrice, totalAmount, category, pricingMode]
+      properties:
+        id:
+          type: string
+          format: uuid
+        receiptId:
+          type: string
+          format: uuid
+        receiptItemCode:
+          type: ["string", "null"]
+        description:
+          type: string
+        quantity:
+          type: number
+          format: double
+        unitPrice:
+          type: number
+          format: double
+        totalAmount:
+          type: number
+          format: double
+        category:
+          type: string
+        subcategory:
+          type: ["string", "null"]
+        pricingMode:
+          type: string
 
     # ── Dashboard ──────────────────────────────────
 
