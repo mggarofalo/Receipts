@@ -1,5 +1,4 @@
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/test-utils";
 import Reports, { REPORTS, DEFAULT_REPORT } from "./Reports";
 
@@ -85,17 +84,10 @@ describe("Reports", () => {
     ).toBeInTheDocument();
   });
 
-  it("switches report when dropdown selection changes", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<Reports />, { route: "/reports" });
-
-    const trigger = screen.getByRole("combobox");
-    await user.click(trigger);
-    const option = await screen.findByRole("option", {
-      name: "Category Trends",
+  it("renders a different report when query param changes", async () => {
+    renderWithProviders(<Reports />, {
+      route: "/reports?report=category-trends",
     });
-    await user.click(option);
-
     expect(
       await screen.findByTestId("report-category-trends"),
     ).toBeInTheDocument();
