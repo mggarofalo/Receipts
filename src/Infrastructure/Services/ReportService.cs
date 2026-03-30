@@ -191,9 +191,9 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 			{
 				edges.Add(new DescriptionSimilarityEdge(
 					reader.GetString(0),
-					reader.GetInt32(1),
+					(int)reader.GetInt64(1),
 					reader.GetString(2),
-					reader.GetInt32(3),
+					(int)reader.GetInt64(3),
 					reader.GetDouble(4)));
 			}
 		}

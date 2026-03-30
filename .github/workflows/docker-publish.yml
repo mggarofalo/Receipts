@@ -80,8 +80,9 @@ jobs:
           build-args: |
             VITE_APP_VERSION=${{ github.ref_name }}
             VITE_COMMIT_HASH=${{ github.sha }}
-            VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            VITE_SENTRY_DSN=${{ secrets.SENTRY_FRONTEND_DSN }}
             VITE_SENTRY_ENVIRONMENT=production
+            SENTRY_BACKEND_DSN=${{ secrets.SENTRY_BACKEND_DSN }}
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
             SENTRY_ORG=${{ secrets.SENTRY_ORG }}
             SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
