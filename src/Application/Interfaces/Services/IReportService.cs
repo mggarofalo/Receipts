@@ -59,4 +59,11 @@ public interface IReportService
 		string granularity,
 		int topN,
 		CancellationToken cancellationToken);
+
+	Task<UncategorizedItemsResult> GetUncategorizedItemsAsync(
+		string sortBy,
+		string sortDirection,
+		int page,
+		int pageSize,
+		CancellationToken cancellationToken);
 }
