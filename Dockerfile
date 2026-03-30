@@ -96,6 +96,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gosu curl && \
     rm -rf /var/lib/apt/lists/*
 
+ARG SENTRY_BACKEND_DSN=
+ENV SENTRY_BACKEND_DSN=${SENTRY_BACKEND_DSN}
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:8080
 
