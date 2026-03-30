@@ -66,7 +66,21 @@ public class ImageProcessingServiceTests
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
-			.WithMessage("*not a valid image*");
+			.WithMessage("*not a supported image format*");
+	}
+
+	[Fact]
+	public async Task PreprocessAsync_GifMasqueradingAsJpeg_ThrowsInvalidOperationException()
+	{
+		// Arrange - GIF magic bytes with JPEG content type
+		byte[] gifBytes = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]; // GIF89a
+
+		// Act
+		Func<Task> act = () => _service.PreprocessAsync(gifBytes, "image/jpeg", CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*not a supported image format*");
 	}
 
 	[Fact]

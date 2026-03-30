@@ -30,10 +30,10 @@ public partial class AddImagePathsToReceipts : Migration
 	{
 		migrationBuilder.DropColumn(
 			name: "OriginalImagePath",
-			table: "ReceiptEntity");
+			table: "Receipts");
 
 		migrationBuilder.DropColumn(
 			name: "ProcessedImagePath",
-			table: "ReceiptEntity");
+			table: "Receipts");
 	}
 }

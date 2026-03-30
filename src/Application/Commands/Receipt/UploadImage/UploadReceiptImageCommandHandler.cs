@@ -25,6 +25,9 @@ public class UploadReceiptImageCommandHandler(
 		string processedPath = await imageStorageService.SaveProcessedAsync(
 			request.ReceiptId, processed.ProcessedBytes, cancellationToken);
 
+		await receiptService.UpdateImagePathsAsync(
+			request.ReceiptId, originalPath, processedPath, cancellationToken);
+
 		return new UploadReceiptImageResult(originalPath, processedPath);
 	}
 }

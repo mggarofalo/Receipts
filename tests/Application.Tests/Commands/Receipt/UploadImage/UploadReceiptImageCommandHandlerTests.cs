@@ -37,7 +37,7 @@ public class UploadReceiptImageCommandHandlerTests
 
 		_mockStorageService
 			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync("/storage/original.jpg");
+			.ReturnsAsync($"{receiptId}/original.jpg");
 
 		ImageProcessingResult processingResult = new([0x89, 0x50, 0x4E, 0x47], 100, 200);
 		_mockProcessingService
@@ -46,14 +46,18 @@ public class UploadReceiptImageCommandHandlerTests
 
 		_mockStorageService
 			.Setup(s => s.SaveProcessedAsync(receiptId, processingResult.ProcessedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync("/storage/processed.png");
+			.ReturnsAsync($"{receiptId}/processed.png");
 
 		// Act
 		UploadReceiptImageResult result = await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		result.OriginalImagePath.Should().Be("/storage/original.jpg");
-		result.ProcessedImagePath.Should().Be("/storage/processed.png");
+		result.OriginalImagePath.Should().Be($"{receiptId}/original.jpg");
+		result.ProcessedImagePath.Should().Be($"{receiptId}/processed.png");
+
+		_mockReceiptService.Verify(
+			s => s.UpdateImagePathsAsync(receiptId, $"{receiptId}/original.jpg", $"{receiptId}/processed.png", It.IsAny<CancellationToken>()),
+			Times.Once);
 	}
 
 	[Fact]
@@ -89,7 +93,7 @@ public class UploadReceiptImageCommandHandlerTests
 
 		_mockStorageService
 			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".png", It.IsAny<CancellationToken>()))
-			.ReturnsAsync("/path/original.png");
+			.ReturnsAsync($"{receiptId}/original.png");
 
 		ImageProcessingResult processingResult = new([0x01], 50, 50);
 		_mockProcessingService
@@ -98,7 +102,7 @@ public class UploadReceiptImageCommandHandlerTests
 
 		_mockStorageService
 			.Setup(s => s.SaveProcessedAsync(receiptId, processingResult.ProcessedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync("/path/processed.png");
+			.ReturnsAsync($"{receiptId}/processed.png");
 
 		// Act
 		await _handler.Handle(command, CancellationToken.None);
@@ -108,5 +112,8 @@ public class UploadReceiptImageCommandHandlerTests
 		_mockStorageService.Verify(s => s.SaveOriginalAsync(receiptId, imageBytes, ".png", It.IsAny<CancellationToken>()), Times.Once);
 		_mockProcessingService.Verify(s => s.PreprocessAsync(imageBytes, "image/png", It.IsAny<CancellationToken>()), Times.Once);
 		_mockStorageService.Verify(s => s.SaveProcessedAsync(receiptId, processingResult.ProcessedBytes, It.IsAny<CancellationToken>()), Times.Once);
+		_mockReceiptService.Verify(
+			s => s.UpdateImagePathsAsync(receiptId, $"{receiptId}/original.png", $"{receiptId}/processed.png", It.IsAny<CancellationToken>()),
+			Times.Once);
 	}
 }

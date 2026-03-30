@@ -1,7 +1,10 @@
 using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Memory;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
@@ -13,15 +16,69 @@ public class ImageProcessingService(ILogger<ImageProcessingService> logger) : II
 	private const double DeskewMaxAngle = 10.0;
 	private const double DeskewStepDegrees = 0.5;
 	private const double DeskewMinAngle = 0.5;
+	private const int MaxPixelWidth = 10_000;
+	private const int MaxPixelHeight = 10_000;
+
+	// 256 MB upper bound for ImageSharp memory allocations
+	private const int MemoryBudgetMegabytes = 256;
+
+	private static readonly HashSet<Type> AllowedFormatTypes =
+	[
+		typeof(JpegFormat),
+		typeof(PngFormat),
+	];
+
+	private static readonly Configuration BoundedConfiguration = CreateBoundedConfiguration();
+
+	private static Configuration CreateBoundedConfiguration()
+	{
+		Configuration config = Configuration.Default.Clone();
+		config.MemoryAllocator = MemoryAllocator.Create(new MemoryAllocatorOptions
+		{
+			MaximumPoolSizeMegabytes = MemoryBudgetMegabytes,
+		});
+		return config;
+	}
 
 	public Task<ImageProcessingResult> PreprocessAsync(byte[] imageBytes, string contentType, CancellationToken ct)
 	{
 		ct.ThrowIfCancellationRequested();
 
+		// Validate actual image format via magic bytes, not Content-Type header
+		IImageFormat? detectedFormat;
+		try
+		{
+			detectedFormat = Image.DetectFormat(imageBytes);
+		}
+		catch (UnknownImageFormatException)
+		{
+			detectedFormat = null;
+		}
+
+		if (detectedFormat is null || !AllowedFormatTypes.Contains(detectedFormat.GetType()))
+		{
+			throw new InvalidOperationException(
+				"The uploaded file is not a supported image format. Only JPEG and PNG are accepted.");
+		}
+
+		// Check image dimensions before full decode to reject oversized images cheaply
+		ImageInfo info = Image.Identify(imageBytes);
+		if (info.Width > MaxPixelWidth || info.Height > MaxPixelHeight)
+		{
+			throw new InvalidOperationException(
+				$"Image dimensions ({info.Width}x{info.Height}) exceed the maximum allowed ({MaxPixelWidth}x{MaxPixelHeight}).");
+		}
+
+		DecoderOptions decoderOptions = new()
+		{
+			Configuration = BoundedConfiguration,
+			MaxFrames = 1,
+		};
+
 		Image<L8> image;
 		try
 		{
-			image = Image.Load<L8>(imageBytes);
+			image = Image.Load<L8>(decoderOptions, imageBytes);
 		}
 		catch (Exception ex)
 		{

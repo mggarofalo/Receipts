@@ -20,7 +20,8 @@ public class LocalImageStorageService(IConfiguration configuration) : IImageStor
 
 		await File.WriteAllBytesAsync(filePath, imageBytes, ct);
 
-		return filePath;
+		// Return relative path (receiptId/filename) instead of absolute filesystem path
+		return Path.Combine(receiptId.ToString(), fileName);
 	}
 
 	public async Task<string> SaveProcessedAsync(Guid receiptId, byte[] processedBytes, CancellationToken ct)
@@ -32,7 +33,8 @@ public class LocalImageStorageService(IConfiguration configuration) : IImageStor
 
 		await File.WriteAllBytesAsync(filePath, processedBytes, ct);
 
-		return filePath;
+		// Return relative path (receiptId/filename) instead of absolute filesystem path
+		return Path.Combine(receiptId.ToString(), "processed.png");
 	}
 
 	public string GetImagePath(Guid receiptId, string fileName)
