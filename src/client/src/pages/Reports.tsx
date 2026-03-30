@@ -1,7 +1,13 @@
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ReportConfig {
@@ -68,29 +74,33 @@ function Reports() {
 
   usePageTitle(`Reports - ${activeReport.name}`);
 
-  function handleTabChange(slug: string) {
-    setSearchParams({ report: slug }, { replace: true });
-  }
+  const handleReportChange = useCallback(
+    (slug: string) => {
+      setSearchParams({ report: slug }, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
-      <Tabs value={activeSlug} onValueChange={handleTabChange}>
-        <TabsList className="flex-wrap">
-          {REPORTS.map((report) => (
-            <TabsTrigger key={report.slug} value={report.slug}>
-              {report.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {REPORTS.map((report) => (
-          <TabsContent key={report.slug} value={report.slug}>
-            <Suspense fallback={<ReportFallback />}>
-              <report.component />
-            </Suspense>
-          </TabsContent>
-        ))}
-      </Tabs>
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
+        <Select value={activeSlug} onValueChange={handleReportChange}>
+          <SelectTrigger className="w-[220px]" aria-label="Select report">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {REPORTS.map((report) => (
+              <SelectItem key={report.slug} value={report.slug}>
+                {report.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Suspense fallback={<ReportFallback />}>
+        <activeReport.component />
+      </Suspense>
     </div>
   );
 }
