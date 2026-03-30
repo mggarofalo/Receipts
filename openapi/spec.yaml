@@ -1296,6 +1296,47 @@ paths:
         "404":
           description: Not Found
 
+  /api/receipts/scan:
+    post:
+      operationId: ScanReceipt
+      tags: [Receipts]
+      summary: Scan a receipt image and return a proposed receipt
+      description: >
+        Accepts a JPEG or PNG image, runs preprocessing, OCR, and parsing,
+        then returns a proposed receipt with per-field confidence scores.
+        The proposal is NOT persisted — it is a transient suggestion for review.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  $ref: "#/components/schemas/IFormFile"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposedReceiptResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+        "422":
+          description: Unprocessable Entity — image could not be read or OCR returned no text
+          content:
+            application/json:
+              schema:
+                type: string
+
   /api/receipts/complete:
     post:
       operationId: CreateCompleteReceipt
@@ -4472,6 +4513,135 @@ components:
           type: string
         processedImagePath:
           type: string
+
+    ConfidenceLevel:
+      type: string
+      enum: [low, medium, high]
+
+    ProposedReceiptResponse:
+      type: object
+      required:
+        - storeNameConfidence
+        - dateConfidence
+        - items
+        - subtotalConfidence
+        - taxLines
+        - totalConfidence
+        - paymentMethodConfidence
+        - rawOcrText
+        - ocrConfidence
+      properties:
+        storeName:
+          type:
+            - string
+            - "null"
+        storeNameConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        date:
+          type:
+            - string
+            - "null"
+          format: date
+        dateConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProposedReceiptItemResponse"
+        subtotal:
+          type:
+            - number
+            - "null"
+          format: double
+        subtotalConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        taxLines:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProposedTaxLineResponse"
+        total:
+          type:
+            - number
+            - "null"
+          format: double
+        totalConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        paymentMethod:
+          type:
+            - string
+            - "null"
+        paymentMethodConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        rawOcrText:
+          type: string
+        ocrConfidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    ProposedReceiptItemResponse:
+      type: object
+      required:
+        - codeConfidence
+        - descriptionConfidence
+        - quantityConfidence
+        - unitPriceConfidence
+        - totalPriceConfidence
+      properties:
+        code:
+          type:
+            - string
+            - "null"
+        codeConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        description:
+          type:
+            - string
+            - "null"
+        descriptionConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        quantity:
+          type:
+            - number
+            - "null"
+          format: double
+        quantityConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        unitPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        unitPriceConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        totalPrice:
+          type:
+            - number
+            - "null"
+          format: double
+        totalPriceConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+
+    ProposedTaxLineResponse:
+      type: object
+      required:
+        - labelConfidence
+        - amountConfidence
+      properties:
+        label:
+          type:
+            - string
+            - "null"
+        labelConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        amount:
+          type:
+            - number
+            - "null"
+          format: double
+        amountConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
 
     CreateCompleteReceiptRequest:
       type: object
