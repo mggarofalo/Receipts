@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/test-utils";
 import Reports, { REPORTS, DEFAULT_REPORT } from "./Reports";
@@ -55,14 +55,9 @@ describe("Reports", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders all report tabs", () => {
+  it("renders the report selector dropdown", () => {
     renderWithProviders(<Reports />, { route: "/reports" });
-    const tablist = screen.getByRole("tablist");
-    for (const report of REPORTS) {
-      expect(
-        within(tablist).getByRole("tab", { name: report.name }),
-      ).toBeInTheDocument();
-    }
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 
   it("defaults to the first report when no query param", async () => {
@@ -90,11 +85,16 @@ describe("Reports", () => {
     ).toBeInTheDocument();
   });
 
-  it("switches report when a tab is clicked", async () => {
+  it("switches report when dropdown selection changes", async () => {
     const user = userEvent.setup();
     renderWithProviders(<Reports />, { route: "/reports" });
 
-    await user.click(screen.getByRole("tab", { name: "Category Trends" }));
+    const trigger = screen.getByRole("combobox");
+    await user.click(trigger);
+    const option = await screen.findByRole("option", {
+      name: "Category Trends",
+    });
+    await user.click(option);
 
     expect(
       await screen.findByTestId("report-category-trends"),
@@ -117,19 +117,5 @@ describe("Reports", () => {
 
   it("exports DEFAULT_REPORT as out-of-balance", () => {
     expect(DEFAULT_REPORT).toBe("out-of-balance");
-  });
-
-  it("has the default tab marked as selected", () => {
-    renderWithProviders(<Reports />, { route: "/reports" });
-    const tab = screen.getByRole("tab", { name: "Out of Balance" });
-    expect(tab).toHaveAttribute("data-state", "active");
-  });
-
-  it("marks the correct tab as selected from query param", () => {
-    renderWithProviders(<Reports />, {
-      route: "/reports?report=spending-by-location",
-    });
-    const tab = screen.getByRole("tab", { name: "Spending by Location" });
-    expect(tab).toHaveAttribute("data-state", "active");
   });
 });
