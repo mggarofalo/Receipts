@@ -88,6 +88,15 @@ vi.mock("@/lib/format", async (importOriginal) => {
   };
 });
 
+vi.mock("@/hooks/useReceiptItemSuggestions", () => ({
+  useReceiptItemSuggestions: vi.fn(() => ({
+    data: undefined,
+    isFetching: false,
+    isSuccess: false,
+    isLoading: false,
+  })),
+}));
+
 describe("ReceiptItemForm", () => {
   const defaultProps = {
     mode: "create" as const,
@@ -133,8 +142,8 @@ describe("ReceiptItemForm", () => {
       />,
     );
 
-    // Item Code is a Combobox; it shows the value as text content
-    expect(screen.getByLabelText("Item Code")).toHaveTextContent("ITM-001");
+    // Item Code is now an Input; check its value
+    expect(screen.getByPlaceholderText("Enter item code...")).toHaveValue("ITM-001");
     expect(screen.getByRole("button", { name: /update item/i })).toBeInTheDocument();
   });
 
@@ -320,7 +329,7 @@ describe("ReceiptItemForm", () => {
     expect(storedItemCodes).toContain("ITM-001");
   });
 
-  it("shows saved item codes in the item code Combobox dropdown", async () => {
+  it("shows saved item codes in the item code autocomplete dropdown", async () => {
     const user = userEvent.setup();
     localStorage.setItem(
       "receipts:item-code-history",
@@ -329,9 +338,10 @@ describe("ReceiptItemForm", () => {
 
     render(<ReceiptItemForm {...defaultProps} />);
 
-    // The Item Code field is a Combobox; click its trigger to open
-    const itemCodeCombobox = screen.getByLabelText("Item Code");
-    await user.click(itemCodeCombobox);
+    // The Item Code field is now an Input with autocomplete popover;
+    // type a partial match to trigger the dropdown
+    const itemCodeInput = screen.getByPlaceholderText("Enter item code...");
+    await user.type(itemCodeInput, "ITM");
 
     await waitFor(() => {
       expect(screen.getByText("ITM-001")).toBeInTheDocument();

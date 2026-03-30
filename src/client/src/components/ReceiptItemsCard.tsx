@@ -54,12 +54,14 @@ interface ReceiptItemsCardProps {
   receiptId: string;
   items: ReceiptItem[];
   subtotal: number;
+  location?: string | null;
 }
 
 export function ReceiptItemsCard({
   receiptId,
   items,
   subtotal,
+  location,
 }: ReceiptItemsCardProps) {
   const queryClient = useQueryClient();
   const createReceiptItem = useCreateReceiptItem();
@@ -278,6 +280,7 @@ export function ReceiptItemsCard({
             serverErrors={serverErrors}
             onCancel={() => setCreateOpen(false)}
             onSubmit={handleCreate}
+            location={location}
           />
         </DialogContent>
       </Dialog>
@@ -309,6 +312,7 @@ export function ReceiptItemsCard({
               serverErrors={serverErrors}
               onCancel={() => setEditItem(null)}
               onSubmit={handleUpdate}
+              location={location}
             />
           )}
         </DialogContent>

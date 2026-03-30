@@ -43,6 +43,16 @@ vi.mock("@/hooks/useSimilarItems", () => ({
   ),
 }));
 
+vi.mock("@/hooks/useReceiptItemSuggestions", () => ({
+  useReceiptItemSuggestions: vi.fn(() =>
+    mockQueryResult({
+      data: undefined,
+      isFetching: false,
+      isSuccess: false,
+    }),
+  ),
+}));
+
 describe("LineItemsSection", () => {
   const defaultProps = {
     items: [] as ReceiptLineItem[],
