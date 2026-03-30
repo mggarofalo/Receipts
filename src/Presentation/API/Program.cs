@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using API.Configuration;
 using API.Hubs;
 using API.Middleware;
@@ -7,11 +8,21 @@ using Application.Services;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Sentry;
 
 // Create builder
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.AddApplicationConfiguration();
+
+// Configure Sentry error tracking (disabled when SENTRY_DSN is empty/missing)
+builder.WebHost.UseSentry(o =>
+{
+	o.Dsn = builder.Configuration["SENTRY_DSN"] ?? "";
+	o.Environment = builder.Environment.EnvironmentName;
+	o.TracesSampleRate = 0.1;
+	o.SendDefaultPii = false;
+});
 
 // Persist DataProtection keys to the /data volume so they survive container restarts
 builder.Services.AddDataProtection()
@@ -42,8 +53,26 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseOpenApiServices()
    .UseApplicationServices()
+   .UseSentryTracing()
    .UseCorsServices()
    .UseAuthServices();
+
+// Attach authenticated user context to Sentry scope for error attribution
+app.Use(async (context, next) =>
+{
+	if (context.User.Identity?.IsAuthenticated == true)
+	{
+		SentrySdk.ConfigureScope(scope =>
+		{
+			scope.User = new SentryUser
+			{
+				Id = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+				Email = context.User.FindFirst(ClaimTypes.Email)?.Value,
+			};
+		});
+	}
+	await next();
+});
 
 // Serve SPA static files in production (Vite dev server handles this in development)
 if (!app.Environment.IsDevelopment())
