@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Infrastructure.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Models\AllMiniLmL6V2\model.onnx" Condition="Exists('Models\AllMiniLmL6V2\model.onnx')" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Models\AllMiniLmL6V2\vocab.txt" Condition="Exists('Models\AllMiniLmL6V2\vocab.txt')" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
@@ -26,6 +30,7 @@
     <PackageReference Include="Pgvector" />
     <PackageReference Include="Pgvector.EntityFrameworkCore" />
     <PackageReference Include="Riok.Mapperly" />
+    <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

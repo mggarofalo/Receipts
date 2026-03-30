@@ -15,6 +15,8 @@ public partial class ReceiptMapper
 	[MapperIgnoreTarget(nameof(ReceiptEntity.DeletedByUserId))]
 	[MapperIgnoreTarget(nameof(ReceiptEntity.DeletedByApiKeyId))]
 	[MapperIgnoreTarget(nameof(ReceiptEntity.CascadeDeletedByParentId))]
+	[MapperIgnoreTarget(nameof(ReceiptEntity.OriginalImagePath))]
+	[MapperIgnoreTarget(nameof(ReceiptEntity.ProcessedImagePath))]
 	public partial ReceiptEntity ToEntity(Receipt source);
 
 	private Money MapTaxAmount(decimal amount, Currency currency) => new(amount, currency);
@@ -24,5 +26,7 @@ public partial class ReceiptMapper
 	[MapperIgnoreSource(nameof(ReceiptEntity.DeletedByUserId))]
 	[MapperIgnoreSource(nameof(ReceiptEntity.DeletedByApiKeyId))]
 	[MapperIgnoreSource(nameof(ReceiptEntity.CascadeDeletedByParentId))]
+	[MapperIgnoreSource(nameof(ReceiptEntity.OriginalImagePath))]
+	[MapperIgnoreSource(nameof(ReceiptEntity.ProcessedImagePath))]
 	public partial Receipt ToDomain(ReceiptEntity source);
 }

@@ -138,7 +138,9 @@ public static class InfrastructureService
 			.AddScoped<IUserService, UserService>()
 			.AddScoped<ITrashService, TrashService>()
 			.AddScoped<IDashboardService, DashboardService>()
-			.AddScoped<IReportService, ReportService>();
+			.AddScoped<IReportService, ReportService>()
+			.AddScoped<IImageStorageService, LocalImageStorageService>()
+			.AddScoped<IImageProcessingService, ImageProcessingService>();
 
 		// Embedding services (local ONNX model — always available)
 		services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
