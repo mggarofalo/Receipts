@@ -18,7 +18,7 @@ builder.AddApplicationConfiguration();
 // Configure Sentry error tracking (disabled when SENTRY_DSN is empty/missing)
 builder.WebHost.UseSentry(o =>
 {
-	o.Dsn = builder.Configuration["SENTRY_DSN"] ?? "";
+	o.Dsn = builder.Configuration["SENTRY_BACKEND_DSN"] ?? builder.Configuration["SENTRY_DSN"] ?? "";
 	o.Environment = builder.Environment.EnvironmentName;
 	o.TracesSampleRate = 0.1;
 	o.SendDefaultPii = false;

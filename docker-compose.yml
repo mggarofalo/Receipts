@@ -108,6 +108,7 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - OTEL_SERVICE_NAME=receipts-api
       - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_BACKEND_DSN=${SENTRY_BACKEND_DSN:-}
     depends_on:
       db:
         condition: service_healthy
