@@ -451,4 +451,202 @@ public class ReportServiceTests
 
 		contextFactory.ResetDatabase();
 	}
+
+	[Fact]
+	public async Task GetItemDescriptionsAsync_ReturnsMatchingItems()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Receipts.Add(
+				new ReceiptEntity { Id = receiptId, Location = "Store", Date = new DateOnly(2025, 3, 1), TaxAmount = 0m });
+
+			context.ReceiptItems.AddRange(
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Milk", Quantity = 1, UnitPrice = 3.00m, TotalAmount = 3.00m, Category = "Dairy" },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Milk", Quantity = 1, UnitPrice = 3.50m, TotalAmount = 3.50m, Category = "Dairy" },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Bread", Quantity = 1, UnitPrice = 2.00m, TotalAmount = 2.00m, Category = "Bakery" });
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		ItemDescriptionResult result = await service.GetItemDescriptionsAsync("milk", false, 10, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().ContainSingle();
+		result.Items[0].Description.Should().Be("Milk");
+		result.Items[0].Category.Should().Be("Dairy");
+		result.Items[0].Occurrences.Should().Be(2);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetItemDescriptionsAsync_CategoryOnlyMode_ReturnsCategories()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Receipts.Add(
+				new ReceiptEntity { Id = receiptId, Location = "Store", Date = new DateOnly(2025, 3, 1), TaxAmount = 0m });
+
+			context.ReceiptItems.AddRange(
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Milk", Quantity = 1, UnitPrice = 3.00m, TotalAmount = 3.00m, Category = "Dairy" },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Cheese", Quantity = 1, UnitPrice = 5.00m, TotalAmount = 5.00m, Category = "Dairy" },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Bread", Quantity = 1, UnitPrice = 2.00m, TotalAmount = 2.00m, Category = "Bakery" });
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		ItemDescriptionResult result = await service.GetItemDescriptionsAsync("dairy", true, 10, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().ContainSingle();
+		result.Items[0].Description.Should().Be("Dairy");
+		result.Items[0].Category.Should().Be("Dairy");
+		result.Items[0].Occurrences.Should().Be(2);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetItemDescriptionsAsync_ExcludesSoftDeletedItems()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Receipts.Add(
+				new ReceiptEntity { Id = receiptId, Location = "Store", Date = new DateOnly(2025, 3, 1), TaxAmount = 0m });
+
+			context.ReceiptItems.AddRange(
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Milk", Quantity = 1, UnitPrice = 3.00m, TotalAmount = 3.00m, Category = "Dairy" },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Milk", Quantity = 1, UnitPrice = 3.00m, TotalAmount = 3.00m, Category = "Dairy", DeletedAt = DateTimeOffset.UtcNow });
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		ItemDescriptionResult result = await service.GetItemDescriptionsAsync("milk", false, 10, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().ContainSingle();
+		result.Items[0].Occurrences.Should().Be(1);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetItemDescriptionsAsync_RespectsLimit()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Receipts.Add(
+				new ReceiptEntity { Id = receiptId, Location = "Store", Date = new DateOnly(2025, 3, 1), TaxAmount = 0m });
+
+			context.ReceiptItems.AddRange(
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Item A", Quantity = 1, UnitPrice = 1.00m, TotalAmount = 1.00m, Category = "Cat1" },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Item B", Quantity = 1, UnitPrice = 2.00m, TotalAmount = 2.00m, Category = "Cat2" },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Item C", Quantity = 1, UnitPrice = 3.00m, TotalAmount = 3.00m, Category = "Cat3" });
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		ItemDescriptionResult result = await service.GetItemDescriptionsAsync("item", false, 2, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().HaveCount(2);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetItemDescriptionsAsync_NoMatch_ReturnsEmpty()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Receipts.Add(
+				new ReceiptEntity { Id = receiptId, Location = "Store", Date = new DateOnly(2025, 3, 1), TaxAmount = 0m });
+
+			context.ReceiptItems.Add(
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Milk", Quantity = 1, UnitPrice = 3.00m, TotalAmount = 3.00m, Category = "Dairy" });
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		ItemDescriptionResult result = await service.GetItemDescriptionsAsync("xyz", false, 10, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().BeEmpty();
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetItemDescriptionsAsync_GroupsByDescriptionAndCategory()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Receipts.Add(
+				new ReceiptEntity { Id = receiptId, Location = "Store", Date = new DateOnly(2025, 3, 1), TaxAmount = 0m });
+
+			// Same description, different categories => separate groups
+			context.ReceiptItems.AddRange(
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Milk", Quantity = 1, UnitPrice = 3.00m, TotalAmount = 3.00m, Category = "Dairy" },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = receiptId, Description = "Milk", Quantity = 1, UnitPrice = 4.00m, TotalAmount = 4.00m, Category = "Beverages" });
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		ItemDescriptionResult result = await service.GetItemDescriptionsAsync("milk", false, 10, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().HaveCount(2);
+		result.Items.Should().Contain(x => x.Category == "Dairy");
+		result.Items.Should().Contain(x => x.Category == "Beverages");
+
+		contextFactory.ResetDatabase();
+	}
 }
