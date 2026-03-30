@@ -577,5 +577,122 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 
 	private sealed record ReceiptSnapshot(Guid Id, string Location, DateOnly Date, decimal TransactionTotal);
 
+	public async Task<CategoryTrendsResult> GetCategoryTrendsAsync(
+		DateOnly startDate,
+		DateOnly endDate,
+		string granularity,
+		int topN,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		// Join receipt items with receipts for date filtering
+		var itemsInRange = context.ReceiptItems
+			.AsNoTracking()
+			.Where(ri => ri.DeletedAt == null)
+			.Join(
+				context.Receipts.AsNoTracking().Where(r => r.DeletedAt == null && r.Date >= startDate && r.Date <= endDate),
+				ri => ri.ReceiptId,
+				r => r.Id,
+				(ri, r) => new { ri.Category, ri.TotalAmount, r.Date });
+
+		// Materialize for in-memory grouping (bounded by item count in date range)
+		var materialized = await itemsInRange.ToListAsync(cancellationToken);
+
+		if (materialized.Count == 0)
+		{
+			return new CategoryTrendsResult([], []);
+		}
+
+		// Find top-N categories by total spending
+		var categoryTotals = materialized
+			.GroupBy(x => x.Category)
+			.Select(g => new { Category = g.Key, Total = g.Sum(x => x.TotalAmount) })
+			.OrderByDescending(x => x.Total)
+			.ToList();
+
+		HashSet<string> topCategories = categoryTotals
+			.Take(topN)
+			.Select(x => x.Category)
+			.ToHashSet();
+
+		bool hasOther = categoryTotals.Count > topN;
+
+		// Build ordered category list
+		List<string> categories = categoryTotals
+			.Take(topN)
+			.Select(x => x.Category)
+			.ToList();
+
+		if (hasOther)
+		{
+			categories.Add("Other");
+		}
+
+		// Map items to resolved category (top-N or "Other")
+		var resolvedItems = materialized.Select(x => new
+		{
+			Category = topCategories.Contains(x.Category) ? x.Category : "Other",
+			x.TotalAmount,
+			x.Date
+		});
+
+		// Generate all periods in range
+		List<string> allPeriods = GeneratePeriods(startDate, endDate, granularity);
+
+		// Group by period and category
+		var grouped = resolvedItems
+			.GroupBy(x => new { Period = FormatPeriod(x.Date, granularity), x.Category })
+			.ToDictionary(g => (g.Key.Period, g.Key.Category), g => g.Sum(x => x.TotalAmount));
+
+		// Build dense zero-filled buckets
+		List<CategoryTrendsBucketResult> buckets = allPeriods.Select(period =>
+		{
+			List<decimal> amounts = categories.Select(cat =>
+				grouped.TryGetValue((period, cat), out decimal amount) ? amount : 0m
+			).ToList();
+			return new CategoryTrendsBucketResult(period, amounts);
+		}).ToList();
+
+		return new CategoryTrendsResult(categories, buckets);
+	}
+
+	private static string FormatPeriod(DateOnly date, string granularity)
+	{
+		return granularity.ToLowerInvariant() switch
+		{
+			"daily" => date.ToString("yyyy-MM-dd"),
+			"quarterly" => $"{date.Year} Q{(date.Month - 1) / 3 + 1}",
+			"yearly" => date.Year.ToString(),
+			_ => $"{date.Year}-{date.Month:D2}" // monthly
+		};
+	}
+
+	private static List<string> GeneratePeriods(DateOnly start, DateOnly end, string granularity)
+	{
+		List<string> periods = [];
+		DateOnly current = granularity.ToLowerInvariant() switch
+		{
+			"daily" => start,
+			"quarterly" => new DateOnly(start.Year, ((start.Month - 1) / 3) * 3 + 1, 1),
+			"yearly" => new DateOnly(start.Year, 1, 1),
+			_ => new DateOnly(start.Year, start.Month, 1) // monthly
+		};
+
+		while (current <= end)
+		{
+			periods.Add(FormatPeriod(current, granularity));
+			current = granularity.ToLowerInvariant() switch
+			{
+				"daily" => current.AddDays(1),
+				"quarterly" => current.AddMonths(3),
+				"yearly" => current.AddYears(1),
+				_ => current.AddMonths(1) // monthly
+			};
+		}
+
+		return periods;
+	}
+
 	private record SimilarityEdge(Guid IdA, string DescA, Guid IdB, string DescB, double Score);
 }

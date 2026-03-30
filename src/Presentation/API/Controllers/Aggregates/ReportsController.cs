@@ -349,4 +349,49 @@ public class ReportsController(IMediator mediator) : ControllerBase
 			}).ToList()
 		});
 	}
+
+	[HttpGet("category-trends")]
+	[EndpointSummary("Get category spending trends over time")]
+	[EndpointDescription("Returns time-series spending data broken down by category. Categories beyond the topN threshold are collapsed into \"Other\". Buckets are dense and zero-filled.")]
+	public async Task<Results<Ok<CategoryTrendsResponse>, BadRequest<string>>> GetCategoryTrends(
+		[FromQuery] DateOnly? startDate,
+		[FromQuery] DateOnly? endDate,
+		[FromQuery] string? granularity,
+		[FromQuery] int? topN,
+		CancellationToken cancellationToken)
+	{
+		DateOnly start = startDate ?? DateOnly.MinValue;
+		DateOnly end = endDate ?? DateOnly.FromDateTime(DateTime.Today);
+		string gran = granularity ?? "monthly";
+		int top = topN ?? 7;
+
+		if (start > end)
+		{
+			return TypedResults.BadRequest("startDate must be before or equal to endDate");
+		}
+
+		string[] validGranularities = ["daily", "monthly", "quarterly", "yearly"];
+		if (!validGranularities.Contains(gran.ToLowerInvariant()))
+		{
+			return TypedResults.BadRequest($"Invalid granularity '{gran}'. Allowed: daily, monthly, quarterly, yearly");
+		}
+
+		if (top < 1 || top > 50)
+		{
+			return TypedResults.BadRequest("topN must be between 1 and 50");
+		}
+
+		GetCategoryTrendsReportQuery query = new(start, end, gran, top);
+		AppReports.CategoryTrendsResult result = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new CategoryTrendsResponse
+		{
+			Categories = result.Categories,
+			Buckets = result.Buckets.Select(b => new CategoryTrendsBucket
+			{
+				Period = b.Period,
+				Amounts = b.Amounts.Select(a => (double)a).ToList()
+			}).ToList()
+		});
+	}
 }

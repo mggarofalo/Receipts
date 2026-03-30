@@ -420,4 +420,130 @@ public class ReportsControllerTests
 				q.StartDate == start && q.EndDate == end),
 			It.IsAny<CancellationToken>()), Times.Once);
 	}
+
+	// ── CategoryTrends ─────────────────────────────
+
+	[Fact]
+	public async Task GetCategoryTrends_ReturnsOkResult_WithDefaultParameters()
+	{
+		// Arrange
+		AppReports.CategoryTrendsResult trendsResult = new(
+			["Groceries", "Dining"],
+			[new AppReports.CategoryTrendsBucketResult("2025-01", [100.00m, 50.00m])]);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetCategoryTrendsReportQuery>(q =>
+				q.Granularity == "monthly" && q.TopN == 7),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(trendsResult);
+
+		// Act
+		Results<Ok<CategoryTrendsResponse>, BadRequest<string>> result =
+			await _controller.GetCategoryTrends(null, null, null, null, CancellationToken.None);
+
+		// Assert
+		Ok<CategoryTrendsResponse> okResult = Assert.IsType<Ok<CategoryTrendsResponse>>(result.Result);
+		CategoryTrendsResponse response = okResult.Value!;
+		response.Categories.Should().ContainInOrder("Groceries", "Dining");
+		response.Buckets.Should().ContainSingle();
+		response.Buckets.First().Period.Should().Be("2025-01");
+		response.Buckets.First().Amounts.Should().Equal(100.00, 50.00);
+	}
+
+	[Fact]
+	public async Task GetCategoryTrends_ReturnsBadRequest_WhenStartDateAfterEndDate()
+	{
+		// Act
+		Results<Ok<CategoryTrendsResponse>, BadRequest<string>> result =
+			await _controller.GetCategoryTrends(new DateOnly(2025, 12, 31), new DateOnly(2025, 1, 1), null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Contain("startDate must be before or equal to endDate");
+	}
+
+	[Fact]
+	public async Task GetCategoryTrends_ReturnsBadRequest_WhenInvalidGranularity()
+	{
+		// Act
+		Results<Ok<CategoryTrendsResponse>, BadRequest<string>> result =
+			await _controller.GetCategoryTrends(null, null, "invalid", null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Contain("Invalid granularity");
+	}
+
+	[Theory]
+	[InlineData("daily")]
+	[InlineData("monthly")]
+	[InlineData("quarterly")]
+	[InlineData("yearly")]
+	public async Task GetCategoryTrends_AcceptsValidGranularities(string granularity)
+	{
+		// Arrange
+		AppReports.CategoryTrendsResult trendsResult = new([], []);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetCategoryTrendsReportQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(trendsResult);
+
+		// Act
+		Results<Ok<CategoryTrendsResponse>, BadRequest<string>> result =
+			await _controller.GetCategoryTrends(null, null, granularity, null, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<Ok<CategoryTrendsResponse>>(result.Result);
+	}
+
+	[Fact]
+	public async Task GetCategoryTrends_ReturnsBadRequest_WhenTopNTooLow()
+	{
+		// Act
+		Results<Ok<CategoryTrendsResponse>, BadRequest<string>> result =
+			await _controller.GetCategoryTrends(null, null, null, 0, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Contain("topN must be between 1 and 50");
+	}
+
+	[Fact]
+	public async Task GetCategoryTrends_ReturnsBadRequest_WhenTopNTooHigh()
+	{
+		// Act
+		Results<Ok<CategoryTrendsResponse>, BadRequest<string>> result =
+			await _controller.GetCategoryTrends(null, null, null, 51, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Contain("topN must be between 1 and 50");
+	}
+
+	[Fact]
+	public async Task GetCategoryTrends_PassesCustomParameters()
+	{
+		// Arrange
+		DateOnly start = new(2024, 1, 1);
+		DateOnly end = new(2024, 12, 31);
+		AppReports.CategoryTrendsResult trendsResult = new([], []);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetCategoryTrendsReportQuery>(q =>
+				q.StartDate == start && q.EndDate == end && q.Granularity == "quarterly" && q.TopN == 5),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(trendsResult);
+
+		// Act
+		Results<Ok<CategoryTrendsResponse>, BadRequest<string>> result =
+			await _controller.GetCategoryTrends(start, end, "quarterly", 5, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<Ok<CategoryTrendsResponse>>(result.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetCategoryTrendsReportQuery>(q =>
+				q.StartDate == start && q.EndDate == end && q.Granularity == "quarterly" && q.TopN == 5),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
 }
