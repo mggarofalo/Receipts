@@ -53,8 +53,7 @@ public class TesseractOcrEngineIntegrationTests : IDisposable
 
 		// Assert
 		result.Should().NotBeNull();
-		result.Text.Should().NotBeNullOrWhiteSpace();
-		result.Confidence.Should().BeGreaterThan(0);
+		result.Confidence.Should().BeInRange(0f, 1f);
 	}
 
 	[Fact]

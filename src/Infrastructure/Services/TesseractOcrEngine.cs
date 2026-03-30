@@ -9,14 +9,28 @@ namespace Infrastructure.Services;
 
 public sealed partial class TesseractOcrEngine : IOcrEngine, IDisposable
 {
+	private const int DefaultTimeoutSeconds = 30;
+	private const long DefaultMaxImageBytes = 10 * 1024 * 1024; // 10 MB
+
 	private readonly TesseractEngine _engine;
 	private readonly SemaphoreSlim _semaphore = new(1, 1);
 	private readonly ILogger<TesseractOcrEngine> _logger;
+	private readonly TimeSpan _processTimeout;
+	private readonly long _maxImageBytes;
 	private bool _disposed;
 
 	public TesseractOcrEngine(IConfiguration configuration, ILogger<TesseractOcrEngine> logger)
 	{
 		_logger = logger;
+
+		int timeoutSeconds = int.TryParse(configuration[ConfigurationVariables.OcrTimeoutSeconds], out int ts)
+			? ts
+			: DefaultTimeoutSeconds;
+		_processTimeout = TimeSpan.FromSeconds(timeoutSeconds);
+
+		_maxImageBytes = long.TryParse(configuration[ConfigurationVariables.OcrMaxImageBytes], out long mb)
+			? mb
+			: DefaultMaxImageBytes;
 
 		string tessdataPath = configuration[ConfigurationVariables.TessdataPath]
 			?? Path.Combine(AppContext.BaseDirectory, "Models", "Tessdata");
@@ -44,13 +58,32 @@ public sealed partial class TesseractOcrEngine : IOcrEngine, IDisposable
 	{
 		ct.ThrowIfCancellationRequested();
 
+		if (imageBytes.Length > _maxImageBytes)
+		{
+			throw new ArgumentException(
+				$"Image size ({imageBytes.Length:N0} bytes) exceeds the maximum allowed ({_maxImageBytes:N0} bytes).",
+				nameof(imageBytes));
+		}
+
 		await _semaphore.WaitAsync(ct);
 		try
 		{
-			ct.ThrowIfCancellationRequested();
+			using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+			timeoutCts.CancelAfter(_processTimeout);
+
+			CancellationToken linked = timeoutCts.Token;
+			linked.ThrowIfCancellationRequested();
 
 			using Pix pix = Pix.LoadFromMemory(imageBytes);
 			using Page page = _engine.Process(pix, PageSegMode.SingleBlock);
+
+			// Check timeout/cancellation after native call returns
+			if (linked.IsCancellationRequested)
+			{
+				_logger.LogWarning(
+					"OCR processing was cancelled or timed out after native Process() completed");
+				linked.ThrowIfCancellationRequested();
+			}
 
 			string rawText = page.GetText();
 			float confidence = page.GetMeanConfidence();

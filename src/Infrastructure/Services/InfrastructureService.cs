@@ -142,7 +142,7 @@ public static class InfrastructureService
 			.AddScoped<IImageStorageService, LocalImageStorageService>()
 			.AddScoped<IImageProcessingService, ImageProcessingService>();
 
-		// Embedding services (local ONNX model — always available)
+		// Singleton AI/ML services (local models — always available)
 		services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
 		services.AddSingleton<IOcrEngine, TesseractOcrEngine>();
 		services.AddHostedService<EmbeddingGenerationService>();

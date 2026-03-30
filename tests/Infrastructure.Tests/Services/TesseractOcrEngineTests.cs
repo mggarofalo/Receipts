@@ -12,10 +12,10 @@ public class TesseractOcrEngineTests
 	public void ApplyOcrCorrections_DollarSign_ReplacesSAtStartOrAfterSpace(string input, string expected)
 	{
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(input);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
 
 		// Assert
-		result.Should().Be(expected);
+		actual.Should().Be(expected);
 	}
 
 	[Theory]
@@ -25,10 +25,10 @@ public class TesseractOcrEngineTests
 	public void ApplyOcrCorrections_DollarSign_LeavesNonSContextAlone(string input, string expected)
 	{
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(input);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
 
 		// Assert
-		result.Should().Be(expected);
+		actual.Should().Be(expected);
 	}
 
 	[Theory]
@@ -38,20 +38,20 @@ public class TesseractOcrEngineTests
 	public void ApplyOcrCorrections_OToZero_ReplacesInDigitContext(string input, string expected)
 	{
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(input);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
 
 		// Assert
-		result.Should().Be(expected);
+		actual.Should().Be(expected);
 	}
 
 	[Fact]
 	public void ApplyOcrCorrections_OToZero_LeavesNonDigitContextAlone()
 	{
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections("TOTAL AMOUNT");
+		string actual = TesseractOcrEngine.ApplyOcrCorrections("TOTAL AMOUNT");
 
 		// Assert
-		result.Should().Be("TOTAL AMOUNT");
+		actual.Should().Be("TOTAL AMOUNT");
 	}
 
 	[Theory]
@@ -61,10 +61,10 @@ public class TesseractOcrEngineTests
 	public void ApplyOcrCorrections_LAndIToOne_ReplacesInDigitContext(string input, string expected)
 	{
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(input);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
 
 		// Assert
-		result.Should().Be(expected);
+		actual.Should().Be(expected);
 	}
 
 	[Fact]
@@ -74,10 +74,10 @@ public class TesseractOcrEngineTests
 		string input = "Line 1  \n\n\n\nLine 2  \n\n\n\n\nLine 3";
 
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(input);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
 
 		// Assert
-		result.Should().Be("Line 1\n\nLine 2\n\nLine 3");
+		actual.Should().Be("Line 1\n\nLine 2\n\nLine 3");
 	}
 
 	[Fact]
@@ -87,50 +87,30 @@ public class TesseractOcrEngineTests
 		string input = "$12.99\nBananas\n$3.50";
 
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(input);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
 
 		// Assert
-		result.Should().Be(input);
+		actual.Should().Be(input);
 	}
 
 	[Fact]
 	public void ApplyOcrCorrections_EmptyString_ReturnsEmpty()
 	{
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(string.Empty);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(string.Empty);
 
 		// Assert
-		result.Should().BeEmpty();
+		actual.Should().BeEmpty();
 	}
 
 	[Fact]
 	public void ApplyOcrCorrections_NullString_ReturnsNull()
 	{
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(null!);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(null!);
 
 		// Assert
-		result.Should().BeNull();
-	}
-
-	[Fact]
-	public async Task ExtractTextAsync_CancellationAlreadyRequested_ThrowsOperationCanceledException()
-	{
-		// Arrange
-		using CancellationTokenSource cts = new();
-		cts.Cancel();
-
-		// We cannot construct the real engine without tessdata, but the cancellation check
-		// happens before any Tesseract call. We test this by verifying the pattern:
-		// calling with a cancelled token should throw before reaching the semaphore.
-		Func<Task> act = async () =>
-		{
-			cts.Token.ThrowIfCancellationRequested();
-			await Task.CompletedTask;
-		};
-
-		// Assert
-		await act.Should().ThrowAsync<OperationCanceledException>();
+		actual.Should().BeNull();
 	}
 
 	[Theory]
@@ -139,10 +119,10 @@ public class TesseractOcrEngineTests
 	public void ApplyOcrCorrections_MultipleDollarSigns_ReplacesAll(string input, string expected)
 	{
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(input);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
 
 		// Assert
-		result.Should().Be(expected);
+		actual.Should().Be(expected);
 	}
 
 	[Fact]
@@ -152,9 +132,9 @@ public class TesseractOcrEngineTests
 		string input = "S1O.5O\nI2.OO\nl5.99";
 
 		// Act
-		string result = TesseractOcrEngine.ApplyOcrCorrections(input);
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
 
 		// Assert
-		result.Should().Be("$10.50\n12.00\n15.99");
+		actual.Should().Be("$10.50\n12.00\n15.99");
 	}
 }
