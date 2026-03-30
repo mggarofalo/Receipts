@@ -694,5 +694,62 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 		return periods;
 	}
 
+	public async Task<UncategorizedItemsResult> GetUncategorizedItemsAsync(
+		string sortBy,
+		string sortDirection,
+		int page,
+		int pageSize,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		var baseQuery = from ri in context.ReceiptItems.AsNoTracking()
+						where ri.DeletedAt == null && ri.Category == "Uncategorized"
+						select new
+						{
+							ri.Id,
+							ri.ReceiptId,
+							ri.ReceiptItemCode,
+							ri.Description,
+							ri.Quantity,
+							ri.UnitPrice,
+							ri.TotalAmount,
+							ri.Category,
+							ri.Subcategory,
+							ri.PricingMode
+						};
+
+		var allItems = await baseQuery.ToListAsync(cancellationToken);
+		int totalCount = allItems.Count;
+
+		var sorted = (sortBy.ToLowerInvariant(), sortDirection.ToLowerInvariant()) switch
+		{
+			("total", "asc") => allItems.OrderBy(x => x.TotalAmount).AsEnumerable(),
+			("total", "desc") => allItems.OrderByDescending(x => x.TotalAmount).AsEnumerable(),
+			("itemcode", "asc") => allItems.OrderBy(x => x.ReceiptItemCode ?? string.Empty).AsEnumerable(),
+			("itemcode", "desc") => allItems.OrderByDescending(x => x.ReceiptItemCode ?? string.Empty).AsEnumerable(),
+			("description", "desc") => allItems.OrderByDescending(x => x.Description).AsEnumerable(),
+			_ => allItems.OrderBy(x => x.Description).AsEnumerable(),
+		};
+
+		List<UncategorizedItemRecord> pagedItems = sorted
+			.Skip((page - 1) * pageSize)
+			.Take(pageSize)
+			.Select(x => new UncategorizedItemRecord(
+				x.Id,
+				x.ReceiptId,
+				x.ReceiptItemCode,
+				x.Description,
+				x.Quantity,
+				x.UnitPrice,
+				x.TotalAmount,
+				x.Category,
+				x.Subcategory,
+				x.PricingMode.ToString().ToLowerInvariant()))
+			.ToList();
+
+		return new UncategorizedItemsResult(pagedItems, totalCount);
+	}
+
 	private record SimilarityEdge(Guid IdA, string DescA, Guid IdB, string DescB, double Score);
 }

@@ -394,4 +394,63 @@ public class ReportsController(IMediator mediator) : ControllerBase
 			}).ToList()
 		});
 	}
+
+	[HttpGet("uncategorized-items")]
+	[EndpointSummary("Get uncategorized items report")]
+	[EndpointDescription("Returns all receipt items where the category is \"Uncategorized\".")]
+	public async Task<Results<Ok<UncategorizedItemsResponse>, BadRequest<string>>> GetUncategorizedItems(
+		[FromQuery] string? sortBy,
+		[FromQuery] string? sortDirection,
+		[FromQuery] int? page,
+		[FromQuery] int? pageSize,
+		CancellationToken cancellationToken)
+	{
+		string sort = sortBy ?? "description";
+		string direction = sortDirection ?? "asc";
+		int pg = page ?? 1;
+		int ps = pageSize ?? 50;
+
+		string[] validSortColumns = ["description", "total", "itemcode"];
+		if (!validSortColumns.Contains(sort.ToLowerInvariant()))
+		{
+			return TypedResults.BadRequest($"Invalid sortBy '{sort}'. Allowed: description, total, itemCode");
+		}
+
+		string[] validDirections = ["asc", "desc"];
+		if (!validDirections.Contains(direction.ToLowerInvariant()))
+		{
+			return TypedResults.BadRequest($"Invalid sortDirection '{direction}'. Allowed: asc, desc");
+		}
+
+		if (pg < 1)
+		{
+			return TypedResults.BadRequest("page must be at least 1");
+		}
+
+		if (ps < 1 || ps > 100)
+		{
+			return TypedResults.BadRequest("pageSize must be between 1 and 100");
+		}
+
+		GetUncategorizedItemsReportQuery query = new(sort, direction, pg, ps);
+		AppReports.UncategorizedItemsResult result = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new UncategorizedItemsResponse
+		{
+			TotalCount = result.TotalCount,
+			Items = result.Items.Select(i => new UncategorizedItem
+			{
+				Id = i.Id,
+				ReceiptId = i.ReceiptId,
+				ReceiptItemCode = i.ReceiptItemCode,
+				Description = i.Description,
+				Quantity = (double)i.Quantity,
+				UnitPrice = (double)i.UnitPrice,
+				TotalAmount = (double)i.TotalAmount,
+				Category = i.Category,
+				Subcategory = i.Subcategory,
+				PricingMode = i.PricingMode
+			}).ToList()
+		});
+	}
 }
