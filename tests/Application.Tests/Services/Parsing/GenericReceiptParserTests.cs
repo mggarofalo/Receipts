@@ -217,6 +217,64 @@ public class GenericReceiptParserTests
 	}
 
 	[Fact]
+	public void Parse_TaxLineWithRateAndAmount_ExtractsLastPrice()
+	{
+		// Arrange
+		const string ocrText = """
+            Store
+            Item 10.00
+            SUBTOTAL 10.00
+            TAX RATE 8.25% 0.83
+            TOTAL 10.83
+            """;
+
+		// Act
+		ParsedReceipt actual = _parser.Parse(ocrText);
+
+		// Assert
+		actual.TaxLines.Should().HaveCount(1);
+		actual.TaxLines[0].Amount.Value.Should().Be(0.83m);
+	}
+
+	[Fact]
+	public void Parse_TotalLineWithMultipleDecimals_ExtractsLastPrice()
+	{
+		// Arrange
+		const string ocrText = """
+            Store
+            Item 5.00
+            SUBTOTAL 5.00
+            TAX 0.40
+            TOTAL DUE 5.40% 5.40
+            """;
+
+		// Act
+		ParsedReceipt actual = _parser.Parse(ocrText);
+
+		// Assert
+		actual.Total.Value.Should().Be(5.40m);
+	}
+
+	[Fact]
+	public void Parse_SubtotalLineWithMultipleDecimals_ExtractsLastPrice()
+	{
+		// Arrange
+		const string ocrText = """
+            Store
+            Item 5.00
+            SUBTOTAL ITEMS 3.00 5.00
+            TAX 0.40
+            TOTAL 5.40
+            """;
+
+		// Act
+		ParsedReceipt actual = _parser.Parse(ocrText);
+
+		// Assert
+		actual.Subtotal.Value.Should().Be(5.00m);
+	}
+
+	[Fact]
 	public void Parse_FullReceipt_IntegrationStyle()
 	{
 		// Arrange

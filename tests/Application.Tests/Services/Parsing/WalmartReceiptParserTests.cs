@@ -138,6 +138,29 @@ public class WalmartReceiptParserTests
 	}
 
 	[Fact]
+	public void Parse_TaxLineWithRateAndAmount_ExtractsLastPrice()
+	{
+		// Arrange
+		const string ocrText = """
+            WALMART
+            Store #1234
+            GV MILK 3.48
+            SUBTOTAL 3.48
+            TAX RATE 8.25% 0.29
+            TOTAL 3.77
+            VISA TEND 3.77
+            03/15/24
+            """;
+
+		// Act
+		ParsedReceipt actual = _parser.Parse(ocrText);
+
+		// Assert
+		actual.TaxLines.Should().HaveCount(1);
+		actual.TaxLines[0].Amount.Value.Should().Be(0.29m);
+	}
+
+	[Fact]
 	public void Parse_SampleReceipt_ItemsHaveHighConfidence()
 	{
 		// Act
