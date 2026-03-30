@@ -494,4 +494,96 @@ public class ReceiptsControllerTests
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
 	}
+
+	[Fact]
+	public async Task GetLocations_ReturnsOkResult_WithLocations()
+	{
+		// Arrange
+		List<string> expectedLocations = ["Walmart", "Target", "Costco"];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDistinctLocationsQuery>(q => q.Query == "Wal" && q.Limit == 20),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(expectedLocations);
+
+		// Act
+		Results<Ok<LocationSuggestionsResponse>, BadRequest<string>> result = await _controller.GetLocations("Wal", 20);
+
+		// Assert
+		Ok<LocationSuggestionsResponse> okResult = Assert.IsType<Ok<LocationSuggestionsResponse>>(result.Result);
+		LocationSuggestionsResponse response = Assert.IsType<LocationSuggestionsResponse>(okResult.Value);
+		response.Locations.Should().BeEquivalentTo(expectedLocations);
+	}
+
+	[Fact]
+	public async Task GetLocations_ReturnsOkResult_WithEmptyListWhenNoMatches()
+	{
+		// Arrange
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDistinctLocationsQuery>(q => q.Query == "xyz"),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync([]);
+
+		// Act
+		Results<Ok<LocationSuggestionsResponse>, BadRequest<string>> result = await _controller.GetLocations("xyz", 20);
+
+		// Assert
+		Ok<LocationSuggestionsResponse> okResult = Assert.IsType<Ok<LocationSuggestionsResponse>>(result.Result);
+		LocationSuggestionsResponse response = Assert.IsType<LocationSuggestionsResponse>(okResult.Value);
+		response.Locations.Should().BeEmpty();
+	}
+
+	[Fact]
+	public async Task GetLocations_ReturnsOkResult_WithNullQuery()
+	{
+		// Arrange
+		List<string> expectedLocations = ["Walmart", "Target"];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDistinctLocationsQuery>(q => q.Query == null && q.Limit == 20),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(expectedLocations);
+
+		// Act
+		Results<Ok<LocationSuggestionsResponse>, BadRequest<string>> result = await _controller.GetLocations(null, 20);
+
+		// Assert
+		Ok<LocationSuggestionsResponse> okResult = Assert.IsType<Ok<LocationSuggestionsResponse>>(result.Result);
+		LocationSuggestionsResponse response = Assert.IsType<LocationSuggestionsResponse>(okResult.Value);
+		response.Locations.Should().BeEquivalentTo(expectedLocations);
+	}
+
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	[InlineData(101)]
+	public async Task GetLocations_ReturnsBadRequest_WhenLimitIsOutOfRange(int invalidLimit)
+	{
+		// Act
+		Results<Ok<LocationSuggestionsResponse>, BadRequest<string>> result = await _controller.GetLocations(null, invalidLimit);
+
+		// Assert
+		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badRequestResult.Value.Should().Contain("limit must be between 1 and 100");
+	}
+
+	[Fact]
+	public async Task GetLocations_ReturnsOkResult_WithCustomLimit()
+	{
+		// Arrange
+		List<string> expectedLocations = ["Walmart"];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDistinctLocationsQuery>(q => q.Limit == 5),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(expectedLocations);
+
+		// Act
+		Results<Ok<LocationSuggestionsResponse>, BadRequest<string>> result = await _controller.GetLocations(null, 5);
+
+		// Assert
+		Ok<LocationSuggestionsResponse> okResult = Assert.IsType<Ok<LocationSuggestionsResponse>>(result.Result);
+		LocationSuggestionsResponse response = Assert.IsType<LocationSuggestionsResponse>(okResult.Value);
+		response.Locations.Should().BeEquivalentTo(expectedLocations);
+	}
 }
