@@ -8,6 +8,7 @@ import {
   useUpdateSubcategory,
   useDeleteSubcategory,
 } from "@/hooks/useSubcategories";
+import type { AffectedReceipt } from "@/hooks/useSubcategories";
 import { usePermission } from "@/hooks/usePermission";
 import { useCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -110,6 +111,11 @@ function Subcategories() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editSubcategory, setEditSubcategory] =
     useState<SubcategoryResponse | null>(null);
+  const [conflictData, setConflictData] = useState<{
+    subcategoryName: string;
+    receiptItemCount: number;
+    affectedReceipts: AffectedReceipt[];
+  } | null>(null);
   const [filterValues, setFilterValues] = useState<FilterValues>({
     categoryId: "all",
   });
@@ -117,7 +123,7 @@ function Subcategories() {
     new Set(),
   );
 
-  const anyDialogOpen = createOpen || editSubcategory !== null;
+  const anyDialogOpen = createOpen || editSubcategory !== null || conflictData !== null;
 
   useEffect(() => {
     function onNewItem() {
@@ -311,7 +317,7 @@ function Subcategories() {
 
       {hasActiveFilter && (
         <ActiveFilterBanner
-          message={`Showing subcategories for category: ${categoryMap.get(linkParams.categoryId!) ?? linkParams.categoryId}`}
+          message={`Showing subcategories for category: ${categoryMap.get(linkParams.categoryId!) ?? "Unknown category"}`}
           onClear={clearParams}
         />
       )}
@@ -347,7 +353,6 @@ function Subcategories() {
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
                   <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
-                  <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -363,7 +368,7 @@ function Subcategories() {
                         onClick={() => toggleCategory(categoryId)}
                         data-testid={`category-header-${categoryId}`}
                       >
-                        <TableCell colSpan={6}>
+                        <TableCell colSpan={5}>
                           <div className="flex items-center gap-2 font-medium">
                             {isExpanded ? (
                               <ChevronDown className="h-4 w-4" />
@@ -429,11 +434,6 @@ function Subcategories() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                <Link to={`/receipt-items?subcategory=${encodeURIComponent(subcategory.name)}`} className="text-sm text-primary hover:underline">
-                                  Items
-                                </Link>
-                              </TableCell>
-                              <TableCell>
                                 <div className="flex gap-1">
                                   <Button
                                     variant="ghost"
@@ -467,7 +467,18 @@ function Subcategories() {
                                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                                           <AlertDialogAction
                                             variant="destructive"
-                                            onClick={() => deleteSubcategory.mutate(subcategory.id)}
+                                            onClick={() => deleteSubcategory.mutate(subcategory.id, {
+                                              onError: (error: unknown) => {
+                                                const err = error as { conflict?: boolean; message?: string; receiptItemCount?: number; affectedReceipts?: AffectedReceipt[] };
+                                                if (err.conflict && err.affectedReceipts) {
+                                                  setConflictData({
+                                                    subcategoryName: subcategory.name,
+                                                    receiptItemCount: err.receiptItemCount ?? 0,
+                                                    affectedReceipts: err.affectedReceipts,
+                                                  });
+                                                }
+                                              },
+                                            })}
                                           >
                                             Delete
                                           </AlertDialogAction>
@@ -543,6 +554,50 @@ function Subcategories() {
                 );
               }}
             />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Conflict Dialog — shown when deletion is blocked by receipt items */}
+      <Dialog
+        open={conflictData !== null}
+        onOpenChange={(open) => !open && setConflictData(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cannot Delete Subcategory</DialogTitle>
+          </DialogHeader>
+          {conflictData && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                <strong>{conflictData.subcategoryName}</strong> cannot be deleted because{" "}
+                {conflictData.receiptItemCount} receipt item(s) use this subcategory.
+                Re-categorize the items on these receipts first:
+              </p>
+              <ul className="max-h-64 space-y-1 overflow-y-auto text-sm">
+                {conflictData.affectedReceipts.map((receipt) => (
+                  <li key={receipt.id}>
+                    <Link
+                      to={`/receipts/${receipt.id}`}
+                      className="text-primary hover:underline"
+                      onClick={() => setConflictData(null)}
+                    >
+                      {receipt.date} &mdash; {receipt.location}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {conflictData.receiptItemCount > conflictData.affectedReceipts.length && (
+                <p className="text-xs text-muted-foreground">
+                  and {conflictData.receiptItemCount - conflictData.affectedReceipts.length} more receipt(s)
+                </p>
+              )}
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setConflictData(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

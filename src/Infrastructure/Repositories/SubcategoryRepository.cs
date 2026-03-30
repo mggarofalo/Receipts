@@ -177,4 +177,17 @@ public class SubcategoryRepository(IDbContextFactory<ApplicationDbContext> conte
 			.IgnoreQueryFilters()
 			.CountAsync(ri => ri.Subcategory == subcategoryName, cancellationToken);
 	}
+
+	public async Task<List<(Guid ReceiptId, DateOnly Date, string Location)>> GetAffectedReceiptsBySubcategoryNameAsync(string subcategoryName, int limit, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.ReceiptItems
+			.Where(ri => ri.Subcategory == subcategoryName)
+			.Select(ri => ri.Receipt!)
+			.Distinct()
+			.OrderByDescending(r => r.Date)
+			.Take(limit)
+			.Select(r => ValueTuple.Create(r.Id, r.Date, r.Location))
+			.ToListAsync(cancellationToken);
+	}
 }

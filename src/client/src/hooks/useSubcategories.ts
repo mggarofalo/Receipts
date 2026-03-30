@@ -99,9 +99,16 @@ export function useUpdateSubcategory() {
   });
 }
 
+export interface AffectedReceipt {
+  id: string;
+  date: string;
+  location: string;
+}
+
 export interface DeleteSubcategoryConflict {
   message: string;
   receiptItemCount: number;
+  affectedReceipts: AffectedReceipt[];
 }
 
 export function useDeleteSubcategory() {
@@ -125,7 +132,11 @@ export function useDeleteSubcategory() {
       toast.success("Subcategory deleted");
     },
     onError: (error: unknown) => {
-      const err = error as { conflict?: boolean; message?: string; receiptItemCount?: number };
+      const err = error as { conflict?: boolean; message?: string; receiptItemCount?: number; affectedReceipts?: AffectedReceipt[] };
+      if (err.conflict && err.affectedReceipts) {
+        // Conflict with affected receipts — handled by the component via onError callback
+        return;
+      }
       if (err.conflict) {
         toast.error(err.message ?? "Cannot delete — receipt items reference this subcategory");
       } else {

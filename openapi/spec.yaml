@@ -574,9 +574,27 @@ paths:
                     type: string
                   receiptItemCount:
                     type: integer
+                  affectedReceipts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        date:
+                          type: string
+                          format: date
+                        location:
+                          type: string
+                      required:
+                        - id
+                        - date
+                        - location
                 required:
                   - message
                   - receiptItemCount
+                  - affectedReceipts
 
   /api/subcategories/deleted:
     get:
