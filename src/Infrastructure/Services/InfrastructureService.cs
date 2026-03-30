@@ -144,6 +144,7 @@ public static class InfrastructureService
 
 		// Embedding services (local ONNX model — always available)
 		services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
+		services.AddSingleton<IOcrEngine, TesseractOcrEngine>();
 		services.AddHostedService<EmbeddingGenerationService>();
 
 		services.AddHostedService<AuthAuditCleanupService>();

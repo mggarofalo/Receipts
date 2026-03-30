@@ -21,5 +21,7 @@ public static class ConfigurationVariables
 	public const string AdminSeedPassword = "AdminSeed:Password";
 	public const string AdminSeedFirstName = "AdminSeed:FirstName";
 	public const string AdminSeedLastName = "AdminSeed:LastName";
+
+	public const string TessdataPath = "Ocr:TessdataPath";
 }
 
