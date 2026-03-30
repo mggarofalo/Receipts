@@ -23,6 +23,7 @@ import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -93,6 +94,15 @@ function Accounts() {
     toggleSort(column);
     resetPage();
   }, [toggleSort, resetPage]);
+
+  const handleToggleActive = useCallback((account: AccountResponse, checked: boolean) => {
+    updateAccount.mutate({
+      id: account.id,
+      accountCode: account.accountCode,
+      name: account.name,
+      isActive: checked,
+    });
+  }, [updateAccount]);
 
   const data = (accountsData as AccountResponse[] | undefined) ?? [];
 
@@ -223,11 +233,18 @@ function Accounts() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={account.isActive ? "default" : "secondary"}
-                        >
-                          {account.isActive ? "Active" : "Inactive"}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={account.isActive}
+                            onCheckedChange={(checked) => handleToggleActive(account, checked)}
+                            aria-label={`Toggle ${account.name} active status`}
+                          />
+                          <Badge
+                            variant={account.isActive ? "default" : "secondary"}
+                          >
+                            {account.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Link to={`/transactions?accountId=${account.id}`} className="text-sm text-primary hover:underline">
