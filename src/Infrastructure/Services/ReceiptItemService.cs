@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models;
+using Application.Queries.Core.ReceiptItem.GetReceiptItemSuggestions;
 using Domain.Core;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
@@ -82,5 +83,10 @@ public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMa
 	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
 	{
 		return await repository.RestoreAsync(id, cancellationToken);
+	}
+
+	public async Task<List<ReceiptItemSuggestion>> GetSuggestionsAsync(string itemCode, string? location, int limit, CancellationToken cancellationToken)
+	{
+		return await repository.GetSuggestionsAsync(itemCode, location, limit, cancellationToken);
 	}
 }

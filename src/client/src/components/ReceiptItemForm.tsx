@@ -13,6 +13,7 @@ import {
   useCreateSubcategory,
 } from "@/hooks/useSubcategories";
 import { useItemTemplates } from "@/hooks/useItemTemplates";
+import { useReceiptItemSuggestions } from "@/hooks/useReceiptItemSuggestions";
 import {
   itemDescriptionHistory,
   itemCodeHistory,
@@ -34,6 +35,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -44,6 +46,7 @@ import {
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
+import { Loader2 } from "lucide-react";
 
 interface ItemTemplate {
   id: string;
@@ -81,6 +84,7 @@ interface ReceiptItemFormProps {
   isSubmitting?: boolean;
   serverErrors?: Record<string, string>;
   hideReceiptField?: boolean;
+  location?: string | null;
 }
 
 export function ReceiptItemForm({
@@ -91,6 +95,7 @@ export function ReceiptItemForm({
   isSubmitting,
   serverErrors,
   hideReceiptField,
+  location,
 }: ReceiptItemFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
@@ -188,6 +193,72 @@ export function ReceiptItemForm({
   const watchedQuantity = form.watch("quantity");
   const watchedUnitPrice = form.watch("unitPrice");
   const isFlat = watchedPricingMode === "flat";
+
+  // Resolve location: use prop if provided, otherwise derive from selected receipt
+  const watchedReceiptId = form.watch("receiptId");
+  const resolvedLocation = useMemo(() => {
+    if (location) return location;
+    if (!watchedReceiptId || !receipts) return null;
+    const receipt = (receipts as { id: string; location: string }[])?.find(
+      (r) => r.id === watchedReceiptId,
+    );
+    return receipt?.location ?? null;
+  }, [location, watchedReceiptId, receipts]);
+
+  // Item code autocomplete state
+  const [itemCodeInput, setItemCodeInput] = useState(
+    defaultValues?.receiptItemCode ?? "",
+  );
+  const [itemCodeAutocompleteOpen, setItemCodeAutocompleteOpen] = useState(false);
+  const itemCodeListId = "item-code-autocomplete-list";
+
+  const { data: itemCodeSuggestions, isFetching: isFetchingItemCodeSuggestions } =
+    useReceiptItemSuggestions(itemCodeInput, resolvedLocation, {
+      enabled: itemCodeAutocompleteOpen && itemCodeInput.length >= 1,
+    });
+
+  // Filter item code history entries that match the current input
+  const itemCodeHistoryMatches = useMemo(() => {
+    if (!itemCodeInput) return itemCodeOptions;
+    const lower = itemCodeInput.toLowerCase();
+    return itemCodeOptions.filter((opt) =>
+      opt.label.toLowerCase().includes(lower),
+    );
+  }, [itemCodeOptions, itemCodeInput]);
+
+  const isItemCodePopoverOpen =
+    itemCodeAutocompleteOpen &&
+    ((itemCodeSuggestions && itemCodeSuggestions.length > 0) ||
+      itemCodeHistoryMatches.length > 0);
+
+  const handleItemCodeKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
+        setItemCodeAutocompleteOpen(false);
+      } else if (e.key === "ArrowDown" && isItemCodePopoverOpen) {
+        e.preventDefault();
+        const list = document.getElementById(itemCodeListId);
+        const firstItem = list?.querySelector("[cmdk-item]") as HTMLElement | null;
+        firstItem?.focus();
+      }
+    },
+    [isItemCodePopoverOpen, itemCodeListId],
+  );
+
+  function applySuggestion(suggestion: NonNullable<typeof itemCodeSuggestions>[number]) {
+    form.setValue("receiptItemCode", suggestion.itemCode);
+    setItemCodeInput(suggestion.itemCode);
+    form.setValue("description", suggestion.description);
+    setDescriptionInput(suggestion.description);
+    form.setValue("category", suggestion.category);
+    if (suggestion.subcategory) {
+      form.setValue("subcategory", suggestion.subcategory);
+    }
+    if (suggestion.unitPrice != null) {
+      form.setValue("unitPrice", suggestion.unitPrice);
+    }
+    setItemCodeAutocompleteOpen(false);
+  }
 
   const handlePricingModeChange = useCallback(
     (value: string) => {
@@ -331,18 +402,111 @@ export function ReceiptItemForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Item Code</FormLabel>
-              <FormControl>
-                <Combobox
-                  options={itemCodeOptions}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  placeholder="Select or type an item code..."
-                  searchPlaceholder="Search item codes..."
-                  emptyMessage="Type to add a new item code"
-                  allowCustom
-                  aria-required="true"
-                />
-              </FormControl>
+              <Popover
+                open={isItemCodePopoverOpen}
+                onOpenChange={setItemCodeAutocompleteOpen}
+              >
+                <PopoverAnchor asChild>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        role="combobox"
+                        aria-required="true"
+                        aria-autocomplete="list"
+                        aria-expanded={isItemCodePopoverOpen}
+                        aria-controls={itemCodeListId}
+                        placeholder="Enter item code..."
+                        {...field}
+                        value={itemCodeInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setItemCodeInput(val);
+                          field.onChange(val);
+                          setItemCodeAutocompleteOpen(true);
+                        }}
+                        onFocus={() => {
+                          if (itemCodeInput.length >= 1 || itemCodeHistoryMatches.length > 0) {
+                            setItemCodeAutocompleteOpen(true);
+                          }
+                        }}
+                        onKeyDown={handleItemCodeKeyDown}
+                        autoComplete="off"
+                      />
+                      {isFetchingItemCodeSuggestions && itemCodeInput.length >= 1 && (
+                        <>
+                          <Loader2 className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-hidden="true" />
+                          <span className="sr-only" role="status">Loading suggestions...</span>
+                        </>
+                      )}
+                    </div>
+                  </FormControl>
+                </PopoverAnchor>
+                <PopoverContent
+                  className="w-[--radix-popover-trigger-width] p-0"
+                  align="start"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                  onInteractOutside={() => setItemCodeAutocompleteOpen(false)}
+                >
+                  <Command>
+                    <CommandList id={itemCodeListId}>
+                      <CommandEmpty>No suggestions found.</CommandEmpty>
+                      {itemCodeHistoryMatches.length > 0 && (
+                        <CommandGroup heading="Recent Item Codes">
+                          {itemCodeHistoryMatches.slice(0, 5).map((opt) => (
+                            <CommandItem
+                              key={`history-${opt.value}`}
+                              value={`history: ${opt.label}`}
+                              onSelect={() => {
+                                setItemCodeInput(opt.value);
+                                field.onChange(opt.value);
+                                setItemCodeAutocompleteOpen(false);
+                              }}
+                            >
+                              <span>{opt.label}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                      {itemCodeSuggestions && itemCodeSuggestions.length > 0 && (
+                        <CommandGroup heading="Suggestions">
+                          {itemCodeSuggestions.map((suggestion) => (
+                            <CommandItem
+                              key={`${suggestion.itemCode}-${suggestion.matchType}`}
+                              value={`${suggestion.itemCode} ${suggestion.description}`}
+                              onSelect={() => applySuggestion(suggestion)}
+                            >
+                              <div className="flex w-full items-center justify-between">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="font-medium font-mono">
+                                    {suggestion.itemCode}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {suggestion.description}
+                                    {suggestion.category
+                                      ? ` · ${suggestion.category}`
+                                      : ""}
+                                    {suggestion.unitPrice != null
+                                      ? ` · ${formatCurrency(suggestion.unitPrice)}`
+                                      : ""}
+                                  </span>
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] px-1.5 py-0"
+                                >
+                                  {suggestion.matchType === "location"
+                                    ? "Location"
+                                    : "Global"}
+                                </Badge>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <FormMessage />
               {serverErrors?.receiptItemCode && (
                 <p className="text-sm font-medium text-destructive">

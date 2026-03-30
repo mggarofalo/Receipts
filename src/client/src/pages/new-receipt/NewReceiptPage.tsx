@@ -263,7 +263,7 @@ export default function NewReceiptPage() {
             )}
 
           {/* Line Items */}
-          <LineItemsSection items={items} onChange={setItems} />
+          <LineItemsSection items={items} onChange={setItems} location={location} />
         </div>
 
         {/* Right column — sticky balance sidebar */}

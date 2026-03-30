@@ -60,6 +60,15 @@ vi.mock("@/hooks/useSimilarItems", () => ({
   useCategoryRecommendations: () => useCategoryRecommendationsMock(),
 }));
 
+vi.mock("@/hooks/useReceiptItemSuggestions", () => ({
+  useReceiptItemSuggestions: () =>
+    mockQueryResult({
+      data: undefined,
+      isFetching: false,
+      isSuccess: false,
+    }),
+}));
+
 describe("Step3Items", () => {
   const defaultProps = {
     data: [],

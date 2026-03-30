@@ -1408,6 +1408,52 @@ paths:
               schema:
                 type: string
 
+  /api/receipt-items/suggestions:
+    get:
+      operationId: GetReceiptItemSuggestions
+      tags: [ReceiptItems]
+      summary: Get item code suggestions from receipt history
+      description: |
+        Returns suggestions for receipt item entry based on historical receipt items.
+        Groups items by itemCode and optionally filters by location. Falls back to
+        all-location matches when no location-specific results exist.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: itemCode
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: Partial or full item code to search for
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Receipt location to filter suggestions by
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+            minimum: 1
+            maximum: 50
+          description: Maximum number of suggestions to return
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReceiptItemSuggestionResponse"
+
   /api/receipt-items/{id}/restore:
     post:
       operationId: RestoreReceiptItem
@@ -4429,6 +4475,34 @@ components:
         limit:
           type: integer
           format: int32
+
+    ReceiptItemSuggestionResponseMatchType:
+      type: string
+      description: "'location' if matched with the specified location, 'global' if fallback to all locations"
+      enum: [location, global]
+
+    ReceiptItemSuggestionResponse:
+      type: object
+      required: [itemCode, description, category, unitPrice, matchType]
+      properties:
+        itemCode:
+          type: string
+          description: The item code that matched the search
+        description:
+          type: string
+          description: Most recent description for this item code
+        category:
+          type: string
+          description: Most recent category for this item code
+        subcategory:
+          type: ["string", "null"]
+          description: Most recent subcategory for this item code
+        unitPrice:
+          type: number
+          format: double
+          description: Most recent unit price for this item code
+        matchType:
+          $ref: "#/components/schemas/ReceiptItemSuggestionResponseMatchType"
 
     # ── Transaction ──────────────────────────────
 
