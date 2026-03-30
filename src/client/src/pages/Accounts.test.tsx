@@ -403,6 +403,110 @@ describe("Accounts", () => {
     expect(localStorage.getItem("accounts-status-filter")).toBe("all");
   });
 
+  it("renders a switch toggle on each account row", async () => {
+    const items = [
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }),
+      mockAccountResponse({ id: "2", accountCode: "ACC-002", name: "Savings", isActive: false }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Accounts />);
+    const switches = screen.getAllByRole("switch");
+    expect(switches).toHaveLength(2);
+    expect(switches[0]).toHaveAttribute("aria-checked", "true");
+    expect(switches[1]).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("calls updateAccount.mutate when switch is toggled", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useUpdateAccount } = await import("@/hooks/useAccounts");
+    vi.mocked(useUpdateAccount).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    const items = [
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Accounts />);
+    const switchEl = screen.getByRole("switch");
+    await user.click(switchEl);
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "1",
+        accountCode: "ACC-001",
+        name: "Checking",
+        isActive: false,
+      }),
+    );
+  });
+
+  it("does not open edit dialog when switch is clicked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Accounts />);
+    const switchEl = screen.getByRole("switch");
+    await user.click(switchEl);
+
+    expect(screen.queryByRole("heading", { name: /edit account/i })).not.toBeInTheDocument();
+  });
+
   it("passes isActive=false to useAccounts when Inactive tab is selected", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const inactiveItems = [
