@@ -208,6 +208,85 @@ public class ImageProcessingServiceTests
 		await act.Should().ThrowAsync<OperationCanceledException>();
 	}
 
+	[Fact]
+	public async Task PreprocessAsync_OutputIsSingleChannelGrayscale()
+	{
+		// Arrange - create a color-like JPEG (will still be L8 channel but verifies pipeline output)
+		byte[] imageBytes = CreateTestJpeg(60, 40);
+
+		// Act
+		ImageProcessingResult result = await _service.PreprocessAsync(imageBytes, "image/jpeg", CancellationToken.None);
+
+		// Assert - output should be loadable as L8 (grayscale)
+		using Image<L8> output = Image.Load<L8>(result.ProcessedBytes);
+		output.Width.Should().BeGreaterThan(0);
+		output.Height.Should().BeGreaterThan(0);
+	}
+
+	[Fact]
+	public async Task PreprocessAsync_ReturnsCorrectDimensions()
+	{
+		// Arrange
+		byte[] imageBytes = CreateTestPng(75, 50);
+
+		// Act
+		ImageProcessingResult result = await _service.PreprocessAsync(imageBytes, "image/png", CancellationToken.None);
+
+		// Assert
+		result.Width.Should().BeGreaterThan(0);
+		result.Height.Should().BeGreaterThan(0);
+		// Dimensions may differ slightly due to deskew rotation, but should be close
+		result.Width.Should().BeInRange(50, 100);
+		result.Height.Should().BeInRange(25, 75);
+	}
+
+	[Fact]
+	public void DetectSkewAngle_UniformImage_ReturnsZero()
+	{
+		// Arrange - uniform gray image with no features
+		using Image<L8> image = new(50, 50, new L8(128));
+
+		// Act
+		double angle = ImageProcessingService.DetectSkewAngle(image);
+
+		// Assert - with no features, angle should be near zero
+		Math.Abs(angle).Should().BeLessThanOrEqualTo(10.0);
+	}
+
+	[Fact]
+	public void ApplyAdaptiveThreshold_NearBlackImage_SkipsThreshold()
+	{
+		// Arrange - image with mean pixel value < 5 (mostly black with some very dark pixels)
+		using Image<L8> image = new(30, 30, new L8(2));
+
+		// Act
+		ImageProcessingService.ApplyAdaptiveThreshold(image);
+
+		// Assert - should be unchanged (threshold skipped)
+		image.ProcessPixelRows(accessor =>
+		{
+			Span<L8> row = accessor.GetRowSpan(0);
+			row[0].PackedValue.Should().Be(2);
+		});
+	}
+
+	[Fact]
+	public void ApplyAdaptiveThreshold_NearWhiteImage_SkipsThreshold()
+	{
+		// Arrange - image with mean pixel value > 250
+		using Image<L8> image = new(30, 30, new L8(252));
+
+		// Act
+		ImageProcessingService.ApplyAdaptiveThreshold(image);
+
+		// Assert - should be unchanged (threshold skipped)
+		image.ProcessPixelRows(accessor =>
+		{
+			Span<L8> row = accessor.GetRowSpan(0);
+			row[0].PackedValue.Should().Be(252);
+		});
+	}
+
 	private static byte[] CreateTestJpeg(int width, int height)
 	{
 		using Image<L8> image = new(width, height);

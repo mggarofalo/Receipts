@@ -5,6 +5,76 @@ using Moq;
 
 namespace Application.Tests.Commands.Receipt.UploadImage;
 
+public class UploadReceiptImageCommandValidationTests
+{
+	[Fact]
+	public void Constructor_NullImageBytes_ThrowsArgumentNullException()
+	{
+		// Act
+		Action act = () => new UploadReceiptImageCommand(Guid.NewGuid(), null!, "image/jpeg", ".jpg");
+
+		// Assert
+		act.Should().Throw<ArgumentNullException>()
+			.And.ParamName.Should().Be("imageBytes");
+	}
+
+	[Fact]
+	public void Constructor_EmptyImageBytes_ThrowsArgumentException()
+	{
+		// Act
+		Action act = () => new UploadReceiptImageCommand(Guid.NewGuid(), [], "image/jpeg", ".jpg");
+
+		// Assert
+		act.Should().Throw<ArgumentException>()
+			.WithMessage($"*{UploadReceiptImageCommand.ImageBytesCannotBeEmpty}*");
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData("   ")]
+	public void Constructor_InvalidContentType_ThrowsArgumentException(string? contentType)
+	{
+		// Act
+		Action act = () => new UploadReceiptImageCommand(Guid.NewGuid(), [0xFF], contentType!, ".jpg");
+
+		// Assert
+		act.Should().Throw<ArgumentException>()
+			.WithMessage($"*{UploadReceiptImageCommand.ContentTypeCannotBeEmpty}*");
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData("   ")]
+	public void Constructor_InvalidFileExtension_ThrowsArgumentException(string? extension)
+	{
+		// Act
+		Action act = () => new UploadReceiptImageCommand(Guid.NewGuid(), [0xFF], "image/jpeg", extension!);
+
+		// Assert
+		act.Should().Throw<ArgumentException>()
+			.WithMessage($"*{UploadReceiptImageCommand.FileExtensionCannotBeEmpty}*");
+	}
+
+	[Fact]
+	public void Constructor_ValidArguments_SetsProperties()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		byte[] bytes = [0xFF, 0xD8];
+
+		// Act
+		UploadReceiptImageCommand command = new(receiptId, bytes, "image/jpeg", ".jpg");
+
+		// Assert
+		command.ReceiptId.Should().Be(receiptId);
+		command.ImageBytes.Should().BeSameAs(bytes);
+		command.ContentType.Should().Be("image/jpeg");
+		command.FileExtension.Should().Be(".jpg");
+	}
+}
+
 public class UploadReceiptImageCommandHandlerTests
 {
 	private readonly Mock<IReceiptService> _mockReceiptService;
@@ -115,5 +185,67 @@ public class UploadReceiptImageCommandHandlerTests
 		_mockReceiptService.Verify(
 			s => s.UpdateImagePathsAsync(receiptId, $"{receiptId}/original.png", $"{receiptId}/processed.png", It.IsAny<CancellationToken>()),
 			Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_ProcessingServiceThrows_PropagatesInvalidOperationException()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		byte[] imageBytes = [0xFF, 0xD8];
+		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
+
+		_mockReceiptService
+			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_mockStorageService
+			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync($"{receiptId}/original.jpg");
+
+		_mockProcessingService
+			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("The uploaded file is not a supported image format."));
+
+		// Act
+		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*not a supported image format*");
+
+		// Verify SaveProcessedAsync was never called after processing failure
+		_mockStorageService.Verify(
+			s => s.SaveProcessedAsync(It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
+			Times.Never);
+	}
+
+	[Fact]
+	public async Task Handle_StorageServiceThrows_PropagatesException()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		byte[] imageBytes = [0xFF, 0xD8];
+		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
+
+		_mockReceiptService
+			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_mockStorageService
+			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new IOException("Disk full"));
+
+		// Act
+		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<IOException>()
+			.WithMessage("Disk full");
+
+		// Verify preprocessing was never called
+		_mockProcessingService.Verify(
+			s => s.PreprocessAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+			Times.Never);
 	}
 }
