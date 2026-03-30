@@ -381,7 +381,7 @@ export function Layout() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex-1 container mx-auto px-4 py-6 focus:outline-none"
+        className="flex-1 container mx-auto px-4 pt-6 pb-16 focus:outline-none"
       >
         <Breadcrumbs />
         <div
