@@ -57,6 +57,25 @@ public class TesseractOcrEngineIntegrationTests : IDisposable
 	}
 
 	[Fact]
+	public async Task ExtractTextAsync_ImageExceedsMaxBytes_ThrowsArgumentException()
+	{
+		if (!TessdataAvailable)
+		{
+			return;
+		}
+
+		// Arrange — create a byte array larger than the 10 MB default
+		byte[] oversizedBytes = new byte[11 * 1024 * 1024];
+
+		// Act
+		Func<Task> act = () => _engine!.ExtractTextAsync(oversizedBytes, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<ArgumentException>()
+			.WithParameterName("imageBytes");
+	}
+
+	[Fact]
 	public async Task ExtractTextAsync_CancelledToken_ThrowsOperationCanceledException()
 	{
 		if (!TessdataAvailable)

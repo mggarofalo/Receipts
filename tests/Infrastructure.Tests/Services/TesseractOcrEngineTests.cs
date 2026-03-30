@@ -67,6 +67,19 @@ public class TesseractOcrEngineTests
 		actual.Should().Be(expected);
 	}
 
+	[Theory]
+	[InlineData("ITEM", "ITEM")]
+	[InlineData("line", "line")]
+	[InlineData("Illinois", "Illinois")]
+	public void ApplyOcrCorrections_LAndIToOne_LeavesNonDigitContextAlone(string input, string expected)
+	{
+		// Act
+		string actual = TesseractOcrEngine.ApplyOcrCorrections(input);
+
+		// Assert
+		actual.Should().Be(expected);
+	}
+
 	[Fact]
 	public void ApplyOcrCorrections_LineNormalization_TrimsAndCollapsesBlankLines()
 	{
