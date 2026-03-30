@@ -435,6 +435,13 @@ public class SubcategoriesControllerTests
 		_subcategoryServiceMock.Setup(s => s.GetReceiptItemCountBySubcategoryNameAsync(subcategory.Name, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(5);
 
+		_subcategoryServiceMock.Setup(s => s.GetAffectedReceiptsBySubcategoryNameAsync(subcategory.Name, 20, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new List<(Guid ReceiptId, DateOnly Date, string Location)>
+			{
+				(Guid.NewGuid(), new DateOnly(2026, 1, 15), "Store A"),
+				(Guid.NewGuid(), new DateOnly(2026, 2, 20), "Store B"),
+			});
+
 		// Act
 		Results<NoContent, NotFound, Conflict<object>> result = await _controller.DeleteSubcategory(subcategory.Id);
 

@@ -212,7 +212,13 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		if (receiptItemCount > 0)
 		{
 			logger.LogWarning("Subcategory {Id} cannot be deleted — {Count} receipt items reference it", id, receiptItemCount);
-			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {receiptItemCount} receipt item(s) use this subcategory", receiptItemCount });
+			List<(Guid ReceiptId, DateOnly Date, string Location)> affected = await subcategoryService.GetAffectedReceiptsBySubcategoryNameAsync(subcategory.Name, 20, HttpContext.RequestAborted);
+			return TypedResults.Conflict<object>(new
+			{
+				message = $"Cannot delete — {receiptItemCount} receipt item(s) use this subcategory",
+				receiptItemCount,
+				affectedReceipts = affected.Select(r => new { id = r.ReceiptId, date = r.Date.ToString("yyyy-MM-dd"), location = r.Location }).ToList()
+			});
 		}
 
 		DeleteSubcategoryCommand command = new([id]);

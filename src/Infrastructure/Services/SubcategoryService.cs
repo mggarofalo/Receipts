@@ -102,4 +102,9 @@ public class SubcategoryService(ISubcategoryRepository repository, SubcategoryMa
 	{
 		return await repository.GetReceiptItemCountBySubcategoryNameAsync(subcategoryName, cancellationToken);
 	}
+
+	public async Task<List<(Guid ReceiptId, DateOnly Date, string Location)>> GetAffectedReceiptsBySubcategoryNameAsync(string subcategoryName, int limit, CancellationToken cancellationToken)
+	{
+		return await repository.GetAffectedReceiptsBySubcategoryNameAsync(subcategoryName, limit, cancellationToken);
+	}
 }
