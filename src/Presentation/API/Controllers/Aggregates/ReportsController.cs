@@ -298,4 +298,55 @@ public class ReportsController(IMediator mediator) : ControllerBase
 			}).ToList()
 		});
 	}
+
+	[HttpGet("duplicates")]
+	[EndpointSummary("Get duplicate receipt detection report")]
+	[EndpointDescription("Finds receipts that share the same date+location, date+total, or all three fields and may be double entries.")]
+	public async Task<Results<Ok<DuplicatesResponse>, BadRequest<string>>> GetDuplicates(
+		[FromQuery] string? matchOn,
+		[FromQuery] string? locationTolerance,
+		[FromQuery] double? totalTolerance,
+		CancellationToken cancellationToken)
+	{
+		string match = matchOn ?? "DateAndLocation";
+		string locTol = locationTolerance ?? "exact";
+		decimal totTol = (decimal)(totalTolerance ?? 0);
+
+		string[] validMatchOn = ["DateAndLocation", "DateAndTotal", "DateAndLocationAndTotal"];
+		if (!validMatchOn.Contains(match))
+		{
+			return TypedResults.BadRequest($"Invalid matchOn '{match}'. Allowed: DateAndLocation, DateAndTotal, DateAndLocationAndTotal");
+		}
+
+		string[] validLocTolerance = ["exact", "normalized"];
+		if (!validLocTolerance.Contains(locTol.ToLowerInvariant()))
+		{
+			return TypedResults.BadRequest($"Invalid locationTolerance '{locTol}'. Allowed: exact, normalized");
+		}
+
+		if (totTol < 0)
+		{
+			return TypedResults.BadRequest("totalTolerance must be >= 0");
+		}
+
+		GetDuplicateDetectionReportQuery query = new(match, locTol, totTol);
+		AppReports.DuplicateDetectionResult result = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new DuplicatesResponse
+		{
+			GroupCount = result.GroupCount,
+			TotalDuplicateReceipts = result.TotalDuplicateReceipts,
+			Groups = result.Groups.Select(g => new DuplicateGroup
+			{
+				MatchKey = g.MatchKey,
+				Receipts = g.Receipts.Select(r => new DuplicateReceipt
+				{
+					ReceiptId = r.ReceiptId,
+					Location = r.Location,
+					Date = r.Date,
+					TransactionTotal = (double)r.TransactionTotal
+				}).ToList()
+			}).ToList()
+		});
+	}
 }

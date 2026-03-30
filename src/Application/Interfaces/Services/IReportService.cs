@@ -12,13 +12,13 @@ public interface IReportService
 		CancellationToken cancellationToken);
 
 	Task<SpendingByLocationResult> GetSpendingByLocationAsync(
-		DateOnly? startDate,
-		DateOnly? endDate,
-		string sortBy,
-		string sortDirection,
-		int page,
-		int pageSize,
-		CancellationToken cancellationToken);
+			DateOnly? startDate,
+			DateOnly? endDate,
+			string sortBy,
+			string sortDirection,
+			int page,
+			int pageSize,
+			CancellationToken cancellationToken);
 
 	Task<ItemSimilarityResult> GetItemSimilarityAsync(
 		double threshold,
@@ -45,5 +45,11 @@ public interface IReportService
 		DateOnly? startDate,
 		DateOnly? endDate,
 		string granularity,
+		CancellationToken cancellationToken);
+
+	Task<DuplicateDetectionResult> GetDuplicatesAsync(
+		string matchOn,
+		string locationTolerance,
+		decimal totalTolerance,
 		CancellationToken cancellationToken);
 }

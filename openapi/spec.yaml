@@ -3022,6 +3022,55 @@ paths:
               schema:
                 type: string
 
+  /api/reports/duplicates:
+    get:
+      operationId: GetDuplicateDetectionReport
+      tags: [Reports]
+      summary: Get duplicate receipt detection report
+      description: Finds receipts that share the same date+location, date+total, or all three fields and may be double entries.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: matchOn
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [DateAndLocation, DateAndTotal, DateAndLocationAndTotal]
+            default: DateAndLocation
+          description: Which fields to compare when detecting duplicates.
+        - name: locationTolerance
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [exact, normalized]
+            default: exact
+          description: "How to compare locations: exact (case-sensitive) or normalized (trimmed, lowercased, whitespace-collapsed)."
+        - name: totalTolerance
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            default: 0
+            minimum: 0
+          description: Maximum difference between transaction totals to still consider them matching. Default 0 (exact match).
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuplicatesResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
   # ──────────────────────────────────────────────
   # Dashboard
   # ──────────────────────────────────────────────
@@ -3432,6 +3481,49 @@ components:
         period:
           type: string
         amount:
+          type: number
+          format: double
+
+    DuplicatesResponse:
+      type: object
+      required: [groupCount, totalDuplicateReceipts, groups]
+      properties:
+        groupCount:
+          type: integer
+          format: int32
+        totalDuplicateReceipts:
+          type: integer
+          format: int32
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/DuplicateGroup"
+
+    DuplicateGroup:
+      type: object
+      required: [matchKey, receipts]
+      properties:
+        matchKey:
+          type: string
+          description: Human-readable description of what these receipts have in common.
+        receipts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DuplicateReceipt"
+
+    DuplicateReceipt:
+      type: object
+      required: [receiptId, location, date, transactionTotal]
+      properties:
+        receiptId:
+          type: string
+          format: uuid
+        location:
+          type: string
+        date:
+          type: string
+          format: date
+        transactionTotal:
           type: number
           format: double
 
