@@ -3071,6 +3071,61 @@ paths:
               schema:
                 type: string
 
+  /api/reports/category-trends:
+    get:
+      operationId: GetCategoryTrendsReport
+      tags: [Reports]
+      summary: Get category spending trends over time
+      description: Returns time-series spending data broken down by category. Categories beyond the topN threshold are collapsed into "Other". Buckets are dense and zero-filled.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO date string). Defaults to all time.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: End date (ISO date string). Defaults to today.
+        - name: granularity
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, monthly, quarterly, yearly]
+            default: monthly
+          description: Time bucket granularity.
+        - name: topN
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 7
+          description: Number of top categories to show. Remaining categories are collapsed into "Other".
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryTrendsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
   # ──────────────────────────────────────────────
   # Dashboard
   # ──────────────────────────────────────────────
@@ -3526,6 +3581,34 @@ components:
         transactionTotal:
           type: number
           format: double
+
+    CategoryTrendsResponse:
+      type: object
+      required: [categories, buckets]
+      properties:
+        categories:
+          type: array
+          items:
+            type: string
+          description: Ordered list of category names. The amounts array in each bucket parallels this list.
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryTrendsBucket"
+
+    CategoryTrendsBucket:
+      type: object
+      required: [period, amounts]
+      properties:
+        period:
+          type: string
+          description: Time period label (e.g. "2024-01", "2024 Q1", "2024").
+        amounts:
+          type: array
+          items:
+            type: number
+            format: double
+          description: Spending amounts parallel to the categories array. Zero-filled for missing data.
 
     # ── Dashboard ──────────────────────────────────
 

@@ -52,4 +52,11 @@ public interface IReportService
 		string locationTolerance,
 		decimal totalTolerance,
 		CancellationToken cancellationToken);
+
+	Task<CategoryTrendsResult> GetCategoryTrendsAsync(
+		DateOnly startDate,
+		DateOnly endDate,
+		string granularity,
+		int topN,
+		CancellationToken cancellationToken);
 }
