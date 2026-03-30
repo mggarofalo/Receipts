@@ -231,4 +231,11 @@ describe("Layout", () => {
     renderLayout();
     expect(screen.queryByText(/dev/)).not.toBeInTheDocument();
   });
+
+  it("applies bottom padding to main content to clear the Sentry feedback button", () => {
+    renderLayout();
+    const main = document.getElementById("main-content");
+    expect(main).not.toBeNull();
+    expect(main!.className).toContain("pb-16");
+  });
 });
