@@ -26,6 +26,7 @@ import {
   useDeleteReceipts,
   useDeletedReceipts,
   useRestoreReceipt,
+  useLocationSuggestions,
 } from "./useReceipts";
 
 function createWrapper() {
@@ -321,5 +322,66 @@ describe("useReceipts", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["receipts"] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["receipts", "deleted"] });
+  });
+});
+
+describe("useLocationSuggestions", () => {
+  it("returns location strings on success", async () => {
+    const locations = ["Walmart", "Target", "Costco"];
+    (client.GET as Mock).mockResolvedValue({
+      data: { locations },
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => useLocationSuggestions(""), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(locations);
+    expect(client.GET).toHaveBeenCalledWith("/api/receipts/locations", {
+      params: { query: { q: undefined, limit: 20 } },
+    });
+  });
+
+  it("passes query parameter when provided", async () => {
+    (client.GET as Mock).mockResolvedValue({
+      data: { locations: ["Walmart"] },
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => useLocationSuggestions("Wal"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/receipts/locations", {
+      params: { query: { q: "Wal", limit: 20 } },
+    });
+  });
+
+  it("returns empty array when response has no locations", async () => {
+    (client.GET as Mock).mockResolvedValue({
+      data: undefined,
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => useLocationSuggestions(""), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual([]);
+  });
+
+  it("throws on error", async () => {
+    const error = { message: "Server error" };
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error });
+
+    const { result } = renderHook(() => useLocationSuggestions(""), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });

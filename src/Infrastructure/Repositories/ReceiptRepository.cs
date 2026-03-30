@@ -123,6 +123,29 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		return await context.Receipts.CountAsync(cancellationToken);
 	}
 
+	public async Task<List<string>> GetDistinctLocationsAsync(string? query, int limit, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+
+		IQueryable<ReceiptEntity> receipts = context.Receipts.AsNoTracking();
+
+		if (!string.IsNullOrWhiteSpace(query))
+		{
+			string pattern = query.Replace("%", "\\%").Replace("_", "\\_") + "%";
+			receipts = receipts.Where(r => EF.Functions.ILike(r.Location, pattern));
+		}
+
+		List<string> locations = await receipts
+			.GroupBy(r => r.Location)
+			.OrderByDescending(g => g.Count())
+			.ThenBy(g => g.Key)
+			.Select(g => g.Key)
+			.Take(limit)
+			.ToListAsync(cancellationToken);
+
+		return locations;
+	}
+
 	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();

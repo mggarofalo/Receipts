@@ -7,6 +7,7 @@ using Application.Commands.ReceiptItem.Restore;
 using Application.Commands.ReceiptItem.Update;
 using Application.Models;
 using Application.Queries.Core.ReceiptItem;
+using Application.Queries.Core.ReceiptItem.GetReceiptItemSuggestions;
 using Asp.Versioning;
 using Domain.Core;
 using MediatR;
@@ -32,6 +33,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	public const string RouteDelete = "";
 	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
+	public const string RouteGetSuggestions = "suggestions";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a receipt item by ID")]
@@ -229,5 +231,26 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 
 		await notifier.NotifyUpdated("receipt-item", id);
 		return TypedResults.NoContent();
+	}
+
+	[HttpGet(RouteGetSuggestions)]
+	[EndpointSummary("Get item code suggestions from receipt history")]
+	[EndpointDescription("Returns suggestions for receipt item entry based on historical receipt items, grouped by itemCode and optionally filtered by location.")]
+	public async Task<Ok<List<ReceiptItemSuggestionResponse>>> GetSuggestions([FromQuery] string itemCode, [FromQuery] string? location = null, [FromQuery] int limit = 10)
+	{
+		GetReceiptItemSuggestionsQuery query = new(itemCode, location, limit);
+		IEnumerable<ReceiptItemSuggestion> results = await mediator.Send(query);
+
+		List<ReceiptItemSuggestionResponse> response = [.. results.Select(r => new ReceiptItemSuggestionResponse
+		{
+			ItemCode = r.ItemCode,
+			Description = r.Description,
+			Category = r.Category,
+			Subcategory = r.Subcategory,
+			UnitPrice = (double)r.UnitPrice,
+			MatchType = r.MatchType == "location" ? ReceiptItemSuggestionResponseMatchType.Location : ReceiptItemSuggestionResponseMatchType.Global,
+		})];
+
+		return TypedResults.Ok(response);
 	}
 }

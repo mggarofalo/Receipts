@@ -1,4 +1,5 @@
 using Application.Models;
+using Application.Queries.Core.ReceiptItem.GetReceiptItemSuggestions;
 using Infrastructure.Entities.Core;
 
 namespace Infrastructure.Interfaces.Repositories;
@@ -17,4 +18,5 @@ public interface IReceiptItemRepository
 	Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken);
 	Task<int> GetCountAsync(CancellationToken cancellationToken);
 	Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken);
+	Task<List<ReceiptItemSuggestion>> GetSuggestionsAsync(string itemCode, string? location, int limit, CancellationToken cancellationToken);
 }

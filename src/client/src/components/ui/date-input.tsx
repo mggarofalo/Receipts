@@ -214,6 +214,7 @@ export function DateInput({
         ref={mergedRef}
         type="date"
         data-slot="input"
+        autoComplete="off"
         value={value || ""}
         min={min}
         max={max}
@@ -238,6 +239,7 @@ export function DateInput({
         type="text"
         inputMode="text"
         data-slot="input"
+        autoComplete="off"
         value={displayValue}
         onFocus={handleFocus}
         onChange={handleTextChange}

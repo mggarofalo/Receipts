@@ -51,7 +51,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all accounts")]
-	public async Task<Results<Ok<AccountListResponse>, BadRequest<string>>> GetAllAccounts([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<AccountListResponse>, BadRequest<string>>> GetAllAccounts([FromQuery] bool? isActive = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
 	{
 		if (offset < 0)
 		{
@@ -74,7 +74,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		}
 
 		SortParams sort = new(sortBy, sortDirection);
-		GetAllAccountsQuery query = new(offset, limit, sort);
+		GetAllAccountsQuery query = new(offset, limit, sort, isActive);
 		PagedResult<Account> result = await mediator.Send(query);
 
 		return TypedResults.Ok(new AccountListResponse

@@ -38,6 +38,7 @@ public class ReceiptsController(
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
 	public const string RouteDelete = "";
+	public const string RouteGetLocations = "locations";
 	public const string RouteGetDeleted = "deleted";
 	public const string RouteRestore = "{id}/restore";
 
@@ -94,6 +95,27 @@ public class ReceiptsController(
 			Offset = result.Offset,
 			Limit = result.Limit,
 		});
+	}
+
+	[HttpGet(RouteGetLocations)]
+	[EndpointSummary("Get distinct receipt locations sorted by frequency")]
+	[EndpointDescription("Returns distinct location strings from existing receipts, ordered by usage frequency (most-used first). Supports optional prefix filtering.")]
+	public async Task<Results<Ok<LocationSuggestionsResponse>, BadRequest<string>>> GetLocations([FromQuery] string? q = null, [FromQuery] int limit = 20)
+	{
+		if (limit <= 0 || limit > 100)
+		{
+			return TypedResults.BadRequest("limit must be between 1 and 100");
+		}
+
+		GetDistinctLocationsQuery query = new(q, limit);
+		List<string> locations = await mediator.Send(query);
+
+		LocationSuggestionsResponse response = new()
+		{
+			Locations = [.. locations],
+		};
+
+		return TypedResults.Ok(response);
 	}
 
 	[HttpGet(RouteGetDeleted)]

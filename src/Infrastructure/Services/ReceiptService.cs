@@ -63,4 +63,9 @@ public class ReceiptService(IReceiptRepository repository, ReceiptMapper mapper)
 	{
 		return await repository.RestoreAsync(id, cancellationToken);
 	}
+
+	public async Task<List<string>> GetDistinctLocationsAsync(string? query, int limit, CancellationToken cancellationToken)
+	{
+		return await repository.GetDistinctLocationsAsync(query, limit, cancellationToken);
+	}
 }

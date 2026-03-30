@@ -72,6 +72,7 @@ export function StackedAreaChart({
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
         <XAxis
           dataKey="period"
+          type="category"
           tick={{ fontSize: 12 }}
           className="fill-muted-foreground"
         />
@@ -106,7 +107,9 @@ export function StackedAreaChart({
             stackId="1"
             stroke={CHART_COLORS[i % CHART_COLORS.length]}
             fill={`url(#${baseId}-gradient-${i})`}
-            strokeWidth={1.5}
+            fillOpacity={0.3}
+            strokeWidth={2}
+            strokeOpacity={0.8}
           />
         ))}
       </AreaChart>

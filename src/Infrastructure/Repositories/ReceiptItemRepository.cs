@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Application.Models;
+using Application.Queries.Core.ReceiptItem.GetReceiptItemSuggestions;
 using Infrastructure.Entities.Core;
 using Infrastructure.Extensions;
 using Infrastructure.Interfaces.Repositories;
@@ -194,5 +195,60 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 		entity.CascadeDeletedByParentId = null;
 		await context.SaveChangesAsync(cancellationToken);
 		return true;
+	}
+
+	public async Task<List<ReceiptItemSuggestion>> GetSuggestionsAsync(string itemCode, string? location, int limit, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		string lowerItemCode = itemCode.ToLowerInvariant();
+
+		// Try location-filtered results first
+		if (!string.IsNullOrWhiteSpace(location))
+		{
+			string lowerLocation = location.ToLowerInvariant();
+
+			List<ReceiptItemSuggestion> locationResults = await context.ReceiptItems
+				.AsNoTracking()
+				.Where(ri => ri.ReceiptItemCode != null && ri.ReceiptItemCode != "")
+				.Where(ri => ri.Receipt != null && ri.Receipt.Location.ToLower() == lowerLocation)
+				.Where(ri => ri.ReceiptItemCode!.ToLower().Contains(lowerItemCode))
+				.GroupBy(ri => ri.ReceiptItemCode!.ToLower())
+				.Select(g => new ReceiptItemSuggestion
+				{
+					ItemCode = g.OrderByDescending(ri => ri.Id).First().ReceiptItemCode!,
+					Description = g.OrderByDescending(ri => ri.Id).First().Description,
+					Category = g.OrderByDescending(ri => ri.Id).First().Category,
+					Subcategory = g.OrderByDescending(ri => ri.Id).First().Subcategory,
+					UnitPrice = g.OrderByDescending(ri => ri.Id).First().UnitPrice,
+					MatchType = "location",
+				})
+				.Take(limit)
+				.ToListAsync(cancellationToken);
+
+			if (locationResults.Count > 0)
+			{
+				return locationResults;
+			}
+		}
+
+		// Fall back to all-location matches
+		List<ReceiptItemSuggestion> globalResults = await context.ReceiptItems
+			.AsNoTracking()
+			.Where(ri => ri.ReceiptItemCode != null && ri.ReceiptItemCode != "")
+			.Where(ri => ri.ReceiptItemCode!.ToLower().Contains(lowerItemCode))
+			.GroupBy(ri => ri.ReceiptItemCode!.ToLower())
+			.Select(g => new ReceiptItemSuggestion
+			{
+				ItemCode = g.OrderByDescending(ri => ri.Id).First().ReceiptItemCode!,
+				Description = g.OrderByDescending(ri => ri.Id).First().Description,
+				Category = g.OrderByDescending(ri => ri.Id).First().Category,
+				Subcategory = g.OrderByDescending(ri => ri.Id).First().Subcategory,
+				UnitPrice = g.OrderByDescending(ri => ri.Id).First().UnitPrice,
+				MatchType = "global",
+			})
+			.Take(limit)
+			.ToListAsync(cancellationToken);
+
+		return globalResults;
 	}
 }

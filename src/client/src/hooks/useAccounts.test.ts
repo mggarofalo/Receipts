@@ -57,6 +57,38 @@ describe("useAccounts", () => {
     });
   });
 
+  it("list query passes isActive filter to API", async () => {
+    const accounts = [
+      { id: "1", accountCode: "ACC1", name: "Checking", isActive: true },
+    ];
+    (client.GET as Mock).mockResolvedValue({ data: { data: accounts, total: 1, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useAccounts(0, 50, null, null, true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/accounts", {
+      params: { query: { offset: 0, limit: 50, isActive: true } },
+    });
+  });
+
+  it("list query omits isActive when null", async () => {
+    const accounts = [
+      { id: "1", accountCode: "ACC1", name: "Checking", isActive: true },
+    ];
+    (client.GET as Mock).mockResolvedValue({ data: { data: accounts, total: 1, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useAccounts(0, 50, null, null, null), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/accounts", {
+      params: { query: { offset: 0, limit: 50 } },
+    });
+  });
+
   it("single query is disabled when id is null", () => {
     const { result } = renderHook(() => useAccount(null), {
       wrapper: createWrapper(),

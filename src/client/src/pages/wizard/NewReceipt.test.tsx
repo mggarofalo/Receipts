@@ -16,6 +16,7 @@ vi.mock("@/hooks/useReceipts", () => ({
   useCreateCompleteReceipt: vi.fn(() =>
     mockMutationResult({ mutateAsync: mockCreateCompleteReceiptAsync }),
   ),
+  useLocationSuggestions: vi.fn(() => ({ data: undefined })),
 }));
 
 const mockNavigate = vi.fn();

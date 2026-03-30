@@ -156,6 +156,7 @@ export default function NewReceipt() {
             goNext();
           }}
           onBack={goBack}
+          location={state.receipt.location}
         />
       )}
       {state.currentStep === 3 && (

@@ -80,6 +80,7 @@ export function CurrencyInput({
         ref={inputRef}
         type="text"
         inputMode="decimal"
+        autoComplete="off"
         value={displayValue}
         placeholder="0.00"
         onChange={handleChange}

@@ -14,6 +14,7 @@ vi.mock("@/hooks/useReceipts", () => ({
   useCreateReceipt: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateReceipt: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteReceipts: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useLocationSuggestions: vi.fn(() => ({ data: undefined })),
 }));
 
 vi.mock("@/hooks/useFuzzySearch", () => ({

@@ -158,6 +158,20 @@ export function useCreateCompleteReceipt() {
   });
 }
 
+export function useLocationSuggestions(query: string) {
+  return useQuery({
+    queryKey: ["receipts", "locations", query],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/receipts/locations", {
+        params: { query: { q: query || undefined, limit: 20 } },
+      });
+      if (error) throw error;
+      return data?.locations ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useRestoreReceipt() {
   const queryClient = useQueryClient();
   return useMutation({

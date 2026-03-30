@@ -23,6 +23,7 @@ import { NoResults } from "@/components/NoResults";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -66,17 +67,18 @@ function Accounts() {
   const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "name", defaultSortDirection: "asc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
-  const { data: accountsData, total: serverTotal, isLoading } = useAccounts(offset, limit, sortBy, sortDirection);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
+    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
+  });
+  const isActiveParam = statusFilter === "all" ? undefined : statusFilter === "true";
+  const { data: accountsData, total: serverTotal, isLoading } = useAccounts(offset, limit, sortBy, sortDirection, isActiveParam);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccount = useDeleteAccount();
   const { isAdmin } = usePermission();
   const [createOpen, setCreateOpen] = useState(false);
   const [editAccount, setEditAccount] = useState<AccountResponse | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
-    const saved = localStorage.getItem(STATUS_STORAGE_KEY);
-    return saved === "all" || saved === "true" || saved === "false" ? saved : "true";
-  });
 
   const anyDialogOpen = createOpen || editAccount !== null;
 
@@ -93,6 +95,15 @@ function Accounts() {
     resetPage();
   }, [toggleSort, resetPage]);
 
+  const handleToggleActive = useCallback((account: AccountResponse, checked: boolean) => {
+    updateAccount.mutate({
+      id: account.id,
+      accountCode: account.accountCode,
+      name: account.name,
+      isActive: checked,
+    });
+  }, [updateAccount]);
+
   const data = (accountsData as AccountResponse[] | undefined) ?? [];
 
   const { search, setSearch, results, totalCount, clearSearch } =
@@ -102,14 +113,12 @@ function Accounts() {
     const v = value as StatusFilter;
     setStatusFilter(v);
     localStorage.setItem(STATUS_STORAGE_KEY, v);
+    resetPage();
   }
 
   const filteredResults = useMemo(() => {
-    const items = results.map((r) => r.item);
-    if (statusFilter === "all") return items;
-    const expected = statusFilter === "true";
-    return items.filter((a) => a.isActive === expected);
-  }, [results, statusFilter]);
+    return results.map((r) => r.item);
+  }, [results]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -224,11 +233,18 @@ function Accounts() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={account.isActive ? "default" : "secondary"}
-                        >
-                          {account.isActive ? "Active" : "Inactive"}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={account.isActive}
+                            onCheckedChange={(checked) => handleToggleActive(account, checked)}
+                            aria-label={`Toggle ${account.name} active status`}
+                          />
+                          <Badge
+                            variant={account.isActive ? "default" : "secondary"}
+                          >
+                            {account.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Link to={`/transactions?accountId=${account.id}`} className="text-sm text-primary hover:underline">

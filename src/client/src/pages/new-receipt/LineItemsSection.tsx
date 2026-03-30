@@ -12,6 +12,7 @@ import {
   useSimilarItems,
   useCategoryRecommendations,
 } from "@/hooks/useSimilarItems";
+import { useReceiptItemSuggestions } from "@/hooks/useReceiptItemSuggestions";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,9 +80,10 @@ export interface ReceiptLineItem {
 interface LineItemsSectionProps {
   items: ReceiptLineItem[];
   onChange: (items: ReceiptLineItem[]) => void;
+  location?: string | null;
 }
 
-export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
+export function LineItemsSection({ items, onChange, location }: LineItemsSectionProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsListId = "new-receipt-suggestions-list";
   const { data: categories } = useCategories();
@@ -108,9 +110,63 @@ export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const itemCode = form.watch("receiptItemCode");
   const description = form.watch("description");
   const selectedCategory = form.watch("category");
   const pricingMode = form.watch("pricingMode");
+
+  // Item code autocomplete
+  const [showItemCodeSuggestions, setShowItemCodeSuggestions] = useState(false);
+  const itemCodeSuggestionsListId = "new-receipt-item-code-suggestions-list";
+
+  const { data: itemCodeSuggestions, isFetching: isFetchingItemCodeSuggestions } =
+    useReceiptItemSuggestions(itemCode ?? "", location, {
+      enabled: showItemCodeSuggestions && (itemCode ?? "").length >= 1,
+    });
+
+  const hasItemCodeResults = itemCodeSuggestions && itemCodeSuggestions.length > 0;
+  const hasNoItemCodeResultsMessage =
+    (itemCode ?? "").length >= 1 &&
+    !isFetchingItemCodeSuggestions &&
+    itemCodeSuggestions &&
+    itemCodeSuggestions.length === 0;
+  const isItemCodeSuggestionsOpen =
+    showItemCodeSuggestions && (hasItemCodeResults || hasNoItemCodeResultsMessage);
+
+  const applyItemCodeSuggestion = useCallback(
+    (suggestion: NonNullable<typeof itemCodeSuggestions>[number]) => {
+      form.setValue("receiptItemCode", suggestion.itemCode);
+      form.setValue("description", suggestion.description);
+      if (suggestion.category) {
+        form.setValue("category", suggestion.category);
+      }
+      if (suggestion.subcategory) {
+        form.setValue("subcategory", suggestion.subcategory);
+      }
+      if (suggestion.unitPrice != null) {
+        form.setValue("unitPrice", suggestion.unitPrice);
+      }
+      setShowItemCodeSuggestions(false);
+    },
+    [form],
+  );
+
+  const handleItemCodeKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
+        setShowItemCodeSuggestions(false);
+      } else if (e.key === "ArrowDown" && isItemCodeSuggestionsOpen) {
+        e.preventDefault();
+        const list = document.getElementById(itemCodeSuggestionsListId);
+        const firstItem = list?.querySelector(
+          "[cmdk-item]",
+        ) as HTMLElement | null;
+        firstItem?.focus();
+      }
+    },
+    [isItemCodeSuggestionsOpen, itemCodeSuggestionsListId],
+  );
 
   const { data: similarItems, isFetching: isFetchingSimilar } =
     useSimilarItems(description, { enabled: showSuggestions });
@@ -261,6 +317,89 @@ export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
             className="space-y-4"
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="receiptItemCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Code</FormLabel>
+                    <Popover
+                      open={isItemCodeSuggestionsOpen}
+                      onOpenChange={setShowItemCodeSuggestions}
+                    >
+                      <PopoverAnchor asChild>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              role="combobox"
+                              placeholder="e.g. MILK-GAL"
+                              aria-autocomplete="list"
+                              aria-expanded={isItemCodeSuggestionsOpen}
+                              aria-controls={itemCodeSuggestionsListId}
+                              autoComplete="off"
+                              {...field}
+                              onFocus={() => setShowItemCodeSuggestions(true)}
+                              onKeyDown={handleItemCodeKeyDown}
+                            />
+                            {isFetchingItemCodeSuggestions && (itemCode ?? "").length >= 1 && (
+                              <>
+                                <Loader2 className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-hidden="true" />
+                                <span className="sr-only" role="status">Loading suggestions...</span>
+                              </>
+                            )}
+                          </div>
+                        </FormControl>
+                      </PopoverAnchor>
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onInteractOutside={() => setShowItemCodeSuggestions(false)}
+                      >
+                        <Command shouldFilter={false}>
+                          <CommandList id={itemCodeSuggestionsListId}>
+                            <CommandEmpty>No suggestions found</CommandEmpty>
+                            {itemCodeSuggestions?.map((suggestion) => (
+                              <CommandItem
+                                key={`${suggestion.itemCode}-${suggestion.matchType}`}
+                                value={`${suggestion.itemCode} ${suggestion.description}`}
+                                onSelect={() => applyItemCodeSuggestion(suggestion)}
+                              >
+                                <div className="flex w-full items-center justify-between">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="font-medium font-mono">
+                                      {suggestion.itemCode}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {suggestion.description}
+                                      {suggestion.category
+                                        ? ` · ${suggestion.category}`
+                                        : ""}
+                                      {suggestion.unitPrice != null
+                                        ? ` · ${formatCurrency(suggestion.unitPrice)}`
+                                        : ""}
+                                    </span>
+                                  </div>
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0"
+                                  >
+                                    {suggestion.matchType === "location"
+                                      ? "Location"
+                                      : "Global"}
+                                  </Badge>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="description"
@@ -447,21 +586,7 @@ export function LineItemsSection({ items, onChange }: LineItemsSectionProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[auto_auto_auto_auto_1fr] sm:items-end">
-              <FormField
-                control={form.control}
-                name="receiptItemCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Item Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. MILK-GAL" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[auto_auto_auto_1fr] sm:items-end">
               <FormField
                 control={form.control}
                 name="pricingMode"

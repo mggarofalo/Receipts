@@ -161,6 +161,7 @@ function ReceiptDetail() {
             receiptId={id}
             items={trip.receipt.items}
             subtotal={subtotal}
+            location={trip.receipt.receipt.location}
           />
 
           {/* Adjustments Table (read-only) */}

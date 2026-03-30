@@ -129,6 +129,13 @@ describe("CurrencyInput", () => {
     expect(screen.getByText("EUR")).toBeInTheDocument();
   });
 
+  it("disables browser autofill with autoComplete='off'", () => {
+    render(<CurrencyInput {...defaultProps} />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveAttribute("autocomplete", "off");
+  });
+
   it("keeps text empty (not '0.00') when focusing a zero-value field", async () => {
     const user = userEvent.setup();
 

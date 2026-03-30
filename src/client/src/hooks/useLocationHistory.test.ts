@@ -1,6 +1,10 @@
 import { renderHook, act } from "@testing-library/react";
 import { useLocationHistory } from "./useLocationHistory";
 
+vi.mock("@/hooks/useReceipts", () => ({
+  useLocationSuggestions: vi.fn(() => ({ data: undefined })),
+}));
+
 describe("useLocationHistory", () => {
   beforeEach(() => {
     localStorage.clear();
