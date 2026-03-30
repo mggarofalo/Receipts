@@ -106,6 +106,106 @@ public class AccountRepositoryTests
 	}
 
 	[Fact]
+	public async Task GetAllAsync_WithIsActiveTrue_ReturnsOnlyActiveAccounts()
+	{
+		// Arrange
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		AccountEntity activeAccount = AccountEntityGenerator.Generate();
+		activeAccount.IsActive = true;
+		AccountEntity inactiveAccount = AccountEntityGenerator.Generate();
+		inactiveAccount.IsActive = false;
+		await context.Accounts.AddRangeAsync([activeAccount, inactiveAccount]);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		AccountRepository repository = new(_contextFactory);
+
+		// Act
+		List<AccountEntity> actual = await repository.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None, isActive: true);
+
+		// Assert
+		actual.Should().HaveCount(1);
+		actual[0].Id.Should().Be(activeAccount.Id);
+
+		_contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetAllAsync_WithIsActiveFalse_ReturnsOnlyInactiveAccounts()
+	{
+		// Arrange
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		AccountEntity activeAccount = AccountEntityGenerator.Generate();
+		activeAccount.IsActive = true;
+		AccountEntity inactiveAccount = AccountEntityGenerator.Generate();
+		inactiveAccount.IsActive = false;
+		await context.Accounts.AddRangeAsync([activeAccount, inactiveAccount]);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		AccountRepository repository = new(_contextFactory);
+
+		// Act
+		List<AccountEntity> actual = await repository.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None, isActive: false);
+
+		// Assert
+		actual.Should().HaveCount(1);
+		actual[0].Id.Should().Be(inactiveAccount.Id);
+
+		_contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetAllAsync_WithIsActiveNull_ReturnsAllAccounts()
+	{
+		// Arrange
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		AccountEntity activeAccount = AccountEntityGenerator.Generate();
+		activeAccount.IsActive = true;
+		AccountEntity inactiveAccount = AccountEntityGenerator.Generate();
+		inactiveAccount.IsActive = false;
+		await context.Accounts.AddRangeAsync([activeAccount, inactiveAccount]);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		AccountRepository repository = new(_contextFactory);
+
+		// Act
+		List<AccountEntity> actual = await repository.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None, isActive: null);
+
+		// Assert
+		actual.Should().HaveCount(2);
+
+		_contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetCountAsync_WithIsActive_ReturnsFilteredCount()
+	{
+		// Arrange
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		AccountEntity activeAccount1 = AccountEntityGenerator.Generate();
+		activeAccount1.IsActive = true;
+		AccountEntity activeAccount2 = AccountEntityGenerator.Generate();
+		activeAccount2.IsActive = true;
+		AccountEntity inactiveAccount = AccountEntityGenerator.Generate();
+		inactiveAccount.IsActive = false;
+		await context.Accounts.AddRangeAsync([activeAccount1, activeAccount2, inactiveAccount]);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		AccountRepository repository = new(_contextFactory);
+
+		// Act
+		int activeCount = await repository.GetCountAsync(CancellationToken.None, isActive: true);
+		int inactiveCount = await repository.GetCountAsync(CancellationToken.None, isActive: false);
+		int allCount = await repository.GetCountAsync(CancellationToken.None, isActive: null);
+
+		// Assert
+		activeCount.Should().Be(2);
+		inactiveCount.Should().Be(1);
+		allCount.Should().Be(3);
+
+		_contextFactory.ResetDatabase();
+	}
+
+	[Fact]
 	public async Task CreateAsync_ValidAccounts_ReturnsCreatedAccounts()
 	{
 		// Arrange
