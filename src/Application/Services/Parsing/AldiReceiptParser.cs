@@ -93,8 +93,9 @@ public partial class AldiReceiptParser : IReceiptParser
 				continue;
 			}
 
-			Match priceMatch = PricePattern().Match(lines[i]);
-			if (priceMatch.Success && decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal amount))
+			MatchCollection matches = PricePattern().Matches(lines[i]);
+			Match? priceMatch = matches.Count > 0 ? matches[^1] : null;
+			if (priceMatch is not null && decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal amount))
 			{
 				return FieldConfidence<decimal>.High(amount);
 			}
@@ -115,8 +116,9 @@ public partial class AldiReceiptParser : IReceiptParser
 				continue;
 			}
 
-			Match priceMatch = PricePattern().Match(line);
-			if (!priceMatch.Success || !decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal taxAmount))
+			MatchCollection matches = PricePattern().Matches(line);
+			Match? priceMatch = matches.Count > 0 ? matches[^1] : null;
+			if (priceMatch is null || !decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal taxAmount))
 			{
 				continue;
 			}

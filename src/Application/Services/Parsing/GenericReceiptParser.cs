@@ -83,8 +83,9 @@ public partial class GenericReceiptParser : IReceiptParser
 				continue;
 			}
 
-			Match priceMatch = PricePattern().Match(lines[i]);
-			if (priceMatch.Success && decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal totalAmount))
+			MatchCollection matches = PricePattern().Matches(lines[i]);
+			Match? priceMatch = matches.Count > 0 ? matches[^1] : null;
+			if (priceMatch is not null && decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal totalAmount))
 			{
 				return FieldConfidence<decimal>.High(totalAmount);
 			}
@@ -103,8 +104,9 @@ public partial class GenericReceiptParser : IReceiptParser
 				continue;
 			}
 
-			Match priceMatch = PricePattern().Match(lines[i]);
-			if (priceMatch.Success && decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal subtotalAmount))
+			MatchCollection matches = PricePattern().Matches(lines[i]);
+			Match? priceMatch = matches.Count > 0 ? matches[^1] : null;
+			if (priceMatch is not null && decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal subtotalAmount))
 			{
 				return FieldConfidence<decimal>.High(subtotalAmount);
 			}
@@ -125,8 +127,9 @@ public partial class GenericReceiptParser : IReceiptParser
 				continue;
 			}
 
-			Match priceMatch = PricePattern().Match(line);
-			if (!priceMatch.Success || !decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal taxAmount))
+			MatchCollection matches = PricePattern().Matches(line);
+			Match? priceMatch = matches.Count > 0 ? matches[^1] : null;
+			if (priceMatch is null || !decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal taxAmount))
 			{
 				continue;
 			}
@@ -178,7 +181,7 @@ public partial class GenericReceiptParser : IReceiptParser
 		return FieldConfidence<string?>.None();
 	}
 
-	protected static List<ParsedReceiptItem> ExtractItems(string[] lines)
+	private static List<ParsedReceiptItem> ExtractItems(string[] lines)
 	{
 		List<ParsedReceiptItem> items = [];
 
@@ -231,19 +234,19 @@ public partial class GenericReceiptParser : IReceiptParser
 	private static partial Regex LongDatePattern();
 
 	[GeneratedRegex(@"\d+\.\d{2}")]
-	protected static partial Regex PricePattern();
+	private static partial Regex PricePattern();
 
 	[GeneratedRegex(@"\d{2}[/-]\d{2}[/-]\d{2,4}")]
 	private static partial Regex DatePattern();
 
 	[GeneratedRegex(@"\b(?:GRAND\s+)?TOTAL\b")]
-	protected static partial Regex TotalLinePattern();
+	private static partial Regex TotalLinePattern();
 
 	[GeneratedRegex(@"\bSUB[\s-]?TOTAL\b")]
-	protected static partial Regex SubtotalLinePattern();
+	private static partial Regex SubtotalLinePattern();
 
 	[GeneratedRegex(@"\b(?:TAX|GST|HST|VAT|PST)\b")]
-	protected static partial Regex TaxLinePattern();
+	private static partial Regex TaxLinePattern();
 
 	[GeneratedRegex(@"\bCHANGE\b")]
 	private static partial Regex ChangeLinePattern();
