@@ -53,7 +53,7 @@ export default function CategoryTrends() {
   }));
   const [granularityOverride, setGranularityOverride] =
     useState<Granularity | null>(null);
-  const [topN, setTopN] = useState(7);
+  const [topN, setTopN] = useState(5);
 
   const autoGranularity = useMemo(
     () => getAutoGranularity(dateRange),
