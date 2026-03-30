@@ -11,6 +11,11 @@ public static class ApplicationService
 	{
 		services.AddMediatR(cfg =>
 		{
+			string? licenseKey = configuration["MediatR:LicenseKey"];
+			if (!string.IsNullOrEmpty(licenseKey))
+			{
+				cfg.LicenseKey = licenseKey;
+			}
 			cfg.RegisterServicesFromAssembly(typeof(ICommand<>).Assembly);
 			cfg.RegisterServicesFromAssembly(typeof(IQuery<>).Assembly);
 			cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
