@@ -349,36 +349,41 @@ describe("Accounts", () => {
     expect(screen.getByText(/try fewer keywords/i)).toBeInTheDocument();
   });
 
-  it("defaults to showing only active accounts", async () => {
-    const items = [
+  it("defaults to showing only active accounts (server-side filtered)", async () => {
+    // Server-side filtering: useAccounts is called with isActive=true by default,
+    // so mock data only contains active accounts (the server already filtered).
+    const activeItems = [
       mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }),
-      mockAccountResponse({ id: "2", accountCode: "ACC-002", name: "Savings", isActive: false }),
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
     vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
       search: "",
       setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
+      results: activeItems.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: activeItems.length,
       isSearching: false,
       clearSearch: vi.fn(),
     }));
 
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: items,
-      total: items.length,
+      data: activeItems,
+      total: activeItems.length,
       isLoading: false,
     }));
 
     renderWithProviders(<Accounts />);
     expect(screen.getByText("Checking")).toBeInTheDocument();
-    expect(screen.queryByText("Savings")).not.toBeInTheDocument();
 
     // Active tab should be selected
     const activeTab = screen.getByRole("tab", { name: "Active" });
     expect(activeTab).toHaveAttribute("data-state", "active");
+
+    // Verify useAccounts was called with isActive=true (5th argument)
+    expect(useAccounts).toHaveBeenCalledWith(
+      expect.anything(), expect.anything(), expect.anything(), expect.anything(), true,
+    );
   });
 
   it("persists status filter in localStorage", async () => {
@@ -398,10 +403,9 @@ describe("Accounts", () => {
     expect(localStorage.getItem("accounts-status-filter")).toBe("all");
   });
 
-  it("shows inactive accounts when Inactive tab is selected", async () => {
+  it("passes isActive=false to useAccounts when Inactive tab is selected", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
-    const items = [
-      mockAccountResponse({ id: "1", accountCode: "ACC-001", name: "Checking", isActive: true }),
+    const inactiveItems = [
       mockAccountResponse({ id: "2", accountCode: "ACC-002", name: "Savings", isActive: false }),
     ];
 
@@ -409,24 +413,26 @@ describe("Accounts", () => {
     vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
       search: "",
       setSearch: vi.fn(),
-      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
-      totalCount: items.length,
+      results: inactiveItems.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: inactiveItems.length,
       isSearching: false,
       clearSearch: vi.fn(),
     }));
 
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
-      data: items,
-      total: items.length,
+      data: inactiveItems,
+      total: inactiveItems.length,
       isLoading: false,
     }));
 
     renderWithProviders(<Accounts />);
     await user.click(screen.getByRole("tab", { name: "Inactive" }));
 
-    expect(screen.queryByText("Checking")).not.toBeInTheDocument();
-    expect(screen.getByText("Savings")).toBeInTheDocument();
+    // Verify useAccounts was called with isActive=false after tab switch
+    expect(useAccounts).toHaveBeenCalledWith(
+      expect.anything(), expect.anything(), expect.anything(), expect.anything(), false,
+    );
   });
 
 });

@@ -114,7 +114,7 @@ public class AccountsControllerTests
 			.ReturnsAsync(new PagedResult<Account>(accounts, accounts.Count, 0, 50));
 
 		// Act
-		Results<Ok<AccountListResponse>, BadRequest<string>> rawResult = await _controller.GetAllAccounts(0, 50, null, null);
+		Results<Ok<AccountListResponse>, BadRequest<string>> rawResult = await _controller.GetAllAccounts(null, 0, 50, null, null);
 
 		// Assert
 		Ok<AccountListResponse> result = Assert.IsType<Ok<AccountListResponse>>(rawResult.Result);
@@ -132,7 +132,7 @@ public class AccountsControllerTests
 	public async Task GetAllAccounts_ReturnsBadRequest_WhenOffsetIsNegative(int offset, int limit)
 	{
 		// Act
-		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetAllAccounts(offset, limit, null, null);
+		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetAllAccounts(null, offset, limit, null, null);
 
 		// Assert
 		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
@@ -146,7 +146,7 @@ public class AccountsControllerTests
 	public async Task GetAllAccounts_ReturnsBadRequest_WhenLimitIsOutOfRange(int offset, int limit)
 	{
 		// Act
-		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetAllAccounts(offset, limit, null, null);
+		Results<Ok<AccountListResponse>, BadRequest<string>> result = await _controller.GetAllAccounts(null, offset, limit, null, null);
 
 		// Assert
 		BadRequest<string> badRequestResult = Assert.IsType<BadRequest<string>>(result.Result);
@@ -163,7 +163,7 @@ public class AccountsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.GetAllAccounts(0, 50, null, null);
+		Func<Task> act = () => _controller.GetAllAccounts(null, 0, 50, null, null);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();

@@ -31,11 +31,16 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.FirstOrDefaultAsync(cancellationToken);
 	}
 
-	public async Task<List<AccountEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
+	public async Task<List<AccountEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Accounts
-			.AsNoTracking()
+		IQueryable<AccountEntity> query = context.Accounts.AsNoTracking();
+		if (isActive.HasValue)
+		{
+			query = query.Where(e => e.IsActive == isActive.Value);
+		}
+
+		return await query
 			.ApplySort(sort, AllowedSortColumns, e => e.Name)
 			.Skip(offset)
 			.Take(limit)
@@ -80,10 +85,16 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		return await context.Accounts.AnyAsync(e => e.Id == id, cancellationToken);
 	}
 
-	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
+	public async Task<int> GetCountAsync(CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Accounts.CountAsync(cancellationToken);
+		IQueryable<AccountEntity> query = context.Accounts;
+		if (isActive.HasValue)
+		{
+			query = query.Where(e => e.IsActive == isActive.Value);
+		}
+
+		return await query.CountAsync(cancellationToken);
 	}
 
 	public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)

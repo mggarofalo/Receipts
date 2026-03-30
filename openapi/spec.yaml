@@ -146,6 +146,11 @@ paths:
         - BearerAuth: []
         - ApiKey: []
       parameters:
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/SortBy"

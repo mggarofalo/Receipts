@@ -5,12 +5,12 @@ import { toast } from "sonner";
 
 // Note: Accounts are hard-delete entities (no soft-delete/restore).
 
-export function useAccounts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
+export function useAccounts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null, isActive?: boolean | null) {
   const query = useQuery({
-    queryKey: ["accounts", "list", offset, limit, sortBy, sortDirection],
+    queryKey: ["accounts", "list", offset, limit, sortBy, sortDirection, isActive],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/accounts", {
-        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },
+        params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined, isActive: isActive ?? undefined } },
       });
       if (error) throw error;
       return data;
