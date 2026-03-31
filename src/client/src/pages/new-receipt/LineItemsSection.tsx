@@ -405,7 +405,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel required>Description</FormLabel>
                     <Popover
                       open={isSuggestionsOpen}
                       onOpenChange={setShowSuggestions}
@@ -496,7 +496,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel required>Category</FormLabel>
                     <FormControl>
                       <Combobox
                         options={categoryOptions}
@@ -618,7 +618,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Qty</FormLabel>
+                    <FormLabel required>Qty</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -640,7 +640,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
+                    <FormLabel required>
                       {pricingMode === "flat" ? "Price" : "Unit Price"}
                     </FormLabel>
                     <FormControl>

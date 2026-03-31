@@ -209,7 +209,7 @@ export default function NewReceiptPage({
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2">
+                    <FormLabel required className="flex items-center gap-2">
                       Location
                       <ConfidenceIndicator confidence={confidenceMap?.location} />
                     </FormLabel>
@@ -236,7 +236,7 @@ export default function NewReceiptPage({
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2">
+                    <FormLabel required className="flex items-center gap-2">
                       Date
                       <ConfidenceIndicator confidence={confidenceMap?.date} />
                     </FormLabel>
