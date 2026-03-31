@@ -19,15 +19,23 @@ public class UploadReceiptImageCommandHandler(
 		string originalPath = await imageStorageService.SaveOriginalAsync(
 			request.ReceiptId, request.ImageBytes, request.FileExtension, cancellationToken);
 
-		ImageProcessingResult processed = await imageProcessingService.PreprocessAsync(
-			request.ImageBytes, request.ContentType, cancellationToken);
+		try
+		{
+			ImageProcessingResult processed = await imageProcessingService.PreprocessAsync(
+				request.ImageBytes, request.ContentType, cancellationToken);
 
-		string processedPath = await imageStorageService.SaveProcessedAsync(
-			request.ReceiptId, processed.ProcessedBytes, cancellationToken);
+			string processedPath = await imageStorageService.SaveProcessedAsync(
+				request.ReceiptId, processed.ProcessedBytes, cancellationToken);
 
-		await receiptService.UpdateImagePathsAsync(
-			request.ReceiptId, originalPath, processedPath, cancellationToken);
+			await receiptService.UpdateImagePathsAsync(
+				request.ReceiptId, originalPath, processedPath, cancellationToken);
 
-		return new UploadReceiptImageResult(originalPath, processedPath);
+			return new UploadReceiptImageResult(originalPath, processedPath);
+		}
+		catch
+		{
+			await imageStorageService.DeleteReceiptImagesAsync(request.ReceiptId, cancellationToken);
+			throw;
+		}
 	}
 }

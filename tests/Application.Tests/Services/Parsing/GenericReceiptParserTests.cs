@@ -87,6 +87,25 @@ public class GenericReceiptParserTests
 	}
 
 	[Fact]
+	public void Parse_MultiPriceItemLine_UsesLastPrice()
+	{
+		// Arrange — line has unit price AND total price; parser should use the last (total)
+		const string ocrText = """
+            Some Store
+            2 APPLES @ 1.49/lb 2.98
+            TOTAL 2.98
+            """;
+
+		// Act
+		ParsedReceipt actual = _parser.Parse(ocrText);
+
+		// Assert
+		actual.Items.Should().HaveCount(1);
+		actual.Items[0].TotalPrice.Value.Should().Be(2.98m);
+		actual.Items[0].Description.Value.Should().Be("2 APPLES @ 1.49/lb");
+	}
+
+	[Fact]
 	public void Parse_ExtractsTotal()
 	{
 		// Arrange

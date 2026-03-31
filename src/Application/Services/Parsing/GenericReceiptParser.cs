@@ -197,8 +197,14 @@ public partial class GenericReceiptParser : IReceiptParser
 				continue;
 			}
 
-			Match priceMatch = PricePattern().Match(line);
-			if (!priceMatch.Success || !decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal price))
+			MatchCollection priceMatches = PricePattern().Matches(line);
+			if (priceMatches.Count == 0)
+			{
+				continue;
+			}
+
+			Match priceMatch = priceMatches[^1];
+			if (!decimal.TryParse(priceMatch.Value, CultureInfo.InvariantCulture, out decimal price))
 			{
 				continue;
 			}

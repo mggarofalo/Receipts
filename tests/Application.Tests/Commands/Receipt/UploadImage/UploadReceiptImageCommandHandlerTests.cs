@@ -218,6 +218,11 @@ public class UploadReceiptImageCommandHandlerTests
 		_mockStorageService.Verify(
 			s => s.SaveProcessedAsync(It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
 			Times.Never);
+
+		// Verify orphaned files are cleaned up
+		_mockStorageService.Verify(
+			s => s.DeleteReceiptImagesAsync(receiptId, It.IsAny<CancellationToken>()),
+			Times.Once);
 	}
 
 	[Fact]

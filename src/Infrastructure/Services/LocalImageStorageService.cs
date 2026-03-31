@@ -41,4 +41,14 @@ public class LocalImageStorageService(IConfiguration configuration) : IImageStor
 	{
 		return Path.Combine(StorageRoot, receiptId.ToString(), fileName);
 	}
+
+	public Task DeleteReceiptImagesAsync(Guid receiptId, CancellationToken ct)
+	{
+		string directory = Path.Combine(StorageRoot, receiptId.ToString());
+		if (Directory.Exists(directory))
+		{
+			Directory.Delete(directory, recursive: true);
+		}
+		return Task.CompletedTask;
+	}
 }
