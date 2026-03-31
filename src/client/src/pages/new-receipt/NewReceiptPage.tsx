@@ -7,12 +7,18 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCreateCompleteReceipt } from "@/hooks/useReceipts";
 import { useLocationHistory } from "@/hooks/useLocationHistory";
 import { formatCurrency } from "@/lib/format";
+import { generateId } from "@/lib/id";
 import {
   TransactionsSection,
   type ReceiptTransaction,
 } from "./TransactionsSection";
 import { LineItemsSection, type ReceiptLineItem } from "./LineItemsSection";
 import { BalanceSidebar } from "./BalanceSidebar";
+import { ConfidenceIndicator } from "@/pages/scan-receipt/ConfidenceIndicator";
+import type {
+  ScanInitialValues,
+  ReceiptConfidenceMap,
+} from "@/pages/scan-receipt/types";
 import { Combobox } from "@/components/ui/combobox";
 import { DateInput } from "@/components/ui/date-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -49,14 +55,29 @@ const headerSchema = z.object({
 
 type HeaderFormValues = z.output<typeof headerSchema>;
 
-export default function NewReceiptPage() {
-  usePageTitle("New Receipt");
+interface NewReceiptPageProps {
+  initialValues?: ScanInitialValues;
+  confidenceMap?: ReceiptConfidenceMap;
+  pageTitle?: string;
+}
+
+export default function NewReceiptPage({
+  initialValues,
+  confidenceMap,
+  pageTitle,
+}: NewReceiptPageProps = {}) {
+  usePageTitle(pageTitle ?? "New Receipt");
   const navigate = useNavigate();
   const locationRef = useRef<HTMLButtonElement>(null);
   const { options: locationOptions, add: addLocation } = useLocationHistory();
 
   const [transactions, setTransactions] = useState<ReceiptTransaction[]>([]);
-  const [items, setItems] = useState<ReceiptLineItem[]>([]);
+  const [items, setItems] = useState<ReceiptLineItem[]>(() =>
+    initialValues?.items.map((item) => ({
+      id: generateId(),
+      ...item,
+    })) ?? [],
+  );
   const [showDiscard, setShowDiscard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,9 +88,9 @@ export default function NewReceiptPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(headerSchema) as any,
     defaultValues: {
-      location: "",
-      date: "",
-      taxAmount: 0,
+      location: initialValues?.header.location ?? "",
+      date: initialValues?.header.date ?? "",
+      taxAmount: initialValues?.header.taxAmount ?? 0,
     },
   });
 
@@ -188,7 +209,10 @@ export default function NewReceiptPage() {
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Location
+                      <ConfidenceIndicator confidence={confidenceMap?.location} />
+                    </FormLabel>
                     <FormControl>
                       <Combobox
                         ref={locationRef}
@@ -212,7 +236,10 @@ export default function NewReceiptPage() {
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Date
+                      <ConfidenceIndicator confidence={confidenceMap?.date} />
+                    </FormLabel>
                     <FormControl>
                       <DateInput
                         aria-required="true"
@@ -230,7 +257,10 @@ export default function NewReceiptPage() {
                 name="taxAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tax Amount</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Tax Amount
+                      <ConfidenceIndicator confidence={confidenceMap?.taxAmount} />
+                    </FormLabel>
                     <FormControl>
                       <CurrencyInput {...field} />
                     </FormControl>
