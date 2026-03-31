@@ -5,6 +5,7 @@ import { receiptItemHandlers } from "./receipt-items";
 import { transactionHandlers } from "./transactions";
 import { tripHandlers } from "./trips";
 import { metadataHandlers } from "./metadata";
+import { scanHandlers } from "./scan";
 
 export const handlers = [
   ...authHandlers,
@@ -14,4 +15,5 @@ export const handlers = [
   ...transactionHandlers,
   ...tripHandlers,
   ...metadataHandlers,
+  ...scanHandlers,
 ];

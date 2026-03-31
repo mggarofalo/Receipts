@@ -21,6 +21,7 @@ import AuditLog from "@/pages/AuditLog";
 import SecurityLog from "@/pages/SecurityLog";
 import RecycleBin from "@/pages/RecycleBin";
 import NewReceipt from "@/pages/new-receipt/NewReceiptPage";
+import ScanReceipt from "@/pages/scan-receipt/ScanReceiptPage";
 import NotFound from "@/pages/NotFound";
 
 export const routeConfig = [
@@ -47,6 +48,7 @@ export const routeConfig = [
           { path: "/subcategories", element: <Subcategories /> },
           { path: "/receipts", element: <Receipts /> },
           { path: "/receipts/new", element: <NewReceipt /> },
+          { path: "/receipts/scan", element: <ScanReceipt /> },
           { path: "/receipt-items", element: <Navigate to="/receipts" replace /> },
           { path: "/transactions", element: <Navigate to="/receipts" replace /> },
           { path: "/trips", element: <Navigate to="/receipts" replace /> },
