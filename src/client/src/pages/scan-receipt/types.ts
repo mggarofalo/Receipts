@@ -1,42 +1,14 @@
-export type ConfidenceLevel = "low" | "medium" | "high";
+import type { components } from "@/generated/api";
 
-export interface ProposedReceiptItem {
-  code: string | null;
-  codeConfidence: ConfidenceLevel;
-  description: string | null;
-  descriptionConfidence: ConfidenceLevel;
-  quantity: number | null;
-  quantityConfidence: ConfidenceLevel;
-  unitPrice: number | null;
-  unitPriceConfidence: ConfidenceLevel;
-  totalPrice: number | null;
-  totalPriceConfidence: ConfidenceLevel;
-}
+export type ConfidenceLevel = components["schemas"]["ConfidenceLevel"];
+export type ProposedReceiptResponse =
+  components["schemas"]["ProposedReceiptResponse"];
+export type ProposedReceiptItemResponse =
+  components["schemas"]["ProposedReceiptItemResponse"];
+export type ProposedTaxLineResponse =
+  components["schemas"]["ProposedTaxLineResponse"];
 
-export interface ProposedTaxLine {
-  label: string | null;
-  labelConfidence: ConfidenceLevel;
-  amount: number | null;
-  amountConfidence: ConfidenceLevel;
-}
-
-export interface ProposedReceiptResponse {
-  storeName: string | null;
-  storeNameConfidence: ConfidenceLevel;
-  date: string | null;
-  dateConfidence: ConfidenceLevel;
-  items: ProposedReceiptItem[];
-  subtotal: number | null;
-  subtotalConfidence: ConfidenceLevel;
-  taxLines: ProposedTaxLine[];
-  total: number | null;
-  totalConfidence: ConfidenceLevel;
-  paymentMethod: string | null;
-  paymentMethodConfidence: ConfidenceLevel;
-  rawOcrText: string;
-  ocrConfidence: number;
-}
-
+// Internal UI types with no API counterpart
 export interface ReceiptConfidenceMap {
   location?: ConfidenceLevel;
   date?: ConfidenceLevel;

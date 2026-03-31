@@ -20,14 +20,19 @@ vi.mock("@/hooks/useReceiptScan", () => ({
 vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
   default: ({
     initialValues,
+    confidenceMap,
   }: {
     initialValues?: { header: { location: string } };
+    confidenceMap?: Record<string, string>;
   }) => (
     <div data-testid="new-receipt-page">
       {initialValues?.header.location && (
         <span data-testid="prepopulated-location">
           {initialValues.header.location}
         </span>
+      )}
+      {confidenceMap && (
+        <span data-testid="confidence-map">{JSON.stringify(confidenceMap)}</span>
       )}
     </div>
   ),
@@ -165,5 +170,55 @@ describe("ScanReceiptPage", () => {
         screen.getByText(/could not read the image/i),
       ).toBeInTheDocument();
     });
+  });
+
+  it("passes correct confidence map when store name confidence is low", async () => {
+    mockMutate.mockImplementation(
+      (
+        _file: File,
+        options: { onSuccess: (data: unknown) => void },
+      ) => {
+        options.onSuccess({
+          storeName: "Low Confidence Store",
+          storeNameConfidence: "low",
+          date: "2024-06-15",
+          dateConfidence: "high",
+          items: [],
+          subtotal: 10,
+          subtotalConfidence: "high",
+          taxLines: [
+            {
+              label: "Tax",
+              labelConfidence: "high",
+              amount: 1,
+              amountConfidence: "high",
+            },
+          ],
+          total: 11,
+          totalConfidence: "high",
+          paymentMethod: null,
+          paymentMethodConfidence: "high",
+          rawOcrText: "LOW CONFIDENCE STORE",
+          ocrConfidence: 0.5,
+        });
+      },
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<ScanReceiptPage />);
+
+    const fileInput = screen.getByTestId("file-input");
+    const file = createTestFile();
+    await user.upload(fileInput, file);
+    await user.click(screen.getByRole("button", { name: /scan receipt/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("confidence-map")).toBeInTheDocument();
+    });
+
+    const confidenceMap = JSON.parse(
+      screen.getByTestId("confidence-map").textContent!,
+    );
+    expect(confidenceMap).toEqual({ location: "low" });
   });
 });

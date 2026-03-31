@@ -7,4 +7,6 @@ export type {
   ReceiptConfidenceMap,
   ScanInitialValues,
   ProposedReceiptResponse,
+  ProposedReceiptItemResponse,
+  ProposedTaxLineResponse,
 } from "./types";

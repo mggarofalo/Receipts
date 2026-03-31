@@ -58,13 +58,15 @@ type HeaderFormValues = z.output<typeof headerSchema>;
 interface NewReceiptPageProps {
   initialValues?: ScanInitialValues;
   confidenceMap?: ReceiptConfidenceMap;
+  pageTitle?: string;
 }
 
 export default function NewReceiptPage({
   initialValues,
   confidenceMap,
+  pageTitle,
 }: NewReceiptPageProps = {}) {
-  usePageTitle("New Receipt");
+  usePageTitle(pageTitle ?? "New Receipt");
   const navigate = useNavigate();
   const locationRef = useRef<HTMLButtonElement>(null);
   const { options: locationOptions, add: addLocation } = useLocationHistory();

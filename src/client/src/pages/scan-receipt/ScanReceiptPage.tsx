@@ -5,12 +5,11 @@ import { isTimeoutError } from "@/lib/api-client";
 import { ReceiptImageUpload } from "./ReceiptImageUpload";
 import { OcrTextPanel } from "./OcrTextPanel";
 import NewReceiptPage from "@/pages/new-receipt/NewReceiptPage";
-import type {
-  ProposedReceiptResponse,
-  ScanInitialValues,
-  ReceiptConfidenceMap,
-  ConfidenceLevel,
-} from "./types";
+import type { components } from "@/generated/api";
+import type { ScanInitialValues, ReceiptConfidenceMap } from "./types";
+
+type ProposedReceiptResponse = components["schemas"]["ProposedReceiptResponse"];
+type ConfidenceLevel = components["schemas"]["ConfidenceLevel"];
 
 type Status = "idle" | "uploading" | "success" | "error";
 
@@ -101,7 +100,7 @@ export default function ScanReceiptPage() {
       setErrorMessage(null);
       scanMutation.mutate(file, {
         onSuccess: (data) => {
-          setProposal(data as ProposedReceiptResponse);
+          setProposal(data ?? null);
           setStatus("success");
         },
         onError: (error) => {
@@ -110,7 +109,9 @@ export default function ScanReceiptPage() {
         },
       });
     },
-    [scanMutation],
+    // scanMutation.mutate is referentially stable in TanStack Query v5
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   if (status === "success" && proposal) {
@@ -119,13 +120,14 @@ export default function ScanReceiptPage() {
 
     return (
       <div className="space-y-6">
-        <NewReceiptPage
-          initialValues={initialValues}
-          confidenceMap={confidenceMap}
-        />
         <OcrTextPanel
           rawText={proposal.rawOcrText}
           ocrConfidence={proposal.ocrConfidence}
+        />
+        <NewReceiptPage
+          initialValues={initialValues}
+          confidenceMap={confidenceMap}
+          pageTitle="Scan Receipt"
         />
       </div>
     );
