@@ -14,6 +14,12 @@ public class ReceiptEntityConfiguration : IEntityTypeConfiguration<ReceiptEntity
 			.IsRequired()
 			.ValueGeneratedOnAdd();
 
+		builder.Property(e => e.OriginalImagePath)
+			.HasMaxLength(1024);
+
+		builder.Property(e => e.ProcessedImagePath)
+			.HasMaxLength(1024);
+
 		builder.HasQueryFilter(e => e.DeletedAt == null);
 	}
 }

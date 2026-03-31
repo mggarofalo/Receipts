@@ -10,6 +10,8 @@ public class ReceiptEntity : ISoftDeletable
 	public DateOnly Date { get; set; }
 	public decimal TaxAmount { get; set; }
 	public Currency TaxAmountCurrency { get; set; }
+	public string? OriginalImagePath { get; set; }
+	public string? ProcessedImagePath { get; set; }
 	public DateTimeOffset? DeletedAt { get; set; }
 	public string? DeletedByUserId { get; set; }
 	public Guid? DeletedByApiKeyId { get; set; }
