@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -47,7 +47,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Loader2, Sparkles, Pencil, Check, X } from "lucide-react";
 
 const itemSchema = z
   .object({
@@ -300,6 +300,54 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     },
     [items, onChange],
   );
+
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{
+    description: string;
+    quantity: number;
+    unitPrice: number;
+  }>({ description: "", quantity: 1, unitPrice: 0 });
+
+  const startEditing = useCallback((item: ReceiptLineItem) => {
+    setEditingItemId(item.id);
+    setEditDraft({
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+    });
+  }, []);
+
+  const cancelEditing = useCallback(() => {
+    setEditingItemId(null);
+  }, []);
+
+  const saveEditing = useCallback(() => {
+    if (!editingItemId) return;
+    if (!editDraft.description.trim()) return;
+    if (!Number.isFinite(editDraft.quantity) || editDraft.quantity <= 0) return;
+    if (!Number.isFinite(editDraft.unitPrice) || editDraft.unitPrice < 0) return;
+
+    onChange(
+      items.map((item) =>
+        item.id === editingItemId
+          ? {
+              ...item,
+              description: editDraft.description.trim(),
+              quantity: editDraft.quantity,
+              unitPrice: editDraft.unitPrice,
+            }
+          : item,
+      ),
+    );
+    setEditingItemId(null);
+  }, [editingItemId, editDraft, items, onChange]);
+
+  // Clear stale editing state when the edited item is removed externally
+  useEffect(() => {
+    if (editingItemId && !items.some((i) => i.id === editingItemId)) {
+      setEditingItemId(null);
+    }
+  }, [items, editingItemId]);
 
   return (
     <Card>
@@ -677,30 +725,112 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
-                  <TableCell>
-                    {formatCurrency(item.quantity * item.unitPrice)}
-                  </TableCell>
-                  <TableCell>
-                    {item.category}
-                    {item.subcategory ? ` / ${item.subcategory}` : ""}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemove(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Remove</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {items.map((item) =>
+                editingItemId === item.id ? (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Input
+                        value={editDraft.description}
+                        onChange={(e) =>
+                          setEditDraft((d) => ({
+                            ...d,
+                            description: e.target.value,
+                          }))
+                        }
+                        aria-label="Edit description"
+                        className="h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        value={editDraft.quantity}
+                        onChange={(e) =>
+                          setEditDraft((d) => ({
+                            ...d,
+                            quantity: Number(e.target.value),
+                          }))
+                        }
+                        aria-label="Edit quantity"
+                        className="h-8 w-20"
+                        disabled={item.pricingMode === "flat"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <CurrencyInput
+                        value={editDraft.unitPrice}
+                        onChange={(v) =>
+                          setEditDraft((d) => ({ ...d, unitPrice: v }))
+                        }
+                        aria-label="Edit unit price"
+                        className="h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(editDraft.quantity * editDraft.unitPrice)}
+                    </TableCell>
+                    <TableCell>
+                      {item.category}
+                      {item.subcategory ? ` / ${item.subcategory}` : ""}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={saveEditing}
+                          aria-label="Save"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={cancelEditing}
+                          aria-label="Cancel"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
+                    <TableCell>
+                      {formatCurrency(item.quantity * item.unitPrice)}
+                    </TableCell>
+                    <TableCell>
+                      {item.category}
+                      {item.subcategory ? ` / ${item.subcategory}` : ""}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startEditing(item)}
+                          aria-label="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemove(item.id)}
+                          aria-label="Remove"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ),
+              )}
             </TableBody>
           </Table>
         )}
