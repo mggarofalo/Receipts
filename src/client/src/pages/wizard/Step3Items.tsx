@@ -323,7 +323,7 @@ export function Step3Items({
             <Badge variant={isBalanced ? "default" : "secondary"}>
               {isBalanced
                 ? "Balanced"
-                : `Unbalanced (${formatCurrency(balanceDiff)})`}
+                : `Remaining: ${formatCurrency(balanceDiff)}`}
             </Badge>
           </div>
         </div>

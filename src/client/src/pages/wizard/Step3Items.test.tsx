@@ -136,8 +136,8 @@ describe("Step3Items", () => {
 
   it("shows balance status", () => {
     renderWithProviders(<Step3Items {...defaultProps} />);
-    // With 0 items subtotal = 0, tax = 5, expected = 5, txn total = 50 => Unbalanced
-    expect(screen.getByText(/unbalanced/i)).toBeInTheDocument();
+    // With 0 items subtotal = 0, tax = 5, expected = 5, txn total = 50 => Remaining
+    expect(screen.getByText(/remaining/i)).toBeInTheDocument();
   });
 
   it("calls onBack when Back is clicked", async () => {
@@ -237,7 +237,7 @@ describe("Step3Items", () => {
     expect(screen.getByText("Balanced")).toBeInTheDocument();
   });
 
-  it("shows Unbalanced badge with difference amount", () => {
+  it("shows Remaining badge with difference amount", () => {
     const items = [
       {
         id: "1",
@@ -250,7 +250,7 @@ describe("Step3Items", () => {
         subcategory: "",
       },
     ];
-    // subtotal=30, tax=5, expected=35, txnTotal=50 => unbalanced by $15.00
+    // subtotal=30, tax=5, expected=35, txnTotal=50 => remaining $15.00
     renderWithProviders(
       <Step3Items
         {...defaultProps}
@@ -259,7 +259,7 @@ describe("Step3Items", () => {
         transactionTotal={50}
       />,
     );
-    expect(screen.getByText(/unbalanced/i)).toBeInTheDocument();
+    expect(screen.getByText(/remaining/i)).toBeInTheDocument();
   });
 
   it("removes an item when the remove button is clicked", async () => {
