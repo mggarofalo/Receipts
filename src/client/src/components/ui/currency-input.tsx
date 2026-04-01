@@ -24,6 +24,24 @@ export function CurrencyInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
 
+  // Track the last value we reported via onChange so we can distinguish
+  // external prop changes (form.reset()) from echoed changes (user typing).
+  const [lastEmitted, setLastEmitted] = useState(value);
+
+  // Detect external prop changes (e.g. form.reset()) and sync internal text.
+  // This is the React-recommended pattern for adjusting state when a prop changes:
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    // Only sync text for external changes (value differs from what we last emitted).
+    // This avoids formatting partial input while the user is typing (e.g. "1" -> "1.00").
+    if (value !== lastEmitted) {
+      setText(value === 0 ? "" : formatDecimal(value));
+      setLastEmitted(value);
+    }
+  }
+
   // When not focused, show empty string for zero so placeholder is visible
   const displayValue = focused ? text : value === 0 ? "" : formatDecimal(value);
 
@@ -34,8 +52,10 @@ export function CurrencyInput({
     setText(raw);
     const num = parseFloat(raw);
     if (!isNaN(num)) {
+      setLastEmitted(num);
       onChange(num);
     } else if (raw === "" || raw === ".") {
+      setLastEmitted(0);
       onChange(0);
     }
   }
@@ -55,6 +75,7 @@ export function CurrencyInput({
     const num = parseFloat(text);
     const final = isNaN(num) ? 0 : num;
     setText(final === 0 ? "" : formatDecimal(final));
+    setLastEmitted(final);
     onChange(final);
     onBlur?.();
   }
@@ -68,7 +89,9 @@ export function CurrencyInput({
       parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 2)}` : cleaned;
     setText(limited);
     const num = parseFloat(limited);
-    onChange(isNaN(num) ? 0 : num);
+    const final = isNaN(num) ? 0 : num;
+    setLastEmitted(final);
+    onChange(final);
   }
 
   return (

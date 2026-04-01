@@ -174,4 +174,87 @@ describe("CurrencyInput", () => {
     expect(onChange).toHaveBeenCalledWith(42.5);
     expect(input).toHaveValue("42.50");
   });
+
+  it("clears displayed text when value prop is reset to 0 externally (e.g. form.reset())", async () => {
+    // Simulates the bug where CurrencyInput retains its internal text state
+    // after a parent form resets the value prop to 0.
+    function ResettableWrapper() {
+      const [value, setValue] = useState(25.99);
+      return (
+        <>
+          <CurrencyInput value={value} onChange={setValue} />
+          <button onClick={() => setValue(0)}>Reset</button>
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<ResettableWrapper />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("25.99");
+
+    // Simulate the parent resetting value to 0 (like form.reset())
+    await user.click(screen.getByText("Reset"));
+
+    // The input should now show empty (placeholder visible), not "25.99"
+    expect(input).toHaveValue("");
+    expect(input).toHaveAttribute("placeholder", "0.00");
+  });
+
+  it("clears displayed text when value prop is reset to 0 while input is focused (Enter key submit)", async () => {
+    // This test exercises the actual bug scenario: the input has focus when
+    // the parent resets the value (e.g. form.handleSubmit → form.reset via Enter).
+    // When focused, displayValue reads from internal `text` state, so the sync
+    // logic must update `text` for the input to clear.
+    //
+    // We use a form wrapper that resets the value on submit (triggered by Enter),
+    // which mirrors the real wizard behavior without blurring the input.
+    function FormResetWrapper() {
+      const [value, setValue] = useState(0);
+      return (
+        <form onSubmit={(e) => { e.preventDefault(); setValue(0); }}>
+          <CurrencyInput value={value} onChange={setValue} />
+        </form>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<FormResetWrapper />);
+
+    const input = screen.getByRole("textbox");
+
+    // Focus the input and type a price (simulates user entering unit price)
+    await user.click(input);
+    await user.type(input, "5.99");
+    expect(input).toHaveValue("5.99");
+
+    // Press Enter to submit the form, which resets value to 0 without blurring.
+    await user.keyboard("{Enter}");
+
+    // The input should clear even though it still has focus
+    expect(input).toHaveValue("");
+  });
+
+  it("updates displayed text when value prop changes to a new non-zero value externally", async () => {
+    function ExternalUpdateWrapper() {
+      const [value, setValue] = useState(10);
+      return (
+        <>
+          <CurrencyInput value={value} onChange={setValue} />
+          <button onClick={() => setValue(42.5)}>Update</button>
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<ExternalUpdateWrapper />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("10.00");
+
+    await user.click(screen.getByText("Update"));
+
+    expect(input).toHaveValue("42.50");
+  });
 });
