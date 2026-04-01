@@ -859,4 +859,182 @@ describe("Step3Items", () => {
     }
     // This exercises the category onValueChange handler that clears subcategory
   });
+
+  // --- Inline editing tests ---
+
+  it("shows edit button for each item row", () => {
+    const items = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity" as const,
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(<Step3Items {...defaultProps} data={items} />);
+    expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
+  });
+
+  it("enters edit mode when edit button is clicked", async () => {
+    const user = userEvent.setup();
+    const items = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity" as const,
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(<Step3Items {...defaultProps} data={items} />);
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    // Should show editable fields
+    expect(screen.getByLabelText("Edit description")).toBeInTheDocument();
+    expect(screen.getByLabelText("Edit quantity")).toBeInTheDocument();
+    expect(screen.getByLabelText("Edit unit price")).toBeInTheDocument();
+    // Should show save and cancel buttons
+    expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
+  });
+
+  it("populates edit fields with current item values", async () => {
+    const user = userEvent.setup();
+    const items = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity" as const,
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(<Step3Items {...defaultProps} data={items} />);
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(screen.getByLabelText("Edit description")).toHaveValue("Milk");
+    expect(screen.getByLabelText("Edit quantity")).toHaveValue(2);
+  });
+
+  it("saves edited values when save is clicked", async () => {
+    const user = userEvent.setup();
+    const onNext = vi.fn();
+    const items = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity" as const,
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <Step3Items {...defaultProps} data={items} onNext={onNext} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const descInput = screen.getByLabelText("Edit description");
+    await user.clear(descInput);
+    await user.type(descInput, "Whole Milk");
+
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    // Should exit edit mode and show updated value
+    expect(screen.queryByLabelText("Edit description")).not.toBeInTheDocument();
+    expect(screen.getByText("Whole Milk")).toBeInTheDocument();
+  });
+
+  it("cancels editing without saving changes", async () => {
+    const user = userEvent.setup();
+    const items = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity" as const,
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(<Step3Items {...defaultProps} data={items} />);
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const descInput = screen.getByLabelText("Edit description");
+    await user.clear(descInput);
+    await user.type(descInput, "Changed Value");
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    // Should exit edit mode and show original value
+    expect(screen.queryByLabelText("Edit description")).not.toBeInTheDocument();
+    expect(screen.getByText("Milk")).toBeInTheDocument();
+    expect(screen.queryByText("Changed Value")).not.toBeInTheDocument();
+  });
+
+  it("does not save when description is empty", async () => {
+    const user = userEvent.setup();
+    const items = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity" as const,
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(<Step3Items {...defaultProps} data={items} />);
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const descInput = screen.getByLabelText("Edit description");
+    await user.clear(descInput);
+
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    // Should still be in edit mode (save rejected)
+    expect(screen.getByLabelText("Edit description")).toBeInTheDocument();
+  });
+
+  it("disables quantity input in edit mode for flat pricing items", async () => {
+    const user = userEvent.setup();
+    const items = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Service Fee",
+        pricingMode: "flat" as const,
+        quantity: 1,
+        unitPrice: 25,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(<Step3Items {...defaultProps} data={items} />);
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(screen.getByLabelText("Edit quantity")).toBeDisabled();
+  });
 });

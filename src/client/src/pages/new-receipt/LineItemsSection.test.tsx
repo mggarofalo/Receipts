@@ -178,4 +178,170 @@ describe("LineItemsSection", () => {
     );
     expect(screen.getByText("Household / Cleaning")).toBeInTheDocument();
   });
+
+  // --- Inline editing tests ---
+
+  it("shows edit button for each item row", () => {
+    const items: ReceiptLineItem[] = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity",
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <LineItemsSection {...defaultProps} items={items} />,
+    );
+    expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
+  });
+
+  it("enters edit mode when edit button is clicked", async () => {
+    const user = userEvent.setup();
+    const items: ReceiptLineItem[] = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity",
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <LineItemsSection {...defaultProps} items={items} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(screen.getByLabelText("Edit description")).toBeInTheDocument();
+    expect(screen.getByLabelText("Edit quantity")).toBeInTheDocument();
+    expect(screen.getByLabelText("Edit unit price")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
+  });
+
+  it("saves edited values and calls onChange", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const items: ReceiptLineItem[] = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity",
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <LineItemsSection items={items} onChange={onChange} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const descInput = screen.getByLabelText("Edit description");
+    await user.clear(descInput);
+    await user.type(descInput, "Whole Milk");
+
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    expect(onChange).toHaveBeenCalledWith([
+      expect.objectContaining({ description: "Whole Milk" }),
+    ]);
+  });
+
+  it("cancels editing without calling onChange", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const items: ReceiptLineItem[] = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity",
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <LineItemsSection items={items} onChange={onChange} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const descInput = screen.getByLabelText("Edit description");
+    await user.clear(descInput);
+    await user.type(descInput, "Changed");
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    // onChange should not have been called for editing (only for remove)
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText("Milk")).toBeInTheDocument();
+  });
+
+  it("does not save when description is empty", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const items: ReceiptLineItem[] = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Milk",
+        pricingMode: "quantity",
+        quantity: 2,
+        unitPrice: 3.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <LineItemsSection items={items} onChange={onChange} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    const descInput = screen.getByLabelText("Edit description");
+    await user.clear(descInput);
+
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    // Should still be in edit mode (save rejected)
+    expect(screen.getByLabelText("Edit description")).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("disables quantity input in edit mode for flat pricing items", async () => {
+    const user = userEvent.setup();
+    const items: ReceiptLineItem[] = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Service Fee",
+        pricingMode: "flat",
+        quantity: 1,
+        unitPrice: 25,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <LineItemsSection {...defaultProps} items={items} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+
+    expect(screen.getByLabelText("Edit quantity")).toBeDisabled();
+  });
 });
