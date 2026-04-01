@@ -359,5 +359,64 @@ describe("CurrencyInput", () => {
       expect(onChange).toHaveBeenCalledWith(0);
       expect(input).toHaveValue("");
     });
+
+    it("blocks more than 2 decimal digits in plain number input (BUG-002 regression)", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "42.999");
+
+      // The third decimal digit should be blocked — value stays at 42.99
+      const calls = onChange.mock.calls.map((c) => c[0]);
+      expect(calls).not.toContain(42.999);
+      expect(input).not.toHaveValue("42.999");
+    });
+
+    it("collapses double dots in plain number input (BUG-001 regression)", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "42.5");
+      // Try typing a second dot — it should be collapsed
+      await user.type(input, ".0");
+      await user.tab();
+
+      // Should not evaluate to 0 (which would happen if NaN)
+      const lastOnChange = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+      expect(lastOnChange).not.toBe(0);
+    });
+
+    it("does not fire onChange twice when Enter is followed by blur (BUG-003 regression)", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "10+5");
+
+      // Clear calls from typing
+      onChange.mockClear();
+
+      // Press Enter (commits expression)
+      await user.keyboard("{Enter}");
+      const callsAfterEnter = onChange.mock.calls.length;
+      expect(callsAfterEnter).toBe(1);
+      expect(onChange).toHaveBeenCalledWith(15);
+
+      // Tab away (should NOT fire onChange again)
+      onChange.mockClear();
+      await user.tab();
+      expect(onChange.mock.calls.length).toBe(0);
+    });
   });
 });

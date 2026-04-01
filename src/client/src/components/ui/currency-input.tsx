@@ -5,6 +5,27 @@ import { formatDecimal, evaluateMathExpression } from "@/lib/format";
 /** Characters allowed while the user is actively typing an expression. */
 const EXPRESSION_CHARS = /[^0-9.+\-*/() ]/g;
 
+/** Collapse multiple decimal points into one (same guard the old code used). */
+function collapseDoubleDots(s: string): string {
+  return s.replace(/(\..*)\./g, "$1");
+}
+
+/**
+ * For plain-number input, limit to 2 fractional digits and collapse double dots.
+ * Returns null when the input contains math operators (caller should skip).
+ */
+function sanitizePlainNumber(raw: string): string | null {
+  // If it contains math operators or parens, it's an expression — don't sanitize
+  if (/[+\-*/()]/.test(raw.replace(/^-/, ""))) return null;
+
+  let sanitized = collapseDoubleDots(raw);
+  const parts = sanitized.split(".");
+  if (parts.length > 1 && parts[1].length > 2) {
+    sanitized = `${parts[0]}.${parts[1].slice(0, 2)}`;
+  }
+  return sanitized;
+}
+
 interface CurrencyInputProps
   extends Omit<ComponentProps<"input">, "type" | "value" | "onChange"> {
   value: number;
@@ -26,6 +47,9 @@ export function CurrencyInput({
   );
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
+  // Tracks whether commitExpression was already called (e.g. via Enter),
+  // so the subsequent blur doesn't fire onChange a second time.
+  const committedRef = useRef(false);
 
   // Track the last value we reported via onChange so we can distinguish
   // external prop changes (form.reset()) from echoed changes (user typing).
@@ -51,24 +75,28 @@ export function CurrencyInput({
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     // Allow math-expression characters while typing; strip everything else
     const raw = e.target.value.replace(EXPRESSION_CHARS, "");
-    setText(raw);
 
-    // If it looks like a plain number (no operators / parens), update immediately
-    const num = parseFloat(raw);
-    if (!isNaN(num) && /^-?\d*\.?\d*$/.test(raw)) {
-      const parts = raw.split(".");
-      if (parts.length > 1 && parts[1].length > 2) return;
-      setLastEmitted(num);
-      onChange(num);
-    } else if (raw === "" || raw === ".") {
-      setLastEmitted(0);
-      onChange(0);
+    const plain = sanitizePlainNumber(raw);
+    if (plain !== null) {
+      // Plain number path — sanitize before setting state (BUG-001, BUG-002)
+      setText(plain);
+      const num = parseFloat(plain);
+      if (!isNaN(num)) {
+        setLastEmitted(num);
+        onChange(num);
+      } else if (plain === "" || plain === ".") {
+        setLastEmitted(0);
+        onChange(0);
+      }
+    } else {
+      // Expression path — store as-is, evaluate on blur/Enter
+      setText(raw);
     }
-    // If it contains operators we wait for blur/Enter to evaluate
   }
 
   function handleFocus() {
     setFocused(true);
+    committedRef.current = false;
     if (value === 0) {
       setText("");
     } else {
@@ -84,11 +112,16 @@ export function CurrencyInput({
     setText(final === 0 ? "" : formatDecimal(final));
     setLastEmitted(final);
     onChange(final);
+    committedRef.current = true;
   }
 
   function handleBlur() {
     setFocused(false);
-    commitExpression();
+    // Skip if commitExpression was already called via Enter (BUG-003)
+    if (!committedRef.current) {
+      commitExpression();
+    }
+    committedRef.current = false;
     onBlur?.();
   }
 
@@ -109,20 +142,18 @@ export function CurrencyInput({
     const pasted = e.clipboardData.getData("text");
     // Allow math expressions in pasted content too
     const cleaned = pasted.replace(EXPRESSION_CHARS, "");
-    setText(cleaned);
 
-    // If it's a plain number, update immediately
-    const num = parseFloat(cleaned);
-    if (!isNaN(num) && /^-?\d*\.?\d*$/.test(cleaned)) {
-      const parts = cleaned.split(".");
-      const limited =
-        parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 2)}` : cleaned;
-      setText(limited);
-      const final = parseFloat(limited) || 0;
+    const plain = sanitizePlainNumber(cleaned);
+    if (plain !== null) {
+      // Plain number — sanitize and update immediately
+      setText(plain);
+      const final = parseFloat(plain) || 0;
       setLastEmitted(final);
       onChange(final);
+    } else {
+      // Expression — store as-is, wait for blur/Enter
+      setText(cleaned);
     }
-    // Otherwise wait for blur/Enter to evaluate expression
   }
 
   return (
