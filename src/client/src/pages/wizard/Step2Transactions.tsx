@@ -90,6 +90,19 @@ export function Step2Transactions({
     },
   });
 
+  // Sync the date field when the receipt date changes and the field is empty
+  const prevReceiptDateRef = useRef(receiptDate);
+  useEffect(() => {
+    const currentDate = form.getValues("date");
+    if (
+      receiptDate !== prevReceiptDateRef.current &&
+      (currentDate === "" || currentDate === prevReceiptDateRef.current)
+    ) {
+      form.setValue("date", receiptDate);
+    }
+    prevReceiptDateRef.current = receiptDate;
+  }, [receiptDate, form]);
+
   const runningTotal = useMemo(
     () => transactions.reduce((sum, t) => sum + t.amount, 0),
     [transactions],

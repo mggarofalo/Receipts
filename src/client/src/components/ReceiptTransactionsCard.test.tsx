@@ -259,6 +259,23 @@ describe("ReceiptTransactionsCard", () => {
     ).toBeInTheDocument();
   });
 
+  it("pre-fills the date field with receiptDate in the create dialog", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <ReceiptTransactionsCard
+        receiptId="receipt-1"
+        receiptDate="2024-01-15"
+        transactions={mockTransactions}
+        transactionsTotal={75.5}
+      />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: /add transaction/i }),
+    );
+    const dateInput = screen.getByPlaceholderText("MM/DD/YYYY");
+    expect(dateInput).toHaveValue("01/15/2024");
+  });
+
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = userEvent.setup();
     renderWithQueryClient(

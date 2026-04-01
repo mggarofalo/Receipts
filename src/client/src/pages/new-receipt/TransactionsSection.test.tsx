@@ -118,6 +118,35 @@ describe("TransactionsSection", () => {
     expect(onChange).toHaveBeenCalledWith([]);
   });
 
+  it("syncs transaction date when defaultDate changes and date field is empty", () => {
+    const { rerender } = renderWithProviders(
+      <TransactionsSection {...defaultProps} defaultDate="" />,
+    );
+    // The date input should be empty initially
+    const dateInput = screen.getByPlaceholderText("MM/DD/YYYY");
+    expect(dateInput).toHaveValue("");
+
+    // Update the defaultDate prop (simulating the receipt date being set)
+    rerender(
+      <TransactionsSection {...defaultProps} defaultDate="2024-03-20" />,
+    );
+    expect(dateInput).toHaveValue("03/20/2024");
+  });
+
+  it("syncs transaction date when defaultDate changes and date matches previous default", () => {
+    const { rerender } = renderWithProviders(
+      <TransactionsSection {...defaultProps} defaultDate="2024-01-15" />,
+    );
+    const dateInput = screen.getByPlaceholderText("MM/DD/YYYY");
+    expect(dateInput).toHaveValue("01/15/2024");
+
+    // Change the receipt date
+    rerender(
+      <TransactionsSection {...defaultProps} defaultDate="2024-03-20" />,
+    );
+    expect(dateInput).toHaveValue("03/20/2024");
+  });
+
   it("displays running total with existing transactions", () => {
     const transactions = [
       { id: "1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
