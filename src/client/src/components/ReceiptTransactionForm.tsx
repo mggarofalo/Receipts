@@ -49,7 +49,7 @@ export function ReceiptTransactionForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
-  const { data: accounts, isLoading: accountsLoading } = useAccounts();
+  const { data: accounts, isLoading: accountsLoading } = useAccounts(0, 50, undefined, undefined, true);
 
   const accountOptions = useMemo(
     () =>

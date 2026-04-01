@@ -106,7 +106,7 @@ export function ReceiptItemForm({
     useFieldHistory(itemCodeHistory);
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
-  const { data: categories } = useCategories();
+  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
   const { data: itemTemplatesData } = useItemTemplates();
   const templates = useMemo(
     () => (itemTemplatesData as ItemTemplate[] | undefined) ?? [],
@@ -165,7 +165,7 @@ export function ReceiptItemForm({
   }, [categories, watchedCategory]);
 
   const { data: subcategoriesData } =
-    useSubcategoriesByCategoryId(selectedCategoryId);
+    useSubcategoriesByCategoryId(selectedCategoryId, 0, 200, undefined, undefined, true);
   const createSubcategory = useCreateSubcategory();
 
   const subcategoryOptions = useMemo(
