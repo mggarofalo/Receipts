@@ -1,6 +1,30 @@
 import { useState, useRef, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
-import { formatDecimal, parseCurrencyInput } from "@/lib/format";
+import { formatDecimal, evaluateMathExpression } from "@/lib/format";
+
+/** Characters allowed while the user is actively typing an expression. */
+const EXPRESSION_CHARS = /[^0-9.+\-*/() ]/g;
+
+/** Collapse multiple decimal points into one (same guard the old code used). */
+function collapseDoubleDots(s: string): string {
+  return s.replace(/(\..*)\./g, "$1");
+}
+
+/**
+ * For plain-number input, limit to 2 fractional digits and collapse double dots.
+ * Returns null when the input contains math operators (caller should skip).
+ */
+function sanitizePlainNumber(raw: string): string | null {
+  // If it contains math operators or parens, it's an expression — don't sanitize
+  if (/[+\-*/()]/.test(raw.replace(/^-/, ""))) return null;
+
+  let sanitized = collapseDoubleDots(raw);
+  const parts = sanitized.split(".");
+  if (parts.length > 1 && parts[1].length > 2) {
+    sanitized = `${parts[0]}.${parts[1].slice(0, 2)}`;
+  }
+  return sanitized;
+}
 
 interface CurrencyInputProps
   extends Omit<ComponentProps<"input">, "type" | "value" | "onChange"> {
@@ -23,6 +47,9 @@ export function CurrencyInput({
   );
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
+  // Tracks whether commitExpression was already called (e.g. via Enter),
+  // so the subsequent blur doesn't fire onChange a second time.
+  const committedRef = useRef(false);
 
   // Track the last value we reported via onChange so we can distinguish
   // external prop changes (form.reset()) from echoed changes (user typing).
@@ -46,22 +73,30 @@ export function CurrencyInput({
   const displayValue = focused ? text : value === 0 ? "" : formatDecimal(value);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = parseCurrencyInput(e.target.value);
-    const parts = raw.split(".");
-    if (parts.length > 1 && parts[1].length > 2) return;
-    setText(raw);
-    const num = parseFloat(raw);
-    if (!isNaN(num)) {
-      setLastEmitted(num);
-      onChange(num);
-    } else if (raw === "" || raw === ".") {
-      setLastEmitted(0);
-      onChange(0);
+    // Allow math-expression characters while typing; strip everything else
+    const raw = e.target.value.replace(EXPRESSION_CHARS, "");
+
+    const plain = sanitizePlainNumber(raw);
+    if (plain !== null) {
+      // Plain number path — sanitize before setting state (BUG-001, BUG-002)
+      setText(plain);
+      const num = parseFloat(plain);
+      if (!isNaN(num)) {
+        setLastEmitted(num);
+        onChange(num);
+      } else if (plain === "" || plain === ".") {
+        setLastEmitted(0);
+        onChange(0);
+      }
+    } else {
+      // Expression path — store as-is, evaluate on blur/Enter
+      setText(raw);
     }
   }
 
   function handleFocus() {
     setFocused(true);
+    committedRef.current = false;
     if (value === 0) {
       setText("");
     } else {
@@ -70,28 +105,55 @@ export function CurrencyInput({
     }
   }
 
-  function handleBlur() {
-    setFocused(false);
-    const num = parseFloat(text);
-    const final = isNaN(num) ? 0 : num;
+  function commitExpression() {
+    const evaluated = evaluateMathExpression(text);
+    const final =
+      isNaN(evaluated) || !isFinite(evaluated) ? 0 : Math.round(evaluated * 100) / 100;
     setText(final === 0 ? "" : formatDecimal(final));
     setLastEmitted(final);
     onChange(final);
+    committedRef.current = true;
+  }
+
+  function handleBlur() {
+    setFocused(false);
+    // Skip if commitExpression was already called via Enter (BUG-003)
+    if (!committedRef.current) {
+      commitExpression();
+    }
+    committedRef.current = false;
     onBlur?.();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      // Only intercept Enter when the text contains math operators.
+      // For plain numbers, let the event propagate so forms can submit.
+      const hasMathOperators = /[+\-*/()]/.test(text.replace(/^-/, ""));
+      if (hasMathOperators) {
+        e.preventDefault();
+      }
+      commitExpression();
+    }
   }
 
   function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
     const pasted = e.clipboardData.getData("text");
-    const cleaned = parseCurrencyInput(pasted);
-    const parts = cleaned.split(".");
-    const limited =
-      parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 2)}` : cleaned;
-    setText(limited);
-    const num = parseFloat(limited);
-    const final = isNaN(num) ? 0 : num;
-    setLastEmitted(final);
-    onChange(final);
+    // Allow math expressions in pasted content too
+    const cleaned = pasted.replace(EXPRESSION_CHARS, "");
+
+    const plain = sanitizePlainNumber(cleaned);
+    if (plain !== null) {
+      // Plain number — sanitize and update immediately
+      setText(plain);
+      const final = parseFloat(plain) || 0;
+      setLastEmitted(final);
+      onChange(final);
+    } else {
+      // Expression — store as-is, wait for blur/Enter
+      setText(cleaned);
+    }
   }
 
   return (
@@ -109,6 +171,7 @@ export function CurrencyInput({
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         className={cn(
           "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
