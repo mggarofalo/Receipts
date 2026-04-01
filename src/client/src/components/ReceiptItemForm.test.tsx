@@ -7,22 +7,6 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
 }));
 
-vi.mock("@/hooks/useEnumMetadata", () => ({
-  useEnumMetadata: vi.fn(() => ({
-    adjustmentTypes: [],
-    authEventTypes: [],
-    pricingModes: [{ value: "quantity", label: "Quantity" }, { value: "flat", label: "Flat" }],
-    auditActions: [],
-    entityTypes: [],
-    adjustmentTypeLabels: {},
-    authEventLabels: {},
-    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
-    auditActionLabels: {},
-    entityTypeLabels: {},
-    isLoading: false,
-  })),
-}));
-
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
     data: [
@@ -112,14 +96,13 @@ describe("ReceiptItemForm", () => {
   it("renders in create mode with correct submit button text and all field labels", () => {
     render(<ReceiptItemForm {...defaultProps} />);
 
-    expect(screen.getByText("Receipt")).toBeInTheDocument();
-    expect(screen.getByText("Item Code")).toBeInTheDocument();
-    expect(screen.getByText("Description")).toBeInTheDocument();
-    expect(screen.getByText("Pricing Mode")).toBeInTheDocument();
-    expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
-    expect(screen.getByLabelText("Unit Price")).toBeInTheDocument();
-    expect(screen.getByText("Category")).toBeInTheDocument();
-    expect(screen.getByText("Subcategory")).toBeInTheDocument();
+    expect(screen.getByText(/^Receipt/)).toBeInTheDocument();
+    expect(screen.getByText(/^Item Code/)).toBeInTheDocument();
+    expect(screen.getByText(/^Description/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Quantity/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Unit Price/)).toBeInTheDocument();
+    expect(screen.getByText(/^Category/)).toBeInTheDocument();
+    expect(screen.getByText(/^Subcategory/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create item/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
@@ -133,7 +116,7 @@ describe("ReceiptItemForm", () => {
           receiptId: "r-1",
           receiptItemCode: "ITM-001",
           description: "Whole Milk",
-          pricingMode: "quantity",
+
           quantity: 2,
           unitPrice: 3.99,
           category: "Groceries",
@@ -187,7 +170,7 @@ describe("ReceiptItemForm", () => {
           receiptId: "r-1",
           receiptItemCode: "ITM-001",
           description: "Milk",
-          pricingMode: "quantity",
+
           quantity: 3,
           unitPrice: 2.50,
           category: "Groceries",
@@ -208,7 +191,7 @@ describe("ReceiptItemForm", () => {
           receiptId: "r-1",
           receiptItemCode: "ITM-001",
           description: "Milk",
-          pricingMode: "quantity",
+
           quantity: 1,
           unitPrice: 3.99,
           category: "Groceries",
@@ -232,11 +215,11 @@ describe("ReceiptItemForm", () => {
     });
   });
 
-  it("defaults quantity to 1 and pricing mode to 'quantity'", () => {
+  it("defaults quantity to 1", () => {
     render(<ReceiptItemForm {...defaultProps} />);
 
-    expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
-    expect(screen.getByLabelText("Unit Price")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Quantity/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Unit Price/)).toBeInTheDocument();
   });
 
   it("shows recent description history and item template groups in description autocomplete", async () => {
@@ -248,7 +231,7 @@ describe("ReceiptItemForm", () => {
 
     render(<ReceiptItemForm {...defaultProps} />);
 
-    const descriptionInput = screen.getByLabelText("Description");
+    const descriptionInput = screen.getByLabelText(/^Description/);
     await user.click(descriptionInput);
 
     // History entries should appear under "Recent Descriptions"
@@ -263,7 +246,7 @@ describe("ReceiptItemForm", () => {
     const user = userEvent.setup();
     render(<ReceiptItemForm {...defaultProps} />);
 
-    const descriptionInput = screen.getByLabelText("Description");
+    const descriptionInput = screen.getByLabelText(/^Description/);
     await user.type(descriptionInput, "Milk");
 
     // Fuzzy-matched template should appear under "Item Templates"
@@ -281,7 +264,7 @@ describe("ReceiptItemForm", () => {
 
     render(<ReceiptItemForm {...defaultProps} />);
 
-    const descriptionInput = screen.getByLabelText("Description");
+    const descriptionInput = screen.getByLabelText(/^Description/);
     await user.click(descriptionInput);
 
     await waitFor(() => {
@@ -303,7 +286,7 @@ describe("ReceiptItemForm", () => {
           receiptId: "r-1",
           receiptItemCode: "ITM-001",
           description: "Bananas",
-          pricingMode: "quantity",
+
           quantity: 1,
           unitPrice: 1.29,
           category: "Groceries",
@@ -354,7 +337,7 @@ describe("ReceiptItemForm", () => {
     render(<ReceiptItemForm {...defaultProps} />);
 
     // Open the category combobox
-    const categoryCombobox = screen.getByLabelText("Category");
+    const categoryCombobox = screen.getByLabelText(/^Category/);
     await user.click(categoryCombobox);
 
     // Type a non-existent category (like a store name)

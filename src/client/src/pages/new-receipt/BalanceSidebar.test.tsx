@@ -25,11 +25,18 @@ describe("BalanceSidebar", () => {
     expect(screen.getByText("Balanced")).toBeInTheDocument();
   });
 
-  it("shows Unbalanced badge when not balanced", () => {
+  it("shows Remaining badge when items are under transaction total", () => {
+    renderWithProviders(
+      <BalanceSidebar {...defaultProps} transactionTotal={70} />,
+    );
+    expect(screen.getByText("Remaining: $15.00")).toBeInTheDocument();
+  });
+
+  it("shows Over badge when items exceed transaction total", () => {
     renderWithProviders(
       <BalanceSidebar {...defaultProps} transactionTotal={40} />,
     );
-    expect(screen.getByText("Unbalanced by $15.00")).toBeInTheDocument();
+    expect(screen.getByText("Over by $15.00")).toBeInTheDocument();
   });
 
   it("enables submit button when balanced", () => {

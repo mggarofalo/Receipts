@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -47,22 +47,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Loader2, Sparkles, Pencil, Check, X } from "lucide-react";
 
-const itemSchema = z
-  .object({
-    receiptItemCode: z.string().optional().default(""),
-    description: z.string().min(1, "Description is required"),
-    pricingMode: z.enum(["quantity", "flat"]),
-    quantity: z.number().positive("Quantity must be positive"),
-    unitPrice: z.number().min(0, "Unit price must be non-negative"),
-    category: z.string().min(1, "Category is required"),
-    subcategory: z.string().optional().default(""),
-  })
-  .refine((data) => data.pricingMode !== "flat" || data.quantity === 1, {
-    message: "Quantity must be 1 for flat pricing",
-    path: ["quantity"],
-  });
+const itemSchema = z.object({
+  receiptItemCode: z.string().optional().default(""),
+  description: z.string().min(1, "Description is required"),
+  quantity: z.number().positive("Quantity must be positive"),
+  unitPrice: z.number().min(0, "Unit price must be non-negative"),
+  category: z.string().min(1, "Category is required"),
+  subcategory: z.string().optional().default(""),
+});
 
 type ItemFormValues = z.output<typeof itemSchema>;
 
@@ -86,7 +80,7 @@ interface LineItemsSectionProps {
 export function LineItemsSection({ items, onChange, location }: LineItemsSectionProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsListId = "new-receipt-suggestions-list";
-  const { data: categories } = useCategories();
+  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
 
   const categoryOptions = useMemo(
     () =>
@@ -102,7 +96,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     defaultValues: {
       receiptItemCode: "",
       description: "",
-      pricingMode: "quantity",
       quantity: 1,
       unitPrice: 0,
       category: "",
@@ -114,7 +107,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
   const itemCode = form.watch("receiptItemCode");
   const description = form.watch("description");
   const selectedCategory = form.watch("category");
-  const pricingMode = form.watch("pricingMode");
 
   // Item code autocomplete
   const [showItemCodeSuggestions, setShowItemCodeSuggestions] = useState(false);
@@ -194,6 +186,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
 
   const { data: subcategories } = useSubcategoriesByCategoryId(
     selectedCategoryObj?.id ?? "",
+    0, 200, undefined, undefined, true,
   );
   const createSubcategory = useCreateSubcategory();
   const pendingSubcategories = useRef(new Set<string>());
@@ -222,15 +215,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
       }
       if (suggestion.defaultUnitPrice != null) {
         form.setValue("unitPrice", suggestion.defaultUnitPrice);
-      }
-      if (
-        suggestion.defaultPricingMode === "quantity" ||
-        suggestion.defaultPricingMode === "flat"
-      ) {
-        form.setValue("pricingMode", suggestion.defaultPricingMode);
-        if (suggestion.defaultPricingMode === "flat") {
-          form.setValue("quantity", 1);
-        }
       }
       if (suggestion.defaultItemCode) {
         form.setValue("receiptItemCode", suggestion.defaultItemCode);
@@ -272,7 +256,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
         id: generateId(),
         receiptItemCode: values.receiptItemCode ?? "",
         description: values.description,
-        pricingMode: values.pricingMode,
+        pricingMode: "quantity",
         quantity: values.quantity,
         unitPrice: values.unitPrice,
         category: values.category,
@@ -282,7 +266,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
       form.reset({
         receiptItemCode: "",
         description: "",
-        pricingMode: "quantity",
         quantity: 1,
         unitPrice: 0,
         category: values.category,
@@ -299,6 +282,54 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     },
     [items, onChange],
   );
+
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{
+    description: string;
+    quantity: number;
+    unitPrice: number;
+  }>({ description: "", quantity: 1, unitPrice: 0 });
+
+  const startEditing = useCallback((item: ReceiptLineItem) => {
+    setEditingItemId(item.id);
+    setEditDraft({
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+    });
+  }, []);
+
+  const cancelEditing = useCallback(() => {
+    setEditingItemId(null);
+  }, []);
+
+  const saveEditing = useCallback(() => {
+    if (!editingItemId) return;
+    if (!editDraft.description.trim()) return;
+    if (!Number.isFinite(editDraft.quantity) || editDraft.quantity <= 0) return;
+    if (!Number.isFinite(editDraft.unitPrice) || editDraft.unitPrice < 0) return;
+
+    onChange(
+      items.map((item) =>
+        item.id === editingItemId
+          ? {
+              ...item,
+              description: editDraft.description.trim(),
+              quantity: editDraft.quantity,
+              unitPrice: editDraft.unitPrice,
+            }
+          : item,
+      ),
+    );
+    setEditingItemId(null);
+  }, [editingItemId, editDraft, items, onChange]);
+
+  // Clear stale editing state when the edited item is removed externally
+  useEffect(() => {
+    if (editingItemId && !items.some((i) => i.id === editingItemId)) {
+      setEditingItemId(null);
+    }
+  }, [items, editingItemId]);
 
   return (
     <Card>
@@ -405,7 +436,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel required>Description</FormLabel>
                     <Popover
                       open={isSuggestionsOpen}
                       onOpenChange={setShowSuggestions}
@@ -496,7 +527,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel required>Category</FormLabel>
                     <FormControl>
                       <Combobox
                         options={categoryOptions}
@@ -534,6 +565,10 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 )}
               />
 
+            </div>
+
+            {/* Row 2: Subcategory, Quantity, Unit Price, Add Item */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
               <FormField
                 control={form.control}
                 name="subcategory"
@@ -584,48 +619,19 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                   </FormItem>
                 )}
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[auto_auto_auto_1fr] sm:items-end">
-              <FormField
-                control={form.control}
-                name="pricingMode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pricing</FormLabel>
-                    <FormControl>
-                      <Combobox
-                        options={[
-                          { value: "quantity", label: "Quantity" },
-                          { value: "flat", label: "Flat" },
-                        ]}
-                        value={field.value}
-                        onValueChange={(v) => {
-                          field.onChange(v);
-                          if (v === "flat") form.setValue("quantity", 1);
-                        }}
-                        placeholder="Mode..."
-                        searchPlaceholder="Search modes..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}
                 name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Qty</FormLabel>
+                    <FormLabel required>Qty</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         step="any"
                         min="0.01"
                         className="w-20"
-                        disabled={pricingMode === "flat"}
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                       />
@@ -640,9 +646,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      {pricingMode === "flat" ? "Price" : "Unit Price"}
-                    </FormLabel>
+                    <FormLabel required>Unit Price</FormLabel>
                     <FormControl>
                       <CurrencyInput {...field} />
                     </FormControl>
@@ -676,30 +680,112 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
-                  <TableCell>
-                    {formatCurrency(item.quantity * item.unitPrice)}
-                  </TableCell>
-                  <TableCell>
-                    {item.category}
-                    {item.subcategory ? ` / ${item.subcategory}` : ""}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemove(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Remove</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {items.map((item) =>
+                editingItemId === item.id ? (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Input
+                        value={editDraft.description}
+                        onChange={(e) =>
+                          setEditDraft((d) => ({
+                            ...d,
+                            description: e.target.value,
+                          }))
+                        }
+                        aria-label="Edit description"
+                        className="h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        value={editDraft.quantity}
+                        onChange={(e) =>
+                          setEditDraft((d) => ({
+                            ...d,
+                            quantity: Number(e.target.value),
+                          }))
+                        }
+                        aria-label="Edit quantity"
+                        className="h-8 w-20"
+                        disabled={item.pricingMode === "flat"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <CurrencyInput
+                        value={editDraft.unitPrice}
+                        onChange={(v) =>
+                          setEditDraft((d) => ({ ...d, unitPrice: v }))
+                        }
+                        aria-label="Edit unit price"
+                        className="h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(editDraft.quantity * editDraft.unitPrice)}
+                    </TableCell>
+                    <TableCell>
+                      {item.category}
+                      {item.subcategory ? ` / ${item.subcategory}` : ""}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={saveEditing}
+                          aria-label="Save"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={cancelEditing}
+                          aria-label="Cancel"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
+                    <TableCell>
+                      {formatCurrency(item.quantity * item.unitPrice)}
+                    </TableCell>
+                    <TableCell>
+                      {item.category}
+                      {item.subcategory ? ` / ${item.subcategory}` : ""}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startEditing(item)}
+                          aria-label="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemove(item.id)}
+                          aria-label="Remove"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ),
+              )}
             </TableBody>
           </Table>
         )}

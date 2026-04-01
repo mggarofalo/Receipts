@@ -6,10 +6,16 @@ export const accountHandlers = [
     const url = new URL(request.url);
     const offset = Number(url.searchParams.get("offset") ?? 0);
     const limit = Number(url.searchParams.get("limit") ?? 50);
-    const page = accounts.slice(offset, offset + limit);
+    const isActiveParam = url.searchParams.get("isActive");
+    let filtered = accounts;
+    if (isActiveParam !== null) {
+      const isActive = isActiveParam === "true";
+      filtered = accounts.filter((a) => a.isActive === isActive);
+    }
+    const page = filtered.slice(offset, offset + limit);
     return HttpResponse.json({
       data: page,
-      total: accounts.length,
+      total: filtered.length,
       offset,
       limit,
     });

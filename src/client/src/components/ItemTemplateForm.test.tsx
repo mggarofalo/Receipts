@@ -21,22 +21,6 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
 }));
 
-vi.mock("@/hooks/useEnumMetadata", () => ({
-  useEnumMetadata: vi.fn(() => ({
-    adjustmentTypes: [],
-    authEventTypes: [],
-    pricingModes: [{ value: "quantity", label: "Quantity" }, { value: "flat", label: "Flat" }],
-    auditActions: [],
-    entityTypes: [],
-    adjustmentTypeLabels: {},
-    authEventLabels: {},
-    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
-    auditActionLabels: {},
-    entityTypeLabels: {},
-    isLoading: false,
-  })),
-}));
-
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() => ({
     data: [
@@ -71,7 +55,7 @@ describe("ItemTemplateForm", () => {
   it("renders in create mode with empty fields and correct submit button text", () => {
     render(<ItemTemplateForm {...defaultProps} />);
 
-    expect(screen.getByLabelText("Name")).toHaveValue("");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("");
     expect(screen.getByLabelText("Default Item Code (optional)")).toHaveValue("");
     expect(screen.getByRole("button", { name: /create template/i })).toBeInTheDocument();
@@ -95,7 +79,7 @@ describe("ItemTemplateForm", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Name")).toHaveValue("Milk");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("Milk");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("Whole milk");
     expect(screen.getByLabelText("Default Item Code (optional)")).toHaveValue("MLK-001");
     expect(screen.getByRole("button", { name: /update template/i })).toBeInTheDocument();
@@ -105,7 +89,7 @@ describe("ItemTemplateForm", () => {
     const user = userEvent.setup();
     render(<ItemTemplateForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText("Name"), "Bread");
+    await user.type(screen.getByLabelText(/^Name/), "Bread");
     await user.click(screen.getByRole("button", { name: /create template/i }));
 
     await waitFor(() => {
@@ -150,7 +134,6 @@ describe("ItemTemplateForm", () => {
     expect(screen.getByText("Default Category (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Subcategory (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Unit Price (optional)")).toBeInTheDocument();
-    expect(screen.getByText("Default Pricing Mode (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Item Code (optional)")).toBeInTheDocument();
   });
 

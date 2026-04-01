@@ -59,7 +59,7 @@ export function Step2Transactions({
   const [transactions, setTransactions] = useState<WizardTransaction[]>(data);
   const formRef = useRef<HTMLFormElement>(null);
   const accountRef = useRef<HTMLButtonElement>(null);
-  const { data: accounts } = useAccounts();
+  const { data: accounts } = useAccounts(0, 50, undefined, undefined, true);
   useFormShortcuts({ formRef });
 
   const accountOptions = useMemo(
@@ -89,6 +89,19 @@ export function Step2Transactions({
       date: receiptDate,
     },
   });
+
+  // Sync the date field when the receipt date changes and the field is empty
+  const prevReceiptDateRef = useRef(receiptDate);
+  useEffect(() => {
+    const currentDate = form.getValues("date");
+    if (
+      receiptDate !== prevReceiptDateRef.current &&
+      (currentDate === "" || currentDate === prevReceiptDateRef.current)
+    ) {
+      form.setValue("date", receiptDate, { shouldValidate: true });
+    }
+    prevReceiptDateRef.current = receiptDate;
+  }, [receiptDate, form]);
 
   const runningTotal = useMemo(
     () => transactions.reduce((sum, t) => sum + t.amount, 0),
@@ -157,7 +170,7 @@ export function Step2Transactions({
               name="accountId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Account</FormLabel>
+                  <FormLabel required>Account</FormLabel>
                   <FormControl>
                     <Combobox
                       ref={accountRef}
@@ -180,7 +193,7 @@ export function Step2Transactions({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel required>Amount</FormLabel>
                   <FormControl>
                     <CurrencyInput {...field} />
                   </FormControl>
@@ -194,7 +207,7 @@ export function Step2Transactions({
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel required>Date</FormLabel>
                   <FormControl>
                     <DateInput aria-required="true" {...field} />
                   </FormControl>

@@ -174,4 +174,249 @@ describe("CurrencyInput", () => {
     expect(onChange).toHaveBeenCalledWith(42.5);
     expect(input).toHaveValue("42.50");
   });
+
+  it("clears displayed text when value prop is reset to 0 externally (e.g. form.reset())", async () => {
+    function ResettableWrapper() {
+      const [value, setValue] = useState(25.99);
+      return (
+        <>
+          <CurrencyInput value={value} onChange={setValue} />
+          <button onClick={() => setValue(0)}>Reset</button>
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<ResettableWrapper />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("25.99");
+
+    await user.click(screen.getByText("Reset"));
+
+    expect(input).toHaveValue("");
+    expect(input).toHaveAttribute("placeholder", "0.00");
+  });
+
+  it("clears displayed text when value prop is reset to 0 while input is focused (Enter key submit)", async () => {
+    function FormResetWrapper() {
+      const [value, setValue] = useState(0);
+      return (
+        <form onSubmit={(e) => { e.preventDefault(); setValue(0); }}>
+          <CurrencyInput value={value} onChange={setValue} />
+        </form>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<FormResetWrapper />);
+
+    const input = screen.getByRole("textbox");
+
+    await user.click(input);
+    await user.type(input, "5.99");
+    expect(input).toHaveValue("5.99");
+
+    await user.keyboard("{Enter}");
+
+    expect(input).toHaveValue("");
+  });
+
+  it("updates displayed text when value prop changes to a new non-zero value externally", async () => {
+    function ExternalUpdateWrapper() {
+      const [value, setValue] = useState(10);
+      return (
+        <>
+          <CurrencyInput value={value} onChange={setValue} />
+          <button onClick={() => setValue(42.5)}>Update</button>
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<ExternalUpdateWrapper />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("10.00");
+
+    await user.click(screen.getByText("Update"));
+
+    expect(input).toHaveValue("42.50");
+  });
+
+  describe("math expression support", () => {
+    it("allows typing arithmetic operators", async () => {
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "24.99-7.30");
+
+      expect(input).toHaveValue("24.99-7.30");
+    });
+
+    it("evaluates expression on blur", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "10+5");
+      await user.tab();
+
+      expect(onChange).toHaveBeenCalledWith(15);
+      expect(input).toHaveValue("15.00");
+    });
+
+    it("evaluates subtraction expression on blur", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "24.99-7.30");
+      await user.tab();
+
+      expect(input).toHaveValue("17.69");
+    });
+
+    it("evaluates multiplication expression on blur", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "4.50*3");
+      await user.tab();
+
+      expect(input).toHaveValue("13.50");
+    });
+
+    it("evaluates expression on Enter key", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "10+5");
+      await user.keyboard("{Enter}");
+
+      expect(onChange).toHaveBeenCalledWith(15);
+      expect(input).toHaveValue("15.00");
+    });
+
+    it("rounds result to two decimal places", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "10/3");
+      await user.tab();
+
+      expect(input).toHaveValue("3.33");
+      expect(onChange).toHaveBeenCalledWith(3.33);
+    });
+
+    it("treats invalid expression as zero on blur", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "5+");
+      await user.tab();
+
+      expect(onChange).toHaveBeenCalledWith(0);
+      expect(input).toHaveValue("");
+    });
+
+    it("treats division by zero as zero on blur", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "5/0");
+      await user.tab();
+
+      expect(onChange).toHaveBeenCalledWith(0);
+      expect(input).toHaveValue("");
+    });
+
+    it("blocks more than 2 decimal digits in plain number input (BUG-002 regression)", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "42.999");
+
+      // The third decimal digit should be blocked — value stays at 42.99
+      const calls = onChange.mock.calls.map((c) => c[0]);
+      expect(calls).not.toContain(42.999);
+      expect(input).not.toHaveValue("42.999");
+    });
+
+    it("collapses double dots in plain number input (BUG-001 regression)", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "42.5");
+      // Try typing a second dot — it should be collapsed
+      await user.type(input, ".0");
+      await user.tab();
+
+      // Should not evaluate to 0 (which would happen if NaN)
+      const lastOnChange = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+      expect(lastOnChange).not.toBe(0);
+    });
+
+    it("does not fire onChange twice when Enter is followed by blur (BUG-003 regression)", async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+
+      render(<ControlledCurrencyInput initialValue={0} onChange={onChange} />);
+
+      const input = screen.getByRole("textbox");
+      await user.click(input);
+      await user.type(input, "10+5");
+
+      // Clear calls from typing
+      onChange.mockClear();
+
+      // Press Enter (commits expression)
+      await user.keyboard("{Enter}");
+      const callsAfterEnter = onChange.mock.calls.length;
+      expect(callsAfterEnter).toBe(1);
+      expect(onChange).toHaveBeenCalledWith(15);
+
+      // Tab away (should NOT fire onChange again)
+      onChange.mockClear();
+      await user.tab();
+      expect(onChange.mock.calls.length).toBe(0);
+    });
+  });
 });

@@ -29,6 +29,7 @@ export function BalanceSidebar({
   const expectedTotal = subtotal + taxAmount;
   const balanceDiff = Math.abs(expectedTotal - transactionTotal);
   const isBalanced = balanceDiff < 0.01;
+  const isOver = expectedTotal > transactionTotal;
 
   return (
     <div className="sticky top-6 space-y-4">
@@ -53,10 +54,12 @@ export function BalanceSidebar({
             </dd>
           </dl>
           <div className="mt-3 text-right" role="status" aria-live="polite">
-            <Badge variant={isBalanced ? "default" : "destructive"}>
+            <Badge variant={isBalanced ? "default" : "secondary"}>
               {isBalanced
                 ? "Balanced"
-                : `Unbalanced by ${formatCurrency(balanceDiff)}`}
+                : isOver
+                  ? `Over by ${formatCurrency(balanceDiff)}`
+                  : `Remaining: ${formatCurrency(balanceDiff)}`}
             </Badge>
           </div>
         </CardContent>
@@ -78,8 +81,10 @@ export function BalanceSidebar({
           {!isBalanced && (
             <TooltipContent>
               <p>
-                Receipt is unbalanced by {formatCurrency(balanceDiff)}. Adjust
-                transactions or line items so totals match.
+                {isOver
+                  ? `Over by ${formatCurrency(balanceDiff)}.`
+                  : `${formatCurrency(balanceDiff)} remaining.`}{" "}
+                Adjust transactions or line items so totals match.
               </p>
             </TooltipContent>
           )}

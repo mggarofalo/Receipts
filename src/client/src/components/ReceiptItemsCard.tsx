@@ -301,7 +301,6 @@ export function ReceiptItemsCard({
                 receiptId,
                 receiptItemCode: editItem.receiptItemCode ?? "",
                 description: editItem.description,
-                pricingMode: (editItem.pricingMode as "flat" | "quantity") ?? "quantity",
                 quantity: editItem.quantity,
                 unitPrice: editItem.unitPrice,
                 category: editItem.category,

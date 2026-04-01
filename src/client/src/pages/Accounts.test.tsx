@@ -273,7 +273,7 @@ describe("Accounts", () => {
     await user.click(screen.getByRole("button", { name: /new account/i }));
 
     await user.type(screen.getByLabelText(/account code/i), "ACC-NEW");
-    await user.type(screen.getByLabelText(/^name$/i), "New Account");
+    await user.type(screen.getByLabelText(/^name/i), "New Account");
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     await vi.waitFor(() => {
@@ -318,7 +318,7 @@ describe("Accounts", () => {
     renderWithProviders(<Accounts />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
 
-    const nameInput = screen.getByLabelText(/^name$/i);
+    const nameInput = screen.getByLabelText(/^name/i);
     await user.clear(nameInput);
     await user.type(nameInput, "Updated Account");
     await user.click(screen.getByRole("button", { name: /update account/i }));

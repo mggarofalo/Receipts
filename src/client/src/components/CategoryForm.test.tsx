@@ -20,7 +20,7 @@ describe("CategoryForm", () => {
   it("renders in create mode with empty fields and correct submit button text", () => {
     render(<CategoryForm {...defaultProps} />);
 
-    expect(screen.getByLabelText("Name")).toHaveValue("");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("");
     expect(screen.getByRole("button", { name: /create category/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe("CategoryForm", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Name")).toHaveValue("Groceries");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("Groceries");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("Food items");
     expect(screen.getByRole("button", { name: /update category/i })).toBeInTheDocument();
   });
@@ -44,7 +44,7 @@ describe("CategoryForm", () => {
     const user = userEvent.setup();
     render(<CategoryForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText("Name"), "Utilities");
+    await user.type(screen.getByLabelText(/^Name/), "Utilities");
     await user.type(screen.getByLabelText("Description (optional)"), "Monthly bills");
     await user.click(screen.getByRole("button", { name: /create category/i }));
 
@@ -88,7 +88,7 @@ describe("CategoryForm", () => {
     const user = userEvent.setup();
     render(<CategoryForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText("Name"), "Transport");
+    await user.type(screen.getByLabelText(/^Name/), "Transport");
     await user.click(screen.getByRole("button", { name: /create category/i }));
 
     await waitFor(() => {

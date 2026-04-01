@@ -342,7 +342,7 @@ describe("ItemTemplates", () => {
     renderWithProviders(<ItemTemplates />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
 
-    const nameInput = screen.getByLabelText(/^name$/i);
+    const nameInput = screen.getByLabelText(/^name/i);
     await user.clear(nameInput);
     await user.type(nameInput, "Updated Template");
     await user.click(screen.getByRole("button", { name: /update template/i }));
@@ -364,7 +364,7 @@ describe("ItemTemplates", () => {
     renderWithProviders(<ItemTemplates />);
     await user.click(screen.getByRole("button", { name: /new template/i }));
 
-    await user.type(screen.getByLabelText(/^name$/i), "Coffee Template");
+    await user.type(screen.getByLabelText(/^name/i), "Coffee Template");
     await user.click(screen.getByRole("button", { name: /create template/i }));
 
     await vi.waitFor(() => {

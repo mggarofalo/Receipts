@@ -47,23 +47,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Loader2, Sparkles, Pencil, Check, X } from "lucide-react";
 import type { WizardReceiptItem } from "./wizardReducer";
 
-const itemSchema = z
-  .object({
-    receiptItemCode: z.string().optional().default(""),
-    description: z.string().min(1, "Description is required"),
-    pricingMode: z.enum(["quantity", "flat"]),
-    quantity: z.number().positive("Quantity must be positive"),
-    unitPrice: z.number().min(0, "Unit price must be non-negative"),
-    category: z.string().min(1, "Category is required"),
-    subcategory: z.string().optional().default(""),
-  })
-  .refine((data) => data.pricingMode !== "flat" || data.quantity === 1, {
-    message: "Quantity must be 1 for flat pricing",
-    path: ["quantity"],
-  });
+const itemSchema = z.object({
+  receiptItemCode: z.string().optional().default(""),
+  description: z.string().min(1, "Description is required"),
+  quantity: z.number().positive("Quantity must be positive"),
+  unitPrice: z.number().min(0, "Unit price must be non-negative"),
+  category: z.string().min(1, "Category is required"),
+  subcategory: z.string().optional().default(""),
+});
 
 type ItemFormValues = z.output<typeof itemSchema>;
 
@@ -87,7 +81,7 @@ export function Step3Items({
   const [items, setItems] = useState<WizardReceiptItem[]>(data);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsListId = "step3-suggestions-list";
-  const { data: categories } = useCategories();
+  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
 
   const categoryOptions = useMemo(
     () =>
@@ -105,7 +99,6 @@ export function Step3Items({
     defaultValues: {
       receiptItemCode: "",
       description: "",
-      pricingMode: "quantity",
       quantity: 1,
       unitPrice: 0,
       category: "",
@@ -198,6 +191,7 @@ export function Step3Items({
 
   const { data: subcategories } = useSubcategoriesByCategoryId(
     selectedCategoryObj?.id ?? "",
+    0, 200, undefined, undefined, true,
   );
   const createSubcategory = useCreateSubcategory();
   const pendingSubcategories = useRef(new Set<string>());
@@ -210,8 +204,6 @@ export function Step3Items({
     [subcategories],
   );
 
-  const pricingMode = form.watch("pricingMode");
-
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
     [items],
@@ -220,6 +212,7 @@ export function Step3Items({
   const expectedTotal = subtotal + taxAmount;
   const balanceDiff = Math.abs(expectedTotal - transactionTotal);
   const isBalanced = balanceDiff < 0.01;
+  const isOver = expectedTotal > transactionTotal;
 
   const applySuggestion = useCallback(
     (suggestion: NonNullable<typeof similarItems>[number]) => {
@@ -232,15 +225,6 @@ export function Step3Items({
       }
       if (suggestion.defaultUnitPrice != null) {
         form.setValue("unitPrice", suggestion.defaultUnitPrice);
-      }
-      if (
-        suggestion.defaultPricingMode === "quantity" ||
-        suggestion.defaultPricingMode === "flat"
-      ) {
-        form.setValue("pricingMode", suggestion.defaultPricingMode);
-        if (suggestion.defaultPricingMode === "flat") {
-          form.setValue("quantity", 1);
-        }
       }
       if (suggestion.defaultItemCode) {
         form.setValue("receiptItemCode", suggestion.defaultItemCode);
@@ -282,7 +266,7 @@ export function Step3Items({
         id: generateId(),
         receiptItemCode: values.receiptItemCode ?? "",
         description: values.description,
-        pricingMode: values.pricingMode,
+        pricingMode: "quantity",
         quantity: values.quantity,
         unitPrice: values.unitPrice,
         category: values.category,
@@ -292,7 +276,6 @@ export function Step3Items({
       form.reset({
         receiptItemCode: "",
         description: "",
-        pricingMode: "quantity",
         quantity: 1,
         unitPrice: 0,
         category: values.category,
@@ -306,6 +289,47 @@ export function Step3Items({
   const handleRemove = useCallback((id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
+
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{
+    description: string;
+    quantity: number;
+    unitPrice: number;
+  }>({ description: "", quantity: 1, unitPrice: 0 });
+
+  const startEditing = useCallback((item: WizardReceiptItem) => {
+    setEditingItemId(item.id);
+    setEditDraft({
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+    });
+  }, []);
+
+  const cancelEditing = useCallback(() => {
+    setEditingItemId(null);
+  }, []);
+
+  const saveEditing = useCallback(() => {
+    if (!editingItemId) return;
+    if (!editDraft.description.trim()) return;
+    if (!Number.isFinite(editDraft.quantity) || editDraft.quantity <= 0) return;
+    if (!Number.isFinite(editDraft.unitPrice) || editDraft.unitPrice < 0) return;
+
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === editingItemId
+          ? {
+              ...item,
+              description: editDraft.description.trim(),
+              quantity: editDraft.quantity,
+              unitPrice: editDraft.unitPrice,
+            }
+          : item,
+      ),
+    );
+    setEditingItemId(null);
+  }, [editingItemId, editDraft]);
 
   const handleNext = useCallback(() => {
     onNext(items);
@@ -323,7 +347,9 @@ export function Step3Items({
             <Badge variant={isBalanced ? "default" : "secondary"}>
               {isBalanced
                 ? "Balanced"
-                : `Unbalanced (${formatCurrency(balanceDiff)})`}
+                : isOver
+                  ? `Over by ${formatCurrency(balanceDiff)}`
+                  : `Remaining: ${formatCurrency(balanceDiff)}`}
             </Badge>
           </div>
         </div>
@@ -332,14 +358,16 @@ export function Step3Items({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleAdd)}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="space-y-4"
           >
+            {/* Row 1: Item Code, Description, Category */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <FormField
               control={form.control}
               name="receiptItemCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Item Code</FormLabel>
+                  <FormLabel required>Item Code</FormLabel>
                   <Popover
                     open={isItemCodeSuggestionsOpen}
                     onOpenChange={setShowItemCodeSuggestions}
@@ -422,7 +450,7 @@ export function Step3Items({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel required>Description</FormLabel>
                   <Popover
                     open={isSuggestionsOpen}
                     onOpenChange={setShowSuggestions}
@@ -507,73 +535,10 @@ export function Step3Items({
 
             <FormField
               control={form.control}
-              name="pricingMode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Pricing Mode</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      options={[
-                        { value: "quantity", label: "Quantity" },
-                        { value: "flat", label: "Flat" },
-                      ]}
-                      value={field.value}
-                      onValueChange={(v) => {
-                        field.onChange(v);
-                        if (v === "flat") form.setValue("quantity", 1);
-                      }}
-                      placeholder="Select pricing mode..."
-                      searchPlaceholder="Search modes..."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantity</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="any"
-                      min="0.01"
-                      disabled={pricingMode === "flat"}
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="unitPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {pricingMode === "flat" ? "Price" : "Unit Price"}
-                  </FormLabel>
-                  <FormControl>
-                    <CurrencyInput {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel required>Category</FormLabel>
                   <FormControl>
                     <Combobox
                       options={categoryOptions}
@@ -610,57 +575,94 @@ export function Step3Items({
                 </FormItem>
               )}
             />
+            </div>
 
-            <FormField
-              control={form.control}
-              name="subcategory"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Subcategory (optional)</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      options={subcategoryOptions}
-                      value={field.value ?? ""}
-                      onValueChange={(v: string) => {
-                        field.onChange(v);
-                        const isExisting = subcategoryOptions.some(
-                          (o) => o.value === v,
-                        );
-                        if (
-                          !isExisting &&
-                          v &&
-                          selectedCategoryObj?.id &&
-                          !pendingSubcategories.current.has(v)
-                        ) {
-                          pendingSubcategories.current.add(v);
-                          createSubcategory.mutate(
-                            {
-                              categoryId: selectedCategoryObj.id,
-                              name: v,
-                              isActive: true,
-                            },
-                            {
-                              onSettled: () => {
-                                pendingSubcategories.current.delete(v);
-                              },
-                            },
+            {/* Row 2: Subcategory, Quantity, Unit Price, Add Item */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
+              <FormField
+                control={form.control}
+                name="subcategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory (optional)</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={subcategoryOptions}
+                        value={field.value ?? ""}
+                        onValueChange={(v: string) => {
+                          field.onChange(v);
+                          const isExisting = subcategoryOptions.some(
+                            (o) => o.value === v,
                           );
-                        }
-                      }}
-                      placeholder="Select subcategory..."
-                      searchPlaceholder="Search subcategories..."
-                      emptyMessage="No subcategories found."
-                      allowCustom
-                      disabled={!selectedCategory}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                          if (
+                            !isExisting &&
+                            v &&
+                            selectedCategoryObj?.id &&
+                            !pendingSubcategories.current.has(v)
+                          ) {
+                            pendingSubcategories.current.add(v);
+                            createSubcategory.mutate(
+                              {
+                                categoryId: selectedCategoryObj.id,
+                                name: v,
+                                isActive: true,
+                              },
+                              {
+                                onSettled: () => {
+                                  pendingSubcategories.current.delete(v);
+                                },
+                              },
+                            );
+                          }
+                        }}
+                        placeholder="Select subcategory..."
+                        searchPlaceholder="Search subcategories..."
+                        emptyMessage="No subcategories found."
+                        allowCustom
+                        disabled={!selectedCategory}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="sm:col-span-2 lg:col-span-3 flex justify-end">
-              <Button type="submit" variant="secondary" size="sm">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        className="w-20"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unitPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit Price</FormLabel>
+                    <FormControl>
+                      <CurrencyInput {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" variant="secondary" size="sm" className="sm:mb-0.5">
                 <Plus className="mr-1 h-4 w-4" />
                 Add Item
               </Button>
@@ -681,30 +683,112 @@ export function Step3Items({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
-                  <TableCell>
-                    {formatCurrency(item.quantity * item.unitPrice)}
-                  </TableCell>
-                  <TableCell>
-                    {item.category}
-                    {item.subcategory ? ` / ${item.subcategory}` : ""}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemove(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Remove</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {items.map((item) =>
+                editingItemId === item.id ? (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Input
+                        value={editDraft.description}
+                        onChange={(e) =>
+                          setEditDraft((d) => ({
+                            ...d,
+                            description: e.target.value,
+                          }))
+                        }
+                        aria-label="Edit description"
+                        className="h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        value={editDraft.quantity}
+                        onChange={(e) =>
+                          setEditDraft((d) => ({
+                            ...d,
+                            quantity: Number(e.target.value),
+                          }))
+                        }
+                        aria-label="Edit quantity"
+                        className="h-8 w-20"
+                        disabled={item.pricingMode === "flat"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <CurrencyInput
+                        value={editDraft.unitPrice}
+                        onChange={(v) =>
+                          setEditDraft((d) => ({ ...d, unitPrice: v }))
+                        }
+                        aria-label="Edit unit price"
+                        className="h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(editDraft.quantity * editDraft.unitPrice)}
+                    </TableCell>
+                    <TableCell>
+                      {item.category}
+                      {item.subcategory ? ` / ${item.subcategory}` : ""}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={saveEditing}
+                          aria-label="Save"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={cancelEditing}
+                          aria-label="Cancel"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
+                    <TableCell>
+                      {formatCurrency(item.quantity * item.unitPrice)}
+                    </TableCell>
+                    <TableCell>
+                      {item.category}
+                      {item.subcategory ? ` / ${item.subcategory}` : ""}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startEditing(item)}
+                          aria-label="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemove(item.id)}
+                          aria-label="Remove"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ),
+              )}
             </TableBody>
           </Table>
         )}

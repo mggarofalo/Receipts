@@ -86,7 +86,7 @@ export function AdjustmentForm({
           name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Type</FormLabel>
+              <FormLabel required>Type</FormLabel>
               <FormControl>
                 <Combobox
                   options={adjustmentTypes}
@@ -111,7 +111,7 @@ export function AdjustmentForm({
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount</FormLabel>
+              <FormLabel required>Amount</FormLabel>
               <FormControl>
                 <CurrencyInput {...field} />
               </FormControl>
@@ -131,7 +131,7 @@ export function AdjustmentForm({
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel required>Description</FormLabel>
                 <FormControl>
                   <Combobox
                     options={adjustmentDescOptions}
