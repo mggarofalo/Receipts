@@ -26,9 +26,9 @@ describe("ChangePassword", () => {
 
   it("renders current password, new password, and confirm password fields", () => {
     renderWithProviders(<ChangePassword />);
-    expect(screen.getByLabelText(/^current password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^new password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^confirm new password$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^current password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^new password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^confirm new password/i)).toBeInTheDocument();
   });
 
   it("renders the change password submit button", () => {
@@ -90,9 +90,9 @@ describe("ChangePassword", () => {
     });
 
     renderWithProviders(<ChangePassword />);
-    await user.type(screen.getByLabelText(/^current password$/i), "OldPass123");
-    await user.type(screen.getByLabelText(/^new password$/i), "NewPass456");
-    await user.type(screen.getByLabelText(/^confirm new password$/i), "NewPass456");
+    await user.type(screen.getByLabelText(/^current password/i), "OldPass123");
+    await user.type(screen.getByLabelText(/^new password/i), "NewPass456");
+    await user.type(screen.getByLabelText(/^confirm new password/i), "NewPass456");
     await user.click(screen.getByRole("button", { name: /change password/i }));
 
     await vi.waitFor(() => {
@@ -114,9 +114,9 @@ describe("ChangePassword", () => {
     });
 
     renderWithProviders(<ChangePassword />);
-    await user.type(screen.getByLabelText(/^current password$/i), "OldPass123");
-    await user.type(screen.getByLabelText(/^new password$/i), "NewPass456");
-    await user.type(screen.getByLabelText(/^confirm new password$/i), "NewPass456");
+    await user.type(screen.getByLabelText(/^current password/i), "OldPass123");
+    await user.type(screen.getByLabelText(/^new password/i), "NewPass456");
+    await user.type(screen.getByLabelText(/^confirm new password/i), "NewPass456");
     await user.click(screen.getByRole("button", { name: /change password/i }));
 
     expect(await screen.findByText(/failed to change password/i)).toBeInTheDocument();
@@ -140,9 +140,9 @@ describe("ChangePassword", () => {
     });
 
     renderWithProviders(<ChangePassword />);
-    await user.type(screen.getByLabelText(/^current password$/i), "OldPass123");
-    await user.type(screen.getByLabelText(/^new password$/i), "weakpass");
-    await user.type(screen.getByLabelText(/^confirm new password$/i), "weakpass");
+    await user.type(screen.getByLabelText(/^current password/i), "OldPass123");
+    await user.type(screen.getByLabelText(/^new password/i), "weakpass");
+    await user.type(screen.getByLabelText(/^confirm new password/i), "weakpass");
     await user.click(screen.getByRole("button", { name: /change password/i }));
 
     expect(

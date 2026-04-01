@@ -25,7 +25,7 @@ describe("Login", () => {
   it("renders email and password fields", () => {
     renderWithProviders(<Login />);
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
   });
 
   it("renders the sign in button", () => {
@@ -87,7 +87,7 @@ describe("Login", () => {
 
     renderWithProviders(<Login />);
     await user.type(screen.getByLabelText(/email/i), "test@example.com");
-    await user.type(screen.getByLabelText(/^password$/i), "Password123");
+    await user.type(screen.getByLabelText(/^password/i), "Password123");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     await vi.waitFor(() => {
@@ -110,7 +110,7 @@ describe("Login", () => {
 
     renderWithProviders(<Login />);
     await user.type(screen.getByLabelText(/email/i), "test@example.com");
-    await user.type(screen.getByLabelText(/^password$/i), "Password123");
+    await user.type(screen.getByLabelText(/^password/i), "Password123");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe("Login", () => {
 
     renderWithProviders(<Login />);
     await user.type(screen.getByLabelText(/email/i), "test@example.com");
-    await user.type(screen.getByLabelText(/^password$/i), "Password123");
+    await user.type(screen.getByLabelText(/^password/i), "Password123");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(await screen.findByText(/request timed out/i)).toBeInTheDocument();
@@ -154,7 +154,7 @@ describe("Login", () => {
 
     renderWithProviders(<Login />);
     await user.type(screen.getByLabelText(/email/i), "test@example.com");
-    await user.type(screen.getByLabelText(/^password$/i), "Password123");
+    await user.type(screen.getByLabelText(/^password/i), "Password123");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(await screen.findByText(/unable to reach the server/i)).toBeInTheDocument();

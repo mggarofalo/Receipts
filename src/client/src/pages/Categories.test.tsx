@@ -212,7 +212,7 @@ describe("Categories", () => {
     renderWithProviders(<Categories />);
     await user.click(screen.getByRole("button", { name: /new category/i }));
 
-    await user.type(screen.getByLabelText(/^name$/i), "New Category");
+    await user.type(screen.getByLabelText(/^name/i), "New Category");
     await user.click(screen.getByRole("button", { name: /create category/i }));
 
     await vi.waitFor(() => {
@@ -257,7 +257,7 @@ describe("Categories", () => {
     renderWithProviders(<Categories />);
     await user.click(screen.getByRole("button", { name: /edit/i }));
 
-    const nameInput = screen.getByLabelText(/^name$/i);
+    const nameInput = screen.getByLabelText(/^name/i);
     await user.clear(nameInput);
     await user.type(nameInput, "Updated Category");
     await user.click(screen.getByRole("button", { name: /update category/i }));
