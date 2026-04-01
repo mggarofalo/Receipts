@@ -221,6 +221,7 @@ export function Step3Items({
   const expectedTotal = subtotal + taxAmount;
   const balanceDiff = Math.abs(expectedTotal - transactionTotal);
   const isBalanced = balanceDiff < 0.01;
+  const isOver = expectedTotal > transactionTotal;
 
   const applySuggestion = useCallback(
     (suggestion: NonNullable<typeof similarItems>[number]) => {
@@ -324,7 +325,9 @@ export function Step3Items({
             <Badge variant={isBalanced ? "default" : "secondary"}>
               {isBalanced
                 ? "Balanced"
-                : `Unbalanced (${formatCurrency(balanceDiff)})`}
+                : isOver
+                  ? `Over by ${formatCurrency(balanceDiff)}`
+                  : `Remaining: ${formatCurrency(balanceDiff)}`}
             </Badge>
           </div>
         </div>

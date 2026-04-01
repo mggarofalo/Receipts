@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCreateCompleteReceipt } from "@/hooks/useReceipts";
 import { useLocationHistory } from "@/hooks/useLocationHistory";
-import { formatCurrency } from "@/lib/format";
 import { generateId } from "@/lib/id";
 import {
   TransactionsSection,
@@ -40,8 +39,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const headerSchema = z.object({
@@ -277,20 +274,6 @@ export default function NewReceiptPage({
             defaultDate={receiptDate}
             onChange={setTransactions}
           />
-
-          {/* Balance warning between sections */}
-          {transactions.length > 0 &&
-            items.length > 0 &&
-            Math.abs(subtotal + taxAmount - transactionTotal) >= 0.01 && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Items + tax total ({formatCurrency(subtotal + taxAmount)}) does
-                  not match transaction total (
-                  {formatCurrency(transactionTotal)}). The receipt is unbalanced.
-                </AlertDescription>
-              </Alert>
-            )}
 
           {/* Line Items */}
           <LineItemsSection items={items} onChange={setItems} location={location} />
