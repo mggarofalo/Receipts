@@ -20,8 +20,8 @@ describe("AccountForm", () => {
   it("renders in create mode with empty fields and correct submit button text", () => {
     render(<AccountForm {...defaultProps} />);
 
-    expect(screen.getByLabelText("Account Code")).toHaveValue("");
-    expect(screen.getByLabelText("Name")).toHaveValue("");
+    expect(screen.getByLabelText(/^Account Code/)).toHaveValue("");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("");
     expect(screen.getByRole("button", { name: /create account/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
@@ -35,8 +35,8 @@ describe("AccountForm", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Account Code")).toHaveValue("ACC-001");
-    expect(screen.getByLabelText("Name")).toHaveValue("Checking");
+    expect(screen.getByLabelText(/^Account Code/)).toHaveValue("ACC-001");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("Checking");
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     expect(screen.getByRole("button", { name: /update account/i })).toBeInTheDocument();
   });
@@ -45,8 +45,8 @@ describe("AccountForm", () => {
     const user = userEvent.setup();
     render(<AccountForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText("Account Code"), "ACC-002");
-    await user.type(screen.getByLabelText("Name"), "Savings");
+    await user.type(screen.getByLabelText(/^Account Code/), "ACC-002");
+    await user.type(screen.getByLabelText(/^Name/), "Savings");
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     await waitFor(() => {

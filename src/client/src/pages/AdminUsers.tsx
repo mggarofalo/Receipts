@@ -395,7 +395,7 @@ function AdminUsers() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel required>Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -412,7 +412,7 @@ function AdminUsers() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel required>Password</FormLabel>
                     <FormControl>
                       <PasswordInput
                         placeholder="At least 8 characters"
@@ -428,7 +428,7 @@ function AdminUsers() {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
+                    <FormLabel required>Role</FormLabel>
                     <FormControl>
                       <Combobox
                         options={ROLE_OPTIONS}
@@ -505,7 +505,7 @@ function AdminUsers() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel required>Email</FormLabel>
                     <FormControl>
                       <Input type="email" {...field} />
                     </FormControl>
@@ -518,7 +518,7 @@ function AdminUsers() {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
+                    <FormLabel required>Role</FormLabel>
                     <FormControl>
                       <Combobox
                         options={ROLE_OPTIONS}
@@ -595,7 +595,7 @@ function AdminUsers() {
                 name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Password</FormLabel>
+                    <FormLabel required>New Password</FormLabel>
                     <FormControl>
                       <PasswordInput
                         placeholder="At least 8 characters"

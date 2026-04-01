@@ -42,8 +42,8 @@ describe("AdjustmentForm", () => {
   it("renders in create mode with correct submit button text and fields", () => {
     render(<AdjustmentForm {...defaultProps} />);
 
-    expect(screen.getByText("Type")).toBeInTheDocument();
-    expect(screen.getByText("Amount")).toBeInTheDocument();
+    expect(screen.getByText(/^Type/)).toBeInTheDocument();
+    expect(screen.getByText(/^Amount/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /add adjustment/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
@@ -144,7 +144,7 @@ describe("AdjustmentForm", () => {
     );
 
     // The description field is a Combobox; click its trigger to open
-    const descCombobox = screen.getByLabelText("Description");
+    const descCombobox = screen.getByLabelText(/^Description/);
     await user.click(descCombobox);
 
     await waitFor(() => {
@@ -167,7 +167,7 @@ describe("AdjustmentForm", () => {
       />,
     );
 
-    const descCombobox = screen.getByLabelText("Description");
+    const descCombobox = screen.getByLabelText(/^Description/);
     await user.click(descCombobox);
 
     await waitFor(() => {
@@ -190,7 +190,7 @@ describe("AdjustmentForm", () => {
     );
 
     // Open the description combobox and type a custom value
-    const descCombobox = screen.getByLabelText("Description");
+    const descCombobox = screen.getByLabelText(/^Description/);
     await user.click(descCombobox);
     const searchInput = screen.getByPlaceholderText("Search descriptions...");
     await user.type(searchInput, "Loyalty bonus");

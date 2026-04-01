@@ -111,9 +111,9 @@ describe("Step3Items", () => {
 
   it("renders the form fields", () => {
     renderWithProviders(<Step3Items {...defaultProps} />);
-    expect(screen.getByText("Description")).toBeInTheDocument();
-    expect(screen.getByText("Quantity")).toBeInTheDocument();
-    expect(screen.getByText("Unit Price")).toBeInTheDocument();
+    expect(screen.getByText(/^Description/)).toBeInTheDocument();
+    expect(screen.getByText(/^Quantity/)).toBeInTheDocument();
+    expect(screen.getByText(/^Unit Price/)).toBeInTheDocument();
   });
 
   it("renders Back and Next buttons", () => {
@@ -826,7 +826,7 @@ describe("Step3Items", () => {
 
   it("renders quantity input as enabled (no pricing mode selector)", () => {
     renderWithProviders(<Step3Items {...defaultProps} />);
-    const qtyInput = screen.getByLabelText("Quantity");
+    const qtyInput = screen.getByLabelText(/^Quantity/);
     expect(qtyInput).not.toBeDisabled();
   });
 

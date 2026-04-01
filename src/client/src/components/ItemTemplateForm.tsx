@@ -106,7 +106,7 @@ export function ItemTemplateForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel required>Name</FormLabel>
               <FormControl>
                 <Input aria-required="true" {...field} />
               </FormControl>

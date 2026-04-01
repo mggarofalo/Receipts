@@ -78,7 +78,7 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
               name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Location</FormLabel>
+                  <FormLabel required>Location</FormLabel>
                   <FormControl>
                     <Combobox
                       ref={locationRef}
@@ -102,7 +102,7 @@ export function Step1TripDetails({ data, onNext }: Step1Props) {
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel required>Date</FormLabel>
                   <FormControl>
                     <DateInput
                       aria-required="true"

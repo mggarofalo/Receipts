@@ -75,7 +75,7 @@ export function ReceiptForm({
           name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Location</FormLabel>
+              <FormLabel required>Location</FormLabel>
               <FormControl>
                 <Combobox
                   options={locationOptions}
@@ -98,7 +98,7 @@ export function ReceiptForm({
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Date</FormLabel>
+              <FormLabel required>Date</FormLabel>
               <FormControl>
                 <DateInput aria-required="true" {...field} />
               </FormControl>

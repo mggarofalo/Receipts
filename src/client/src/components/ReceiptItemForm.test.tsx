@@ -96,13 +96,13 @@ describe("ReceiptItemForm", () => {
   it("renders in create mode with correct submit button text and all field labels", () => {
     render(<ReceiptItemForm {...defaultProps} />);
 
-    expect(screen.getByText("Receipt")).toBeInTheDocument();
-    expect(screen.getByText("Item Code")).toBeInTheDocument();
-    expect(screen.getByText("Description")).toBeInTheDocument();
-    expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
-    expect(screen.getByLabelText("Unit Price")).toBeInTheDocument();
-    expect(screen.getByText("Category")).toBeInTheDocument();
-    expect(screen.getByText("Subcategory")).toBeInTheDocument();
+    expect(screen.getByText(/^Receipt/)).toBeInTheDocument();
+    expect(screen.getByText(/^Item Code/)).toBeInTheDocument();
+    expect(screen.getByText(/^Description/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Quantity/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Unit Price/)).toBeInTheDocument();
+    expect(screen.getByText(/^Category/)).toBeInTheDocument();
+    expect(screen.getByText(/^Subcategory/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create item/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
@@ -218,8 +218,8 @@ describe("ReceiptItemForm", () => {
   it("defaults quantity to 1", () => {
     render(<ReceiptItemForm {...defaultProps} />);
 
-    expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
-    expect(screen.getByLabelText("Unit Price")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Quantity/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Unit Price/)).toBeInTheDocument();
   });
 
   it("shows recent description history and item template groups in description autocomplete", async () => {
@@ -231,7 +231,7 @@ describe("ReceiptItemForm", () => {
 
     render(<ReceiptItemForm {...defaultProps} />);
 
-    const descriptionInput = screen.getByLabelText("Description");
+    const descriptionInput = screen.getByLabelText(/^Description/);
     await user.click(descriptionInput);
 
     // History entries should appear under "Recent Descriptions"
@@ -246,7 +246,7 @@ describe("ReceiptItemForm", () => {
     const user = userEvent.setup();
     render(<ReceiptItemForm {...defaultProps} />);
 
-    const descriptionInput = screen.getByLabelText("Description");
+    const descriptionInput = screen.getByLabelText(/^Description/);
     await user.type(descriptionInput, "Milk");
 
     // Fuzzy-matched template should appear under "Item Templates"
@@ -264,7 +264,7 @@ describe("ReceiptItemForm", () => {
 
     render(<ReceiptItemForm {...defaultProps} />);
 
-    const descriptionInput = screen.getByLabelText("Description");
+    const descriptionInput = screen.getByLabelText(/^Description/);
     await user.click(descriptionInput);
 
     await waitFor(() => {
@@ -337,7 +337,7 @@ describe("ReceiptItemForm", () => {
     render(<ReceiptItemForm {...defaultProps} />);
 
     // Open the category combobox
-    const categoryCombobox = screen.getByLabelText("Category");
+    const categoryCombobox = screen.getByLabelText(/^Category/);
     await user.click(categoryCombobox);
 
     // Type a non-existent category (like a store name)

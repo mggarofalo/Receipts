@@ -29,7 +29,7 @@ describe("ReceiptHeaderForm", () => {
   it("renders all form fields", () => {
     render(<ReceiptHeaderForm {...defaultProps} />);
     expect(screen.getByRole("combobox")).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: /^date$/i })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /^date/i })).toBeInTheDocument();
     expect(screen.getByText(/tax amount/i)).toBeInTheDocument();
   });
 
