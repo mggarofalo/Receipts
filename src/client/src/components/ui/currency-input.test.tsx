@@ -174,4 +174,53 @@ describe("CurrencyInput", () => {
     expect(onChange).toHaveBeenCalledWith(42.5);
     expect(input).toHaveValue("42.50");
   });
+
+  it("clears displayed text when value prop is reset to 0 externally (e.g. form.reset())", async () => {
+    // Simulates the bug where CurrencyInput retains its internal text state
+    // after a parent form resets the value prop to 0.
+    function ResettableWrapper() {
+      const [value, setValue] = useState(25.99);
+      return (
+        <>
+          <CurrencyInput value={value} onChange={setValue} />
+          <button onClick={() => setValue(0)}>Reset</button>
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<ResettableWrapper />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("25.99");
+
+    // Simulate the parent resetting value to 0 (like form.reset())
+    await user.click(screen.getByText("Reset"));
+
+    // The input should now show empty (placeholder visible), not "25.99"
+    expect(input).toHaveValue("");
+    expect(input).toHaveAttribute("placeholder", "0.00");
+  });
+
+  it("updates displayed text when value prop changes to a new non-zero value externally", async () => {
+    function ExternalUpdateWrapper() {
+      const [value, setValue] = useState(10);
+      return (
+        <>
+          <CurrencyInput value={value} onChange={setValue} />
+          <button onClick={() => setValue(42.5)}>Update</button>
+        </>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<ExternalUpdateWrapper />);
+
+    const input = screen.getByRole("textbox");
+    expect(input).toHaveValue("10.00");
+
+    await user.click(screen.getByText("Update"));
+
+    expect(input).toHaveValue("42.50");
+  });
 });
