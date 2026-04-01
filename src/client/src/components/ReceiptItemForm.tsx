@@ -71,8 +71,9 @@ const receiptItemSchema = z.object({
 
 type ReceiptItemSchemaValues = z.output<typeof receiptItemSchema>;
 
+/** The form always emits pricingMode: "quantity" — flat pricing has been removed from the UI. */
 export type ReceiptItemFormValues = ReceiptItemSchemaValues & {
-  pricingMode: "quantity" | "flat";
+  pricingMode: "quantity";
 };
 
 interface ReceiptItemFormProps {
