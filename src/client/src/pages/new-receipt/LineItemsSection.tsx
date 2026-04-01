@@ -49,20 +49,14 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Sparkles, Pencil, Check, X } from "lucide-react";
 
-const itemSchema = z
-  .object({
-    receiptItemCode: z.string().optional().default(""),
-    description: z.string().min(1, "Description is required"),
-    pricingMode: z.enum(["quantity", "flat"]),
-    quantity: z.number().positive("Quantity must be positive"),
-    unitPrice: z.number().min(0, "Unit price must be non-negative"),
-    category: z.string().min(1, "Category is required"),
-    subcategory: z.string().optional().default(""),
-  })
-  .refine((data) => data.pricingMode !== "flat" || data.quantity === 1, {
-    message: "Quantity must be 1 for flat pricing",
-    path: ["quantity"],
-  });
+const itemSchema = z.object({
+  receiptItemCode: z.string().optional().default(""),
+  description: z.string().min(1, "Description is required"),
+  quantity: z.number().positive("Quantity must be positive"),
+  unitPrice: z.number().min(0, "Unit price must be non-negative"),
+  category: z.string().min(1, "Category is required"),
+  subcategory: z.string().optional().default(""),
+});
 
 type ItemFormValues = z.output<typeof itemSchema>;
 
@@ -102,7 +96,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     defaultValues: {
       receiptItemCode: "",
       description: "",
-      pricingMode: "quantity",
       quantity: 1,
       unitPrice: 0,
       category: "",
@@ -114,7 +107,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
   const itemCode = form.watch("receiptItemCode");
   const description = form.watch("description");
   const selectedCategory = form.watch("category");
-  const pricingMode = form.watch("pricingMode");
 
   // Item code autocomplete
   const [showItemCodeSuggestions, setShowItemCodeSuggestions] = useState(false);
@@ -224,15 +216,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
       if (suggestion.defaultUnitPrice != null) {
         form.setValue("unitPrice", suggestion.defaultUnitPrice);
       }
-      if (
-        suggestion.defaultPricingMode === "quantity" ||
-        suggestion.defaultPricingMode === "flat"
-      ) {
-        form.setValue("pricingMode", suggestion.defaultPricingMode);
-        if (suggestion.defaultPricingMode === "flat") {
-          form.setValue("quantity", 1);
-        }
-      }
       if (suggestion.defaultItemCode) {
         form.setValue("receiptItemCode", suggestion.defaultItemCode);
       }
@@ -273,7 +256,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
         id: generateId(),
         receiptItemCode: values.receiptItemCode ?? "",
         description: values.description,
-        pricingMode: values.pricingMode,
+        pricingMode: "quantity",
         quantity: values.quantity,
         unitPrice: values.unitPrice,
         category: values.category,
@@ -283,7 +266,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
       form.reset({
         receiptItemCode: "",
         description: "",
-        pricingMode: "quantity",
         quantity: 1,
         unitPrice: 0,
         category: values.category,
@@ -583,6 +565,10 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 )}
               />
 
+            </div>
+
+            {/* Row 2: Subcategory, Quantity, Unit Price, Add Item */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
               <FormField
                 control={form.control}
                 name="subcategory"
@@ -633,34 +619,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                   </FormItem>
                 )}
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[auto_auto_auto_1fr] sm:items-end">
-              <FormField
-                control={form.control}
-                name="pricingMode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pricing</FormLabel>
-                    <FormControl>
-                      <Combobox
-                        options={[
-                          { value: "quantity", label: "Quantity" },
-                          { value: "flat", label: "Flat" },
-                        ]}
-                        value={field.value}
-                        onValueChange={(v) => {
-                          field.onChange(v);
-                          if (v === "flat") form.setValue("quantity", 1);
-                        }}
-                        placeholder="Mode..."
-                        searchPlaceholder="Search modes..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}
@@ -674,7 +632,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                         step="any"
                         min="0.01"
                         className="w-20"
-                        disabled={pricingMode === "flat"}
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                       />
@@ -689,9 +646,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 name="unitPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required>
-                      {pricingMode === "flat" ? "Price" : "Unit Price"}
-                    </FormLabel>
+                    <FormLabel required>Unit Price</FormLabel>
                     <FormControl>
                       <CurrencyInput {...field} />
                     </FormControl>

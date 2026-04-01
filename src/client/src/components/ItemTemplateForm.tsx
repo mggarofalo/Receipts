@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
-import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import { useCategories } from "@/hooks/useCategories";
 import { useSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
 import { Combobox } from "@/components/ui/combobox";
@@ -53,7 +52,6 @@ export function ItemTemplateForm({
 }: ItemTemplateFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
-  const { pricingModes } = useEnumMetadata();
 
   const { data: categories } = useCategories(0, 50, undefined, undefined, true);
   const categoryOptions =
@@ -175,44 +173,22 @@ export function ItemTemplateForm({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="defaultUnitPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Default Unit Price (optional)</FormLabel>
-                <FormControl>
-                  <CurrencyInput
-                    value={field.value ?? 0}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="defaultPricingMode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Default Pricing Mode (optional)</FormLabel>
-                <FormControl>
-                  <Combobox
-                    options={pricingModes}
-                    value={field.value ?? ""}
-                    onValueChange={field.onChange}
-                    placeholder="Select pricing mode..."
-                    searchPlaceholder="Search modes..."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="defaultUnitPrice"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Default Unit Price (optional)</FormLabel>
+              <FormControl>
+                <CurrencyInput
+                  value={field.value ?? 0}
+                  onChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

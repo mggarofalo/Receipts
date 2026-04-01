@@ -4,7 +4,6 @@ import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Fuse from "fuse.js";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
-import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useCategories } from "@/hooks/useCategories";
@@ -64,17 +63,18 @@ const receiptItemSchema = z.object({
   receiptId: z.string().min(1, "Receipt is required"),
   receiptItemCode: z.string().min(1, "Item code is required"),
   description: z.string().min(1, "Description is required"),
-  pricingMode: z.enum(["flat", "quantity"], { message: "Pricing mode is required" }),
   quantity: z.number().positive("Quantity must be positive"),
   unitPrice: z.number().min(0, "Unit price must be non-negative"),
   category: z.string().min(1, "Category is required"),
   subcategory: z.string().min(1, "Subcategory is required"),
-}).refine(
-  (data) => data.pricingMode !== "flat" || data.quantity === 1,
-  { message: "Quantity must be 1 for flat pricing", path: ["quantity"] }
-);
+});
 
-export type ReceiptItemFormValues = z.output<typeof receiptItemSchema>;
+type ReceiptItemSchemaValues = z.output<typeof receiptItemSchema>;
+
+/** The form always emits pricingMode: "quantity" — flat pricing has been removed from the UI. */
+export type ReceiptItemFormValues = ReceiptItemSchemaValues & {
+  pricingMode: "quantity";
+};
 
 interface ReceiptItemFormProps {
   mode: "create" | "edit";
@@ -99,7 +99,6 @@ export function ReceiptItemForm({
 }: ReceiptItemFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
-  const { pricingModes } = useEnumMetadata();
   const { options: descriptionHistoryOptions, add: addDescriptionHistory } =
     useFieldHistory(itemDescriptionHistory);
   const { options: itemCodeOptions, add: addItemCodeHistory } =
@@ -140,14 +139,13 @@ export function ReceiptItemForm({
     [categories],
   );
 
-  const form = useForm<ReceiptItemFormValues>({
+  const form = useForm<ReceiptItemSchemaValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(receiptItemSchema) as any,
     defaultValues: {
       receiptId: "",
       receiptItemCode: "",
       description: "",
-      pricingMode: "quantity",
       quantity: 1,
       unitPrice: 0,
       category: "",
@@ -189,10 +187,8 @@ export function ReceiptItemForm({
     [form],
   );
 
-  const watchedPricingMode = form.watch("pricingMode");
   const watchedQuantity = form.watch("quantity");
   const watchedUnitPrice = form.watch("unitPrice");
-  const isFlat = watchedPricingMode === "flat";
 
   // Resolve location: use prop if provided, otherwise derive from selected receipt
   const watchedReceiptId = form.watch("receiptId");
@@ -260,17 +256,7 @@ export function ReceiptItemForm({
     setItemCodeAutocompleteOpen(false);
   }
 
-  const handlePricingModeChange = useCallback(
-    (value: string) => {
-      form.setValue("pricingMode", value as "flat" | "quantity", { shouldValidate: true });
-      if (value === "flat") {
-        form.setValue("quantity", 1);
-      }
-    },
-    [form],
-  );
-
-  async function handleFormSubmit(values: ReceiptItemFormValues) {
+  async function handleFormSubmit(values: ReceiptItemSchemaValues) {
     // Persist field values for future autocomplete before calling onSubmit.
     // Like location history, these are valid user input regardless of whether
     // the server mutation succeeds.
@@ -289,7 +275,7 @@ export function ReceiptItemForm({
       });
     }
 
-    onSubmit(values);
+    onSubmit({ ...values, pricingMode: "quantity" });
   }
 
   const computedTotal = (watchedQuantity ?? 0) * (watchedUnitPrice ?? 0);
@@ -623,78 +609,6 @@ export function ReceiptItemForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="pricingMode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Pricing Mode</FormLabel>
-              <FormControl>
-                <Combobox
-                  options={pricingModes}
-                  value={field.value}
-                  onValueChange={handlePricingModeChange}
-                  placeholder="Select pricing mode..."
-                  searchPlaceholder="Search modes..."
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
-          {!isFlat && (
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantity</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="1"
-                      aria-required="true"
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  {serverErrors?.quantity && (
-                    <p className="text-sm font-medium text-destructive">
-                      {serverErrors.quantity}
-                    </p>
-                  )}
-                </FormItem>
-              )}
-            />
-          )}
-
-          <FormField
-            control={form.control}
-            name="unitPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{isFlat ? "Price" : "Unit Price"}</FormLabel>
-                <FormControl>
-                  <CurrencyInput {...field} />
-                </FormControl>
-                <FormMessage />
-                {serverErrors?.unitPrice && (
-                  <p className="text-sm font-medium text-destructive">
-                    {serverErrors.unitPrice}
-                  </p>
-                )}
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="text-sm text-muted-foreground">
-          Total: {formatCurrency(computedTotal)}
-        </div>
-
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -747,6 +661,56 @@ export function ReceiptItemForm({
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="quantity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Quantity</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="1"
+                    aria-required="true"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                  />
+                </FormControl>
+                <FormMessage />
+                {serverErrors?.quantity && (
+                  <p className="text-sm font-medium text-destructive">
+                    {serverErrors.quantity}
+                  </p>
+                )}
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="unitPrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unit Price</FormLabel>
+                <FormControl>
+                  <CurrencyInput {...field} />
+                </FormControl>
+                <FormMessage />
+                {serverErrors?.unitPrice && (
+                  <p className="text-sm font-medium text-destructive">
+                    {serverErrors.unitPrice}
+                  </p>
+                )}
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          Total: {formatCurrency(computedTotal)}
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
