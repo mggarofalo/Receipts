@@ -5,25 +5,6 @@ import { ReceiptItemsCard } from "./ReceiptItemsCard";
 import { renderWithQueryClient } from "@/test/test-utils";
 import { mockMutationResult } from "@/test/mock-hooks";
 
-vi.mock("@/hooks/useEnumMetadata", () => ({
-  useEnumMetadata: vi.fn(() => ({
-    adjustmentTypes: [],
-    authEventTypes: [],
-    pricingModes: [
-      { value: "quantity", label: "Quantity" },
-      { value: "flat", label: "Flat" },
-    ],
-    auditActions: [],
-    entityTypes: [],
-    adjustmentTypeLabels: {},
-    authEventLabels: {},
-    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
-    auditActionLabels: {},
-    entityTypeLabels: {},
-    isLoading: false,
-  })),
-}));
-
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
     data: [],

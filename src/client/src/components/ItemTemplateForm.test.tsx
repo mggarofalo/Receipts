@@ -21,22 +21,6 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
 }));
 
-vi.mock("@/hooks/useEnumMetadata", () => ({
-  useEnumMetadata: vi.fn(() => ({
-    adjustmentTypes: [],
-    authEventTypes: [],
-    pricingModes: [{ value: "quantity", label: "Quantity" }, { value: "flat", label: "Flat" }],
-    auditActions: [],
-    entityTypes: [],
-    adjustmentTypeLabels: {},
-    authEventLabels: {},
-    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
-    auditActionLabels: {},
-    entityTypeLabels: {},
-    isLoading: false,
-  })),
-}));
-
 vi.mock("@/hooks/useCategories", () => ({
   useCategories: vi.fn(() => ({
     data: [
@@ -150,7 +134,6 @@ describe("ItemTemplateForm", () => {
     expect(screen.getByText("Default Category (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Subcategory (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Unit Price (optional)")).toBeInTheDocument();
-    expect(screen.getByText("Default Pricing Mode (optional)")).toBeInTheDocument();
     expect(screen.getByText("Default Item Code (optional)")).toBeInTheDocument();
   });
 

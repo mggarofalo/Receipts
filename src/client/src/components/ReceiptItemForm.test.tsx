@@ -7,22 +7,6 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
 }));
 
-vi.mock("@/hooks/useEnumMetadata", () => ({
-  useEnumMetadata: vi.fn(() => ({
-    adjustmentTypes: [],
-    authEventTypes: [],
-    pricingModes: [{ value: "quantity", label: "Quantity" }, { value: "flat", label: "Flat" }],
-    auditActions: [],
-    entityTypes: [],
-    adjustmentTypeLabels: {},
-    authEventLabels: {},
-    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
-    auditActionLabels: {},
-    entityTypeLabels: {},
-    isLoading: false,
-  })),
-}));
-
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({
     data: [
@@ -115,7 +99,6 @@ describe("ReceiptItemForm", () => {
     expect(screen.getByText("Receipt")).toBeInTheDocument();
     expect(screen.getByText("Item Code")).toBeInTheDocument();
     expect(screen.getByText("Description")).toBeInTheDocument();
-    expect(screen.getByText("Pricing Mode")).toBeInTheDocument();
     expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
     expect(screen.getByLabelText("Unit Price")).toBeInTheDocument();
     expect(screen.getByText("Category")).toBeInTheDocument();
@@ -133,7 +116,7 @@ describe("ReceiptItemForm", () => {
           receiptId: "r-1",
           receiptItemCode: "ITM-001",
           description: "Whole Milk",
-          pricingMode: "quantity",
+
           quantity: 2,
           unitPrice: 3.99,
           category: "Groceries",
@@ -187,7 +170,7 @@ describe("ReceiptItemForm", () => {
           receiptId: "r-1",
           receiptItemCode: "ITM-001",
           description: "Milk",
-          pricingMode: "quantity",
+
           quantity: 3,
           unitPrice: 2.50,
           category: "Groceries",
@@ -208,7 +191,7 @@ describe("ReceiptItemForm", () => {
           receiptId: "r-1",
           receiptItemCode: "ITM-001",
           description: "Milk",
-          pricingMode: "quantity",
+
           quantity: 1,
           unitPrice: 3.99,
           category: "Groceries",
@@ -232,7 +215,7 @@ describe("ReceiptItemForm", () => {
     });
   });
 
-  it("defaults quantity to 1 and pricing mode to 'quantity'", () => {
+  it("defaults quantity to 1", () => {
     render(<ReceiptItemForm {...defaultProps} />);
 
     expect(screen.getByLabelText("Quantity")).toBeInTheDocument();
@@ -303,7 +286,7 @@ describe("ReceiptItemForm", () => {
           receiptId: "r-1",
           receiptItemCode: "ITM-001",
           description: "Bananas",
-          pricingMode: "quantity",
+
           quantity: 1,
           unitPrice: 1.29,
           category: "Groceries",

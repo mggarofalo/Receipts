@@ -50,20 +50,14 @@ import {
 import { Plus, Trash2, Loader2, Sparkles } from "lucide-react";
 import type { WizardReceiptItem } from "./wizardReducer";
 
-const itemSchema = z
-  .object({
-    receiptItemCode: z.string().optional().default(""),
-    description: z.string().min(1, "Description is required"),
-    pricingMode: z.enum(["quantity", "flat"]),
-    quantity: z.number().positive("Quantity must be positive"),
-    unitPrice: z.number().min(0, "Unit price must be non-negative"),
-    category: z.string().min(1, "Category is required"),
-    subcategory: z.string().optional().default(""),
-  })
-  .refine((data) => data.pricingMode !== "flat" || data.quantity === 1, {
-    message: "Quantity must be 1 for flat pricing",
-    path: ["quantity"],
-  });
+const itemSchema = z.object({
+  receiptItemCode: z.string().optional().default(""),
+  description: z.string().min(1, "Description is required"),
+  quantity: z.number().positive("Quantity must be positive"),
+  unitPrice: z.number().min(0, "Unit price must be non-negative"),
+  category: z.string().min(1, "Category is required"),
+  subcategory: z.string().optional().default(""),
+});
 
 type ItemFormValues = z.output<typeof itemSchema>;
 
@@ -105,7 +99,6 @@ export function Step3Items({
     defaultValues: {
       receiptItemCode: "",
       description: "",
-      pricingMode: "quantity",
       quantity: 1,
       unitPrice: 0,
       category: "",
@@ -210,8 +203,6 @@ export function Step3Items({
     [subcategories],
   );
 
-  const pricingMode = form.watch("pricingMode");
-
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
     [items],
@@ -232,15 +223,6 @@ export function Step3Items({
       }
       if (suggestion.defaultUnitPrice != null) {
         form.setValue("unitPrice", suggestion.defaultUnitPrice);
-      }
-      if (
-        suggestion.defaultPricingMode === "quantity" ||
-        suggestion.defaultPricingMode === "flat"
-      ) {
-        form.setValue("pricingMode", suggestion.defaultPricingMode);
-        if (suggestion.defaultPricingMode === "flat") {
-          form.setValue("quantity", 1);
-        }
       }
       if (suggestion.defaultItemCode) {
         form.setValue("receiptItemCode", suggestion.defaultItemCode);
@@ -282,7 +264,7 @@ export function Step3Items({
         id: generateId(),
         receiptItemCode: values.receiptItemCode ?? "",
         description: values.description,
-        pricingMode: values.pricingMode,
+        pricingMode: "quantity",
         quantity: values.quantity,
         unitPrice: values.unitPrice,
         category: values.category,
@@ -292,7 +274,6 @@ export function Step3Items({
       form.reset({
         receiptItemCode: "",
         description: "",
-        pricingMode: "quantity",
         quantity: 1,
         unitPrice: 0,
         category: values.category,
@@ -332,8 +313,10 @@ export function Step3Items({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleAdd)}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="space-y-4"
           >
+            {/* Row 1: Item Code, Description, Category */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <FormField
               control={form.control}
               name="receiptItemCode"
@@ -507,69 +490,6 @@ export function Step3Items({
 
             <FormField
               control={form.control}
-              name="pricingMode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Pricing Mode</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      options={[
-                        { value: "quantity", label: "Quantity" },
-                        { value: "flat", label: "Flat" },
-                      ]}
-                      value={field.value}
-                      onValueChange={(v) => {
-                        field.onChange(v);
-                        if (v === "flat") form.setValue("quantity", 1);
-                      }}
-                      placeholder="Select pricing mode..."
-                      searchPlaceholder="Search modes..."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantity</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="any"
-                      min="0.01"
-                      disabled={pricingMode === "flat"}
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="unitPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {pricingMode === "flat" ? "Price" : "Unit Price"}
-                  </FormLabel>
-                  <FormControl>
-                    <CurrencyInput {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="category"
               render={({ field }) => (
                 <FormItem>
@@ -610,57 +530,94 @@ export function Step3Items({
                 </FormItem>
               )}
             />
+            </div>
 
-            <FormField
-              control={form.control}
-              name="subcategory"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Subcategory (optional)</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      options={subcategoryOptions}
-                      value={field.value ?? ""}
-                      onValueChange={(v: string) => {
-                        field.onChange(v);
-                        const isExisting = subcategoryOptions.some(
-                          (o) => o.value === v,
-                        );
-                        if (
-                          !isExisting &&
-                          v &&
-                          selectedCategoryObj?.id &&
-                          !pendingSubcategories.current.has(v)
-                        ) {
-                          pendingSubcategories.current.add(v);
-                          createSubcategory.mutate(
-                            {
-                              categoryId: selectedCategoryObj.id,
-                              name: v,
-                              isActive: true,
-                            },
-                            {
-                              onSettled: () => {
-                                pendingSubcategories.current.delete(v);
-                              },
-                            },
+            {/* Row 2: Subcategory, Quantity, Unit Price, Add Item */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
+              <FormField
+                control={form.control}
+                name="subcategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory (optional)</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={subcategoryOptions}
+                        value={field.value ?? ""}
+                        onValueChange={(v: string) => {
+                          field.onChange(v);
+                          const isExisting = subcategoryOptions.some(
+                            (o) => o.value === v,
                           );
-                        }
-                      }}
-                      placeholder="Select subcategory..."
-                      searchPlaceholder="Search subcategories..."
-                      emptyMessage="No subcategories found."
-                      allowCustom
-                      disabled={!selectedCategory}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                          if (
+                            !isExisting &&
+                            v &&
+                            selectedCategoryObj?.id &&
+                            !pendingSubcategories.current.has(v)
+                          ) {
+                            pendingSubcategories.current.add(v);
+                            createSubcategory.mutate(
+                              {
+                                categoryId: selectedCategoryObj.id,
+                                name: v,
+                                isActive: true,
+                              },
+                              {
+                                onSettled: () => {
+                                  pendingSubcategories.current.delete(v);
+                                },
+                              },
+                            );
+                          }
+                        }}
+                        placeholder="Select subcategory..."
+                        searchPlaceholder="Search subcategories..."
+                        emptyMessage="No subcategories found."
+                        allowCustom
+                        disabled={!selectedCategory}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="sm:col-span-2 lg:col-span-3 flex justify-end">
-              <Button type="submit" variant="secondary" size="sm">
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantity</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        className="w-20"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="unitPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit Price</FormLabel>
+                    <FormControl>
+                      <CurrencyInput {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" variant="secondary" size="sm" className="sm:mb-0.5">
                 <Plus className="mr-1 h-4 w-4" />
                 Add Item
               </Button>

@@ -112,8 +112,8 @@ describe("Step3Items", () => {
   it("renders the form fields", () => {
     renderWithProviders(<Step3Items {...defaultProps} />);
     expect(screen.getByText("Description")).toBeInTheDocument();
-    // "Quantity" appears as both a label and a select option; verify at least one exists
-    expect(screen.getAllByText("Quantity").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Quantity")).toBeInTheDocument();
+    expect(screen.getByText("Unit Price")).toBeInTheDocument();
   });
 
   it("renders Back and Next buttons", () => {
@@ -309,10 +309,8 @@ describe("Step3Items", () => {
     const descInput = screen.getByPlaceholderText("Item description");
     await user.type(descInput, "Bananas");
 
-    // Select category via combobox - find the category combobox (skip pricing mode combobox)
+    // Select category via combobox
     const comboboxes = screen.getAllByRole("combobox");
-    // comboboxes: [description (role=combobox), pricingMode, category, subcategory]
-    // Find the one with "Select category..." text
     const categoryCombobox = comboboxes.find(
       (cb) => cb.textContent?.includes("Select category"),
     );
@@ -801,38 +799,10 @@ describe("Step3Items", () => {
     expect(rows.length).toBe(3);
   });
 
-  it("disables quantity input when pricing mode is flat", () => {
+  it("renders quantity input as enabled (no pricing mode selector)", () => {
     renderWithProviders(<Step3Items {...defaultProps} />);
-    // The quantity input should be enabled by default (pricing mode = quantity)
     const qtyInput = screen.getByLabelText("Quantity");
     expect(qtyInput).not.toBeDisabled();
-  });
-
-  it("shows Price label when pricing mode is flat", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<Step3Items {...defaultProps} />);
-
-    // Initially shows "Unit Price"
-    expect(screen.getByText("Unit Price")).toBeInTheDocument();
-
-    // Switch to flat pricing mode via the combobox
-    const comboboxes = screen.getAllByRole("combobox");
-    const pricingCombobox = comboboxes.find(
-      (cb) => cb.textContent?.includes("Quantity"),
-    );
-    if (pricingCombobox) {
-      await user.click(pricingCombobox);
-      const flatOption = await screen.findByRole("option", { name: /flat/i });
-      await user.click(flatOption);
-
-      // After switching to flat, the label changes to "Price"
-      await vi.waitFor(() => {
-        expect(screen.getByText("Price")).toBeInTheDocument();
-      });
-
-      // Quantity should be disabled
-      expect(screen.getByLabelText("Quantity")).toBeDisabled();
-    }
   });
 
   it("clears subcategory when category changes", async () => {
