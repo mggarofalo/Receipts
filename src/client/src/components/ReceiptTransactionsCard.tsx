@@ -55,12 +55,14 @@ interface TransactionRow {
 
 interface ReceiptTransactionsCardProps {
   receiptId: string;
+  receiptDate?: string;
   transactions: TransactionRow[];
   transactionsTotal: number;
 }
 
 export function ReceiptTransactionsCard({
   receiptId,
+  receiptDate,
   transactions,
   transactionsTotal,
 }: ReceiptTransactionsCardProps) {
@@ -256,6 +258,7 @@ export function ReceiptTransactionsCard({
           </DialogHeader>
           <ReceiptTransactionForm
             mode="create"
+            defaultValues={receiptDate ? { date: receiptDate } : undefined}
             isSubmitting={createTransaction.isPending}
             serverErrors={serverErrors}
             onCancel={() => setCreateOpen(false)}

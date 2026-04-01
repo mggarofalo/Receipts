@@ -231,6 +231,7 @@ function ReceiptDetail() {
 
           <ReceiptTransactionsCard
             receiptId={id}
+            receiptDate={trip.receipt.receipt.date}
             transactions={trip.transactions}
             transactionsTotal={transactionsTotal}
           />

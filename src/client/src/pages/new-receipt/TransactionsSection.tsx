@@ -89,6 +89,19 @@ export function TransactionsSection({
     },
   });
 
+  // Sync the date field when the receipt date changes and the field is empty
+  const prevDefaultDateRef = useRef(defaultDate);
+  useEffect(() => {
+    const currentDate = form.getValues("date");
+    if (
+      defaultDate !== prevDefaultDateRef.current &&
+      (currentDate === "" || currentDate === prevDefaultDateRef.current)
+    ) {
+      form.setValue("date", defaultDate, { shouldValidate: true });
+    }
+    prevDefaultDateRef.current = defaultDate;
+  }, [defaultDate, form]);
+
   const runningTotal = useMemo(
     () => transactions.reduce((sum, t) => sum + t.amount, 0),
     [transactions],
