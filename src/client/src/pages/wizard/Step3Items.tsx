@@ -330,8 +330,8 @@ export function Step3Items({
   const saveEditing = useCallback(() => {
     if (!editingItemId) return;
     if (!editDraft.description.trim()) return;
-    if (editDraft.quantity <= 0) return;
-    if (editDraft.unitPrice < 0) return;
+    if (!Number.isFinite(editDraft.quantity) || editDraft.quantity <= 0) return;
+    if (!Number.isFinite(editDraft.unitPrice) || editDraft.unitPrice < 0) return;
 
     setItems((prev) =>
       prev.map((item) =>

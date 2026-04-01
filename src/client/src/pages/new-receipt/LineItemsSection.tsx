@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -323,8 +323,8 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
   const saveEditing = useCallback(() => {
     if (!editingItemId) return;
     if (!editDraft.description.trim()) return;
-    if (editDraft.quantity <= 0) return;
-    if (editDraft.unitPrice < 0) return;
+    if (!Number.isFinite(editDraft.quantity) || editDraft.quantity <= 0) return;
+    if (!Number.isFinite(editDraft.unitPrice) || editDraft.unitPrice < 0) return;
 
     onChange(
       items.map((item) =>
@@ -340,6 +340,13 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     );
     setEditingItemId(null);
   }, [editingItemId, editDraft, items, onChange]);
+
+  // Clear stale editing state when the edited item is removed externally
+  useEffect(() => {
+    if (editingItemId && !items.some((i) => i.id === editingItemId)) {
+      setEditingItemId(null);
+    }
+  }, [items, editingItemId]);
 
   return (
     <Card>
