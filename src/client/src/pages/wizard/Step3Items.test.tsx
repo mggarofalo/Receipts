@@ -237,7 +237,7 @@ describe("Step3Items", () => {
     expect(screen.getByText("Balanced")).toBeInTheDocument();
   });
 
-  it("shows Remaining badge with difference amount", () => {
+  it("shows Remaining badge when items are under transaction total", () => {
     const items = [
       {
         id: "1",
@@ -260,6 +260,31 @@ describe("Step3Items", () => {
       />,
     );
     expect(screen.getByText(/remaining/i)).toBeInTheDocument();
+  });
+
+  it("shows Over badge when items exceed transaction total", () => {
+    const items = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Item",
+        pricingMode: "quantity" as const,
+        quantity: 1,
+        unitPrice: 50,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    // subtotal=50, tax=5, expected=55, txnTotal=40 => over by $15.00
+    renderWithProviders(
+      <Step3Items
+        {...defaultProps}
+        data={items}
+        taxAmount={5}
+        transactionTotal={40}
+      />,
+    );
+    expect(screen.getByText(/over by/i)).toBeInTheDocument();
   });
 
   it("removes an item when the remove button is clicked", async () => {
