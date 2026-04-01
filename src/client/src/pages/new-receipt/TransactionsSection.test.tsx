@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult } from "@/test/mock-hooks";
@@ -118,7 +118,7 @@ describe("TransactionsSection", () => {
     expect(onChange).toHaveBeenCalledWith([]);
   });
 
-  it("syncs transaction date when defaultDate changes and date field is empty", () => {
+  it("syncs transaction date when defaultDate changes and date field is empty", async () => {
     const { rerender } = renderWithProviders(
       <TransactionsSection {...defaultProps} defaultDate="" />,
     );
@@ -127,13 +127,15 @@ describe("TransactionsSection", () => {
     expect(dateInput).toHaveValue("");
 
     // Update the defaultDate prop (simulating the receipt date being set)
-    rerender(
-      <TransactionsSection {...defaultProps} defaultDate="2024-03-20" />,
-    );
+    await act(async () => {
+      rerender(
+        <TransactionsSection {...defaultProps} defaultDate="2024-03-20" />,
+      );
+    });
     expect(dateInput).toHaveValue("03/20/2024");
   });
 
-  it("syncs transaction date when defaultDate changes and date matches previous default", () => {
+  it("syncs transaction date when defaultDate changes and date matches previous default", async () => {
     const { rerender } = renderWithProviders(
       <TransactionsSection {...defaultProps} defaultDate="2024-01-15" />,
     );
@@ -141,9 +143,11 @@ describe("TransactionsSection", () => {
     expect(dateInput).toHaveValue("01/15/2024");
 
     // Change the receipt date
-    rerender(
-      <TransactionsSection {...defaultProps} defaultDate="2024-03-20" />,
-    );
+    await act(async () => {
+      rerender(
+        <TransactionsSection {...defaultProps} defaultDate="2024-03-20" />,
+      );
+    });
     expect(dateInput).toHaveValue("03/20/2024");
   });
 

@@ -97,7 +97,7 @@ export function TransactionsSection({
       defaultDate !== prevDefaultDateRef.current &&
       (currentDate === "" || currentDate === prevDefaultDateRef.current)
     ) {
-      form.setValue("date", defaultDate);
+      form.setValue("date", defaultDate, { shouldValidate: true });
     }
     prevDefaultDateRef.current = defaultDate;
   }, [defaultDate, form]);

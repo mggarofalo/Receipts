@@ -98,7 +98,7 @@ export function Step2Transactions({
       receiptDate !== prevReceiptDateRef.current &&
       (currentDate === "" || currentDate === prevReceiptDateRef.current)
     ) {
-      form.setValue("date", receiptDate);
+      form.setValue("date", receiptDate, { shouldValidate: true });
     }
     prevReceiptDateRef.current = receiptDate;
   }, [receiptDate, form]);
