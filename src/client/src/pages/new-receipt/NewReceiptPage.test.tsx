@@ -133,7 +133,7 @@ describe("NewReceiptPage", () => {
 
   it("renders all three sections", () => {
     renderWithProviders(<NewReceiptPage />);
-    expect(screen.getByText("Location")).toBeInTheDocument();
+    expect(screen.getByText(/^Location/)).toBeInTheDocument();
     expect(screen.getByTestId("transactions-section")).toBeInTheDocument();
     expect(screen.getByTestId("line-items-section")).toBeInTheDocument();
   });

@@ -69,7 +69,7 @@ describe("ReceiptForm", () => {
     // Click the "Use ..." button to select the custom value
     await user.click(screen.getByText(/Use "Target"/));
 
-    await user.type(screen.getByLabelText("Date"), "2024-03-01");
+    await user.type(screen.getByLabelText(/^Date/), "2024-03-01");
     await user.click(
       screen.getByRole("button", { name: /create receipt/i }),
     );
@@ -125,14 +125,14 @@ describe("ReceiptForm", () => {
   it("renders date input field", () => {
     render(<ReceiptForm {...defaultProps} />);
 
-    expect(screen.getByLabelText("Date")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Date/)).toBeInTheDocument();
   });
 
   it("associates Location label with the combobox trigger via id", () => {
     render(<ReceiptForm {...defaultProps} />);
 
     const combobox = screen.getByRole("combobox");
-    const label = screen.getByText("Location");
+    const label = screen.getByText(/^Location/);
 
     // FormControl's Slot passes id to the Combobox trigger button;
     // FormLabel sets htmlFor to the same id, creating the association.
@@ -164,7 +164,7 @@ describe("ReceiptForm", () => {
     expect(screen.getByRole("combobox")).toHaveTextContent("Target");
 
     // Fill remaining fields and submit
-    await user.type(screen.getByLabelText("Date"), "2024-05-10");
+    await user.type(screen.getByLabelText(/^Date/), "2024-05-10");
     await user.click(
       screen.getByRole("button", { name: /create receipt/i }),
     );
@@ -190,7 +190,7 @@ describe("ReceiptForm", () => {
     await user.type(searchInput, "Costco");
     await user.click(screen.getByText(/Use "Costco"/));
 
-    await user.type(screen.getByLabelText("Date"), "2024-06-01");
+    await user.type(screen.getByLabelText(/^Date/), "2024-06-01");
     await user.click(
       screen.getByRole("button", { name: /create receipt/i }),
     );

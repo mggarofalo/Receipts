@@ -84,7 +84,7 @@ export function ReceiptTransactionForm({
           name="accountId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Account</FormLabel>
+              <FormLabel required>Account</FormLabel>
               <FormControl>
                 <Combobox
                   options={accountOptions}
@@ -112,7 +112,7 @@ export function ReceiptTransactionForm({
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount</FormLabel>
+              <FormLabel required>Amount</FormLabel>
               <FormControl>
                 <CurrencyInput {...field} />
               </FormControl>
@@ -131,7 +131,7 @@ export function ReceiptTransactionForm({
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Date</FormLabel>
+              <FormLabel required>Date</FormLabel>
               <FormControl>
                 <DateInput aria-required="true" {...field} />
               </FormControl>

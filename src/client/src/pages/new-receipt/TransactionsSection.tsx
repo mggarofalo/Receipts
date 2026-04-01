@@ -158,7 +158,7 @@ export function TransactionsSection({
               name="accountId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Account</FormLabel>
+                  <FormLabel required>Account</FormLabel>
                   <FormControl>
                     <Combobox
                       ref={accountRef}
@@ -181,7 +181,7 @@ export function TransactionsSection({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel required>Amount</FormLabel>
                   <FormControl>
                     <CurrencyInput {...field} />
                   </FormControl>
@@ -195,7 +195,7 @@ export function TransactionsSection({
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel required>Date</FormLabel>
                   <FormControl>
                     <DateInput aria-required="true" {...field} />
                   </FormControl>

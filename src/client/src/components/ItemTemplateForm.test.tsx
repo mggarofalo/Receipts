@@ -55,7 +55,7 @@ describe("ItemTemplateForm", () => {
   it("renders in create mode with empty fields and correct submit button text", () => {
     render(<ItemTemplateForm {...defaultProps} />);
 
-    expect(screen.getByLabelText("Name")).toHaveValue("");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("");
     expect(screen.getByLabelText("Default Item Code (optional)")).toHaveValue("");
     expect(screen.getByRole("button", { name: /create template/i })).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe("ItemTemplateForm", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Name")).toHaveValue("Milk");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("Milk");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("Whole milk");
     expect(screen.getByLabelText("Default Item Code (optional)")).toHaveValue("MLK-001");
     expect(screen.getByRole("button", { name: /update template/i })).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe("ItemTemplateForm", () => {
     const user = userEvent.setup();
     render(<ItemTemplateForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText("Name"), "Bread");
+    await user.type(screen.getByLabelText(/^Name/), "Bread");
     await user.click(screen.getByRole("button", { name: /create template/i }));
 
     await waitFor(() => {

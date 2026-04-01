@@ -362,7 +362,7 @@ export function ReceiptItemForm({
             name="receiptId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Receipt</FormLabel>
+                <FormLabel required>Receipt</FormLabel>
                 <FormControl>
                   <Combobox
                     options={receiptOptions}
@@ -387,7 +387,7 @@ export function ReceiptItemForm({
           name="receiptItemCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Item Code</FormLabel>
+              <FormLabel required>Item Code</FormLabel>
               <Popover
                 open={isItemCodePopoverOpen}
                 onOpenChange={setItemCodeAutocompleteOpen}
@@ -513,7 +513,7 @@ export function ReceiptItemForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel required>Description</FormLabel>
               <Popover
                 open={isDescriptionPopoverOpen}
                 onOpenChange={setAutocompleteOpen}
@@ -615,7 +615,7 @@ export function ReceiptItemForm({
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
+                <FormLabel required>Category</FormLabel>
                 <FormControl>
                   <Combobox
                     options={categoryOptions}
@@ -640,7 +640,7 @@ export function ReceiptItemForm({
             name="subcategory"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Subcategory</FormLabel>
+                <FormLabel required>Subcategory</FormLabel>
                 <FormControl>
                   <Combobox
                     options={subcategoryOptions}

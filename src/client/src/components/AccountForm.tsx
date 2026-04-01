@@ -76,7 +76,7 @@ export function AccountForm({
           name="accountCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Account Code</FormLabel>
+              <FormLabel required>Account Code</FormLabel>
               <FormControl>
                 <Input aria-required="true" {...field} />
               </FormControl>
@@ -90,7 +90,7 @@ export function AccountForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel required>Name</FormLabel>
               <FormControl>
                 <Input aria-required="true" {...field} />
               </FormControl>

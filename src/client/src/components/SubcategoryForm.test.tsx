@@ -33,7 +33,7 @@ describe("SubcategoryForm", () => {
     render(<SubcategoryForm {...defaultProps} />);
 
     // Name is now a Combobox (button), not an Input
-    expect(screen.getByLabelText("Name")).toHaveTextContent(
+    expect(screen.getByLabelText(/^Name/)).toHaveTextContent(
       "Select or type a name...",
     );
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("");
@@ -51,7 +51,7 @@ describe("SubcategoryForm", () => {
     );
 
     // Name is a Combobox; it shows the value as text content
-    expect(screen.getByLabelText("Name")).toHaveTextContent("Produce");
+    expect(screen.getByLabelText(/^Name/)).toHaveTextContent("Produce");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("Fresh produce");
     expect(screen.getByRole("button", { name: /update subcategory/i })).toBeInTheDocument();
   });
@@ -104,7 +104,7 @@ describe("SubcategoryForm", () => {
     );
 
     // Name is a Combobox with allowCustom; type a custom value
-    const nameCombobox = screen.getByLabelText("Name");
+    const nameCombobox = screen.getByLabelText(/^Name/);
     await user.click(nameCombobox);
     const searchInput = screen.getByPlaceholderText("Search names...");
     await user.type(searchInput, "Dairy");
@@ -128,7 +128,7 @@ describe("SubcategoryForm", () => {
 
     render(<SubcategoryForm {...defaultProps} />);
 
-    const nameCombobox = screen.getByLabelText("Name");
+    const nameCombobox = screen.getByLabelText(/^Name/);
     await user.click(nameCombobox);
 
     await waitFor(() => {
@@ -146,7 +146,7 @@ describe("SubcategoryForm", () => {
 
     render(<SubcategoryForm {...defaultProps} />);
 
-    const nameCombobox = screen.getByLabelText("Name");
+    const nameCombobox = screen.getByLabelText(/^Name/);
     await user.click(nameCombobox);
 
     await waitFor(() => {
@@ -168,7 +168,7 @@ describe("SubcategoryForm", () => {
     );
 
     // Type a custom name
-    const nameCombobox = screen.getByLabelText("Name");
+    const nameCombobox = screen.getByLabelText(/^Name/);
     await user.click(nameCombobox);
     const searchInput = screen.getByPlaceholderText("Search names...");
     await user.type(searchInput, "Bakery");

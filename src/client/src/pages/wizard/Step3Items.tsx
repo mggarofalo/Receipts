@@ -367,7 +367,7 @@ export function Step3Items({
               name="receiptItemCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Item Code</FormLabel>
+                  <FormLabel required>Item Code</FormLabel>
                   <Popover
                     open={isItemCodeSuggestionsOpen}
                     onOpenChange={setShowItemCodeSuggestions}
@@ -450,7 +450,7 @@ export function Step3Items({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel required>Description</FormLabel>
                   <Popover
                     open={isSuggestionsOpen}
                     onOpenChange={setShowSuggestions}
@@ -538,7 +538,7 @@ export function Step3Items({
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel required>Category</FormLabel>
                   <FormControl>
                     <Combobox
                       options={categoryOptions}

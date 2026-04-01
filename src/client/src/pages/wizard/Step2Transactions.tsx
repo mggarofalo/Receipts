@@ -170,7 +170,7 @@ export function Step2Transactions({
               name="accountId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Account</FormLabel>
+                  <FormLabel required>Account</FormLabel>
                   <FormControl>
                     <Combobox
                       ref={accountRef}
@@ -193,7 +193,7 @@ export function Step2Transactions({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel required>Amount</FormLabel>
                   <FormControl>
                     <CurrencyInput {...field} />
                   </FormControl>
@@ -207,7 +207,7 @@ export function Step2Transactions({
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel required>Date</FormLabel>
                   <FormControl>
                     <DateInput aria-required="true" {...field} />
                   </FormControl>

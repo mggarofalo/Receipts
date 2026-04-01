@@ -105,7 +105,7 @@ function ChangePassword() {
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Current Password</FormLabel>
+                  <FormLabel required>Current Password</FormLabel>
                   <FormControl>
                     <PasswordInput
                       placeholder="Enter your current password"
@@ -122,7 +122,7 @@ function ChangePassword() {
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New Password</FormLabel>
+                  <FormLabel required>New Password</FormLabel>
                   <FormControl>
                     <PasswordInput
                       placeholder="At least 8 characters"
@@ -139,7 +139,7 @@ function ChangePassword() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm New Password</FormLabel>
+                  <FormLabel required>Confirm New Password</FormLabel>
                   <FormControl>
                     <PasswordInput
                       placeholder="Re-enter your new password"

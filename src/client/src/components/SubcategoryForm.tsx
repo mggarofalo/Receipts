@@ -85,7 +85,7 @@ export function SubcategoryForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel required>Name</FormLabel>
               <FormControl>
                 <Combobox
                   options={subcategoryNameOptions}
@@ -108,7 +108,7 @@ export function SubcategoryForm({
           name="categoryId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
+              <FormLabel required>Category</FormLabel>
               <FormControl>
                 <Combobox
                   options={categoryOptions}
