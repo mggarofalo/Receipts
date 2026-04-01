@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, formatDecimal, parseCurrencyInput, camelToTitle, capitalize } from "./format";
+import { formatCurrency, formatDecimal, parseCurrencyInput, camelToTitle, capitalize, evaluateMathExpression } from "./format";
 
 describe("formatCurrency", () => {
   it("formats a positive number as USD", () => {
@@ -94,6 +94,93 @@ describe("camelToTitle", () => {
 
   it("handles consecutive capitals", () => {
     expect(camelToTitle("apiKeyAuth")).toBe("Api Key Auth");
+  });
+});
+
+describe("evaluateMathExpression", () => {
+  it("evaluates a single number", () => {
+    expect(evaluateMathExpression("42")).toBe(42);
+  });
+
+  it("evaluates a decimal number", () => {
+    expect(evaluateMathExpression("24.99")).toBe(24.99);
+  });
+
+  it("evaluates addition", () => {
+    expect(evaluateMathExpression("10+5")).toBe(15);
+  });
+
+  it("evaluates subtraction", () => {
+    expect(evaluateMathExpression("24.99-7.30")).toBeCloseTo(17.69);
+  });
+
+  it("evaluates multiplication", () => {
+    expect(evaluateMathExpression("3*4")).toBe(12);
+  });
+
+  it("evaluates division", () => {
+    expect(evaluateMathExpression("10/4")).toBe(2.5);
+  });
+
+  it("respects operator precedence (multiply before add)", () => {
+    expect(evaluateMathExpression("2+3*4")).toBe(14);
+  });
+
+  it("respects operator precedence (divide before subtract)", () => {
+    expect(evaluateMathExpression("10-6/3")).toBe(8);
+  });
+
+  it("evaluates chained operations", () => {
+    expect(evaluateMathExpression("1+2+3+4")).toBe(10);
+  });
+
+  it("handles parentheses", () => {
+    expect(evaluateMathExpression("(2+3)*4")).toBe(20);
+  });
+
+  it("handles nested parentheses", () => {
+    expect(evaluateMathExpression("((2+3)*4)+1")).toBe(21);
+  });
+
+  it("handles leading negative number", () => {
+    expect(evaluateMathExpression("-5+3")).toBe(-2);
+  });
+
+  it("handles negative in parentheses", () => {
+    expect(evaluateMathExpression("10+(-3)")).toBe(7);
+  });
+
+  it("ignores whitespace", () => {
+    expect(evaluateMathExpression(" 10 + 5 ")).toBe(15);
+  });
+
+  it("returns NaN for empty string", () => {
+    expect(evaluateMathExpression("")).toBeNaN();
+  });
+
+  it("returns NaN for non-numeric input", () => {
+    expect(evaluateMathExpression("abc")).toBeNaN();
+  });
+
+  it("returns NaN for incomplete expression", () => {
+    expect(evaluateMathExpression("5+")).toBeNaN();
+  });
+
+  it("returns NaN for unmatched parenthesis", () => {
+    expect(evaluateMathExpression("(5+3")).toBeNaN();
+  });
+
+  it("returns Infinity for division by zero", () => {
+    expect(evaluateMathExpression("5/0")).toBe(Infinity);
+  });
+
+  it("handles complex real-world expression", () => {
+    // e.g. item price minus discount
+    expect(evaluateMathExpression("24.99-7.30")).toBeCloseTo(17.69);
+  });
+
+  it("handles multiplication with decimals", () => {
+    expect(evaluateMathExpression("4.50*3")).toBeCloseTo(13.5);
   });
 });
 

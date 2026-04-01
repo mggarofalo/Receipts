@@ -1,6 +1,9 @@
 import { useState, useRef, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
-import { formatDecimal, parseCurrencyInput } from "@/lib/format";
+import { formatDecimal, evaluateMathExpression } from "@/lib/format";
+
+/** Characters allowed while the user is actively typing an expression. */
+const EXPRESSION_CHARS = /[^0-9.+\-*/() ]/g;
 
 interface CurrencyInputProps
   extends Omit<ComponentProps<"input">, "type" | "value" | "onChange"> {
@@ -46,18 +49,22 @@ export function CurrencyInput({
   const displayValue = focused ? text : value === 0 ? "" : formatDecimal(value);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = parseCurrencyInput(e.target.value);
-    const parts = raw.split(".");
-    if (parts.length > 1 && parts[1].length > 2) return;
+    // Allow math-expression characters while typing; strip everything else
+    const raw = e.target.value.replace(EXPRESSION_CHARS, "");
     setText(raw);
+
+    // If it looks like a plain number (no operators / parens), update immediately
     const num = parseFloat(raw);
-    if (!isNaN(num)) {
+    if (!isNaN(num) && /^-?\d*\.?\d*$/.test(raw)) {
+      const parts = raw.split(".");
+      if (parts.length > 1 && parts[1].length > 2) return;
       setLastEmitted(num);
       onChange(num);
     } else if (raw === "" || raw === ".") {
       setLastEmitted(0);
       onChange(0);
     }
+    // If it contains operators we wait for blur/Enter to evaluate
   }
 
   function handleFocus() {
@@ -70,28 +77,52 @@ export function CurrencyInput({
     }
   }
 
-  function handleBlur() {
-    setFocused(false);
-    const num = parseFloat(text);
-    const final = isNaN(num) ? 0 : num;
+  function commitExpression() {
+    const evaluated = evaluateMathExpression(text);
+    const final =
+      isNaN(evaluated) || !isFinite(evaluated) ? 0 : Math.round(evaluated * 100) / 100;
     setText(final === 0 ? "" : formatDecimal(final));
     setLastEmitted(final);
     onChange(final);
+  }
+
+  function handleBlur() {
+    setFocused(false);
+    commitExpression();
     onBlur?.();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      // Only intercept Enter when the text contains math operators.
+      // For plain numbers, let the event propagate so forms can submit.
+      const hasMathOperators = /[+\-*/()]/.test(text.replace(/^-/, ""));
+      if (hasMathOperators) {
+        e.preventDefault();
+      }
+      commitExpression();
+    }
   }
 
   function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
     const pasted = e.clipboardData.getData("text");
-    const cleaned = parseCurrencyInput(pasted);
-    const parts = cleaned.split(".");
-    const limited =
-      parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 2)}` : cleaned;
-    setText(limited);
-    const num = parseFloat(limited);
-    const final = isNaN(num) ? 0 : num;
-    setLastEmitted(final);
-    onChange(final);
+    // Allow math expressions in pasted content too
+    const cleaned = pasted.replace(EXPRESSION_CHARS, "");
+    setText(cleaned);
+
+    // If it's a plain number, update immediately
+    const num = parseFloat(cleaned);
+    if (!isNaN(num) && /^-?\d*\.?\d*$/.test(cleaned)) {
+      const parts = cleaned.split(".");
+      const limited =
+        parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 2)}` : cleaned;
+      setText(limited);
+      const final = parseFloat(limited) || 0;
+      setLastEmitted(final);
+      onChange(final);
+    }
+    // Otherwise wait for blur/Enter to evaluate expression
   }
 
   return (
@@ -109,6 +140,7 @@ export function CurrencyInput({
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         className={cn(
           "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
