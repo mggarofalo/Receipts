@@ -202,6 +202,40 @@ describe("CurrencyInput", () => {
     expect(input).toHaveAttribute("placeholder", "0.00");
   });
 
+  it("clears displayed text when value prop is reset to 0 while input is focused (Enter key submit)", async () => {
+    // This test exercises the actual bug scenario: the input has focus when
+    // the parent resets the value (e.g. form.handleSubmit → form.reset via Enter).
+    // When focused, displayValue reads from internal `text` state, so the sync
+    // logic must update `text` for the input to clear.
+    //
+    // We use a form wrapper that resets the value on submit (triggered by Enter),
+    // which mirrors the real wizard behavior without blurring the input.
+    function FormResetWrapper() {
+      const [value, setValue] = useState(0);
+      return (
+        <form onSubmit={(e) => { e.preventDefault(); setValue(0); }}>
+          <CurrencyInput value={value} onChange={setValue} />
+        </form>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<FormResetWrapper />);
+
+    const input = screen.getByRole("textbox");
+
+    // Focus the input and type a price (simulates user entering unit price)
+    await user.click(input);
+    await user.type(input, "5.99");
+    expect(input).toHaveValue("5.99");
+
+    // Press Enter to submit the form, which resets value to 0 without blurring.
+    await user.keyboard("{Enter}");
+
+    // The input should clear even though it still has focus
+    expect(input).toHaveValue("");
+  });
+
   it("updates displayed text when value prop changes to a new non-zero value externally", async () => {
     function ExternalUpdateWrapper() {
       const [value, setValue] = useState(10);
