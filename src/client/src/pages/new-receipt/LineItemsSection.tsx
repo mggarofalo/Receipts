@@ -86,7 +86,7 @@ interface LineItemsSectionProps {
 export function LineItemsSection({ items, onChange, location }: LineItemsSectionProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsListId = "new-receipt-suggestions-list";
-  const { data: categories } = useCategories();
+  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
 
   const categoryOptions = useMemo(
     () =>
@@ -194,6 +194,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
 
   const { data: subcategories } = useSubcategoriesByCategoryId(
     selectedCategoryObj?.id ?? "",
+    0, 200, undefined, undefined, true,
   );
   const createSubcategory = useCreateSubcategory();
   const pendingSubcategories = useRef(new Set<string>());

@@ -87,7 +87,7 @@ export function Step3Items({
   const [items, setItems] = useState<WizardReceiptItem[]>(data);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsListId = "step3-suggestions-list";
-  const { data: categories } = useCategories();
+  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
 
   const categoryOptions = useMemo(
     () =>
@@ -198,6 +198,7 @@ export function Step3Items({
 
   const { data: subcategories } = useSubcategoriesByCategoryId(
     selectedCategoryObj?.id ?? "",
+    0, 200, undefined, undefined, true,
   );
   const createSubcategory = useCreateSubcategory();
   const pendingSubcategories = useRef(new Set<string>());

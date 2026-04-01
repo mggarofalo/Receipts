@@ -58,7 +58,7 @@ export function TransactionsSection({
 }: TransactionsSectionProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const accountRef = useRef<HTMLButtonElement>(null);
-  const { data: accounts } = useAccounts();
+  const { data: accounts } = useAccounts(0, 50, undefined, undefined, true);
   useFormShortcuts({ formRef });
 
   const accountOptions = useMemo(

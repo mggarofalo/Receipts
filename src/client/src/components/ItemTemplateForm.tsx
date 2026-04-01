@@ -55,11 +55,10 @@ export function ItemTemplateForm({
   useFormShortcuts({ formRef });
   const { pricingModes } = useEnumMetadata();
 
-  const { data: categories } = useCategories();
+  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
   const categoryOptions =
     (categories as { id: string; name: string; isActive: boolean }[] | undefined)
-      ?.filter((c) => c.isActive)
-      .map((c) => ({
+      ?.map((c) => ({
         value: c.name,
         label: c.name,
       })) ?? [];
@@ -88,12 +87,11 @@ export function ItemTemplateForm({
     )?.id ?? null;
 
   const { data: subcategoriesData } =
-    useSubcategoriesByCategoryId(selectedCategoryId);
+    useSubcategoriesByCategoryId(selectedCategoryId, 0, 200, undefined, undefined, true);
 
   const subcategoryOptions =
     (subcategoriesData as { id: string; name: string; isActive: boolean }[] | undefined)
-      ?.filter((s) => s.isActive)
-      .map((s) => ({
+      ?.map((s) => ({
         value: s.name,
         label: s.name,
       })) ?? [];
