@@ -22,6 +22,7 @@ public static class ConfigurationVariables
 	public const string AdminSeedFirstName = "AdminSeed:FirstName";
 	public const string AdminSeedLastName = "AdminSeed:LastName";
 
+	public const string OcrEngine = "Ocr:Engine";
 	public const string TessdataPath = "Ocr:TessdataPath";
 	public const string OcrTimeoutSeconds = "Ocr:TimeoutSeconds";
 	public const string OcrMaxImageBytes = "Ocr:MaxImageBytes";
