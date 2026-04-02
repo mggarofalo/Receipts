@@ -120,6 +120,7 @@ public static class InfrastructureService
 			.AddScoped<IAdjustmentService, AdjustmentService>()
 			.AddScoped<IReceiptItemService, ReceiptItemService>()
 			.AddScoped<ICompleteReceiptService, CompleteReceiptService>()
+			.AddScoped<IBackupImportService, BackupImportService>()
 			.AddScoped<IItemTemplateService, ItemTemplateService>()
 			.AddScoped<IItemTemplateSimilarityService, ItemTemplateSimilarityService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
@@ -139,12 +140,13 @@ public static class InfrastructureService
 			.AddScoped<ITrashService, TrashService>()
 			.AddScoped<IDashboardService, DashboardService>()
 			.AddScoped<IReportService, ReportService>()
+			.AddScoped<IBackupService, BackupService>()
 			.AddScoped<IImageStorageService, LocalImageStorageService>()
 			.AddScoped<IImageProcessingService, ImageProcessingService>();
 
 		// Singleton AI/ML services (local models — always available)
 		services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
-		services.AddSingleton<IOcrEngine, TesseractOcrEngine>();
+		RegisterOcrEngine(services, configuration);
 		services.AddHostedService<EmbeddingGenerationService>();
 
 		services.AddHostedService<AuthAuditCleanupService>();
@@ -160,5 +162,23 @@ public static class InfrastructureService
 			.AddSingleton<ItemTemplateMapper>();
 
 		return services;
+	}
+
+	/// <summary>
+	/// Registers the configured OCR engine as a singleton <see cref="IOcrEngine"/>.
+	/// Reads <c>Ocr:Engine</c> from configuration — valid values are "Tesseract" (default) and "PaddleOCR".
+	/// </summary>
+	internal static void RegisterOcrEngine(IServiceCollection services, IConfiguration configuration)
+	{
+		string engineName = configuration[ConfigurationVariables.OcrEngine] ?? "Tesseract";
+
+		if (string.Equals(engineName, "PaddleOCR", StringComparison.OrdinalIgnoreCase))
+		{
+			services.AddSingleton<IOcrEngine, PaddleOcrEngine>();
+		}
+		else
+		{
+			services.AddSingleton<IOcrEngine, TesseractOcrEngine>();
+		}
 	}
 }
