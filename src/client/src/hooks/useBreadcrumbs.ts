@@ -14,6 +14,7 @@ const routeLabels: Record<string, string> = {
   "/audit": "Audit Log",
   "/trash": "Recycle Bin",
   "/admin/users": "User Management",
+  "/admin/backup": "Backup & Restore",
   "/login": "Login",
   "/change-password": "Change Password",
 };
