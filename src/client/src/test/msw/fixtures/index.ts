@@ -1,5 +1,7 @@
 export { loginRequest, tokenResponse } from "./auth";
 export { accounts } from "./accounts";
+export { categories } from "./categories";
+export { subcategories } from "./subcategories";
 export { receipts } from "./receipts";
 export { receiptItems } from "./receipt-items";
 export { transactions } from "./transactions";

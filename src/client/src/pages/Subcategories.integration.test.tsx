@@ -4,17 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
 import { categories } from "@/test/msw/fixtures/categories";
-import { subcategories } from "@/test/msw/fixtures/subcategories";
-import { createListHandlers } from "@/test/msw/handler-factories";
 import { renderWithQueryClient } from "@/test/test-utils";
 import Subcategories from "./Subcategories";
 
 beforeEach(() => {
   localStorage.clear();
-  server.use(
-    ...createListHandlers("subcategories", subcategories),
-    ...createListHandlers("categories", categories),
-  );
 });
 
 describe("Subcategories (integration)", () => {
@@ -128,6 +122,85 @@ describe("Subcategories (integration)", () => {
     // Tools has 1 subcategory (Power Tools)
     const toolsHeader = screen.getByTestId(`category-header-${categories[1].id}`);
     expect(toolsHeader).toHaveTextContent("(1)");
+  });
+
+  it("defaults to showing only active subcategories", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<Subcategories />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    // Expand Groceries to see subcategories
+    await user.click(screen.getByTestId(`category-header-${categories[0].id}`));
+
+    // Active subcategories visible
+    expect(screen.getByText("Dairy")).toBeInTheDocument();
+    expect(screen.getByText("Bakery")).toBeInTheDocument();
+    // Inactive subcategory filtered out
+    expect(screen.queryByText("Expired Coupons")).not.toBeInTheDocument();
+
+    // Active tab selected
+    const activeTab = screen.getByRole("tab", { name: "Active" });
+    expect(activeTab).toHaveAttribute("data-state", "active");
+  });
+
+  it("shows inactive subcategories when Inactive tab is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<Subcategories />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Inactive" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    // Expand Groceries to see inactive subcategories
+    await user.click(screen.getByTestId(`category-header-${categories[0].id}`));
+
+    expect(screen.getByText("Expired Coupons")).toBeInTheDocument();
+    // Active subcategories should not be shown
+    expect(screen.queryByText("Dairy")).not.toBeInTheDocument();
+  });
+
+  it("shows all subcategories when All tab is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<Subcategories />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("tab", { name: "All" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    // Expand Groceries to see all subcategories
+    await user.click(screen.getByTestId(`category-header-${categories[0].id}`));
+
+    expect(screen.getByText("Dairy")).toBeInTheDocument();
+    expect(screen.getByText("Bakery")).toBeInTheDocument();
+    expect(screen.getByText("Expired Coupons")).toBeInTheDocument();
+  });
+
+  it("persists status filter in localStorage", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<Subcategories />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("tab", { name: "All" }));
+
+    expect(localStorage.getItem("subcategories-status-filter")).toBe("all");
   });
 
   it("opens create dialog and submits a new subcategory via API", async () => {
