@@ -321,7 +321,7 @@ describe("BackupRestore", () => {
         mutate: vi.fn(() => {
           if (opts?.onSuccess) {
             opts.onSuccess(
-              { recordsImported: 10, recordsUpdated: 5, recordsSkipped: 2 },
+              { totalCreated: 10, totalUpdated: 5 },
               undefined,
               undefined,
             );
@@ -349,7 +349,7 @@ describe("BackupRestore", () => {
 
     await vi.waitFor(() => {
       expect(showSuccess).toHaveBeenCalledWith(
-        "Import complete: 10 imported, 5 updated, 2 skipped.",
+        "Import complete: 10 created, 5 updated.",
       );
     });
   });
