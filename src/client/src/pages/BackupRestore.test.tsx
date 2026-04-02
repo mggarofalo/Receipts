@@ -454,4 +454,66 @@ describe("BackupRestore", () => {
     const fileInput = document.getElementById("backup-file") as HTMLInputElement;
     expect(fileInput.accept).toBe(".sqlite,.db");
   });
+
+  it("does not close confirmation dialog via Escape while import is pending", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useMutation } = await import("@tanstack/react-query");
+
+    // Start with isPending = false so the user can open the dialog,
+    // then switch to isPending = true to simulate an in-flight import
+    let importPending = false;
+    let callCount = 0;
+    vi.mocked(useMutation).mockImplementation((() => {
+      callCount++;
+      if (callCount % 2 === 1) {
+        // export mutation (odd calls)
+        return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+      }
+      // import mutation (even calls) - pending state is dynamic
+      return {
+        mutate: vi.fn(() => {
+          importPending = true;
+        }),
+        mutateAsync: vi.fn(),
+        get isPending() {
+          return importPending;
+        },
+      };
+    }) as unknown as typeof useMutation);
+
+    const { rerender } = renderWithQueryClient(<BackupRestore />);
+
+    const fileInput = document.getElementById("backup-file") as HTMLInputElement;
+    const testFile = new File(["test"], "backup.sqlite", {
+      type: "application/octet-stream",
+    });
+    await user.upload(fileInput, testFile);
+
+    // Open the confirmation dialog
+    await user.click(
+      screen.getByRole("button", { name: /import backup/i }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /confirm import/i }),
+    ).toBeInTheDocument();
+
+    // Click Confirm Import (this triggers mutate, setting importPending = true)
+    await user.click(
+      screen.getByRole("button", { name: /confirm import/i }),
+    );
+
+    // Re-render to pick up the pending state change
+    // Reset mock call count for the re-render
+    callCount = 0;
+    rerender(<BackupRestore />);
+
+    // The dialog should still be visible after pressing Escape because import is pending
+    await user.keyboard("{Escape}");
+
+    // Dialog should remain open since import is pending
+    expect(
+      screen.getByRole("heading", { name: /confirm import/i }),
+    ).toBeInTheDocument();
+  });
 });
