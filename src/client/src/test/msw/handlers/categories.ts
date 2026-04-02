@@ -10,7 +10,7 @@ export const categoryHandlers = [
     let filtered = categories;
     if (isActiveParam !== null) {
       const isActive = isActiveParam === "true";
-      filtered = categories.filter((c) => c.isActive === isActive);
+      filtered = filtered.filter((c) => c.isActive === isActive);
     }
     const page = filtered.slice(offset, offset + limit);
     return HttpResponse.json({
