@@ -90,6 +90,13 @@ public sealed class PaddleOcrEngine : IOcrEngine, IDisposable
 			PaddleOcrResult result = await Task.Run(() =>
 			{
 				using Mat mat = Cv2.ImDecode(imageBytes, ImreadModes.Color);
+				if (mat.Empty())
+				{
+					throw new ArgumentException(
+						"Failed to decode image: data is corrupt or the format is not supported.",
+						nameof(imageBytes));
+				}
+
 				return _engine.Run(mat);
 			}, linked);
 
