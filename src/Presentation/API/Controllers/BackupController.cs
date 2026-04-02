@@ -1,4 +1,6 @@
+using API.Generated.Dtos;
 using Application.Interfaces.Services;
+using Application.Models;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -12,8 +14,18 @@ namespace API.Controllers;
 [Authorize(Policy = "RequireAdmin")]
 public class BackupController(
 	IBackupService backupService,
+	IBackupImportService importService,
 	ILogger<BackupController> logger) : ControllerBase
 {
+	private const long MaxFileSizeBytes = 100 * 1024 * 1024; // 100 MB
+
+	private static readonly HashSet<string> AllowedExtensions =
+	[
+		".sqlite",
+		".sqlite3",
+		".db",
+	];
+
 	[HttpPost("export")]
 	[EndpointSummary("Export database to a portable SQLite file")]
 	[EndpointDescription("Generates a SQLite database containing all domain data (accounts, categories, receipts, items, transactions, adjustments, item templates). Admin-only. Soft-deleted records are excluded.")]
@@ -47,6 +59,72 @@ public class BackupController(
 		{
 			logger.LogError(ex, "Failed to export database backup");
 			return TypedResults.StatusCode(StatusCodes.Status500InternalServerError);
+		}
+	}
+
+	[HttpPost("import")]
+	[RequestSizeLimit(100 * 1024 * 1024)]
+	[EndpointSummary("Import data from a SQLite backup file")]
+	[EndpointDescription("Accepts a SQLite database file exported by the backup endpoint, reads all entity tables, and upserts each row into the current database. Requires the Admin role.")]
+	public async Task<Results<Ok<BackupImportResponse>, BadRequest<string>>> ImportBackup(
+		IFormFile? file)
+	{
+		if (file is null || file.Length == 0)
+		{
+			return TypedResults.BadRequest("No file was uploaded.");
+		}
+
+		if (file.Length > MaxFileSizeBytes)
+		{
+			return TypedResults.BadRequest($"File size exceeds the maximum allowed size of {MaxFileSizeBytes / (1024 * 1024)} MB.");
+		}
+
+		string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+		if (!AllowedExtensions.Contains(extension))
+		{
+			return TypedResults.BadRequest($"Invalid file extension '{extension}'. Allowed: {string.Join(", ", AllowedExtensions)}");
+		}
+
+		try
+		{
+			await using Stream stream = file.OpenReadStream();
+			BackupImportResult result = await importService.ImportFromSqliteAsync(stream, HttpContext.RequestAborted);
+
+			logger.LogInformation(
+				"Backup import completed: {TotalCreated} created, {TotalUpdated} updated",
+				result.TotalCreated, result.TotalUpdated);
+
+			return TypedResults.Ok(new BackupImportResponse
+			{
+				AccountsCreated = result.AccountsCreated,
+				AccountsUpdated = result.AccountsUpdated,
+				CategoriesCreated = result.CategoriesCreated,
+				CategoriesUpdated = result.CategoriesUpdated,
+				SubcategoriesCreated = result.SubcategoriesCreated,
+				SubcategoriesUpdated = result.SubcategoriesUpdated,
+				ItemTemplatesCreated = result.ItemTemplatesCreated,
+				ItemTemplatesUpdated = result.ItemTemplatesUpdated,
+				ReceiptsCreated = result.ReceiptsCreated,
+				ReceiptsUpdated = result.ReceiptsUpdated,
+				ReceiptItemsCreated = result.ReceiptItemsCreated,
+				ReceiptItemsUpdated = result.ReceiptItemsUpdated,
+				TransactionsCreated = result.TransactionsCreated,
+				TransactionsUpdated = result.TransactionsUpdated,
+				AdjustmentsCreated = result.AdjustmentsCreated,
+				AdjustmentsUpdated = result.AdjustmentsUpdated,
+				TotalCreated = result.TotalCreated,
+				TotalUpdated = result.TotalUpdated,
+			});
+		}
+		catch (InvalidOperationException ex)
+		{
+			logger.LogWarning(ex, "Backup import failed: {Message}", ex.Message);
+			return TypedResults.BadRequest(ex.Message);
+		}
+		catch (Exception ex) when (ex is FormatException or ArgumentException or Microsoft.Data.Sqlite.SqliteException)
+		{
+			logger.LogWarning(ex, "Backup import failed due to malformed data: {Message}", ex.Message);
+			return TypedResults.BadRequest($"The backup file contains invalid data: {ex.Message}");
 		}
 	}
 }

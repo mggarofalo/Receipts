@@ -2390,6 +2390,46 @@ paths:
                 type: string
 
   # ──────────────────────────────────────────────
+  # Backup
+  # ──────────────────────────────────────────────
+
+  /api/backup/import:
+    post:
+      operationId: ImportBackup
+      tags: [Backup]
+      summary: Import data from a SQLite backup file
+      description: >
+        Accepts a SQLite database file exported by the backup endpoint, reads all
+        entity tables, and upserts each row into the current database (insert if
+        new, update if existing by ID). Requires the Admin role. The import is
+        atomic — if any entity fails validation, the entire import is rolled back.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  $ref: "#/components/schemas/IFormFile"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupImportResponse"
+        "400":
+          description: Bad Request — file missing, wrong format, or validation error
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
   # Auth
   # ──────────────────────────────────────────────
 
@@ -5490,6 +5530,83 @@ components:
           type: string
         label:
           type: string
+
+    BackupImportResponse:
+      type: object
+      required:
+        - accountsCreated
+        - accountsUpdated
+        - categoriesCreated
+        - categoriesUpdated
+        - subcategoriesCreated
+        - subcategoriesUpdated
+        - itemTemplatesCreated
+        - itemTemplatesUpdated
+        - receiptsCreated
+        - receiptsUpdated
+        - receiptItemsCreated
+        - receiptItemsUpdated
+        - transactionsCreated
+        - transactionsUpdated
+        - adjustmentsCreated
+        - adjustmentsUpdated
+        - totalCreated
+        - totalUpdated
+      properties:
+        accountsCreated:
+          type: integer
+          format: int32
+        accountsUpdated:
+          type: integer
+          format: int32
+        categoriesCreated:
+          type: integer
+          format: int32
+        categoriesUpdated:
+          type: integer
+          format: int32
+        subcategoriesCreated:
+          type: integer
+          format: int32
+        subcategoriesUpdated:
+          type: integer
+          format: int32
+        itemTemplatesCreated:
+          type: integer
+          format: int32
+        itemTemplatesUpdated:
+          type: integer
+          format: int32
+        receiptsCreated:
+          type: integer
+          format: int32
+        receiptsUpdated:
+          type: integer
+          format: int32
+        receiptItemsCreated:
+          type: integer
+          format: int32
+        receiptItemsUpdated:
+          type: integer
+          format: int32
+        transactionsCreated:
+          type: integer
+          format: int32
+        transactionsUpdated:
+          type: integer
+          format: int32
+        adjustmentsCreated:
+          type: integer
+          format: int32
+        adjustmentsUpdated:
+          type: integer
+          format: int32
+        totalCreated:
+          type: integer
+          format: int32
+        totalUpdated:
+          type: integer
+          format: int32
 
     EnumMetadataResponse:
       type: object

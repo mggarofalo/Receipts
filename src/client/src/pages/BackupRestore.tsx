@@ -103,14 +103,13 @@ function BackupRestore() {
       }
 
       return res.json() as Promise<{
-        recordsImported: number;
-        recordsUpdated: number;
-        recordsSkipped: number;
+        totalCreated: number;
+        totalUpdated: number;
       }>;
     },
     onSuccess: (data) => {
       showSuccess(
-        `Import complete: ${data.recordsImported} imported, ${data.recordsUpdated} updated, ${data.recordsSkipped} skipped.`,
+        `Import complete: ${data.totalCreated} created, ${data.totalUpdated} updated.`,
       );
       setSelectedFile(null);
       setConfirmImportOpen(false);
