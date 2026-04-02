@@ -21,4 +21,10 @@ export const categories: CategoryResponse[] = [
     description: null,
     isActive: true,
   },
+  {
+    id: "dddd4444-4444-4444-4444-444444444444",
+    name: "Clothing",
+    description: "Archived clothing category",
+    isActive: false,
+  },
 ];
