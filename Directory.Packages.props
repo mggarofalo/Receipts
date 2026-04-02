@@ -12,6 +12,9 @@
     </PackageVersion>
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.16.0" />
     <PackageVersion Include="Riok.Mapperly" Version="4.2.0" />
+    <PackageVersion Include="Sdcb.PaddleInference" Version="3.0.1" />
+    <PackageVersion Include="Sdcb.PaddleOCR" Version="3.0.1" />
+    <PackageVersion Include="Sdcb.PaddleOCR.Models.Local" Version="3.0.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="FluentAssertions" Version="8.2.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
