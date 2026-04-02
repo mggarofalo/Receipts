@@ -121,10 +121,10 @@ public class BackupController(
 			logger.LogWarning(ex, "Backup import failed: {Message}", ex.Message);
 			return TypedResults.BadRequest(ex.Message);
 		}
-		catch (Exception ex) when (ex is FormatException or ArgumentException)
+		catch (Exception ex) when (ex is FormatException or ArgumentException or Microsoft.Data.Sqlite.SqliteException)
 		{
 			logger.LogWarning(ex, "Backup import failed due to malformed data: {Message}", ex.Message);
-			return TypedResults.BadRequest($"Invalid backup file: {ex.Message}");
+			return TypedResults.BadRequest($"The backup file contains invalid data: {ex.Message}");
 		}
 	}
 }

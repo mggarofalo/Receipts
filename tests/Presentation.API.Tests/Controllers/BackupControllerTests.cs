@@ -195,6 +195,48 @@ public class BackupControllerTests : IDisposable
 	}
 
 	[Fact]
+	public async Task ImportBackup_ServiceThrowsFormatException_ReturnsBadRequest()
+	{
+		// Arrange
+		_importServiceMock
+			.Setup(s => s.ImportFromSqliteAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new FormatException("Guid should contain 32 digits with 4 dashes."));
+
+		Mock<IFormFile> fileMock = new();
+		fileMock.Setup(f => f.Length).Returns(1024);
+		fileMock.Setup(f => f.FileName).Returns("backup.sqlite");
+		fileMock.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+
+		// Act
+		Results<Ok<BackupImportResponse>, BadRequest<string>> result = await _controller.ImportBackup(fileMock.Object);
+
+		// Assert
+		result.Result.Should().BeOfType<BadRequest<string>>()
+			.Which.Value.Should().Contain("invalid data");
+	}
+
+	[Fact]
+	public async Task ImportBackup_ServiceThrowsArgumentException_ReturnsBadRequest()
+	{
+		// Arrange
+		_importServiceMock
+			.Setup(s => s.ImportFromSqliteAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new ArgumentException("Requested value 'INVALID' was not found."));
+
+		Mock<IFormFile> fileMock = new();
+		fileMock.Setup(f => f.Length).Returns(1024);
+		fileMock.Setup(f => f.FileName).Returns("backup.sqlite");
+		fileMock.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+
+		// Act
+		Results<Ok<BackupImportResponse>, BadRequest<string>> result = await _controller.ImportBackup(fileMock.Object);
+
+		// Assert
+		result.Result.Should().BeOfType<BadRequest<string>>()
+			.Which.Value.Should().Contain("invalid data");
+	}
+
+	[Fact]
 	public async Task ImportBackup_ValidFile_ReturnsCorrectUpsertCounts()
 	{
 		// Arrange

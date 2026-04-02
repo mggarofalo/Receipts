@@ -94,7 +94,7 @@ public class BackupImportService(
 		}
 		catch
 		{
-			await transaction.RollbackAsync(cancellationToken);
+			await transaction.RollbackAsync(CancellationToken.None);
 			throw;
 		}
 	}
@@ -110,8 +110,8 @@ public class BackupImportService(
 			throw new InvalidOperationException("The uploaded file is not a valid SQLite database.");
 		}
 
-		string magic = System.Text.Encoding.ASCII.GetString(header, 0, 15);
-		if (magic != "SQLite format 3")
+		string magic = System.Text.Encoding.ASCII.GetString(header, 0, 16);
+		if (magic != "SQLite format 3\0")
 		{
 			throw new InvalidOperationException("The uploaded file is not a valid SQLite database.");
 		}
