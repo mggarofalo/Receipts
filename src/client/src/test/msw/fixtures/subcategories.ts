@@ -24,4 +24,11 @@ export const subcategories: SubcategoryResponse[] = [
     description: null,
     isActive: true,
   },
+  {
+    id: "eeee4444-4444-4444-4444-444444444444",
+    name: "Expired Coupons",
+    categoryId: "dddd1111-1111-1111-1111-111111111111",
+    description: "No longer valid coupon items",
+    isActive: false,
+  },
 ];

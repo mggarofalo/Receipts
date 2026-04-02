@@ -2,14 +2,11 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { categories } from "@/test/msw/fixtures/categories";
-import { createListHandlers } from "@/test/msw/handler-factories";
 import { renderWithQueryClient } from "@/test/test-utils";
 import Categories from "./Categories";
 
 beforeEach(() => {
   localStorage.clear();
-  server.use(...createListHandlers("categories", categories));
 });
 
 describe("Categories (integration)", () => {
@@ -58,6 +55,71 @@ describe("Categories (integration)", () => {
 
     // Electronics has null description, should show "--"
     expect(screen.getByText("--")).toBeInTheDocument();
+  });
+
+  it("defaults to showing only active categories", async () => {
+    renderWithQueryClient(<Categories />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    // Active categories visible
+    expect(screen.getByText("Tools")).toBeInTheDocument();
+    expect(screen.getByText("Electronics")).toBeInTheDocument();
+    // Inactive category filtered out
+    expect(screen.queryByText("Clothing")).not.toBeInTheDocument();
+
+    // Active tab selected
+    const activeTab = screen.getByRole("tab", { name: "Active" });
+    expect(activeTab).toHaveAttribute("data-state", "active");
+  });
+
+  it("shows inactive categories when Inactive tab is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<Categories />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Inactive" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Clothing")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Groceries")).not.toBeInTheDocument();
+  });
+
+  it("shows all categories when All tab is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<Categories />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("tab", { name: "All" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Clothing")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Groceries")).toBeInTheDocument();
+    expect(screen.getByText("Tools")).toBeInTheDocument();
+    expect(screen.getByText("Electronics")).toBeInTheDocument();
+  });
+
+  it("persists status filter in localStorage", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<Categories />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Groceries")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("tab", { name: "All" }));
+
+    expect(localStorage.getItem("categories-status-filter")).toBe("all");
   });
 
   it("opens create dialog and submits a new category via API", async () => {
