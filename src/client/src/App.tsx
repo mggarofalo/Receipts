@@ -20,6 +20,7 @@ import AdminUsers from "@/pages/AdminUsers";
 import AuditLog from "@/pages/AuditLog";
 import SecurityLog from "@/pages/SecurityLog";
 import RecycleBin from "@/pages/RecycleBin";
+import BackupRestore from "@/pages/BackupRestore";
 import NewReceipt from "@/pages/new-receipt/NewReceiptPage";
 import ScanReceipt from "@/pages/scan-receipt/ScanReceiptPage";
 import NotFound from "@/pages/NotFound";
@@ -80,6 +81,14 @@ export const routeConfig = [
             element: (
               <AdminRoute>
                 <AdminUsers />
+              </AdminRoute>
+            ),
+          },
+          {
+            path: "/admin/backup",
+            element: (
+              <AdminRoute>
+                <BackupRestore />
               </AdminRoute>
             ),
           },

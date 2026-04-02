@@ -126,6 +126,7 @@ const adminNavGroup: NavGroup = {
     { to: "/admin/users", label: "Users", description: "Manage user accounts" },
     { to: "/audit", label: "Audit", description: "View audit logs" },
     { to: "/trash", label: "Trash", description: "Recover deleted items" },
+    { to: "/admin/backup", label: "Backup", description: "Export and import data backups" },
   ],
 };
 
@@ -212,6 +213,7 @@ export function Layout() {
     { to: "/admin/users", label: "Users" },
     { to: "/audit", label: "Audit" },
     { to: "/trash", label: "Trash" },
+    { to: "/admin/backup", label: "Backup" },
   ];
 
   return (
