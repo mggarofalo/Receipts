@@ -48,17 +48,20 @@ export default function YnabSettings() {
   const { selectedBudgetId, isLoading: settingsLoading } = useSelectedYnabBudget();
   const selectBudget = useSelectYnabBudget();
 
+  // Only fetch YNAB data when configured (budgets query succeeded)
+  const ynabReady = !budgetsLoading && !budgetsError;
+
   const { data: receiptsAccounts, isLoading: accountsLoading } = useAccounts(0, 200);
-  const { accounts: ynabAccounts, isLoading: ynabAccountsLoading } = useYnabAccounts();
-  const { mappings: accountMappings, isLoading: accountMappingsLoading } = useYnabAccountMappings();
+  const { accounts: ynabAccounts, isLoading: ynabAccountsLoading } = useYnabAccounts(ynabReady);
+  const { mappings: accountMappings, isLoading: accountMappingsLoading } = useYnabAccountMappings(ynabReady);
   const createAccountMapping = useCreateYnabAccountMapping();
   const updateAccountMapping = useUpdateYnabAccountMapping();
   const deleteAccountMapping = useDeleteYnabAccountMapping();
 
-  const { categories: ynabCategories, isLoading: ynabCatsLoading } = useYnabCategories();
-  const { categories: receiptCategories, isLoading: receiptCatsLoading } = useDistinctReceiptItemCategories();
-  const { mappings: categoryMappings, isLoading: categoryMappingsLoading } = useYnabCategoryMappings();
-  const { unmappedCategories } = useUnmappedCategories();
+  const { categories: ynabCategories, isLoading: ynabCatsLoading } = useYnabCategories(ynabReady);
+  const { categories: receiptCategories, isLoading: receiptCatsLoading } = useDistinctReceiptItemCategories(ynabReady);
+  const { mappings: categoryMappings, isLoading: categoryMappingsLoading } = useYnabCategoryMappings(ynabReady);
+  const { unmappedCategories } = useUnmappedCategories(ynabReady);
 
   const createCategoryMapping = useCreateYnabCategoryMapping();
   const updateCategoryMapping = useUpdateYnabCategoryMapping();

@@ -57,7 +57,7 @@ export function useSelectYnabBudget() {
   });
 }
 
-export function useYnabAccounts() {
+export function useYnabAccounts(enabled = true) {
   const query = useQuery({
     queryKey: ["ynab", "accounts"],
     queryFn: async () => {
@@ -66,6 +66,7 @@ export function useYnabAccounts() {
       return data;
     },
     retry: false,
+    enabled,
   });
   return useMemo(
     () => ({ ...query, accounts: query.data?.data ?? [] }),
@@ -73,7 +74,7 @@ export function useYnabAccounts() {
   );
 }
 
-export function useYnabAccountMappings() {
+export function useYnabAccountMappings(enabled = true) {
   const query = useQuery({
     queryKey: ["ynab", "account-mappings"],
     queryFn: async () => {
@@ -81,6 +82,7 @@ export function useYnabAccountMappings() {
       if (error) throw error;
       return data;
     },
+    enabled,
   });
   return useMemo(
     () => ({ ...query, mappings: query.data?.data ?? [] }),
@@ -168,7 +170,7 @@ export function useDeleteYnabAccountMapping() {
   });
 }
 
-export function useYnabCategories() {
+export function useYnabCategories(enabled = true) {
   const query = useQuery({
     queryKey: ["ynab", "categories"],
     queryFn: async () => {
@@ -177,6 +179,7 @@ export function useYnabCategories() {
       return data;
     },
     retry: false,
+    enabled,
   });
   return useMemo(
     () => ({ ...query, categories: query.data?.data ?? [] }),
@@ -184,7 +187,7 @@ export function useYnabCategories() {
   );
 }
 
-export function useDistinctReceiptItemCategories() {
+export function useDistinctReceiptItemCategories(enabled = true) {
   const query = useQuery({
     queryKey: ["receipt-items", "distinct-categories"],
     queryFn: async () => {
@@ -194,6 +197,7 @@ export function useDistinctReceiptItemCategories() {
       if (error) throw error;
       return data;
     },
+    enabled,
   });
   return useMemo(
     () => ({ ...query, categories: query.data?.categories ?? [] }),
@@ -201,7 +205,7 @@ export function useDistinctReceiptItemCategories() {
   );
 }
 
-export function useYnabCategoryMappings() {
+export function useYnabCategoryMappings(enabled = true) {
   const query = useQuery({
     queryKey: ["ynab", "category-mappings"],
     queryFn: async () => {
@@ -211,6 +215,7 @@ export function useYnabCategoryMappings() {
       if (error) throw error;
       return data;
     },
+    enabled,
   });
   return useMemo(
     () => ({ ...query, mappings: query.data?.data ?? [] }),
@@ -218,7 +223,7 @@ export function useYnabCategoryMappings() {
   );
 }
 
-export function useUnmappedCategories() {
+export function useUnmappedCategories(enabled = true) {
   const query = useQuery({
     queryKey: ["ynab", "category-mappings", "unmapped"],
     queryFn: async () => {
@@ -228,6 +233,7 @@ export function useUnmappedCategories() {
       if (error) throw error;
       return data;
     },
+    enabled,
   });
   return useMemo(
     () => ({
