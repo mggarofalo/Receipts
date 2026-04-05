@@ -38,6 +38,8 @@ import {
   useSyncYnabMemosBulk,
   useResolveYnabMemoSync,
   useMemoSyncSummary,
+  usePushYnabTransactions,
+  useBulkPushYnabTransactions,
 } from "./useYnab";
 
 function createWrapper() {
@@ -582,5 +584,112 @@ describe("useYnab", () => {
     });
 
     expect(result.current).toBeNull();
+  });
+
+  it("usePushYnabTransactions calls POST and shows success toast", async () => {
+    const pushResult = {
+      success: true,
+      pushedTransactions: [
+        {
+          localTransactionId: "tx-1",
+          ynabTransactionId: "ynab-tx-1",
+          milliunits: -15000,
+          subTransactionCount: 2,
+        },
+      ],
+      unmappedCategories: null,
+      error: null,
+    };
+    (client.POST as Mock).mockResolvedValue({
+      data: pushResult,
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => usePushYnabTransactions(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync("receipt-123");
+
+    expect(client.POST).toHaveBeenCalledWith("/api/ynab/push-transactions", {
+      body: { receiptId: "receipt-123" },
+    });
+    expect(toast.success).toHaveBeenCalledWith(
+      "Pushed 1 transaction(s) to YNAB",
+    );
+  });
+
+  it("usePushYnabTransactions shows error toast on failure response", async () => {
+    const pushResult = {
+      success: false,
+      pushedTransactions: [],
+      unmappedCategories: ["Electronics"],
+      error: "Unmapped categories found.",
+    };
+    (client.POST as Mock).mockResolvedValue({
+      data: pushResult,
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => usePushYnabTransactions(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync("receipt-123");
+
+    expect(toast.error).toHaveBeenCalledWith("Unmapped categories found.");
+  });
+
+  it("usePushYnabTransactions shows error toast on network failure", async () => {
+    (client.POST as Mock).mockResolvedValue({
+      error: "Network error",
+    });
+
+    const { result } = renderHook(() => usePushYnabTransactions(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(result.current.mutateAsync("receipt-123")).rejects.toThrow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Failed to push transactions to YNAB",
+      );
+    });
+  });
+
+  it("useBulkPushYnabTransactions calls POST and shows success toast", async () => {
+    const bulkResult = {
+      results: [
+        {
+          receiptId: "r1",
+          result: { success: true, pushedTransactions: [], error: null },
+        },
+        {
+          receiptId: "r2",
+          result: { success: false, pushedTransactions: [], error: "Not found" },
+        },
+      ],
+    };
+    (client.POST as Mock).mockResolvedValue({
+      data: bulkResult,
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => useBulkPushYnabTransactions(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync(["r1", "r2"]);
+
+    expect(client.POST).toHaveBeenCalledWith(
+      "/api/ynab/push-transactions/bulk",
+      {
+        body: { receiptIds: ["r1", "r2"] },
+      },
+    );
+    expect(toast.success).toHaveBeenCalledWith(
+      "Pushed 1/2 receipt(s) to YNAB",
+    );
   });
 });

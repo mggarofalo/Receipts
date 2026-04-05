@@ -4071,6 +4071,64 @@ paths:
         "404":
           description: No sync record found
 
+  /api/ynab/push-transactions:
+    post:
+      operationId: PushYnabTransactions
+      tags: [YNAB]
+      summary: Push receipt transactions to YNAB
+      description: >
+        Creates split transactions in YNAB from a single receipt.
+        Allocates tax and adjustments proportionally across item categories.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushYnabTransactionsRequest"
+      responses:
+        "200":
+          description: Push completed (check result for per-transaction status)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushYnabTransactionsResponse"
+        "400":
+          description: Validation failed (unmapped categories, currency mismatch, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushYnabTransactionsResponse"
+        "503":
+          description: YNAB integration is not configured
+
+  /api/ynab/push-transactions/bulk:
+    post:
+      operationId: BulkPushYnabTransactions
+      tags: [YNAB]
+      summary: Push transactions for multiple receipts to YNAB
+      description: >
+        Creates split transactions in YNAB for each receipt in the batch.
+        Each receipt is processed independently; failures don't block other receipts.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkPushYnabTransactionsRequest"
+      responses:
+        "200":
+          description: Bulk push completed (check per-receipt results)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkPushYnabTransactionsResponse"
+        "503":
+          description: YNAB integration is not configured
+
 components:
   schemas:
     # ── Reports ───────────────────────────────────
@@ -6298,6 +6356,14 @@ components:
           type: string
           format: uuid
 
+    PushYnabTransactionsRequest:
+      type: object
+      required: [receiptId]
+      properties:
+        receiptId:
+          type: string
+          format: uuid
+
     SyncYnabMemosBulkRequest:
       type: object
       required: [receiptIds]
@@ -6309,6 +6375,53 @@ components:
             format: uuid
           minItems: 1
           maxItems: 100
+
+    PushedTransactionInfo:
+      type: object
+      required: [localTransactionId, ynabTransactionId, milliunits, subTransactionCount]
+      properties:
+        localTransactionId:
+          type: string
+          format: uuid
+        ynabTransactionId:
+          type: string
+        milliunits:
+          type: integer
+          format: int64
+        subTransactionCount:
+          type: integer
+          format: int32
+
+    PushYnabTransactionsResponse:
+      type: object
+      required: [success, pushedTransactions]
+      properties:
+        success:
+          type: boolean
+        pushedTransactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PushedTransactionInfo"
+        unmappedCategories:
+          type:
+            - "null"
+            - array
+          items:
+            type: string
+        error:
+          type:
+            - "null"
+            - string
+
+    BulkPushYnabTransactionsRequest:
+      type: object
+      required: [receiptIds]
+      properties:
+        receiptIds:
+          type: array
+          items:
+            type: string
+            format: uuid
 
     ResolveYnabMemoSyncRequest:
       type: object
@@ -6329,6 +6442,25 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/YnabMemoSyncResultItem"
+
+    ReceiptPushResult:
+      type: object
+      required: [receiptId, result]
+      properties:
+        receiptId:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/PushYnabTransactionsResponse"
+
+    BulkPushYnabTransactionsResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReceiptPushResult"
 
     YnabMemoSyncResultItem:
       type: object

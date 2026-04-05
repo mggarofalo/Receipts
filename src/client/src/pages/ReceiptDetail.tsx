@@ -44,6 +44,7 @@ import { ChangeHistory } from "@/components/ChangeHistory";
 import { YnabMemoSyncCard } from "@/components/YnabMemoSyncCard";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { formatCurrency } from "@/lib/format";
+import { YnabPushButton } from "@/components/YnabPushButton";
 import { Pencil } from "lucide-react";
 
 function ReceiptDetail() {
@@ -238,6 +239,22 @@ function ReceiptDetail() {
           />
 
           <YnabMemoSyncCard receiptId={id} />
+
+          {/* YNAB Push */}
+          <Card>
+            <CardHeader>
+              <CardTitle>YNAB Sync</CardTitle>
+              <CardDescription>
+                Push this receipt's transactions to YNAB with category splits.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <YnabPushButton
+                receiptId={id}
+                hasTransactions={trip.transactions.length > 0}
+              />
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>

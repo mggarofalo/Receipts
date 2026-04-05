@@ -3,6 +3,7 @@ using API.Mapping.Core;
 using Application.Commands.Ynab.AccountMapping;
 using Application.Commands.Ynab.CategoryMapping;
 using Application.Commands.Ynab.MemoSync;
+using Application.Commands.Ynab.PushTransactions;
 using Application.Commands.Ynab.SelectBudget;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
@@ -322,6 +323,41 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 		}
 	}
 
+	[HttpPost("push-transactions")]
+	[EndpointSummary("Push receipt transactions to YNAB")]
+	[EndpointDescription("Creates split transactions in YNAB from a single receipt. Allocates tax and adjustments proportionally across item categories.")]
+	[ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+	public async Task<Results<Ok<PushYnabTransactionsResponse>, BadRequest<PushYnabTransactionsResponse>, StatusCodeHttpResult>> PushTransactions(
+		[FromBody] PushYnabTransactionsRequest request,
+		CancellationToken cancellationToken)
+	{
+		if (!ynabClient.IsConfigured)
+		{
+			logger.LogWarning("YNAB API client is not configured — missing personal access token");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+
+		try
+		{
+			PushYnabTransactionsResult result = await mediator.Send(
+				new PushYnabTransactionsCommand(request.ReceiptId), cancellationToken);
+
+			PushYnabTransactionsResponse response = mapper.ToPushTransactionsResponse(result);
+
+			if (!result.Success)
+			{
+				return TypedResults.BadRequest(response);
+			}
+
+			return TypedResults.Ok(response);
+		}
+		catch (YnabAuthException ex)
+		{
+			logger.LogWarning(ex, "YNAB authentication failed during push");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+	}
+
 	[HttpPost("sync-memos/bulk")]
 	[EndpointSummary("Bulk sync YNAB memos")]
 	[EndpointDescription("Batch syncs YNAB memos for multiple receipts.")]
@@ -372,6 +408,34 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 		catch (YnabAuthException ex)
 		{
 			logger.LogWarning(ex, "YNAB authentication failed");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+	}
+
+	[HttpPost("push-transactions/bulk")]
+	[EndpointSummary("Push transactions for multiple receipts to YNAB")]
+	[EndpointDescription("Creates split transactions in YNAB for each receipt in the batch. Each receipt is processed independently.")]
+	[ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+	public async Task<Results<Ok<BulkPushYnabTransactionsResponse>, StatusCodeHttpResult>> BulkPushTransactions(
+		[FromBody] BulkPushYnabTransactionsRequest request,
+		CancellationToken cancellationToken)
+	{
+		if (!ynabClient.IsConfigured)
+		{
+			logger.LogWarning("YNAB API client is not configured — missing personal access token");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+
+		try
+		{
+			BulkPushYnabTransactionsResult result = await mediator.Send(
+				new BulkPushYnabTransactionsCommand(request.ReceiptIds.ToList()), cancellationToken);
+
+			return TypedResults.Ok(mapper.ToBulkPushTransactionsResponse(result));
+		}
+		catch (YnabAuthException ex)
+		{
+			logger.LogWarning(ex, "YNAB authentication failed during bulk push");
 			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
 		}
 	}

@@ -124,19 +124,33 @@ public class YnabApiClient(
 	public async Task<YnabCreateTransactionResponse> CreateTransactionAsync(
 		string budgetId, YnabCreateTransactionRequest request, CancellationToken cancellationToken)
 	{
-		YnabSaveTransactionWrapper body = new()
+		YnabSaveTransactionDto transactionDto = new()
 		{
-			Transaction = new YnabSaveTransactionDto
-			{
-				AccountId = request.AccountId,
-				Date = request.Date.ToString("yyyy-MM-dd"),
-				Amount = request.Amount,
-				Memo = request.Memo,
-				PayeeName = request.PayeeName,
-				CategoryId = request.CategoryId,
-				Approved = request.Approved,
-			}
+			AccountId = request.AccountId,
+			Date = request.Date.ToString("yyyy-MM-dd"),
+			Amount = request.Amount,
+			Memo = request.Memo,
+			PayeeName = request.PayeeName,
+			CategoryId = request.CategoryId,
+			Approved = request.Approved,
 		};
+
+		if (request.SubTransactions is { Count: > 0 })
+		{
+			transactionDto.SubTransactions = request.SubTransactions
+				.Select(st => new YnabSaveSubTransactionDto
+				{
+					Amount = st.Amount,
+					CategoryId = st.CategoryId,
+					Memo = st.Memo,
+				})
+				.ToList();
+
+			// YNAB requires CategoryId to be null on split parent
+			transactionDto.CategoryId = null;
+		}
+
+		YnabSaveTransactionWrapper body = new() { Transaction = transactionDto };
 
 		YnabCreateTransactionResponseEnvelope envelope = await PostAsync<YnabSaveTransactionWrapper, YnabCreateTransactionResponseEnvelope>(
 			$"budgets/{Uri.EscapeDataString(budgetId)}/transactions", body, cancellationToken);

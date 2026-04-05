@@ -1,4 +1,5 @@
 using API.Generated.Dtos;
+using Application.Commands.Ynab.PushTransactions;
 using Application.Models.Ynab;
 using Riok.Mapperly.Abstractions;
 using AppYnabMemoSyncOutcome = Application.Models.Ynab.YnabMemoSyncOutcome;
@@ -179,6 +180,45 @@ public partial class YnabMapper
 		return new YnabMemoSyncResponse
 		{
 			Results = results.Select(ToMemoSyncResultItem).ToList(),
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(PushYnabTransactionsResponse.AdditionalProperties))]
+	public PushYnabTransactionsResponse ToPushTransactionsResponse(PushYnabTransactionsResult source)
+	{
+		return new PushYnabTransactionsResponse
+		{
+			Success = source.Success,
+			PushedTransactions = source.PushedTransactions
+				.Select(ToPushedTransactionInfo)
+				.ToList(),
+			UnmappedCategories = source.UnmappedCategories,
+			Error = source.Error,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(API.Generated.Dtos.PushedTransactionInfo.AdditionalProperties))]
+	public API.Generated.Dtos.PushedTransactionInfo ToPushedTransactionInfo(Application.Commands.Ynab.PushTransactions.PushedTransactionInfo source)
+	{
+		return new API.Generated.Dtos.PushedTransactionInfo
+		{
+			LocalTransactionId = source.LocalTransactionId,
+			YnabTransactionId = source.YnabTransactionId,
+			Milliunits = source.Milliunits,
+			SubTransactionCount = source.SubTransactionCount,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(BulkPushYnabTransactionsResponse.AdditionalProperties))]
+	public BulkPushYnabTransactionsResponse ToBulkPushTransactionsResponse(BulkPushYnabTransactionsResult source)
+	{
+		return new BulkPushYnabTransactionsResponse
+		{
+			Results = source.Results.Select(r => new API.Generated.Dtos.ReceiptPushResult
+			{
+				ReceiptId = r.ReceiptId,
+				Result = ToPushTransactionsResponse(r.Result),
+			}).ToList(),
 		};
 	}
 }

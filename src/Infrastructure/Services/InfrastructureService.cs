@@ -156,7 +156,8 @@ public static class InfrastructureService
 			.AddScoped<IYnabSyncRecordService, YnabSyncRecordService>()
 			.AddScoped<IYnabAccountMappingService, YnabAccountMappingService>()
 			.AddScoped<IYnabCategoryMappingService, YnabCategoryMappingService>()
-			.AddScoped<IYnabMemoSyncService, YnabMemoSyncService>();
+			.AddScoped<IYnabMemoSyncService, YnabMemoSyncService>()
+			.AddSingleton<IYnabSplitCalculator, YnabSplitCalculator>();
 
 		services.AddMemoryCache();
 

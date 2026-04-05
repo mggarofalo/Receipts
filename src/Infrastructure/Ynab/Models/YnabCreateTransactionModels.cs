@@ -33,6 +33,22 @@ internal sealed class YnabSaveTransactionDto
 
 	[JsonPropertyName("approved")]
 	public bool Approved { get; set; }
+
+	[JsonPropertyName("subtransactions")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public List<YnabSaveSubTransactionDto>? SubTransactions { get; set; }
+}
+
+internal sealed class YnabSaveSubTransactionDto
+{
+	[JsonPropertyName("amount")]
+	public long Amount { get; set; }
+
+	[JsonPropertyName("category_id")]
+	public string CategoryId { get; set; } = string.Empty;
+
+	[JsonPropertyName("memo")]
+	public string? Memo { get; set; }
 }
 
 /// <summary>

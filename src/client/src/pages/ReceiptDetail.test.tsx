@@ -65,6 +65,12 @@ vi.mock("@/components/ReceiptTransactionsCard", () => ({
   },
 }));
 
+vi.mock("@/components/YnabPushButton", () => ({
+  YnabPushButton: function MockYnabPushButton() {
+    return <div data-testid="ynab-push-button">Push to YNAB</div>;
+  },
+}));
+
 vi.mock("@/components/ReceiptHeaderForm", () => ({
   ReceiptHeaderForm: function MockReceiptHeaderForm() {
     return <div data-testid="receipt-header-form">Receipt Header Form</div>;

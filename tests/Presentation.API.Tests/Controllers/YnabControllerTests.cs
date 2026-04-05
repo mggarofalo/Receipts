@@ -3,6 +3,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Ynab.CategoryMapping;
 using Application.Commands.Ynab.MemoSync;
+using Application.Commands.Ynab.PushTransactions;
 using Application.Commands.Ynab.SelectBudget;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
@@ -34,10 +35,12 @@ public class YnabControllerTests
 		_budgetSelectionMock = new Mock<IYnabBudgetSelectionService>();
 		_mapper = new YnabMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<YnabController>();
-		_controller = new YnabController(_mediatorMock.Object, _ynabClientMock.Object, _budgetSelectionMock.Object, _mapper, _loggerMock.Object);
-		_controller.ControllerContext = new ControllerContext
+		_controller = new YnabController(_mediatorMock.Object, _ynabClientMock.Object, _budgetSelectionMock.Object, _mapper, _loggerMock.Object)
 		{
-			HttpContext = new DefaultHttpContext()
+			ControllerContext = new ControllerContext
+			{
+				HttpContext = new DefaultHttpContext()
+			}
 		};
 	}
 
@@ -333,7 +336,7 @@ public class YnabControllerTests
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<GetUnmappedCategoriesQuery>(),
 			It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new List<string> { "Electronics", "Pharmacy" });
+			.ReturnsAsync(["Electronics", "Pharmacy"]);
 
 		// Act
 		Ok<UnmappedCategoriesResponse> result = await _controller.GetUnmappedCategories(CancellationToken.None);
@@ -494,5 +497,111 @@ public class YnabControllerTests
 		// Assert
 		StatusCodeHttpResult statusResult = Assert.IsType<StatusCodeHttpResult>(result.Result);
 		statusResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+	}
+
+	[Fact]
+	public async Task PushTransactions_Returns200_OnSuccess()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+		Guid receiptId = Guid.NewGuid();
+		Guid txId = Guid.NewGuid();
+
+		PushYnabTransactionsResult pushResult = new(true,
+		[
+			new Application.Commands.Ynab.PushTransactions.PushedTransactionInfo(txId, "ynab-tx-1", -15000, 2),
+		]);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<PushYnabTransactionsCommand>(c => c.ReceiptId == receiptId),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(pushResult);
+
+		PushYnabTransactionsRequest request = new() { ReceiptId = receiptId };
+
+		// Act
+		Results<Ok<PushYnabTransactionsResponse>, BadRequest<PushYnabTransactionsResponse>, StatusCodeHttpResult> result =
+			await _controller.PushTransactions(request, CancellationToken.None);
+
+		// Assert
+		Ok<PushYnabTransactionsResponse> okResult = Assert.IsType<Ok<PushYnabTransactionsResponse>>(result.Result);
+		PushYnabTransactionsResponse response = okResult.Value!;
+		response.Success.Should().BeTrue();
+		response.PushedTransactions.Should().HaveCount(1);
+		response.PushedTransactions.First().YnabTransactionId.Should().Be("ynab-tx-1");
+	}
+
+	[Fact]
+	public async Task PushTransactions_Returns400_OnFailure()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+		Guid receiptId = Guid.NewGuid();
+
+		PushYnabTransactionsResult pushResult = new(false, [],
+			UnmappedCategories: ["Electronics"], Error: "Unmapped categories found.");
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<PushYnabTransactionsCommand>(c => c.ReceiptId == receiptId),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(pushResult);
+
+		PushYnabTransactionsRequest request = new() { ReceiptId = receiptId };
+
+		// Act
+		Results<Ok<PushYnabTransactionsResponse>, BadRequest<PushYnabTransactionsResponse>, StatusCodeHttpResult> result =
+			await _controller.PushTransactions(request, CancellationToken.None);
+
+		// Assert
+		BadRequest<PushYnabTransactionsResponse> badResult = Assert.IsType<BadRequest<PushYnabTransactionsResponse>>(result.Result);
+		PushYnabTransactionsResponse response = badResult.Value!;
+		response.Success.Should().BeFalse();
+		response.UnmappedCategories.Should().Contain("Electronics");
+	}
+
+	[Fact]
+	public async Task PushTransactions_Returns503_WhenNotConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(false);
+		PushYnabTransactionsRequest request = new() { ReceiptId = Guid.NewGuid() };
+
+		// Act
+		Results<Ok<PushYnabTransactionsResponse>, BadRequest<PushYnabTransactionsResponse>, StatusCodeHttpResult> result =
+			await _controller.PushTransactions(request, CancellationToken.None);
+
+		// Assert
+		StatusCodeHttpResult statusResult = Assert.IsType<StatusCodeHttpResult>(result.Result);
+		statusResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+	}
+
+	[Fact]
+	public async Task BulkPushTransactions_Returns200_WithResults()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+		Guid receiptId1 = Guid.NewGuid();
+		Guid receiptId2 = Guid.NewGuid();
+
+		BulkPushYnabTransactionsResult bulkResult = new([
+			new Application.Commands.Ynab.PushTransactions.ReceiptPushResult(receiptId1, new PushYnabTransactionsResult(true, [new Application.Commands.Ynab.PushTransactions.PushedTransactionInfo(Guid.NewGuid(), "ynab-tx-1", -10000, 1)])),
+			new Application.Commands.Ynab.PushTransactions.ReceiptPushResult(receiptId2, new PushYnabTransactionsResult(false, [], Error: "Receipt not found.")),
+		]);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<BulkPushYnabTransactionsCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(bulkResult);
+
+		BulkPushYnabTransactionsRequest request = new() { ReceiptIds = [receiptId1, receiptId2] };
+
+		// Act
+		Results<Ok<BulkPushYnabTransactionsResponse>, StatusCodeHttpResult> result =
+			await _controller.BulkPushTransactions(request, CancellationToken.None);
+
+		// Assert
+		Ok<BulkPushYnabTransactionsResponse> okResult = Assert.IsType<Ok<BulkPushYnabTransactionsResponse>>(result.Result);
+		BulkPushYnabTransactionsResponse response = okResult.Value!;
+		response.Results.Should().HaveCount(2);
 	}
 }

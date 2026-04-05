@@ -411,3 +411,75 @@ export function useMemoSyncSummary(results: YnabMemoSyncResult[] | undefined) {
     };
   }, [results]);
 }
+
+export function usePushYnabTransactions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (receiptId: string) => {
+      const { data, error } = await client.POST(
+        "/api/ynab/push-transactions",
+        { body: { receiptId } },
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      if (data?.success) {
+        toast.success(
+          `Pushed ${data.pushedTransactions.length} transaction(s) to YNAB`,
+        );
+      } else {
+        toast.error(data?.error ?? "Failed to push transactions to YNAB");
+      }
+    },
+    onError: () => {
+      toast.error("Failed to push transactions to YNAB");
+    },
+  });
+}
+
+export function useBulkPushYnabTransactions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (receiptIds: string[]) => {
+      const { data, error } = await client.POST(
+        "/api/ynab/push-transactions/bulk",
+        { body: { receiptIds } },
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      const total = data?.results?.length ?? 0;
+      const succeeded =
+        data?.results?.filter((r) => r.result.success).length ?? 0;
+      toast.success(`Pushed ${succeeded}/${total} receipt(s) to YNAB`);
+    },
+    onError: () => {
+      toast.error("Failed to bulk push transactions to YNAB");
+    },
+  });
+}
+
+export function useYnabSyncStatus(transactionId: string | null) {
+  return useQuery({
+    queryKey: ["ynab", "sync-status", transactionId],
+    queryFn: async () => {
+      if (!transactionId) return null;
+      const { data, error } = await client.GET(
+        "/api/ynab/sync-status/{transactionId}",
+        {
+          params: {
+            path: { transactionId },
+            query: { syncType: "TransactionPush" },
+          },
+        },
+      );
+      if (error) return null;
+      return data;
+    },
+    enabled: !!transactionId,
+  });
+}
