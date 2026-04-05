@@ -93,4 +93,51 @@ public partial class YnabMapper
 			Data = mappings.Select(ToAccountMappingResponse).ToList(),
 		};
 	}
+
+	[MapperIgnoreTarget(nameof(YnabCategorySummary.AdditionalProperties))]
+	public YnabCategorySummary ToCategorySummary(YnabCategory source)
+	{
+		return new YnabCategorySummary
+		{
+			Id = source.Id,
+			Name = source.Name,
+			CategoryGroupId = source.CategoryGroupId,
+			CategoryGroupName = source.CategoryGroupName,
+			Hidden = source.Hidden,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(YnabCategoryListResponse.AdditionalProperties))]
+	public YnabCategoryListResponse ToCategoryListResponse(List<YnabCategory> categories)
+	{
+		return new YnabCategoryListResponse
+		{
+			Data = categories.Select(ToCategorySummary).ToList(),
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(YnabCategoryMappingResponse.AdditionalProperties))]
+	public YnabCategoryMappingResponse ToCategoryMappingResponse(YnabCategoryMappingDto source)
+	{
+		return new YnabCategoryMappingResponse
+		{
+			Id = source.Id,
+			ReceiptsCategory = source.ReceiptsCategory,
+			YnabCategoryId = source.YnabCategoryId,
+			YnabCategoryName = source.YnabCategoryName,
+			YnabCategoryGroupName = source.YnabCategoryGroupName,
+			YnabBudgetId = source.YnabBudgetId,
+			CreatedAt = source.CreatedAt,
+			UpdatedAt = source.UpdatedAt,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(YnabCategoryMappingListResponse.AdditionalProperties))]
+	public YnabCategoryMappingListResponse ToCategoryMappingListResponse(List<YnabCategoryMappingDto> mappings)
+	{
+		return new YnabCategoryMappingListResponse
+		{
+			Data = mappings.Select(ToCategoryMappingResponse).ToList(),
+		};
+	}
 }

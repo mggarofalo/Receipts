@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useAccounts } from "@/hooks/useAccounts";
 import {
@@ -9,6 +10,13 @@ import {
   useCreateYnabAccountMapping,
   useUpdateYnabAccountMapping,
   useDeleteYnabAccountMapping,
+  useYnabCategories,
+  useDistinctReceiptItemCategories,
+  useYnabCategoryMappings,
+  useUnmappedCategories,
+  useCreateYnabCategoryMapping,
+  useUpdateYnabCategoryMapping,
+  useDeleteYnabCategoryMapping,
 } from "@/hooks/useYnab";
 import {
   Card,
@@ -21,12 +29,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
 
 const UNMAPPED_VALUE = "__unmapped__";
 
@@ -39,27 +50,64 @@ export default function YnabSettings() {
 
   const { data: receiptsAccounts, isLoading: accountsLoading } = useAccounts(0, 200);
   const { accounts: ynabAccounts, isLoading: ynabAccountsLoading } = useYnabAccounts();
-  const { mappings, isLoading: mappingsLoading } = useYnabAccountMappings();
-  const createMapping = useCreateYnabAccountMapping();
-  const updateMapping = useUpdateYnabAccountMapping();
-  const deleteMapping = useDeleteYnabAccountMapping();
+  const { mappings: accountMappings, isLoading: accountMappingsLoading } = useYnabAccountMappings();
+  const createAccountMapping = useCreateYnabAccountMapping();
+  const updateAccountMapping = useUpdateYnabAccountMapping();
+  const deleteAccountMapping = useDeleteYnabAccountMapping();
+
+  const { categories: ynabCategories, isLoading: ynabCatsLoading } = useYnabCategories();
+  const { categories: receiptCategories, isLoading: receiptCatsLoading } = useDistinctReceiptItemCategories();
+  const { mappings: categoryMappings, isLoading: categoryMappingsLoading } = useYnabCategoryMappings();
+  const { unmappedCategories } = useUnmappedCategories();
+
+  const createCategoryMapping = useCreateYnabCategoryMapping();
+  const updateCategoryMapping = useUpdateYnabCategoryMapping();
+  const deleteCategoryMapping = useDeleteYnabCategoryMapping();
 
   const isLoading = budgetsLoading || settingsLoading;
   const notConfigured = budgetsError;
-  const mappingSectionLoading = accountsLoading || ynabAccountsLoading || mappingsLoading;
+  const mappingSectionLoading = accountsLoading || ynabAccountsLoading || accountMappingsLoading;
+
+  // Group YNAB categories by category group for grouped dropdown
+  const groupedCategories = useMemo(() => {
+    const groups: Record<string, { id: string; name: string }[]> = {};
+    for (const cat of ynabCategories) {
+      const groupName = cat.categoryGroupName ?? "Other";
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push({ id: cat.id, name: cat.name });
+    }
+    return groups;
+  }, [ynabCategories]);
+
+  // Build a lookup from receiptsCategory to existing mapping
+  const mappingsByCategory = useMemo(() => {
+    const map = new Map<string, (typeof categoryMappings)[number]>();
+    for (const m of categoryMappings) {
+      map.set(m.receiptsCategory, m);
+    }
+    return map;
+  }, [categoryMappings]);
+
+  // Build a set of unmapped categories for quick lookup
+  const unmappedSet = useMemo(
+    () => new Set(unmappedCategories),
+    [unmappedCategories],
+  );
 
   function handleBudgetChange(budgetId: string) {
     selectBudget.mutate(budgetId);
   }
 
   function handleYnabAccountChange(receiptsAccountId: string, ynabAccountId: string) {
-    const existingMapping = mappings.find(
+    const existingMapping = accountMappings.find(
       (m) => m.receiptsAccountId === receiptsAccountId,
     );
 
     if (ynabAccountId === UNMAPPED_VALUE) {
       if (existingMapping) {
-        deleteMapping.mutate(existingMapping.id);
+        deleteAccountMapping.mutate(existingMapping.id);
       }
       return;
     }
@@ -68,14 +116,14 @@ export default function YnabSettings() {
     if (!ynabAccount || !selectedBudgetId) return;
 
     if (existingMapping) {
-      updateMapping.mutate({
+      updateAccountMapping.mutate({
         id: existingMapping.id,
         ynabAccountId: ynabAccount.id,
         ynabAccountName: ynabAccount.name,
         ynabBudgetId: selectedBudgetId,
       });
     } else {
-      createMapping.mutate({
+      createAccountMapping.mutate({
         receiptsAccountId,
         ynabAccountId: ynabAccount.id,
         ynabAccountName: ynabAccount.name,
@@ -83,6 +131,39 @@ export default function YnabSettings() {
       });
     }
   }
+
+  function handleCategoryMappingChange(receiptsCategory: string, ynabCategoryId: string) {
+    const ynabCat = ynabCategories.find((c) => c.id === ynabCategoryId);
+    if (!ynabCat || !selectedBudgetId) return;
+
+    const existingMapping = mappingsByCategory.get(receiptsCategory);
+    if (existingMapping) {
+      updateCategoryMapping.mutate({
+        id: existingMapping.id,
+        ynabCategoryId: ynabCat.id,
+        ynabCategoryName: ynabCat.name,
+        ynabCategoryGroupName: ynabCat.categoryGroupName,
+        ynabBudgetId: selectedBudgetId,
+      });
+    } else {
+      createCategoryMapping.mutate({
+        receiptsCategory,
+        ynabCategoryId: ynabCat.id,
+        ynabCategoryName: ynabCat.name,
+        ynabCategoryGroupName: ynabCat.categoryGroupName,
+        ynabBudgetId: selectedBudgetId,
+      });
+    }
+  }
+
+  function handleDeleteMapping(receiptsCategory: string) {
+    const existingMapping = mappingsByCategory.get(receiptsCategory);
+    if (existingMapping) {
+      deleteCategoryMapping.mutate(existingMapping.id);
+    }
+  }
+
+  const categoryMappingLoading = ynabCatsLoading || receiptCatsLoading || categoryMappingsLoading;
 
   return (
     <div className="space-y-6">
@@ -167,7 +248,7 @@ export default function YnabSettings() {
           ) : (
             <div className="space-y-4">
               {receiptsAccounts.map((account) => {
-                const mapping = mappings.find(
+                const mapping = accountMappings.find(
                   (m) => m.receiptsAccountId === account.id,
                 );
                 const currentYnabAccountId = mapping?.ynabAccountId ?? UNMAPPED_VALUE;
@@ -186,9 +267,9 @@ export default function YnabSettings() {
                         handleYnabAccountChange(account.id!, value)
                       }
                       disabled={
-                        createMapping.isPending ||
-                        updateMapping.isPending ||
-                        deleteMapping.isPending
+                        createAccountMapping.isPending ||
+                        updateAccountMapping.isPending ||
+                        deleteAccountMapping.isPending
                       }
                     >
                       <SelectTrigger className="w-full max-w-sm">
@@ -212,8 +293,8 @@ export default function YnabSettings() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => deleteMapping.mutate(mapping.id)}
-                        disabled={deleteMapping.isPending}
+                        onClick={() => deleteAccountMapping.mutate(mapping.id)}
+                        disabled={deleteAccountMapping.isPending}
                       >
                         Remove
                       </Button>
@@ -225,6 +306,91 @@ export default function YnabSettings() {
           )}
         </CardContent>
       </Card>
+
+      {selectedBudgetId && !notConfigured && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Category Mapping</CardTitle>
+            <CardDescription>
+              Map your receipt categories to YNAB categories for automatic
+              categorization during sync.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {categoryMappingLoading ? (
+              <div className="flex items-center gap-2">
+                <Spinner className="h-4 w-4" />
+                <span className="text-sm text-muted-foreground">
+                  Loading categories...
+                </span>
+              </div>
+            ) : receiptCategories.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No receipt item categories found. Create some receipts first.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {receiptCategories.map((category) => {
+                  const mapping = mappingsByCategory.get(category);
+                  const isUnmapped = unmappedSet.has(category);
+
+                  return (
+                    <div
+                      key={category}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="flex items-center gap-2 min-w-[200px]">
+                        <span className="text-sm font-medium">{category}</span>
+                        {isUnmapped && (
+                          <Badge variant="outline" className="text-amber-600 border-amber-300">
+                            Unmapped
+                          </Badge>
+                        )}
+                      </div>
+
+                      <Select
+                        value={mapping?.ynabCategoryId ?? ""}
+                        onValueChange={(value) =>
+                          handleCategoryMappingChange(category, value)
+                        }
+                      >
+                        <SelectTrigger className="w-full max-w-sm">
+                          <SelectValue placeholder="Select YNAB category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(groupedCategories).map(
+                            ([groupName, cats]) => (
+                              <SelectGroup key={groupName}>
+                                <SelectLabel>{groupName}</SelectLabel>
+                                {cats.map((cat) => (
+                                  <SelectItem key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            ),
+                          )}
+                        </SelectContent>
+                      </Select>
+
+                      {mapping && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteMapping(category)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

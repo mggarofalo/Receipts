@@ -151,9 +151,11 @@ public static class InfrastructureService
 			.AddScoped<IYnabSyncRecordRepository, YnabSyncRecordRepository>()
 			.AddScoped<IYnabBudgetSelectionRepository, YnabBudgetSelectionRepository>()
 			.AddScoped<IYnabAccountMappingRepository, YnabAccountMappingRepository>()
+			.AddScoped<IYnabCategoryMappingRepository, YnabCategoryMappingRepository>()
 			.AddScoped<IYnabBudgetSelectionService, YnabBudgetSelectionService>()
 			.AddScoped<IYnabSyncRecordService, YnabSyncRecordService>()
-			.AddScoped<IYnabAccountMappingService, YnabAccountMappingService>();
+			.AddScoped<IYnabAccountMappingService, YnabAccountMappingService>()
+			.AddScoped<IYnabCategoryMappingService, YnabCategoryMappingService>();
 
 		services.AddMemoryCache();
 

@@ -1,6 +1,7 @@
 using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Ynab.AccountMapping;
+using Application.Commands.Ynab.CategoryMapping;
 using Application.Commands.Ynab.SelectBudget;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
@@ -20,7 +21,7 @@ namespace API.Controllers;
 [Route("api/ynab")]
 [Produces("application/json")]
 [Authorize]
-public class YnabController(IMediator mediator, IYnabApiClient ynabClient, YnabMapper mapper, ILogger<YnabController> logger) : ControllerBase
+public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnabBudgetSelectionService budgetSelectionService, YnabMapper mapper, ILogger<YnabController> logger) : ControllerBase
 {
 	[HttpGet("budgets")]
 	[EndpointSummary("List YNAB budgets")]
@@ -71,6 +72,38 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, YnabM
 			// Return only open (not closed) accounts
 			List<YnabAccount> activeAccounts = accounts.Where(a => !a.Closed).ToList();
 			return TypedResults.Ok(mapper.ToAccountListResponse(activeAccounts));
+		}
+		catch (YnabAuthException ex)
+		{
+			logger.LogWarning(ex, "YNAB authentication failed");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+	}
+
+	[HttpGet("categories")]
+	[EndpointSummary("List YNAB categories")]
+	[EndpointDescription("Returns all YNAB categories for the selected budget, grouped by category group, with hidden categories excluded.")]
+	[ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+	public async Task<Results<Ok<YnabCategoryListResponse>, StatusCodeHttpResult>> GetCategories(CancellationToken cancellationToken)
+	{
+		if (!ynabClient.IsConfigured)
+		{
+			logger.LogWarning("YNAB API client is not configured — missing personal access token");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+
+		string? budgetId = await budgetSelectionService.GetSelectedBudgetIdAsync(cancellationToken);
+		if (string.IsNullOrEmpty(budgetId))
+		{
+			logger.LogWarning("No YNAB budget selected");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+
+		try
+		{
+			List<YnabCategory> categories = await mediator.Send(new GetYnabCategoriesQuery(budgetId), cancellationToken);
+			List<YnabCategory> visible = categories.Where(c => !c.Hidden).ToList();
+			return TypedResults.Ok(mapper.ToCategoryListResponse(visible));
 		}
 		catch (YnabAuthException ex)
 		{
@@ -172,6 +205,76 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, YnabM
 
 		await mediator.Send(new DeleteYnabAccountMappingCommand(id), cancellationToken);
 		return TypedResults.NoContent();
+	}
+
+	[HttpGet("category-mappings")]
+	[EndpointSummary("List all category mappings")]
+	[EndpointDescription("Returns all receipts-to-YNAB category mappings.")]
+	public async Task<Ok<YnabCategoryMappingListResponse>> GetCategoryMappings(CancellationToken cancellationToken)
+	{
+		List<YnabCategoryMappingDto> mappings = await mediator.Send(new GetAllYnabCategoryMappingsQuery(), cancellationToken);
+		return TypedResults.Ok(mapper.ToCategoryMappingListResponse(mappings));
+	}
+
+	[HttpPost("category-mappings")]
+	[EndpointSummary("Create a category mapping")]
+	[EndpointDescription("Creates a new mapping from a receipts category to a YNAB category.")]
+	public async Task<Results<Created<YnabCategoryMappingResponse>, Conflict<string>>> CreateCategoryMapping(
+		[FromBody] CreateYnabCategoryMappingRequest request,
+		CancellationToken cancellationToken)
+	{
+		try
+		{
+			YnabCategoryMappingDto mapping = await mediator.Send(new CreateYnabCategoryMappingCommand(
+				request.ReceiptsCategory,
+				request.YnabCategoryId,
+				request.YnabCategoryName,
+				request.YnabCategoryGroupName,
+				request.YnabBudgetId), cancellationToken);
+
+			YnabCategoryMappingResponse response = mapper.ToCategoryMappingResponse(mapping);
+			return TypedResults.Created($"/api/ynab/category-mappings/{mapping.Id}", response);
+		}
+		catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+		{
+			return TypedResults.Conflict(ex.Message);
+		}
+	}
+
+	[HttpPut("category-mappings/{id}")]
+	[EndpointSummary("Update a category mapping")]
+	[EndpointDescription("Updates the YNAB category for an existing mapping.")]
+	public async Task<NoContent> UpdateCategoryMapping(
+		[FromRoute] Guid id,
+		[FromBody] UpdateYnabCategoryMappingRequest request,
+		CancellationToken cancellationToken)
+	{
+		await mediator.Send(new UpdateYnabCategoryMappingCommand(
+			id,
+			request.YnabCategoryId,
+			request.YnabCategoryName,
+			request.YnabCategoryGroupName,
+			request.YnabBudgetId), cancellationToken);
+
+		return TypedResults.NoContent();
+	}
+
+	[HttpDelete("category-mappings/{id}")]
+	[EndpointSummary("Delete a category mapping")]
+	[EndpointDescription("Permanently deletes a category mapping.")]
+	public async Task<NoContent> DeleteCategoryMapping([FromRoute] Guid id, CancellationToken cancellationToken)
+	{
+		await mediator.Send(new DeleteYnabCategoryMappingCommand(id), cancellationToken);
+		return TypedResults.NoContent();
+	}
+
+	[HttpGet("category-mappings/unmapped")]
+	[EndpointSummary("Get unmapped receipt categories")]
+	[EndpointDescription("Returns receipts categories that do not yet have a YNAB category mapping.")]
+	public async Task<Ok<UnmappedCategoriesResponse>> GetUnmappedCategories(CancellationToken cancellationToken)
+	{
+		List<string> unmapped = await mediator.Send(new GetUnmappedCategoriesQuery(), cancellationToken);
+		return TypedResults.Ok(new UnmappedCategoriesResponse { UnmappedCategories = unmapped.ToList() });
 	}
 
 	[HttpGet("sync-status/{transactionId}")]

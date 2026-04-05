@@ -72,4 +72,80 @@ public class YnabMapperTests
 		// Assert
 		Assert.Null(result.SelectedBudgetId);
 	}
+
+	[Fact]
+	public void ToCategoryListResponse_MapsAllCategories()
+	{
+		// Arrange
+		List<YnabCategory> categories =
+		[
+			new("cat-1", "Groceries", "group-1", "Needs", false),
+			new("cat-2", "Rent", "group-1", "Needs", false),
+		];
+
+		// Act
+		YnabCategoryListResponse result = _mapper.ToCategoryListResponse(categories);
+
+		// Assert
+		Assert.Equal(2, result.Data.Count);
+		Assert.Equal("cat-1", result.Data.ElementAt(0).Id);
+		Assert.Equal("Groceries", result.Data.ElementAt(0).Name);
+		Assert.Equal("group-1", result.Data.ElementAt(0).CategoryGroupId);
+		Assert.Equal("Needs", result.Data.ElementAt(0).CategoryGroupName);
+		Assert.False(result.Data.ElementAt(0).Hidden);
+	}
+
+	[Fact]
+	public void ToCategoryMappingResponse_MapsAllFields()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		DateTimeOffset now = DateTimeOffset.UtcNow;
+		YnabCategoryMappingDto dto = new(id, "Groceries", "cat-1", "Groceries", "Needs", "budget-1", now, now);
+
+		// Act
+		YnabCategoryMappingResponse result = _mapper.ToCategoryMappingResponse(dto);
+
+		// Assert
+		Assert.Equal(id, result.Id);
+		Assert.Equal("Groceries", result.ReceiptsCategory);
+		Assert.Equal("cat-1", result.YnabCategoryId);
+		Assert.Equal("Groceries", result.YnabCategoryName);
+		Assert.Equal("Needs", result.YnabCategoryGroupName);
+		Assert.Equal("budget-1", result.YnabBudgetId);
+		Assert.Equal(now, result.CreatedAt);
+		Assert.Equal(now, result.UpdatedAt);
+	}
+
+	[Fact]
+	public void ToCategoryMappingListResponse_MapsAllMappings()
+	{
+		// Arrange
+		List<YnabCategoryMappingDto> mappings =
+		[
+			new(Guid.NewGuid(), "Groceries", "cat-1", "Groceries", "Needs", "budget-1", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+			new(Guid.NewGuid(), "Electronics", "cat-2", "Technology", "Wants", "budget-1", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+		];
+
+		// Act
+		YnabCategoryMappingListResponse result = _mapper.ToCategoryMappingListResponse(mappings);
+
+		// Assert
+		Assert.Equal(2, result.Data.Count);
+		Assert.Equal("Groceries", result.Data.ElementAt(0).ReceiptsCategory);
+		Assert.Equal("Electronics", result.Data.ElementAt(1).ReceiptsCategory);
+	}
+
+	[Fact]
+	public void ToCategoryMappingListResponse_MapsEmptyList()
+	{
+		// Arrange
+		List<YnabCategoryMappingDto> mappings = [];
+
+		// Act
+		YnabCategoryMappingListResponse result = _mapper.ToCategoryMappingListResponse(mappings);
+
+		// Assert
+		Assert.Empty(result.Data);
+	}
 }

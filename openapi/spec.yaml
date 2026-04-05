@@ -3838,6 +3838,136 @@ paths:
         "404":
           description: Mapping not found
 
+  /api/ynab/categories:
+    get:
+      operationId: GetYnabCategories
+      tags: [YNAB]
+      summary: List YNAB categories
+      description: Returns all YNAB categories for the selected budget, grouped by category group, with hidden categories excluded.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabCategoryListResponse"
+        "503":
+          description: YNAB integration is not configured
+
+  /api/receipt-items/distinct-categories:
+    get:
+      operationId: GetDistinctReceiptItemCategories
+      tags: [ReceiptItems]
+      summary: Get distinct receipt item categories
+      description: Returns the distinct Category values from all non-deleted receipt items.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistinctCategoriesResponse"
+
+  /api/ynab/category-mappings:
+    get:
+      operationId: GetYnabCategoryMappings
+      tags: [YNAB]
+      summary: List all category mappings
+      description: Returns all receipts-to-YNAB category mappings.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabCategoryMappingListResponse"
+    post:
+      operationId: CreateYnabCategoryMapping
+      tags: [YNAB]
+      summary: Create a category mapping
+      description: Creates a new mapping from a receipts category to a YNAB category.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateYnabCategoryMappingRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabCategoryMappingResponse"
+        "409":
+          description: Conflict — mapping for this receipts category already exists
+
+  /api/ynab/category-mappings/{id}:
+    put:
+      operationId: UpdateYnabCategoryMapping
+      tags: [YNAB]
+      summary: Update a category mapping
+      description: Updates the YNAB category for an existing mapping.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateYnabCategoryMappingRequest"
+      responses:
+        "204":
+          description: No Content
+    delete:
+      operationId: DeleteYnabCategoryMapping
+      tags: [YNAB]
+      summary: Delete a category mapping
+      description: Permanently deletes a category mapping.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+
+  /api/ynab/category-mappings/unmapped:
+    get:
+      operationId: GetUnmappedCategories
+      tags: [YNAB]
+      summary: Get unmapped receipt categories
+      description: Returns receipts categories that do not yet have a YNAB category mapping.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnmappedCategoriesResponse"
+
   /api/ynab/sync-status/{transactionId}:
     get:
       operationId: GetYnabSyncStatus
@@ -5984,6 +6114,109 @@ components:
           type: string
         ynabBudgetId:
           type: string
+
+    YnabCategorySummary:
+      type: object
+      required: [id, name, categoryGroupId, categoryGroupName, hidden]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        categoryGroupId:
+          type: string
+        categoryGroupName:
+          type: string
+        hidden:
+          type: boolean
+
+    YnabCategoryListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/YnabCategorySummary"
+
+    DistinctCategoriesResponse:
+      type: object
+      required: [categories]
+      properties:
+        categories:
+          type: array
+          items:
+            type: string
+
+    YnabCategoryMappingResponse:
+      type: object
+      required: [id, receiptsCategory, ynabCategoryId, ynabCategoryName, ynabCategoryGroupName, ynabBudgetId, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        receiptsCategory:
+          type: string
+        ynabCategoryId:
+          type: string
+        ynabCategoryName:
+          type: string
+        ynabCategoryGroupName:
+          type: string
+        ynabBudgetId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    YnabCategoryMappingListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/YnabCategoryMappingResponse"
+
+    CreateYnabCategoryMappingRequest:
+      type: object
+      required: [receiptsCategory, ynabCategoryId, ynabCategoryName, ynabCategoryGroupName, ynabBudgetId]
+      properties:
+        receiptsCategory:
+          type: string
+        ynabCategoryId:
+          type: string
+        ynabCategoryName:
+          type: string
+        ynabCategoryGroupName:
+          type: string
+        ynabBudgetId:
+          type: string
+
+    UpdateYnabCategoryMappingRequest:
+      type: object
+      required: [ynabCategoryId, ynabCategoryName, ynabCategoryGroupName, ynabBudgetId]
+      properties:
+        ynabCategoryId:
+          type: string
+        ynabCategoryName:
+          type: string
+        ynabCategoryGroupName:
+          type: string
+        ynabBudgetId:
+          type: string
+
+    UnmappedCategoriesResponse:
+      type: object
+      required: [unmappedCategories]
+      properties:
+        unmappedCategories:
+          type: array
+          items:
+            type: string
 
     YnabSyncType:
       type: integer

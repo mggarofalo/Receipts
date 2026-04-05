@@ -19,6 +19,7 @@ public class YnabAccountMappingControllerTests
 {
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<IYnabApiClient> _ynabClientMock;
+	private readonly Mock<IYnabBudgetSelectionService> _budgetSelectionMock;
 	private readonly YnabMapper _mapper;
 	private readonly Mock<ILogger<YnabController>> _loggerMock;
 	private readonly YnabController _controller;
@@ -27,9 +28,10 @@ public class YnabAccountMappingControllerTests
 	{
 		_mediatorMock = new Mock<IMediator>();
 		_ynabClientMock = new Mock<IYnabApiClient>();
+		_budgetSelectionMock = new Mock<IYnabBudgetSelectionService>();
 		_mapper = new YnabMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<YnabController>();
-		_controller = new YnabController(_mediatorMock.Object, _ynabClientMock.Object, _mapper, _loggerMock.Object);
+		_controller = new YnabController(_mediatorMock.Object, _ynabClientMock.Object, _budgetSelectionMock.Object, _mapper, _loggerMock.Object);
 		_controller.ControllerContext = new ControllerContext
 		{
 			HttpContext = new DefaultHttpContext()

@@ -1,6 +1,7 @@
 using API.Controllers;
 using API.Generated.Dtos;
 using API.Mapping.Core;
+using Application.Commands.Ynab.CategoryMapping;
 using Application.Commands.Ynab.SelectBudget;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
@@ -20,6 +21,7 @@ public class YnabControllerTests
 {
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<IYnabApiClient> _ynabClientMock;
+	private readonly Mock<IYnabBudgetSelectionService> _budgetSelectionMock;
 	private readonly YnabMapper _mapper;
 	private readonly Mock<ILogger<YnabController>> _loggerMock;
 	private readonly YnabController _controller;
@@ -28,9 +30,10 @@ public class YnabControllerTests
 	{
 		_mediatorMock = new Mock<IMediator>();
 		_ynabClientMock = new Mock<IYnabApiClient>();
+		_budgetSelectionMock = new Mock<IYnabBudgetSelectionService>();
 		_mapper = new YnabMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<YnabController>();
-		_controller = new YnabController(_mediatorMock.Object, _ynabClientMock.Object, _mapper, _loggerMock.Object);
+		_controller = new YnabController(_mediatorMock.Object, _ynabClientMock.Object, _budgetSelectionMock.Object, _mapper, _loggerMock.Object);
 		_controller.ControllerContext = new ControllerContext
 		{
 			HttpContext = new DefaultHttpContext()
@@ -134,5 +137,210 @@ public class YnabControllerTests
 		_mediatorMock.Verify(m => m.Send(
 			It.Is<SelectYnabBudgetCommand>(c => c.BudgetId == budgetId),
 			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetCategories_Returns200_WithCategories_WhenConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+		_budgetSelectionMock.Setup(s => s.GetSelectedBudgetIdAsync(It.IsAny<CancellationToken>()))
+			.ReturnsAsync("budget-1");
+
+		List<YnabCategory> categories =
+		[
+			new("cat-1", "Groceries", "group-1", "Needs", false),
+			new("cat-2", "Rent", "group-1", "Needs", false),
+			new("cat-3", "Hidden", "group-2", "Other", true),
+		];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetYnabCategoriesQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(categories);
+
+		// Act
+		Results<Ok<YnabCategoryListResponse>, StatusCodeHttpResult> result = await _controller.GetCategories(CancellationToken.None);
+
+		// Assert
+		Ok<YnabCategoryListResponse> okResult = Assert.IsType<Ok<YnabCategoryListResponse>>(result.Result);
+		YnabCategoryListResponse response = okResult.Value!;
+		response.Data.Should().HaveCount(2); // hidden excluded
+	}
+
+	[Fact]
+	public async Task GetCategories_Returns503_WhenNotConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(false);
+
+		// Act
+		Results<Ok<YnabCategoryListResponse>, StatusCodeHttpResult> result = await _controller.GetCategories(CancellationToken.None);
+
+		// Assert
+		StatusCodeHttpResult statusResult = Assert.IsType<StatusCodeHttpResult>(result.Result);
+		statusResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+	}
+
+	[Fact]
+	public async Task GetCategories_Returns503_WhenNoBudgetSelected()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+		_budgetSelectionMock.Setup(s => s.GetSelectedBudgetIdAsync(It.IsAny<CancellationToken>()))
+			.ReturnsAsync((string?)null);
+
+		// Act
+		Results<Ok<YnabCategoryListResponse>, StatusCodeHttpResult> result = await _controller.GetCategories(CancellationToken.None);
+
+		// Assert
+		StatusCodeHttpResult statusResult = Assert.IsType<StatusCodeHttpResult>(result.Result);
+		statusResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+	}
+
+	[Fact]
+	public async Task GetCategoryMappings_Returns200_WithMappings()
+	{
+		// Arrange
+		List<YnabCategoryMappingDto> mappings =
+		[
+			new(Guid.NewGuid(), "Groceries", "cat-1", "Groceries", "Needs", "budget-1", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+		];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetAllYnabCategoryMappingsQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(mappings);
+
+		// Act
+		Ok<YnabCategoryMappingListResponse> result = await _controller.GetCategoryMappings(CancellationToken.None);
+
+		// Assert
+		YnabCategoryMappingListResponse response = result.Value!;
+		response.Data.Should().HaveCount(1);
+		response.Data.First().ReceiptsCategory.Should().Be("Groceries");
+	}
+
+	[Fact]
+	public async Task CreateCategoryMapping_Returns201_OnSuccess()
+	{
+		// Arrange
+		YnabCategoryMappingDto dto = new(
+			Guid.NewGuid(),
+			"Groceries",
+			"cat-1",
+			"Groceries",
+			"Needs",
+			"budget-1",
+			DateTimeOffset.UtcNow,
+			DateTimeOffset.UtcNow);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<CreateYnabCategoryMappingCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(dto);
+
+		CreateYnabCategoryMappingRequest request = new()
+		{
+			ReceiptsCategory = "Groceries",
+			YnabCategoryId = "cat-1",
+			YnabCategoryName = "Groceries",
+			YnabCategoryGroupName = "Needs",
+			YnabBudgetId = "budget-1",
+		};
+
+		// Act
+		Results<Created<YnabCategoryMappingResponse>, Conflict<string>> result = await _controller.CreateCategoryMapping(request, CancellationToken.None);
+
+		// Assert
+		Created<YnabCategoryMappingResponse> createdResult = Assert.IsType<Created<YnabCategoryMappingResponse>>(result.Result);
+		createdResult.Value!.ReceiptsCategory.Should().Be("Groceries");
+	}
+
+	[Fact]
+	public async Task CreateCategoryMapping_Returns409_WhenDuplicate()
+	{
+		// Arrange
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<CreateYnabCategoryMappingCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("A mapping for receipts category 'Groceries' already exists."));
+
+		CreateYnabCategoryMappingRequest request = new()
+		{
+			ReceiptsCategory = "Groceries",
+			YnabCategoryId = "cat-1",
+			YnabCategoryName = "Groceries",
+			YnabCategoryGroupName = "Needs",
+			YnabBudgetId = "budget-1",
+		};
+
+		// Act
+		Results<Created<YnabCategoryMappingResponse>, Conflict<string>> result = await _controller.CreateCategoryMapping(request, CancellationToken.None);
+
+		// Assert
+		Conflict<string> conflictResult = Assert.IsType<Conflict<string>>(result.Result);
+		conflictResult.Value.Should().Contain("already exists");
+	}
+
+	[Fact]
+	public async Task UpdateCategoryMapping_Returns204()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<UpdateYnabCategoryMappingCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(Unit.Value);
+
+		UpdateYnabCategoryMappingRequest request = new()
+		{
+			YnabCategoryId = "cat-1",
+			YnabCategoryName = "Groceries",
+			YnabCategoryGroupName = "Needs",
+			YnabBudgetId = "budget-1",
+		};
+
+		// Act
+		NoContent result = await _controller.UpdateCategoryMapping(id, request, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<NoContent>(result);
+	}
+
+	[Fact]
+	public async Task DeleteCategoryMapping_Returns204()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<DeleteYnabCategoryMappingCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(Unit.Value);
+
+		// Act
+		NoContent result = await _controller.DeleteCategoryMapping(id, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<NoContent>(result);
+	}
+
+	[Fact]
+	public async Task GetUnmappedCategories_Returns200_WithUnmapped()
+	{
+		// Arrange
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetUnmappedCategoriesQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new List<string> { "Electronics", "Pharmacy" });
+
+		// Act
+		Ok<UnmappedCategoriesResponse> result = await _controller.GetUnmappedCategories(CancellationToken.None);
+
+		// Assert
+		UnmappedCategoriesResponse response = result.Value!;
+		response.UnmappedCategories.Should().HaveCount(2);
+		response.UnmappedCategories.Should().Contain("Electronics");
+		response.UnmappedCategories.Should().Contain("Pharmacy");
 	}
 }

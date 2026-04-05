@@ -3,6 +3,7 @@ using System;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using Pgvector;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260405183500_AddYnabCategoryMapping")]
+    partial class AddYnabCategoryMapping
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -814,44 +817,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("Transactions");
                 });
 
-            modelBuilder.Entity("Infrastructure.Entities.Core.YnabAccountMappingEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<Guid>("ReceiptsAccountId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamptz");
-
-                    b.Property<string>("YnabAccountId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("text");
-
-                    b.Property<string>("YnabAccountName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("text");
-
-                    b.Property<string>("YnabBudgetId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReceiptsAccountId")
-                        .IsUnique();
-
-                    b.ToTable("YnabAccountMappings");
-                });
-
             modelBuilder.Entity("Infrastructure.Entities.Core.YnabCategoryMappingEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1171,17 +1136,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Account");
 
                     b.Navigation("Receipt");
-                });
-
-            modelBuilder.Entity("Infrastructure.Entities.Core.YnabAccountMappingEntity", b =>
-                {
-                    b.HasOne("Infrastructure.Entities.Core.AccountEntity", "Account")
-                        .WithMany()
-                        .HasForeignKey("ReceiptsAccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Account");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.Core.YnabSyncRecordEntity", b =>
