@@ -46,4 +46,51 @@ public partial class YnabMapper
 			UpdatedAt = source.UpdatedAt,
 		};
 	}
+
+	[MapperIgnoreTarget(nameof(YnabAccountSummary.AdditionalProperties))]
+	public YnabAccountSummary ToAccountSummary(YnabAccount source)
+	{
+		return new YnabAccountSummary
+		{
+			Id = source.Id,
+			Name = source.Name,
+			Type = source.Type,
+			OnBudget = source.OnBudget,
+			Closed = source.Closed,
+			Balance = source.Balance,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(YnabAccountListResponse.AdditionalProperties))]
+	public YnabAccountListResponse ToAccountListResponse(List<YnabAccount> accounts)
+	{
+		return new YnabAccountListResponse
+		{
+			Data = accounts.Select(ToAccountSummary).ToList(),
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(YnabAccountMappingResponse.AdditionalProperties))]
+	public YnabAccountMappingResponse ToAccountMappingResponse(YnabAccountMappingDto source)
+	{
+		return new YnabAccountMappingResponse
+		{
+			Id = source.Id,
+			ReceiptsAccountId = source.ReceiptsAccountId,
+			YnabAccountId = source.YnabAccountId,
+			YnabAccountName = source.YnabAccountName,
+			YnabBudgetId = source.YnabBudgetId,
+			CreatedAt = source.CreatedAt,
+			UpdatedAt = source.UpdatedAt,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(YnabAccountMappingListResponse.AdditionalProperties))]
+	public YnabAccountMappingListResponse ToAccountMappingListResponse(List<YnabAccountMappingDto> mappings)
+	{
+		return new YnabAccountMappingListResponse
+		{
+			Data = mappings.Select(ToAccountMappingResponse).ToList(),
+		};
+	}
 }

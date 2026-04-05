@@ -150,8 +150,10 @@ public static class InfrastructureService
 			.AddScoped<IImageProcessingService, ImageProcessingService>()
 			.AddScoped<IYnabSyncRecordRepository, YnabSyncRecordRepository>()
 			.AddScoped<IYnabBudgetSelectionRepository, YnabBudgetSelectionRepository>()
+			.AddScoped<IYnabAccountMappingRepository, YnabAccountMappingRepository>()
 			.AddScoped<IYnabBudgetSelectionService, YnabBudgetSelectionService>()
-			.AddScoped<IYnabSyncRecordService, YnabSyncRecordService>();
+			.AddScoped<IYnabSyncRecordService, YnabSyncRecordService>()
+			.AddScoped<IYnabAccountMappingService, YnabAccountMappingService>();
 
 		services.AddMemoryCache();
 

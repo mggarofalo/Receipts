@@ -22,6 +22,11 @@ import {
   useYnabBudgets,
   useSelectedYnabBudget,
   useSelectYnabBudget,
+  useYnabAccounts,
+  useYnabAccountMappings,
+  useCreateYnabAccountMapping,
+  useUpdateYnabAccountMapping,
+  useDeleteYnabAccountMapping,
 } from "./useYnab";
 
 function createWrapper() {
@@ -114,6 +119,134 @@ describe("useYnab", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to select YNAB budget");
+    });
+  });
+
+  it("useYnabAccounts returns accounts on success", async () => {
+    const accounts = [
+      { id: "acc-1", name: "Checking", type: "checking", onBudget: true, closed: false, balance: 100000 },
+      { id: "acc-2", name: "Savings", type: "savings", onBudget: true, closed: false, balance: 50000 },
+    ];
+    (client.GET as Mock).mockResolvedValue({ data: { data: accounts }, error: undefined });
+
+    const { result } = renderHook(() => useYnabAccounts(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.accounts).toEqual(accounts);
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/accounts");
+  });
+
+  it("useYnabAccounts returns empty array on error", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: "Service unavailable" });
+
+    const { result } = renderHook(() => useYnabAccounts(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.accounts).toEqual([]);
+  });
+
+  it("useYnabAccountMappings returns mappings on success", async () => {
+    const mappings = [
+      { id: "m1", receiptsAccountId: "a1", ynabAccountId: "y1", ynabAccountName: "Checking", ynabBudgetId: "b1" },
+    ];
+    (client.GET as Mock).mockResolvedValue({ data: { data: mappings }, error: undefined });
+
+    const { result } = renderHook(() => useYnabAccountMappings(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.mappings).toEqual(mappings);
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/account-mappings");
+  });
+
+  it("useCreateYnabAccountMapping calls POST and shows toast", async () => {
+    (client.POST as Mock).mockResolvedValue({ data: { id: "new-id" }, error: undefined });
+
+    const { result } = renderHook(() => useCreateYnabAccountMapping(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync({
+      receiptsAccountId: "a1",
+      ynabAccountId: "y1",
+      ynabAccountName: "Checking",
+      ynabBudgetId: "b1",
+    });
+
+    expect(client.POST).toHaveBeenCalledWith("/api/ynab/account-mappings", {
+      body: {
+        receiptsAccountId: "a1",
+        ynabAccountId: "y1",
+        ynabAccountName: "Checking",
+        ynabBudgetId: "b1",
+      },
+    });
+    expect(toast.success).toHaveBeenCalledWith("Account mapping created");
+  });
+
+  it("useUpdateYnabAccountMapping calls PUT and shows toast", async () => {
+    (client.PUT as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useUpdateYnabAccountMapping(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync({
+      id: "m1",
+      ynabAccountId: "y2",
+      ynabAccountName: "Savings",
+      ynabBudgetId: "b1",
+    });
+
+    expect(client.PUT).toHaveBeenCalledWith("/api/ynab/account-mappings/{id}", {
+      params: { path: { id: "m1" } },
+      body: {
+        ynabAccountId: "y2",
+        ynabAccountName: "Savings",
+        ynabBudgetId: "b1",
+      },
+    });
+    expect(toast.success).toHaveBeenCalledWith("Account mapping updated");
+  });
+
+  it("useDeleteYnabAccountMapping calls DELETE and shows toast", async () => {
+    (client.DELETE as Mock).mockResolvedValue({ error: undefined });
+
+    const { result } = renderHook(() => useDeleteYnabAccountMapping(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync("m1");
+
+    expect(client.DELETE).toHaveBeenCalledWith("/api/ynab/account-mappings/{id}", {
+      params: { path: { id: "m1" } },
+    });
+    expect(toast.success).toHaveBeenCalledWith("Account mapping removed");
+  });
+
+  it("useCreateYnabAccountMapping shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: "Failed" });
+
+    const { result } = renderHook(() => useCreateYnabAccountMapping(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(
+      result.current.mutateAsync({
+        receiptsAccountId: "a1",
+        ynabAccountId: "y1",
+        ynabAccountName: "Checking",
+        ynabBudgetId: "b1",
+      }),
+    ).rejects.toThrow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to create account mapping");
     });
   });
 });

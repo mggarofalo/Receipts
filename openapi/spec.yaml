@@ -3736,6 +3736,108 @@ paths:
         "204":
           description: No Content
 
+  /api/ynab/accounts:
+    get:
+      operationId: GetYnabAccounts
+      tags: [YNAB]
+      summary: List YNAB accounts
+      description: Returns the list of open/active accounts from the selected YNAB budget.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabAccountListResponse"
+        "503":
+          description: YNAB integration is not configured
+
+  /api/ynab/account-mappings:
+    get:
+      operationId: GetYnabAccountMappings
+      tags: [YNAB]
+      summary: List YNAB account mappings
+      description: Returns all mappings between receipts accounts and YNAB accounts.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabAccountMappingListResponse"
+    post:
+      operationId: CreateYnabAccountMapping
+      tags: [YNAB]
+      summary: Create a YNAB account mapping
+      description: Maps a receipts account to a YNAB account.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateYnabAccountMappingRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabAccountMappingResponse"
+        "400":
+          description: Invalid request (e.g. nonexistent receipts account)
+
+  /api/ynab/account-mappings/{id}:
+    put:
+      operationId: UpdateYnabAccountMapping
+      tags: [YNAB]
+      summary: Update a YNAB account mapping
+      description: Updates the YNAB account for an existing mapping.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateYnabAccountMappingRequest"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Mapping not found
+    delete:
+      operationId: DeleteYnabAccountMapping
+      tags: [YNAB]
+      summary: Delete a YNAB account mapping
+      description: Removes a mapping between a receipts account and a YNAB account.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Mapping not found
+
   /api/ynab/sync-status/{transactionId}:
     get:
       operationId: GetYnabSyncStatus
@@ -5798,6 +5900,90 @@ components:
 
     YnabSyncRecordResponseSyncStatus:
       enum: [Pending, Synced, Failed]
+
+    YnabAccountSummary:
+      type: object
+      required: [id, name, type, onBudget, closed, balance]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        onBudget:
+          type: boolean
+        closed:
+          type: boolean
+        balance:
+          type: integer
+          format: int64
+
+    YnabAccountListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/YnabAccountSummary"
+
+    YnabAccountMappingResponse:
+      type: object
+      required: [id, receiptsAccountId, ynabAccountId, ynabAccountName, ynabBudgetId, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        receiptsAccountId:
+          type: string
+          format: uuid
+        ynabAccountId:
+          type: string
+        ynabAccountName:
+          type: string
+        ynabBudgetId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    YnabAccountMappingListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/YnabAccountMappingResponse"
+
+    CreateYnabAccountMappingRequest:
+      type: object
+      required: [receiptsAccountId, ynabAccountId, ynabAccountName, ynabBudgetId]
+      properties:
+        receiptsAccountId:
+          type: string
+          format: uuid
+        ynabAccountId:
+          type: string
+        ynabAccountName:
+          type: string
+        ynabBudgetId:
+          type: string
+
+    UpdateYnabAccountMappingRequest:
+      type: object
+      required: [ynabAccountId, ynabAccountName, ynabBudgetId]
+      properties:
+        ynabAccountId:
+          type: string
+        ynabAccountName:
+          type: string
+        ynabBudgetId:
+          type: string
 
     YnabSyncType:
       type: integer

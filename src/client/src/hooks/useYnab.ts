@@ -55,3 +55,114 @@ export function useSelectYnabBudget() {
     },
   });
 }
+
+export function useYnabAccounts() {
+  const query = useQuery({
+    queryKey: ["ynab", "accounts"],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/ynab/accounts");
+      if (error) throw error;
+      return data;
+    },
+    retry: false,
+  });
+  return useMemo(
+    () => ({ ...query, accounts: query.data?.data ?? [] }),
+    [query],
+  );
+}
+
+export function useYnabAccountMappings() {
+  const query = useQuery({
+    queryKey: ["ynab", "account-mappings"],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/ynab/account-mappings");
+      if (error) throw error;
+      return data;
+    },
+  });
+  return useMemo(
+    () => ({ ...query, mappings: query.data?.data ?? [] }),
+    [query],
+  );
+}
+
+export function useCreateYnabAccountMapping() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      receiptsAccountId: string;
+      ynabAccountId: string;
+      ynabAccountName: string;
+      ynabBudgetId: string;
+    }) => {
+      const { data, error } = await client.POST(
+        "/api/ynab/account-mappings",
+        { body },
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ynab", "account-mappings"] });
+      toast.success("Account mapping created");
+    },
+    onError: () => {
+      toast.error("Failed to create account mapping");
+    },
+  });
+}
+
+export function useUpdateYnabAccountMapping() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      id: string;
+      ynabAccountId: string;
+      ynabAccountName: string;
+      ynabBudgetId: string;
+    }) => {
+      const { error } = await client.PUT(
+        "/api/ynab/account-mappings/{id}",
+        {
+          params: { path: { id: params.id } },
+          body: {
+            ynabAccountId: params.ynabAccountId,
+            ynabAccountName: params.ynabAccountName,
+            ynabBudgetId: params.ynabBudgetId,
+          },
+        },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ynab", "account-mappings"] });
+      toast.success("Account mapping updated");
+    },
+    onError: () => {
+      toast.error("Failed to update account mapping");
+    },
+  });
+}
+
+export function useDeleteYnabAccountMapping() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await client.DELETE(
+        "/api/ynab/account-mappings/{id}",
+        {
+          params: { path: { id } },
+        },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ynab", "account-mappings"] });
+      toast.success("Account mapping removed");
+    },
+    onError: () => {
+      toast.error("Failed to remove account mapping");
+    },
+  });
+}
