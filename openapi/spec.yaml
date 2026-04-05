@@ -3682,6 +3682,91 @@ paths:
                 type: string
                 format: binary
 
+  # ──────────────────────────────────────────────
+  # YNAB
+  # ──────────────────────────────────────────────
+
+  /api/ynab/budgets:
+    get:
+      operationId: GetYnabBudgets
+      tags: [YNAB]
+      summary: List YNAB budgets
+      description: Returns the list of budgets from the connected YNAB account.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabBudgetListResponse"
+        "503":
+          description: YNAB integration is not configured
+
+  /api/ynab/settings/budget:
+    get:
+      operationId: GetYnabBudgetSettings
+      tags: [YNAB]
+      summary: Get the selected YNAB budget
+      description: Returns the currently selected YNAB budget ID.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabBudgetSettingsResponse"
+    put:
+      operationId: SelectYnabBudget
+      tags: [YNAB]
+      summary: Select a YNAB budget
+      description: Sets the active YNAB budget for sync operations.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelectYnabBudgetRequest"
+      responses:
+        "204":
+          description: No Content
+
+  /api/ynab/sync-status/{transactionId}:
+    get:
+      operationId: GetYnabSyncStatus
+      tags: [YNAB]
+      summary: Get YNAB sync status for a transaction
+      description: Returns the sync record for a given local transaction ID and sync type.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: syncType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [MemoUpdate, TransactionPush]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabSyncRecordResponse"
+        "404":
+          description: No sync record found
+
 components:
   schemas:
     # ── Reports ───────────────────────────────────
@@ -5632,6 +5717,90 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EnumValuePair"
+
+    # ── YNAB ──────────────────────────────────────
+
+    YnabBudgetSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+
+    YnabBudgetListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/YnabBudgetSummary"
+
+    YnabBudgetSettingsResponse:
+      type: object
+      properties:
+        selectedBudgetId:
+          type:
+            - string
+            - "null"
+
+    SelectYnabBudgetRequest:
+      type: object
+      required: [budgetId]
+      properties:
+        budgetId:
+          type: string
+
+    YnabSyncRecordResponse:
+      type: object
+      required: [id, localTransactionId, ynabBudgetId, syncType, syncStatus, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        localTransactionId:
+          type: string
+          format: uuid
+        ynabTransactionId:
+          type:
+            - "null"
+            - string
+        ynabBudgetId:
+          type: string
+        ynabAccountId:
+          type:
+            - "null"
+            - string
+        syncType:
+          $ref: "#/components/schemas/YnabSyncRecordResponseSyncType"
+        syncStatus:
+          $ref: "#/components/schemas/YnabSyncRecordResponseSyncStatus"
+        syncedAtUtc:
+          type:
+            - "null"
+            - string
+          format: date-time
+        lastError:
+          type:
+            - "null"
+            - string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    YnabSyncRecordResponseSyncType:
+      enum: [MemoUpdate, TransactionPush]
+
+    YnabSyncRecordResponseSyncStatus:
+      enum: [Pending, Synced, Failed]
+
+    YnabSyncType:
+      type: integer
 
   headers:
     X-Resource-Id:
