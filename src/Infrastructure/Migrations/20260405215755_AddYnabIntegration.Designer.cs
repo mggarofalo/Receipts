@@ -13,7 +13,7 @@ using Pgvector;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260405214211_AddYnabIntegration")]
+    [Migration("20260405215755_AddYnabIntegration")]
     partial class AddYnabIntegration
     {
         /// <inheritdoc />

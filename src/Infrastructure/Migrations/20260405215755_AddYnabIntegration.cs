@@ -11,6 +11,28 @@ public partial class AddYnabIntegration : Migration
 	/// <inheritdoc />
 	protected override void Up(MigrationBuilder migrationBuilder)
 	{
+		migrationBuilder.AlterColumn<string>(
+			name: "ProcessedImagePath",
+			table: "Receipts",
+			type: "text",
+			maxLength: 1024,
+			nullable: true,
+			oldClrType: typeof(string),
+			oldType: "character varying(1024)",
+			oldMaxLength: 1024,
+			oldNullable: true);
+
+		migrationBuilder.AlterColumn<string>(
+			name: "OriginalImagePath",
+			table: "Receipts",
+			type: "text",
+			maxLength: 1024,
+			nullable: true,
+			oldClrType: typeof(string),
+			oldType: "character varying(1024)",
+			oldMaxLength: 1024,
+			oldNullable: true);
+
 		migrationBuilder.CreateTable(
 			name: "YnabAccountMappings",
 			columns: table => new
@@ -125,5 +147,27 @@ public partial class AddYnabIntegration : Migration
 
 		migrationBuilder.DropTable(
 			name: "YnabSyncRecords");
+
+		migrationBuilder.AlterColumn<string>(
+			name: "ProcessedImagePath",
+			table: "Receipts",
+			type: "character varying(1024)",
+			maxLength: 1024,
+			nullable: true,
+			oldClrType: typeof(string),
+			oldType: "text",
+			oldMaxLength: 1024,
+			oldNullable: true);
+
+		migrationBuilder.AlterColumn<string>(
+			name: "OriginalImagePath",
+			table: "Receipts",
+			type: "character varying(1024)",
+			maxLength: 1024,
+			nullable: true,
+			oldClrType: typeof(string),
+			oldType: "text",
+			oldMaxLength: 1024,
+			oldNullable: true);
 	}
 }
