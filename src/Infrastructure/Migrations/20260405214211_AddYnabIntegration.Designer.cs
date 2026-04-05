@@ -13,8 +13,8 @@ using Pgvector;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260405183439_AddYnabAccountMapping")]
-    partial class AddYnabAccountMapping
+    [Migration("20260405214211_AddYnabIntegration")]
+    partial class AddYnabIntegration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -853,6 +853,51 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("YnabAccountMappings");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Core.YnabCategoryMappingEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<string>("ReceiptsCategory")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<string>("YnabBudgetId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("text");
+
+                    b.Property<string>("YnabCategoryGroupName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("text");
+
+                    b.Property<string>("YnabCategoryId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("text");
+
+                    b.Property<string>("YnabCategoryName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiptsCategory")
+                        .IsUnique();
+
+                    b.ToTable("YnabCategoryMappings");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.Core.YnabSelectedBudgetEntity", b =>
