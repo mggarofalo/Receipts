@@ -17,6 +17,36 @@ internal sealed class YnabTransactionResponseData
 	public YnabTransactionDto Transaction { get; set; } = null!;
 }
 
+/// <summary>
+/// Response envelope for GET /v1/budgets/{budget_id}/transactions?since_date=...
+/// </summary>
+internal sealed class YnabTransactionsListResponseEnvelope
+{
+	[JsonPropertyName("data")]
+	public YnabTransactionsListResponseData Data { get; set; } = null!;
+}
+
+internal sealed class YnabTransactionsListResponseData
+{
+	[JsonPropertyName("transactions")]
+	public List<YnabTransactionDto> Transactions { get; set; } = [];
+}
+
+/// <summary>
+/// Request body for PATCH /v1/budgets/{budget_id}/transactions/{transaction_id}.
+/// </summary>
+internal sealed class YnabUpdateTransactionWrapper
+{
+	[JsonPropertyName("transaction")]
+	public YnabUpdateTransactionDto Transaction { get; set; } = null!;
+}
+
+internal sealed class YnabUpdateTransactionDto
+{
+	[JsonPropertyName("memo")]
+	public string? Memo { get; set; }
+}
+
 internal sealed class YnabTransactionDto
 {
 	[JsonPropertyName("id")]

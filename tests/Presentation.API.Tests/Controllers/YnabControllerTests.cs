@@ -2,6 +2,7 @@ using API.Controllers;
 using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Ynab.CategoryMapping;
+using Application.Commands.Ynab.MemoSync;
 using Application.Commands.Ynab.SelectBudget;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
@@ -342,5 +343,156 @@ public class YnabControllerTests
 		response.UnmappedCategories.Should().HaveCount(2);
 		response.UnmappedCategories.Should().Contain("Electronics");
 		response.UnmappedCategories.Should().Contain("Pharmacy");
+	}
+
+	[Fact]
+	public async Task SyncMemos_Returns200_WithResults_WhenConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+
+		Guid receiptId = Guid.NewGuid();
+		Guid txId = Guid.NewGuid();
+		List<Application.Models.Ynab.YnabMemoSyncResult> results =
+		[
+			new(txId, receiptId, Application.Models.Ynab.YnabMemoSyncOutcome.Synced, "yt-1", null, null),
+		];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<SyncYnabMemosCommand>(c => c.ReceiptId == receiptId),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(results);
+
+		SyncYnabMemosRequest request = new() { ReceiptId = receiptId };
+
+		// Act
+		Results<Ok<YnabMemoSyncResponse>, StatusCodeHttpResult> result = await _controller.SyncMemos(request, CancellationToken.None);
+
+		// Assert
+		Ok<YnabMemoSyncResponse> okResult = Assert.IsType<Ok<YnabMemoSyncResponse>>(result.Result);
+		YnabMemoSyncResponse response = okResult.Value!;
+		response.Results.Should().HaveCount(1);
+		response.Results.First().Outcome.Should().Be(global::API.Generated.Dtos.YnabMemoSyncOutcome.Synced);
+	}
+
+	[Fact]
+	public async Task SyncMemos_Returns503_WhenNotConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(false);
+
+		SyncYnabMemosRequest request = new() { ReceiptId = Guid.NewGuid() };
+
+		// Act
+		Results<Ok<YnabMemoSyncResponse>, StatusCodeHttpResult> result = await _controller.SyncMemos(request, CancellationToken.None);
+
+		// Assert
+		StatusCodeHttpResult statusResult = Assert.IsType<StatusCodeHttpResult>(result.Result);
+		statusResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+	}
+
+	[Fact]
+	public async Task SyncMemos_Returns503_OnYnabAuthException()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<SyncYnabMemosCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new YnabAuthException("Invalid token"));
+
+		SyncYnabMemosRequest request = new() { ReceiptId = Guid.NewGuid() };
+
+		// Act
+		Results<Ok<YnabMemoSyncResponse>, StatusCodeHttpResult> result = await _controller.SyncMemos(request, CancellationToken.None);
+
+		// Assert
+		StatusCodeHttpResult statusResult = Assert.IsType<StatusCodeHttpResult>(result.Result);
+		statusResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+	}
+
+	[Fact]
+	public async Task SyncMemosBulk_Returns200_WithResults_WhenConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+
+		Guid receiptId = Guid.NewGuid();
+		List<Application.Models.Ynab.YnabMemoSyncResult> results =
+		[
+			new(Guid.NewGuid(), receiptId, Application.Models.Ynab.YnabMemoSyncOutcome.NoMatch, null, null, null),
+		];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<SyncYnabMemosBulkCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(results);
+
+		SyncYnabMemosBulkRequest request = new() { ReceiptIds = [receiptId] };
+
+		// Act
+		Results<Ok<YnabMemoSyncResponse>, StatusCodeHttpResult> result = await _controller.SyncMemosBulk(request, CancellationToken.None);
+
+		// Assert
+		Ok<YnabMemoSyncResponse> okResult = Assert.IsType<Ok<YnabMemoSyncResponse>>(result.Result);
+		okResult.Value!.Results.Should().HaveCount(1);
+	}
+
+	[Fact]
+	public async Task SyncMemosBulk_Returns503_WhenNotConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(false);
+
+		SyncYnabMemosBulkRequest request = new() { ReceiptIds = [Guid.NewGuid()] };
+
+		// Act
+		Results<Ok<YnabMemoSyncResponse>, StatusCodeHttpResult> result = await _controller.SyncMemosBulk(request, CancellationToken.None);
+
+		// Assert
+		StatusCodeHttpResult statusResult = Assert.IsType<StatusCodeHttpResult>(result.Result);
+		statusResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+	}
+
+	[Fact]
+	public async Task ResolveMemoSync_Returns200_WithResult_WhenConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(true);
+
+		Guid txId = Guid.NewGuid();
+		Application.Models.Ynab.YnabMemoSyncResult expected = new(
+			txId, Guid.NewGuid(), Application.Models.Ynab.YnabMemoSyncOutcome.Synced, "yt-1", null, null);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<ResolveYnabMemoSyncCommand>(c => c.LocalTransactionId == txId && c.YnabTransactionId == "yt-1"),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(expected);
+
+		ResolveYnabMemoSyncRequest request = new() { LocalTransactionId = txId, YnabTransactionId = "yt-1" };
+
+		// Act
+		Results<Ok<YnabMemoSyncResultItem>, StatusCodeHttpResult> result = await _controller.ResolveMemoSync(request, CancellationToken.None);
+
+		// Assert
+		Ok<YnabMemoSyncResultItem> okResult = Assert.IsType<Ok<YnabMemoSyncResultItem>>(result.Result);
+		okResult.Value!.Outcome.Should().Be(global::API.Generated.Dtos.YnabMemoSyncOutcome.Synced);
+	}
+
+	[Fact]
+	public async Task ResolveMemoSync_Returns503_WhenNotConfigured()
+	{
+		// Arrange
+		_ynabClientMock.Setup(c => c.IsConfigured).Returns(false);
+
+		ResolveYnabMemoSyncRequest request = new() { LocalTransactionId = Guid.NewGuid(), YnabTransactionId = "yt-1" };
+
+		// Act
+		Results<Ok<YnabMemoSyncResultItem>, StatusCodeHttpResult> result = await _controller.ResolveMemoSync(request, CancellationToken.None);
+
+		// Assert
+		StatusCodeHttpResult statusResult = Assert.IsType<StatusCodeHttpResult>(result.Result);
+		statusResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
 	}
 }

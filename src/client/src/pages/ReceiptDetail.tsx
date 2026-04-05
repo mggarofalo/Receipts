@@ -41,6 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ChangeHistory } from "@/components/ChangeHistory";
+import { YnabMemoSyncCard } from "@/components/YnabMemoSyncCard";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { formatCurrency } from "@/lib/format";
 import { Pencil } from "lucide-react";
@@ -235,6 +236,8 @@ function ReceiptDetail() {
             transactions={trip.transactions}
             transactionsTotal={transactionsTotal}
           />
+
+          <YnabMemoSyncCard receiptId={id} />
 
           <Card>
             <CardHeader>

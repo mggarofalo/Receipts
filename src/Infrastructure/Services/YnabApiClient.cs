@@ -148,6 +148,43 @@ public class YnabApiClient(
 		return new YnabCreateTransactionResponse(transactionId);
 	}
 
+	public async Task<List<YnabTransaction>> GetTransactionsByDateAsync(string budgetId, DateOnly sinceDate, CancellationToken cancellationToken)
+	{
+		string encodedBudgetId = Uri.EscapeDataString(budgetId);
+		string formattedDate = sinceDate.ToString("yyyy-MM-dd");
+
+		YnabTransactionsListResponseEnvelope envelope = await GetAsync<YnabTransactionsListResponseEnvelope>(
+			$"budgets/{encodedBudgetId}/transactions?since_date={formattedDate}", cancellationToken);
+
+		return envelope.Data.Transactions
+			.Where(t => !t.Deleted)
+			.Select(t => new YnabTransaction(
+				t.Id,
+				DateOnly.Parse(t.Date),
+				t.Amount,
+				t.Memo,
+				t.ClearedStatus,
+				t.Approved,
+				t.AccountId,
+				t.CategoryId,
+				t.PayeeName))
+			.ToList();
+	}
+
+	public async Task UpdateTransactionMemoAsync(string budgetId, string transactionId, string memo, CancellationToken cancellationToken)
+	{
+		string encodedBudgetId = Uri.EscapeDataString(budgetId);
+		string encodedTransactionId = Uri.EscapeDataString(transactionId);
+
+		YnabUpdateTransactionWrapper body = new()
+		{
+			Transaction = new YnabUpdateTransactionDto { Memo = memo }
+		};
+
+		await PatchAsync<YnabUpdateTransactionWrapper>(
+			$"budgets/{encodedBudgetId}/transactions/{encodedTransactionId}", body, cancellationToken);
+	}
+
 	private async Task<T> GetAsync<T>(string path, CancellationToken cancellationToken)
 	{
 		using HttpRequestMessage request = new(HttpMethod.Get, path);
@@ -175,6 +212,16 @@ public class YnabApiClient(
 			?? throw new InvalidOperationException($"Failed to deserialize YNAB response for POST {path}.");
 
 		return result;
+	}
+
+	private async Task PatchAsync<TBody>(string path, TBody body, CancellationToken cancellationToken)
+	{
+		using HttpRequestMessage request = new(HttpMethod.Patch, path);
+		ApplyAuth(request);
+		request.Content = JsonContent.Create(body, options: JsonOptions);
+
+		using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
+		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
 	private void ApplyAuth(HttpRequestMessage request)

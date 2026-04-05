@@ -3968,6 +3968,78 @@ paths:
               schema:
                 $ref: "#/components/schemas/UnmappedCategoriesResponse"
 
+  /api/ynab/sync-memos:
+    post:
+      operationId: SyncYnabMemos
+      tags: [YNAB]
+      summary: Sync YNAB memo for a receipt
+      description: Matches local transactions to YNAB transactions and updates their memos with a receipt link.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncYnabMemosRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabMemoSyncResponse"
+        "503":
+          description: YNAB integration is not configured
+
+  /api/ynab/sync-memos/bulk:
+    post:
+      operationId: SyncYnabMemosBulk
+      tags: [YNAB]
+      summary: Bulk sync YNAB memos
+      description: Batch syncs YNAB memos for multiple receipts.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncYnabMemosBulkRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabMemoSyncResponse"
+        "503":
+          description: YNAB integration is not configured
+
+  /api/ynab/sync-memos/resolve:
+    post:
+      operationId: ResolveYnabMemoSync
+      tags: [YNAB]
+      summary: Resolve ambiguous YNAB memo sync
+      description: Resolves an ambiguous match by linking a local transaction to a specific YNAB transaction.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveYnabMemoSyncRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YnabMemoSyncResultItem"
+        "503":
+          description: YNAB integration is not configured
+
   /api/ynab/sync-status/{transactionId}:
     get:
       operationId: GetYnabSyncStatus
@@ -6217,6 +6289,99 @@ components:
           type: array
           items:
             type: string
+
+    SyncYnabMemosRequest:
+      type: object
+      required: [receiptId]
+      properties:
+        receiptId:
+          type: string
+          format: uuid
+
+    SyncYnabMemosBulkRequest:
+      type: object
+      required: [receiptIds]
+      properties:
+        receiptIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          maxItems: 100
+
+    ResolveYnabMemoSyncRequest:
+      type: object
+      required: [localTransactionId, ynabTransactionId]
+      properties:
+        localTransactionId:
+          type: string
+          format: uuid
+        ynabTransactionId:
+          type: string
+          maxLength: 256
+
+    YnabMemoSyncResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/YnabMemoSyncResultItem"
+
+    YnabMemoSyncResultItem:
+      type: object
+      required: [localTransactionId, receiptId, outcome]
+      properties:
+        localTransactionId:
+          type: string
+          format: uuid
+        receiptId:
+          type: string
+          format: uuid
+        outcome:
+          $ref: "#/components/schemas/YnabMemoSyncOutcome"
+        ynabTransactionId:
+          type:
+            - "null"
+            - string
+        error:
+          type:
+            - "null"
+            - string
+        ambiguousCandidates:
+          type:
+            - "null"
+            - array
+          items:
+            $ref: "#/components/schemas/YnabTransactionCandidate"
+
+    YnabTransactionCandidate:
+      type: object
+      required: [id, date, amount, accountId]
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        amount:
+          type: integer
+          format: int64
+        memo:
+          type:
+            - "null"
+            - string
+        payeeName:
+          type:
+            - "null"
+            - string
+        accountId:
+          type: string
+
+    YnabMemoSyncOutcome:
+      enum: [Synced, AlreadySynced, NoMatch, Ambiguous, CurrencySkipped, Failed]
 
     YnabSyncType:
       type: integer

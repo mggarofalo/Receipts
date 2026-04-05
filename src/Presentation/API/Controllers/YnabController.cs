@@ -2,6 +2,7 @@ using API.Generated.Dtos;
 using API.Mapping.Core;
 using Application.Commands.Ynab.AccountMapping;
 using Application.Commands.Ynab.CategoryMapping;
+using Application.Commands.Ynab.MemoSync;
 using Application.Commands.Ynab.SelectBudget;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
@@ -293,5 +294,85 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 		}
 
 		return TypedResults.Ok(mapper.ToSyncRecordResponse(record));
+	}
+
+	[HttpPost("sync-memos")]
+	[EndpointSummary("Sync YNAB memo for a receipt")]
+	[EndpointDescription("Matches local transactions to YNAB transactions and updates their memos with a receipt link.")]
+	[ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+	public async Task<Results<Ok<YnabMemoSyncResponse>, StatusCodeHttpResult>> SyncMemos(
+		[FromBody] SyncYnabMemosRequest request,
+		CancellationToken cancellationToken)
+	{
+		if (!ynabClient.IsConfigured)
+		{
+			logger.LogWarning("YNAB API client is not configured — missing personal access token");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+
+		try
+		{
+			List<YnabMemoSyncResult> results = await mediator.Send(new SyncYnabMemosCommand(request.ReceiptId), cancellationToken);
+			return TypedResults.Ok(mapper.ToMemoSyncResponse(results));
+		}
+		catch (YnabAuthException ex)
+		{
+			logger.LogWarning(ex, "YNAB authentication failed");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+	}
+
+	[HttpPost("sync-memos/bulk")]
+	[EndpointSummary("Bulk sync YNAB memos")]
+	[EndpointDescription("Batch syncs YNAB memos for multiple receipts.")]
+	[ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+	public async Task<Results<Ok<YnabMemoSyncResponse>, StatusCodeHttpResult>> SyncMemosBulk(
+		[FromBody] SyncYnabMemosBulkRequest request,
+		CancellationToken cancellationToken)
+	{
+		if (!ynabClient.IsConfigured)
+		{
+			logger.LogWarning("YNAB API client is not configured — missing personal access token");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+
+		try
+		{
+			List<YnabMemoSyncResult> results = await mediator.Send(
+				new SyncYnabMemosBulkCommand(request.ReceiptIds.ToList()), cancellationToken);
+			return TypedResults.Ok(mapper.ToMemoSyncResponse(results));
+		}
+		catch (YnabAuthException ex)
+		{
+			logger.LogWarning(ex, "YNAB authentication failed");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+	}
+
+	[HttpPost("sync-memos/resolve")]
+	[EndpointSummary("Resolve ambiguous YNAB memo sync")]
+	[EndpointDescription("Resolves an ambiguous match by linking a local transaction to a specific YNAB transaction.")]
+	[ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+	public async Task<Results<Ok<YnabMemoSyncResultItem>, StatusCodeHttpResult>> ResolveMemoSync(
+		[FromBody] ResolveYnabMemoSyncRequest request,
+		CancellationToken cancellationToken)
+	{
+		if (!ynabClient.IsConfigured)
+		{
+			logger.LogWarning("YNAB API client is not configured — missing personal access token");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+
+		try
+		{
+			YnabMemoSyncResult result = await mediator.Send(
+				new ResolveYnabMemoSyncCommand(request.LocalTransactionId, request.YnabTransactionId), cancellationToken);
+			return TypedResults.Ok(mapper.ToMemoSyncResultItem(result));
+		}
+		catch (YnabAuthException ex)
+		{
+			logger.LogWarning(ex, "YNAB authentication failed");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
 	}
 }

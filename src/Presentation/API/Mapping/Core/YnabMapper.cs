@@ -1,6 +1,10 @@
 using API.Generated.Dtos;
 using Application.Models.Ynab;
 using Riok.Mapperly.Abstractions;
+using AppYnabMemoSyncOutcome = Application.Models.Ynab.YnabMemoSyncOutcome;
+using AppYnabTransactionCandidate = Application.Models.Ynab.YnabTransactionCandidate;
+using DtoYnabMemoSyncOutcome = API.Generated.Dtos.YnabMemoSyncOutcome;
+using DtoYnabTransactionCandidate = API.Generated.Dtos.YnabTransactionCandidate;
 
 namespace API.Mapping.Core;
 
@@ -138,6 +142,43 @@ public partial class YnabMapper
 		return new YnabCategoryMappingListResponse
 		{
 			Data = mappings.Select(ToCategoryMappingResponse).ToList(),
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(YnabMemoSyncResultItem.AdditionalProperties))]
+	public YnabMemoSyncResultItem ToMemoSyncResultItem(YnabMemoSyncResult source)
+	{
+		return new YnabMemoSyncResultItem
+		{
+			LocalTransactionId = source.LocalTransactionId,
+			ReceiptId = source.ReceiptId,
+			Outcome = Enum.Parse<DtoYnabMemoSyncOutcome>(source.Outcome.ToString()),
+			YnabTransactionId = source.YnabTransactionId,
+			Error = source.Error,
+			AmbiguousCandidates = source.AmbiguousCandidates?.Select(ToTransactionCandidate).ToList(),
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(DtoYnabTransactionCandidate.AdditionalProperties))]
+	public DtoYnabTransactionCandidate ToTransactionCandidate(AppYnabTransactionCandidate source)
+	{
+		return new DtoYnabTransactionCandidate
+		{
+			Id = source.Id,
+			Date = source.Date,
+			Amount = source.Amount,
+			Memo = source.Memo,
+			PayeeName = source.PayeeName,
+			AccountId = source.AccountId,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(YnabMemoSyncResponse.AdditionalProperties))]
+	public YnabMemoSyncResponse ToMemoSyncResponse(List<YnabMemoSyncResult> results)
+	{
+		return new YnabMemoSyncResponse
+		{
+			Results = results.Select(ToMemoSyncResultItem).ToList(),
 		};
 	}
 }

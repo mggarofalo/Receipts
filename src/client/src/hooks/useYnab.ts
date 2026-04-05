@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
+import type { components } from "@/generated/api";
 
 export function useYnabBudgets() {
   const query = useQuery({
@@ -311,4 +312,102 @@ export function useDeleteYnabCategoryMapping() {
       toast.error("Failed to delete category mapping");
     },
   });
+}
+
+export type YnabMemoSyncResult =
+  components["schemas"]["YnabMemoSyncResultItem"];
+export type YnabMemoSyncOutcome =
+  components["schemas"]["YnabMemoSyncOutcome"];
+export type YnabTransactionCandidateDto =
+  components["schemas"]["YnabTransactionCandidate"];
+
+export function useSyncYnabMemos() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (receiptId: string) => {
+      const { data, error } = await client.POST("/api/ynab/sync-memos", {
+        body: { receiptId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      const synced = data?.results?.filter(
+        (r) => r.outcome === "Synced",
+      ).length;
+      if (synced && synced > 0) {
+        toast.success(`Synced ${synced} transaction memo(s) to YNAB`);
+      } else {
+        toast.info("No transactions were synced");
+      }
+    },
+    onError: () => {
+      toast.error("Failed to sync YNAB memos");
+    },
+  });
+}
+
+export function useSyncYnabMemosBulk() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (receiptIds: string[]) => {
+      const { data, error } = await client.POST("/api/ynab/sync-memos/bulk", {
+        body: { receiptIds },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      const synced = data?.results?.filter(
+        (r) => r.outcome === "Synced",
+      ).length;
+      toast.success(`Synced ${synced ?? 0} transaction memo(s) to YNAB`);
+    },
+    onError: () => {
+      toast.error("Failed to bulk sync YNAB memos");
+    },
+  });
+}
+
+export function useResolveYnabMemoSync() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      localTransactionId: string;
+      ynabTransactionId: string;
+    }) => {
+      const { data, error } = await client.POST(
+        "/api/ynab/sync-memos/resolve",
+        { body: params },
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      toast.success("YNAB memo sync resolved");
+    },
+    onError: () => {
+      toast.error("Failed to resolve YNAB memo sync");
+    },
+  });
+}
+
+export function useMemoSyncSummary(results: YnabMemoSyncResult[] | undefined) {
+  return useMemo(() => {
+    if (!results) return null;
+    return {
+      synced: results.filter((r) => r.outcome === "Synced").length,
+      alreadySynced: results.filter((r) => r.outcome === "AlreadySynced")
+        .length,
+      noMatch: results.filter((r) => r.outcome === "NoMatch").length,
+      ambiguous: results.filter((r) => r.outcome === "Ambiguous").length,
+      currencySkipped: results.filter((r) => r.outcome === "CurrencySkipped")
+        .length,
+      failed: results.filter((r) => r.outcome === "Failed").length,
+      total: results.length,
+    };
+  }, [results]);
 }

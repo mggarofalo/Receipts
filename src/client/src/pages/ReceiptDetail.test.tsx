@@ -71,6 +71,12 @@ vi.mock("@/components/ReceiptHeaderForm", () => ({
   },
 }));
 
+vi.mock("@/components/YnabMemoSyncCard", () => ({
+  YnabMemoSyncCard: function MockYnabMemoSyncCard() {
+    return null;
+  },
+}));
+
 function renderWithRoutes(initialRoute: string) {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>

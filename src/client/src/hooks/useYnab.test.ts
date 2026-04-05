@@ -34,6 +34,10 @@ import {
   useCreateYnabCategoryMapping,
   useUpdateYnabCategoryMapping,
   useDeleteYnabCategoryMapping,
+  useSyncYnabMemos,
+  useSyncYnabMemosBulk,
+  useResolveYnabMemoSync,
+  useMemoSyncSummary,
 } from "./useYnab";
 
 function createWrapper() {
@@ -417,5 +421,166 @@ describe("useYnab", () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to create category mapping");
     });
+  });
+
+  it("useSyncYnabMemos calls POST and shows toast on success", async () => {
+    const syncResults = {
+      results: [
+        { localTransactionId: "tx-1", receiptId: "r-1", outcome: "Synced", ynabTransactionId: "yt-1" },
+      ],
+    };
+    (client.POST as Mock).mockResolvedValue({ data: syncResults, error: undefined });
+
+    const { result } = renderHook(() => useSyncYnabMemos(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync("r-1");
+
+    expect(client.POST).toHaveBeenCalledWith("/api/ynab/sync-memos", {
+      body: { receiptId: "r-1" },
+    });
+    expect(toast.success).toHaveBeenCalledWith("Synced 1 transaction memo(s) to YNAB");
+  });
+
+  it("useSyncYnabMemos shows info toast when no transactions synced", async () => {
+    const syncResults = {
+      results: [
+        { localTransactionId: "tx-1", receiptId: "r-1", outcome: "NoMatch" },
+      ],
+    };
+    (client.POST as Mock).mockResolvedValue({ data: syncResults, error: undefined });
+
+    const { result } = renderHook(() => useSyncYnabMemos(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync("r-1");
+
+    expect(toast.info).toHaveBeenCalledWith("No transactions were synced");
+  });
+
+  it("useSyncYnabMemos shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: "Server error" });
+
+    const { result } = renderHook(() => useSyncYnabMemos(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(result.current.mutateAsync("r-1")).rejects.toThrow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to sync YNAB memos");
+    });
+  });
+
+  it("useSyncYnabMemosBulk calls POST and shows toast on success", async () => {
+    const syncResults = {
+      results: [
+        { localTransactionId: "tx-1", receiptId: "r-1", outcome: "Synced", ynabTransactionId: "yt-1" },
+        { localTransactionId: "tx-2", receiptId: "r-2", outcome: "Synced", ynabTransactionId: "yt-2" },
+      ],
+    };
+    (client.POST as Mock).mockResolvedValue({ data: syncResults, error: undefined });
+
+    const { result } = renderHook(() => useSyncYnabMemosBulk(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync(["r-1", "r-2"]);
+
+    expect(client.POST).toHaveBeenCalledWith("/api/ynab/sync-memos/bulk", {
+      body: { receiptIds: ["r-1", "r-2"] },
+    });
+    expect(toast.success).toHaveBeenCalledWith("Synced 2 transaction memo(s) to YNAB");
+  });
+
+  it("useSyncYnabMemosBulk shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: "Server error" });
+
+    const { result } = renderHook(() => useSyncYnabMemosBulk(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(result.current.mutateAsync(["r-1"])).rejects.toThrow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to bulk sync YNAB memos");
+    });
+  });
+
+  it("useResolveYnabMemoSync calls POST and shows toast on success", async () => {
+    const resolved = {
+      localTransactionId: "tx-1",
+      receiptId: "r-1",
+      outcome: "Synced",
+      ynabTransactionId: "yt-1",
+    };
+    (client.POST as Mock).mockResolvedValue({ data: resolved, error: undefined });
+
+    const { result } = renderHook(() => useResolveYnabMemoSync(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync({
+      localTransactionId: "tx-1",
+      ynabTransactionId: "yt-1",
+    });
+
+    expect(client.POST).toHaveBeenCalledWith("/api/ynab/sync-memos/resolve", {
+      body: { localTransactionId: "tx-1", ynabTransactionId: "yt-1" },
+    });
+    expect(toast.success).toHaveBeenCalledWith("YNAB memo sync resolved");
+  });
+
+  it("useResolveYnabMemoSync shows error toast on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ error: "Server error" });
+
+    const { result } = renderHook(() => useResolveYnabMemoSync(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(
+      result.current.mutateAsync({
+        localTransactionId: "tx-1",
+        ynabTransactionId: "yt-1",
+      }),
+    ).rejects.toThrow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to resolve YNAB memo sync");
+    });
+  });
+
+  it("useMemoSyncSummary computes correct summary", () => {
+    const results = [
+      { localTransactionId: "tx-1", receiptId: "r-1", outcome: "Synced" as const, ynabTransactionId: "yt-1" },
+      { localTransactionId: "tx-2", receiptId: "r-1", outcome: "AlreadySynced" as const, ynabTransactionId: "yt-2" },
+      { localTransactionId: "tx-3", receiptId: "r-1", outcome: "NoMatch" as const },
+      { localTransactionId: "tx-4", receiptId: "r-1", outcome: "Ambiguous" as const, ambiguousCandidates: [] },
+      { localTransactionId: "tx-5", receiptId: "r-1", outcome: "Failed" as const, error: "err" },
+    ];
+
+    const { result } = renderHook(() => useMemoSyncSummary(results), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current).toEqual({
+      synced: 1,
+      alreadySynced: 1,
+      noMatch: 1,
+      ambiguous: 1,
+      currencySkipped: 0,
+      failed: 1,
+      total: 5,
+    });
+  });
+
+  it("useMemoSyncSummary returns null when no results", () => {
+    const { result } = renderHook(() => useMemoSyncSummary(undefined), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current).toBeNull();
   });
 });
