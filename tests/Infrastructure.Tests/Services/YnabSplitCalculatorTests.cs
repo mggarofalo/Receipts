@@ -596,4 +596,27 @@ public class YnabSplitCalculatorTests
 		YnabTransactionSplit split = result.TransactionSplits[0];
 		split.SubTransactions.Sum(s => s.Milliunits).Should().Be(-30);
 	}
+
+	[Fact]
+	public void ComputeWaterfallSplits_ExhaustedAllocations_ThrowsInvalidOperationException()
+	{
+		// Arrange: categories total $10, but transactions total $15.
+		// tx1 ($10) exhausts all category allocations, tx2 ($5) gets empty subs.
+		Transaction tx1 = MakeTransaction(10.00m);
+		Transaction tx2 = MakeTransaction(5.00m);
+		ReceiptWithItems rwi = new()
+		{
+			Receipt = MakeReceipt(0.00m),
+			Items = [MakeItem("A", 10.00m)],
+			Adjustments = [],
+		};
+		Dictionary<string, string> mappings = MakeMappings("A");
+
+		// Act & Assert
+		Action act = () => _calculator.ComputeWaterfallSplits(rwi, [tx1, tx2], mappings);
+		act.Should().Throw<InvalidOperationException>()
+			.WithMessage("*could not be categorized*")
+			.WithMessage("*exhausted*");
+	}
+
 }
