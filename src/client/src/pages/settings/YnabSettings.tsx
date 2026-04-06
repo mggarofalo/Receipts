@@ -310,90 +310,94 @@ export default function YnabSettings() {
         </CardContent>
       </Card>
 
-      {selectedBudgetId && !notConfigured && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Category Mapping</CardTitle>
-            <CardDescription>
-              Map your receipt categories to YNAB categories for automatic
-              categorization during sync.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {categoryMappingLoading ? (
-              <div className="flex items-center gap-2">
-                <Spinner className="h-4 w-4" />
-                <span className="text-sm text-muted-foreground">
-                  Loading categories...
-                </span>
-              </div>
-            ) : receiptCategories.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No receipt item categories found. Create some receipts first.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {receiptCategories.map((category) => {
-                  const mapping = mappingsByCategory.get(category);
-                  const isUnmapped = unmappedSet.has(category);
+      <Card>
+        <CardHeader>
+          <CardTitle>Category Mapping</CardTitle>
+          <CardDescription>
+            Map your receipt categories to YNAB categories for automatic
+            categorization during sync.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {categoryMappingLoading ? (
+            <div className="flex items-center gap-2">
+              <Spinner className="h-4 w-4" />
+              <span className="text-sm text-muted-foreground">
+                Loading categories...
+              </span>
+            </div>
+          ) : notConfigured || !selectedBudgetId ? (
+            <p className="text-sm text-muted-foreground">
+              {notConfigured
+                ? "Configure YNAB to map categories."
+                : "Select a budget above to map categories."}
+            </p>
+          ) : receiptCategories.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No receipt item categories found. Create some receipts first.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {receiptCategories.map((category) => {
+                const mapping = mappingsByCategory.get(category);
+                const isUnmapped = unmappedSet.has(category);
 
-                  return (
-                    <div
-                      key={category}
-                      className="flex items-center gap-3"
-                    >
-                      <div className="flex items-center gap-2 min-w-[200px]">
-                        <span className="text-sm font-medium">{category}</span>
-                        {isUnmapped && (
-                          <Badge variant="outline" className="text-amber-600 border-amber-300">
-                            Unmapped
-                          </Badge>
-                        )}
-                      </div>
-
-                      <Select
-                        value={mapping?.ynabCategoryId ?? ""}
-                        onValueChange={(value) =>
-                          handleCategoryMappingChange(category, value)
-                        }
-                      >
-                        <SelectTrigger className="w-full max-w-sm">
-                          <SelectValue placeholder="Select YNAB category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(groupedCategories).map(
-                            ([groupName, cats]) => (
-                              <SelectGroup key={groupName}>
-                                <SelectLabel>{groupName}</SelectLabel>
-                                {cats.map((cat) => (
-                                  <SelectItem key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            ),
-                          )}
-                        </SelectContent>
-                      </Select>
-
-                      {mapping && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteMapping(category)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          Remove
-                        </Button>
+                return (
+                  <div
+                    key={category}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="flex items-center gap-2 min-w-[200px]">
+                      <span className="text-sm font-medium">{category}</span>
+                      {isUnmapped && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300">
+                          Unmapped
+                        </Badge>
                       )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+
+                    <Select
+                      value={mapping?.ynabCategoryId ?? ""}
+                      onValueChange={(value) =>
+                        handleCategoryMappingChange(category, value)
+                      }
+                    >
+                      <SelectTrigger className="w-full max-w-sm">
+                        <SelectValue placeholder="Select YNAB category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(groupedCategories).map(
+                          ([groupName, cats]) => (
+                            <SelectGroup key={groupName}>
+                              <SelectLabel>{groupName}</SelectLabel>
+                              {cats.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    {mapping && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteMapping(category)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
