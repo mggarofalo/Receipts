@@ -6571,7 +6571,7 @@ components:
       enum: [Synced, AlreadySynced, NoMatch, Ambiguous, CurrencySkipped, ReconciledSkipped, Failed]
 
     YnabSyncType:
-      type: integer
+      enum: [MemoUpdate, TransactionPush]
 
   headers:
     X-Resource-Id:
