@@ -22,7 +22,7 @@ public class YnabRateLimitTrackerTests
 	}
 
 	[Fact]
-	public void GetStatus_NoRequests_ReturnsFullQuota()
+	public void GetStatus_NoRequests_ReturnsFullQuotaWithNullWindowResetAt()
 	{
 		// Arrange
 		(YnabRateLimitTracker tracker, _) = CreateTracker();
@@ -34,6 +34,7 @@ public class YnabRateLimitTrackerTests
 		status.RemainingRequests.Should().Be(200);
 		status.MaxRequests.Should().Be(200);
 		status.RequestsUsed.Should().Be(0);
+		status.WindowResetAt.Should().BeNull();
 		status.OldestRequestAt.Should().BeNull();
 	}
 
@@ -180,5 +181,55 @@ public class YnabRateLimitTrackerTests
 		// Assert
 		status.RemainingRequests.Should().Be(0);
 		status.RequestsUsed.Should().Be(5);
+	}
+
+	[Fact]
+	public void WindowResetAt_IsNull_WhenAllRequestsExpired()
+	{
+		// Arrange
+		(YnabRateLimitTracker tracker, FakeTimeProvider timeProvider) = CreateTracker(windowSeconds: 3600);
+
+		tracker.RecordRequest();
+		tracker.GetStatus().WindowResetAt.Should().NotBeNull();
+
+		// Advance past the window so all requests expire
+		timeProvider.Advance(TimeSpan.FromSeconds(3601));
+
+		// Act
+		YnabRateLimitStatus status = tracker.GetStatus();
+
+		// Assert
+		status.WindowResetAt.Should().BeNull();
+		status.OldestRequestAt.Should().BeNull();
+		status.RequestsUsed.Should().Be(0);
+	}
+
+	[Fact]
+	public async Task ConcurrentAccess_DoesNotCorruptState()
+	{
+		// Arrange — verify lock-based synchronization prevents data corruption
+		(YnabRateLimitTracker tracker, _) = CreateTracker(maxRequests: 10000);
+
+		const int threadCount = 10;
+		const int requestsPerThread = 100;
+
+		// Act — hammer the tracker from multiple threads simultaneously
+		Task[] tasks = Enumerable.Range(0, threadCount)
+			.Select(_ => Task.Run(() =>
+			{
+				for (int i = 0; i < requestsPerThread; i++)
+				{
+					tracker.RecordRequest();
+					tracker.GetStatus();
+					tracker.CanMakeRequests(1);
+				}
+			}))
+			.ToArray();
+
+		await Task.WhenAll(tasks);
+
+		// Assert — exactly threadCount * requestsPerThread requests should be recorded
+		YnabRateLimitStatus status = tracker.GetStatus();
+		status.RequestsUsed.Should().Be(threadCount * requestsPerThread);
 	}
 }

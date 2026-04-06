@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
 using Infrastructure.Ynab;
@@ -7,7 +6,8 @@ namespace Infrastructure.Services;
 
 public class YnabRateLimitTracker : IYnabRateLimitTracker
 {
-	private readonly ConcurrentQueue<DateTimeOffset> _requestTimestamps = new();
+	private readonly Queue<DateTimeOffset> _requestTimestamps = new();
+	private readonly object _lock = new();
 	private readonly YnabClientOptions _options;
 	private readonly TimeProvider _timeProvider;
 
@@ -19,41 +19,48 @@ public class YnabRateLimitTracker : IYnabRateLimitTracker
 
 	public void RecordRequest()
 	{
-		PruneExpired();
-		_requestTimestamps.Enqueue(_timeProvider.GetUtcNow());
+		lock (_lock)
+		{
+			PruneExpired();
+			_requestTimestamps.Enqueue(_timeProvider.GetUtcNow());
+		}
 	}
 
 	public YnabRateLimitStatus GetStatus()
 	{
-		PruneExpired();
-
-		int requestsUsed = _requestTimestamps.Count;
-		int remaining = Math.Max(0, _options.RateLimitMaxRequests - requestsUsed);
-
-		DateTimeOffset now = _timeProvider.GetUtcNow();
-		DateTimeOffset windowResetAt = now.Add(TimeSpan.FromSeconds(_options.RateLimitWindowSeconds));
-
-		DateTimeOffset? oldestRequestAt = null;
-		if (_requestTimestamps.TryPeek(out DateTimeOffset oldest))
+		lock (_lock)
 		{
-			oldestRequestAt = oldest;
-			// The window resets when the oldest request expires
-			windowResetAt = oldest.Add(TimeSpan.FromSeconds(_options.RateLimitWindowSeconds));
-		}
+			PruneExpired();
 
-		return new YnabRateLimitStatus(
-			remaining,
-			_options.RateLimitMaxRequests,
-			requestsUsed,
-			windowResetAt,
-			oldestRequestAt);
+			int requestsUsed = _requestTimestamps.Count;
+			int remaining = Math.Max(0, _options.RateLimitMaxRequests - requestsUsed);
+
+			DateTimeOffset? windowResetAt = null;
+			DateTimeOffset? oldestRequestAt = null;
+
+			if (_requestTimestamps.TryPeek(out DateTimeOffset oldest))
+			{
+				oldestRequestAt = oldest;
+				windowResetAt = oldest.Add(TimeSpan.FromSeconds(_options.RateLimitWindowSeconds));
+			}
+
+			return new YnabRateLimitStatus(
+				remaining,
+				_options.RateLimitMaxRequests,
+				requestsUsed,
+				windowResetAt,
+				oldestRequestAt);
+		}
 	}
 
 	public bool CanMakeRequests(int count)
 	{
-		PruneExpired();
-		int requestsUsed = _requestTimestamps.Count;
-		return requestsUsed + count <= _options.RateLimitMaxRequests;
+		lock (_lock)
+		{
+			PruneExpired();
+			int requestsUsed = _requestTimestamps.Count;
+			return requestsUsed + count <= _options.RateLimitMaxRequests;
+		}
 	}
 
 	private void PruneExpired()
@@ -62,7 +69,7 @@ public class YnabRateLimitTracker : IYnabRateLimitTracker
 
 		while (_requestTimestamps.TryPeek(out DateTimeOffset oldest) && oldest < cutoff)
 		{
-			_requestTimestamps.TryDequeue(out _);
+			_requestTimestamps.Dequeue();
 		}
 	}
 }

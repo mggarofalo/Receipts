@@ -6534,7 +6534,7 @@ components:
 
     YnabRateLimitStatusResponse:
       type: object
-      required: [remainingRequests, maxRequests, requestsUsed, windowResetAt]
+      required: [remainingRequests, maxRequests, requestsUsed]
       properties:
         remainingRequests:
           type: integer
@@ -6549,9 +6549,11 @@ components:
           format: int32
           description: Number of requests made in the current window
         windowResetAt:
-          type: string
+          type:
+            - "null"
+            - string
           format: date-time
-          description: When the oldest request in the window expires
+          description: When the oldest request in the window expires, null if no requests tracked
         oldestRequestAt:
           type:
             - "null"

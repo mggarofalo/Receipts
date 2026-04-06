@@ -16,7 +16,7 @@ public class SyncYnabMemosBulkCommandHandler(IYnabMemoSyncService memoSyncServic
 		if (!rateLimitTracker.CanMakeRequests(estimatedRequests))
 		{
 			YnabRateLimitStatus status = rateLimitTracker.GetStatus();
-			string error = $"YNAB API rate limit would be exceeded. {status.RemainingRequests}/{status.MaxRequests} requests remaining. Try again after {status.WindowResetAt:HH:mm:ss} UTC.";
+			string error = $"YNAB API rate limit would be exceeded. {status.RemainingRequests}/{status.MaxRequests} requests remaining.{(status.WindowResetAt.HasValue ? $" Try again after {status.WindowResetAt.Value:HH:mm:ss} UTC." : "")}";
 			return request.ReceiptIds
 				.Select(id => new YnabMemoSyncResult(Guid.Empty, id, YnabMemoSyncOutcome.Failed, null, error, null))
 				.ToList();

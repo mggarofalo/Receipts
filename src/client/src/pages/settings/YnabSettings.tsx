@@ -437,7 +437,7 @@ export default function YnabSettings() {
                   }}
                 />
               </div>
-              {rateLimitStatus.oldestRequestAt && (
+              {rateLimitStatus.oldestRequestAt && rateLimitStatus.windowResetAt && (
                 <p className="text-xs text-muted-foreground">
                   Window resets at{" "}
                   {new Date(rateLimitStatus.windowResetAt).toLocaleTimeString()}

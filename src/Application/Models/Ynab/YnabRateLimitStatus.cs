@@ -4,5 +4,5 @@ public record YnabRateLimitStatus(
 	int RemainingRequests,
 	int MaxRequests,
 	int RequestsUsed,
-	DateTimeOffset WindowResetAt,
+	DateTimeOffset? WindowResetAt,
 	DateTimeOffset? OldestRequestAt);

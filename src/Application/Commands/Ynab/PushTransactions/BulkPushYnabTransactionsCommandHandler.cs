@@ -17,7 +17,7 @@ public class BulkPushYnabTransactionsCommandHandler(IMediator mediator, IYnabRat
 			YnabRateLimitStatus status = rateLimitTracker.GetStatus();
 			List<ReceiptPushResult> failedResults = request.ReceiptIds
 				.Select(id => new ReceiptPushResult(id, PushYnabTransactionsResult.Failure(
-					$"YNAB API rate limit would be exceeded. {status.RemainingRequests}/{status.MaxRequests} requests remaining. Try again after {status.WindowResetAt:HH:mm:ss} UTC.")))
+					$"YNAB API rate limit would be exceeded. {status.RemainingRequests}/{status.MaxRequests} requests remaining.{(status.WindowResetAt.HasValue ? $" Try again after {status.WindowResetAt.Value:HH:mm:ss} UTC." : "")}")))
 				.ToList();
 			return new BulkPushYnabTransactionsResult(failedResults);
 		}
