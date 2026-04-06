@@ -61,5 +61,13 @@ public class YnabSyncRecordRepository(IDbContextFactory<ApplicationDbContext> co
 			.Include(sr => sr.Transaction)
 			.AsNoTracking()
 			.ToListAsync(cancellationToken);
+	public async Task<DateTimeOffset?> GetLatestSuccessfulSyncTimestampAsync(CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.YnabSyncRecords
+			.Where(e => e.SyncStatus == YnabSyncStatus.Synced && e.SyncedAtUtc != null)
+			.OrderByDescending(e => e.SyncedAtUtc)
+			.Select(e => e.SyncedAtUtc)
+			.FirstOrDefaultAsync(cancellationToken);
 	}
 }
