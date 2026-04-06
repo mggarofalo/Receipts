@@ -298,7 +298,7 @@ public class PushYnabTransactionsCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_YnabApiFailure_ReturnsErrorWithMessage()
+	public async Task Handle_YnabApiFailure_MarksSyncRecordAsFailedAndReturnsError()
 	{
 		SetupHappyPath();
 		_ynabApiClientMock.Setup(s => s.CreateTransactionAsync(_budgetId, It.IsAny<YnabCreateTransactionRequest>(), It.IsAny<CancellationToken>()))
@@ -309,6 +309,9 @@ public class PushYnabTransactionsCommandHandlerTests
 
 		result.Success.Should().BeFalse();
 		result.Error.Should().Contain("YNAB API down");
+		_syncRecordServiceMock.Verify(s => s.UpdateStatusAsync(
+			It.IsAny<Guid>(), YnabSyncStatus.Failed, null, It.Is<string>(msg => msg.Contains("YNAB API down")),
+			It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]

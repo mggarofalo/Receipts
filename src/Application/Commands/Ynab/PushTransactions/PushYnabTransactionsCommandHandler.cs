@@ -145,10 +145,11 @@ public class PushYnabTransactionsCommandHandler(
 			importIdOccurrences[importIdKey] = occurrence;
 			string importId = YnabImportId.Generate(txSplit.TotalMilliunits, localTx.Date, request.ReceiptId, occurrence);
 
+			YnabSyncRecordDto? syncRecord = null;
 			try
 			{
 				// Create sync record (Pending) — inside try so DB failure is caught (Bug 3)
-				YnabSyncRecordDto syncRecord = await syncRecordService.CreateAsync(
+				syncRecord = await syncRecordService.CreateAsync(
 					localTx.Id, budgetId, YnabSyncType.TransactionPush, cancellationToken);
 
 				// Build sub-transactions
@@ -208,6 +209,13 @@ public class PushYnabTransactionsCommandHandler(
 			}
 			catch (Exception ex)
 			{
+				// Mark sync record as Failed if it was created (preserves original behavior)
+				if (syncRecord is not null)
+				{
+					await syncRecordService.UpdateStatusAsync(
+						syncRecord.Id, YnabSyncStatus.Failed, null, ex.Message, cancellationToken);
+				}
+
 				return new PushYnabTransactionsResult(false, pushedTransactions,
 					Error: $"Failed to push YNAB transaction for local transaction {localTx.Id}: {ex.Message}");
 			}
