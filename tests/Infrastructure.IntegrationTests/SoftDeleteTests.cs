@@ -213,4 +213,98 @@ public class SoftDeleteTests(PostgresFixture fixture)
 		onlyDeleted.Should().NotBeNull();
 		onlyDeleted!.DeletedAt.Should().NotBeNull();
 	}
+
+	[Fact]
+	public async Task SoftDelete_Transaction_CascadesToYnabSyncRecords()
+	{
+		// Arrange — transaction with a child YnabSyncRecord
+		Guid transactionId;
+		Guid syncRecordId;
+		{
+			await using ApplicationDbContext setupContext = fixture.CreateDbContext();
+			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+			AccountEntity account = AccountEntityGenerator.Generate();
+			setupContext.Receipts.Add(receipt);
+			setupContext.Accounts.Add(account);
+			await setupContext.SaveChangesAsync();
+
+			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+			setupContext.Transactions.Add(transaction);
+			await setupContext.SaveChangesAsync();
+
+			YnabSyncRecordEntity syncRecord = YnabSyncRecordEntityGenerator.Generate(localTransactionId: transaction.Id);
+			setupContext.YnabSyncRecords.Add(syncRecord);
+			await setupContext.SaveChangesAsync();
+
+			transactionId = transaction.Id;
+			syncRecordId = syncRecord.Id;
+		}
+
+		// Act — soft-delete the transaction on a fresh context
+		{
+			await using ApplicationDbContext deleteContext = fixture.CreateDbContext();
+			TransactionEntity txToDelete = await deleteContext.Transactions.FirstAsync(t => t.Id == transactionId);
+			deleteContext.Transactions.Remove(txToDelete);
+			await deleteContext.SaveChangesAsync();
+		}
+
+		// Assert — YnabSyncRecord should also be cascade soft-deleted
+		await using ApplicationDbContext readContext = fixture.CreateDbContext();
+
+		YnabSyncRecordEntity? hiddenRecord = await readContext.YnabSyncRecords
+			.FirstOrDefaultAsync(s => s.Id == syncRecordId);
+		hiddenRecord.Should().BeNull("query filter should exclude cascade-soft-deleted sync records");
+
+		YnabSyncRecordEntity? deletedRecord = await readContext.YnabSyncRecords
+			.IgnoreQueryFilters()
+			.FirstOrDefaultAsync(s => s.Id == syncRecordId);
+		deletedRecord.Should().NotBeNull();
+		deletedRecord!.DeletedAt.Should().NotBeNull();
+		deletedRecord.CascadeDeletedByParentId.Should().Be(transactionId);
+	}
+
+	[Fact]
+	public async Task SoftDelete_YnabSyncRecord_AllowsReCreationAfterSoftDelete()
+	{
+		// Arrange — this test validates the filtered unique index on (LocalTransactionId, SyncType)
+		// against a real PostgreSQL instance where unique indexes are enforced
+		Guid transactionId;
+		{
+			await using ApplicationDbContext setupContext = fixture.CreateDbContext();
+			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+			AccountEntity account = AccountEntityGenerator.Generate();
+			setupContext.Receipts.Add(receipt);
+			setupContext.Accounts.Add(account);
+			await setupContext.SaveChangesAsync();
+
+			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+			setupContext.Transactions.Add(transaction);
+			await setupContext.SaveChangesAsync();
+
+			transactionId = transaction.Id;
+		}
+
+		// Create and soft-delete a sync record
+		{
+			await using ApplicationDbContext context = fixture.CreateDbContext();
+			YnabSyncRecordEntity syncRecord = YnabSyncRecordEntityGenerator.Generate(localTransactionId: transactionId);
+			context.YnabSyncRecords.Add(syncRecord);
+			await context.SaveChangesAsync();
+
+			context.YnabSyncRecords.Remove(syncRecord);
+			await context.SaveChangesAsync();
+		}
+
+		// Act — create a new sync record with the same (LocalTransactionId, SyncType)
+		// This should succeed because the filtered unique index excludes soft-deleted rows
+		{
+			await using ApplicationDbContext context = fixture.CreateDbContext();
+			YnabSyncRecordEntity newRecord = YnabSyncRecordEntityGenerator.Generate(localTransactionId: transactionId);
+			context.YnabSyncRecords.Add(newRecord);
+
+			// This would throw if the unique index is not filtered on DeletedAt IS NULL
+			Func<Task> act = async () => await context.SaveChangesAsync();
+			await act.Should().NotThrowAsync();
+		}
+	}
 }

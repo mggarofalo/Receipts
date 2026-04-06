@@ -24,7 +24,7 @@ public class YnabSyncRecordEntityConfiguration : IEntityTypeConfiguration<YnabSy
 		builder.HasOne(e => e.Transaction)
 			.WithMany()
 			.HasForeignKey(e => e.LocalTransactionId)
-			.OnDelete(DeleteBehavior.Restrict);
+			.OnDelete(DeleteBehavior.ClientCascade);
 
 		builder.HasQueryFilter(e => e.DeletedAt == null);
 	}
