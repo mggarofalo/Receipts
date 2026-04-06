@@ -1,8 +1,9 @@
 using Common;
+using Infrastructure.Interfaces;
 
 namespace Infrastructure.Entities.Core;
 
-public class YnabSyncRecordEntity
+public class YnabSyncRecordEntity : ISoftDeletable
 {
 	public Guid Id { get; set; }
 	public Guid LocalTransactionId { get; set; }
@@ -16,4 +17,8 @@ public class YnabSyncRecordEntity
 	public DateTimeOffset CreatedAt { get; set; }
 	public DateTimeOffset UpdatedAt { get; set; }
 	public virtual TransactionEntity? Transaction { get; set; }
+	public DateTimeOffset? DeletedAt { get; set; }
+	public string? DeletedByUserId { get; set; }
+	public Guid? DeletedByApiKeyId { get; set; }
+	public Guid? CascadeDeletedByParentId { get; set; }
 }
