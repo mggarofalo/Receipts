@@ -694,13 +694,13 @@ describe("useYnab", () => {
     );
   });
 
-  it("useAllReceiptIds returns receipt IDs on success", async () => {
+  it("useAllReceiptIds returns receipt IDs from a single page", async () => {
     const receipts = [
       { id: "r1", location: "Store A", date: "2024-01-01", taxAmount: 5 },
       { id: "r2", location: "Store B", date: "2024-01-02", taxAmount: 3 },
     ];
     (client.GET as Mock).mockResolvedValue({
-      data: { data: receipts, total: 2, offset: 0, limit: 10000 },
+      data: { data: receipts, total: 2, offset: 0, limit: 500 },
       error: undefined,
     });
 
@@ -711,8 +711,48 @@ describe("useYnab", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.receiptIds).toEqual(["r1", "r2"]);
     expect(result.current.totalReceipts).toBe(2);
+    expect(result.current.isTruncated).toBe(false);
     expect(client.GET).toHaveBeenCalledWith("/api/receipts", {
-      params: { query: { offset: 0, limit: 10000 } },
+      params: { query: { offset: 0, limit: 500 } },
+    });
+  });
+
+  it("useAllReceiptIds paginates through multiple pages", async () => {
+    const page1 = Array.from({ length: 500 }, (_, i) => ({
+      id: `r${i}`,
+      location: "Store",
+      date: "2024-01-01",
+      taxAmount: 0,
+    }));
+    const page2 = [
+      { id: "r500", location: "Store", date: "2024-01-01", taxAmount: 0 },
+      { id: "r501", location: "Store", date: "2024-01-01", taxAmount: 0 },
+    ];
+
+    (client.GET as Mock)
+      .mockResolvedValueOnce({
+        data: { data: page1, total: 502, offset: 0, limit: 500 },
+        error: undefined,
+      })
+      .mockResolvedValueOnce({
+        data: { data: page2, total: 502, offset: 500, limit: 500 },
+        error: undefined,
+      });
+
+    const { result } = renderHook(() => useAllReceiptIds(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.receiptIds).toHaveLength(502);
+    expect(result.current.totalReceipts).toBe(502);
+    expect(result.current.isTruncated).toBe(false);
+    expect(client.GET).toHaveBeenCalledTimes(2);
+    expect(client.GET).toHaveBeenCalledWith("/api/receipts", {
+      params: { query: { offset: 0, limit: 500 } },
+    });
+    expect(client.GET).toHaveBeenCalledWith("/api/receipts", {
+      params: { query: { offset: 500, limit: 500 } },
     });
   });
 
@@ -729,6 +769,7 @@ describe("useYnab", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.receiptIds).toEqual([]);
     expect(result.current.totalReceipts).toBe(0);
+    expect(result.current.isTruncated).toBe(false);
   });
 
   it("useAllReceiptIds respects enabled flag", () => {
@@ -737,6 +778,7 @@ describe("useYnab", () => {
     });
 
     expect(result.current.receiptIds).toEqual([]);
+    expect(result.current.isTruncated).toBe(false);
     expect(client.GET).not.toHaveBeenCalled();
   });
 });

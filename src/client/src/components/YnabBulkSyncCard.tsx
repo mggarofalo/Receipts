@@ -19,7 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 
 export function YnabBulkSyncCard() {
-  const { receiptIds, totalReceipts, isLoading: receiptsLoading } =
+  const { receiptIds, totalReceipts, isTruncated, isLoading: receiptsLoading } =
     useAllReceiptIds();
   const bulkPush = useBulkPushYnabTransactions();
   const bulkMemoSync = useSyncYnabMemosBulk();
@@ -36,6 +36,7 @@ export function YnabBulkSyncCard() {
   }
 
   function handleBulkMemoSync() {
+    setMemoResults(undefined);
     bulkMemoSync.mutate(receiptIds, {
       onSuccess: (data) => {
         setMemoResults(data?.results as YnabMemoSyncResult[] | undefined);
@@ -174,6 +175,16 @@ export function YnabBulkSyncCard() {
           <Alert variant="destructive">
             <AlertDescription>
               Failed to sync memos to YNAB. Please try again.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isTruncated && (
+          <Alert>
+            <AlertDescription>
+              Only {receiptIds.length.toLocaleString()} of{" "}
+              {totalReceipts.toLocaleString()} receipts could be loaded. Some
+              receipts will not be included in the bulk sync.
             </AlertDescription>
           </Alert>
         )}
