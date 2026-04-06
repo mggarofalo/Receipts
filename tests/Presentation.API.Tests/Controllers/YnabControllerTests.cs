@@ -5,6 +5,7 @@ using Application.Commands.Ynab.CategoryMapping;
 using Application.Commands.Ynab.MemoSync;
 using Application.Commands.Ynab.PushTransactions;
 using Application.Commands.Ynab.SelectBudget;
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
 using Application.Queries.Core.Ynab;
@@ -268,7 +269,7 @@ public class YnabControllerTests
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<CreateYnabCategoryMappingCommand>(),
 			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new InvalidOperationException("A mapping for receipts category 'Groceries' already exists."));
+			.ThrowsAsync(new DuplicateEntityException("A mapping for receipts category 'Groceries' already exists."));
 
 		CreateYnabCategoryMappingRequest request = new()
 		{
@@ -288,10 +289,19 @@ public class YnabControllerTests
 	}
 
 	[Fact]
-	public async Task UpdateCategoryMapping_Returns204()
+	public async Task UpdateCategoryMapping_Returns204_WhenExists()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
+		YnabCategoryMappingDto existing = new(
+			id, "Groceries", "cat-1", "Groceries", "Needs", "budget-1",
+			DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetYnabCategoryMappingByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(existing);
+
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<UpdateYnabCategoryMappingCommand>(),
 			It.IsAny<CancellationToken>()))
@@ -306,27 +316,84 @@ public class YnabControllerTests
 		};
 
 		// Act
-		NoContent result = await _controller.UpdateCategoryMapping(id, request, CancellationToken.None);
+		Results<NoContent, NotFound> result = await _controller.UpdateCategoryMapping(id, request, CancellationToken.None);
 
 		// Assert
-		Assert.IsType<NoContent>(result);
+		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
-	public async Task DeleteCategoryMapping_Returns204()
+	public async Task UpdateCategoryMapping_Returns404_WhenNotFound()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetYnabCategoryMappingByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync((YnabCategoryMappingDto?)null);
+
+		UpdateYnabCategoryMappingRequest request = new()
+		{
+			YnabCategoryId = "cat-1",
+			YnabCategoryName = "Groceries",
+			YnabCategoryGroupName = "Needs",
+			YnabBudgetId = "budget-1",
+		};
+
+		// Act
+		Results<NoContent, NotFound> result = await _controller.UpdateCategoryMapping(id, request, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<NotFound>(result.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.IsAny<UpdateYnabCategoryMappingCommand>(),
+			It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task DeleteCategoryMapping_Returns204_WhenExists()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		YnabCategoryMappingDto existing = new(
+			id, "Groceries", "cat-1", "Groceries", "Needs", "budget-1",
+			DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetYnabCategoryMappingByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(existing);
+
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<DeleteYnabCategoryMappingCommand>(),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(Unit.Value);
 
 		// Act
-		NoContent result = await _controller.DeleteCategoryMapping(id, CancellationToken.None);
+		Results<NoContent, NotFound> result = await _controller.DeleteCategoryMapping(id, CancellationToken.None);
 
 		// Assert
-		Assert.IsType<NoContent>(result);
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task DeleteCategoryMapping_Returns404_WhenNotFound()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetYnabCategoryMappingByIdQuery>(q => q.Id == id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync((YnabCategoryMappingDto?)null);
+
+		// Act
+		Results<NoContent, NotFound> result = await _controller.DeleteCategoryMapping(id, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<NotFound>(result.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.IsAny<DeleteYnabCategoryMappingCommand>(),
+			It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]

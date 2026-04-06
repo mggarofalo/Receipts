@@ -13,7 +13,7 @@ public class CreateYnabAccountMappingCommandHandler(
 		bool accountExists = await accountService.ExistsAsync(request.ReceiptsAccountId, cancellationToken);
 		if (!accountExists)
 		{
-			throw new InvalidOperationException($"Account with ID '{request.ReceiptsAccountId}' does not exist.");
+			throw new ArgumentException($"Account with ID '{request.ReceiptsAccountId}' does not exist.", nameof(request));
 		}
 
 		return await accountMappingService.CreateAsync(

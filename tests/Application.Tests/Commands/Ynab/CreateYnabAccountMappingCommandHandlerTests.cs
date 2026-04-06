@@ -54,7 +54,7 @@ public class CreateYnabAccountMappingCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_WhenAccountDoesNotExist_ThrowsInvalidOperationException()
+	public async Task Handle_WhenAccountDoesNotExist_ThrowsArgumentException()
 	{
 		// Arrange
 		Guid accountId = Guid.NewGuid();
@@ -67,8 +67,8 @@ public class CreateYnabAccountMappingCommandHandlerTests
 		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		await act.Should().ThrowAsync<InvalidOperationException>()
-			.WithMessage($"Account with ID '{accountId}' does not exist.");
+		await act.Should().ThrowAsync<ArgumentException>()
+			.WithMessage($"Account with ID '{accountId}' does not exist.*");
 
 		_mappingServiceMock.Verify(s => s.CreateAsync(
 			It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),

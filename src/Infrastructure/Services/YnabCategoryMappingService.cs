@@ -1,7 +1,10 @@
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
 using Infrastructure.Entities.Core;
 using Infrastructure.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Infrastructure.Services;
 
@@ -45,8 +48,15 @@ public class YnabCategoryMappingService(IYnabCategoryMappingRepository repositor
 			UpdatedAt = now,
 		};
 
-		YnabCategoryMappingEntity created = await repository.CreateAsync(entity, cancellationToken);
-		return ToDto(created);
+		try
+		{
+			YnabCategoryMappingEntity created = await repository.CreateAsync(entity, cancellationToken);
+			return ToDto(created);
+		}
+		catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+		{
+			throw new DuplicateEntityException($"A mapping for receipts category '{receiptsCategory}' already exists.", ex);
+		}
 	}
 
 	public async Task UpdateAsync(

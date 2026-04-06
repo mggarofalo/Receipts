@@ -5,6 +5,7 @@ using Application.Commands.Ynab.CategoryMapping;
 using Application.Commands.Ynab.MemoSync;
 using Application.Commands.Ynab.PushTransactions;
 using Application.Commands.Ynab.SelectBudget;
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
 using Application.Queries.Core.Ynab;
@@ -237,7 +238,7 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 			YnabCategoryMappingResponse response = mapper.ToCategoryMappingResponse(mapping);
 			return TypedResults.Created($"/api/ynab/category-mappings/{mapping.Id}", response);
 		}
-		catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+		catch (DuplicateEntityException ex)
 		{
 			return TypedResults.Conflict(ex.Message);
 		}
@@ -246,11 +247,17 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 	[HttpPut("category-mappings/{id}")]
 	[EndpointSummary("Update a category mapping")]
 	[EndpointDescription("Updates the YNAB category for an existing mapping.")]
-	public async Task<NoContent> UpdateCategoryMapping(
+	public async Task<Results<NoContent, NotFound>> UpdateCategoryMapping(
 		[FromRoute] Guid id,
 		[FromBody] UpdateYnabCategoryMappingRequest request,
 		CancellationToken cancellationToken)
 	{
+		YnabCategoryMappingDto? existing = await mediator.Send(new GetYnabCategoryMappingByIdQuery(id), cancellationToken);
+		if (existing is null)
+		{
+			return TypedResults.NotFound();
+		}
+
 		await mediator.Send(new UpdateYnabCategoryMappingCommand(
 			id,
 			request.YnabCategoryId,
@@ -264,8 +271,14 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 	[HttpDelete("category-mappings/{id}")]
 	[EndpointSummary("Delete a category mapping")]
 	[EndpointDescription("Permanently deletes a category mapping.")]
-	public async Task<NoContent> DeleteCategoryMapping([FromRoute] Guid id, CancellationToken cancellationToken)
+	public async Task<Results<NoContent, NotFound>> DeleteCategoryMapping([FromRoute] Guid id, CancellationToken cancellationToken)
 	{
+		YnabCategoryMappingDto? existing = await mediator.Send(new GetYnabCategoryMappingByIdQuery(id), cancellationToken);
+		if (existing is null)
+		{
+			return TypedResults.NotFound();
+		}
+
 		await mediator.Send(new DeleteYnabCategoryMappingCommand(id), cancellationToken);
 		return TypedResults.NoContent();
 	}
