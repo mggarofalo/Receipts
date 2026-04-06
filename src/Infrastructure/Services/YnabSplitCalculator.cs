@@ -196,6 +196,17 @@ public class YnabSplitCalculator : IYnabSplitCalculator
 				}
 			}
 
+			// Guard: every non-zero transaction must have at least one category allocation.
+			// If subs is empty, category allocations were exhausted by earlier transactions,
+			// which means transaction totals exceed category totals — a data inconsistency.
+			if (subs.Count == 0 && txMilliunits != 0)
+			{
+				throw new InvalidOperationException(
+					$"Transaction {tx.Id} ({txMilliunits} milliunits) could not be categorized. " +
+					$"All category allocations were exhausted by earlier transactions. " +
+					$"This indicates transaction totals exceed the receipt category totals.");
+			}
+
 			// Apply largest-remainder correction for this transaction independently
 			if (subs.Count > 0)
 			{
