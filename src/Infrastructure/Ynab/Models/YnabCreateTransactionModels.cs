@@ -34,6 +34,10 @@ internal sealed class YnabSaveTransactionDto
 	[JsonPropertyName("approved")]
 	public bool Approved { get; set; }
 
+	[JsonPropertyName("import_id")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public string? ImportId { get; set; }
+
 	[JsonPropertyName("subtransactions")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	public List<YnabSaveSubTransactionDto>? SubTransactions { get; set; }

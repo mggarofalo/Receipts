@@ -1,6 +1,7 @@
 using Application.Interfaces.Services;
 using Application.Models;
 using Application.Models.Ynab;
+using Application.Utilities;
 using Common;
 using Domain.Aggregates;
 using MediatR;
@@ -124,11 +125,18 @@ public class PushYnabTransactionsCommandHandler(
 
 		// 8. Create YNAB transactions and track sync
 		List<PushedTransactionInfo> pushedTransactions = [];
+		Dictionary<(long Milliunits, DateOnly Date), int> importIdOccurrences = [];
 
 		foreach (YnabTransactionSplit txSplit in splitResult.TransactionSplits)
 		{
 			Domain.Core.Transaction localTx = transactions.First(t => t.Id == txSplit.LocalTransactionId);
 			string ynabAccountId = accountToYnabId[localTx.AccountId];
+
+			// Compute import_id for deduplication
+			(long Milliunits, DateOnly Date) importIdKey = (txSplit.TotalMilliunits, localTx.Date);
+			int occurrence = importIdOccurrences.TryGetValue(importIdKey, out int current) ? current + 1 : 1;
+			importIdOccurrences[importIdKey] = occurrence;
+			string importId = YnabImportId.Generate(txSplit.TotalMilliunits, localTx.Date, occurrence);
 
 			// Create sync record (Pending)
 			YnabSyncRecordDto syncRecord = await syncRecordService.CreateAsync(
@@ -160,7 +168,8 @@ public class PushYnabTransactionsCommandHandler(
 					PayeeName: receipt.Location,
 					CategoryId: categoryId,
 					Approved: false,
-					SubTransactions: subTransactions);
+					SubTransactions: subTransactions,
+					ImportId: importId);
 
 				YnabCreateTransactionResponse ynabResponse = await ynabApiClient.CreateTransactionAsync(
 					budgetId, ynabRequest, cancellationToken);

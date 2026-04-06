@@ -133,6 +133,7 @@ public class YnabApiClient(
 			PayeeName = request.PayeeName,
 			CategoryId = request.CategoryId,
 			Approved = request.Approved,
+			ImportId = request.ImportId,
 		};
 
 		if (request.SubTransactions is { Count: > 0 })

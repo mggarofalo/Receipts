@@ -273,4 +273,68 @@ public class PushYnabTransactionsCommandHandlerTests
 			It.IsAny<Guid>(), YnabSyncStatus.Synced, "ynab-tx-1", null,
 			It.IsAny<CancellationToken>()), Times.Once);
 	}
+
+	[Fact]
+	public async Task Handle_HappyPath_PassesImportIdToCreateTransaction()
+	{
+		SetupHappyPath();
+		YnabCreateTransactionRequest? capturedRequest = null;
+		_ynabApiClientMock
+			.Setup(s => s.CreateTransactionAsync(_budgetId, It.IsAny<YnabCreateTransactionRequest>(), It.IsAny<CancellationToken>()))
+			.Callback<string, YnabCreateTransactionRequest, CancellationToken>((_, req, _) => capturedRequest = req)
+			.ReturnsAsync(new YnabCreateTransactionResponse("ynab-tx-1"));
+
+		await _handler.Handle(new PushYnabTransactionsCommand(_receiptId), CancellationToken.None);
+
+		capturedRequest.Should().NotBeNull();
+		capturedRequest!.ImportId.Should().NotBeNullOrEmpty();
+		capturedRequest.ImportId.Should().StartWith("YNAB:");
+		string expected = $"YNAB:-11000:{DateTime.Today.AddDays(-1):yyyy-MM-dd}:1";
+		capturedRequest.ImportId.Should().Be(expected);
+	}
+
+	[Fact]
+	public async Task Handle_MultipleSplitsWithSameAmountAndDate_IncrementsOccurrence()
+	{
+		SetupHappyPath();
+
+		// Override split result to return two splits with the same milliunits
+		Guid transactionId2 = Guid.NewGuid();
+		Domain.Core.Transaction tx2 = new(transactionId2, new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+		tx2.AccountId = _accountId;
+		tx2.ReceiptId = _receiptId;
+
+		Domain.Core.Account account = new(_accountId, "CHK001", "Checking", true);
+		List<TransactionAccount> txAccounts =
+		[
+			new() { Transaction = new Domain.Core.Transaction(_transactionId, new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1))) { AccountId = _accountId, ReceiptId = _receiptId }, Account = account },
+			new() { Transaction = tx2, Account = account },
+		];
+		_transactionServiceMock.Setup(s => s.GetTransactionAccountsByReceiptIdAsync(_receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(txAccounts);
+
+		_syncRecordServiceMock.Setup(s => s.GetByTransactionAndTypeAsync(transactionId2, YnabSyncType.TransactionPush, It.IsAny<CancellationToken>()))
+			.ReturnsAsync((YnabSyncRecordDto?)null);
+
+		_syncRecordServiceMock.Setup(s => s.CreateAsync(transactionId2, _budgetId, YnabSyncType.TransactionPush, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new YnabSyncRecordDto(Guid.NewGuid(), transactionId2, null, _budgetId, null, YnabSyncType.TransactionPush, YnabSyncStatus.Pending, null, null, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+
+		_splitCalculatorMock.Setup(s => s.ComputeWaterfallSplits(It.IsAny<ReceiptWithItems>(), It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Dictionary<string, string>>()))
+			.Returns(new YnabSplitResult([
+				new YnabTransactionSplit(_transactionId, -11000, [new YnabSubTransactionSplit("ynab-cat-1", -11000)]),
+				new YnabTransactionSplit(transactionId2, -11000, [new YnabSubTransactionSplit("ynab-cat-1", -11000)]),
+			]));
+
+		List<YnabCreateTransactionRequest> capturedRequests = [];
+		_ynabApiClientMock
+			.Setup(s => s.CreateTransactionAsync(_budgetId, It.IsAny<YnabCreateTransactionRequest>(), It.IsAny<CancellationToken>()))
+			.Callback<string, YnabCreateTransactionRequest, CancellationToken>((_, req, _) => capturedRequests.Add(req))
+			.ReturnsAsync(new YnabCreateTransactionResponse("ynab-tx-1"));
+
+		await _handler.Handle(new PushYnabTransactionsCommand(_receiptId), CancellationToken.None);
+
+		capturedRequests.Should().HaveCount(2);
+		capturedRequests[0].ImportId.Should().EndWith(":1");
+		capturedRequests[1].ImportId.Should().EndWith(":2");
+	}
 }

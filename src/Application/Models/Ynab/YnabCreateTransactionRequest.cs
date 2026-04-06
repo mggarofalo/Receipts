@@ -10,4 +10,5 @@ public record YnabCreateTransactionRequest(
 	string? PayeeName,
 	string? CategoryId,
 	bool Approved,
-	List<YnabSubTransaction>? SubTransactions = null);
+	List<YnabSubTransaction>? SubTransactions = null,
+	string? ImportId = null);
