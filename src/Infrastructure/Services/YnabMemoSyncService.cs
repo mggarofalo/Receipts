@@ -20,6 +20,7 @@ public class YnabMemoSyncService(
 	internal const string MemoSeparator = " | ";
 	internal const string ReceiptLinkPrefix = "Receipt: /receipts/";
 	internal const double FuzzyMatchThreshold = 0.3;
+	internal const string ReconciledClearedStatus = "reconciled";
 
 	public async Task<List<YnabMemoSyncResult>> SyncMemosByReceiptAsync(Guid receiptId, CancellationToken cancellationToken)
 	{
@@ -89,6 +90,11 @@ public class YnabMemoSyncService(
 			return new YnabMemoSyncResult(localTransactionId, transaction.ReceiptId, YnabMemoSyncOutcome.Failed, null, "YNAB transaction not found.", null);
 		}
 
+		if (string.Equals(ynabTx.ClearedStatus, ReconciledClearedStatus, StringComparison.OrdinalIgnoreCase))
+		{
+			return new YnabMemoSyncResult(localTransactionId, transaction.ReceiptId, YnabMemoSyncOutcome.ReconciledSkipped, ynabTransactionId, "YNAB transaction is reconciled.", null);
+		}
+
 		return await UpdateMemoAndTrackAsync(transaction, receipt, budgetId, ynabTx, cancellationToken);
 	}
 
@@ -133,6 +139,19 @@ public class YnabMemoSyncService(
 		{
 			return new YnabMemoSyncResult(transaction.Id, receipt.Id, YnabMemoSyncOutcome.NoMatch, null, null, null);
 		}
+
+		// Filter out reconciled transactions — users consider them finalized
+		List<YnabTransaction> nonReconciled = candidates
+			.Where(yt => !string.Equals(yt.ClearedStatus, ReconciledClearedStatus, StringComparison.OrdinalIgnoreCase))
+			.ToList();
+
+		if (nonReconciled.Count == 0)
+		{
+			// All date+amount matches were reconciled
+			return new YnabMemoSyncResult(transaction.Id, receipt.Id, YnabMemoSyncOutcome.ReconciledSkipped, null, "All matching YNAB transactions are reconciled.", null);
+		}
+
+		candidates = nonReconciled;
 
 		// Apply fuzzy payee matching
 		string payeeName = receipt.Location;

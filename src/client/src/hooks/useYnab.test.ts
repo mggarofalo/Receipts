@@ -573,8 +573,31 @@ describe("useYnab", () => {
       noMatch: 1,
       ambiguous: 1,
       currencySkipped: 0,
+      reconciledSkipped: 0,
       failed: 1,
       total: 5,
+    });
+  });
+
+  it("useMemoSyncSummary counts reconciledSkipped outcomes", () => {
+    const results = [
+      { localTransactionId: "tx-1", receiptId: "r-1", outcome: "ReconciledSkipped" as const, ynabTransactionId: "yt-1", error: "reconciled" },
+      { localTransactionId: "tx-2", receiptId: "r-1", outcome: "Synced" as const, ynabTransactionId: "yt-2" },
+    ];
+
+    const { result } = renderHook(() => useMemoSyncSummary(results), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current).toEqual({
+      synced: 1,
+      alreadySynced: 0,
+      noMatch: 0,
+      ambiguous: 0,
+      currencySkipped: 0,
+      reconciledSkipped: 1,
+      failed: 0,
+      total: 2,
     });
   });
 

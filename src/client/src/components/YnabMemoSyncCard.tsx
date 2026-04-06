@@ -49,6 +49,8 @@ function outcomeLabel(outcome: string): string {
       return "Ambiguous";
     case "CurrencySkipped":
       return "Currency skipped";
+    case "ReconciledSkipped":
+      return "Reconciled";
     case "Failed":
       return "Failed";
     default:
@@ -68,6 +70,7 @@ function outcomeBadgeVariant(
       return "outline";
     case "NoMatch":
     case "CurrencySkipped":
+    case "ReconciledSkipped":
       return "secondary";
     case "Failed":
       return "destructive";
@@ -175,6 +178,11 @@ export function YnabMemoSyncCard({ receiptId }: YnabMemoSyncCardProps) {
                 {summary.ambiguous > 0 && (
                   <Badge variant="outline">
                     {summary.ambiguous} ambiguous
+                  </Badge>
+                )}
+                {summary.reconciledSkipped > 0 && (
+                  <Badge variant="secondary">
+                    {summary.reconciledSkipped} reconciled
                   </Badge>
                 )}
                 {summary.failed > 0 && (

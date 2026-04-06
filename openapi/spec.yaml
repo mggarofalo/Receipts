@@ -6513,7 +6513,7 @@ components:
           type: string
 
     YnabMemoSyncOutcome:
-      enum: [Synced, AlreadySynced, NoMatch, Ambiguous, CurrencySkipped, Failed]
+      enum: [Synced, AlreadySynced, NoMatch, Ambiguous, CurrencySkipped, ReconciledSkipped, Failed]
 
     YnabSyncType:
       type: integer

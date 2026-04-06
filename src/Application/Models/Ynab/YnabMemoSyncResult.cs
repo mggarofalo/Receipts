@@ -39,6 +39,9 @@ public enum YnabMemoSyncOutcome
 	/// <summary>Transaction currency is not USD — skipped for V1.</summary>
 	CurrencySkipped,
 
+	/// <summary>YNAB transaction is reconciled — skipped to respect user intent.</summary>
+	ReconciledSkipped,
+
 	/// <summary>An error occurred during sync.</summary>
 	Failed
 }
