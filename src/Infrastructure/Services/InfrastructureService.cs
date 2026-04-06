@@ -179,7 +179,6 @@ public static class InfrastructureService
 				BackoffType = DelayBackoffType.Exponential,
 				UseJitter = true,
 				ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-					.HandleResult(r => r.StatusCode == HttpStatusCode.TooManyRequests)
 					.Handle<HttpRequestException>(),
 			});
 			builder.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
