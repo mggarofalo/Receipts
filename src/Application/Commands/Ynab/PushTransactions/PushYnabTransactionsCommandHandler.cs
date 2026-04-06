@@ -99,15 +99,15 @@ public class PushYnabTransactionsCommandHandler(
 			return new PushYnabTransactionsResult(false, [], Error: "Some transaction accounts are not mapped to YNAB accounts.");
 		}
 
-		// 5. Check no transaction is already synced
+		// 5. Skip already-synced transactions (allows retry after partial push)
+		HashSet<Guid> alreadySyncedIds = [];
 		foreach (Domain.Core.Transaction tx in transactions)
 		{
 			YnabSyncRecordDto? existingSync = await syncRecordService.GetByTransactionAndTypeAsync(
 				tx.Id, YnabSyncType.TransactionPush, cancellationToken);
 			if (existingSync is not null && existingSync.SyncStatus == YnabSyncStatus.Synced)
 			{
-				return new PushYnabTransactionsResult(false, [],
-					Error: $"Transaction {tx.Id} has already been synced to YNAB.");
+				alreadySyncedIds.Add(tx.Id);
 			}
 		}
 
@@ -130,20 +130,27 @@ public class PushYnabTransactionsCommandHandler(
 		foreach (YnabTransactionSplit txSplit in splitResult.TransactionSplits)
 		{
 			Domain.Core.Transaction localTx = transactions.First(t => t.Id == txSplit.LocalTransactionId);
+
+			// Skip already-synced transactions (Bug 1: allows retry after partial push)
+			if (alreadySyncedIds.Contains(localTx.Id))
+			{
+				continue;
+			}
+
 			string ynabAccountId = accountToYnabId[localTx.AccountId];
 
-			// Compute import_id for deduplication
+			// Compute import_id for deduplication (includes receipt prefix to avoid cross-receipt collision)
 			(long Milliunits, DateOnly Date) importIdKey = (txSplit.TotalMilliunits, localTx.Date);
 			int occurrence = importIdOccurrences.TryGetValue(importIdKey, out int current) ? current + 1 : 1;
 			importIdOccurrences[importIdKey] = occurrence;
-			string importId = YnabImportId.Generate(txSplit.TotalMilliunits, localTx.Date, occurrence);
-
-			// Create sync record (Pending)
-			YnabSyncRecordDto syncRecord = await syncRecordService.CreateAsync(
-				localTx.Id, budgetId, YnabSyncType.TransactionPush, cancellationToken);
+			string importId = YnabImportId.Generate(txSplit.TotalMilliunits, localTx.Date, request.ReceiptId, occurrence);
 
 			try
 			{
+				// Create sync record (Pending) — inside try so DB failure is caught (Bug 3)
+				YnabSyncRecordDto syncRecord = await syncRecordService.CreateAsync(
+					localTx.Id, budgetId, YnabSyncType.TransactionPush, cancellationToken);
+
 				// Build sub-transactions
 				List<YnabSubTransaction>? subTransactions = null;
 				string? categoryId = null;
@@ -174,9 +181,24 @@ public class PushYnabTransactionsCommandHandler(
 				YnabCreateTransactionResponse ynabResponse = await ynabApiClient.CreateTransactionAsync(
 					budgetId, ynabRequest, cancellationToken);
 
-				// Update sync record to Synced
-				await syncRecordService.UpdateStatusAsync(
-					syncRecord.Id, YnabSyncStatus.Synced, ynabResponse.TransactionId, null, cancellationToken);
+				// Update sync record to Synced — separate error handling (Bug 6)
+				try
+				{
+					await syncRecordService.UpdateStatusAsync(
+						syncRecord.Id, YnabSyncStatus.Synced, ynabResponse.TransactionId, null, cancellationToken);
+				}
+				catch (Exception statusEx)
+				{
+					// YNAB TX already created; don't mark as Failed. Return success with warning.
+					pushedTransactions.Add(new PushedTransactionInfo(
+						localTx.Id,
+						ynabResponse.TransactionId,
+						txSplit.TotalMilliunits,
+						txSplit.SubTransactions.Count));
+
+					return new PushYnabTransactionsResult(true, pushedTransactions,
+						Error: $"YNAB transaction created but sync record update failed for transaction {localTx.Id}: {statusEx.Message}");
+				}
 
 				pushedTransactions.Add(new PushedTransactionInfo(
 					localTx.Id,
@@ -186,12 +208,8 @@ public class PushYnabTransactionsCommandHandler(
 			}
 			catch (Exception ex)
 			{
-				// Update sync record to Failed
-				await syncRecordService.UpdateStatusAsync(
-					syncRecord.Id, YnabSyncStatus.Failed, null, ex.Message, cancellationToken);
-
 				return new PushYnabTransactionsResult(false, pushedTransactions,
-					Error: $"Failed to create YNAB transaction for local transaction {localTx.Id}: {ex.Message}");
+					Error: $"Failed to push YNAB transaction for local transaction {localTx.Id}: {ex.Message}");
 			}
 		}
 
