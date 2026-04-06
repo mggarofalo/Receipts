@@ -162,7 +162,7 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 			YnabAccountMappingResponse response = mapper.ToAccountMappingResponse(mapping);
 			return TypedResults.Created($"/api/ynab/account-mappings/{response.Id}", response);
 		}
-		catch (InvalidOperationException ex)
+		catch (ArgumentException ex)
 		{
 			return TypedResults.BadRequest(ex.Message);
 		}
