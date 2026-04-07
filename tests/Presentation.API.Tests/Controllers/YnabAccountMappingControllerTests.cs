@@ -100,7 +100,7 @@ public class YnabAccountMappingControllerTests
 		_mediatorMock.Setup(m => m.Send(
 			It.IsAny<CreateYnabAccountMappingCommand>(),
 			It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new InvalidOperationException("Account does not exist."));
+			.ThrowsAsync(new ArgumentException("Account does not exist.", "request"));
 
 		CreateYnabAccountMappingRequest request = new()
 		{
@@ -116,7 +116,7 @@ public class YnabAccountMappingControllerTests
 
 		// Assert
 		BadRequest<string> badRequest = Assert.IsType<BadRequest<string>>(result.Result);
-		badRequest.Value.Should().Be("Account does not exist.");
+		badRequest.Value.Should().Contain("Account does not exist.");
 	}
 
 	[Fact]

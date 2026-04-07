@@ -478,6 +478,138 @@ public class YnabMemoSyncServiceTests
 
 	#endregion
 
+	#region Reconciled Skip Tests
+
+	[Fact]
+	public async Task SyncMemosByReceipt_AllCandidatesReconciled_ReturnsReconciledSkipped()
+	{
+		// Arrange
+		SetupBudgetSelection(BudgetId);
+		ReceiptEntity receipt = CreateReceipt("Walmart");
+		TransactionEntity transaction = CreateTransaction(receipt.Id, 25.50m);
+
+		SetupReceiptRepo(receipt);
+		SetupTransactionRepo(receipt.Id, [transaction]);
+		SetupNoExistingSyncRecord(transaction.Id);
+
+		YnabTransaction reconciledTx = CreateYnabTransaction("yt-1", transaction.Date, -25500, "Walmart", "reconciled");
+		_ynabClientMock
+			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<CancellationToken>()))
+			.ReturnsAsync([reconciledTx]);
+
+		// Act
+		List<YnabMemoSyncResult> results = await _service.SyncMemosByReceiptAsync(receipt.Id, CancellationToken.None);
+
+		// Assert
+		results.Should().ContainSingle();
+		results[0].Outcome.Should().Be(YnabMemoSyncOutcome.ReconciledSkipped);
+		results[0].Error.Should().Contain("reconciled");
+		// Should NOT call UpdateTransactionMemoAsync
+		_ynabClientMock.Verify(c => c.UpdateTransactionMemoAsync(
+			It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task SyncMemosByReceipt_MixedReconciledAndCleared_SyncsNonReconciled()
+	{
+		// Arrange
+		SetupBudgetSelection(BudgetId);
+		ReceiptEntity receipt = CreateReceipt("Walmart");
+		TransactionEntity transaction = CreateTransaction(receipt.Id, 25.50m);
+
+		SetupReceiptRepo(receipt);
+		SetupTransactionRepo(receipt.Id, [transaction]);
+		SetupNoExistingSyncRecord(transaction.Id);
+
+		YnabTransaction reconciledTx = CreateYnabTransaction("yt-reconciled", transaction.Date, -25500, "Walmart", "reconciled");
+		YnabTransaction clearedTx = CreateYnabTransaction("yt-cleared", transaction.Date, -25500, "Walmart", "cleared");
+		_ynabClientMock
+			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<CancellationToken>()))
+			.ReturnsAsync([reconciledTx, clearedTx]);
+
+		SetupSyncRecordCreation();
+		SetupSyncRecordUpdate();
+		_ynabClientMock
+			.Setup(c => c.UpdateTransactionMemoAsync(BudgetId, "yt-cleared", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+			.Returns(Task.CompletedTask);
+
+		// Act
+		List<YnabMemoSyncResult> results = await _service.SyncMemosByReceiptAsync(receipt.Id, CancellationToken.None);
+
+		// Assert
+		results.Should().ContainSingle();
+		results[0].Outcome.Should().Be(YnabMemoSyncOutcome.Synced);
+		results[0].YnabTransactionId.Should().Be("yt-cleared");
+	}
+
+	[Fact]
+	public async Task SyncMemosByReceipt_UnclearedTransaction_NotSkipped()
+	{
+		// Arrange
+		SetupBudgetSelection(BudgetId);
+		ReceiptEntity receipt = CreateReceipt("Walmart");
+		TransactionEntity transaction = CreateTransaction(receipt.Id, 25.50m);
+
+		SetupReceiptRepo(receipt);
+		SetupTransactionRepo(receipt.Id, [transaction]);
+		SetupNoExistingSyncRecord(transaction.Id);
+
+		YnabTransaction unclearedTx = CreateYnabTransaction("yt-1", transaction.Date, -25500, "Walmart", "uncleared");
+		_ynabClientMock
+			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<CancellationToken>()))
+			.ReturnsAsync([unclearedTx]);
+
+		SetupSyncRecordCreation();
+		SetupSyncRecordUpdate();
+		_ynabClientMock
+			.Setup(c => c.UpdateTransactionMemoAsync(BudgetId, "yt-1", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+			.Returns(Task.CompletedTask);
+
+		// Act
+		List<YnabMemoSyncResult> results = await _service.SyncMemosByReceiptAsync(receipt.Id, CancellationToken.None);
+
+		// Assert
+		results.Should().ContainSingle();
+		results[0].Outcome.Should().Be(YnabMemoSyncOutcome.Synced);
+	}
+
+	#endregion
+
+	#region Resolve Reconciled Skip Tests
+
+	[Fact]
+	public async Task ResolveMemoSync_ReconciledTransaction_ReturnsReconciledSkipped()
+	{
+		// Arrange
+		SetupBudgetSelection(BudgetId);
+		ReceiptEntity receipt = CreateReceipt("Walmart");
+		TransactionEntity transaction = CreateTransaction(receipt.Id, 25.50m);
+
+		_transactionRepoMock
+			.Setup(r => r.GetByIdAsync(transaction.Id, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(transaction);
+		SetupReceiptRepo(receipt);
+
+		YnabTransaction reconciledTx = CreateYnabTransaction("yt-1", transaction.Date, -25500, "Walmart", "reconciled");
+		_ynabClientMock
+			.Setup(c => c.GetTransactionAsync(BudgetId, "yt-1", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reconciledTx);
+
+		// Act
+		YnabMemoSyncResult result = await _service.ResolveMemoSyncAsync(
+			transaction.Id, "yt-1", CancellationToken.None);
+
+		// Assert
+		result.Outcome.Should().Be(YnabMemoSyncOutcome.ReconciledSkipped);
+		result.YnabTransactionId.Should().Be("yt-1");
+		result.Error.Should().Contain("reconciled");
+		// Should NOT call UpdateTransactionMemoAsync
+		_ynabClientMock.Verify(c => c.UpdateTransactionMemoAsync(
+			It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	#endregion
+
 	#region Resolve Tests
 
 	[Fact]
@@ -547,9 +679,9 @@ public class YnabMemoSyncServiceTests
 		};
 	}
 
-	private YnabTransaction CreateYnabTransaction(string id, DateOnly date, long amount, string? payeeName)
+	private YnabTransaction CreateYnabTransaction(string id, DateOnly date, long amount, string? payeeName, string clearedStatus = "cleared")
 	{
-		return new YnabTransaction(id, date, amount, null, "cleared", true, "acc-1", null, payeeName);
+		return new YnabTransaction(id, date, amount, null, clearedStatus, true, "acc-1", null, payeeName);
 	}
 
 	private void SetupReceiptRepo(ReceiptEntity receipt)

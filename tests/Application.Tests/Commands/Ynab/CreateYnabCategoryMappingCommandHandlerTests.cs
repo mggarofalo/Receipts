@@ -1,4 +1,5 @@
 using Application.Commands.Ynab.CategoryMapping;
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
 using FluentAssertions;
@@ -56,7 +57,7 @@ public class CreateYnabCategoryMappingCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_ThrowsInvalidOperationException_WhenDuplicateExists()
+	public async Task Handle_ThrowsDuplicateEntityException_WhenDuplicateExists()
 	{
 		// Arrange
 		CreateYnabCategoryMappingCommand command = new(
@@ -83,7 +84,35 @@ public class CreateYnabCategoryMappingCommandHandlerTests
 		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		await act.Should().ThrowAsync<InvalidOperationException>()
+		await act.Should().ThrowAsync<DuplicateEntityException>()
+			.WithMessage("*already exists*");
+	}
+
+	[Fact]
+	public async Task Handle_PropagatesDuplicateEntityException_FromServiceToctouRace()
+	{
+		// Arrange: simulate TOCTOU race — existence check passes but CreateAsync
+		// hits a unique constraint and the service converts it to DuplicateEntityException
+		CreateYnabCategoryMappingCommand command = new(
+			"Groceries",
+			"cat-123",
+			"Groceries",
+			"Immediate Obligations",
+			"budget-1");
+
+		_mockService.Setup(s => s.GetByReceiptsCategoryAsync("Groceries", It.IsAny<CancellationToken>()))
+			.ReturnsAsync((YnabCategoryMappingDto?)null);
+
+		_mockService.Setup(s => s.CreateAsync(
+			"Groceries", "cat-123", "Groceries", "Immediate Obligations", "budget-1",
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new DuplicateEntityException("A mapping for receipts category 'Groceries' already exists."));
+
+		// Act
+		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<DuplicateEntityException>()
 			.WithMessage("*already exists*");
 	}
 

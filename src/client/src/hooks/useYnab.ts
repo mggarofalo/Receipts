@@ -412,6 +412,9 @@ export function useMemoSyncSummary(results: YnabMemoSyncResult[] | undefined) {
       ambiguous: results.filter((r) => r.outcome === "Ambiguous").length,
       currencySkipped: results.filter((r) => r.outcome === "CurrencySkipped")
         .length,
+      reconciledSkipped: results.filter(
+        (r) => r.outcome === "ReconciledSkipped",
+      ).length,
       failed: results.filter((r) => r.outcome === "Failed").length,
       total: results.length,
     };

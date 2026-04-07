@@ -3934,6 +3934,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "404":
+          description: Mapping not found
     delete:
       operationId: DeleteYnabCategoryMapping
       tags: [YNAB]
@@ -3951,6 +3953,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "404":
+          description: Mapping not found
 
   /api/ynab/category-mappings/unmapped:
     get:
@@ -6564,7 +6568,7 @@ components:
           description: Timestamp of the oldest tracked request, null if no requests
 
     YnabMemoSyncOutcome:
-      enum: [Synced, AlreadySynced, NoMatch, Ambiguous, CurrencySkipped, Failed]
+      enum: [Synced, AlreadySynced, NoMatch, Ambiguous, CurrencySkipped, ReconciledSkipped, Failed]
 
     YnabSyncType:
       type: integer
