@@ -21,6 +21,7 @@ import RecycleBin from "@/pages/RecycleBin";
 import BackupRestore from "@/pages/BackupRestore";
 import NewReceipt from "@/pages/new-receipt/NewReceiptPage";
 import ScanReceipt from "@/pages/scan-receipt/ScanReceiptPage";
+import YnabSettings from "@/pages/settings/YnabSettings";
 import NotFound from "@/pages/NotFound";
 
 export const routeConfig = [
@@ -53,6 +54,7 @@ export const routeConfig = [
           { path: "/receipts/:id", element: <ReceiptDetail /> },
           { path: "/api-keys", element: <ApiKeys /> },
           { path: "/security", element: <SecurityLog /> },
+          { path: "/settings/ynab", element: <YnabSettings /> },
           {
             path: "/audit",
             element: (
