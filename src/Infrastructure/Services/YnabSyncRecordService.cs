@@ -128,6 +128,8 @@ public class YnabSyncRecordService(IYnabSyncRecordRepository repository) : IYnab
 
 		return ReceiptSyncStatusValue.NotSynced;
 	}
+	public Task<DateTimeOffset?> GetLatestSuccessfulSyncTimestampAsync(CancellationToken cancellationToken)
+		=> repository.GetLatestSuccessfulSyncTimestampAsync(cancellationToken);
 
 	private static YnabSyncRecordDto ToDto(YnabSyncRecordEntity entity) => new(
 		entity.Id,
