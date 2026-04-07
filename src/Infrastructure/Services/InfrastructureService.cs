@@ -1,4 +1,3 @@
-using System.Net;
 using Application.Interfaces;
 using Application.Interfaces.Services;
 using Common;
@@ -162,6 +161,11 @@ public static class InfrastructureService
 		services.AddMemoryCache();
 
 		YnabClientOptions ynabOptions = new();
+		services.AddSingleton(ynabOptions);
+		services.AddSingleton<IYnabRateLimitTracker>(sp =>
+			new YnabRateLimitTracker(
+				sp.GetRequiredService<YnabClientOptions>(),
+				sp.GetService<TimeProvider>() ?? TimeProvider.System));
 		services.AddHttpClient<IYnabApiClient, YnabApiClient>(client =>
 		{
 			client.BaseAddress = new Uri(ynabOptions.BaseUrl.TrimEnd('/') + "/");
@@ -174,7 +178,6 @@ public static class InfrastructureService
 				BackoffType = DelayBackoffType.Exponential,
 				UseJitter = true,
 				ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-					.HandleResult(r => r.StatusCode == HttpStatusCode.TooManyRequests)
 					.Handle<HttpRequestException>(),
 			});
 			builder.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions

@@ -17,6 +17,7 @@ public class YnabApiClient(
 	HttpClient httpClient,
 	IMemoryCache memoryCache,
 	IConfiguration configuration,
+	IYnabRateLimitTracker rateLimitTracker,
 	ILogger<YnabApiClient> logger) : IYnabApiClient
 {
 	private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -212,6 +213,7 @@ public class YnabApiClient(
 		ApplyAuth(request);
 
 		using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
+		rateLimitTracker.RecordRequest();
 		await EnsureSuccessAsync(response, cancellationToken);
 
 		T result = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken)
@@ -227,6 +229,7 @@ public class YnabApiClient(
 		request.Content = JsonContent.Create(body, options: JsonOptions);
 
 		using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
+		rateLimitTracker.RecordRequest();
 		await EnsureSuccessAsync(response, cancellationToken);
 
 		TResponse result = await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken)
@@ -242,6 +245,7 @@ public class YnabApiClient(
 		request.Content = JsonContent.Create(body, options: JsonOptions);
 
 		using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
+		rateLimitTracker.RecordRequest();
 		await EnsureSuccessAsync(response, cancellationToken);
 	}
 
