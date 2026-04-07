@@ -26,9 +26,17 @@ public class BulkPushYnabTransactionsCommandHandler(IMediator mediator, IYnabRat
 
 		foreach (Guid receiptId in request.ReceiptIds)
 		{
-			PushYnabTransactionsResult result = await mediator.Send(
-				new PushYnabTransactionsCommand(receiptId), cancellationToken);
-			results.Add(new ReceiptPushResult(receiptId, result));
+			try
+			{
+				PushYnabTransactionsResult result = await mediator.Send(
+					new PushYnabTransactionsCommand(receiptId), cancellationToken);
+				results.Add(new ReceiptPushResult(receiptId, result));
+			}
+			catch (Exception ex)
+			{
+				PushYnabTransactionsResult failureResult = new(false, [], Error: $"Unexpected error: {ex.Message}");
+				results.Add(new ReceiptPushResult(receiptId, failureResult));
+			}
 		}
 
 		return new BulkPushYnabTransactionsResult(results);

@@ -83,7 +83,93 @@ public class BulkPushYnabTransactionsCommandHandlerTests
 		// Act
 		await _handler.Handle(command, CancellationToken.None);
 
-		// Assert — checks with 2 receipts * 2 estimated requests per receipt = 4
+		// Assert -- checks with 2 receipts * 2 estimated requests per receipt = 4
 		_rateLimitTrackerMock.Verify(r => r.CanMakeRequests(4), Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_AllSucceed_ReturnsAllResults()
+	{
+		// Arrange
+		Guid receipt1 = Guid.NewGuid();
+		Guid receipt2 = Guid.NewGuid();
+		PushYnabTransactionsResult successResult1 = new(true, [new PushedTransactionInfo(Guid.NewGuid(), "ynab-1", -1000, 1)]);
+		PushYnabTransactionsResult successResult2 = new(true, [new PushedTransactionInfo(Guid.NewGuid(), "ynab-2", -2000, 1)]);
+
+		_mediatorMock.Setup(m => m.Send(It.Is<PushYnabTransactionsCommand>(c => c.ReceiptId == receipt1), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(successResult1);
+		_mediatorMock.Setup(m => m.Send(It.Is<PushYnabTransactionsCommand>(c => c.ReceiptId == receipt2), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(successResult2);
+
+		// Act
+		BulkPushYnabTransactionsResult result = await _handler.Handle(
+			new BulkPushYnabTransactionsCommand([receipt1, receipt2]), CancellationToken.None);
+
+		// Assert
+		result.Results.Should().HaveCount(2);
+		result.Results[0].ReceiptId.Should().Be(receipt1);
+		result.Results[0].Result.Success.Should().BeTrue();
+		result.Results[1].ReceiptId.Should().Be(receipt2);
+		result.Results[1].Result.Success.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task Handle_ExceptionOnSecondReceipt_ContinuesAndReturnsAll()
+	{
+		// Bug 2: Exception on receipt N must not abort remaining receipts
+		Guid receipt1 = Guid.NewGuid();
+		Guid receipt2 = Guid.NewGuid();
+		Guid receipt3 = Guid.NewGuid();
+
+		PushYnabTransactionsResult successResult = new(true, [new PushedTransactionInfo(Guid.NewGuid(), "ynab-1", -1000, 1)]);
+
+		_mediatorMock.Setup(m => m.Send(It.Is<PushYnabTransactionsCommand>(c => c.ReceiptId == receipt1), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(successResult);
+		_mediatorMock.Setup(m => m.Send(It.Is<PushYnabTransactionsCommand>(c => c.ReceiptId == receipt2), It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("DB connection lost"));
+		_mediatorMock.Setup(m => m.Send(It.Is<PushYnabTransactionsCommand>(c => c.ReceiptId == receipt3), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(successResult);
+
+		// Act
+		BulkPushYnabTransactionsResult result = await _handler.Handle(
+			new BulkPushYnabTransactionsCommand([receipt1, receipt2, receipt3]), CancellationToken.None);
+
+		// Assert: all 3 receipts have results, receipt2 has failure
+		result.Results.Should().HaveCount(3);
+		result.Results[0].Result.Success.Should().BeTrue();
+		result.Results[1].Result.Success.Should().BeFalse();
+		result.Results[1].Result.Error.Should().Contain("DB connection lost");
+		result.Results[2].Result.Success.Should().BeTrue();
+	}
+
+	[Fact]
+	public async Task Handle_ExceptionResult_ContainsUnexpectedErrorPrefix()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		_mediatorMock.Setup(m => m.Send(It.IsAny<PushYnabTransactionsCommand>(), It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new HttpRequestException("Network timeout"));
+
+		// Act
+		BulkPushYnabTransactionsResult result = await _handler.Handle(
+			new BulkPushYnabTransactionsCommand([receiptId]), CancellationToken.None);
+
+		// Assert
+		result.Results.Should().HaveCount(1);
+		result.Results[0].Result.Success.Should().BeFalse();
+		result.Results[0].Result.Error.Should().StartWith("Unexpected error:");
+		result.Results[0].Result.PushedTransactions.Should().BeEmpty();
+	}
+
+	[Fact]
+	public async Task Handle_EmptyReceiptIds_ReturnsEmptyResults()
+	{
+		// Act
+		BulkPushYnabTransactionsResult result = await _handler.Handle(
+			new BulkPushYnabTransactionsCommand([]), CancellationToken.None);
+
+		// Assert
+		result.Results.Should().BeEmpty();
+		_mediatorMock.Verify(m => m.Send(It.IsAny<PushYnabTransactionsCommand>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 }
