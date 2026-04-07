@@ -227,6 +227,22 @@ public partial class YnabMapper
 		{
 			DeletedAccountMappings = source.DeletedAccountMappings,
 			DeletedCategoryMappings = source.DeletedCategoryMappings,
+	[MapperIgnoreTarget(nameof(ReceiptYnabSyncStatus.AdditionalProperties))]
+	public ReceiptYnabSyncStatus ToReceiptSyncStatus(ReceiptYnabSyncStatusDto source)
+	{
+		return new ReceiptYnabSyncStatus
+		{
+			ReceiptId = source.ReceiptId,
+			SyncStatus = Enum.Parse<ReceiptYnabSyncStatusValue>(source.SyncStatus.ToString()),
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(ReceiptYnabSyncStatusListResponse.AdditionalProperties))]
+	public ReceiptYnabSyncStatusListResponse ToReceiptSyncStatusListResponse(List<ReceiptYnabSyncStatusDto> statuses)
+	{
+		return new ReceiptYnabSyncStatusListResponse
+		{
+			Data = statuses.Select(ToReceiptSyncStatus).ToList(),
 		};
 	}
 
