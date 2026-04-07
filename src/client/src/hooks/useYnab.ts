@@ -469,6 +469,53 @@ export function useBulkPushYnabTransactions() {
   });
 }
 
+const ALL_RECEIPTS_PAGE_SIZE = 500;
+
+async function fetchAllReceiptIds(): Promise<{
+  ids: string[];
+  total: number;
+}> {
+  const ids: string[] = [];
+  let offset = 0;
+  let total = 0;
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  while (true) {
+    const { data, error } = await client.GET("/api/receipts", {
+      params: { query: { offset, limit: ALL_RECEIPTS_PAGE_SIZE } },
+    });
+    if (error) throw error;
+    total = data?.total ?? 0;
+    const page = data?.data ?? [];
+    for (const r of page) {
+      if (r.id) ids.push(r.id);
+    }
+    if (page.length < ALL_RECEIPTS_PAGE_SIZE || ids.length >= total) {
+      break;
+    }
+    offset += ALL_RECEIPTS_PAGE_SIZE;
+  }
+
+  return { ids, total };
+}
+
+export function useAllReceiptIds(enabled = true) {
+  const query = useQuery({
+    queryKey: ["receipts", "all-ids"],
+    queryFn: fetchAllReceiptIds,
+    enabled,
+  });
+  return useMemo(
+    () => ({
+      ...query,
+      receiptIds: query.data?.ids ?? [],
+      totalReceipts: query.data?.total ?? 0,
+      isTruncated: (query.data?.total ?? 0) > (query.data?.ids.length ?? 0),
+    }),
+    [query],
+  );
+}
+
 export function useYnabSyncStatus(transactionId: string | null) {
   return useQuery({
     queryKey: ["ynab", "sync-status", transactionId],
