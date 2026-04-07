@@ -3,7 +3,8 @@ using Infrastructure.Interfaces;
 
 namespace Infrastructure.Entities.Core;
 
-public class YnabSyncRecordEntity : ISoftDeletable
+[OwnedByFk(typeof(TransactionEntity), nameof(LocalTransactionId))]
+public class YnabSyncRecordEntity : ISoftDeletable, IOwnedBy<TransactionEntity>
 {
 	public Guid Id { get; set; }
 	public Guid LocalTransactionId { get; set; }

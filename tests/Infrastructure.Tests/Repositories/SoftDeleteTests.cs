@@ -525,6 +525,50 @@ public class SoftDeleteTests
 	}
 
 	[Fact]
+	public async Task SoftDelete_Transaction_CascadesToYnabSyncRecords()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		AccountEntity account = AccountEntityGenerator.Generate();
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+		TransactionEntity transaction = TransactionEntityGenerator.Generate(receiptId: receipt.Id, accountId: account.Id);
+
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.Accounts.AddAsync(account);
+			await context.Receipts.AddAsync(receipt);
+			await context.Transactions.AddAsync(transaction);
+			YnabSyncRecordEntity syncRecord1 = YnabSyncRecordEntityGenerator.Generate(localTransactionId: transaction.Id);
+			YnabSyncRecordEntity syncRecord2 = YnabSyncRecordEntityGenerator.Generate(localTransactionId: transaction.Id, syncType: Common.YnabSyncType.MemoUpdate);
+			await context.YnabSyncRecords.AddRangeAsync(syncRecord1, syncRecord2);
+			await context.SaveChangesAsync();
+		}
+
+		// Act - delete the transaction (need to load sync records into context for cascade)
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			TransactionEntity tx = await context.Transactions.FirstAsync();
+			await context.YnabSyncRecords.Where(s => s.LocalTransactionId == tx.Id).LoadAsync();
+			context.Transactions.Remove(tx);
+			await context.SaveChangesAsync();
+		}
+
+		// Assert
+		using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			List<YnabSyncRecordEntity> allRecords = await context.YnabSyncRecords.IgnoreQueryFilters().ToListAsync();
+			allRecords.Should().HaveCount(2);
+			allRecords.Should().AllSatisfy(r =>
+			{
+				r.DeletedAt.Should().NotBeNull();
+				r.CascadeDeletedByParentId.Should().Be(transaction.Id);
+			});
+		}
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
 	public async Task SoftDelete_YnabSyncRecord_ExcludedFromNormalQueriesWhenSoftDeleted()
 	{
 		// Arrange
