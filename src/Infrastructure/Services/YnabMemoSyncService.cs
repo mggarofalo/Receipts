@@ -14,6 +14,7 @@ public class YnabMemoSyncService(
 	IYnabSyncRecordService syncRecordService,
 	ITransactionRepository transactionRepository,
 	IReceiptRepository receiptRepository,
+	IYnabServerKnowledgeRepository serverKnowledgeRepository,
 	ILogger<YnabMemoSyncService> logger) : IYnabMemoSyncService
 {
 	internal const int YnabMemoMaxLength = 200;
@@ -115,11 +116,16 @@ public class YnabMemoSyncService(
 			return new YnabMemoSyncResult(transaction.Id, receipt.Id, YnabMemoSyncOutcome.AlreadySynced, existingRecord.YnabTransactionId, null, null);
 		}
 
-		// Fetch YNAB transactions for the same date
+		// Fetch YNAB transactions for the same date.
+		// NOTE: Do NOT use delta sync (last_knowledge_of_server) here — memo matching
+		// requires the full set of transactions on a date, not just changed ones.
+		// Delta sync is available on the API client for polling/change-detection consumers.
 		List<YnabTransaction> ynabTransactions;
 		try
 		{
-			ynabTransactions = await ynabClient.GetTransactionsByDateAsync(budgetId, transaction.Date, cancellationToken);
+			YnabTransactionsResult result = await ynabClient.GetTransactionsByDateAsync(budgetId, transaction.Date, cancellationToken: cancellationToken);
+			ynabTransactions = result.Transactions;
+			await serverKnowledgeRepository.UpsertAsync(budgetId, result.ServerKnowledge, cancellationToken);
 		}
 		catch (Exception ex)
 		{
