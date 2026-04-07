@@ -297,7 +297,7 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 	[EndpointDescription("Returns the sync record for a given local transaction ID and sync type.")]
 	public async Task<Results<Ok<YnabSyncRecordResponse>, NotFound>> GetSyncStatus(
 		[FromRoute] Guid transactionId,
-		[FromQuery] YnabSyncType syncType,
+		[FromQuery] Common.YnabSyncType syncType,
 		CancellationToken cancellationToken)
 	{
 		YnabSyncRecordDto? record = await mediator.Send(new GetYnabSyncRecordByTransactionQuery(transactionId, syncType), cancellationToken);
