@@ -120,8 +120,16 @@ public class PushYnabTransactionsCommandHandler(
 		};
 
 		// 7. Compute waterfall splits
-		YnabSplitResult splitResult = splitCalculator.ComputeWaterfallSplits(
-			receiptWithItems, transactions, categoryToYnabId);
+		YnabSplitResult splitResult;
+		try
+		{
+			splitResult = splitCalculator.ComputeWaterfallSplits(
+				receiptWithItems, transactions, categoryToYnabId);
+		}
+		catch (InvalidOperationException ex)
+		{
+			return new PushYnabTransactionsResult(false, [], Error: ex.Message);
+		}
 
 		// 8. Create YNAB transactions and track sync
 		List<PushedTransactionInfo> pushedTransactions = [];

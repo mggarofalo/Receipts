@@ -432,4 +432,27 @@ public class PushYnabTransactionsCommandHandlerTests
 		capturedRequests[0].ImportId.Should().EndWith(":1");
 		capturedRequests[1].ImportId.Should().EndWith(":2");
 	}
+
+	[Fact]
+	public async Task Handle_SplitCalculatorThrowsExhaustedAllocations_ReturnsError()
+	{
+		SetupHappyPath();
+		_splitCalculatorMock
+			.Setup(s => s.ComputeWaterfallSplits(It.IsAny<ReceiptWithItems>(), It.IsAny<List<Domain.Core.Transaction>>(), It.IsAny<Dictionary<string, string>>()))
+			.Throws(new InvalidOperationException(
+				"Transaction abc (−5000 milliunits) could not be categorized. " +
+				"All category allocations were exhausted by earlier transactions."));
+
+		PushYnabTransactionsResult result = await _handler.Handle(
+			new PushYnabTransactionsCommand(_receiptId), CancellationToken.None);
+
+		result.Success.Should().BeFalse();
+		result.Error.Should().Contain("could not be categorized");
+		result.Error.Should().Contain("exhausted");
+
+		// No sync record should be created since the error occurs before the push loop
+		_syncRecordServiceMock.Verify(s => s.CreateAsync(
+			It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<YnabSyncType>(),
+			It.IsAny<CancellationToken>()), Times.Never);
+	}
 }
