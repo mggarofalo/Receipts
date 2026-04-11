@@ -198,7 +198,7 @@ function AdminUsers() {
       firstName: user.firstName,
       lastName: user.lastName,
       role: primaryRole,
-      isDisabled: user.isDisabled,
+      isDisabled: user.isDisabled ?? false,
     });
     editForm.reset({
       email: user.email,

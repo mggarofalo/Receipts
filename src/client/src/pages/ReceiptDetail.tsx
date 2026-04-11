@@ -64,20 +64,24 @@ function ReceiptDetail() {
 
   const transactionsTotal =
     trip?.transactions?.reduce(
-      (sum: number, ta: { transaction: { amount: number } }) =>
-        sum + ta.transaction.amount,
+      (sum: number, ta) =>
+        sum + Number(ta.transaction.amount ?? 0),
       0,
     ) ?? 0;
 
-  const subtotal = trip?.receipt?.subtotal ?? 0;
-  const adjustmentTotal = trip?.receipt?.adjustmentTotal ?? 0;
-  const expectedTotal = trip?.receipt?.expectedTotal ?? 0;
-  const taxAmount = trip?.receipt?.receipt?.taxAmount ?? 0;
+  const subtotal = Number(trip?.receipt?.subtotal ?? 0);
+  const adjustmentTotal = Number(trip?.receipt?.adjustmentTotal ?? 0);
+  const expectedTotal = Number(trip?.receipt?.expectedTotal ?? 0);
+  const taxAmount = Number(trip?.receipt?.receipt?.taxAmount ?? 0);
 
   const allWarnings = [
     ...(trip?.receipt?.warnings ?? []),
     ...(trip?.warnings ?? []),
-  ];
+  ].map((w) => ({
+    property: w.property,
+    message: w.message,
+    severity: w.severity != null ? Number(w.severity) : undefined,
+  }));
 
   function handleUpdate(values: ReceiptHeaderFormValues) {
     if (!id) return;
@@ -161,7 +165,16 @@ function ReceiptDetail() {
 
           <ReceiptItemsCard
             receiptId={id}
-            items={trip.receipt.items}
+            items={trip.receipt.items.map((i) => ({
+              id: i.id,
+              receiptItemCode: i.receiptItemCode,
+              description: i.description,
+              quantity: Number(i.quantity ?? 0),
+              unitPrice: Number(i.unitPrice ?? 0),
+              category: i.category,
+              subcategory: i.subcategory,
+              pricingMode: i.pricingMode,
+            }))}
             subtotal={subtotal}
             location={trip.receipt.receipt.location}
           />
@@ -190,12 +203,7 @@ function ReceiptDetail() {
                     </TableHeader>
                     <TableBody>
                       {trip.receipt.adjustments.map(
-                        (adj: {
-                          id: string;
-                          type: string;
-                          description?: string | null;
-                          amount: number;
-                        }) => (
+                        (adj) => (
                           <TableRow key={adj.id}>
                             <TableCell>
                               <Badge variant="outline">
@@ -206,7 +214,7 @@ function ReceiptDetail() {
                               {adj.description ?? "\u2014"}
                             </TableCell>
                             <TableCell className="text-right">
-                              {formatCurrency(adj.amount)}
+                              {formatCurrency(Number(adj.amount ?? 0))}
                             </TableCell>
                           </TableRow>
                         ),
@@ -234,7 +242,19 @@ function ReceiptDetail() {
           <ReceiptTransactionsCard
             receiptId={id}
             receiptDate={trip.receipt.receipt.date}
-            transactions={trip.transactions}
+            transactions={trip.transactions.map((ta) => ({
+              transaction: {
+                id: ta.transaction.id,
+                amount: Number(ta.transaction.amount ?? 0),
+                date: ta.transaction.date,
+              },
+              account: {
+                id: ta.account.id,
+                accountCode: ta.account.accountCode,
+                name: ta.account.name,
+                isActive: ta.account.isActive ?? true,
+              },
+            }))}
             transactionsTotal={transactionsTotal}
           />
 
@@ -275,7 +295,7 @@ function ReceiptDetail() {
                 defaultValues={{
                   location: trip.receipt.receipt.location,
                   date: trip.receipt.receipt.date,
-                  taxAmount: trip.receipt.receipt.taxAmount,
+                  taxAmount: Number(trip.receipt.receipt.taxAmount ?? 0),
                 }}
                 isSubmitting={updateReceipt.isPending}
                 serverErrors={serverErrors}

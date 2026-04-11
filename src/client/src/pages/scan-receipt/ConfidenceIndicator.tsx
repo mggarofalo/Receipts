@@ -10,11 +10,11 @@ export function ConfidenceIndicator({
   confidence,
   className,
 }: ConfidenceIndicatorProps) {
-  if (!confidence || confidence === "high") {
+  if (!confidence || confidence === "High") {
     return null;
   }
 
-  if (confidence === "low") {
+  if (confidence === "Low") {
     return (
       <Badge
         variant="outline"

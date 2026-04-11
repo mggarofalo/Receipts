@@ -145,7 +145,7 @@ export function GlobalSearchDialog({
                   onSelect={() => select(`/receipts/${t.receiptId}`)}
                 >
                   <ArrowRightLeft className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{formatCurrency(t.amount)}</span>
+                  <span>{formatCurrency(Number(t.amount ?? 0))}</span>
                   <span className="ml-2 text-xs text-muted-foreground">
                     {t.date}
                   </span>

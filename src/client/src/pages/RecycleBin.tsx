@@ -223,7 +223,7 @@ function RecycleBin() {
         entityType: "Transaction",
         entityTypeLabel: "Transaction",
         id: t.id,
-        label: `$${t.amount.toFixed(2)} - ${t.date}`,
+        label: `$${Number(t.amount ?? 0).toFixed(2)} - ${t.date}`,
       });
     }
     for (const it of itemTemplates.data ?? []) {

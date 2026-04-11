@@ -14,7 +14,7 @@ export function useSubcategories(offset = 0, limit = 50, sortBy?: string | null,
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useSubcategory(id: string | null) {
@@ -43,7 +43,7 @@ export function useSubcategoriesByCategoryId(categoryId: string | null, offset =
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useCreateSubcategory() {
@@ -157,7 +157,7 @@ export function useDeletedSubcategories(offset = 0, limit = 50, sortBy?: string 
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useRestoreSubcategory() {

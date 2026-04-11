@@ -251,7 +251,7 @@ export function ReceiptItemForm({
       form.setValue("subcategory", suggestion.subcategory);
     }
     if (suggestion.unitPrice != null) {
-      form.setValue("unitPrice", suggestion.unitPrice);
+      form.setValue("unitPrice", Number(suggestion.unitPrice));
     }
     setItemCodeAutocompleteOpen(false);
   }
@@ -472,7 +472,7 @@ export function ReceiptItemForm({
                                       ? ` · ${suggestion.category}`
                                       : ""}
                                     {suggestion.unitPrice != null
-                                      ? ` · ${formatCurrency(suggestion.unitPrice)}`
+                                      ? ` · ${formatCurrency(Number(suggestion.unitPrice))}`
                                       : ""}
                                   </span>
                                 </div>
@@ -480,7 +480,7 @@ export function ReceiptItemForm({
                                   variant="outline"
                                   className="text-[10px] px-1.5 py-0"
                                 >
-                                  {suggestion.matchType === "location"
+                                  {suggestion.matchType === "Location"
                                     ? "Location"
                                     : "Global"}
                                 </Badge>

@@ -6,8 +6,8 @@ using Application.Commands.Ynab.CategoryMapping;
 using Application.Commands.Ynab.MemoSync;
 using Application.Commands.Ynab.PushTransactions;
 using Application.Commands.Ynab.SelectBudget;
-using Application.Exceptions;
 using Application.Commands.Ynab.StaleMappings;
+using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
 using Application.Queries.Core.Ynab;
@@ -426,6 +426,8 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 	{
 		YnabRateLimitStatus status = await mediator.Send(new GetYnabRateLimitStatusQuery(), cancellationToken);
 		return TypedResults.Ok(mapper.ToRateLimitStatusResponse(status));
+	}
+
 	[HttpGet("receipt-sync-statuses")]
 	[EndpointSummary("Get YNAB sync statuses for receipts")]
 	[EndpointDescription("Returns the aggregate YNAB sync status for each receipt, joining through transactions to sync records.")]

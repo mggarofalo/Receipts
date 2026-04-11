@@ -210,7 +210,7 @@ export default function UncategorizedItems() {
     setSelectedSubcategory("");
   }
 
-  const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
+  const totalPages = data ? Math.ceil(Number(data.totalCount ?? 0) / pageSize) : 0;
   const allOnPageSelected =
     data?.items &&
     data.items.length > 0 &&
@@ -351,7 +351,7 @@ export default function UncategorizedItems() {
                 </button>
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(item.totalAmount)}
+                {formatCurrency(Number(item.totalAmount ?? 0))}
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {item.subcategory ?? "-"}

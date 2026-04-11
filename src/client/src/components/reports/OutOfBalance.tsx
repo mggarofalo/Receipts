@@ -54,7 +54,7 @@ export default function OutOfBalance() {
     navigate(`/receipts/${receiptId}`);
   }
 
-  const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
+  const totalPages = data ? Math.ceil(Number(data.totalCount ?? 0) / pageSize) : 0;
 
   if (isLoading) {
     return (
@@ -98,7 +98,7 @@ export default function OutOfBalance() {
         <div>
           <p className="text-sm text-muted-foreground">Total Discrepancy</p>
           <p className="text-2xl font-bold">
-            {formatCurrency(data.totalDiscrepancy)}
+            {formatCurrency(Number(data.totalDiscrepancy ?? 0))}
           </p>
         </div>
       </div>
@@ -136,28 +136,28 @@ export default function OutOfBalance() {
               <TableCell>{item.date}</TableCell>
               <TableCell>{item.location}</TableCell>
               <TableCell className="text-right">
-                {formatCurrency(item.itemSubtotal)}
+                {formatCurrency(Number(item.itemSubtotal ?? 0))}
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(item.taxAmount)}
+                {formatCurrency(Number(item.taxAmount ?? 0))}
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(item.adjustmentTotal)}
+                {formatCurrency(Number(item.adjustmentTotal ?? 0))}
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(item.expectedTotal)}
+                {formatCurrency(Number(item.expectedTotal ?? 0))}
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(item.transactionTotal)}
+                {formatCurrency(Number(item.transactionTotal ?? 0))}
               </TableCell>
               <TableCell
                 className={`text-right font-medium ${
-                  item.difference < 0
+                  Number(item.difference ?? 0) < 0
                     ? "text-red-600 dark:text-red-400"
                     : "text-amber-600 dark:text-amber-400"
                 }`}
               >
-                {formatCurrency(item.difference)}
+                {formatCurrency(Number(item.difference ?? 0))}
               </TableCell>
             </TableRow>
           ))}

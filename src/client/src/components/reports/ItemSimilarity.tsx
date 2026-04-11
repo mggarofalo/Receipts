@@ -123,7 +123,7 @@ export default function ItemSimilarity() {
     );
   }
 
-  const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
+  const totalPages = data ? Math.ceil(Number(data.totalCount ?? 0) / pageSize) : 0;
 
   if (isLoading) {
     return (
@@ -233,7 +233,7 @@ export default function ItemSimilarity() {
                     {group.occurrences}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatDecimal(group.maxSimilarity)}
+                    {formatDecimal(Number(group.maxSimilarity ?? 0))}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button

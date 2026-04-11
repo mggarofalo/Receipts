@@ -77,7 +77,7 @@ export default function SpendingByLocation() {
     [data?.items],
   );
 
-  const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
+  const totalPages = data ? Math.ceil(Number(data.totalCount ?? 0) / pageSize) : 0;
 
   if (isLoading) {
     return (
@@ -129,7 +129,7 @@ export default function SpendingByLocation() {
           <div>
             <p className="text-sm text-muted-foreground">Total Spending</p>
             <p className="text-2xl font-bold">
-              {formatCurrency(data.grandTotal)}
+              {formatCurrency(Number(data.grandTotal ?? 0))}
             </p>
           </div>
         </div>
@@ -186,10 +186,10 @@ export default function SpendingByLocation() {
               <TableCell>{item.location}</TableCell>
               <TableCell className="text-right">{item.visits}</TableCell>
               <TableCell className="text-right">
-                {formatCurrency(item.total)}
+                {formatCurrency(Number(item.total ?? 0))}
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(item.averagePerVisit)}
+                {formatCurrency(Number(item.averagePerVisit ?? 0))}
               </TableCell>
             </TableRow>
           ))}

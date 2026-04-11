@@ -18,7 +18,7 @@ export function useUsers(offset = 0, limit = 50, sortBy?: string | null, sortDir
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useUser(userId: string | null) {

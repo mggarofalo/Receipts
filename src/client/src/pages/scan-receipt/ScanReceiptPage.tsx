@@ -16,7 +16,7 @@ type Status = "idle" | "uploading" | "success" | "error";
 function mapProposalToInitialValues(
   proposal: ProposedReceiptResponse,
 ): ScanInitialValues {
-  const taxAmount = proposal.taxLines[0]?.amount ?? 0;
+  const taxAmount = Number(proposal.taxLines[0]?.amount ?? 0);
 
   let date = "";
   if (proposal.date) {
@@ -34,8 +34,8 @@ function mapProposalToInitialValues(
       receiptItemCode: item.code ?? "",
       description: item.description ?? "",
       pricingMode: "quantity" as const,
-      quantity: item.quantity ?? 1,
-      unitPrice: item.unitPrice ?? 0,
+      quantity: Number(item.quantity ?? 1),
+      unitPrice: Number(item.unitPrice ?? 0),
       category: "",
       subcategory: "",
     })),
@@ -51,7 +51,7 @@ function mapProposalToConfidenceMap(
     key: keyof ReceiptConfidenceMap,
     confidence: ConfidenceLevel,
   ) => {
-    if (confidence !== "high") {
+    if (confidence !== "High") {
       map[key] = confidence;
     }
   };
@@ -122,7 +122,7 @@ export default function ScanReceiptPage() {
       <div className="space-y-6">
         <OcrTextPanel
           rawText={proposal.rawOcrText}
-          ocrConfidence={proposal.ocrConfidence}
+          ocrConfidence={Number(proposal.ocrConfidence ?? 0)}
         />
         <NewReceiptPage
           initialValues={initialValues}

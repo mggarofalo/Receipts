@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) {
       setTokens(data.accessToken, data.refreshToken);
       setUser(parseJwtPayload(data.accessToken));
-      setMustResetPassword(data.mustResetPassword);
+      setMustResetPassword(data.mustResetPassword ?? false);
     }
   }, []);
 

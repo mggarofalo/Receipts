@@ -30,7 +30,7 @@ export function useEntityAuditHistory(
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export interface AuditLogFilters {
@@ -95,5 +95,5 @@ export function useRecentAuditLogs(filters: AuditLogFilters = {}) {
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }

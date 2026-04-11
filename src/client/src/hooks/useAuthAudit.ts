@@ -25,7 +25,7 @@ export function useMyAuthAuditLog(
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useRecentAuthAuditLogs(
@@ -51,7 +51,7 @@ export function useRecentAuthAuditLogs(
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useFailedAuthAttempts(
@@ -77,5 +77,5 @@ export function useFailedAuthAttempts(
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }

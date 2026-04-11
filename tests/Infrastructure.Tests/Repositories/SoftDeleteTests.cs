@@ -568,6 +568,9 @@ public class SoftDeleteTests
 		}
 
 		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
 	public void AllSoftDeletableRelationships_HaveQueryFiltersOnBothEnds()
 	{
 		// Arrange — build the EF Core model

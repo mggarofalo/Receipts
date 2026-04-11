@@ -238,6 +238,9 @@ public partial class YnabMapper
 		{
 			DeletedAccountMappings = source.DeletedAccountMappings,
 			DeletedCategoryMappings = source.DeletedCategoryMappings,
+		};
+	}
+
 	[MapperIgnoreTarget(nameof(ReceiptYnabSyncStatus.AdditionalProperties))]
 	public ReceiptYnabSyncStatus ToReceiptSyncStatus(ReceiptYnabSyncStatusDto source)
 	{

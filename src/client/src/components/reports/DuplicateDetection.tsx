@@ -229,7 +229,7 @@ export default function DuplicateDetection() {
                                     : ""
                                 }`}
                               >
-                                {formatCurrency(receipt.transactionTotal)}
+                                {formatCurrency(Number(receipt.transactionTotal ?? 0))}
                               </p>
                             </div>
                             <div className="flex flex-col gap-1">

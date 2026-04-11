@@ -208,6 +208,7 @@ describe("YnabBulkSyncCard", () => {
       noMatch: 1,
       ambiguous: 0,
       currencySkipped: 0,
+      reconciledSkipped: 0,
       failed: 1,
       total: 9,
     });
@@ -261,6 +262,7 @@ describe("YnabBulkSyncCard", () => {
       noMatch: 0,
       ambiguous: 0,
       currencySkipped: 0,
+      reconciledSkipped: 0,
       failed: 0,
       total: 3,
     });

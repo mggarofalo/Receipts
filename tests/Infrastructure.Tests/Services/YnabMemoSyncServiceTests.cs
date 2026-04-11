@@ -503,8 +503,8 @@ public class YnabMemoSyncServiceTests
 
 		YnabTransaction reconciledTx = CreateYnabTransaction("yt-1", transaction.Date, -25500, "Walmart", "reconciled");
 		_ynabClientMock
-			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([reconciledTx]);
+			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<long?>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new YnabTransactionsResult([reconciledTx], 0));
 
 		// Act
 		List<YnabMemoSyncResult> results = await _service.SyncMemosByReceiptAsync(receipt.Id, CancellationToken.None);
@@ -533,8 +533,8 @@ public class YnabMemoSyncServiceTests
 		YnabTransaction reconciledTx = CreateYnabTransaction("yt-reconciled", transaction.Date, -25500, "Walmart", "reconciled");
 		YnabTransaction clearedTx = CreateYnabTransaction("yt-cleared", transaction.Date, -25500, "Walmart", "cleared");
 		_ynabClientMock
-			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([reconciledTx, clearedTx]);
+			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<long?>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new YnabTransactionsResult([reconciledTx, clearedTx], 0));
 
 		SetupSyncRecordCreation();
 		SetupSyncRecordUpdate();
@@ -565,8 +565,8 @@ public class YnabMemoSyncServiceTests
 
 		YnabTransaction unclearedTx = CreateYnabTransaction("yt-1", transaction.Date, -25500, "Walmart", "uncleared");
 		_ynabClientMock
-			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([unclearedTx]);
+			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<long?>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new YnabTransactionsResult([unclearedTx], 0));
 
 		SetupSyncRecordCreation();
 		SetupSyncRecordUpdate();
