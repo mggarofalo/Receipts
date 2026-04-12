@@ -434,7 +434,7 @@ export function Step3Items({
                                   variant="outline"
                                   className="text-[10px] px-1.5 py-0"
                                 >
-                                  {suggestion.matchType === "Location"
+                                  {suggestion.matchType === "location"
                                     ? "Location"
                                     : "Global"}
                                 </Badge>
@@ -518,7 +518,7 @@ export function Step3Items({
                                     variant="outline"
                                     className="text-[10px] px-1.5 py-0"
                                   >
-                                    {item.source === "Template"
+                                    {item.source === "template"
                                       ? "Template"
                                       : "History"}
                                   </Badge>

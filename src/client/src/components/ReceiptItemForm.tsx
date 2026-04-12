@@ -480,7 +480,7 @@ export function ReceiptItemForm({
                                   variant="outline"
                                   className="text-[10px] px-1.5 py-0"
                                 >
-                                  {suggestion.matchType === "Location"
+                                  {suggestion.matchType === "location"
                                     ? "Location"
                                     : "Global"}
                                 </Badge>

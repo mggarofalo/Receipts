@@ -51,7 +51,7 @@ function mapProposalToConfidenceMap(
     key: keyof ReceiptConfidenceMap,
     confidence: ConfidenceLevel,
   ) => {
-    if (confidence !== "High") {
+    if (confidence !== "high") {
       map[key] = confidence;
     }
   };

@@ -80,7 +80,7 @@ describe("useDuplicateDetectionReport", () => {
     const { result } = renderHook(
       () =>
         useDuplicateDetectionReport({
-          matchOn: "DateAndTotal",
+          matchOn: "dateAndTotal",
           locationTolerance: "normalized",
           totalTolerance: 0.05,
         }),
@@ -91,7 +91,7 @@ describe("useDuplicateDetectionReport", () => {
     expect(mockClient.GET).toHaveBeenCalledWith("/api/reports/duplicates", {
       params: {
         query: {
-          matchOn: "DateAndTotal",
+          matchOn: "dateAndTotal",
           locationTolerance: "normalized",
           totalTolerance: 0.05,
         },
