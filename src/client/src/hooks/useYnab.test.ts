@@ -78,7 +78,7 @@ describe("useYnab", () => {
     expect(result.current.isConfigured).toBe(true);
     expect(result.current.isConnected).toBe(true);
     expect(result.current.lastSuccessfulSyncUtc).toBe("2026-04-05T12:00:00Z");
-    expect(client.GET).toHaveBeenCalledWith("/api/ynab/connection-status", {});
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/connection-status");
   });
 
   it("useYnabConnectionStatus returns defaults when data is undefined", async () => {
@@ -719,6 +719,52 @@ describe("useYnab", () => {
     });
   });
 
+  it("useReceiptYnabSyncStatuses returns status map on success", async () => {
+    const statuses = {
+      data: [
+        { receiptId: "r1", syncStatus: "Synced" },
+        { receiptId: "r2", syncStatus: "Failed" },
+        { receiptId: "r3", syncStatus: "NotSynced" },
+      ],
+    };
+    (client.GET as Mock).mockResolvedValue({ data: statuses, error: undefined });
+
+    const { result } = renderHook(
+      () => useReceiptYnabSyncStatuses(["r1", "r2", "r3"]),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.statusMap.get("r1")).toBe("Synced");
+    expect(result.current.statusMap.get("r2")).toBe("Failed");
+    expect(result.current.statusMap.get("r3")).toBe("NotSynced");
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/receipt-sync-statuses", {
+      params: { query: { receiptIds: ["r1", "r2", "r3"] } },
+    });
+  });
+
+  it("useReceiptYnabSyncStatuses returns empty map on error", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: "Server error" });
+
+    const { result } = renderHook(
+      () => useReceiptYnabSyncStatuses(["r1"]),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.statusMap.size).toBe(0);
+  });
+
+  it("useReceiptYnabSyncStatuses is disabled when receiptIds is empty", () => {
+    const { result } = renderHook(
+      () => useReceiptYnabSyncStatuses([]),
+      { wrapper: createWrapper() },
+    );
+
+    expect(result.current.statusMap.size).toBe(0);
+    expect(client.GET).not.toHaveBeenCalledWith("/api/ynab/receipt-sync-statuses", expect.anything());
+  });
+
   it("useBulkPushYnabTransactions calls POST and shows success toast", async () => {
     const bulkResult = {
       results: [
@@ -832,62 +878,6 @@ describe("useYnab", () => {
     expect(result.current.isTruncated).toBe(false);
   });
 
-  it("useAllReceiptIds respects enabled flag", () => {
-    const { result } = renderHook(() => useAllReceiptIds(false), {
-      wrapper: createWrapper(),
-    });
-
-    expect(result.current.receiptIds).toEqual([]);
-    expect(result.current.isTruncated).toBe(false);
-    expect(client.GET).not.toHaveBeenCalled();
-  });
-
-  it("useReceiptYnabSyncStatuses returns status map on success", async () => {
-    const statuses = {
-      data: [
-        { receiptId: "r1", syncStatus: "Synced" },
-        { receiptId: "r2", syncStatus: "Failed" },
-        { receiptId: "r3", syncStatus: "NotSynced" },
-      ],
-    };
-    (client.GET as Mock).mockResolvedValue({ data: statuses, error: undefined });
-
-    const { result } = renderHook(
-      () => useReceiptYnabSyncStatuses(["r1", "r2", "r3"]),
-      { wrapper: createWrapper() },
-    );
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.statusMap.get("r1")).toBe("Synced");
-    expect(result.current.statusMap.get("r2")).toBe("Failed");
-    expect(result.current.statusMap.get("r3")).toBe("NotSynced");
-    expect(client.GET).toHaveBeenCalledWith("/api/ynab/receipt-sync-statuses", {
-      params: { query: { receiptIds: ["r1", "r2", "r3"] } },
-    });
-  });
-
-  it("useReceiptYnabSyncStatuses returns empty map on error", async () => {
-    (client.GET as Mock).mockResolvedValue({ data: undefined, error: "Server error" });
-
-    const { result } = renderHook(
-      () => useReceiptYnabSyncStatuses(["r1"]),
-      { wrapper: createWrapper() },
-    );
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.statusMap.size).toBe(0);
-  });
-
-  it("useReceiptYnabSyncStatuses is disabled when receiptIds is empty", () => {
-    const { result } = renderHook(
-      () => useReceiptYnabSyncStatuses([]),
-      { wrapper: createWrapper() },
-    );
-
-    expect(result.current.statusMap.size).toBe(0);
-    expect(client.GET).not.toHaveBeenCalledWith("/api/ynab/receipt-sync-statuses", expect.anything());
-  });
-
   it("useStaleMappings returns stale counts on success", async () => {
     (client.GET as Mock).mockResolvedValue({
       data: {
@@ -906,7 +896,7 @@ describe("useYnab", () => {
     expect(result.current.staleAccountMappingCount).toBe(2);
     expect(result.current.staleCategoryMappingCount).toBe(3);
     expect(result.current.hasStaleMappings).toBe(true);
-    expect(client.GET).toHaveBeenCalledWith("/api/ynab/stale-mappings", {});
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/stale-mappings");
   });
 
   it("useStaleMappings returns hasStaleMappings false when no stale mappings", async () => {
@@ -955,7 +945,7 @@ describe("useYnab", () => {
 
     await result.current.mutateAsync();
 
-    expect(client.DELETE).toHaveBeenCalledWith("/api/ynab/stale-mappings", {});
+    expect(client.DELETE).toHaveBeenCalledWith("/api/ynab/stale-mappings");
     expect(toast.success).toHaveBeenCalledWith("Cleared 5 stale mapping(s)");
   });
 
@@ -975,6 +965,16 @@ describe("useYnab", () => {
     );
   });
 
+  it("useAllReceiptIds respects enabled flag", () => {
+    const { result } = renderHook(() => useAllReceiptIds(false), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.receiptIds).toEqual([]);
+    expect(result.current.isTruncated).toBe(false);
+    expect(client.GET).not.toHaveBeenCalled();
+  });
+
   it("useYnabRateLimitStatus returns rate limit data on success", async () => {
     const rateLimitData = {
       remainingRequests: 150,
@@ -991,7 +991,7 @@ describe("useYnab", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.rateLimitStatus).toEqual(rateLimitData);
-    expect(client.GET).toHaveBeenCalledWith("/api/ynab/rate-limit-status", {});
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/rate-limit-status");
   });
 
   it("useYnabRateLimitStatus returns null when data is undefined", async () => {

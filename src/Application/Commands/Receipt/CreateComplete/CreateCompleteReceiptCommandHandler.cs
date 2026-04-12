@@ -23,7 +23,7 @@ public class CreateCompleteReceiptCommandHandler(
 			decimal expectedTotal = receiptWithItems.ExpectedTotal.Amount;
 			decimal transactionTotal = request.Transactions.Sum(t => t.Amount.Amount);
 
-			if (expectedTotal != transactionTotal)
+			if (Math.Abs(expectedTotal - transactionTotal) > 0.01m)
 			{
 				throw new ValidationException(
 				[

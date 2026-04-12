@@ -154,6 +154,75 @@ public class CreateCompleteReceiptCommandHandlerTests
 	}
 
 	[Fact]
+	public async Task Handle_WithHalfCentRoundingDifference_DelegatesToService()
+	{
+		// Arrange: 3 x $1.005 floors to $3.01, but half-up rounds to $3.02.
+		// A transaction of $3.02 + tax should be accepted within the 1-cent tolerance.
+		decimal taxAmount = 0.25m;
+		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(taxAmount));
+
+		// ReceiptItem constructor floors: Math.Floor(3 * 1.005 * 100) / 100 = $3.01
+		Domain.Core.ReceiptItem item = new(
+			Guid.NewGuid(), null, "Half-cent item", 3, new Money(1.005m), new Money(3.01m), "Groceries", null);
+
+		List<Domain.Core.ReceiptItem> items = [item];
+
+		// The item subtotal (via TotalAmount) is $3.01, so ExpectedTotal = $3.01 + $0.25 = $3.26.
+		// A user whose UI half-up-rounded would see $3.02 subtotal → expected $3.27.
+		// The tolerance allows this 1-cent difference.
+		decimal transactionAmount = 3.02m + taxAmount; // $3.27 — 1 cent over expectedTotal of $3.26
+		List<Domain.Core.Transaction> transactions =
+		[
+			new Domain.Core.Transaction(Guid.NewGuid(), new Money(transactionAmount), DateOnly.FromDateTime(DateTime.Now))
+		];
+
+		CreateCompleteReceiptResult expectedResult = new(receipt, transactions, items);
+		_mockService.Setup(s => s.CreateAsync(
+				It.IsAny<Domain.Core.Receipt>(),
+				It.IsAny<List<Domain.Core.Transaction>>(),
+				It.IsAny<List<Domain.Core.ReceiptItem>>(),
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync(expectedResult);
+
+		CreateCompleteReceiptCommand command = new(receipt, transactions, items);
+
+		// Act
+		CreateCompleteReceiptResult result = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert — should succeed, not throw
+		result.Should().BeSameAs(expectedResult);
+		_mockService.Verify(s => s.CreateAsync(
+			It.IsAny<Domain.Core.Receipt>(),
+			It.IsAny<List<Domain.Core.Transaction>>(),
+			It.IsAny<List<Domain.Core.ReceiptItem>>(),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_WithLargeBalanceDifference_StillThrowsValidationException()
+	{
+		// Arrange: items total $10, tax $10, expected $20, but transactions total $22 (> 1 cent off)
+		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10));
+		List<Domain.Core.ReceiptItem> items = ReceiptItemGenerator.GenerateList(2); // 2 x $5 = $10 subtotal
+		List<Domain.Core.Transaction> transactions =
+		[
+			new Domain.Core.Transaction(Guid.NewGuid(), new Money(22), DateOnly.FromDateTime(DateTime.Now))
+		];
+
+		CreateCompleteReceiptCommand command = new(receipt, transactions, items);
+
+		// Act & Assert — $22 vs $20 = $2 difference, well beyond tolerance
+		await Assert.ThrowsAsync<ValidationException>(() =>
+			_handler.Handle(command, CancellationToken.None));
+
+		_mockService.Verify(s => s.CreateAsync(
+			It.IsAny<Domain.Core.Receipt>(),
+			It.IsAny<List<Domain.Core.Transaction>>(),
+			It.IsAny<List<Domain.Core.ReceiptItem>>(),
+			It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
 	public async Task Handle_WithItemsButNoTransactions_DelegatesToService()
 	{
 		// Arrange: items but no transactions — balance check skipped since no transactions

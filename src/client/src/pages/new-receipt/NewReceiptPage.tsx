@@ -101,7 +101,12 @@ export default function NewReceiptPage({
   }, []);
 
   const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+    () =>
+      items.reduce(
+        (sum, item) =>
+          sum + Math.floor(item.quantity * item.unitPrice * 100) / 100,
+        0,
+      ),
     [items],
   );
 
