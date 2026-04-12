@@ -2017,6 +2017,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ynab/receipts/{receiptId}/split-comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get expected vs actual YNAB category split for a receipt
+         * @description Returns the expected YNAB category split computed locally alongside the actual state stored in YNAB for any already-pushed transactions. Used by the receipt detail page to validate and preview splits.
+         */
+        get: operations["GetReceiptYnabSplitComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ynab/rate-limit-status": {
         parameters: {
             query?: never;
@@ -3172,6 +3192,29 @@ export interface components {
         };
         BulkPushYnabTransactionsResponse: {
             results: components["schemas"]["ReceiptPushResult"][];
+        };
+        SplitLine: {
+            ynabCategoryId: string;
+            categoryName: string;
+            /** Format: int64 */
+            milliunits: number;
+        };
+        TransactionSplitComparison: {
+            /** Format: uuid */
+            localTransactionId: string;
+            accountName: string;
+            /** Format: int64 */
+            totalMilliunits: number;
+            expected: components["schemas"]["SplitLine"][];
+            actual?: null | components["schemas"]["SplitLine"][];
+            actualFetchError?: null | string;
+            matches?: null | boolean;
+        };
+        ReceiptYnabSplitComparisonResponse: {
+            canComputeExpected: boolean;
+            expectedUnavailableReason?: null | string;
+            unmappedCategories: string[];
+            transactionComparisons: components["schemas"]["TransactionSplitComparison"][];
         };
         YnabMemoSyncResultItem: {
             /** Format: uuid */
@@ -7579,6 +7622,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulkPushYnabTransactionsResponse"];
+                };
+            };
+            /** @description YNAB integration is not configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetReceiptYnabSplitComparison: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Split comparison for the receipt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptYnabSplitComparisonResponse"];
                 };
             };
             /** @description YNAB integration is not configured */

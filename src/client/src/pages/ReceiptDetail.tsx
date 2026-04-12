@@ -45,6 +45,7 @@ import { YnabMemoSyncCard } from "@/components/YnabMemoSyncCard";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { formatCurrency } from "@/lib/format";
 import { YnabPushButton } from "@/components/YnabPushButton";
+import { YnabSplitComparisonCard } from "@/components/YnabSplitComparisonCard";
 import { Pencil } from "lucide-react";
 
 function ReceiptDetail() {
@@ -275,6 +276,8 @@ function ReceiptDetail() {
               />
             </CardContent>
           </Card>
+
+          <YnabSplitComparisonCard receiptId={id} />
 
           <Card>
             <CardHeader>

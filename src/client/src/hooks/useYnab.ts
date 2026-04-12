@@ -562,6 +562,47 @@ export function useMemoSyncSummary(results: YnabMemoSyncResult[] | undefined) {
   }, [results]);
 }
 
+export type SplitLineDto = {
+  ynabCategoryId: string;
+  categoryName: string;
+  milliunits: number;
+};
+
+export type TransactionSplitComparisonDto = {
+  localTransactionId: string;
+  accountName: string;
+  totalMilliunits: number;
+  expected: SplitLineDto[];
+  actual?: SplitLineDto[] | null;
+  actualFetchError?: string | null;
+  matches?: boolean | null;
+};
+
+export type ReceiptYnabSplitComparisonResponse = {
+  canComputeExpected: boolean;
+  expectedUnavailableReason?: string | null;
+  unmappedCategories: string[];
+  transactionComparisons: TransactionSplitComparisonDto[];
+};
+
+export function useYnabSplitComparison(receiptId: string | undefined) {
+  return useQuery({
+    queryKey: ["ynab", "split-comparison", receiptId],
+    queryFn: async (): Promise<ReceiptYnabSplitComparisonResponse> => {
+      const { data, error } = await client.GET(
+        "/api/ynab/receipts/{receiptId}/split-comparison" as never,
+        {
+          params: { path: { receiptId } },
+        } as never,
+      );
+      if (error) throw error;
+      return data as unknown as ReceiptYnabSplitComparisonResponse;
+    },
+    enabled: !!receiptId,
+    retry: false,
+  });
+}
+
 export function usePushYnabTransactions() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -576,6 +617,7 @@ export function usePushYnabTransactions() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
       queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
+      queryClient.invalidateQueries({ queryKey: ["ynab", "split-comparison"] });
       if (data?.success) {
         toast.success(
           `Pushed ${data.pushedTransactions.length} transaction(s) to YNAB`,

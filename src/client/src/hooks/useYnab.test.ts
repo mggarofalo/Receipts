@@ -46,6 +46,7 @@ import {
   useStaleMappings,
   useClearStaleMappings,
   useReceiptYnabSyncStatuses,
+  useYnabSplitComparison,
 } from "./useYnab";
 
 function createWrapper() {
@@ -1003,5 +1004,59 @@ describe("useYnab", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.rateLimitStatus).toBeNull();
+  });
+
+  it("useYnabSplitComparison returns split comparison on success", async () => {
+    const response = {
+      canComputeExpected: true,
+      expectedUnavailableReason: null,
+      unmappedCategories: [],
+      transactionComparisons: [
+        {
+          localTransactionId: "tx-1",
+          accountName: "Checking",
+          totalMilliunits: -11000,
+          expected: [
+            { ynabCategoryId: "cat-1", categoryName: "Groceries", milliunits: -11000 },
+          ],
+          actual: null,
+          actualFetchError: null,
+          matches: null,
+        },
+      ],
+    };
+    (client.GET as Mock).mockResolvedValue({ data: response, error: undefined });
+
+    const { result } = renderHook(() => useYnabSplitComparison("receipt-1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(response);
+    expect(client.GET).toHaveBeenCalledWith(
+      "/api/ynab/receipts/{receiptId}/split-comparison",
+      { params: { path: { receiptId: "receipt-1" } } },
+    );
+  });
+
+  it("useYnabSplitComparison is disabled when receiptId is undefined", () => {
+    const { result } = renderHook(() => useYnabSplitComparison(undefined), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isPending).toBe(true);
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(client.GET).not.toHaveBeenCalled();
+  });
+
+  it("useYnabSplitComparison surfaces an error when the request fails", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: "Boom" });
+
+    const { result } = renderHook(() => useYnabSplitComparison("receipt-1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeDefined();
   });
 });
