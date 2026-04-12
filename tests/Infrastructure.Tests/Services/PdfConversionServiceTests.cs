@@ -82,6 +82,34 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
+	public async Task ConvertAsync_BytesWithoutPdfMagicHeader_ThrowsInvalidOperationException()
+	{
+		// Arrange — a PNG header masquerading as a PDF upload
+		byte[] pngHeader = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+		// Act
+		Func<Task> act = () => _service.ConvertAsync(pngHeader, CancellationToken.None);
+
+		// Assert — rejected before PdfDocument.Open is called
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*not a valid PDF*");
+	}
+
+	[Fact]
+	public async Task ConvertAsync_EmptyByteArray_ThrowsInvalidOperationException()
+	{
+		// Arrange
+		byte[] emptyBytes = [];
+
+		// Act
+		Func<Task> act = () => _service.ConvertAsync(emptyBytes, CancellationToken.None);
+
+		// Assert — too short for magic byte check
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*not a valid PDF*");
+	}
+
+	[Fact]
 	public async Task ConvertAsync_EmptyPdf_ThrowsInvalidOperationException()
 	{
 		// Arrange

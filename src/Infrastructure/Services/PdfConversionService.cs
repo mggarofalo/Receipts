@@ -18,14 +18,43 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 	/// </summary>
 	internal const int MinTextLengthPerPage = 10;
 
+	/// <summary>
+	/// Maximum pixel dimension (width or height) for images created from raw pixel data.
+	/// Matches the cap in <see cref="ImageProcessingService"/>.
+	/// </summary>
+	private const int MaxImageDimension = 10_000;
+
+	/// <summary>
+	/// Maximum total accumulated image bytes (100 MB) before we stop extracting images.
+	/// </summary>
+	private const long MaxTotalImageBytes = 100 * 1024 * 1024;
+
+	/// <summary>
+	/// PDF magic bytes: <c>%PDF</c> (0x25 0x50 0x44 0x46).
+	/// </summary>
+	private static readonly byte[] PdfMagicBytes = [0x25, 0x50, 0x44, 0x46];
+
 	public Task<PdfConversionResult> ConvertAsync(byte[] pdfBytes, CancellationToken ct)
 	{
 		ct.ThrowIfCancellationRequested();
+
+		// Validate PDF magic bytes before attempting to parse
+		if (pdfBytes.Length < PdfMagicBytes.Length ||
+			!pdfBytes.AsSpan(0, PdfMagicBytes.Length).SequenceEqual(PdfMagicBytes))
+		{
+			throw new InvalidOperationException(
+				"The uploaded file is not a valid PDF or is corrupted.");
+		}
 
 		PdfDocument document;
 		try
 		{
 			document = PdfDocument.Open(pdfBytes);
+		}
+		catch (Exception ex) when (IsPasswordProtectedException(ex))
+		{
+			throw new InvalidOperationException(
+				"Password-protected PDFs are not supported.", ex);
 		}
 		catch (Exception ex)
 		{
@@ -35,75 +64,125 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 
 		using (document)
 		{
-			if (document.NumberOfPages == 0)
+			try
 			{
-				throw new InvalidOperationException("The PDF document contains no pages.");
+				return ProcessDocument(document, ct);
 			}
-
-			if (document.NumberOfPages > IPdfConversionService.MaxPages)
+			catch (InvalidOperationException)
+			{
+				throw; // Our own validation exceptions — let them propagate
+			}
+			catch (OperationCanceledException)
+			{
+				throw; // Cancellation — let it propagate
+			}
+			catch (Exception ex)
 			{
 				throw new InvalidOperationException(
-					$"The PDF document has {document.NumberOfPages} pages, which exceeds the maximum of {IPdfConversionService.MaxPages}.");
+					"An error occurred while processing the PDF document.", ex);
 			}
+		}
+	}
 
-			PdfMetadata? metadata = ExtractMetadata(document);
+	private Task<PdfConversionResult> ProcessDocument(PdfDocument document, CancellationToken ct)
+	{
+		if (document.NumberOfPages == 0)
+		{
+			throw new InvalidOperationException("The PDF document contains no pages.");
+		}
 
-			// Try to extract text from all pages; collect images from pages without text
-			List<string> pageTexts = [];
-			List<byte[]> pageImages = [];
+		if (document.NumberOfPages > IPdfConversionService.MaxPages)
+		{
+			throw new InvalidOperationException(
+				$"The PDF document has {document.NumberOfPages} pages, which exceeds the maximum of {IPdfConversionService.MaxPages}.");
+		}
 
-			foreach (Page page in document.GetPages())
+		PdfMetadata? metadata = ExtractMetadata(document);
+
+		// Try to extract text from all pages; collect images from pages without text
+		List<string> pageTexts = [];
+		List<byte[]> pageImages = [];
+		long totalImageBytes = 0;
+		bool imageBytesCapReached = false;
+
+		foreach (Page page in document.GetPages())
+		{
+			ct.ThrowIfCancellationRequested();
+
+			string pageText = page.Text ?? string.Empty;
+
+			if (pageText.Trim().Length >= MinTextLengthPerPage)
 			{
-				ct.ThrowIfCancellationRequested();
-
-				string pageText = page.Text ?? string.Empty;
-
-				if (pageText.Trim().Length >= MinTextLengthPerPage)
+				pageTexts.Add(pageText);
+			}
+			else
+			{
+				if (imageBytesCapReached)
 				{
-					pageTexts.Add(pageText);
+					continue;
 				}
-				else
-				{
-					// Page lacks a text layer — try to extract embedded images for OCR
-					IEnumerable<IPdfImage> images = page.GetImages();
-					foreach (IPdfImage image in images)
-					{
-						ct.ThrowIfCancellationRequested();
 
-						byte[]? imageBytes = TryExtractImageBytes(image);
-						if (imageBytes is not null)
+				// Page lacks a text layer — try to extract embedded images for OCR
+				IEnumerable<IPdfImage> images = page.GetImages();
+				foreach (IPdfImage image in images)
+				{
+					ct.ThrowIfCancellationRequested();
+
+					if (imageBytesCapReached)
+					{
+						break;
+					}
+
+					byte[]? imageBytes = TryExtractImageBytes(image);
+					if (imageBytes is not null)
+					{
+						totalImageBytes += imageBytes.Length;
+						if (totalImageBytes > MaxTotalImageBytes)
 						{
-							pageImages.Add(imageBytes);
+							logger.LogWarning(
+								"Accumulated image bytes ({TotalBytes}) exceeded cap of {MaxBytes}; stopping image extraction",
+								totalImageBytes, MaxTotalImageBytes);
+							imageBytesCapReached = true;
+							break;
 						}
+
+						pageImages.Add(imageBytes);
 					}
 				}
 			}
+		}
 
-			// Prefer text extracted directly from the PDF text layer
-			if (pageTexts.Count > 0)
-			{
-				string combinedText = string.Join("\n\n", pageTexts);
-				logger.LogInformation(
-					"Extracted text from {PageCount} PDF pages ({TextLength} chars)",
-					pageTexts.Count, combinedText.Length);
-
-				return Task.FromResult(new PdfConversionResult(
-					Array.Empty<byte[]>(), combinedText, metadata));
-			}
-
+		// Prefer text extracted directly from the PDF text layer
+		if (pageTexts.Count > 0)
+		{
 			if (pageImages.Count > 0)
 			{
-				logger.LogInformation(
-					"Extracted {ImageCount} images from PDF for OCR processing",
-					pageImages.Count);
-
-				return Task.FromResult(new PdfConversionResult(
-					pageImages, null, metadata));
+				logger.LogWarning(
+					"PDF contains both text ({TextPageCount} pages) and images ({ImageCount} images); using text layer and discarding images",
+					pageTexts.Count, pageImages.Count);
 			}
 
-			throw new InvalidOperationException(
-				"The PDF document contains no readable text and no extractable images.");
+			string combinedText = string.Join("\n\n", pageTexts);
+			logger.LogInformation(
+				"Extracted text from {PageCount} PDF pages ({TextLength} chars)",
+				pageTexts.Count, combinedText.Length);
+
+			return Task.FromResult(new PdfConversionResult(
+				Array.Empty<byte[]>(), combinedText, metadata));
 		}
+
+		if (pageImages.Count > 0)
+		{
+			logger.LogInformation(
+				"Extracted {ImageCount} images from PDF for OCR processing",
+				pageImages.Count);
+
+			return Task.FromResult(new PdfConversionResult(
+				pageImages, null, metadata));
+		}
+
+		throw new InvalidOperationException(
+			"The PDF document contains no readable text and no extractable images.");
 	}
 
 	private PdfMetadata? ExtractMetadata(PdfDocument document)
@@ -184,6 +263,12 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 
 	private static byte[]? TryCreatePngFromRawPixels(byte[] rawBytes, int width, int height)
 	{
+		// Reject dimensions that would cause excessive memory allocation
+		if (width > MaxImageDimension || height > MaxImageDimension)
+		{
+			return null;
+		}
+
 		int expectedLength = width * height * 3; // RGB
 		if (rawBytes.Length < expectedLength)
 		{
@@ -214,5 +299,12 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 		{
 			return null;
 		}
+	}
+
+	private static bool IsPasswordProtectedException(Exception ex)
+	{
+		string message = ex.Message;
+		return message.Contains("encrypt", StringComparison.OrdinalIgnoreCase) ||
+			   message.Contains("password", StringComparison.OrdinalIgnoreCase);
 	}
 }
