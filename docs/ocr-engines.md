@@ -56,6 +56,34 @@ PaddleOCR's advantage comes from its deep-learning detection + recognition pipel
 - **PaddleOCR** is viable on the N150 but consumes roughly 4x the RAM. If receipt scanning accuracy is a priority and the system is not under heavy concurrent load, PaddleOCR is the better choice.
 - For production deployments handling frequent concurrent scans, consider Tesseract to minimize resource contention.
 
+## Docker Runtime Requirements
+
+The Tesseract NuGet package (`Tesseract` 5.2.0) ships managed bindings only; it expects native shared libraries to be present at runtime in a platform-specific subdirectory relative to the application root (e.g. `x64/libleptonica-1.82.0.so`).
+
+### Native packages
+
+The Dockerfile runtime stage installs these Ubuntu Noble (24.04) packages:
+
+| Package | Provides |
+|---------|----------|
+| `libtesseract5` | `libtesseract.so.5` shared library |
+| `liblept5` | `liblept.so.5` shared library (version 1.82.0) |
+
+### Symlink mechanism
+
+Ubuntu installs libraries under `/usr/lib/<arch-triple>/` (e.g. `/usr/lib/x86_64-linux-gnu/liblept.so.5`), but the NuGet package probes `<ARCH_DIR>/libleptonica-1.82.0.so` relative to the app directory. The Dockerfile creates architecture-aware symlinks at build time:
+
+```
+x64/libleptonica-1.82.0.so  -> /usr/lib/x86_64-linux-gnu/liblept.so.5
+x64/libtesseract50.so        -> /usr/lib/x86_64-linux-gnu/libtesseract.so.5
+```
+
+On arm64 the target triple is `aarch64-linux-gnu` and the directory is `arm64/`.
+
+### Tessdata
+
+The English trained data file (`eng.traineddata`) is tracked in the repository at `src/Infrastructure/Models/Tessdata/eng.traineddata`. It flows into the Docker image via the `COPY --from=api-build /app/publish .` step (the .NET publish output includes it as a content file). No manual download or volume mount is required.
+
 ## Architecture
 
 Both engines implement the `IOcrEngine` interface:
