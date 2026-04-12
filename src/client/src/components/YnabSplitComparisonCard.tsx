@@ -258,7 +258,11 @@ function TransactionSection({ tc }: { tc: TransactionSplitComparisonDto }) {
           {rows.map((row, idx) => (
             <TableRow
               key={`${row.categoryName}-${idx}`}
-              className={row.isMismatch ? "bg-yellow-50" : undefined}
+              className={
+                row.isMismatch
+                  ? "bg-yellow-500/10 border-l-2 border-l-yellow-500"
+                  : undefined
+              }
             >
               <TableCell>{row.categoryName}</TableCell>
               <TableCell className="text-right">
