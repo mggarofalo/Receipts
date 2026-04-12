@@ -1,17 +1,22 @@
-import { usePushYnabTransactions } from "@/hooks/useYnab";
+import {
+  usePushYnabTransactions,
+  type ReceiptYnabSyncStatusValue,
+} from "@/hooks/useYnab";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { Badge } from "@/components/ui/badge";
+import { YnabSyncBadge } from "@/components/YnabSyncBadge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface YnabPushButtonProps {
   receiptId: string;
   hasTransactions: boolean;
+  persistedSyncStatus?: ReceiptYnabSyncStatusValue;
 }
 
 export function YnabPushButton({
   receiptId,
   hasTransactions,
+  persistedSyncStatus,
 }: YnabPushButtonProps) {
   const pushMutation = usePushYnabTransactions();
 
@@ -20,7 +25,19 @@ export function YnabPushButton({
   };
 
   const result = pushMutation.data;
-  const hasSynced = result?.success === true;
+  const mutationSucceeded = result?.success === true;
+  const mutationFailed = result != null && result.success === false;
+
+  // Effective status: a fresh mutation result trumps whatever was persisted.
+  // Otherwise fall back to the status fetched on page load.
+  const effectiveStatus: ReceiptYnabSyncStatusValue | undefined =
+    mutationSucceeded
+      ? "Synced"
+      : mutationFailed
+        ? "Failed"
+        : persistedSyncStatus;
+
+  const isSynced = effectiveStatus === "Synced";
 
   return (
     <div className="space-y-3">
@@ -29,34 +46,23 @@ export function YnabPushButton({
           variant="outline"
           size="sm"
           onClick={handlePush}
-          disabled={pushMutation.isPending || hasSynced || !hasTransactions}
+          disabled={pushMutation.isPending || isSynced || !hasTransactions}
         >
           {pushMutation.isPending ? (
             <>
               <Spinner className="mr-2 h-3 w-3" />
               Pushing to YNAB...
             </>
-          ) : hasSynced ? (
+          ) : mutationSucceeded ? (
             "Pushed to YNAB"
+          ) : isSynced ? (
+            "Already pushed"
           ) : (
             "Push to YNAB"
           )}
         </Button>
 
-        {hasSynced && (
-          <Badge variant="outline" className="text-green-600 border-green-300">
-            Synced
-          </Badge>
-        )}
-
-        {result && !result.success && (
-          <Badge
-            variant="outline"
-            className="text-destructive border-destructive/50"
-          >
-            Failed
-          </Badge>
-        )}
+        <YnabSyncBadge status={effectiveStatus} />
       </div>
 
       {result && !result.success && result.error && (
@@ -81,7 +87,7 @@ export function YnabPushButton({
           </Alert>
         )}
 
-      {hasSynced && result.pushedTransactions.length > 0 && (
+      {mutationSucceeded && result != null && result.pushedTransactions.length > 0 && (
         <div className="text-sm text-muted-foreground">
           {result.pushedTransactions.length} transaction(s) pushed
           {result.pushedTransactions.some((t) => t.subTransactionCount > 1) &&
