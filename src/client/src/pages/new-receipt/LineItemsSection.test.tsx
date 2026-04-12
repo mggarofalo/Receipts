@@ -137,17 +137,19 @@ describe("LineItemsSection", () => {
     expect(screen.getByText("Subtotal: $11.00")).toBeInTheDocument();
   });
 
-  it("floors per-item totals when computing subtotal (half-cent rounding)", () => {
-    // 3 x $1.005 = $3.015 → Math.floor(3.015 * 100) / 100 = $3.01
-    // Without floor, naive multiply gives $3.015 which formats as $3.02
+  it("rounds per-item totals to nearest cent when computing subtotal", () => {
+    // Uses Math.round to avoid IEEE 754 float issues with Math.floor.
+    // Example: 10 x $0.09 = $0.90 exactly
+    // With Math.floor: 10 * 0.09 * 100 = 89.9999... → floor → 89 → $0.89 (WRONG)
+    // With Math.round: 10 * 0.09 * 100 = 89.9999... → round → 90 → $0.90 (CORRECT)
     const items: ReceiptLineItem[] = [
       {
         id: "1",
         receiptItemCode: "",
         description: "Fractional item",
         pricingMode: "quantity",
-        quantity: 3,
-        unitPrice: 1.005,
+        quantity: 10,
+        unitPrice: 0.09,
         category: "Food",
         subcategory: "",
       },
@@ -155,8 +157,7 @@ describe("LineItemsSection", () => {
     renderWithProviders(
       <LineItemsSection {...defaultProps} items={items} />,
     );
-    // Floor-rounded: 3 x 1.005 = 3.015 → floor → $3.01
-    expect(screen.getByText("Subtotal: $3.01")).toBeInTheDocument();
+    expect(screen.getByText("Subtotal: $0.90")).toBeInTheDocument();
   });
 
   it("calls onChange when an item is removed", async () => {

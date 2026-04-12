@@ -16,13 +16,13 @@ export const tripResponse: TripResponse = {
     items,
     adjustments: [],
     subtotal: items.reduce(
-      (sum, i) => sum + Math.floor(i.quantity * i.unitPrice * 100) / 100,
+      (sum, i) => sum + Math.round(i.quantity * i.unitPrice * 100) / 100,
       0,
     ),
     adjustmentTotal: 0,
     expectedTotal:
       items.reduce(
-        (sum, i) => sum + Math.floor(i.quantity * i.unitPrice * 100) / 100,
+        (sum, i) => sum + Math.round(i.quantity * i.unitPrice * 100) / 100,
         0,
       ) + receipt.taxAmount,
     warnings: [],

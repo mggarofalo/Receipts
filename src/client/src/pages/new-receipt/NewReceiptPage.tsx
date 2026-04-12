@@ -104,7 +104,7 @@ export default function NewReceiptPage({
     () =>
       items.reduce(
         (sum, item) =>
-          sum + Math.floor(item.quantity * item.unitPrice * 100) / 100,
+          sum + Math.round(item.quantity * item.unitPrice * 100) / 100,
         0,
       ),
     [items],
