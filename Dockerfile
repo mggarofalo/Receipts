@@ -93,7 +93,8 @@ LABEL org.opencontainers.image.title="Receipts" \
       org.opencontainers.image.source="https://github.com/mggarofalo/Receipts"
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gosu curl && \
+    apt-get install -y --no-install-recommends gosu curl \
+      tesseract-ocr libtesseract-dev libleptonica-dev && \
     rm -rf /var/lib/apt/lists/*
 
 ARG SENTRY_BACKEND_DSN=
@@ -105,6 +106,20 @@ WORKDIR /app
 
 # Copy published API
 COPY --from=api-build /app/publish .
+
+# Create arch-aware symlinks for Tesseract/Leptonica native libraries.
+# The Tesseract NuGet package probes for libraries in a platform-specific
+# subdirectory (e.g. x64/libleptonica-1.82.0.so). Ubuntu Noble ships the
+# shared objects under /usr/lib/<triple>, so we symlink them into place.
+ARG TARGETARCH
+RUN case ${TARGETARCH} in \
+      amd64) ARCH_DIR=x64   ; TRIPLE=x86_64-linux-gnu ;; \
+      arm64) ARCH_DIR=arm64 ; TRIPLE=aarch64-linux-gnu ;; \
+      *)     echo "Unsupported architecture for Tesseract: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac && \
+    mkdir -p ${ARCH_DIR} && \
+    ln -sf /usr/lib/${TRIPLE}/liblept.so.5   ${ARCH_DIR}/libleptonica-1.82.0.so && \
+    ln -sf /usr/lib/${TRIPLE}/libtesseract.so.5 ${ARCH_DIR}/libtesseract50.so
 
 # Copy CLI tools
 COPY --from=api-build /app/tools ./tools/

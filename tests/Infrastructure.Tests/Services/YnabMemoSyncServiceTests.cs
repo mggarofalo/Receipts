@@ -40,6 +40,7 @@ public class YnabMemoSyncServiceTests
 			_syncRecordServiceMock.Object,
 			_transactionRepoMock.Object,
 			_receiptRepoMock.Object,
+			_serverKnowledgeRepoMock.Object,
 			_loggerMock.Object);
 	}
 
@@ -336,20 +337,15 @@ public class YnabMemoSyncServiceTests
 				YnabSyncType.MemoUpdate, YnabSyncStatus.Synced,
 				DateTimeOffset.UtcNow, null, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
 
-		// Pre-fetch still runs (batch optimization), so set up the mock
-		_ynabClientMock
-			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<long?>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new YnabTransactionsResult([], 42));
-
 		// Act
 		List<YnabMemoSyncResult> results = await _service.SyncMemosByReceiptAsync(receipt.Id, CancellationToken.None);
 
 		// Assert
 		results.Should().ContainSingle();
 		results[0].Outcome.Should().Be(YnabMemoSyncOutcome.AlreadySynced);
-		// Pre-fetch calls API once per unique date, but memo update should NOT be attempted
-		_ynabClientMock.Verify(c => c.UpdateTransactionMemoAsync(
-			It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+		// Should NOT call YNAB API
+		_ynabClientMock.Verify(c => c.GetTransactionsByDateAsync(
+			It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<long?>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
@@ -508,7 +504,7 @@ public class YnabMemoSyncServiceTests
 		YnabTransaction reconciledTx = CreateYnabTransaction("yt-1", transaction.Date, -25500, "Walmart", "reconciled");
 		_ynabClientMock
 			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<long?>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new YnabTransactionsResult([reconciledTx], 0));
+			.ReturnsAsync(new YnabTransactionsResult([reconciledTx], 42));
 
 		// Act
 		List<YnabMemoSyncResult> results = await _service.SyncMemosByReceiptAsync(receipt.Id, CancellationToken.None);
@@ -538,7 +534,7 @@ public class YnabMemoSyncServiceTests
 		YnabTransaction clearedTx = CreateYnabTransaction("yt-cleared", transaction.Date, -25500, "Walmart", "cleared");
 		_ynabClientMock
 			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<long?>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new YnabTransactionsResult([reconciledTx, clearedTx], 0));
+			.ReturnsAsync(new YnabTransactionsResult([reconciledTx, clearedTx], 42));
 
 		SetupSyncRecordCreation();
 		SetupSyncRecordUpdate();
@@ -570,7 +566,7 @@ public class YnabMemoSyncServiceTests
 		YnabTransaction unclearedTx = CreateYnabTransaction("yt-1", transaction.Date, -25500, "Walmart", "uncleared");
 		_ynabClientMock
 			.Setup(c => c.GetTransactionsByDateAsync(BudgetId, transaction.Date, It.IsAny<long?>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new YnabTransactionsResult([unclearedTx], 0));
+			.ReturnsAsync(new YnabTransactionsResult([unclearedTx], 42));
 
 		SetupSyncRecordCreation();
 		SetupSyncRecordUpdate();
@@ -664,7 +660,7 @@ public class YnabMemoSyncServiceTests
 	#region Server Knowledge Tests
 
 	[Fact]
-	public async Task SyncMemosByReceipt_DoesNotPersistServerKnowledgeFromDateFilteredFetch()
+	public async Task SyncMemosByReceipt_StoresServerKnowledgeAfterFetch()
 	{
 		// Arrange
 		SetupBudgetSelection(BudgetId);
@@ -689,12 +685,10 @@ public class YnabMemoSyncServiceTests
 		// Act
 		await _service.SyncMemosByReceiptAsync(receipt.Id, CancellationToken.None);
 
-		// Assert: server knowledge is NOT persisted from date-filtered fetches (RECEIPTS-523).
-		// Date-filtered results only represent changes within that date window, not global
-		// sync state — persisting them would cause future delta consumers to skip transactions.
+		// Assert: server knowledge was persisted with the value from the API response
 		_serverKnowledgeRepoMock.Verify(
-			r => r.UpsertAsync(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<CancellationToken>()),
-			Times.Never);
+			r => r.UpsertAsync(BudgetId, 5678, It.IsAny<CancellationToken>()),
+			Times.Once);
 	}
 
 	[Fact]

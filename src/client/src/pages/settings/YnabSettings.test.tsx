@@ -56,6 +56,10 @@ vi.mock("@/hooks/useYnab", () => ({
   useYnabRateLimitStatus: vi.fn(() =>
     mockQueryResult({ rateLimitStatus: null }),
   ),
+}));
+
+vi.mock("@/components/YnabBulkSyncCard", () => ({
+  YnabBulkSyncCard: () => <div data-testid="ynab-bulk-sync-card">Bulk YNAB Sync</div>,
   useStaleMappings: vi.fn(() =>
     mockQueryResult({
       staleAccountMappingCount: 0,
@@ -64,10 +68,6 @@ vi.mock("@/hooks/useYnab", () => ({
     }),
   ),
   useClearStaleMappings: vi.fn(() => mockMutationResult()),
-}));
-
-vi.mock("@/components/YnabBulkSyncCard", () => ({
-  YnabBulkSyncCard: () => <div data-testid="ynab-bulk-sync-card">Bulk YNAB Sync</div>,
 }));
 
 describe("YnabSettings – Connection Status", () => {
@@ -403,54 +403,6 @@ describe("YnabSettings – Rate Limit Card", () => {
     expect(
       screen.getByText(/API quota is running low/),
     ).toBeInTheDocument();
-  });
-});
-
-describe("YnabSettings – Stale Mappings", () => {
-  it("shows stale mapping banner when stale account mappings exist", async () => {
-    const { useYnabBudgets, useSelectedYnabBudget, useStaleMappings } =
-      await import("@/hooks/useYnab");
-    vi.mocked(useYnabBudgets).mockReturnValue(
-      mockQueryResult({ budgets: [], isLoading: false, isError: false }),
-    );
-    vi.mocked(useSelectedYnabBudget).mockReturnValue(
-      mockQueryResult({ selectedBudgetId: "budget-1", isLoading: false }),
-    );
-    vi.mocked(useStaleMappings).mockReturnValue(
-      mockQueryResult({
-        staleAccountMappingCount: 2,
-        staleCategoryMappingCount: 0,
-        hasStaleMappings: true,
-      }),
-    );
-
-    renderWithProviders(<YnabSettings />);
-
-    expect(screen.getByText(/2 account mapping\(s\)/)).toBeInTheDocument();
-    expect(screen.getByText("Clear stale mappings")).toBeInTheDocument();
-  });
-
-  it("shows stale mapping banner when stale category mappings exist", async () => {
-    const { useYnabBudgets, useSelectedYnabBudget, useStaleMappings } =
-      await import("@/hooks/useYnab");
-    vi.mocked(useYnabBudgets).mockReturnValue(
-      mockQueryResult({ budgets: [], isLoading: false, isError: false }),
-    );
-    vi.mocked(useSelectedYnabBudget).mockReturnValue(
-      mockQueryResult({ selectedBudgetId: "budget-1", isLoading: false }),
-    );
-    vi.mocked(useStaleMappings).mockReturnValue(
-      mockQueryResult({
-        staleAccountMappingCount: 0,
-        staleCategoryMappingCount: 3,
-        hasStaleMappings: true,
-      }),
-    );
-
-    renderWithProviders(<YnabSettings />);
-
-    expect(screen.getByText(/3 category mapping\(s\)/)).toBeInTheDocument();
-    expect(screen.getByText("Clear stale mappings")).toBeInTheDocument();
   });
 
   it("shows both account and category counts when both are stale", async () => {

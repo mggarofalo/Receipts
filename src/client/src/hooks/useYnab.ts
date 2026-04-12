@@ -2,33 +2,17 @@ import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
-// Some schemas exceed TypeScript's type-resolution depth when accessed via
-// components["schemas"] due to the large union of 150+ schemas.  We define
-// them inline (matching the generated api.d.ts) so property access is sound.
-
-type YnabConnectionStatusResponse = {
-  isConfigured: boolean;
-  isConnected: boolean;
-  lastSuccessfulSyncUtc?: string | null;
-};
-
-type StaleMappingsResponse = {
-  staleAccountMappingCount: number;
-  staleCategoryMappingCount: number;
-  currentBudgetId?: string | null;
-};
+import type { components } from "@/generated/api";
 
 export function useYnabConnectionStatus() {
   const query = useQuery({
     queryKey: ["ynab", "connection-status"],
-    staleTime: 5 * 60 * 1000, // 5 min — matches backend budget cache TTL
     queryFn: async () => {
       const { data, error } = await client.GET(
-        "/api/ynab/connection-status" as never,
-        {} as never,
+        "/api/ynab/connection-status",
       );
       if (error) throw error;
-      return data as unknown as YnabConnectionStatusResponse;
+      return data;
     },
   });
   return useMemo(
@@ -342,12 +326,9 @@ export function useStaleMappings(enabled = true) {
   const query = useQuery({
     queryKey: ["ynab", "stale-mappings"],
     queryFn: async () => {
-      const { data, error } = await client.GET(
-        "/api/ynab/stale-mappings" as never,
-        {} as never,
-      );
+      const { data, error } = await client.GET("/api/ynab/stale-mappings");
       if (error) throw error;
-      return data as unknown as StaleMappingsResponse;
+      return data;
     },
     enabled,
   });
@@ -364,21 +345,13 @@ export function useStaleMappings(enabled = true) {
   );
 }
 
-type ClearStaleMappingsResponse = {
-  deletedAccountMappings: number;
-  deletedCategoryMappings: number;
-};
-
 export function useClearStaleMappings() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await client.DELETE(
-        "/api/ynab/stale-mappings" as never,
-        {} as never,
-      );
+      const { data, error } = await client.DELETE("/api/ynab/stale-mappings");
       if (error) throw error;
-      return data as unknown as ClearStaleMappingsResponse;
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab"] });
@@ -413,57 +386,12 @@ export function useDeleteYnabCategoryMapping() {
   });
 }
 
+export type YnabMemoSyncResult =
+  components["schemas"]["YnabMemoSyncResultItem"];
 export type YnabMemoSyncOutcome =
-  | "Synced"
-  | "AlreadySynced"
-  | "NoMatch"
-  | "Ambiguous"
-  | "CurrencySkipped"
-  | "ReconciledSkipped"
-  | "Failed";
-
-export type YnabTransactionCandidateDto = {
-  id: string;
-  date: string;
-  amount: number;
-  memo?: null | string;
-  payeeName?: null | string;
-  accountId: string;
-};
-
-export type YnabMemoSyncResult = {
-  localTransactionId: string;
-  receiptId: string;
-  outcome: YnabMemoSyncOutcome;
-  ynabTransactionId?: null | string;
-  error?: null | string;
-  ambiguousCandidates?: null | YnabTransactionCandidateDto[];
-};
-
-type YnabMemoSyncResponse = {
-  results: YnabMemoSyncResult[];
-};
-
-type PushedTransactionInfo = {
-  localTransactionId: string;
-  ynabTransactionId: string;
-  milliunits: number;
-  subTransactionCount: number;
-};
-
-type PushYnabTransactionsResponse = {
-  success: boolean;
-  pushedTransactions: PushedTransactionInfo[];
-  unmappedCategories?: null | string[];
-  error?: null | string;
-};
-
-type BulkPushYnabTransactionsResponse = {
-  results: {
-    receiptId: string;
-    result: PushYnabTransactionsResponse;
-  }[];
-};
+  components["schemas"]["YnabMemoSyncOutcome"];
+export type YnabTransactionCandidateDto =
+  components["schemas"]["YnabTransactionCandidate"];
 
 export function useSyncYnabMemos() {
   const queryClient = useQueryClient();
@@ -473,11 +401,10 @@ export function useSyncYnabMemos() {
         body: { receiptId },
       });
       if (error) throw error;
-      return data as unknown as YnabMemoSyncResponse;
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
-      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       const synced = data?.results?.filter(
         (r) => r.outcome === "Synced",
       ).length;
@@ -501,11 +428,10 @@ export function useSyncYnabMemosBulk() {
         body: { receiptIds },
       });
       if (error) throw error;
-      return data as unknown as YnabMemoSyncResponse;
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
-      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       const synced = data?.results?.filter(
         (r) => r.outcome === "Synced",
       ).length;
@@ -533,7 +459,6 @@ export function useResolveYnabMemoSync() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
-      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       toast.success("YNAB memo sync resolved");
     },
     onError: () => {
@@ -571,11 +496,10 @@ export function usePushYnabTransactions() {
         { body: { receiptId } },
       );
       if (error) throw error;
-      return data as unknown as PushYnabTransactionsResponse;
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
-      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       if (data?.success) {
         toast.success(
           `Pushed ${data.pushedTransactions.length} transaction(s) to YNAB`,
@@ -599,11 +523,10 @@ export function useBulkPushYnabTransactions() {
         { body: { receiptIds } },
       );
       if (error) throw error;
-      return data as unknown as BulkPushYnabTransactionsResponse;
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
-      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       const total = data?.results?.length ?? 0;
       const succeeded =
         data?.results?.filter((r) => r.result.success).length ?? 0;
@@ -631,7 +554,7 @@ async function fetchAllReceiptIds(): Promise<{
       params: { query: { offset, limit: ALL_RECEIPTS_PAGE_SIZE } },
     });
     if (error) throw error;
-    total = Number(data?.total ?? 0);
+    total = data?.total ?? 0;
     const page = data?.data ?? [];
     for (const r of page) {
       if (r.id) ids.push(r.id);
@@ -662,30 +585,24 @@ export function useAllReceiptIds(enabled = true) {
   );
 }
 
+export type ReceiptYnabSyncStatus =
+  components["schemas"]["ReceiptYnabSyncStatus"];
 export type ReceiptYnabSyncStatusValue =
-  "NotSynced" | "Pending" | "Synced" | "Failed";
-export type ReceiptYnabSyncStatus = {
-  receiptId: string;
-  syncStatus: ReceiptYnabSyncStatusValue;
-};
-
-type ReceiptYnabSyncStatusListResponse = {
-  data: ReceiptYnabSyncStatus[];
-};
+  components["schemas"]["ReceiptYnabSyncStatusValue"];
 
 export function useReceiptYnabSyncStatuses(receiptIds: string[]) {
   const query = useQuery({
     queryKey: ["ynab", "receipt-sync-statuses", receiptIds],
-    queryFn: async (): Promise<ReceiptYnabSyncStatusListResponse> => {
+    queryFn: async () => {
       if (receiptIds.length === 0) return { data: [] };
-      const res = await client.GET(
-        "/api/ynab/receipt-sync-statuses" as "/api/ynab/budgets",
+      const { data, error } = await client.GET(
+        "/api/ynab/receipt-sync-statuses",
         {
-          params: { query: { receiptIds } } as never,
+          params: { query: { receiptIds } },
         },
       );
-      if (res.error) return { data: [] };
-      return res.data as unknown as ReceiptYnabSyncStatusListResponse;
+      if (error) return { data: [] };
+      return data;
     },
     enabled: receiptIds.length > 0,
     retry: false,
@@ -710,9 +627,9 @@ export function useYnabSyncStatus(transactionId: string | null) {
         {
           params: {
             path: { transactionId },
-            query: { syncType: "TransactionPush" as const },
+            query: { syncType: "TransactionPush" },
           },
-        } as never,
+        },
       );
       if (error) return null;
       return data;
@@ -721,24 +638,15 @@ export function useYnabSyncStatus(transactionId: string | null) {
   });
 }
 
-type YnabRateLimitStatusResponse = {
-  remainingRequests: number;
-  maxRequests: number;
-  requestsUsed: number;
-  windowResetAt?: null | string;
-  oldestRequestAt?: null | string;
-};
-
 export function useYnabRateLimitStatus(enabled = true) {
   const query = useQuery({
     queryKey: ["ynab", "rate-limit-status"],
     queryFn: async () => {
       const { data, error } = await client.GET(
-        "/api/ynab/rate-limit-status" as never,
-        {} as never,
+        "/api/ynab/rate-limit-status",
       );
       if (error) throw error;
-      return data as unknown as YnabRateLimitStatusResponse;
+      return data;
     },
     enabled,
     refetchInterval: 30_000,
