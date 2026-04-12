@@ -50,7 +50,7 @@ describe("useReceiptItemSuggestions", () => {
         category: "Groceries",
         subcategory: "Dairy",
         unitPrice: 3.99,
-        matchType: "location",
+        matchType: "Location",
       },
     ];
     (client.GET as Mock).mockResolvedValue({ data: suggestions, error: undefined });

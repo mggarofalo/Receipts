@@ -991,7 +991,7 @@ describe("useYnab", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.rateLimitStatus).toEqual(rateLimitData);
-    expect(client.GET).toHaveBeenCalledWith("/api/ynab/rate-limit-status");
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/rate-limit-status", {});
   });
 
   it("useYnabRateLimitStatus returns null when data is undefined", async () => {
