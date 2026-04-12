@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, Navigate } from "react-router";
 import { useTripByReceiptId } from "@/hooks/useTrips";
 import { useUpdateReceipt } from "@/hooks/useReceipts";
+import { useReceiptYnabSyncStatuses } from "@/hooks/useYnab";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEnumMetadata } from "@/hooks/useEnumMetadata";
 import {
@@ -55,6 +56,10 @@ function ReceiptDetail() {
 
   const { data: trip, isLoading, isError } = useTripByReceiptId(id ?? null);
   const updateReceipt = useUpdateReceipt();
+  const { statusMap: ynabStatusMap } = useReceiptYnabSyncStatuses(
+    id ? [id] : [],
+  );
+  const persistedYnabStatus = id ? ynabStatusMap.get(id) : undefined;
 
   const [editOpen, setEditOpen] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
@@ -273,6 +278,7 @@ function ReceiptDetail() {
               <YnabPushButton
                 receiptId={id}
                 hasTransactions={trip.transactions.length > 0}
+                persistedSyncStatus={persistedYnabStatus}
               />
             </CardContent>
           </Card>
