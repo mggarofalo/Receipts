@@ -77,7 +77,8 @@ RUN case ${TARGETARCH} in \
     esac && \
     dotnet publish src/Presentation/API/API.csproj \
       -c Release -o /app/publish --no-restore \
-      -p:PublishReadyToRun=true -r linux-${DOTNET_ARCH} && \
+      -p:PublishReadyToRun=true -p:OpenApiGenerateDocumentsOnBuild=false \
+      -r linux-${DOTNET_ARCH} && \
     dotnet publish src/Tools/DbMigrator/DbMigrator.csproj \
       -c Release -o /app/tools/DbMigrator --no-restore \
       -r linux-${DOTNET_ARCH} && \
