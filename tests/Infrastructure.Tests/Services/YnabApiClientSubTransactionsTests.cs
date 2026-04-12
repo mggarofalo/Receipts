@@ -63,7 +63,7 @@ public class YnabApiClientSubTransactionsTests
 					category_name = (string?)null,
 					payee_name = "Walmart",
 					deleted = false,
-					sub_transactions = new[]
+					subtransactions = new[]
 					{
 						new
 						{
@@ -126,7 +126,7 @@ public class YnabApiClientSubTransactionsTests
 					category_name = (string?)null,
 					payee_name = (string?)null,
 					deleted = false,
-					sub_transactions = new[]
+					subtransactions = new[]
 					{
 						new { id = "sub-1", transaction_id = "tx-1", amount = -20000, memo = (string?)null, category_id = "cat-a", category_name = "A", deleted = false },
 						new { id = "sub-2", transaction_id = "tx-1", amount = -10000, memo = (string?)null, category_id = "cat-b", category_name = "B", deleted = true },
@@ -165,7 +165,7 @@ public class YnabApiClientSubTransactionsTests
 					category_name = "Groceries",
 					payee_name = "Store",
 					deleted = false,
-					sub_transactions = Array.Empty<object>(),
+					subtransactions = Array.Empty<object>(),
 				}
 			}
 		});
@@ -203,7 +203,7 @@ public class YnabApiClientSubTransactionsTests
 					category_name = (string?)null,
 					payee_name = (string?)null,
 					deleted = false,
-					sub_transactions = new[]
+					subtransactions = new[]
 					{
 						new { id = "sub-1", transaction_id = "tx-1", amount = -20000, memo = (string?)null, category_id = "cat-a", category_name = "A", deleted = true },
 						new { id = "sub-2", transaction_id = "tx-1", amount = -10000, memo = (string?)null, category_id = "cat-b", category_name = "B", deleted = true },

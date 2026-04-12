@@ -85,7 +85,7 @@ internal sealed class YnabTransactionDto
 	[JsonPropertyName("category_name")]
 	public string? CategoryName { get; set; }
 
-	[JsonPropertyName("sub_transactions")]
+	[JsonPropertyName("subtransactions")]
 	public List<YnabSubTransactionDto>? SubTransactions { get; set; }
 
 	[JsonPropertyName("deleted")]
