@@ -107,7 +107,7 @@ describe("YnabPushButton", () => {
             {
               localTransactionId: "tx-1",
               ynabTransactionId: "ynab-tx-1",
-              amountMilliunits: -11000,
+              milliunits: -11000,
               subTransactionCount: 1,
             },
           ],
