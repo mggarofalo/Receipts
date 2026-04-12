@@ -4982,7 +4982,7 @@ components:
     SimilarItemResponseSource:
       type: string
       description: "'template' if from item templates, 'history' if from receipt item history"
-      enum: [template, history]
+      enum: [Template, History]
 
     SimilarItemResponse:
       type: object
@@ -5163,7 +5163,7 @@ components:
 
     ConfidenceLevel:
       type: string
-      enum: [low, medium, high]
+      enum: [Low, Medium, High]
 
     ProposedReceiptResponse:
       type: object
@@ -5420,7 +5420,7 @@ components:
     ReceiptItemSuggestionResponseMatchType:
       type: string
       description: "'location' if matched with the specified location, 'global' if fallback to all locations"
-      enum: [location, global]
+      enum: [Location, Global]
 
     ReceiptItemSuggestionResponse:
       type: object
