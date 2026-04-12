@@ -16,6 +16,9 @@ IResourceBuilder<ProjectResource> migrator = builder.AddProject<Projects.DbMigra
 IResourceBuilder<ProjectResource> seeder = builder.AddProject<Projects.DbSeeder>("db-seeder")
 	.WithReference(db)
 	.WaitForCompletion(migrator)
+	// These override DbSeeder/appsettings.Development.json when running under Aspire.
+	// Keep both in sync, or remove appsettings.Development.json AdminSeed section if
+	// all local dev runs go through Aspire.
 	.WithEnvironment("AdminSeed__Email", "admin@receipts.local")
 	.WithEnvironment("AdminSeed__Password", "Admin123!@#")
 	.WithEnvironment("AdminSeed__FirstName", "Admin")

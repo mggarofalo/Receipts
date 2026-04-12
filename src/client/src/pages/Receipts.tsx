@@ -120,11 +120,9 @@ function Receipts() {
     useFuzzySearch({ data, config: SEARCH_CONFIG });
 
   const filteredResults = useMemo(() => {
-    const items = search.trim()
-      ? results.map((r) => r.item)
-      : results.map((r) => r.item);
+    const items = results.map((r) => r.item);
     return applyFilters(items, FILTER_DEFS, filterValues);
-  }, [results, filterValues, search]);
+  }, [results, filterValues]);
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();

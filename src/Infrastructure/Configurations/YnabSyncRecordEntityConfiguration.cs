@@ -21,6 +21,10 @@ public class YnabSyncRecordEntityConfiguration : IEntityTypeConfiguration<YnabSy
 			.IsUnique()
 			.HasFilter("\"DeletedAt\" IS NULL");
 
+		// ClientCascade: EF only cascades when related entities are loaded in the
+		// same change tracker. Hard-delete paths (TrashService.PurgeAllDeletedAsync)
+		// must delete YnabSyncRecords before Transactions to respect FK order.
+		// Soft-delete cascades via OwnedByFk attribute + HandleSoftDelete().
 		builder.HasOne(e => e.Transaction)
 			.WithMany()
 			.HasForeignKey(e => e.LocalTransactionId)

@@ -22,9 +22,27 @@ public class YnabApiClient(
 {
 	private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-	private const string BudgetsCacheKey = "ynab:budgets";
-	private const string AccountsCacheKeyPrefix = "ynab:accounts:";
-	private const string CategoriesCacheKeyPrefix = "ynab:categories:";
+	private const string CacheKeyPrefix = "ynab:";
+
+	private string PatCachePrefix
+	{
+		get
+		{
+			string? pat = Pat;
+			if (string.IsNullOrEmpty(pat))
+			{
+				return CacheKeyPrefix;
+			}
+			// Use first 8 chars of SHA256 hash to namespace cache keys by PAT identity.
+			// Avoids stale data after PAT rotation without exposing the token in memory.
+			byte[] hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(pat));
+			return $"{CacheKeyPrefix}{Convert.ToHexString(hash)[..8]}:";
+		}
+	}
+
+	private string BudgetsCacheKey => $"{PatCachePrefix}budgets";
+	private string AccountsCacheKey(string budgetId) => $"{PatCachePrefix}accounts:{budgetId}";
+	private string CategoriesCacheKey(string budgetId) => $"{PatCachePrefix}categories:{budgetId}";
 
 	private static readonly HashSet<string> ExcludedCategoryGroups = new(StringComparer.OrdinalIgnoreCase)
 	{
@@ -57,7 +75,7 @@ public class YnabApiClient(
 
 	public async Task<List<YnabAccount>> GetAccountsAsync(string budgetId, CancellationToken cancellationToken)
 	{
-		string cacheKey = $"{AccountsCacheKeyPrefix}{budgetId}";
+		string cacheKey = AccountsCacheKey(budgetId);
 		if (memoryCache.TryGetValue(cacheKey, out List<YnabAccount>? cached) && cached is not null)
 		{
 			return cached;
@@ -77,7 +95,7 @@ public class YnabApiClient(
 
 	public async Task<List<YnabCategory>> GetCategoriesAsync(string budgetId, CancellationToken cancellationToken)
 	{
-		string cacheKey = $"{CategoriesCacheKeyPrefix}{budgetId}";
+		string cacheKey = CategoriesCacheKey(budgetId);
 		if (memoryCache.TryGetValue(cacheKey, out List<YnabCategory>? cached) && cached is not null)
 		{
 			return cached;

@@ -21,6 +21,7 @@ type StaleMappingsResponse = {
 export function useYnabConnectionStatus() {
   const query = useQuery({
     queryKey: ["ynab", "connection-status"],
+    staleTime: 5 * 60 * 1000, // 5 min — matches backend budget cache TTL
     queryFn: async () => {
       const { data, error } = await client.GET(
         "/api/ynab/connection-status" as never,

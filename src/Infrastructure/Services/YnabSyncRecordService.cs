@@ -91,11 +91,16 @@ public class YnabSyncRecordService(IYnabSyncRecordRepository repository) : IYnab
 
 	private static ReceiptSyncStatusValue AggregateStatus(List<YnabSyncRecordEntity> records)
 	{
+		// Prioritize TransactionPush records — they represent the primary sync operation.
+		// MemoUpdate is secondary; a failed memo update should not mask a successful push.
+		List<YnabSyncRecordEntity> pushRecords = records.Where(r => r.SyncType == Common.YnabSyncType.TransactionPush).ToList();
+		List<YnabSyncRecordEntity> primaryRecords = pushRecords.Count > 0 ? pushRecords : records;
+
 		bool hasFailed = false;
 		bool hasPending = false;
 		bool hasSynced = false;
 
-		foreach (YnabSyncRecordEntity record in records)
+		foreach (YnabSyncRecordEntity record in primaryRecords)
 		{
 			switch (record.SyncStatus)
 			{

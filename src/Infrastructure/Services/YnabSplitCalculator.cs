@@ -26,7 +26,12 @@ public class YnabSplitCalculator : IYnabSplitCalculator
 		Dictionary<string, decimal> categoryPreTaxSums = new();
 		foreach (ReceiptItem item in items)
 		{
-			string ynabCategoryId = categoryToYnabCategoryId[item.Category];
+			if (!categoryToYnabCategoryId.TryGetValue(item.Category, out string? ynabCategoryId))
+			{
+				throw new InvalidOperationException(
+					$"No YNAB category mapping found for item category '{item.Category}'. " +
+					$"Ensure all receipt item categories are mapped before computing splits.");
+			}
 			decimal amount = item.TotalAmount.Amount;
 			if (categoryPreTaxSums.TryGetValue(ynabCategoryId, out decimal existing))
 			{
@@ -88,11 +93,14 @@ public class YnabSplitCalculator : IYnabSplitCalculator
 		long sumOfSubs = subTransactions.Sum(st => st.Milliunits);
 		long remainder = transactionTotalMilliunits - sumOfSubs;
 
-		// Safety: remainder should not exceed the number of sub-transactions
-		if (Math.Abs(remainder) > subTransactions.Count)
+		// Safety: remainder from rounding should be small. In multi-transaction receipts
+		// with independent rounding, the remainder can be up to one milliunit per category
+		// per transaction. Allow a generous bound to avoid false positives (RECEIPTS-525).
+		long maxAcceptableRemainder = Math.Max(subTransactions.Count, 10);
+		if (Math.Abs(remainder) > maxAcceptableRemainder)
 		{
 			throw new InvalidOperationException(
-				$"Rounding remainder ({remainder}) exceeds sub-transaction count ({subTransactions.Count}). " +
+				$"Rounding remainder ({remainder}) exceeds safety bound ({maxAcceptableRemainder}). " +
 				$"Transaction total: {transactionTotalMilliunits}, sum of subs: {sumOfSubs}.");
 		}
 

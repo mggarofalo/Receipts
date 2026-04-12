@@ -46,6 +46,21 @@ vi.mock("@/pages/SecurityLog", () => ({
 vi.mock("@/pages/RecycleBin", () => ({
   default: () => <div data-testid="page-recycle-bin">RecycleBin</div>,
 }));
+vi.mock("@/pages/Reports", () => ({
+  default: () => <div data-testid="page-reports">Reports</div>,
+}));
+vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
+  default: () => <div data-testid="page-new-receipt">NewReceipt</div>,
+}));
+vi.mock("@/pages/scan-receipt/ScanReceiptPage", () => ({
+  default: () => <div data-testid="page-scan-receipt">ScanReceipt</div>,
+}));
+vi.mock("@/pages/settings/YnabSettings", () => ({
+  default: () => <div data-testid="page-ynab-settings">YnabSettings</div>,
+}));
+vi.mock("@/pages/BackupRestore", () => ({
+  default: () => <div data-testid="page-backup-restore">BackupRestore</div>,
+}));
 vi.mock("@/pages/NotFound", () => ({
   default: () => <div data-testid="page-not-found">Not Found</div>,
 }));
@@ -114,6 +129,31 @@ describe("App router", () => {
   it("renders NotFound for unknown routes", async () => {
     renderRoute("/some/unknown/path");
     expect(await screen.findByTestId("page-not-found")).toBeInTheDocument();
+  });
+
+  it('renders Reports page at "/reports" route', async () => {
+    renderRoute("/reports");
+    expect(await screen.findByTestId("page-reports")).toBeInTheDocument();
+  });
+
+  it('renders NewReceipt page at "/receipts/new" route', async () => {
+    renderRoute("/receipts/new");
+    expect(await screen.findByTestId("page-new-receipt")).toBeInTheDocument();
+  });
+
+  it('renders ScanReceipt page at "/receipts/scan" route', async () => {
+    renderRoute("/receipts/scan");
+    expect(await screen.findByTestId("page-scan-receipt")).toBeInTheDocument();
+  });
+
+  it('renders YnabSettings page at "/settings/ynab" route', async () => {
+    renderRoute("/settings/ynab");
+    expect(await screen.findByTestId("page-ynab-settings")).toBeInTheDocument();
+  });
+
+  it('renders BackupRestore page at "/admin/backup" route', async () => {
+    renderRoute("/admin/backup");
+    expect(await screen.findByTestId("page-backup-restore")).toBeInTheDocument();
   });
 
   it("renders NotFound for deprecated redirect routes", async () => {

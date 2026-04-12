@@ -14,7 +14,6 @@ public class YnabMemoSyncService(
 	IYnabSyncRecordService syncRecordService,
 	ITransactionRepository transactionRepository,
 	IReceiptRepository receiptRepository,
-	IYnabServerKnowledgeRepository serverKnowledgeRepository,
 	ILogger<YnabMemoSyncService> logger) : IYnabMemoSyncService
 {
 	internal const int YnabMemoMaxLength = 200;
@@ -43,10 +42,28 @@ public class YnabMemoSyncService(
 			return [];
 		}
 
+		// Pre-fetch YNAB transactions once per unique date to avoid duplicate API calls
+		// when multiple local transactions share the same date (RECEIPTS-527).
+		Dictionary<DateOnly, (List<YnabTransaction>? Transactions, string? Error)> ynabTransactionsByDate = [];
+		foreach (IGrouping<DateOnly, TransactionEntity> group in transactions.GroupBy(t => t.Date))
+		{
+			try
+			{
+				YnabTransactionsResult result = await ynabClient.GetTransactionsByDateAsync(budgetId, group.Key, cancellationToken: cancellationToken);
+				ynabTransactionsByDate[group.Key] = (result.Transactions, null);
+				// Do NOT persist ServerKnowledge from date-filtered fetches (RECEIPTS-523)
+			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Failed to fetch YNAB transactions for date {Date}", group.Key);
+				ynabTransactionsByDate[group.Key] = (null, ex.Message);
+			}
+		}
+
 		List<YnabMemoSyncResult> results = [];
 		foreach (TransactionEntity transaction in transactions)
 		{
-			YnabMemoSyncResult result = await SyncSingleTransactionAsync(transaction, receipt, budgetId, cancellationToken);
+			YnabMemoSyncResult result = await SyncSingleTransactionAsync(transaction, receipt, budgetId, ynabTransactionsByDate, cancellationToken);
 			results.Add(result);
 		}
 
@@ -100,7 +117,9 @@ public class YnabMemoSyncService(
 	}
 
 	private async Task<YnabMemoSyncResult> SyncSingleTransactionAsync(
-		TransactionEntity transaction, ReceiptEntity receipt, string budgetId, CancellationToken cancellationToken)
+		TransactionEntity transaction, ReceiptEntity receipt, string budgetId,
+		Dictionary<DateOnly, (List<YnabTransaction>? Transactions, string? Error)> ynabTransactionsByDate,
+		CancellationToken cancellationToken)
 	{
 		// Currency guard: V1 supports only USD
 		if (transaction.AmountCurrency != Currency.USD)
@@ -116,22 +135,17 @@ public class YnabMemoSyncService(
 			return new YnabMemoSyncResult(transaction.Id, receipt.Id, YnabMemoSyncOutcome.AlreadySynced, existingRecord.YnabTransactionId, null, null);
 		}
 
-		// Fetch YNAB transactions for the same date.
-		// NOTE: Do NOT use delta sync (last_knowledge_of_server) here — memo matching
-		// requires the full set of transactions on a date, not just changed ones.
-		// Delta sync is available on the API client for polling/change-detection consumers.
-		List<YnabTransaction> ynabTransactions;
-		try
+		// Use pre-fetched YNAB transactions for this date (fetched once per unique date in the caller).
+		// A null Transactions entry means the fetch failed for this date.
+		if (!ynabTransactionsByDate.TryGetValue(transaction.Date, out var dateFetchResult) || dateFetchResult.Transactions is null)
 		{
-			YnabTransactionsResult result = await ynabClient.GetTransactionsByDateAsync(budgetId, transaction.Date, cancellationToken: cancellationToken);
-			ynabTransactions = result.Transactions;
-			await serverKnowledgeRepository.UpsertAsync(budgetId, result.ServerKnowledge, cancellationToken);
+			string error = dateFetchResult.Error is not null
+				? $"Failed to fetch YNAB transactions: {dateFetchResult.Error}"
+				: "Failed to fetch YNAB transactions for this date.";
+			return new YnabMemoSyncResult(transaction.Id, receipt.Id, YnabMemoSyncOutcome.Failed, null, error, null);
 		}
-		catch (Exception ex)
-		{
-			logger.LogError(ex, "Failed to fetch YNAB transactions for date {Date}", transaction.Date);
-			return new YnabMemoSyncResult(transaction.Id, receipt.Id, YnabMemoSyncOutcome.Failed, null, $"Failed to fetch YNAB transactions: {ex.Message}", null);
-		}
+
+		List<YnabTransaction> ynabTransactions = dateFetchResult.Transactions;
 
 		// Convert local amount to YNAB milliunits (negated: local positive = YNAB outflow negative)
 		long expectedYnabAmount = -YnabConvert.ToMilliunits(transaction.Amount);
