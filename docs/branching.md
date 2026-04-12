@@ -150,9 +150,8 @@ git worktree add .claude/worktrees/<branch-name> -b <branch-name>
 |-------------------------------|-------------------------------|
 | Git history, refs, branches | `node_modules/` (root and `src/client/`) |
 | Hooks config (`core.hooksPath`) | `bin/` / `obj/` (.NET build output) |
-| | `openapi/generated/` |
+| `src/client/src/generated/api.d.ts` (checked in) | `openapi/generated/` |
 | | `src/Presentation/API/Generated/*.g.cs` |
-| | `src/client/src/generated/` |
 
 #### Bootstrap commands
 
@@ -164,7 +163,7 @@ npm install                            # Root tooling (Spectral, js-yaml, cross-
 cd src/client && npm install && cd -   # React client dependencies
 dotnet run scripts/download-onnx-model.cs  # Download ONNX embedding model (~90MB)
 dotnet build Receipts.slnx             # Compiles + generates DTOs and openapi/generated/API.json
-cd src/client && npm run generate:types && cd -  # TypeScript types from OpenAPI spec
+cd src/client && npm run generate:types:write && cd -  # TypeScript types from OpenAPI spec
 ```
 
 #### Branch naming in worktrees

@@ -29,6 +29,17 @@ Conventional Commits: `<type>(<scope>): <description>`. Enforced by `commit-msg`
 
 Spec-first workflow — edit `openapi/spec.yaml`, lint, build, check drift. See **[docs/api-guidelines.md](docs/api-guidelines.md)** for full details.
 
+#### Generated TypeScript client types (`src/client/src/generated/api.d.ts`)
+
+This file is **checked into git** (via Track B of RECEIPTS-534). It is a materialized view of `openapi/spec.yaml`, and the build guards against drift:
+
+- **Pre-commit auto-regenerates** `api.d.ts` whenever `openapi/spec.yaml` is staged — you do not need to run the regenerate command manually before committing.
+- **`npm run prebuild`** runs `generate:types:check`, which diffs the committed file against a freshly generated one. The build fails on mismatch.
+- **`.gitattributes`** marks `api.d.ts` as `merge=ours`, and **`.githooks/post-merge`** regenerates it automatically when a merge touches `openapi/spec.yaml`.
+- **After rebase or manual merge,** if `openapi/spec.yaml` was touched and the post-merge hook did not run (e.g. IDE merge), run `(cd src/client && npm run generate:types:write)` and commit the result.
+- **Never hand-merge conflicts in `src/client/src/generated/`.** Always resolve by regeneration. If you see a conflict marker in `api.d.ts`, run `npm run generate:types:write` and stage the result.
+- **`openapi-typescript` is pinned** to an exact version in `src/client/package.json` so two worktrees on the same SHA always produce byte-identical output.
+
 ## Build and Test
 
 ```bash

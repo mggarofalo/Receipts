@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Auto-regenerate src/client/src/generated/api.d.ts after a merge that touches
+# openapi/spec.yaml. Combined with `merge=ours` in .gitattributes, this makes
+# generated-file conflicts impossible to hand-merge — we always rebuild from
+# the source-of-truth spec.
+set -e
+
+# Find the merge diff (HEAD@{1} is the pre-merge HEAD).
+if ! git rev-parse --verify -q HEAD@{1} > /dev/null; then
+  exit 0
+fi
+
+CHANGED="$(git diff --name-only HEAD@{1} HEAD -- openapi/spec.yaml 2>/dev/null || true)"
+if [ -z "$CHANGED" ]; then
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+if [ ! -f "$REPO_ROOT/src/client/package.json" ]; then
+  exit 0
+fi
+
+echo "post-merge: openapi/spec.yaml changed — regenerating src/client/src/generated/api.d.ts"
+(cd "$REPO_ROOT/src/client" && npm run generate:types:write --silent)
+
+if ! git diff --quiet -- src/client/src/generated/api.d.ts; then
+  echo "post-merge: api.d.ts drifted; staging and amending with regenerated types"
+  git add src/client/src/generated/api.d.ts
+  # Amend only if the merge produced a commit (non-fast-forward merge).
+  if git rev-parse --verify -q MERGE_HEAD > /dev/null 2>&1; then
+    # MERGE_HEAD still exists means merge is mid-conflict — skip amend.
+    exit 0
+  fi
+  # If the previous commit is a merge commit we just created, amend it.
+  PARENTS="$(git rev-list --parents -n 1 HEAD | wc -w)"
+  if [ "$PARENTS" -ge 3 ]; then
+    git commit --amend --no-edit --no-verify
+  else
+    git commit -m "chore(client): regenerate api.d.ts after spec merge" --no-verify
+  fi
+fi
