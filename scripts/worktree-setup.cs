@@ -39,7 +39,7 @@ if (checkOnly)
 
     if (!File.Exists(Path.Combine(repoRoot, "src", "client", "src", "generated", "api.d.ts")))
     {
-        missing.Add("src/client/src/generated/api.d.ts — run: cd src/client && npm run generate:types");
+        missing.Add("src/client/src/generated/api.d.ts — run: cd src/client && npm run generate:types:write");
     }
 
     if (!File.Exists(Path.Combine(repoRoot, "src", "Infrastructure", "Models", "AllMiniLmL6V2", "model.onnx")))
@@ -80,7 +80,7 @@ Console.WriteLine("==> Building solution (generates DTOs and openapi/generated/A
 await RunAsync("dotnet", ["build", "Receipts.slnx"], repoRoot);
 
 Console.WriteLine("==> Generating TypeScript types from OpenAPI spec...");
-await RunAsync("npm", ["run", "generate:types"], Path.Combine(repoRoot, "src", "client"));
+await RunAsync("npm", ["run", "generate:types:write"], Path.Combine(repoRoot, "src", "client"));
 
 Console.WriteLine("==> Worktree setup complete.");
 return 0;

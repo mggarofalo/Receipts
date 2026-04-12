@@ -299,8 +299,8 @@ openapi/generated/
 src/Presentation/API/Generated/
 !src/Presentation/API/Generated/.gitkeep
 
-# Client generated types (regenerated from openapi/spec.yaml on dev/build)
-src/client/src/generated/
+# Client generated types — api.d.ts is checked in with a prebuild diff guard
+# (regenerate via `npm run generate:types:write` when openapi/spec.yaml changes)
 src/client/src/lib/api-types.ts
 
 # Client test coverage output
