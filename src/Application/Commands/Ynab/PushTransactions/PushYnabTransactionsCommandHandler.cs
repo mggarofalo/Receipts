@@ -99,15 +99,15 @@ public class PushYnabTransactionsCommandHandler(
 			return new PushYnabTransactionsResult(false, [], Error: "Some transaction accounts are not mapped to YNAB accounts.");
 		}
 
-		// 5. Skip already-synced transactions (allows retry after partial push)
-		HashSet<Guid> alreadySyncedIds = [];
+		// 5. Pre-load existing sync records (Synced → skip; Failed/Pending → reuse on retry)
+		Dictionary<Guid, YnabSyncRecordDto> existingSyncRecords = [];
 		foreach (Domain.Core.Transaction tx in transactions)
 		{
 			YnabSyncRecordDto? existingSync = await syncRecordService.GetByTransactionAndTypeAsync(
 				tx.Id, YnabSyncType.TransactionPush, cancellationToken);
-			if (existingSync is not null && existingSync.SyncStatus == YnabSyncStatus.Synced)
+			if (existingSync is not null)
 			{
-				alreadySyncedIds.Add(tx.Id);
+				existingSyncRecords[tx.Id] = existingSync;
 			}
 		}
 
@@ -139,8 +139,10 @@ public class PushYnabTransactionsCommandHandler(
 		{
 			Domain.Core.Transaction localTx = transactions.First(t => t.Id == txSplit.LocalTransactionId);
 
-			// Skip already-synced transactions (Bug 1: allows retry after partial push)
-			if (alreadySyncedIds.Contains(localTx.Id))
+			existingSyncRecords.TryGetValue(localTx.Id, out YnabSyncRecordDto? existingRecord);
+
+			// Skip already-synced transactions (allows retry after partial push)
+			if (existingRecord?.SyncStatus == YnabSyncStatus.Synced)
 			{
 				continue;
 			}
@@ -156,9 +158,19 @@ public class PushYnabTransactionsCommandHandler(
 			YnabSyncRecordDto? syncRecord = null;
 			try
 			{
-				// Create sync record (Pending) — inside try so DB failure is caught (Bug 3)
-				syncRecord = await syncRecordService.CreateAsync(
-					localTx.Id, budgetId, YnabSyncType.TransactionPush, cancellationToken);
+				if (existingRecord is not null)
+				{
+					// Reuse existing Failed/Pending row to avoid unique-constraint violation
+					await syncRecordService.UpdateStatusAsync(
+						existingRecord.Id, YnabSyncStatus.Pending, null, null, cancellationToken);
+					syncRecord = existingRecord;
+				}
+				else
+				{
+					// Create sync record (Pending) — inside try so DB failure is caught
+					syncRecord = await syncRecordService.CreateAsync(
+						localTx.Id, budgetId, YnabSyncType.TransactionPush, cancellationToken);
+				}
 
 				// Build sub-transactions
 				List<YnabSubTransaction>? subTransactions = null;
@@ -187,8 +199,33 @@ public class PushYnabTransactionsCommandHandler(
 					SubTransactions: subTransactions,
 					ImportId: importId);
 
-				YnabCreateTransactionResponse ynabResponse = await ynabApiClient.CreateTransactionAsync(
-					budgetId, ynabRequest, cancellationToken);
+				YnabCreateTransactionResponse ynabResponse;
+				try
+				{
+					ynabResponse = await ynabApiClient.CreateTransactionAsync(
+						budgetId, ynabRequest, cancellationToken);
+				}
+				catch (HttpRequestException conflictEx) when (conflictEx.StatusCode == System.Net.HttpStatusCode.Conflict)
+				{
+					string? recoveredId = await ynabApiClient.FindTransactionByImportIdAsync(
+						budgetId, ynabAccountId, importId, localTx.Date.AddDays(-1), cancellationToken);
+
+					if (recoveredId is null)
+					{
+						throw;
+					}
+
+					await syncRecordService.UpdateStatusAsync(
+						syncRecord!.Id, YnabSyncStatus.Synced, recoveredId, null, cancellationToken);
+
+					pushedTransactions.Add(new PushedTransactionInfo(
+						localTx.Id,
+						recoveredId,
+						txSplit.TotalMilliunits,
+						txSplit.SubTransactions.Count));
+
+					continue;
+				}
 
 				// Update sync record to Synced — separate error handling (Bug 6)
 				try

@@ -219,6 +219,28 @@ public class YnabApiClient(
 		return new YnabTransactionsResult(transactions, envelope.Data.ServerKnowledge);
 	}
 
+	public async Task<string?> FindTransactionByImportIdAsync(string budgetId, string accountId, string importId, DateOnly sinceDate, CancellationToken cancellationToken)
+	{
+		string encodedBudgetId = Uri.EscapeDataString(budgetId);
+		string formattedDate = sinceDate.ToString("yyyy-MM-dd");
+		string url = $"budgets/{encodedBudgetId}/transactions?since_date={formattedDate}";
+
+		YnabTransactionsListResponseEnvelope envelope;
+		try
+		{
+			envelope = await GetAsync<YnabTransactionsListResponseEnvelope>(url, cancellationToken);
+		}
+		catch (YnabNotFoundException)
+		{
+			return null;
+		}
+
+		YnabTransactionDto? match = envelope.Data.Transactions
+			.FirstOrDefault(t => !t.Deleted && t.AccountId == accountId && t.ImportId == importId);
+
+		return match?.Id;
+	}
+
 	public async Task UpdateTransactionMemoAsync(string budgetId, string transactionId, string memo, CancellationToken cancellationToken)
 	{
 		string encodedBudgetId = Uri.EscapeDataString(budgetId);
