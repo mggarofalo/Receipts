@@ -251,7 +251,7 @@ export function ReceiptItemForm({
       form.setValue("subcategory", suggestion.subcategory);
     }
     if (suggestion.unitPrice != null) {
-      form.setValue("unitPrice", suggestion.unitPrice);
+      form.setValue("unitPrice", Number(suggestion.unitPrice));
     }
     setItemCodeAutocompleteOpen(false);
   }
@@ -472,7 +472,7 @@ export function ReceiptItemForm({
                                       ? ` · ${suggestion.category}`
                                       : ""}
                                     {suggestion.unitPrice != null
-                                      ? ` · ${formatCurrency(suggestion.unitPrice)}`
+                                      ? ` · ${formatCurrency(Number(suggestion.unitPrice))}`
                                       : ""}
                                   </span>
                                 </div>

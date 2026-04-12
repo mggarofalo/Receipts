@@ -46,8 +46,20 @@ public static class ApplicationConfiguration
 			.AddJsonOptions(options =>
 			{
 				options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-				options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+				options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 			});
+
+		// Mirror the MVC JSON options onto the Microsoft.AspNetCore.Http.Json options so
+		// that minimal-API endpoints and the runtime schema pipeline share the same
+		// camelCase enum policy. The built-in OpenAPI document generator
+		// (Microsoft.AspNetCore.OpenApi) does not consult this for enum value names — it
+		// enumerates C# member names directly — so we also install a schema transformer
+		// below to rewrite enum values to camelCase at build time.
+		services.ConfigureHttpJsonOptions(options =>
+		{
+			options.SerializerOptions.PropertyNameCaseInsensitive = true;
+			options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+		});
 
 		services.AddResponseCompression(options =>
 		{
@@ -202,6 +214,20 @@ public static class ApplicationConfiguration
 				{
 					diagnosticContext.Set("UserId", userId);
 				}
+			};
+
+			// 503 on YNAB endpoints is expected when YNAB_PAT is not configured — log as Warning not Error
+			options.GetLevel = (httpContext, elapsed, ex) =>
+			{
+				if (httpContext.Response.StatusCode == 503
+					&& httpContext.Request.Path.StartsWithSegments("/api/ynab"))
+				{
+					return Serilog.Events.LogEventLevel.Warning;
+				}
+
+				return ex is not null || httpContext.Response.StatusCode >= 500
+					? Serilog.Events.LogEventLevel.Error
+					: Serilog.Events.LogEventLevel.Information;
 			};
 		});
 		app.UseMiddleware<ValidationExceptionMiddleware>();

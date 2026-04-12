@@ -56,7 +56,7 @@ const createKeySchema = z.object({
 type CreateKeyFormValues = z.infer<typeof createKeySchema>;
 
 function getKeyStatus(key: {
-  isRevoked: boolean;
+  isRevoked?: boolean;
   expiresAt?: string | null;
 }): "active" | "expired" | "revoked" {
   if (key.isRevoked) return "revoked";

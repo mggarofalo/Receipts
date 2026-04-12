@@ -16,7 +16,7 @@ export function useAccounts(offset = 0, limit = 50, sortBy?: string | null, sort
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useAccount(id: string | null) {

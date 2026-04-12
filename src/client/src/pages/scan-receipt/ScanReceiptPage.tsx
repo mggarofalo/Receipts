@@ -16,7 +16,7 @@ type Status = "idle" | "uploading" | "success" | "error";
 function mapProposalToInitialValues(
   proposal: ProposedReceiptResponse,
 ): ScanInitialValues {
-  const taxAmount = proposal.taxLines[0]?.amount ?? 0;
+  const taxAmount = Number(proposal.taxLines[0]?.amount ?? 0);
 
   let date = "";
   if (proposal.date) {
@@ -34,8 +34,8 @@ function mapProposalToInitialValues(
       receiptItemCode: item.code ?? "",
       description: item.description ?? "",
       pricingMode: "quantity" as const,
-      quantity: item.quantity ?? 1,
-      unitPrice: item.unitPrice ?? 0,
+      quantity: Number(item.quantity ?? 1),
+      unitPrice: Number(item.unitPrice ?? 0),
       category: "",
       subcategory: "",
     })),
@@ -75,10 +75,10 @@ function getErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "status" in error) {
     const status = (error as { status: number }).status;
     if (status === 400 || status === 415) {
-      return "Could not read the image. Please use a clear JPEG or PNG photo.";
+      return "Could not read the file. Please use a JPEG, PNG, or PDF.";
     }
     if (status === 422) {
-      return "Could not read the image. The receipt text was not recognized.";
+      return "Could not read the file. The receipt text was not recognized.";
     }
   }
 
@@ -122,7 +122,7 @@ export default function ScanReceiptPage() {
       <div className="space-y-6">
         <OcrTextPanel
           rawText={proposal.rawOcrText}
-          ocrConfidence={proposal.ocrConfidence}
+          ocrConfidence={Number(proposal.ocrConfidence ?? 0)}
         />
         <NewReceiptPage
           initialValues={initialValues}

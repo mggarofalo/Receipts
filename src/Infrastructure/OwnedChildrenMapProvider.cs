@@ -39,8 +39,9 @@ internal static class OwnedChildrenMapProvider
 				}
 
 				Type parentType = iface.GetGenericArguments()[0];
-				string parentName = parentType.Name.Replace("Entity", "");
-				string fkPropertyName = $"{parentName}Id";
+
+				// Check for an explicit FK name override via [OwnedByFk].
+				string fkPropertyName = GetFkPropertyName(type, parentType);
 
 				PropertyInfo fkProperty = type.GetProperty(fkPropertyName)
 					?? throw new InvalidOperationException(
@@ -68,5 +69,20 @@ internal static class OwnedChildrenMapProvider
 		}
 
 		return result.ToFrozenDictionary();
+	}
+
+	private static string GetFkPropertyName(Type childType, Type parentType)
+	{
+		OwnedByFkAttribute? attr = childType
+			.GetCustomAttributes<OwnedByFkAttribute>()
+			.FirstOrDefault(a => a.ParentType == parentType);
+
+		if (attr is not null)
+		{
+			return attr.FkPropertyName;
+		}
+
+		string parentName = parentType.Name.Replace("Entity", "");
+		return $"{parentName}Id";
 	}
 }

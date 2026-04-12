@@ -137,6 +137,29 @@ describe("LineItemsSection", () => {
     expect(screen.getByText("Subtotal: $11.00")).toBeInTheDocument();
   });
 
+  it("rounds per-item totals to nearest cent when computing subtotal", () => {
+    // Uses Math.round to avoid IEEE 754 float issues with Math.floor.
+    // Example: 10 x $0.09 = $0.90 exactly
+    // With Math.floor: 10 * 0.09 * 100 = 89.9999... → floor → 89 → $0.89 (WRONG)
+    // With Math.round: 10 * 0.09 * 100 = 89.9999... → round → 90 → $0.90 (CORRECT)
+    const items: ReceiptLineItem[] = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: "Fractional item",
+        pricingMode: "quantity",
+        quantity: 10,
+        unitPrice: 0.09,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <LineItemsSection {...defaultProps} items={items} />,
+    );
+    expect(screen.getByText("Subtotal: $0.90")).toBeInTheDocument();
+  });
+
   it("calls onChange when an item is removed", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

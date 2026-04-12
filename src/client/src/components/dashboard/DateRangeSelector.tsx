@@ -121,7 +121,7 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
   const { data: earliestYearData } = useDashboardEarliestReceiptYear();
 
   const availableYears = useMemo(() => {
-    const earliest = earliestYearData?.year ?? new Date().getFullYear();
+    const earliest = Number(earliestYearData?.year ?? new Date().getFullYear());
     const current = new Date().getFullYear();
     const years: number[] = [];
     for (let y = current; y >= earliest; y--) {

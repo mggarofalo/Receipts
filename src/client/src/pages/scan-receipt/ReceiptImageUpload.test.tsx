@@ -38,10 +38,10 @@ describe("ReceiptImageUpload", () => {
   it("renders the drop zone", () => {
     renderWithProviders(<ReceiptImageUpload {...defaultProps} />);
     expect(
-      screen.getByLabelText("Drop zone for receipt image"),
+      screen.getByLabelText("Drop zone for receipt file"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Drop a receipt image here"),
+      screen.getByText("Drop a receipt image or PDF here"),
     ).toBeInTheDocument();
   });
 
@@ -101,11 +101,11 @@ describe("ReceiptImageUpload", () => {
     ).toBeInTheDocument();
   });
 
-  it("validates file type and rejects non-image files via drag-and-drop", async () => {
+  it("validates file type and rejects unsupported files via drag-and-drop", async () => {
     renderWithProviders(<ReceiptImageUpload {...defaultProps} />);
 
-    const dropZone = screen.getByLabelText("Drop zone for receipt image");
-    const file = createTestFile("document.pdf", "application/pdf");
+    const dropZone = screen.getByLabelText("Drop zone for receipt file");
+    const file = createTestFile("document.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
     const dataTransfer = {
       files: [file],
@@ -118,8 +118,42 @@ describe("ReceiptImageUpload", () => {
     fireEvent.drop(dropZone, { dataTransfer });
 
     expect(
-      screen.getByText("Only JPEG and PNG images are supported."),
+      screen.getByText("Only JPEG, PNG, and PDF files are supported."),
     ).toBeInTheDocument();
+  });
+
+  it("accepts PDF files via drag-and-drop", async () => {
+    renderWithProviders(<ReceiptImageUpload {...defaultProps} />);
+
+    const dropZone = screen.getByLabelText("Drop zone for receipt file");
+    const file = createTestFile("receipt.pdf", "application/pdf");
+
+    const dataTransfer = {
+      files: [file],
+      items: [{ kind: "file", type: file.type, getAsFile: () => file }],
+      types: ["Files"],
+    };
+
+    const { fireEvent } = await import("@testing-library/react");
+    fireEvent.drop(dropZone, { dataTransfer });
+
+    // Should show the file name (PDF preview uses icon, not img)
+    expect(screen.getByText("receipt.pdf")).toBeInTheDocument();
+    // Should NOT show a validation error
+    expect(screen.queryByText(/only JPEG/i)).not.toBeInTheDocument();
+  });
+
+  it("shows PDF icon for PDF files instead of image preview", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ReceiptImageUpload {...defaultProps} />);
+
+    const fileInput = screen.getByTestId("file-input");
+    const file = createTestFile("receipt.pdf", "application/pdf");
+    await user.upload(fileInput, file);
+
+    // Should show file name but not an image preview
+    expect(screen.getByText("receipt.pdf")).toBeInTheDocument();
+    expect(screen.queryByAltText("Receipt preview")).not.toBeInTheDocument();
   });
 
   it("disables scan button when no file is selected", () => {

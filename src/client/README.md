@@ -43,7 +43,8 @@ Unstable references cause infinite render loops that pass individual tests but h
 ```bash
 npm install                    # Install dependencies
 npm run dev                    # Start Vite dev server
-npm run generate:types         # Regenerate types from OpenAPI spec
+npm run generate:types:write   # Regenerate types from OpenAPI spec (checked into git)
+npm run generate:types:check   # Verify committed types match the current spec
 npm run test                   # Run Vitest unit tests
 npm run lint                   # Run ESLint
 npx tsc -b --noEmit            # Type check

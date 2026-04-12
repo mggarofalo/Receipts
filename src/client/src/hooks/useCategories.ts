@@ -14,7 +14,7 @@ export function useCategories(offset = 0, limit = 50, sortBy?: string | null, so
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useCategory(id: string | null) {
@@ -125,7 +125,7 @@ export function useDeletedCategories(offset = 0, limit = 50, sortBy?: string | n
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useRestoreCategory() {

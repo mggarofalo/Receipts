@@ -796,6 +796,45 @@ public class ApplicationDbContextBranchCoverageTests
 
 	#endregion
 
+	#region OwnedChildrenMapProvider: YnabSyncRecord wired correctly
+
+	[Fact]
+	public void OwnedChildrenMapProvider_YnabSyncRecordEntity_IsChildOfTransactionEntity()
+	{
+		// Verify that OwnedChildrenMapProvider correctly discovers YnabSyncRecordEntity
+		// as a child of TransactionEntity via IOwnedBy<TransactionEntity> with custom FK
+		OwnedChildrenMapProvider.Map.Should().ContainKey(typeof(TransactionEntity));
+
+		OwnedChildrenMapProvider.ParentEntry parentEntry = OwnedChildrenMapProvider.Map[typeof(TransactionEntity)];
+		parentEntry.Children.Should().Contain(c =>
+			c.ChildType == typeof(YnabSyncRecordEntity) &&
+			c.FkPropertyName == "LocalTransactionId");
+	}
+
+	[Fact]
+	public void OwnedChildrenMapProvider_AllSoftDeletableOwnedRelationships_AreDiscovered()
+	{
+		// Verify all expected parent-child relationships are wired
+		// ReceiptEntity -> TransactionEntity, ReceiptItemEntity, AdjustmentEntity
+		OwnedChildrenMapProvider.Map.Should().ContainKey(typeof(ReceiptEntity));
+		OwnedChildrenMapProvider.ParentEntry receiptEntry = OwnedChildrenMapProvider.Map[typeof(ReceiptEntity)];
+		receiptEntry.Children.Select(c => c.ChildType).Should().Contain(typeof(TransactionEntity));
+		receiptEntry.Children.Select(c => c.ChildType).Should().Contain(typeof(ReceiptItemEntity));
+		receiptEntry.Children.Select(c => c.ChildType).Should().Contain(typeof(AdjustmentEntity));
+
+		// TransactionEntity -> YnabSyncRecordEntity
+		OwnedChildrenMapProvider.Map.Should().ContainKey(typeof(TransactionEntity));
+		OwnedChildrenMapProvider.ParentEntry transactionEntry = OwnedChildrenMapProvider.Map[typeof(TransactionEntity)];
+		transactionEntry.Children.Select(c => c.ChildType).Should().Contain(typeof(YnabSyncRecordEntity));
+
+		// CategoryEntity -> SubcategoryEntity
+		OwnedChildrenMapProvider.Map.Should().ContainKey(typeof(CategoryEntity));
+		OwnedChildrenMapProvider.ParentEntry categoryEntry = OwnedChildrenMapProvider.Map[typeof(CategoryEntity)];
+		categoryEntry.Children.Select(c => c.ChildType).Should().Contain(typeof(SubcategoryEntity));
+	}
+
+	#endregion
+
 	#region Soft-Delete: Cascade to Adjustments
 
 	[Fact]

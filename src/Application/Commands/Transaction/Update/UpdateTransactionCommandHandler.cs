@@ -49,7 +49,7 @@ public class UpdateTransactionCommandHandler(
 		decimal updatedTotal = request.Transactions.Sum(t => t.Amount.Amount);
 		decimal proposedTotal = unchangedTotal + updatedTotal;
 
-		if (proposedTotal != receiptWithItems.ExpectedTotal.Amount)
+		if (Math.Abs(proposedTotal - receiptWithItems.ExpectedTotal.Amount) > 0.01m)
 		{
 			throw new ValidationException(
 			[

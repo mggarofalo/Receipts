@@ -266,6 +266,25 @@ function compareSchemas(specDoc, generatedDoc) {
       );
     }
 
+    // Compare enum values (ordered list comparison).
+    // Both spec and runtime must enumerate the same values in the same order,
+    // so a drift like PascalCase runtime vs camelCase spec is caught here.
+    // Only compare when both sides declare an enum list — schema-only enum
+    // types defined in spec.yaml but not surfaced through NSwag/Swashbuckle
+    // may appear as plain `type: integer` in the generated output with no
+    // enum array, and we don't want to flag that asymmetry here.
+    const specEnumArr = Array.isArray(specSchema.enum) ? specSchema.enum : null;
+    const genEnumArr = Array.isArray(genSchema.enum) ? genSchema.enum : null;
+    if (specEnumArr && genEnumArr) {
+      const specJoined = specEnumArr.map((v) => String(v)).join(",");
+      const genJoined = genEnumArr.map((v) => String(v)).join(",");
+      if (specJoined !== genJoined) {
+        error(
+          `Schema "${name}": enum value mismatch — spec=[${specJoined}], generated=[${genJoined}]`,
+        );
+      }
+    }
+
     const specProps = specSchema.properties || {};
     const genProps = genSchema.properties || {};
     const specPropNames = new Set(Object.keys(specProps));

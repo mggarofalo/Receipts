@@ -14,7 +14,7 @@ public class Trip
 	{
 		List<string> errors = [];
 
-		if (Transactions.Count > 0 && Receipt.ExpectedTotal.Amount != TransactionTotal.Amount)
+		if (Transactions.Count > 0 && Math.Abs(Receipt.ExpectedTotal.Amount - TransactionTotal.Amount) > 0.01m)
 		{
 			errors.Add(string.Format(BalanceEquationViolation, Receipt.ExpectedTotal.Amount, TransactionTotal.Amount));
 		}

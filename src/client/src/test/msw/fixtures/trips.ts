@@ -15,9 +15,16 @@ export const tripResponse: TripResponse = {
     receipt,
     items,
     adjustments: [],
-    subtotal: items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0),
+    subtotal: items.reduce(
+      (sum, i) => sum + Math.round(i.quantity * i.unitPrice * 100) / 100,
+      0,
+    ),
     adjustmentTotal: 0,
-    expectedTotal: items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0) + receipt.taxAmount,
+    expectedTotal:
+      items.reduce(
+        (sum, i) => sum + Math.round(i.quantity * i.unitPrice * 100) / 100,
+        0,
+      ) + receipt.taxAmount,
     warnings: [],
   },
   transactions: txns.map((t) => ({

@@ -26,12 +26,13 @@ public class ReceiptScanController(
 	[
 		"image/jpeg",
 		"image/png",
+		"application/pdf",
 	];
 
 	[HttpPost("scan")]
 	[RequestSizeLimit(20 * 1024 * 1024)]
-	[EndpointSummary("Scan a receipt image and return a proposed receipt")]
-	[EndpointDescription("Accepts a JPEG or PNG image, runs preprocessing, OCR, and parsing, then returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted.")]
+	[EndpointSummary("Scan a receipt image or PDF and return a proposed receipt")]
+	[EndpointDescription("Accepts a JPEG or PNG image, or a PDF document. For images, runs preprocessing, OCR, and parsing. For PDFs, extracts text from the text layer or renders pages for OCR. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted.")]
 	[ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
 	public async Task<Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>>> ScanReceipt(
 		IFormFile? file)

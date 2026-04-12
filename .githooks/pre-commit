@@ -5,10 +5,10 @@ echo "=== Pre-commit hook ==="
 
 # Determine mode and step count
 if [ "${PRECOMMIT_QUICK:-}" = "1" ]; then
-  TOTAL=5
+  TOTAL=6
   echo "(quick mode — set PRECOMMIT_QUICK=0 or unset for full checks)"
 else
-  TOTAL=9
+  TOTAL=11
 fi
 STEP=0
 
@@ -21,6 +21,19 @@ next_step "Checking prerequisites..."
 if ! dotnet run scripts/worktree-setup.cs -- --check 2>/dev/null; then
   echo "  -> Auto-fixing: running worktree-setup.cs..."
   dotnet run scripts/worktree-setup.cs
+fi
+
+next_step "Regenerating api.d.ts if openapi/spec.yaml is staged..."
+SPEC_STAGED="$(git diff --cached --name-only -- openapi/spec.yaml 2>/dev/null || true)"
+if [ -n "$SPEC_STAGED" ]; then
+  echo "  -> openapi/spec.yaml staged — running npm run generate:types:write"
+  (cd src/client && npm run generate:types:write --silent)
+  if ! git diff --quiet -- src/client/src/generated/api.d.ts; then
+    echo "  -> api.d.ts drifted; staging regenerated file"
+    git add src/client/src/generated/api.d.ts
+  fi
+else
+  echo "  -> openapi/spec.yaml not staged; skipping"
 fi
 
 if [ "${PRECOMMIT_QUICK:-}" != "1" ]; then
@@ -74,5 +87,10 @@ npx tsc -b src/client/tsconfig.json --noEmit
 
 next_step "Linting React client..."
 npx eslint src/client/src
+
+if [ "${PRECOMMIT_QUICK:-}" != "1" ]; then
+  next_step "Running frontend tests (vitest)..."
+  (cd src/client && npx vitest run)
+fi
 
 echo "=== All checks passed ==="

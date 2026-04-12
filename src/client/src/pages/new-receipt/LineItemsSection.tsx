@@ -137,7 +137,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
         form.setValue("subcategory", suggestion.subcategory);
       }
       if (suggestion.unitPrice != null) {
-        form.setValue("unitPrice", suggestion.unitPrice);
+        form.setValue("unitPrice", Number(suggestion.unitPrice));
       }
       setShowItemCodeSuggestions(false);
     },
@@ -200,7 +200,12 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
   );
 
   const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+    () =>
+      items.reduce(
+        (sum, item) =>
+          sum + Math.round(item.quantity * item.unitPrice * 100) / 100,
+        0,
+      ),
     [items],
   );
 
@@ -214,7 +219,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
         form.setValue("subcategory", suggestion.defaultSubcategory);
       }
       if (suggestion.defaultUnitPrice != null) {
-        form.setValue("unitPrice", suggestion.defaultUnitPrice);
+        form.setValue("unitPrice", Number(suggestion.defaultUnitPrice));
       }
       if (suggestion.defaultItemCode) {
         form.setValue("receiptItemCode", suggestion.defaultItemCode);
@@ -407,7 +412,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                                         ? ` · ${suggestion.category}`
                                         : ""}
                                       {suggestion.unitPrice != null
-                                        ? ` · ${formatCurrency(suggestion.unitPrice)}`
+                                        ? ` · ${formatCurrency(Number(suggestion.unitPrice))}`
                                         : ""}
                                     </span>
                                   </div>
@@ -492,7 +497,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                                           ? ` / ${item.defaultSubcategory}`
                                           : ""}
                                         {item.defaultUnitPrice != null
-                                          ? ` · ${formatCurrency(item.defaultUnitPrice)}`
+                                          ? ` · ${formatCurrency(Number(item.defaultUnitPrice))}`
                                           : ""}
                                       </span>
                                     )}
@@ -507,7 +512,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                                         : "History"}
                                     </Badge>
                                     <span className="text-[10px] text-muted-foreground">
-                                      {Math.round(item.combinedScore * 100)}%
+                                      {Math.round(Number(item.combinedScore ?? 0) * 100)}%
                                     </span>
                                   </div>
                                 </div>

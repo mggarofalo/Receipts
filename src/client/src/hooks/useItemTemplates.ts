@@ -14,7 +14,7 @@ export function useItemTemplates(offset = 0, limit = 50, sortBy?: string | null,
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useItemTemplate(id: string | null) {
@@ -177,7 +177,7 @@ export function useDeletedItemTemplates(offset = 0, limit = 50, sortBy?: string 
       return data;
     },
   });
-  return useMemo(() => ({ ...query, data: query.data?.data, total: query.data?.total ?? 0 }), [query]);
+  return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
 export function useRestoreItemTemplate() {

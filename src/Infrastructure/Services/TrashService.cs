@@ -10,6 +10,11 @@ public class TrashService(ApplicationDbContext context) : ITrashService
 		await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
 		// Delete in FK dependency order (children first)
+		await context.YnabSyncRecords
+			.IgnoreQueryFilters()
+			.Where(e => e.DeletedAt != null)
+			.ExecuteDeleteAsync(cancellationToken);
+
 		await context.Adjustments
 			.IgnoreQueryFilters()
 			.Where(e => e.DeletedAt != null)
