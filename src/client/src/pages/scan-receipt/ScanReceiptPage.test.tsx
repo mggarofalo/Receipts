@@ -69,7 +69,7 @@ describe("ScanReceiptPage", () => {
       screen.getByRole("heading", { name: /scan receipt/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Drop a receipt image here"),
+      screen.getByText("Drop a receipt image or PDF here"),
     ).toBeInTheDocument();
   });
 
@@ -167,7 +167,7 @@ describe("ScanReceiptPage", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/could not read the image/i),
+        screen.getByText(/could not read the file/i),
       ).toBeInTheDocument();
     });
   });

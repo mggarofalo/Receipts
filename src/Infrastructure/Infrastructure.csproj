@@ -39,6 +39,7 @@
     <PackageReference Include="Sdcb.PaddleOCR.Models.Local" />
     <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="Tesseract" />
+    <PackageReference Include="PdfPig" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

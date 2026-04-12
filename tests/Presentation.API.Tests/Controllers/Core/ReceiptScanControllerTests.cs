@@ -67,6 +67,67 @@ public class ReceiptScanControllerTests
 			.Which.Value.Should().Contain("maximum allowed size");
 	}
 
+	[Fact]
+	public async Task ScanReceipt_ValidPdf_ReturnsOkWithProposal()
+	{
+		// Arrange
+		IFormFile file = CreateMockFormFile("receipt.pdf", "application/pdf", 4096);
+
+		ParsedReceipt parsedReceipt = new(
+			FieldConfidence<string>.High("COSTCO"),
+			FieldConfidence<DateOnly>.Medium(new DateOnly(2026, 4, 10)),
+			[],
+			FieldConfidence<decimal>.Low(0m),
+			[],
+			FieldConfidence<decimal>.High(42.99m),
+			FieldConfidence<string?>.None()
+		);
+
+		ScanReceiptResult scanResult = new(parsedReceipt, "COSTCO\nTOTAL $42.99", 0.95f);
+
+		_mediatorMock
+			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(scanResult);
+
+		// Act
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
+
+		// Assert
+		actual.Result.Should().BeOfType<Ok<ProposedReceiptResponse>>();
+	}
+
+	[Fact]
+	public async Task ScanReceipt_PdfContentType_SendsCorrectContentTypeToMediator()
+	{
+		// Arrange
+		IFormFile file = CreateMockFormFile("receipt.pdf", "application/pdf", 2048);
+
+		ParsedReceipt parsedReceipt = new(
+			FieldConfidence<string>.Low("Unknown"),
+			FieldConfidence<DateOnly>.Low(DateOnly.FromDateTime(DateTime.Today)),
+			[],
+			FieldConfidence<decimal>.Low(0m),
+			[],
+			FieldConfidence<decimal>.Low(0m),
+			FieldConfidence<string?>.None()
+		);
+
+		_mediatorMock
+			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new ScanReceiptResult(parsedReceipt, "text", 0.5f));
+
+		// Act
+		await _controller.ScanReceipt(file);
+
+		// Assert
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<ScanReceiptCommand>(c =>
+				c.ContentType == "application/pdf" &&
+				c.ImageBytes.Length == 2048),
+			It.IsAny<CancellationToken>()),
+			Times.Once);
+	}
+
 	[Theory]
 	[InlineData("image/gif")]
 	[InlineData("image/bmp")]
