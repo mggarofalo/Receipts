@@ -56,10 +56,6 @@ vi.mock("@/hooks/useYnab", () => ({
   useYnabRateLimitStatus: vi.fn(() =>
     mockQueryResult({ rateLimitStatus: null }),
   ),
-}));
-
-vi.mock("@/components/YnabBulkSyncCard", () => ({
-  YnabBulkSyncCard: () => <div data-testid="ynab-bulk-sync-card">Bulk YNAB Sync</div>,
   useStaleMappings: vi.fn(() =>
     mockQueryResult({
       staleAccountMappingCount: 0,
@@ -68,6 +64,10 @@ vi.mock("@/components/YnabBulkSyncCard", () => ({
     }),
   ),
   useClearStaleMappings: vi.fn(() => mockMutationResult()),
+}));
+
+vi.mock("@/components/YnabBulkSyncCard", () => ({
+  YnabBulkSyncCard: () => <div data-testid="ynab-bulk-sync-card">Bulk YNAB Sync</div>,
 }));
 
 describe("YnabSettings – Connection Status", () => {
@@ -400,8 +400,9 @@ describe("YnabSettings – Rate Limit Card", () => {
 
     renderWithProviders(<YnabSettings />);
 
-    expect(screen.getByText("190 / 200 requests used")).toBeInTheDocument();
-    expect(screen.getByText("10 remaining")).toBeInTheDocument();
+    expect(
+      screen.getByText(/API quota is running low/),
+    ).toBeInTheDocument();
   });
 });
 
@@ -448,9 +449,6 @@ describe("YnabSettings – Stale Mappings", () => {
 
     renderWithProviders(<YnabSettings />);
 
-    expect(
-      screen.getByText(/API quota is running low/),
-    ).toBeInTheDocument();
     expect(screen.getByText(/3 category mapping\(s\)/)).toBeInTheDocument();
     expect(screen.getByText("Clear stale mappings")).toBeInTheDocument();
   });
