@@ -192,7 +192,10 @@ describe("YnabSplitComparisonCard", () => {
     expect(screen.getByText("Groceries")).toBeInTheDocument();
   });
 
-  it("renders an actual fetch error warning when YNAB read fails", async () => {
+  it("renders an actual fetch error warning even when every actual fetch failed", async () => {
+    // Regression for a bug where a pushed receipt whose YNAB fetches all
+    // failed (actual=null, actualFetchError set) fell through to the
+    // not-yet-pushed state, hiding the error and misleading the user.
     const ynab = await import("@/hooks/useYnab");
     vi.mocked(ynab.useYnabSplitComparison).mockReturnValue(
       mockQueryResult({
@@ -222,9 +225,21 @@ describe("YnabSplitComparisonCard", () => {
 
     renderWithProviders(<YnabSplitComparisonCard receiptId="r1" />);
 
-    // When actual is null, we fall through to the not-yet-pushed state which
-    // won't show the fetch-error alert — so this exercises an edge case where
-    // at least one transaction has actual data. Reset to that scenario:
+    expect(
+      screen.getByText(/Could not fetch current YNAB state: YNAB 503/),
+    ).toBeInTheDocument();
+    // And we must NOT show the not-yet-pushed hint
+    expect(
+      screen.queryByText(/Actual will appear here after you push/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("preserves duplicate-category split lines with different amounts", async () => {
+    // Regression for a bug where buildRows keyed the merge Map on categoryId
+    // alone, collapsing duplicate-category lines with different amounts into
+    // a single row and losing display information for a splitter like
+    // `[(groceries, -30), (groceries, -50)]`.
+    const ynab = await import("@/hooks/useYnab");
     vi.mocked(ynab.useYnabSplitComparison).mockReturnValue(
       mockQueryResult({
         isLoading: false,
@@ -238,14 +253,16 @@ describe("YnabSplitComparisonCard", () => {
             {
               localTransactionId: "tx-1",
               accountName: "Checking",
-              totalMilliunits: -11000,
+              totalMilliunits: -80000,
               expected: [
-                { ynabCategoryId: "cat-1", categoryName: "Groceries", milliunits: -11000 },
+                { ynabCategoryId: "cat-groceries", categoryName: "Groceries", milliunits: -30000 },
+                { ynabCategoryId: "cat-groceries", categoryName: "Groceries", milliunits: -50000 },
               ],
               actual: [
-                { ynabCategoryId: "cat-1", categoryName: "Groceries", milliunits: -11000 },
+                { ynabCategoryId: "cat-groceries", categoryName: "Groceries", milliunits: -30000 },
+                { ynabCategoryId: "cat-groceries", categoryName: "Groceries", milliunits: -50000 },
               ],
-              actualFetchError: "YNAB 503",
+              actualFetchError: null,
               matches: true,
             },
           ],
@@ -254,8 +271,13 @@ describe("YnabSplitComparisonCard", () => {
     );
 
     renderWithProviders(<YnabSplitComparisonCard receiptId="r1" />);
-    expect(
-      screen.getByText(/Could not fetch current YNAB state: YNAB 503/),
-    ).toBeInTheDocument();
+
+    // Both distinct amounts should appear in the table — and each should
+    // render twice (once in Expected, once in Actual) because the merge
+    // preserved both expected lines and matched each with its actual sibling.
+    expect(screen.getAllByText("-$30.00")).toHaveLength(2);
+    expect(screen.getAllByText("-$50.00")).toHaveLength(2);
+    // And no mismatch badge, since every (category, amount) tuple matched.
+    expect(screen.queryByText(/Mismatch/i)).not.toBeInTheDocument();
   });
 });

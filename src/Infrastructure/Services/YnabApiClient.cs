@@ -137,7 +137,7 @@ public class YnabApiClient(
 		List<YnabSubTransactionRead>? subTransactions = null;
 		if (t.SubTransactions is { Count: > 0 })
 		{
-			subTransactions = t.SubTransactions
+			List<YnabSubTransactionRead> filtered = t.SubTransactions
 				.Where(st => !st.Deleted)
 				.Select(st => new YnabSubTransactionRead(
 					st.Id,
@@ -146,6 +146,7 @@ public class YnabApiClient(
 					st.CategoryId,
 					st.CategoryName))
 				.ToList();
+			subTransactions = filtered.Count > 0 ? filtered : null;
 		}
 
 		return new YnabTransaction(

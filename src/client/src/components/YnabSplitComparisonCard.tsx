@@ -51,6 +51,16 @@ export function YnabSplitComparisonCard({
     [data],
   );
 
+  // A Synced transaction whose YNAB fetch failed leaves actual=null but sets
+  // actualFetchError. We must not fall through to NotYetPushedState in that
+  // case — the user needs to see the fetch error, not a "push me" prompt.
+  const hasAnyFetchError = useMemo(
+    () =>
+      data?.transactionComparisons.some((tc) => tc.actualFetchError != null) ??
+      false,
+    [data],
+  );
+
   const hasAnyMismatch = useMemo(
     () =>
       data?.transactionComparisons.some((tc) => tc.matches === false) ?? false,
@@ -89,7 +99,7 @@ export function YnabSplitComparisonCard({
           <p className="text-sm text-muted-foreground">
             No transactions to compare.
           </p>
-        ) : !hasAnyActual ? (
+        ) : !hasAnyActual && !hasAnyFetchError ? (
           <NotYetPushedState comparisons={data.transactionComparisons} />
         ) : (
           <PushedState
@@ -276,13 +286,19 @@ type ComparisonRow = {
 };
 
 /**
- * Merges expected and actual split lines into a single row set keyed by
- * category id, sorted by absolute expected amount descending.
+ * Merges expected and actual split lines into a single row set. Rows are
+ * keyed by a `(categoryId, milliunits)` tuple — mirroring the server's
+ * SplitsMatch logic — so that duplicate-category lines with different
+ * amounts survive the merge and unmatched lines surface as mismatches.
+ * Sorted by absolute amount descending.
  */
 function buildRows(tc: TransactionSplitComparisonDto): ComparisonRow[] {
-  const byId = new Map<string, ComparisonRow>();
+  const keyOf = (line: SplitLineDto) =>
+    `${line.ynabCategoryId}::${line.milliunits}`;
+
+  const byKey = new Map<string, ComparisonRow>();
   for (const line of tc.expected) {
-    byId.set(line.ynabCategoryId, {
+    byKey.set(keyOf(line), {
       categoryName: line.categoryName,
       ynabCategoryId: line.ynabCategoryId,
       expected: line.milliunits,
@@ -292,11 +308,12 @@ function buildRows(tc: TransactionSplitComparisonDto): ComparisonRow[] {
   }
   if (tc.actual) {
     for (const line of tc.actual) {
-      const existing = byId.get(line.ynabCategoryId);
+      const existing = byKey.get(keyOf(line));
       if (existing) {
+        // Same (category, amount) on both sides — a clean match.
         existing.actual = line.milliunits;
       } else {
-        byId.set(line.ynabCategoryId, {
+        byKey.set(keyOf(line), {
           categoryName: line.categoryName,
           ynabCategoryId: line.ynabCategoryId,
           expected: null,
@@ -305,17 +322,14 @@ function buildRows(tc: TransactionSplitComparisonDto): ComparisonRow[] {
         });
       }
     }
-    for (const row of byId.values()) {
-      if (
-        row.expected == null ||
-        row.actual == null ||
-        row.expected !== row.actual
-      ) {
+    // Any row with only expected (no actual pair) is a mismatch.
+    for (const row of byKey.values()) {
+      if (row.actual == null) {
         row.isMismatch = true;
       }
     }
   }
-  return Array.from(byId.values()).sort((a, b) => {
+  return Array.from(byKey.values()).sort((a, b) => {
     const aVal = Math.abs(a.expected ?? a.actual ?? 0);
     const bVal = Math.abs(b.expected ?? b.actual ?? 0);
     return bVal - aVal;

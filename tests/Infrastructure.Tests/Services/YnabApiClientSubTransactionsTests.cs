@@ -179,4 +179,44 @@ public class YnabApiClientSubTransactionsTests
 		result.CategoryId.Should().Be("cat-1");
 		result.CategoryName.Should().Be("Groceries");
 	}
+
+	[Fact]
+	public async Task GetTransactionAsync_WithAllSubTransactionsDeleted_ReturnsNullNotEmpty()
+	{
+		// Regression for a bug where filtering deleted subtransactions produced
+		// an empty list instead of null, causing downstream handlers that check
+		// `SubTransactions is { Count: > 0 }` to misclassify the transaction.
+		string json = JsonSerializer.Serialize(new
+		{
+			data = new
+			{
+				transaction = new
+				{
+					id = "tx-1",
+					date = "2026-04-01",
+					amount = -30000,
+					memo = (string?)null,
+					cleared = "cleared",
+					approved = true,
+					account_id = "acc-1",
+					category_id = (string?)null,
+					category_name = (string?)null,
+					payee_name = (string?)null,
+					deleted = false,
+					sub_transactions = new[]
+					{
+						new { id = "sub-1", transaction_id = "tx-1", amount = -20000, memo = (string?)null, category_id = "cat-a", category_name = "A", deleted = true },
+						new { id = "sub-2", transaction_id = "tx-1", amount = -10000, memo = (string?)null, category_id = "cat-b", category_name = "B", deleted = true },
+					}
+				}
+			}
+		});
+
+		YnabApiClient client = CreateClient(CreateHandler(json));
+
+		YnabTransaction? result = await client.GetTransactionAsync("budget-1", "tx-1", CancellationToken.None);
+
+		result.Should().NotBeNull();
+		result!.SubTransactions.Should().BeNull();
+	}
 }
