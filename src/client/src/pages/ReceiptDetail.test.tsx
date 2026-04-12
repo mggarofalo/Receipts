@@ -83,6 +83,12 @@ vi.mock("@/components/YnabMemoSyncCard", () => ({
   },
 }));
 
+vi.mock("@/components/YnabSplitComparisonCard", () => ({
+  YnabSplitComparisonCard: function MockYnabSplitComparisonCard() {
+    return <div data-testid="ynab-split-comparison-card">Split Comparison</div>;
+  },
+}));
+
 function renderWithRoutes(initialRoute: string) {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>

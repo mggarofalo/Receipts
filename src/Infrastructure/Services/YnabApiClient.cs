@@ -134,6 +134,20 @@ public class YnabApiClient(
 		}
 
 		YnabTransactionDto t = envelope.Data.Transaction;
+		List<YnabSubTransactionRead>? subTransactions = null;
+		if (t.SubTransactions is { Count: > 0 })
+		{
+			subTransactions = t.SubTransactions
+				.Where(st => !st.Deleted)
+				.Select(st => new YnabSubTransactionRead(
+					st.Id,
+					st.Amount,
+					st.Memo,
+					st.CategoryId,
+					st.CategoryName))
+				.ToList();
+		}
+
 		return new YnabTransaction(
 			t.Id,
 			DateOnly.Parse(t.Date),
@@ -143,7 +157,9 @@ public class YnabApiClient(
 			t.Approved,
 			t.AccountId,
 			t.CategoryId,
-			t.PayeeName);
+			t.PayeeName,
+			t.CategoryName,
+			subTransactions);
 	}
 
 	public async Task<YnabCreateTransactionResponse> CreateTransactionAsync(

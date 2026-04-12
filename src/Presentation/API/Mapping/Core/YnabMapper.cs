@@ -273,6 +273,46 @@ public partial class YnabMapper
 		};
 	}
 
+	[MapperIgnoreTarget(nameof(API.Generated.Dtos.SplitLine.AdditionalProperties))]
+	public API.Generated.Dtos.SplitLine ToSplitLine(Application.Models.Ynab.SplitLine source)
+	{
+		return new API.Generated.Dtos.SplitLine
+		{
+			YnabCategoryId = source.YnabCategoryId,
+			CategoryName = source.CategoryName,
+			Milliunits = source.Milliunits,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(API.Generated.Dtos.TransactionSplitComparison.AdditionalProperties))]
+	public API.Generated.Dtos.TransactionSplitComparison ToTransactionSplitComparison(
+		Application.Models.Ynab.TransactionSplitComparison source)
+	{
+		return new API.Generated.Dtos.TransactionSplitComparison
+		{
+			LocalTransactionId = source.LocalTransactionId,
+			AccountName = source.AccountName,
+			TotalMilliunits = source.TotalMilliunits,
+			Expected = source.Expected.Select(ToSplitLine).ToList(),
+			Actual = source.Actual?.Select(ToSplitLine).ToList(),
+			ActualFetchError = source.ActualFetchError,
+			Matches = source.Matches,
+		};
+	}
+
+	[MapperIgnoreTarget(nameof(ReceiptYnabSplitComparisonResponse.AdditionalProperties))]
+	public ReceiptYnabSplitComparisonResponse ToSplitComparisonResponse(
+		Application.Models.Ynab.ReceiptYnabSplitComparisonResult source)
+	{
+		return new ReceiptYnabSplitComparisonResponse
+		{
+			CanComputeExpected = source.CanComputeExpected,
+			ExpectedUnavailableReason = source.ExpectedUnavailableReason,
+			UnmappedCategories = source.UnmappedCategories,
+			TransactionComparisons = source.TransactionComparisons.Select(ToTransactionSplitComparison).ToList(),
+		};
+	}
+
 	[MapperIgnoreTarget(nameof(YnabRateLimitStatusResponse.AdditionalProperties))]
 	public YnabRateLimitStatusResponse ToRateLimitStatusResponse(YnabRateLimitStatus source)
 	{
