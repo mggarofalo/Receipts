@@ -79,6 +79,9 @@ internal sealed class YnabTransactionDto
 	[JsonPropertyName("payee_name")]
 	public string? PayeeName { get; set; }
 
+	[JsonPropertyName("import_id")]
+	public string? ImportId { get; set; }
+
 	[JsonPropertyName("deleted")]
 	public bool Deleted { get; set; }
 }
