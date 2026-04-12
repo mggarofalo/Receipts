@@ -65,6 +65,13 @@ vi.mock("@/components/ReceiptTransactionsCard", () => ({
   },
 }));
 
+vi.mock("@/hooks/useYnab", () => ({
+  useReceiptYnabSyncStatuses: vi.fn(() => ({
+    statusMap: new Map(),
+    isLoading: false,
+  })),
+}));
+
 vi.mock("@/components/YnabPushButton", () => ({
   YnabPushButton: function MockYnabPushButton() {
     return <div data-testid="ynab-push-button">Push to YNAB</div>;
