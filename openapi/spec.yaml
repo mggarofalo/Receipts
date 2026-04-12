@@ -1300,10 +1300,12 @@ paths:
     post:
       operationId: ScanReceipt
       tags: [Receipts]
-      summary: Scan a receipt image and return a proposed receipt
+      summary: Scan a receipt image or PDF and return a proposed receipt
       description: >
-        Accepts a JPEG or PNG image, runs preprocessing, OCR, and parsing,
-        then returns a proposed receipt with per-field confidence scores.
+        Accepts a JPEG image, PNG image, or PDF document. For images, runs
+        preprocessing, OCR, and parsing. For PDFs, extracts text from the text
+        layer or renders pages for OCR. Multi-page PDFs are supported (up to 50
+        pages). Returns a proposed receipt with per-field confidence scores.
         The proposal is NOT persisted — it is a transient suggestion for review.
       security:
         - BearerAuth: []
@@ -1343,7 +1345,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "422":
-          description: Unprocessable Entity — image could not be read or OCR returned no text
+          description: Unprocessable Entity — image/PDF could not be read or OCR returned no text
           content:
             application/json:
               schema:

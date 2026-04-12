@@ -2,10 +2,10 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
-import { Upload, AlertCircle } from "lucide-react";
+import { Upload, AlertCircle, FileText } from "lucide-react";
 
-const ACCEPTED_TYPES = ["image/jpeg", "image/png"];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
 interface ReceiptImageUploadProps {
   onScan: (file: File) => void;
@@ -36,10 +36,10 @@ export function ReceiptImageUpload({
 
   const validateFile = useCallback((f: File): string | null => {
     if (!ACCEPTED_TYPES.includes(f.type)) {
-      return "Only JPEG and PNG images are supported.";
+      return "Only JPEG, PNG, and PDF files are supported.";
     }
     if (f.size > MAX_FILE_SIZE) {
-      return "File size must be 10 MB or less.";
+      return "File size must be 20 MB or less.";
     }
     return null;
   }, []);
@@ -60,13 +60,19 @@ export function ReceiptImageUpload({
       }
       setValidationError(null);
       setFile(f);
-      // Revoke old preview URL and create a new one
+      // Revoke old preview URL
       if (prevPreviewRef.current) {
         URL.revokeObjectURL(prevPreviewRef.current);
+        prevPreviewRef.current = null;
       }
-      const url = URL.createObjectURL(f);
-      prevPreviewRef.current = url;
-      setPreview(url);
+      // Only create image preview for image files, not PDFs
+      if (f.type === "application/pdf") {
+        setPreview("pdf");
+      } else {
+        const url = URL.createObjectURL(f);
+        prevPreviewRef.current = url;
+        setPreview(url);
+      }
     },
     [validateFile],
   );
@@ -117,7 +123,7 @@ export function ReceiptImageUpload({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Drop zone for receipt image"
+        aria-label="Drop zone for receipt file"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -141,6 +147,11 @@ export function ReceiptImageUpload({
               Processing receipt...
             </p>
           </div>
+        ) : preview === "pdf" ? (
+          <div className="flex flex-col items-center gap-3">
+            <FileText className="h-16 w-16 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">{file?.name}</p>
+          </div>
         ) : preview ? (
           <div className="flex flex-col items-center gap-3">
             <img
@@ -155,10 +166,10 @@ export function ReceiptImageUpload({
             <Upload className="h-10 w-10 text-muted-foreground" />
             <div className="text-center">
               <p className="text-sm font-medium">
-                Drop a receipt image here
+                Drop a receipt image or PDF here
               </p>
               <p className="text-xs text-muted-foreground">
-                JPEG or PNG, up to 10 MB
+                JPEG, PNG, or PDF, up to 20 MB
               </p>
             </div>
           </div>
@@ -168,7 +179,7 @@ export function ReceiptImageUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png"
+        accept="image/jpeg,image/png,application/pdf"
         className="hidden"
         onChange={handleInputChange}
         data-testid="file-input"
