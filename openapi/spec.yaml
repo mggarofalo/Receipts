@@ -4181,6 +4181,34 @@ paths:
         "503":
           description: YNAB integration is not configured
 
+  /api/ynab/receipts/{receiptId}/split-comparison:
+    get:
+      operationId: GetReceiptYnabSplitComparison
+      tags: [YNAB]
+      summary: Get expected vs actual YNAB category split for a receipt
+      description: >
+        Returns the expected YNAB category split computed locally alongside the
+        actual state stored in YNAB for any already-pushed transactions. Used by
+        the receipt detail page to validate and preview splits.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: receiptId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Split comparison for the receipt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptYnabSplitComparisonResponse"
+        "503":
+          description: YNAB integration is not configured
+
   /api/ynab/rate-limit-status:
     get:
       operationId: GetYnabRateLimitStatus
@@ -6627,6 +6655,68 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReceiptPushResult"
+
+    SplitLine:
+      type: object
+      required: [ynabCategoryId, categoryName, milliunits]
+      properties:
+        ynabCategoryId:
+          type: string
+        categoryName:
+          type: string
+        milliunits:
+          type: integer
+          format: int64
+
+    TransactionSplitComparison:
+      type: object
+      required: [localTransactionId, accountName, totalMilliunits, expected]
+      properties:
+        localTransactionId:
+          type: string
+          format: uuid
+        accountName:
+          type: string
+        totalMilliunits:
+          type: integer
+          format: int64
+        expected:
+          type: array
+          items:
+            $ref: "#/components/schemas/SplitLine"
+        actual:
+          type:
+            - "null"
+            - array
+          items:
+            $ref: "#/components/schemas/SplitLine"
+        actualFetchError:
+          type:
+            - "null"
+            - string
+        matches:
+          type:
+            - "null"
+            - boolean
+
+    ReceiptYnabSplitComparisonResponse:
+      type: object
+      required: [canComputeExpected, unmappedCategories, transactionComparisons]
+      properties:
+        canComputeExpected:
+          type: boolean
+        expectedUnavailableReason:
+          type:
+            - "null"
+            - string
+        unmappedCategories:
+          type: array
+          items:
+            type: string
+        transactionComparisons:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionSplitComparison"
 
     YnabMemoSyncResultItem:
       type: object

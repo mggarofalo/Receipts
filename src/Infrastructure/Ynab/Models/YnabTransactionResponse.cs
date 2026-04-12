@@ -79,6 +79,39 @@ internal sealed class YnabTransactionDto
 	[JsonPropertyName("payee_name")]
 	public string? PayeeName { get; set; }
 
+	[JsonPropertyName("import_id")]
+	public string? ImportId { get; set; }
+
+	[JsonPropertyName("category_name")]
+	public string? CategoryName { get; set; }
+
+	[JsonPropertyName("sub_transactions")]
+	public List<YnabSubTransactionDto>? SubTransactions { get; set; }
+
+	[JsonPropertyName("deleted")]
+	public bool Deleted { get; set; }
+}
+
+internal sealed class YnabSubTransactionDto
+{
+	[JsonPropertyName("id")]
+	public string Id { get; set; } = string.Empty;
+
+	[JsonPropertyName("transaction_id")]
+	public string TransactionId { get; set; } = string.Empty;
+
+	[JsonPropertyName("amount")]
+	public long Amount { get; set; }
+
+	[JsonPropertyName("memo")]
+	public string? Memo { get; set; }
+
+	[JsonPropertyName("category_id")]
+	public string? CategoryId { get; set; }
+
+	[JsonPropertyName("category_name")]
+	public string? CategoryName { get; set; }
+
 	[JsonPropertyName("deleted")]
 	public bool Deleted { get; set; }
 }

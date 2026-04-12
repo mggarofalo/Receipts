@@ -419,6 +419,28 @@ public class YnabController(IMediator mediator, IYnabApiClient ynabClient, IYnab
 		}
 	}
 
+	[HttpGet("receipts/{receiptId}/split-comparison")]
+	[EndpointSummary("Get expected vs actual YNAB category split for a receipt")]
+	[EndpointDescription("Returns the expected YNAB category split computed locally alongside the actual state stored in YNAB for any already-pushed transactions.")]
+	[ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+	[RequireYnabConfigured]
+	public async Task<Results<Ok<ReceiptYnabSplitComparisonResponse>, StatusCodeHttpResult>> GetReceiptSplitComparison(
+		[FromRoute] Guid receiptId,
+		CancellationToken cancellationToken)
+	{
+		try
+		{
+			ReceiptYnabSplitComparisonResult result = await mediator.Send(
+				new GetReceiptYnabSplitComparisonQuery(receiptId), cancellationToken);
+			return TypedResults.Ok(mapper.ToSplitComparisonResponse(result));
+		}
+		catch (YnabAuthException ex)
+		{
+			logger.LogWarning(ex, "YNAB authentication failed during split comparison");
+			return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+		}
+	}
+
 	[HttpGet("rate-limit-status")]
 	[EndpointSummary("Get YNAB API rate limit status")]
 	[EndpointDescription("Returns the current YNAB API rate limit status including remaining requests, total quota, and window reset time.")]

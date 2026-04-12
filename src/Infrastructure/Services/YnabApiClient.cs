@@ -134,6 +134,21 @@ public class YnabApiClient(
 		}
 
 		YnabTransactionDto t = envelope.Data.Transaction;
+		List<YnabSubTransactionRead>? subTransactions = null;
+		if (t.SubTransactions is { Count: > 0 })
+		{
+			List<YnabSubTransactionRead> filtered = t.SubTransactions
+				.Where(st => !st.Deleted)
+				.Select(st => new YnabSubTransactionRead(
+					st.Id,
+					st.Amount,
+					st.Memo,
+					st.CategoryId,
+					st.CategoryName))
+				.ToList();
+			subTransactions = filtered.Count > 0 ? filtered : null;
+		}
+
 		return new YnabTransaction(
 			t.Id,
 			DateOnly.Parse(t.Date),
@@ -143,7 +158,9 @@ public class YnabApiClient(
 			t.Approved,
 			t.AccountId,
 			t.CategoryId,
-			t.PayeeName);
+			t.PayeeName,
+			t.CategoryName,
+			subTransactions);
 	}
 
 	public async Task<YnabCreateTransactionResponse> CreateTransactionAsync(
@@ -217,6 +234,28 @@ public class YnabApiClient(
 			.ToList();
 
 		return new YnabTransactionsResult(transactions, envelope.Data.ServerKnowledge);
+	}
+
+	public async Task<string?> FindTransactionByImportIdAsync(string budgetId, string accountId, string importId, DateOnly sinceDate, CancellationToken cancellationToken)
+	{
+		string encodedBudgetId = Uri.EscapeDataString(budgetId);
+		string formattedDate = sinceDate.ToString("yyyy-MM-dd");
+		string url = $"budgets/{encodedBudgetId}/transactions?since_date={formattedDate}";
+
+		YnabTransactionsListResponseEnvelope envelope;
+		try
+		{
+			envelope = await GetAsync<YnabTransactionsListResponseEnvelope>(url, cancellationToken);
+		}
+		catch (YnabNotFoundException)
+		{
+			return null;
+		}
+
+		YnabTransactionDto? match = envelope.Data.Transactions
+			.FirstOrDefault(t => !t.Deleted && t.AccountId == accountId && t.ImportId == importId);
+
+		return match?.Id;
 	}
 
 	public async Task UpdateTransactionMemoAsync(string budgetId, string transactionId, string memo, CancellationToken cancellationToken)

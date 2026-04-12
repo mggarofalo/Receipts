@@ -10,6 +10,7 @@ public interface IYnabApiClient
 	Task<YnabTransaction?> GetTransactionAsync(string budgetId, string transactionId, CancellationToken cancellationToken);
 	Task<YnabCreateTransactionResponse> CreateTransactionAsync(string budgetId, YnabCreateTransactionRequest request, CancellationToken cancellationToken);
 	Task<YnabTransactionsResult> GetTransactionsByDateAsync(string budgetId, DateOnly sinceDate, long? lastKnowledgeOfServer = null, CancellationToken cancellationToken = default);
+	Task<string?> FindTransactionByImportIdAsync(string budgetId, string accountId, string importId, DateOnly sinceDate, CancellationToken cancellationToken);
 	Task UpdateTransactionMemoAsync(string budgetId, string transactionId, string memo, CancellationToken cancellationToken);
 	bool IsConfigured { get; }
 }
