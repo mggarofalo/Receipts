@@ -125,6 +125,27 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
+	public async Task ConvertAsync_MixedContentPdf_ReturnsTextFromTextPages()
+	{
+		// Arrange — page 1 has sufficient text, page 2 has very little (below threshold)
+		// This tests the fix for BUG-001: text from text-layer pages should not be
+		// discarded just because other pages lack a text layer.
+		byte[] pdfBytes = CreateMultiPageTextPdf(
+		[
+			"Page one has a valid receipt text WALMART MILK $3.49 TOTAL $3.74",
+			"x" // Below MinTextLengthPerPage threshold
+		]);
+
+		// Act
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert — should return the text from page 1, not throw or return images
+		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
+		result.ExtractedText.Should().Contain("WALMART");
+		result.PageImages.Should().BeEmpty();
+	}
+
+	[Fact]
 	public async Task ConvertAsync_PdfWithSufficientText_ReturnsTextDirectly()
 	{
 		// Arrange — text must be >= MinTextLengthPerPage chars

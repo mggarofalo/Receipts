@@ -48,10 +48,9 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 
 			PdfMetadata? metadata = ExtractMetadata(document);
 
-			// Try to extract text from all pages
+			// Try to extract text from all pages; collect images from pages without text
 			List<string> pageTexts = [];
 			List<byte[]> pageImages = [];
-			bool hasTextLayer = true;
 
 			foreach (Page page in document.GetPages())
 			{
@@ -65,8 +64,7 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 				}
 				else
 				{
-					hasTextLayer = false;
-					// Try to extract embedded images from this page
+					// Page lacks a text layer — try to extract embedded images for OCR
 					IEnumerable<IPdfImage> images = page.GetImages();
 					foreach (IPdfImage image in images)
 					{
@@ -81,7 +79,8 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 				}
 			}
 
-			if (hasTextLayer && pageTexts.Count > 0)
+			// Prefer text extracted directly from the PDF text layer
+			if (pageTexts.Count > 0)
 			{
 				string combinedText = string.Join("\n\n", pageTexts);
 				logger.LogInformation(
