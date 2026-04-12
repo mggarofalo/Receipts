@@ -26,12 +26,10 @@ echo "post-merge: openapi/spec.yaml changed — regenerating src/client/src/gene
 if ! git diff --quiet -- src/client/src/generated/api.d.ts; then
   echo "post-merge: api.d.ts drifted; staging and amending with regenerated types"
   git add src/client/src/generated/api.d.ts
-  # Amend only if the merge produced a commit (non-fast-forward merge).
-  if git rev-parse --verify -q MERGE_HEAD > /dev/null 2>&1; then
-    # MERGE_HEAD still exists means merge is mid-conflict — skip amend.
-    exit 0
-  fi
-  # If the previous commit is a merge commit we just created, amend it.
+  # post-merge only runs after a successful merge, so HEAD points at either
+  # a newly-created merge commit (parents >= 2 → 3+ tokens from rev-list
+  # --parents) or a fast-forwarded linear commit. Amend the merge commit,
+  # otherwise create a follow-up commit for the regenerated types.
   PARENTS="$(git rev-list --parents -n 1 HEAD | wc -w)"
   if [ "$PARENTS" -ge 3 ]; then
     git commit --amend --no-edit --no-verify

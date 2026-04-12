@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "generate:types:write": "openapi-typescript ../../openapi/spec.yaml -o src/generated/api.d.ts",
-    "generate:types:check": "openapi-typescript ../../openapi/spec.yaml -o /tmp/api.d.ts.new && diff -q src/generated/api.d.ts /tmp/api.d.ts.new",
+    "generate:types:check": "TMPFILE=$(mktemp) && openapi-typescript ../../openapi/spec.yaml -o \"$TMPFILE\" && diff -q src/generated/api.d.ts \"$TMPFILE\"; EC=$?; rm -f \"$TMPFILE\"; exit $EC",
     "predev": "npm run generate:types:write",
     "dev": "vite",
     "prebuild": "npm run generate:types:check",
