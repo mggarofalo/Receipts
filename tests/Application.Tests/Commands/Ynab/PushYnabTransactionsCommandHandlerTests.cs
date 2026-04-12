@@ -382,8 +382,8 @@ public class PushYnabTransactionsCommandHandlerTests
 		capturedRequest!.ImportId.Should().NotBeNullOrEmpty();
 		capturedRequest.ImportId.Should().StartWith("YNAB:");
 
-		// Import ID should contain the receipt prefix (first 8 hex chars of receipt ID)
-		string receiptPrefix = _receiptId.ToString("N")[..8];
+		// Import ID should contain the receipt prefix (first 6 hex chars of receipt ID)
+		string receiptPrefix = _receiptId.ToString("N")[..6];
 		string expected = $"YNAB:-11000:{DateTime.Today.AddDays(-1):yyyy-MM-dd}:{receiptPrefix}:1";
 		capturedRequest.ImportId.Should().Be(expected);
 	}

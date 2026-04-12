@@ -179,7 +179,19 @@ public static class InfrastructureService
 				BackoffType = DelayBackoffType.Exponential,
 				UseJitter = true,
 				ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-					.Handle<HttpRequestException>(),
+					.Handle<HttpRequestException>()
+					.HandleResult(r => r.StatusCode is System.Net.HttpStatusCode.TooManyRequests
+						or System.Net.HttpStatusCode.ServiceUnavailable
+						or System.Net.HttpStatusCode.GatewayTimeout),
+				DelayGenerator = args =>
+				{
+					if (args.Outcome.Result?.Headers.RetryAfter?.Delta is TimeSpan delta)
+					{
+						return ValueTask.FromResult<TimeSpan?>(delta);
+					}
+
+					return ValueTask.FromResult<TimeSpan?>(null); // fall back to exponential backoff
+				},
 			});
 			builder.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
 			{

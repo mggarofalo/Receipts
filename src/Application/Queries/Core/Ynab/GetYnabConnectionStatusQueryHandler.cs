@@ -23,7 +23,7 @@ public class GetYnabConnectionStatusQueryHandler(
 			await ynabApiClient.GetBudgetsAsync(cancellationToken);
 			isConnected = true;
 		}
-		catch (Exception)
+		catch (Exception ex) when (ex is not OperationCanceledException)
 		{
 			isConnected = false;
 		}

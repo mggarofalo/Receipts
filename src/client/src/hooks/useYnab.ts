@@ -476,6 +476,7 @@ export function useSyncYnabMemos() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       const synced = data?.results?.filter(
         (r) => r.outcome === "Synced",
       ).length;
@@ -503,6 +504,7 @@ export function useSyncYnabMemosBulk() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       const synced = data?.results?.filter(
         (r) => r.outcome === "Synced",
       ).length;
@@ -530,6 +532,7 @@ export function useResolveYnabMemoSync() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       toast.success("YNAB memo sync resolved");
     },
     onError: () => {
@@ -571,6 +574,7 @@ export function usePushYnabTransactions() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       if (data?.success) {
         toast.success(
           `Pushed ${data.pushedTransactions.length} transaction(s) to YNAB`,
@@ -598,6 +602,7 @@ export function useBulkPushYnabTransactions() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["ynab", "sync-status"] });
+      queryClient.invalidateQueries({ queryKey: ["ynab", "receipt-sync-statuses"] });
       const total = data?.results?.length ?? 0;
       const succeeded =
         data?.results?.filter((r) => r.result.success).length ?? 0;

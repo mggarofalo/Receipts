@@ -3,7 +3,7 @@ namespace Application.Utilities;
 public static class YnabImportId
 {
 	private const int MaxLength = 36;
-	private const int ReceiptPrefixLength = 8;
+	private const int ReceiptPrefixLength = 6;
 
 	public static string Generate(long milliunits, DateOnly date, Guid receiptId, int occurrence)
 	{

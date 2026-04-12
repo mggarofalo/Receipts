@@ -16,14 +16,15 @@ public class YnabServerKnowledgeRepository(IDbContextFactory<ApplicationDbContex
 	public async Task UpsertAsync(string budgetId, long serverKnowledge, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		YnabServerKnowledgeEntity? existing = await context.YnabServerKnowledge.FindAsync([budgetId], cancellationToken);
 
-		if (existing is not null)
-		{
-			existing.ServerKnowledge = serverKnowledge;
-			existing.UpdatedAt = DateTimeOffset.UtcNow;
-		}
-		else
+		int updated = await context.YnabServerKnowledge
+			.Where(e => e.BudgetId == budgetId)
+			.ExecuteUpdateAsync(s => s
+				.SetProperty(e => e.ServerKnowledge, serverKnowledge)
+				.SetProperty(e => e.UpdatedAt, DateTimeOffset.UtcNow),
+				cancellationToken);
+
+		if (updated == 0)
 		{
 			context.YnabServerKnowledge.Add(new YnabServerKnowledgeEntity
 			{
@@ -31,8 +32,22 @@ public class YnabServerKnowledgeRepository(IDbContextFactory<ApplicationDbContex
 				ServerKnowledge = serverKnowledge,
 				UpdatedAt = DateTimeOffset.UtcNow,
 			});
-		}
 
-		await context.SaveChangesAsync(cancellationToken);
+			try
+			{
+				await context.SaveChangesAsync(cancellationToken);
+			}
+			catch (DbUpdateException)
+			{
+				// Lost race — another thread inserted first. Retry as update.
+				using ApplicationDbContext retryContext = contextFactory.CreateDbContext();
+				await retryContext.YnabServerKnowledge
+					.Where(e => e.BudgetId == budgetId)
+					.ExecuteUpdateAsync(s => s
+						.SetProperty(e => e.ServerKnowledge, serverKnowledge)
+						.SetProperty(e => e.UpdatedAt, DateTimeOffset.UtcNow),
+						cancellationToken);
+			}
+		}
 	}
 }

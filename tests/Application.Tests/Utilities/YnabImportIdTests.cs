@@ -6,7 +6,7 @@ namespace Application.Tests.Utilities;
 public class YnabImportIdTests
 {
 	private static readonly Guid TestReceiptId = Guid.Parse("abcdef01-2345-6789-abcd-ef0123456789");
-	private static readonly string TestReceiptPrefix = TestReceiptId.ToString("N")[..8]; // "abcdef01"
+	private static readonly string TestReceiptPrefix = TestReceiptId.ToString("N")[..6]; // "abcdef"
 
 	[Fact]
 	public void Generate_StandardInput_ReturnsExpectedFormat()
@@ -140,7 +140,7 @@ public class YnabImportIdTests
 	}
 
 	[Fact]
-	public void Generate_ReceiptPrefixIsFirst8HexCharsWithoutHyphens()
+	public void Generate_ReceiptPrefixIsFirst6HexCharsWithoutHyphens()
 	{
 		// Arrange
 		Guid receiptId = Guid.Parse("deadbeef-cafe-babe-dead-beefcafebabe");
@@ -152,8 +152,8 @@ public class YnabImportIdTests
 		string actual = YnabImportId.Generate(milliunits, date, receiptId, occurrence);
 
 		// Assert
-		actual.Should().Contain("deadbeef");
-		actual.Should().Be("YNAB:-1000:2025-01-01:deadbeef:1");
+		actual.Should().Contain("deadbe");
+		actual.Should().Be("YNAB:-1000:2025-01-01:deadbe:1");
 	}
 
 	[Fact]

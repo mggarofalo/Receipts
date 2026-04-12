@@ -78,7 +78,7 @@ describe("useYnab", () => {
     expect(result.current.isConfigured).toBe(true);
     expect(result.current.isConnected).toBe(true);
     expect(result.current.lastSuccessfulSyncUtc).toBe("2026-04-05T12:00:00Z");
-    expect(client.GET).toHaveBeenCalledWith("/api/ynab/connection-status");
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/connection-status", {});
   });
 
   it("useYnabConnectionStatus returns defaults when data is undefined", async () => {
@@ -906,7 +906,7 @@ describe("useYnab", () => {
     expect(result.current.staleAccountMappingCount).toBe(2);
     expect(result.current.staleCategoryMappingCount).toBe(3);
     expect(result.current.hasStaleMappings).toBe(true);
-    expect(client.GET).toHaveBeenCalledWith("/api/ynab/stale-mappings");
+    expect(client.GET).toHaveBeenCalledWith("/api/ynab/stale-mappings", {});
   });
 
   it("useStaleMappings returns hasStaleMappings false when no stale mappings", async () => {
@@ -955,7 +955,7 @@ describe("useYnab", () => {
 
     await result.current.mutateAsync();
 
-    expect(client.DELETE).toHaveBeenCalledWith("/api/ynab/stale-mappings");
+    expect(client.DELETE).toHaveBeenCalledWith("/api/ynab/stale-mappings", {});
     expect(toast.success).toHaveBeenCalledWith("Cleared 5 stale mapping(s)");
   });
 
