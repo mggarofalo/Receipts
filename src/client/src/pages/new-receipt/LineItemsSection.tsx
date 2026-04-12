@@ -200,7 +200,12 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
   );
 
   const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+    () =>
+      items.reduce(
+        (sum, item) =>
+          sum + Math.round(item.quantity * item.unitPrice * 100) / 100,
+        0,
+      ),
     [items],
   );
 
