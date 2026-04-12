@@ -66,9 +66,8 @@ The Dockerfile runtime stage installs these Ubuntu Noble (24.04) packages:
 
 | Package | Provides |
 |---------|----------|
-| `tesseract-ocr` | Tesseract CLI and runtime engine |
-| `libtesseract-dev` | `libtesseract.so.5` shared library |
-| `libleptonica-dev` | `liblept.so.5` shared library (version 1.82.0) |
+| `libtesseract5` | `libtesseract.so.5` shared library |
+| `liblept5` | `liblept.so.5` shared library (version 1.82.0) |
 
 ### Symlink mechanism
 
