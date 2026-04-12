@@ -3283,8 +3283,8 @@ paths:
           required: false
           schema:
             type: string
-            enum: [DateAndLocation, DateAndTotal, DateAndLocationAndTotal]
-            default: DateAndLocation
+            enum: [dateAndLocation, dateAndTotal, dateAndLocationAndTotal]
+            default: dateAndLocation
           description: Which fields to compare when detecting duplicates.
         - name: locationTolerance
           in: query
@@ -4110,7 +4110,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [MemoUpdate, TransactionPush]
+            enum: [memoUpdate, transactionPush]
       responses:
         "200":
           description: OK
@@ -4982,7 +4982,7 @@ components:
     SimilarItemResponseSource:
       type: string
       description: "'template' if from item templates, 'history' if from receipt item history"
-      enum: [Template, History]
+      enum: [template, history]
 
     SimilarItemResponse:
       type: object
@@ -5163,7 +5163,7 @@ components:
 
     ConfidenceLevel:
       type: string
-      enum: [Low, Medium, High]
+      enum: [low, medium, high]
 
     ProposedReceiptResponse:
       type: object
@@ -5420,7 +5420,7 @@ components:
     ReceiptItemSuggestionResponseMatchType:
       type: string
       description: "'location' if matched with the specified location, 'global' if fallback to all locations"
-      enum: [Location, Global]
+      enum: [location, global]
 
     ReceiptItemSuggestionResponse:
       type: object
@@ -6018,8 +6018,8 @@ components:
 
     TokenIntrospectionRequestTokenTypeHint:
       enum:
-        - AccessToken
-        - RefreshToken
+        - accessToken
+        - refreshToken
 
     TokenIntrospectionResponse:
       type: object
@@ -6055,8 +6055,8 @@ components:
 
     TokenRevocationRequestTokenTypeHint:
       enum:
-        - AccessToken
-        - RefreshToken
+        - accessToken
+        - refreshToken
 
     AdminResetPasswordRequest:
       type: object
@@ -6269,10 +6269,10 @@ components:
           format: date-time
 
     YnabSyncRecordResponseSyncType:
-      enum: [MemoUpdate, TransactionPush]
+      enum: [memoUpdate, transactionPush]
 
     YnabSyncRecordResponseSyncStatus:
-      enum: [Pending, Synced, Failed]
+      enum: [pending, synced, failed]
 
     ReceiptYnabSyncStatus:
       type: object
@@ -6286,7 +6286,7 @@ components:
 
     ReceiptYnabSyncStatusValue:
       type: string
-      enum: [NotSynced, Pending, Synced, Failed]
+      enum: [notSynced, pending, synced, failed]
 
     ReceiptYnabSyncStatusListResponse:
       type: object
@@ -6706,10 +6706,10 @@ components:
           description: Timestamp of the oldest tracked request, null if no requests
 
     YnabMemoSyncOutcome:
-      enum: [Synced, AlreadySynced, NoMatch, Ambiguous, CurrencySkipped, ReconciledSkipped, Failed]
+      enum: [synced, alreadySynced, noMatch, ambiguous, currencySkipped, reconciledSkipped, failed]
 
     YnabSyncType:
-      enum: [MemoUpdate, TransactionPush]
+      enum: [memoUpdate, transactionPush]
 
   headers:
     X-Resource-Id:

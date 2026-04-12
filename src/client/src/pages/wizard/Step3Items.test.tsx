@@ -462,7 +462,7 @@ describe("Step3Items", () => {
         data: [
           {
             name: "Whole Milk",
-            source: "Template",
+            source: "template",
             combinedScore: 0.95,
             defaultCategory: "Food",
             defaultSubcategory: "Dairy",
@@ -495,7 +495,7 @@ describe("Step3Items", () => {
         data: [
           {
             name: "Whole Milk",
-            source: "Template",
+            source: "template",
             combinedScore: 0.95,
             defaultCategory: "Food",
             defaultSubcategory: "Dairy",
@@ -528,7 +528,7 @@ describe("Step3Items", () => {
         data: [
           {
             name: "Service Fee",
-            source: "History",
+            source: "history",
             combinedScore: 0.85,
             defaultCategory: "Services",
             defaultSubcategory: null,
@@ -561,7 +561,7 @@ describe("Step3Items", () => {
         data: [
           {
             name: "Generic Item",
-            source: "History",
+            source: "history",
             combinedScore: 0.5,
             defaultCategory: null,
             defaultSubcategory: null,
@@ -637,7 +637,7 @@ describe("Step3Items", () => {
         data: [
           {
             name: "Past Purchase",
-            source: "History",
+            source: "history",
             combinedScore: 0.7,
             defaultCategory: "Food",
             defaultSubcategory: null,
@@ -667,7 +667,7 @@ describe("Step3Items", () => {
         data: [
           {
             name: "Organic Milk",
-            source: "Template",
+            source: "template",
             combinedScore: 0.92,
             defaultCategory: "Food",
             defaultSubcategory: "Dairy",
@@ -699,7 +699,7 @@ describe("Step3Items", () => {
         data: [
           {
             name: "Gas",
-            source: "Template",
+            source: "template",
             combinedScore: 0.8,
             defaultCategory: "Transport",
             defaultSubcategory: null,
@@ -732,7 +732,7 @@ describe("Step3Items", () => {
         data: [
           {
             name: "Test Suggestion",
-            source: "Template",
+            source: "template",
             combinedScore: 0.9,
             defaultCategory: "Food",
             defaultSubcategory: null,

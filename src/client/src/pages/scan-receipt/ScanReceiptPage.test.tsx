@@ -100,24 +100,24 @@ describe("ScanReceiptPage", () => {
       ) => {
         options.onSuccess({
           storeName: "Test Store",
-          storeNameConfidence: "High",
+          storeNameConfidence: "high",
           date: "2024-06-15",
-          dateConfidence: "High",
+          dateConfidence: "high",
           items: [],
           subtotal: 0,
-          subtotalConfidence: "High",
+          subtotalConfidence: "high",
           taxLines: [
             {
               label: "Tax",
-              labelConfidence: "High",
+              labelConfidence: "high",
               amount: 0,
-              amountConfidence: "High",
+              amountConfidence: "high",
             },
           ],
           total: 0,
-          totalConfidence: "High",
+          totalConfidence: "high",
           paymentMethod: null,
-          paymentMethodConfidence: "High",
+          paymentMethodConfidence: "high",
           rawOcrText: "TEST STORE\nTotal: 0.00",
           ocrConfidence: 0.9,
         });
@@ -180,24 +180,24 @@ describe("ScanReceiptPage", () => {
       ) => {
         options.onSuccess({
           storeName: "Low Confidence Store",
-          storeNameConfidence: "Low",
+          storeNameConfidence: "low",
           date: "2024-06-15",
-          dateConfidence: "High",
+          dateConfidence: "high",
           items: [],
           subtotal: 10,
-          subtotalConfidence: "High",
+          subtotalConfidence: "high",
           taxLines: [
             {
               label: "Tax",
-              labelConfidence: "High",
+              labelConfidence: "high",
               amount: 1,
-              amountConfidence: "High",
+              amountConfidence: "high",
             },
           ],
           total: 11,
-          totalConfidence: "High",
+          totalConfidence: "high",
           paymentMethod: null,
-          paymentMethodConfidence: "High",
+          paymentMethodConfidence: "high",
           rawOcrText: "LOW CONFIDENCE STORE",
           ocrConfidence: 0.5,
         });
@@ -219,6 +219,6 @@ describe("ScanReceiptPage", () => {
     const confidenceMap = JSON.parse(
       screen.getByTestId("confidence-map").textContent!,
     );
-    expect(confidenceMap).toEqual({ location: "Low" });
+    expect(confidenceMap).toEqual({ location: "low" });
   });
 });

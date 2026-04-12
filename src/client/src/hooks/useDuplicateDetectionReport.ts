@@ -2,9 +2,9 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 
 export type MatchOn =
-  | "DateAndLocation"
-  | "DateAndTotal"
-  | "DateAndLocationAndTotal";
+  | "dateAndLocation"
+  | "dateAndTotal"
+  | "dateAndLocationAndTotal";
 
 export type LocationTolerance = "exact" | "normalized";
 

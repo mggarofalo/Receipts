@@ -44,7 +44,7 @@ describe("useSimilarItems", () => {
 
   it("fetches similar items when query is >= 2 chars", async () => {
     const items = [
-      { name: "Milk", source: "Template", combinedScore: 0.9, defaultCategory: "Food" },
+      { name: "Milk", source: "template", combinedScore: 0.9, defaultCategory: "Food" },
     ];
     (client.GET as Mock).mockResolvedValue({ data: items, error: undefined });
 

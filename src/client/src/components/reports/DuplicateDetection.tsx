@@ -40,7 +40,7 @@ import { Label } from "@/components/ui/label";
 
 export default function DuplicateDetection() {
   const navigate = useNavigate();
-  const [matchOn, setMatchOn] = useState<MatchOn>("DateAndLocation");
+  const [matchOn, setMatchOn] = useState<MatchOn>("dateAndLocation");
   const [locationTolerance, setLocationTolerance] =
     useState<LocationTolerance>("exact");
   const [totalTolerance, setTotalTolerance] = useState<TotalTolerance>(0);
@@ -59,9 +59,9 @@ export default function DuplicateDetection() {
   const deleteReceipts = useDeleteReceipts();
 
   const showLocationTolerance =
-    matchOn === "DateAndLocation" || matchOn === "DateAndLocationAndTotal";
+    matchOn === "dateAndLocation" || matchOn === "dateAndLocationAndTotal";
   const showTotalTolerance =
-    matchOn === "DateAndTotal" || matchOn === "DateAndLocationAndTotal";
+    matchOn === "dateAndTotal" || matchOn === "dateAndLocationAndTotal";
 
   function handleDelete() {
     if (!deleteTarget) return;
@@ -102,9 +102,9 @@ export default function DuplicateDetection() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="DateAndLocation">Date & Location</SelectItem>
-              <SelectItem value="DateAndTotal">Date & Total</SelectItem>
-              <SelectItem value="DateAndLocationAndTotal">
+              <SelectItem value="dateAndLocation">Date & Location</SelectItem>
+              <SelectItem value="dateAndTotal">Date & Total</SelectItem>
+              <SelectItem value="dateAndLocationAndTotal">
                 Date, Location & Total
               </SelectItem>
             </SelectContent>
