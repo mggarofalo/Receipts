@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure.Tests;
 
+[Collection(PostgresConnectionStringEnvCollection.Name)]
 public class DateTimeOffsetUtcConverterTests
 {
 	[Fact]
