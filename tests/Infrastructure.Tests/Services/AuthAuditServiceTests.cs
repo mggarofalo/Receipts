@@ -274,7 +274,7 @@ public class AuthAuditServiceTests
 
 		AuthAuditLogEntity successLog = AuthAuditLogEntityGenerator.Generate(success: true);
 		AuthAuditLogEntity failedLog1 = AuthAuditLogEntityGenerator.Generate(success: false, failureReason: "Bad password");
-		AuthAuditLogEntity failedLog2 = AuthAuditLogEntityGenerator.Generate(success: false, failureReason: "Account locked");
+		AuthAuditLogEntity failedLog2 = AuthAuditLogEntityGenerator.Generate(success: false, failureReason: "Card locked");
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{

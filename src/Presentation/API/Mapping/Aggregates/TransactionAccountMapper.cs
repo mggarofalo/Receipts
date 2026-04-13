@@ -9,14 +9,14 @@ namespace API.Mapping.Aggregates;
 public partial class TransactionAccountMapper
 {
 	private readonly TransactionMapper _transactionMapper = new();
-	private readonly AccountMapper _accountMapper = new();
+	private readonly CardMapper _cardMapper = new();
 
 	public TransactionAccountResponse ToResponse(TransactionAccount source)
 	{
 		return new TransactionAccountResponse
 		{
 			Transaction = _transactionMapper.ToResponse(source.Transaction),
-			Account = _accountMapper.ToResponse(source.Account)
+			Account = _cardMapper.ToResponse(source.Account)
 		};
 	}
 }

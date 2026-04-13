@@ -16,10 +16,10 @@ public class AuditLogTests(PostgresFixture fixture)
 	{
 		// Arrange
 		await using ApplicationDbContext context = fixture.CreateDbContext();
-		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity account = CardEntityGenerator.Generate();
 
 		// Act
-		context.Accounts.Add(account);
+		context.Cards.Add(account);
 		await context.SaveChangesAsync();
 
 		// Assert — an audit log entry should exist for the creation
@@ -35,7 +35,7 @@ public class AuditLogTests(PostgresFixture fixture)
 
 		List<FieldChange> changes = auditLog.GetChanges();
 		changes.Should().Contain(c => c.FieldName == "Name" && c.NewValue == account.Name);
-		changes.Should().Contain(c => c.FieldName == "AccountCode" && c.NewValue == account.AccountCode);
+		changes.Should().Contain(c => c.FieldName == "CardCode" && c.NewValue == account.CardCode);
 	}
 
 	[Fact]
@@ -43,12 +43,12 @@ public class AuditLogTests(PostgresFixture fixture)
 	{
 		// Arrange
 		await using ApplicationDbContext context = fixture.CreateDbContext();
-		AccountEntity account = AccountEntityGenerator.Generate();
-		context.Accounts.Add(account);
+		CardEntity account = CardEntityGenerator.Generate();
+		context.Cards.Add(account);
 		await context.SaveChangesAsync();
 
 		// Act — update the account name
-		account.Name = "Updated Account Name";
+		account.Name = "Updated Card Name";
 		await context.SaveChangesAsync();
 
 		// Assert — an Update audit log should exist with the field change
@@ -62,7 +62,7 @@ public class AuditLogTests(PostgresFixture fixture)
 		auditLog.Should().NotBeNull();
 		List<FieldChange> changes = auditLog!.GetChanges();
 		changes.Should().ContainSingle(c => c.FieldName == "Name")
-			.Which.NewValue.Should().Be("Updated Account Name");
+			.Which.NewValue.Should().Be("Updated Card Name");
 	}
 
 	[Fact]
@@ -94,10 +94,10 @@ public class AuditLogTests(PostgresFixture fixture)
 	{
 		// Arrange — the audit system should not audit itself
 		await using ApplicationDbContext context = fixture.CreateDbContext();
-		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity account = CardEntityGenerator.Generate();
 
 		// Act — create an entity (which triggers audit log creation)
-		context.Accounts.Add(account);
+		context.Cards.Add(account);
 		await context.SaveChangesAsync();
 
 		// Assert — no audit log should exist for AuditLogEntity type

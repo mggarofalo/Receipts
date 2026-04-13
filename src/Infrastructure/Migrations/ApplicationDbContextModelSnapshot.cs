@@ -247,28 +247,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("AuthAuditLogs");
                 });
 
-            modelBuilder.Entity("Infrastructure.Entities.Core.AccountEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AccountCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Accounts");
-                });
-
             modelBuilder.Entity("Infrastructure.Entities.Core.AdjustmentEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -309,6 +287,28 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ReceiptId");
 
                     b.ToTable("Adjustments");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Core.CardEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CardCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Cards");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.Core.CategoryEntity", b =>
@@ -1186,7 +1186,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Infrastructure.Entities.Core.TransactionEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Entities.Core.AccountEntity", "Account")
+                    b.HasOne("Infrastructure.Entities.Core.CardEntity", "Account")
                         .WithMany()
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1205,7 +1205,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Infrastructure.Entities.Core.YnabAccountMappingEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Entities.Core.AccountEntity", "Account")
+                    b.HasOne("Infrastructure.Entities.Core.CardEntity", "Account")
                         .WithMany()
                         .HasForeignKey("ReceiptsAccountId")
                         .OnDelete(DeleteBehavior.Cascade)

@@ -4,8 +4,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
-import { useAccounts } from "@/hooks/useAccounts";
-import { accountToOption } from "@/lib/combobox-options";
+import { useCards } from "@/hooks/useCards";
+import { cardToOption } from "@/lib/combobox-options";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,17 +58,17 @@ export function TransactionsSection({
 }: TransactionsSectionProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const accountRef = useRef<HTMLButtonElement>(null);
-  const { data: accounts } = useAccounts(0, 50, undefined, undefined, true);
+  const { data: cards } = useCards(0, 50, undefined, undefined, true);
   useFormShortcuts({ formRef });
 
   const accountOptions = useMemo(
     () =>
       (
-        (accounts as
-          | { id: string; name: string; accountCode: string }[]
+        (cards as
+          | { id: string; name: string; cardCode: string }[]
           | undefined) ?? []
-      ).map(accountToOption),
-    [accounts],
+      ).map(cardToOption),
+    [cards],
   );
 
   const accountNameMap = useMemo(() => {

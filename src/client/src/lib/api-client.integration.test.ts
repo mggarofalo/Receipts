@@ -18,14 +18,14 @@ describe("auth middleware (integration)", () => {
     let capturedAuth: string | null = null;
 
     server.use(
-      http.get("*/api/accounts", ({ request }) => {
+      http.get("*/api/cards", ({ request }) => {
         capturedAuth = request.headers.get("Authorization");
         return HttpResponse.json({ data: [], total: 0, offset: 0, limit: 50 });
       }),
     );
 
     setTokens("my-access-token", "my-refresh-token");
-    await client.GET("/api/accounts");
+    await client.GET("/api/cards");
 
     expect(capturedAuth).toBe("Bearer my-access-token");
   });
@@ -35,7 +35,7 @@ describe("auth middleware (integration)", () => {
     let retryAuth: string | null = null;
 
     server.use(
-      http.get("*/api/accounts", ({ request }) => {
+      http.get("*/api/cards", ({ request }) => {
         callCount++;
         if (callCount === 1) {
           return HttpResponse.json(
@@ -59,7 +59,7 @@ describe("auth middleware (integration)", () => {
     );
 
     setTokens("expired-access-token", "valid-refresh-token");
-    const { data } = await client.GET("/api/accounts");
+    const { data } = await client.GET("/api/cards");
 
     expect(callCount).toBe(2);
     expect(retryAuth).toBe("Bearer new-access-token");
@@ -73,7 +73,7 @@ describe("auth middleware (integration)", () => {
     let nextCallId = 0;
 
     server.use(
-      http.get("*/api/accounts", () => {
+      http.get("*/api/cards", () => {
         const callId = nextCallId++;
         // All first attempts return 401
         if (callId < 3) {
@@ -102,9 +102,9 @@ describe("auth middleware (integration)", () => {
 
     // Fire 3 concurrent requests — all will get 401 and trigger refresh
     const results = await Promise.all([
-      client.GET("/api/accounts"),
-      client.GET("/api/accounts"),
-      client.GET("/api/accounts"),
+      client.GET("/api/cards"),
+      client.GET("/api/cards"),
+      client.GET("/api/cards"),
     ]);
 
     // Only one refresh call should have been made
@@ -121,7 +121,7 @@ describe("auth middleware (integration)", () => {
 
     try {
       server.use(
-        http.get("*/api/accounts", () => {
+        http.get("*/api/cards", () => {
           return HttpResponse.json(
             { detail: "Password change required" },
             { status: 403 },
@@ -130,7 +130,7 @@ describe("auth middleware (integration)", () => {
       );
 
       setTokens("valid-token", "valid-refresh");
-      await client.GET("/api/accounts");
+      await client.GET("/api/cards");
 
       expect(listener).toHaveBeenCalledOnce();
     } finally {
@@ -165,7 +165,7 @@ describe("auth middleware (integration)", () => {
 
     try {
       setTokens("valid-token", "valid-refresh");
-      await client.GET("/api/accounts");
+      await client.GET("/api/cards");
       expect.fail("Expected request to throw a TimeoutError");
     } catch (err) {
       expect(isTimeoutError(err)).toBe(true);
@@ -186,7 +186,7 @@ describe("auth middleware (integration)", () => {
 
     try {
       server.use(
-        http.get("*/api/accounts", () => {
+        http.get("*/api/cards", () => {
           return HttpResponse.json(
             { message: "Unauthorized" },
             { status: 401 },
@@ -201,7 +201,7 @@ describe("auth middleware (integration)", () => {
       );
 
       setTokens("expired-token", "expired-refresh-token");
-      await client.GET("/api/accounts");
+      await client.GET("/api/cards");
 
       expect(getAccessToken()).toBeNull();
       expect(getRefreshToken()).toBeNull();

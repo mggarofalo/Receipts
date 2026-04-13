@@ -1,9 +1,9 @@
 import type { ComboboxOption } from "@/components/ui/combobox";
 
-interface AccountLike {
+interface CardLike {
   id: string;
   name: string;
-  accountCode: string;
+  cardCode: string;
 }
 
 interface ReceiptLike {
@@ -12,11 +12,11 @@ interface ReceiptLike {
   date: string;
 }
 
-export function accountToOption(account: AccountLike): ComboboxOption {
+export function cardToOption(card: CardLike): ComboboxOption {
   return {
-    value: account.id,
-    label: account.name,
-    sublabel: account.accountCode,
+    value: card.id,
+    label: card.name,
+    sublabel: card.cardCode,
   };
 }
 

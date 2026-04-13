@@ -11,14 +11,14 @@ public class TransactionRepositoryTests
 {
 	private readonly IDbContextFactory<ApplicationDbContext> _contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
 
-	private async Task<(ReceiptEntity receipt, AccountEntity account)> CreateParentEntitiesAsync()
+	private async Task<(ReceiptEntity receipt, CardEntity account)> CreateParentEntitiesAsync()
 	{
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		await context.Receipts.AddAsync(receipt);
 
-		AccountEntity account = AccountEntityGenerator.Generate();
-		await context.Accounts.AddAsync(account);
+		CardEntity account = CardEntityGenerator.Generate();
+		await context.Cards.AddAsync(account);
 
 		await context.SaveChangesAsync(CancellationToken.None);
 		return (receipt, account);
@@ -28,7 +28,7 @@ public class TransactionRepositoryTests
 	public async Task GetByIdAsync_ExistingId_ReturnsTransaction()
 	{
 		// Arrange
-		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, CardEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		TransactionEntity entity = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
@@ -70,7 +70,7 @@ public class TransactionRepositoryTests
 	{
 		// Arrange
 		const int expectedTransactionCount = 3;
-		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, CardEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
@@ -93,7 +93,7 @@ public class TransactionRepositoryTests
 	{
 		// Arrange
 		const int expectedTransactionCount = 3;
-		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, CardEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
@@ -140,7 +140,7 @@ public class TransactionRepositoryTests
 	{
 		// Arrange
 		const int expectedTransactionCount = 2;
-		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, CardEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);
@@ -177,7 +177,7 @@ public class TransactionRepositoryTests
 		const int transactionsToDeleteCount = 2;
 		const int expectedRemainingCount = 3;
 
-		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, CardEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(initialTransactionCount, receipt.Id, account.Id);
@@ -246,7 +246,7 @@ public class TransactionRepositoryTests
 	{
 		// Arrange
 		const int expectedTransactionCount = 3;
-		(ReceiptEntity receipt, AccountEntity account) = await CreateParentEntitiesAsync();
+		(ReceiptEntity receipt, CardEntity account) = await CreateParentEntitiesAsync();
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
 
 		List<TransactionEntity> entities = TransactionEntityGenerator.GenerateList(expectedTransactionCount, receipt.Id, account.Id);

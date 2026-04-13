@@ -19,8 +19,8 @@ vi.mock("@/hooks/useKeyboardShortcut", () => ({
   useKeyboardShortcut: vi.fn(),
 }));
 
-vi.mock("@/hooks/useAccounts", () => ({
-  useAccounts: vi.fn(() => ({ data: undefined })),
+vi.mock("@/hooks/useCards", () => ({
+  useCards: vi.fn(() => ({ data: undefined })),
 }));
 
 vi.mock("@/hooks/useReceipts", () => ({
@@ -60,16 +60,16 @@ describe("GlobalSearchDialog", () => {
     );
     expect(screen.getByText("Navigation")).toBeInTheDocument();
     expect(screen.getByText("Home")).toBeInTheDocument();
-    expect(screen.getByText("Accounts")).toBeInTheDocument();
+    expect(screen.getByText("Cards")).toBeInTheDocument();
     expect(screen.getByText("Receipts")).toBeInTheDocument();
   });
 
-  it("renders account items when accounts data is available", async () => {
-    const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+  it("renders card items when cards data is available", async () => {
+    const { useCards } = await import("@/hooks/useCards");
+    vi.mocked(useCards).mockReturnValue(mockQueryResult({
       data: [
-        { id: "acc-1", accountCode: "ACC001", name: "Checking" },
-        { id: "acc-2", accountCode: "ACC002", name: "Savings" },
+        { id: "acc-1", cardCode: "CARD001", name: "Checking" },
+        { id: "acc-2", cardCode: "CARD002", name: "Savings" },
       ],
       total: 2,
     }));
@@ -78,7 +78,7 @@ describe("GlobalSearchDialog", () => {
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
     );
     expect(screen.getByText("Checking")).toBeInTheDocument();
-    expect(screen.getByText("ACC001")).toBeInTheDocument();
+    expect(screen.getByText("CARD001")).toBeInTheDocument();
     expect(screen.getByText("Savings")).toBeInTheDocument();
   });
 
@@ -199,11 +199,11 @@ describe("GlobalSearchDialog", () => {
     expect(screen.getByText("Store B")).toBeInTheDocument();
   });
 
-  it("selecting an account item closes dialog", async () => {
-    const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+  it("selecting a card item closes dialog", async () => {
+    const { useCards } = await import("@/hooks/useCards");
+    vi.mocked(useCards).mockReturnValue(mockQueryResult({
       data: [
-        { id: "acc-1", accountCode: "ACC001", name: "Checking" },
+        { id: "acc-1", cardCode: "CARD001", name: "Checking" },
       ],
       total: 1,
     }));

@@ -236,11 +236,11 @@ public class InfrastructureServiceTests
 		// Assert
 		serviceProvider.GetService<IDbContextFactory<ApplicationDbContext>>().Should().NotBeNull();
 		serviceProvider.GetService<IReceiptService>().Should().NotBeNull();
-		serviceProvider.GetService<IAccountService>().Should().NotBeNull();
+		serviceProvider.GetService<ICardService>().Should().NotBeNull();
 		serviceProvider.GetService<ITransactionService>().Should().NotBeNull();
 		serviceProvider.GetService<IReceiptItemService>().Should().NotBeNull();
 		serviceProvider.GetService<IDatabaseMigratorService>().Should().NotBeNull();
-		serviceProvider.GetService<AccountMapper>().Should().NotBeNull();
+		serviceProvider.GetService<CardMapper>().Should().NotBeNull();
 		serviceProvider.GetService<ReceiptMapper>().Should().NotBeNull();
 		serviceProvider.GetService<ReceiptItemMapper>().Should().NotBeNull();
 		serviceProvider.GetService<TransactionMapper>().Should().NotBeNull();
@@ -265,9 +265,9 @@ public class InfrastructureServiceTests
 		serviceProvider.GetService<IDbContextFactory<ApplicationDbContext>>().Should().NotBeNull();
 		// All services and mappers are still registered regardless of DB config
 		serviceProvider.GetService<IReceiptService>().Should().NotBeNull();
-		serviceProvider.GetService<IAccountService>().Should().NotBeNull();
+		serviceProvider.GetService<ICardService>().Should().NotBeNull();
 		serviceProvider.GetService<IDatabaseMigratorService>().Should().NotBeNull();
-		serviceProvider.GetService<AccountMapper>().Should().NotBeNull();
+		serviceProvider.GetService<CardMapper>().Should().NotBeNull();
 		serviceProvider.GetService<ReceiptMapper>().Should().NotBeNull();
 	}
 

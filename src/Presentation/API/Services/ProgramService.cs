@@ -15,7 +15,7 @@ public static class ProgramService
 		services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 
 		services
-			.AddSingleton<API.Mapping.Core.AccountMapper>()
+			.AddSingleton<API.Mapping.Core.CardMapper>()
 			.AddSingleton<API.Mapping.Core.CategoryMapper>()
 			.AddSingleton<API.Mapping.Core.SubcategoryMapper>()
 			.AddSingleton<API.Mapping.Core.ReceiptMapper>()

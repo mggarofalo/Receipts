@@ -190,7 +190,7 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 
 		// Fetch account names in a single query
 		List<Guid> accountIds = accountSpending.Select(a => a.AccountId).ToList();
-		Dictionary<Guid, string> accountNames = await context.Accounts
+		Dictionary<Guid, string> accountNames = await context.Cards
 			.AsNoTracking()
 			.Where(a => accountIds.Contains(a.Id))
 			.ToDictionaryAsync(a => a.Id, a => a.Name, cancellationToken);

@@ -24,7 +24,7 @@ public class TransactionAccountMapperTests
 			new DateOnly(2025, 4, 15)
 		);
 
-		Account account = new(
+		Card account = new(
 			accountId,
 			"CHECKING-001",
 			"Primary Checking",
@@ -47,7 +47,7 @@ public class TransactionAccountMapperTests
 
 		// Assert — Account
 		Assert.Equal(accountId, actual.Account.Id);
-		Assert.Equal("CHECKING-001", actual.Account.AccountCode);
+		Assert.Equal("CHECKING-001", actual.Account.CardCode);
 		Assert.Equal("Primary Checking", actual.Account.Name);
 		Assert.True(actual.Account.IsActive);
 	}
@@ -65,7 +65,7 @@ public class TransactionAccountMapperTests
 			new DateOnly(2025, 6, 1)
 		);
 
-		Account account = new(
+		Card account = new(
 			accountId,
 			"SAVINGS-002",
 			"Old Savings",
@@ -83,7 +83,7 @@ public class TransactionAccountMapperTests
 
 		// Assert
 		Assert.False(actual.Account.IsActive);
-		Assert.Equal("SAVINGS-002", actual.Account.AccountCode);
+		Assert.Equal("SAVINGS-002", actual.Account.CardCode);
 	}
 
 	[Fact]
@@ -99,7 +99,7 @@ public class TransactionAccountMapperTests
 			new DateOnly(2025, 8, 22)
 		);
 
-		Account account = new(
+		Card account = new(
 			accountId,
 			"CC-001",
 			"Credit Card",

@@ -2,7 +2,7 @@ import type { components } from "@/generated/api";
 import { receipts } from "./receipts";
 import { receiptItems } from "./receipt-items";
 import { transactions } from "./transactions";
-import { accounts } from "./accounts";
+import { cards } from "./cards";
 
 type TripResponse = components["schemas"]["TripResponse"];
 
@@ -29,7 +29,7 @@ export const tripResponse: TripResponse = {
   },
   transactions: txns.map((t) => ({
     transaction: t,
-    account: accounts.find((a) => a.id === t.accountId)!,
+    account: cards.find((a) => a.id === t.accountId)!,
   })),
   warnings: [],
 };

@@ -256,7 +256,7 @@ function ReceiptDetail() {
               },
               account: {
                 id: ta.account.id,
-                accountCode: ta.account.accountCode,
+                cardCode: ta.account.cardCode,
                 name: ta.account.name,
                 isActive: ta.account.isActive ?? true,
               },

@@ -7,7 +7,7 @@ import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import ChangePassword from "@/pages/ChangePassword";
 import ApiKeys from "@/pages/ApiKeys";
-import Accounts from "@/pages/Accounts";
+import Cards from "@/pages/Cards";
 import Categories from "@/pages/Categories";
 import Subcategories from "@/pages/Subcategories";
 import Receipts from "@/pages/Receipts";
@@ -43,7 +43,7 @@ export const routeConfig = [
         ),
         children: [
           { path: "/", element: <Dashboard /> },
-          { path: "/accounts", element: <Accounts /> },
+          { path: "/cards", element: <Cards /> },
           { path: "/categories", element: <Categories /> },
           { path: "/subcategories", element: <Subcategories /> },
           { path: "/receipts", element: <Receipts /> },

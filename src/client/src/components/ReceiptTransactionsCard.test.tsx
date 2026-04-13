@@ -5,11 +5,11 @@ import { ReceiptTransactionsCard } from "./ReceiptTransactionsCard";
 import { renderWithQueryClient } from "@/test/test-utils";
 import { mockMutationResult } from "@/test/mock-hooks";
 
-vi.mock("@/hooks/useAccounts", () => ({
-  useAccounts: vi.fn(() => ({
+vi.mock("@/hooks/useCards", () => ({
+  useCards: vi.fn(() => ({
     data: [
-      { id: "acc-1", name: "Checking", accountCode: "1001" },
-      { id: "acc-2", name: "Savings", accountCode: "2001" },
+      { id: "acc-1", name: "Checking", cardCode: "1001" },
+      { id: "acc-2", name: "Savings", cardCode: "2001" },
     ],
     isLoading: false,
   })),
@@ -26,7 +26,7 @@ const mockTransactions = [
     transaction: { id: "txn-1", amount: 50.0, date: "2024-01-15" },
     account: {
       id: "acc-1",
-      accountCode: "1001",
+      cardCode: "1001",
       name: "Checking",
       isActive: true,
     },
@@ -35,7 +35,7 @@ const mockTransactions = [
     transaction: { id: "txn-2", amount: 25.5, date: "2024-01-16" },
     account: {
       id: "acc-2",
-      accountCode: "2001",
+      cardCode: "2001",
       name: "Savings",
       isActive: false,
     },

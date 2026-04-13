@@ -46,9 +46,9 @@ public class SoftDeleteTests(PostgresFixture fixture)
 		{
 			await using ApplicationDbContext setupContext = fixture.CreateDbContext();
 			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-			AccountEntity account = AccountEntityGenerator.Generate();
+			CardEntity account = CardEntityGenerator.Generate();
 			setupContext.Receipts.Add(receipt);
-			setupContext.Accounts.Add(account);
+			setupContext.Cards.Add(account);
 			await setupContext.SaveChangesAsync();
 
 			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
@@ -223,9 +223,9 @@ public class SoftDeleteTests(PostgresFixture fixture)
 		{
 			await using ApplicationDbContext setupContext = fixture.CreateDbContext();
 			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-			AccountEntity account = AccountEntityGenerator.Generate();
+			CardEntity account = CardEntityGenerator.Generate();
 			setupContext.Receipts.Add(receipt);
-			setupContext.Accounts.Add(account);
+			setupContext.Cards.Add(account);
 			await setupContext.SaveChangesAsync();
 
 			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
@@ -272,9 +272,9 @@ public class SoftDeleteTests(PostgresFixture fixture)
 		{
 			await using ApplicationDbContext setupContext = fixture.CreateDbContext();
 			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-			AccountEntity account = AccountEntityGenerator.Generate();
+			CardEntity account = CardEntityGenerator.Generate();
 			setupContext.Receipts.Add(receipt);
-			setupContext.Accounts.Add(account);
+			setupContext.Cards.Add(account);
 			await setupContext.SaveChangesAsync();
 
 			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);

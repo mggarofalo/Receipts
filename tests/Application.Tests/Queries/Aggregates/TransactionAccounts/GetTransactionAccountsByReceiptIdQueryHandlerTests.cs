@@ -13,7 +13,7 @@ public class GetTransactionAccountsByReceiptIdQueryHandlerTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<Domain.Core.Account> expectedAccounts = AccountGenerator.GenerateList(3);
+		List<Domain.Core.Card> expectedAccounts = CardGenerator.GenerateList(3);
 		List<Domain.Core.Transaction> expectedTransactions = TransactionGenerator.GenerateList(3);
 		List<Domain.Aggregates.TransactionAccount> expectedResult = expectedTransactions
 			.Zip(expectedAccounts, (t, a) => new Domain.Aggregates.TransactionAccount { Transaction = t, Account = a })

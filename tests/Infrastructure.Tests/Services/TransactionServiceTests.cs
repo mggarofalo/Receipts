@@ -16,14 +16,14 @@ public class TransactionServiceTests
 {
 	private readonly Mock<ITransactionRepository> _mockRepository;
 	private readonly TransactionMapper _mapper;
-	private readonly AccountMapper _accountMapper;
+	private readonly CardMapper _accountMapper;
 	private readonly TransactionService _service;
 
 	public TransactionServiceTests()
 	{
 		_mockRepository = new Mock<ITransactionRepository>();
 		_mapper = new TransactionMapper();
-		_accountMapper = new AccountMapper();
+		_accountMapper = new CardMapper();
 		_service = new TransactionService(_mockRepository.Object, _mapper, _accountMapper);
 	}
 
@@ -194,7 +194,7 @@ public class TransactionServiceTests
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		List<AccountEntity> accountEntities = AccountEntityGenerator.GenerateList(3);
+		List<CardEntity> accountEntities = CardEntityGenerator.GenerateList(3);
 		List<TransactionEntity> transactionEntities = TransactionEntityGenerator.GenerateList(3, receiptId);
 		for (int i = 0; i < transactionEntities.Count; i++)
 		{
@@ -223,7 +223,7 @@ public class TransactionServiceTests
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		List<TransactionEntity> transactionEntities = TransactionEntityGenerator.GenerateList(2, receiptId);
-		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity account = CardEntityGenerator.Generate();
 		transactionEntities[0].Account = account;
 		transactionEntities[0].AccountId = account.Id;
 		transactionEntities[1].Account = null;
