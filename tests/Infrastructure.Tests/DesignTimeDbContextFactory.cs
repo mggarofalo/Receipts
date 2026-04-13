@@ -2,6 +2,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Tests;
 
+/// <summary>
+/// Serializes tests that mutate the process-global POSTGRES_CONNECTION_STRING
+/// environment variable. Without this, xUnit's default parallelism lets sibling
+/// tests race against each other: one test sets the variable to null while another
+/// sets it to a connection string, and the "throws when not set" assertion flakes.
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public class PostgresConnectionStringEnvCollection
+{
+	public const string Name = "PostgresConnectionStringEnv";
+}
+
+[Collection(PostgresConnectionStringEnvCollection.Name)]
 public class DesignTimeDbContextFactoryTests
 {
 	[Fact]
