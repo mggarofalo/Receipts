@@ -38,7 +38,7 @@ public class BackupServiceTests : IDisposable
 		await conn.OpenAsync();
 
 		// Verify all tables exist
-		string[] expectedTables = ["backup_metadata", "accounts", "categories", "subcategories",
+		string[] expectedTables = ["backup_metadata", "cards", "categories", "subcategories",
 			"item_templates", "receipts", "receipt_items", "transactions", "adjustments"];
 
 		foreach (string table in expectedTables)
@@ -59,7 +59,7 @@ public class BackupServiceTests : IDisposable
 		await using SqliteCommand versionCmd = conn.CreateCommand();
 		versionCmd.CommandText = "SELECT value FROM backup_metadata WHERE key='export_version'";
 		string? version = (string?)await versionCmd.ExecuteScalarAsync();
-		version.Should().Be("1");
+		version.Should().Be("2");
 	}
 
 	[Fact]
@@ -68,9 +68,9 @@ public class BackupServiceTests : IDisposable
 		// Arrange
 		await using (ApplicationDbContext ctx = await _dbContextFactory.CreateDbContextAsync())
 		{
-			ctx.Accounts.AddRange(
-				new AccountEntity { Id = Guid.NewGuid(), AccountCode = "1000", Name = "Checking", IsActive = true },
-				new AccountEntity { Id = Guid.NewGuid(), AccountCode = "2000", Name = "Savings", IsActive = false });
+			ctx.Cards.AddRange(
+				new CardEntity { Id = Guid.NewGuid(), CardCode = "1000", Name = "Checking", IsActive = true },
+				new CardEntity { Id = Guid.NewGuid(), CardCode = "2000", Name = "Savings", IsActive = false });
 			await ctx.SaveChangesAsync();
 		}
 
@@ -83,15 +83,15 @@ public class BackupServiceTests : IDisposable
 		await conn.OpenAsync();
 
 		await using SqliteCommand cmd = conn.CreateCommand();
-		cmd.CommandText = "SELECT COUNT(*) FROM accounts";
+		cmd.CommandText = "SELECT COUNT(*) FROM cards";
 		long count = (long)(await cmd.ExecuteScalarAsync())!;
 		count.Should().Be(2);
 
-		cmd.CommandText = "SELECT name FROM accounts WHERE account_code='1000'";
+		cmd.CommandText = "SELECT name FROM cards WHERE card_code='1000'";
 		string? name = (string?)await cmd.ExecuteScalarAsync();
 		name.Should().Be("Checking");
 
-		cmd.CommandText = "SELECT is_active FROM accounts WHERE account_code='2000'";
+		cmd.CommandText = "SELECT is_active FROM cards WHERE card_code='2000'";
 		long isActive = (long)(await cmd.ExecuteScalarAsync())!;
 		isActive.Should().Be(0);
 	}
@@ -135,7 +135,7 @@ public class BackupServiceTests : IDisposable
 
 		await using (ApplicationDbContext ctx = await _dbContextFactory.CreateDbContextAsync())
 		{
-			ctx.Accounts.Add(new AccountEntity { Id = accountId, AccountCode = "1000", Name = "Checking", IsActive = true });
+			ctx.Cards.Add(new CardEntity { Id = accountId, CardCode = "1000", Name = "Checking", IsActive = true });
 
 			ctx.Receipts.Add(new ReceiptEntity
 			{
@@ -321,7 +321,7 @@ public class BackupServiceTests : IDisposable
 		}
 
 		tables.Should().Contain("backup_metadata");
-		tables.Should().Contain("accounts");
+		tables.Should().Contain("cards");
 		tables.Should().Contain("categories");
 		tables.Should().Contain("subcategories");
 		tables.Should().Contain("item_templates");

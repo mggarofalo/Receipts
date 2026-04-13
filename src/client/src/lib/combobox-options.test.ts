@@ -1,11 +1,11 @@
-import { accountToOption, receiptToOption } from "./combobox-options";
+import { cardToOption, receiptToOption } from "./combobox-options";
 
-describe("accountToOption", () => {
-  it("maps account to ComboboxOption", () => {
-    const result = accountToOption({
+describe("cardToOption", () => {
+  it("maps card to ComboboxOption", () => {
+    const result = cardToOption({
       id: "abc-123",
       name: "Checking",
-      accountCode: "1000",
+      cardCode: "1000",
     });
     expect(result).toEqual({
       value: "abc-123",

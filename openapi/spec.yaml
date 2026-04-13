@@ -42,14 +42,14 @@ paths:
                 $ref: "#/components/schemas/EnumMetadataResponse"
 
   # ──────────────────────────────────────────────
-  # Accounts
+  # Cards
   # ──────────────────────────────────────────────
 
-  /api/accounts/{id}:
+  /api/cards/{id}:
     get:
-      operationId: GetAccountById
-      tags: [Accounts]
-      summary: Get an account by ID
+      operationId: GetCardById
+      tags: [Cards]
+      summary: Get a card by ID
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -69,13 +69,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountResponse"
+                $ref: "#/components/schemas/CardResponse"
         "404":
           description: Not Found
     put:
-      operationId: UpdateAccount
-      tags: [Accounts]
-      summary: Update a single account
+      operationId: UpdateCard
+      tags: [Cards]
+      summary: Update a single card
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -91,7 +91,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateAccountRequest"
+              $ref: "#/components/schemas/UpdateCardRequest"
       responses:
         "204":
           description: No Content
@@ -101,12 +101,12 @@ paths:
         "404":
           description: Not Found
     delete:
-      operationId: DeleteAccount
-      tags: [Accounts]
-      summary: Hard-delete an account
+      operationId: DeleteCard
+      tags: [Cards]
+      summary: Hard-delete a card
       description: >
-        Permanently deletes an account. Requires the Admin role. Returns 409
-        Conflict if transactions reference this account.
+        Permanently deletes a card. Requires the Admin role. Returns 409
+        Conflict if transactions reference this card.
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -123,7 +123,7 @@ paths:
         "404":
           description: Not Found
         "409":
-          description: Conflict — transactions reference this account
+          description: Conflict — transactions reference this card
           content:
             application/json:
               schema:
@@ -137,11 +137,11 @@ paths:
                   - message
                   - transactionCount
 
-  /api/accounts:
+  /api/cards:
     get:
-      operationId: GetAllAccounts
-      tags: [Accounts]
-      summary: Get all accounts
+      operationId: GetAllCards
+      tags: [Cards]
+      summary: Get all cards
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -161,7 +161,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountListResponse"
+                $ref: "#/components/schemas/CardListResponse"
         "400":
           description: Bad Request
           content:
@@ -169,9 +169,9 @@ paths:
               schema:
                 type: string
     post:
-      operationId: CreateAccount
-      tags: [Accounts]
-      summary: Create a single account
+      operationId: CreateCard
+      tags: [Cards]
+      summary: Create a single card
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -180,7 +180,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateAccountRequest"
+              $ref: "#/components/schemas/CreateCardRequest"
       responses:
         "200":
           description: OK
@@ -190,12 +190,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AccountResponse"
-  /api/accounts/batch:
+                $ref: "#/components/schemas/CardResponse"
+  /api/cards/batch:
     post:
-      operationId: CreateAccounts
-      tags: [Accounts]
-      summary: Create accounts in batch
+      operationId: CreateCards
+      tags: [Cards]
+      summary: Create cards in batch
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -206,7 +206,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: "#/components/schemas/CreateAccountRequest"
+                $ref: "#/components/schemas/CreateCardRequest"
       responses:
         "200":
           description: OK
@@ -215,11 +215,11 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AccountResponse"
+                  $ref: "#/components/schemas/CardResponse"
     put:
-      operationId: UpdateAccounts
-      tags: [Accounts]
-      summary: Update accounts in batch
+      operationId: UpdateCards
+      tags: [Cards]
+      summary: Update cards in batch
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -230,7 +230,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: "#/components/schemas/UpdateAccountRequest"
+                $ref: "#/components/schemas/UpdateCardRequest"
       responses:
         "204":
           description: No Content
@@ -4684,55 +4684,55 @@ components:
           type: integer
           format: int32
 
-    # ── Account ──────────────────────────────────
+    # ── Card ─────────────────────────────────────
 
-    CreateAccountRequest:
+    CreateCardRequest:
       type: object
-      required: [accountCode, name, isActive]
+      required: [cardCode, name, isActive]
       properties:
-        accountCode:
+        cardCode:
           type: string
         name:
           type: string
         isActive:
           type: boolean
 
-    UpdateAccountRequest:
+    UpdateCardRequest:
       type: object
-      required: [id, accountCode, name, isActive]
-      properties:
-        id:
-          type: string
-          format: uuid
-        accountCode:
-          type: string
-        name:
-          type: string
-        isActive:
-          type: boolean
-
-    AccountResponse:
-      type: object
-      required: [id, accountCode, name, isActive]
+      required: [id, cardCode, name, isActive]
       properties:
         id:
           type: string
           format: uuid
-        accountCode:
+        cardCode:
           type: string
         name:
           type: string
         isActive:
           type: boolean
 
-    AccountListResponse:
+    CardResponse:
+      type: object
+      required: [id, cardCode, name, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        cardCode:
+          type: string
+        name:
+          type: string
+        isActive:
+          type: boolean
+
+    CardListResponse:
       type: object
       required: [data, total, offset, limit]
       properties:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/AccountResponse"
+            $ref: "#/components/schemas/CardResponse"
         total:
           type: integer
           format: int32
@@ -5671,13 +5671,16 @@ components:
           description: "Soft validation warnings (do not block saves)"
 
     TransactionAccountResponse:
+      # TransactionAccount is preserved: transactions conceptually belong to
+      # accounts, not cards. Stage 2 introduces the logical Account layer;
+      # until then, the `account` field is a Card (physical entrypoint).
       type: object
       required: [transaction, account]
       properties:
         transaction:
           $ref: "#/components/schemas/TransactionResponse"
         account:
-          $ref: "#/components/schemas/AccountResponse"
+          $ref: "#/components/schemas/CardResponse"
 
     TripResponse:
       type: object

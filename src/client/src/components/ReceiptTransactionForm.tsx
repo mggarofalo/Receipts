@@ -3,8 +3,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
-import { useAccounts } from "@/hooks/useAccounts";
-import { accountToOption } from "@/lib/combobox-options";
+import { useCards } from "@/hooks/useCards";
+import { cardToOption } from "@/lib/combobox-options";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Combobox } from "@/components/ui/combobox";
@@ -49,16 +49,16 @@ export function ReceiptTransactionForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
-  const { data: accounts, isLoading: accountsLoading } = useAccounts(0, 50, undefined, undefined, true);
+  const { data: cards, isLoading: accountsLoading } = useCards(0, 50, undefined, undefined, true);
 
   const accountOptions = useMemo(
     () =>
       (
-        (accounts as
-          | { id: string; name: string; accountCode: string }[]
+        (cards as
+          | { id: string; name: string; cardCode: string }[]
           | undefined) ?? []
-      ).map(accountToOption),
-    [accounts],
+      ).map(cardToOption),
+    [cards],
   );
 
   const form = useForm<ReceiptTransactionFormValues>({

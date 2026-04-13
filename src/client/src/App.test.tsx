@@ -13,8 +13,8 @@ vi.mock("@/pages/Login", () => ({
 vi.mock("@/pages/ChangePassword", () => ({
   default: () => <div data-testid="page-change-password">Change Password</div>,
 }));
-vi.mock("@/pages/Accounts", () => ({
-  default: () => <div data-testid="page-accounts">Accounts Page</div>,
+vi.mock("@/pages/Cards", () => ({
+  default: () => <div data-testid="page-cards">Cards Page</div>,
 }));
 vi.mock("@/pages/Categories", () => ({
   default: () => <div data-testid="page-categories">Categories</div>,
@@ -116,9 +116,9 @@ describe("App router", () => {
     expect(await screen.findByTestId("page-dashboard")).toBeInTheDocument();
   });
 
-  it('renders Accounts page at "/accounts" route', async () => {
-    renderRoute("/accounts");
-    expect(await screen.findByTestId("page-accounts")).toBeInTheDocument();
+  it('renders Cards page at "/cards" route', async () => {
+    renderRoute("/cards");
+    expect(await screen.findByTestId("page-cards")).toBeInTheDocument();
   });
 
   it('renders Login page at "/login" route', async () => {

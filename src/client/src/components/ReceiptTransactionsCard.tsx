@@ -47,7 +47,7 @@ interface TransactionRow {
   };
   account: {
     id: string;
-    accountCode: string;
+    cardCode: string;
     name: string;
     isActive: boolean;
   };
@@ -205,7 +205,7 @@ export function ReceiptTransactionsCard({
                       </TableCell>
                       <TableCell>{ta.transaction.date}</TableCell>
                       <TableCell className="font-mono">
-                        {ta.account.accountCode}
+                        {ta.account.cardCode}
                       </TableCell>
                       <TableCell>{ta.account.name}</TableCell>
                       <TableCell>

@@ -14,23 +14,23 @@ namespace Infrastructure.IntegrationTests;
 public class ColumnTypeMappingTests(PostgresFixture fixture)
 {
 	[Fact]
-	public async Task AccountEntity_RoundTrips_AllColumnTypes()
+	public async Task CardEntity_RoundTrips_AllColumnTypes()
 	{
 		// Arrange — uuid, text, boolean
 		await using ApplicationDbContext context = fixture.CreateDbContext();
-		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity account = CardEntityGenerator.Generate();
 
 		// Act
-		context.Accounts.Add(account);
+		context.Cards.Add(account);
 		await context.SaveChangesAsync();
 
 		// Assert
 		await using ApplicationDbContext readContext = fixture.CreateDbContext();
-		AccountEntity? loaded = await readContext.Accounts.FirstOrDefaultAsync(a => a.Id == account.Id);
+		CardEntity? loaded = await readContext.Cards.FirstOrDefaultAsync(a => a.Id == account.Id);
 
 		loaded.Should().NotBeNull();
 		loaded!.Id.Should().Be(account.Id);
-		loaded.AccountCode.Should().Be(account.AccountCode);
+		loaded.CardCode.Should().Be(account.CardCode);
 		loaded.Name.Should().Be(account.Name);
 		loaded.IsActive.Should().Be(account.IsActive);
 	}
@@ -63,9 +63,9 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 		// Arrange — FK to Receipt and Account
 		await using ApplicationDbContext context = fixture.CreateDbContext();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity account = CardEntityGenerator.Generate();
 		context.Receipts.Add(receipt);
-		context.Accounts.Add(account);
+		context.Cards.Add(account);
 		await context.SaveChangesAsync();
 
 		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);

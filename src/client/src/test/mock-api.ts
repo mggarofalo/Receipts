@@ -6,17 +6,17 @@
  * them with wrong shapes.
  *
  * Usage:
- *   import { mockAccountResponse, mockAccountListResponse } from "@/test/mock-api";
+ *   import { mockCardResponse, mockCardListResponse } from "@/test/mock-api";
  *
- *   const account = mockAccountResponse({ name: "My Account" });
- *   const list = mockAccountListResponse([account]);
+ *   const card = mockCardResponse({ name: "My Card" });
+ *   const list = mockCardListResponse([card]);
  */
 import type { components } from "@/generated/api";
 
 // ---------------------------------------------------------------------------
 // Type aliases for readability
 // ---------------------------------------------------------------------------
-type AccountResponse = components["schemas"]["AccountResponse"];
+type CardResponse = components["schemas"]["CardResponse"];
 type CategoryResponse = components["schemas"]["CategoryResponse"];
 type SubcategoryResponse = components["schemas"]["SubcategoryResponse"];
 type ReceiptResponse = components["schemas"]["ReceiptResponse"];
@@ -25,7 +25,7 @@ type TransactionResponse = components["schemas"]["TransactionResponse"];
 type AdjustmentResponse = components["schemas"]["AdjustmentResponse"];
 type ItemTemplateResponse = components["schemas"]["ItemTemplateResponse"];
 
-type AccountListResponse = components["schemas"]["AccountListResponse"];
+type CardListResponse = components["schemas"]["CardListResponse"];
 type CategoryListResponse = components["schemas"]["CategoryListResponse"];
 type SubcategoryListResponse = components["schemas"]["SubcategoryListResponse"];
 type ReceiptListResponse = components["schemas"]["ReceiptListResponse"];
@@ -89,14 +89,14 @@ export function mockPaginatedResponse<T>(
 // Per-entity item factories
 // ---------------------------------------------------------------------------
 
-/** Creates a single `AccountResponse` with sensible defaults. */
-export function mockAccountResponse(
-  overrides?: Partial<AccountResponse>,
-): AccountResponse {
+/** Creates a single `CardResponse` with sensible defaults. */
+export function mockCardResponse(
+  overrides?: Partial<CardResponse>,
+): CardResponse {
   return {
     id: nextId(),
-    accountCode: "ACC-001",
-    name: "Test Account",
+    cardCode: "CARD-001",
+    name: "Test Card",
     isActive: true,
     ...overrides,
   };
@@ -210,12 +210,12 @@ export function mockItemTemplateResponse(
 // Per-entity list response factories
 // ---------------------------------------------------------------------------
 
-/** Creates an `AccountListResponse` in the paginated envelope. */
-export function mockAccountListResponse(
-  items?: AccountResponse[],
-  overrides?: Partial<PaginatedEnvelope<AccountResponse>>,
-): AccountListResponse {
-  return mockPaginatedResponse(items ?? [mockAccountResponse()], overrides);
+/** Creates a `CardListResponse` in the paginated envelope. */
+export function mockCardListResponse(
+  items?: CardResponse[],
+  overrides?: Partial<PaginatedEnvelope<CardResponse>>,
+): CardListResponse {
+  return mockPaginatedResponse(items ?? [mockCardResponse()], overrides);
 }
 
 /** Creates a `CategoryListResponse` in the paginated envelope. */

@@ -9,7 +9,7 @@ namespace Application.Tests.Commands.Ynab;
 public class CreateYnabAccountMappingCommandHandlerTests
 {
 	private readonly Mock<IYnabAccountMappingService> _mappingServiceMock = new();
-	private readonly Mock<IAccountService> _accountServiceMock = new();
+	private readonly Mock<ICardService> _accountServiceMock = new();
 	private readonly CreateYnabAccountMappingCommandHandler _handler;
 
 	public CreateYnabAccountMappingCommandHandlerTests()

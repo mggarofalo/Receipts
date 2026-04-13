@@ -12,7 +12,9 @@ public class TransactionEntity : ISoftDeletable, IOwnedBy<ReceiptEntity>
 	public Currency AmountCurrency { get; set; }
 	public DateOnly Date { get; set; }
 	public virtual ReceiptEntity? Receipt { get; set; }
-	public virtual AccountEntity? Account { get; set; }
+	// Nav property preserves the Transaction→Account relationship name.
+	// Type is temporarily CardEntity until Stage 2 introduces the logical Account layer.
+	public virtual CardEntity? Account { get; set; }
 	public DateTimeOffset? DeletedAt { get; set; }
 	public string? DeletedByUserId { get; set; }
 	public Guid? DeletedByApiKeyId { get; set; }

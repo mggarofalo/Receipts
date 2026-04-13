@@ -24,7 +24,7 @@ public class ProgramServiceTests
 	private static void AssertThatMappersAreRegistered(ServiceProvider serviceProvider)
 	{
 		// Core mappers
-		Assert.NotNull(serviceProvider.GetService<AccountMapper>());
+		Assert.NotNull(serviceProvider.GetService<CardMapper>());
 		Assert.NotNull(serviceProvider.GetService<ReceiptMapper>());
 		Assert.NotNull(serviceProvider.GetService<ReceiptItemMapper>());
 		Assert.NotNull(serviceProvider.GetService<TransactionMapper>());

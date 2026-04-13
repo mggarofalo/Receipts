@@ -46,7 +46,7 @@ public static class EnumLabels
 
 	public static readonly EnumValuePair[] EntityTypes =
 	[
-		new() { Value = "Account", Label = "Account" },
+		new() { Value = "Card", Label = "Card" },
 		new() { Value = "Receipt", Label = "Receipt" },
 		new() { Value = "ReceiptItem", Label = "Receipt Item" },
 		new() { Value = "Transaction", Label = "Transaction" },

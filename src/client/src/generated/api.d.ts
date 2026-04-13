@@ -38,47 +38,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/accounts/{id}": {
+    "/api/cards/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get an account by ID */
-        get: operations["GetAccountById"];
-        /** Update a single account */
-        put: operations["UpdateAccount"];
+        /** Get a card by ID */
+        get: operations["GetCardById"];
+        /** Update a single card */
+        put: operations["UpdateCard"];
         post?: never;
         /**
-         * Hard-delete an account
-         * @description Permanently deletes an account. Requires the Admin role. Returns 409 Conflict if transactions reference this account.
+         * Hard-delete a card
+         * @description Permanently deletes a card. Requires the Admin role. Returns 409 Conflict if transactions reference this card.
          */
-        delete: operations["DeleteAccount"];
+        delete: operations["DeleteCard"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/accounts": {
+    "/api/cards": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get all accounts */
-        get: operations["GetAllAccounts"];
+        /** Get all cards */
+        get: operations["GetAllCards"];
         put?: never;
-        /** Create a single account */
-        post: operations["CreateAccount"];
+        /** Create a single card */
+        post: operations["CreateCard"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/accounts/batch": {
+    "/api/cards/batch": {
         parameters: {
             query?: never;
             header?: never;
@@ -86,10 +86,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update accounts in batch */
-        put: operations["UpdateAccounts"];
-        /** Create accounts in batch */
-        post: operations["CreateAccounts"];
+        /** Update cards in batch */
+        put: operations["UpdateCards"];
+        /** Create cards in batch */
+        post: operations["CreateCards"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2294,27 +2294,27 @@ export interface components {
             /** Format: int32 */
             year: number;
         };
-        CreateAccountRequest: {
-            accountCode: string;
+        CreateCardRequest: {
+            cardCode: string;
             name: string;
             isActive: boolean;
         };
-        UpdateAccountRequest: {
+        UpdateCardRequest: {
             /** Format: uuid */
             id: string;
-            accountCode: string;
+            cardCode: string;
             name: string;
             isActive: boolean;
         };
-        AccountResponse: {
+        CardResponse: {
             /** Format: uuid */
             id: string;
-            accountCode: string;
+            cardCode: string;
             name: string;
             isActive: boolean;
         };
-        AccountListResponse: {
-            data: components["schemas"]["AccountResponse"][];
+        CardListResponse: {
+            data: components["schemas"]["CardResponse"][];
             /** Format: int32 */
             total: number;
             /** Format: int32 */
@@ -2767,7 +2767,7 @@ export interface components {
         };
         TransactionAccountResponse: {
             transaction: components["schemas"]["TransactionResponse"];
-            account: components["schemas"]["AccountResponse"];
+            account: components["schemas"]["CardResponse"];
         };
         TripResponse: {
             receipt: components["schemas"]["ReceiptWithItemsResponse"];
@@ -3325,7 +3325,7 @@ export interface operations {
             };
         };
     };
-    GetAccountById: {
+    GetCardById: {
         parameters: {
             query?: never;
             header?: never;
@@ -3343,7 +3343,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountResponse"];
+                    "application/json": components["schemas"]["CardResponse"];
                 };
             };
             /** @description Not Found */
@@ -3355,7 +3355,7 @@ export interface operations {
             };
         };
     };
-    UpdateAccount: {
+    UpdateCard: {
         parameters: {
             query?: never;
             header?: never;
@@ -3366,7 +3366,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateAccountRequest"];
+                "application/json": components["schemas"]["UpdateCardRequest"];
             };
         };
         responses: {
@@ -3387,7 +3387,7 @@ export interface operations {
             };
         };
     };
-    DeleteAccount: {
+    DeleteCard: {
         parameters: {
             query?: never;
             header?: never;
@@ -3412,7 +3412,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Conflict — transactions reference this account */
+            /** @description Conflict — transactions reference this card */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3426,7 +3426,7 @@ export interface operations {
             };
         };
     };
-    GetAllAccounts: {
+    GetAllCards: {
         parameters: {
             query?: {
                 isActive?: boolean;
@@ -3448,7 +3448,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountListResponse"];
+                    "application/json": components["schemas"]["CardListResponse"];
                 };
             };
             /** @description Bad Request */
@@ -3462,7 +3462,7 @@ export interface operations {
             };
         };
     };
-    CreateAccount: {
+    CreateCard: {
         parameters: {
             query?: never;
             header?: never;
@@ -3471,7 +3471,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAccountRequest"];
+                "application/json": components["schemas"]["CreateCardRequest"];
             };
         };
         responses: {
@@ -3482,12 +3482,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountResponse"];
+                    "application/json": components["schemas"]["CardResponse"];
                 };
             };
         };
     };
-    UpdateAccounts: {
+    UpdateCards: {
         parameters: {
             query?: never;
             header?: never;
@@ -3496,7 +3496,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateAccountRequest"][];
+                "application/json": components["schemas"]["UpdateCardRequest"][];
             };
         };
         responses: {
@@ -3516,7 +3516,7 @@ export interface operations {
             };
         };
     };
-    CreateAccounts: {
+    CreateCards: {
         parameters: {
             query?: never;
             header?: never;
@@ -3525,7 +3525,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateAccountRequest"][];
+                "application/json": components["schemas"]["CreateCardRequest"][];
             };
         };
         responses: {
@@ -3535,7 +3535,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountResponse"][];
+                    "application/json": components["schemas"]["CardResponse"][];
                 };
             };
         };

@@ -45,11 +45,11 @@ public class TransactionEntityTests
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity account = CardEntityGenerator.Generate();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
 
-		await context.Accounts.AddAsync(account);
+		await context.Cards.AddAsync(account);
 		await context.Receipts.AddAsync(receipt);
 		await context.Transactions.AddAsync(transaction);
 		await context.SaveChangesAsync(CancellationToken.None);
@@ -67,21 +67,21 @@ public class TransactionEntityTests
 	}
 
 	[Fact]
-	public async Task VirtualAccountEntity_IsNavigable()
+	public async Task VirtualCardEntity_IsNavigable()
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity account = CardEntityGenerator.Generate();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
 
-		await context.Accounts.AddAsync(account);
+		await context.Cards.AddAsync(account);
 		await context.Receipts.AddAsync(receipt);
 		await context.Transactions.AddAsync(transaction);
 		await context.SaveChangesAsync(CancellationToken.None);
 
-		AccountEntity? loadedAccount = await context.Accounts.FindAsync(account.Id);
+		CardEntity? loadedAccount = await context.Cards.FindAsync(account.Id);
 		TransactionEntity? loadedTransaction = await context.Transactions.FindAsync(transaction.Id);
 
 		// Act & Assert
