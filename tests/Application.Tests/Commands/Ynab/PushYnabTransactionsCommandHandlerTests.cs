@@ -65,7 +65,7 @@ public class PushYnabTransactionsCommandHandlerTests
 		tx.AccountId = _accountId;
 		tx.ReceiptId = _receiptId;
 
-		Domain.Core.Card account = new(_accountId, "CHK001", "Checking", true);
+		Domain.Core.Account account = new(_accountId, "Checking", true);
 		List<TransactionAccount> txAccounts =
 		[
 			new() { Transaction = tx, Account = account },
@@ -183,7 +183,7 @@ public class PushYnabTransactionsCommandHandlerTests
 		Domain.Core.Transaction tx = new(Guid.NewGuid(), new Money(8m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 		tx.AccountId = _accountId;
 		_transactionServiceMock.Setup(s => s.GetTransactionAccountsByReceiptIdAsync(_receiptId, It.IsAny<CancellationToken>()))
-			.ReturnsAsync([new TransactionAccount { Transaction = tx, Account = new Domain.Core.Card(_accountId, "CHK001", "Checking", true) }]);
+			.ReturnsAsync([new TransactionAccount { Transaction = tx, Account = new Domain.Core.Account(_accountId, "Checking", true) }]);
 
 		// Only "Groceries" is mapped, "Gas" is not
 		_categoryMappingServiceMock.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -229,7 +229,7 @@ public class PushYnabTransactionsCommandHandlerTests
 		tx2.AccountId = _accountId;
 		tx2.ReceiptId = _receiptId;
 
-		Domain.Core.Card account = new(_accountId, "CHK001", "Checking", true);
+		Domain.Core.Account account = new(_accountId, "Checking", true);
 		_transactionServiceMock.Setup(s => s.GetTransactionAccountsByReceiptIdAsync(_receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync([
 				new TransactionAccount { Transaction = tx1, Account = account },
@@ -399,7 +399,7 @@ public class PushYnabTransactionsCommandHandlerTests
 		tx2.AccountId = _accountId;
 		tx2.ReceiptId = _receiptId;
 
-		Domain.Core.Card account = new(_accountId, "CHK001", "Checking", true);
+		Domain.Core.Account account = new(_accountId, "Checking", true);
 		List<TransactionAccount> txAccounts =
 		[
 			new() { Transaction = new Domain.Core.Transaction(_transactionId, new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1))) { AccountId = _accountId, ReceiptId = _receiptId }, Account = account },

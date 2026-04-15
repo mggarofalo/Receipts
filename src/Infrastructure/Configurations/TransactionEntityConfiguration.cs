@@ -17,6 +17,11 @@ public class TransactionEntityConfiguration : IEntityTypeConfiguration<Transacti
 		builder.Navigation(e => e.Receipt)
 			.AutoInclude();
 
+		builder.HasOne(e => e.Account)
+			.WithMany()
+			.HasForeignKey(e => e.AccountId)
+			.OnDelete(DeleteBehavior.Cascade);
+
 		builder.Navigation(e => e.Account)
 			.AutoInclude();
 

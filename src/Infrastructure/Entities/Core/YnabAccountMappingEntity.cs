@@ -9,7 +9,5 @@ public class YnabAccountMappingEntity
 	public string YnabBudgetId { get; set; } = string.Empty;
 	public DateTimeOffset CreatedAt { get; set; }
 	public DateTimeOffset UpdatedAt { get; set; }
-	// Nav property preserves the YNAB-mapping→Account relationship name.
-	// Type is temporarily CardEntity until Stage 2 introduces the logical Account layer.
-	public virtual CardEntity? Account { get; set; }
+	public virtual AccountEntity? Account { get; set; }
 }

@@ -47,7 +47,6 @@ interface TransactionRow {
   };
   account: {
     id: string;
-    cardCode: string;
     name: string;
     isActive: boolean;
   };
@@ -182,8 +181,7 @@ export function ReceiptTransactionsCard({
                     </TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Account Code</TableHead>
-                    <TableHead>Account Name</TableHead>
+                    <TableHead>Account</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
@@ -204,9 +202,6 @@ export function ReceiptTransactionsCard({
                         {formatCurrency(ta.transaction.amount)}
                       </TableCell>
                       <TableCell>{ta.transaction.date}</TableCell>
-                      <TableCell className="font-mono">
-                        {ta.account.cardCode}
-                      </TableCell>
                       <TableCell>{ta.account.name}</TableCell>
                       <TableCell>
                         <Badge

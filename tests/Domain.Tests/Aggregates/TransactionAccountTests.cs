@@ -12,7 +12,7 @@ public class TransactionAccountTests
 	{
 		// Arrange
 		Transaction transaction = TransactionGenerator.Generate();
-		Card account = CardGenerator.Generate();
+		Account account = AccountGenerator.Generate();
 
 		// Act
 		TransactionAccount transactionAccount = new()

@@ -68,7 +68,7 @@ public class GetReceiptYnabSplitComparisonQueryHandlerTests
 		tx.AccountId = _accountId;
 		tx.ReceiptId = _receiptId;
 
-		Domain.Core.Card account = new(_accountId, "CHK001", "Checking", true);
+		Domain.Core.Account account = new(_accountId, "Checking", true);
 		List<TransactionAccount> txAccounts =
 		[
 			new() { Transaction = tx, Account = account },

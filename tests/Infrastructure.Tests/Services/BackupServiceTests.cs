@@ -135,7 +135,8 @@ public class BackupServiceTests : IDisposable
 
 		await using (ApplicationDbContext ctx = await _dbContextFactory.CreateDbContextAsync())
 		{
-			ctx.Cards.Add(new CardEntity { Id = accountId, CardCode = "1000", Name = "Checking", IsActive = true });
+			ctx.Accounts.Add(new AccountEntity { Id = accountId, Name = "Checking", IsActive = true });
+			ctx.Cards.Add(new CardEntity { Id = accountId, CardCode = "1000", Name = "Checking", IsActive = true, AccountId = accountId });
 
 			ctx.Receipts.Add(new ReceiptEntity
 			{

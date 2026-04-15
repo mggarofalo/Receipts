@@ -67,21 +67,21 @@ public class TransactionEntityTests
 	}
 
 	[Fact]
-	public async Task VirtualCardEntity_IsNavigable()
+	public async Task VirtualAccountEntity_IsNavigable()
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		CardEntity account = CardEntityGenerator.Generate();
+		AccountEntity account = AccountEntityGenerator.Generate();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
 
-		await context.Cards.AddAsync(account);
+		await context.Accounts.AddAsync(account);
 		await context.Receipts.AddAsync(receipt);
 		await context.Transactions.AddAsync(transaction);
 		await context.SaveChangesAsync(CancellationToken.None);
 
-		CardEntity? loadedAccount = await context.Cards.FindAsync(account.Id);
+		AccountEntity? loadedAccount = await context.Accounts.FindAsync(account.Id);
 		TransactionEntity? loadedTransaction = await context.Transactions.FindAsync(transaction.Id);
 
 		// Act & Assert

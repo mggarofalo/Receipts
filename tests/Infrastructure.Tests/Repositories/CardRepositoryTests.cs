@@ -52,9 +52,12 @@ public class CardRepositoryTests
 	{
 		// Arrange
 		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		AccountEntity parentAccount = AccountEntityGenerator.Generate();
+		await context.Accounts.AddAsync(parentAccount);
 		CardEntity accountEntity = CardEntityGenerator.Generate();
+		accountEntity.AccountId = parentAccount.Id;
 		await context.Cards.AddAsync(accountEntity);
-		TransactionEntity transactionEntity = TransactionEntityGenerator.Generate(accountId: accountEntity.Id);
+		TransactionEntity transactionEntity = TransactionEntityGenerator.Generate(accountId: parentAccount.Id);
 		await context.Transactions.AddAsync(transactionEntity);
 		await context.SaveChangesAsync(CancellationToken.None);
 
@@ -65,7 +68,7 @@ public class CardRepositoryTests
 
 		// Assert
 		Assert.NotNull(actual);
-		actual.Should().BeEquivalentTo(accountEntity);
+		actual.Should().BeEquivalentTo(accountEntity, opt => opt.Excluding(x => x.ParentAccount));
 
 		_contextFactory.ResetDatabase();
 	}

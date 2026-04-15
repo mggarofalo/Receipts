@@ -13,5 +13,10 @@ public class CardEntityConfiguration : IEntityTypeConfiguration<CardEntity>
 		builder.Property(e => e.Id)
 			.IsRequired()
 			.ValueGeneratedOnAdd();
+
+		builder.HasOne(e => e.ParentAccount)
+			.WithMany()
+			.HasForeignKey(e => e.AccountId)
+			.OnDelete(DeleteBehavior.SetNull);
 	}
 }
