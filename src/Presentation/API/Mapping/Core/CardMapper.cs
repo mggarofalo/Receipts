@@ -8,6 +8,7 @@ namespace API.Mapping.Core;
 public partial class CardMapper
 {
 	[MapperIgnoreTarget(nameof(CardResponse.AdditionalProperties))]
+	[MapperIgnoreSource(nameof(Card.AccountId))]
 	public partial CardResponse ToResponse(Card source);
 
 	public Card ToDomain(CreateCardRequest source)
