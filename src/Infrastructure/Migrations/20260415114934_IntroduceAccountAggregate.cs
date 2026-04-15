@@ -89,6 +89,16 @@ public partial class IntroduceAccountAggregate : Migration
 	/// <inheritdoc />
 	protected override void Down(MigrationBuilder migrationBuilder)
 	{
+		// Create stub Card rows for any post-migration Account IDs that have
+		// no matching Card, so the FK re-add to Cards succeeds on rollback.
+		migrationBuilder.Sql("""
+			INSERT INTO "Cards" ("Id", "CardCode", "Name", "IsActive")
+			SELECT a."Id", 'STUB-' || LEFT(a."Id"::text, 8), a."Name", a."IsActive"
+			FROM "Accounts" a
+			LEFT JOIN "Cards" c ON c."Id" = a."Id"
+			WHERE c."Id" IS NULL
+			""");
+
 		migrationBuilder.DropForeignKey(
 			name: "FK_Cards_Accounts_AccountId",
 			table: "Cards");
@@ -100,9 +110,6 @@ public partial class IntroduceAccountAggregate : Migration
 		migrationBuilder.DropForeignKey(
 			name: "FK_YnabAccountMappings_Accounts_ReceiptsAccountId",
 			table: "YnabAccountMappings");
-
-		migrationBuilder.DropTable(
-			name: "Accounts");
 
 		migrationBuilder.DropIndex(
 			name: "IX_Cards_AccountId",
@@ -127,5 +134,8 @@ public partial class IntroduceAccountAggregate : Migration
 			principalTable: "Cards",
 			principalColumn: "Id",
 			onDelete: ReferentialAction.Cascade);
+
+		migrationBuilder.DropTable(
+			name: "Accounts");
 	}
 }
