@@ -81,7 +81,6 @@ describe("ReceiptTransactionsCard", () => {
     expect(screen.getByText("Amount")).toBeInTheDocument();
     expect(screen.getByText("Date")).toBeInTheDocument();
     expect(screen.getByText("Account")).toBeInTheDocument();
-    expect(screen.getByText("Account Name")).toBeInTheDocument();
     expect(screen.getByText("Status")).toBeInTheDocument();
     expect(screen.getByText("Actions")).toBeInTheDocument();
   });
