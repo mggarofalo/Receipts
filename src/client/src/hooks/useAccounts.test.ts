@@ -112,8 +112,7 @@ describe("useAccountCards", () => {
       wrapper: createWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual(cards);
+    await waitFor(() => expect(result.current.data).toEqual(cards));
     expect(client.GET).toHaveBeenCalledWith("/api/accounts/{id}/cards", {
       params: { path: { id: "a1" } },
     });

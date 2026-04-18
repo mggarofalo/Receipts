@@ -58,6 +58,8 @@ type StatusFilter = "all" | "true" | "false";
 
 const HIGHLIGHT_PARAMS = ["highlight"] as const;
 
+const getAccountId = (a: AccountRow) => a.id;
+
 function AccountCardsRow({ accountId }: { accountId: string }) {
   const { data, isLoading } = useAccountCards(accountId);
 
@@ -115,6 +117,7 @@ function Accounts() {
   const { data: accountsData, total: serverTotal, isLoading } = useAccounts(offset, limit, sortBy, sortDirection, isActiveParam);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
+  const { mutate: mutateUpdateAccount } = updateAccount;
   const deleteAccount = useDeleteAccount();
   const { isAdmin } = usePermission();
   const [createOpen, setCreateOpen] = useState(false);
@@ -149,12 +152,14 @@ function Accounts() {
   }, [toggleSort, resetPage]);
 
   const handleToggleActive = useCallback((account: AccountRow, checked: boolean) => {
-    updateAccount.mutate({
+    mutateUpdateAccount({
       id: account.id,
       name: account.name,
       isActive: checked,
     });
-  }, [updateAccount]);
+  }, [mutateUpdateAccount]);
+
+  const handleOpen = useCallback((a: AccountRow) => setEditAccount(a), []);
 
   const data = useMemo(() => (accountsData as AccountRow[] | undefined) ?? [], [accountsData]);
 
@@ -185,9 +190,9 @@ function Accounts() {
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: filteredResults,
-    getId: (a) => a.id,
+    getId: getAccountId,
     enabled: !anyDialogOpen,
-    onOpen: (a) => setEditAccount(a),
+    onOpen: handleOpen,
   });
 
   if (isLoading) {
