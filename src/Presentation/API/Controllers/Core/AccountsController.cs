@@ -7,6 +7,7 @@ using Application.Commands.Account.Update;
 using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Account;
+using Application.Queries.Core.Card;
 using Asp.Versioning;
 using Domain.Core;
 using MediatR;
@@ -21,10 +22,11 @@ namespace API.Controllers.Core;
 [Route("api/accounts")]
 [Produces("application/json")]
 [Authorize]
-public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier, IAccountService accountService) : ControllerBase
+public class AccountsController(IMediator mediator, AccountMapper mapper, CardMapper cardMapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier, IAccountService accountService) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
+	public const string RouteGetCards = "{id}/cards";
 	public const string RouteCreate = "";
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
@@ -84,6 +86,22 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 			Offset = result.Offset,
 			Limit = result.Limit,
 		});
+	}
+
+	[HttpGet(RouteGetCards)]
+	[EndpointSummary("Get cards for an account")]
+	[EndpointDescription("Returns the physical Cards (aliases) that belong to the given logical Account. Returns 404 if the account does not exist.")]
+	public async Task<Results<Ok<List<CardResponse>>, NotFound>> GetCardsForAccount([FromRoute] Guid id)
+	{
+		if (!await accountService.ExistsAsync(id, HttpContext.RequestAborted))
+		{
+			logger.LogWarning("Account {Id} not found when fetching cards", id);
+			return TypedResults.NotFound();
+		}
+
+		GetCardsByAccountIdQuery query = new(id);
+		List<Card> cards = await mediator.Send(query);
+		return TypedResults.Ok(cards.Select(cardMapper.ToResponse).ToList());
 	}
 
 	[HttpPost(RouteCreate)]

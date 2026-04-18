@@ -19,6 +19,10 @@ vi.mock("@/hooks/useKeyboardShortcut", () => ({
   useKeyboardShortcut: vi.fn(),
 }));
 
+vi.mock("@/hooks/useAccounts", () => ({
+  useAccounts: vi.fn(() => ({ data: undefined })),
+}));
+
 vi.mock("@/hooks/useCards", () => ({
   useCards: vi.fn(() => ({ data: undefined })),
 }));
@@ -60,8 +64,44 @@ describe("GlobalSearchDialog", () => {
     );
     expect(screen.getByText("Navigation")).toBeInTheDocument();
     expect(screen.getByText("Home")).toBeInTheDocument();
+    expect(screen.getByText("Accounts")).toBeInTheDocument();
     expect(screen.getByText("Cards")).toBeInTheDocument();
     expect(screen.getByText("Receipts")).toBeInTheDocument();
+  });
+
+  it("renders account items when accounts data is available", async () => {
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: [
+        { id: "acct-1", name: "Apple Card", isActive: true },
+        { id: "acct-2", name: "Chase Sapphire", isActive: true },
+      ],
+      total: 2,
+    }));
+
+    renderWithQueryClient(
+      <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
+    );
+    // "Accounts" appears both as a nav item and a group heading; the group items
+    // are the logical account names.
+    expect(screen.getByText("Apple Card")).toBeInTheDocument();
+    expect(screen.getByText("Chase Sapphire")).toBeInTheDocument();
+  });
+
+  it("selecting an account item navigates to /accounts and closes the dialog", async () => {
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: [{ id: "acct-1", name: "Apple Card", isActive: true }],
+      total: 1,
+    }));
+
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <GlobalSearchDialog open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Apple Card"));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("renders card items when cards data is available", async () => {

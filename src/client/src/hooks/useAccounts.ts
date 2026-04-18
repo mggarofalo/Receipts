@@ -31,6 +31,20 @@ export function useAccount(id: string | null) {
   });
 }
 
+export function useAccountCards(accountId: string | null) {
+  return useQuery({
+    queryKey: ["accounts", accountId, "cards"],
+    enabled: !!accountId,
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/accounts/{id}/cards", {
+        params: { path: { id: accountId! } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useCreateAccount() {
   const queryClient = useQueryClient();
   return useMutation({

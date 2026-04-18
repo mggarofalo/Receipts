@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useCards } from "@/hooks/useCards";
+import { useAccounts } from "@/hooks/useAccounts";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,15 +36,15 @@ export function Step4Review({
   onSubmit,
   isSubmitting,
 }: Step4Props) {
-  const { data: cards } = useCards();
+  const { data: accounts } = useAccounts();
 
   const accountNameMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const card of (cards as { id: string; name: string }[] | undefined) ?? []) {
-      map.set(card.id, card.name);
+    for (const account of accounts ?? []) {
+      map.set(account.id, account.name);
     }
     return map;
-  }, [cards]);
+  }, [accounts]);
 
   const subtotal = useMemo(
     () =>

@@ -210,4 +210,35 @@ public class CardServiceTests
 		// Assert
 		Assert.Equal(expected, actual);
 	}
+
+	[Fact]
+	public async Task GetByAccountIdAsync_ReturnsMappedCards()
+	{
+		// Arrange
+		Guid accountId = Guid.NewGuid();
+		List<CardEntity> entities = CardEntityGenerator.GenerateList(2);
+		_mockRepository.Setup(r => r.GetByAccountIdAsync(accountId, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+
+		// Act
+		List<Card> actual = await _service.GetByAccountIdAsync(accountId, CancellationToken.None);
+
+		// Assert
+		actual.Should().HaveCount(entities.Count);
+		actual.Select(c => c.Id).Should().BeEquivalentTo(entities.Select(e => e.Id));
+		_mockRepository.Verify(r => r.GetByAccountIdAsync(accountId, It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetByAccountIdAsync_ReturnsEmptyList_WhenNoCards()
+	{
+		// Arrange
+		Guid accountId = Guid.NewGuid();
+		_mockRepository.Setup(r => r.GetByAccountIdAsync(accountId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+		// Act
+		List<Card> actual = await _service.GetByAccountIdAsync(accountId, CancellationToken.None);
+
+		// Assert
+		actual.Should().BeEmpty();
+	}
 }

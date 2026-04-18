@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/command";
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 import { formatCurrency } from "@/lib/format";
+import { useAccounts } from "@/hooks/useAccounts";
 import { useCards } from "@/hooks/useCards";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useReceiptItems } from "@/hooks/useReceiptItems";
@@ -30,6 +31,7 @@ interface GlobalSearchDialogProps {
 
 const navItems = [
   { label: "Home", path: "/", icon: Home },
+  { label: "Accounts", path: "/accounts", icon: Building2 },
   { label: "Cards", path: "/cards", icon: Building2 },
   { label: "Receipts", path: "/receipts", icon: FileText },
 ];
@@ -39,6 +41,7 @@ export function GlobalSearchDialog({
   onOpenChange,
 }: GlobalSearchDialogProps) {
   const navigate = useNavigate();
+  const { data: accounts } = useAccounts();
   const { data: cards } = useCards();
   const { data: receipts } = useReceipts();
   const { data: receiptItems } = useReceiptItems();
@@ -73,6 +76,24 @@ export function GlobalSearchDialog({
             </CommandItem>
           ))}
         </CommandGroup>
+
+        {accounts?.length ? (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Accounts">
+              {(accounts ?? []).slice(0, 8).map((a) => (
+                <CommandItem
+                  key={a.id}
+                  value={`account:${a.name}`}
+                  onSelect={() => select("/accounts")}
+                >
+                  <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{a.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        ) : null}
 
         {cards?.length ? (
           <>

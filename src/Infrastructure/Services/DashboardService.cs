@@ -188,9 +188,12 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 
 		decimal total = accountSpending.Sum(a => a.Amount);
 
-		// Fetch account names in a single query
+		// Fetch account names in a single query. Transactions.AccountId references
+		// the logical Accounts table (RECEIPTS-543 Stage 2), so we look up names
+		// there — Cards joined coincidentally when seeded 1:1, but breaks once
+		// Cards get merged and their source Accounts are deleted.
 		List<Guid> accountIds = accountSpending.Select(a => a.AccountId).ToList();
-		Dictionary<Guid, string> accountNames = await context.Cards
+		Dictionary<Guid, string> accountNames = await context.Accounts
 			.AsNoTracking()
 			.Where(a => accountIds.Contains(a.Id))
 			.ToDictionaryAsync(a => a.Id, a => a.Name, cancellationToken);

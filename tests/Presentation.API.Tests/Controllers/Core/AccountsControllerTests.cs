@@ -8,6 +8,7 @@ using Application.Commands.Account.Update;
 using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Account;
+using Application.Queries.Core.Card;
 using Domain.Core;
 using FluentAssertions;
 using MediatR;
@@ -24,6 +25,7 @@ namespace Presentation.API.Tests.Controllers.Core;
 public class AccountsControllerTests
 {
 	private readonly AccountMapper _mapper;
+	private readonly CardMapper _cardMapper;
 	private readonly Mock<IMediator> _mediatorMock;
 	private readonly Mock<ILogger<AccountsController>> _loggerMock;
 	private readonly Mock<IEntityChangeNotifier> _notifierMock;
@@ -34,10 +36,11 @@ public class AccountsControllerTests
 	{
 		_mediatorMock = new Mock<IMediator>();
 		_mapper = new AccountMapper();
+		_cardMapper = new CardMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<AccountsController>();
 		_notifierMock = new Mock<IEntityChangeNotifier>();
 		_accountServiceMock = new Mock<IAccountService>();
-		_controller = new AccountsController(_mediatorMock.Object, _mapper, _loggerMock.Object, _notifierMock.Object, _accountServiceMock.Object);
+		_controller = new AccountsController(_mediatorMock.Object, _mapper, _cardMapper, _loggerMock.Object, _notifierMock.Object, _accountServiceMock.Object);
 		_controller.ControllerContext = new ControllerContext
 		{
 			HttpContext = new DefaultHttpContext()
@@ -457,5 +460,76 @@ public class AccountsControllerTests
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
+	}
+
+	[Fact]
+	public async Task GetCardsForAccount_ReturnsOk_WithCards_WhenAccountExists()
+	{
+		// Arrange
+		Guid accountId = Guid.NewGuid();
+		List<Card> cards = CardGenerator.GenerateList(3);
+
+		_accountServiceMock
+			.Setup(s => s.ExistsAsync(accountId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_mediatorMock
+			.Setup(m => m.Send(
+				It.Is<GetCardsByAccountIdQuery>(q => q.AccountId == accountId),
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync(cards);
+
+		// Act
+		Results<Ok<List<CardResponse>>, NotFound> result = await _controller.GetCardsForAccount(accountId);
+
+		// Assert
+		Ok<List<CardResponse>> ok = Assert.IsType<Ok<List<CardResponse>>>(result.Result);
+		List<CardResponse> responses = Assert.IsType<List<CardResponse>>(ok.Value);
+		responses.Should().HaveCount(3);
+		responses.Select(r => r.Id).Should().BeEquivalentTo(cards.Select(c => c.Id));
+	}
+
+	[Fact]
+	public async Task GetCardsForAccount_ReturnsNotFound_WhenAccountDoesNotExist()
+	{
+		// Arrange
+		Guid missingId = Guid.NewGuid();
+
+		_accountServiceMock
+			.Setup(s => s.ExistsAsync(missingId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		Results<Ok<List<CardResponse>>, NotFound> result = await _controller.GetCardsForAccount(missingId);
+
+		// Assert
+		Assert.IsType<NotFound>(result.Result);
+		_mediatorMock.Verify(
+			m => m.Send(It.IsAny<GetCardsByAccountIdQuery>(), It.IsAny<CancellationToken>()),
+			Times.Never);
+	}
+
+	[Fact]
+	public async Task GetCardsForAccount_ReturnsEmptyList_WhenAccountHasNoCards()
+	{
+		// Arrange
+		Guid accountId = Guid.NewGuid();
+
+		_accountServiceMock
+			.Setup(s => s.ExistsAsync(accountId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_mediatorMock
+			.Setup(m => m.Send(
+				It.Is<GetCardsByAccountIdQuery>(q => q.AccountId == accountId),
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync([]);
+
+		// Act
+		Results<Ok<List<CardResponse>>, NotFound> result = await _controller.GetCardsForAccount(accountId);
+
+		// Assert
+		Ok<List<CardResponse>> ok = Assert.IsType<Ok<List<CardResponse>>>(result.Result);
+		ok.Value.Should().BeEmpty();
 	}
 }

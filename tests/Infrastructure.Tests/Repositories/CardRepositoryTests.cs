@@ -314,4 +314,54 @@ public class CardRepositoryTests
 
 		_contextFactory.ResetDatabase();
 	}
+
+	[Fact]
+	public async Task GetByAccountIdAsync_ReturnsOnlyCardsForAccount()
+	{
+		// Arrange
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		AccountEntity parent = AccountEntityGenerator.Generate();
+		AccountEntity otherParent = AccountEntityGenerator.Generate();
+		await context.Accounts.AddRangeAsync(parent, otherParent);
+
+		CardEntity c1 = CardEntityGenerator.Generate();
+		c1.AccountId = parent.Id;
+		CardEntity c2 = CardEntityGenerator.Generate();
+		c2.AccountId = parent.Id;
+		CardEntity c3 = CardEntityGenerator.Generate();
+		c3.AccountId = otherParent.Id;
+		await context.Cards.AddRangeAsync(c1, c2, c3);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		CardRepository repository = new(_contextFactory);
+
+		// Act
+		List<CardEntity> result = await repository.GetByAccountIdAsync(parent.Id, CancellationToken.None);
+
+		// Assert
+		result.Should().HaveCount(2);
+		result.Select(c => c.Id).Should().BeEquivalentTo([c1.Id, c2.Id]);
+
+		_contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetByAccountIdAsync_ReturnsEmptyList_WhenAccountHasNoCards()
+	{
+		// Arrange
+		using ApplicationDbContext context = _contextFactory.CreateDbContext();
+		AccountEntity parent = AccountEntityGenerator.Generate();
+		await context.Accounts.AddAsync(parent);
+		await context.SaveChangesAsync(CancellationToken.None);
+
+		CardRepository repository = new(_contextFactory);
+
+		// Act
+		List<CardEntity> result = await repository.GetByAccountIdAsync(parent.Id, CancellationToken.None);
+
+		// Assert
+		result.Should().BeEmpty();
+
+		_contextFactory.ResetDatabase();
+	}
 }

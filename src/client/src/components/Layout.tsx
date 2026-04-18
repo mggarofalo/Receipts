@@ -92,6 +92,11 @@ const navGroups: NavGroup[] = [
     label: "Manage",
     items: [
       {
+        to: "/accounts",
+        label: "Accounts",
+        description: "Manage logical accounts",
+      },
+      {
         to: "/cards",
         label: "Cards",
         description: "Manage payment cards",
@@ -205,6 +210,7 @@ export function Layout() {
 
   const navLinks = [
     { to: "/", label: "Dashboard" },
+    { to: "/accounts", label: "Accounts" },
     { to: "/cards", label: "Cards" },
     { to: "/categories", label: "Categories" },
     { to: "/subcategories", label: "Subcategories" },
