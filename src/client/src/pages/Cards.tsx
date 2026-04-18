@@ -133,7 +133,7 @@ function Cards() {
     });
   }, [updateCard]);
 
-  const data = (cardsData as CardResponse[] | undefined) ?? [];
+  const data = useMemo(() => (cardsData as CardResponse[] | undefined) ?? [], [cardsData]);
 
   const { search, setSearch, results, totalCount, clearSearch } =
     useFuzzySearch({ data, config: SEARCH_CONFIG });
