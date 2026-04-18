@@ -111,6 +111,45 @@ describe("MergeCardsDialog", () => {
     });
   });
 
+  it("creates new account, hits conflict, cancels — deletes the newly-created account", async () => {
+    const user = userEvent.setup();
+
+    // First POST: create account (for target). Second POST: merge → 409 conflict.
+    (client.POST as Mock)
+      .mockResolvedValueOnce({
+        data: { id: "new-acc-1", name: "Fresh Account", isActive: true },
+        error: undefined,
+        response: { status: 200 },
+      })
+      .mockResolvedValueOnce({
+        error: {
+          message: "conflict",
+          conflicts: [
+            { accountId: "srcA", accountName: "Src A", ynabBudgetId: "b", ynabAccountId: "y1", ynabAccountName: "YA" },
+            { accountId: "srcB", accountName: "Src B", ynabBudgetId: "b", ynabAccountId: "y2", ynabAccountName: "YB" },
+          ],
+        },
+        response: { status: 409 },
+      });
+
+    const { onOpenChange } = renderDialog();
+
+    await user.click(screen.getByLabelText("New account"));
+    await user.type(screen.getByLabelText(/new account name/i), "Fresh Account");
+    await user.click(screen.getByRole("button", { name: /^merge$/i }));
+
+    expect(await screen.findByText(/ynab mapping conflict/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    await vi.waitFor(() => {
+      expect(client.DELETE).toHaveBeenCalledWith("/api/accounts/{id}", {
+        params: { path: { id: "new-acc-1" } },
+      });
+    });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it("shows conflict alert on 409 and resubmits with winner", async () => {
     const user = userEvent.setup();
     (client.POST as Mock).mockResolvedValueOnce({

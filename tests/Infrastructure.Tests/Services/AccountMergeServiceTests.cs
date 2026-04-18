@@ -338,6 +338,83 @@ public class AccountMergeServiceTests : IDisposable
 	}
 
 	[Fact]
+	public async Task MergeCardsAsync_WithPartialSourceAccount_Throws()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		AccountEntity source = AccountEntityGenerator.Generate();
+		CardEntity mergedCardOnSource = CardEntityGenerator.Generate();
+		CardEntity leftBehindCardOnSource = CardEntityGenerator.Generate();
+		CardEntity anotherMergedCard = CardEntityGenerator.Generate();
+		mergedCardOnSource.AccountId = source.Id;
+		leftBehindCardOnSource.AccountId = source.Id;
+		anotherMergedCard.AccountId = target.Id;
+
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.AddRange(target, source);
+			seed.Cards.AddRange(mergedCardOnSource, leftBehindCardOnSource, anotherMergedCard);
+			await seed.SaveChangesAsync();
+		}
+
+		Func<Task> act = () => _service.MergeCardsAsync(
+			target.Id,
+			[mergedCardOnSource.Id, anotherMergedCard.Id],
+			null,
+			CancellationToken.None);
+
+		await act.Should().ThrowAsync<ArgumentException>()
+			.WithMessage(AccountMergeService.PartialSourceAccountMerge + "*");
+
+		using ApplicationDbContext assert = CreateContext();
+		CardEntity reloadedCard = await assert.Cards.AsNoTracking().FirstAsync(c => c.Id == leftBehindCardOnSource.Id);
+		reloadedCard.AccountId.Should().Be(source.Id);
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_AuditEntries_UsePerSourceTransactionCount()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		AccountEntity source1 = AccountEntityGenerator.Generate();
+		AccountEntity source2 = AccountEntityGenerator.Generate();
+		CardEntity card1 = CardEntityGenerator.Generate();
+		CardEntity card2 = CardEntityGenerator.Generate();
+		card1.AccountId = source1.Id;
+		card2.AccountId = source2.Id;
+
+		List<TransactionEntity> source1Txns = TransactionEntityGenerator.GenerateList(2, accountId: source1.Id);
+		List<TransactionEntity> source2Txns = TransactionEntityGenerator.GenerateList(3, accountId: source2.Id);
+
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.AddRange(target, source1, source2);
+			seed.Cards.AddRange(card1, card2);
+			seed.Transactions.AddRange(source1Txns);
+			seed.Transactions.AddRange(source2Txns);
+			await seed.SaveChangesAsync();
+		}
+
+		await _service.MergeCardsAsync(
+			target.Id,
+			[card1.Id, card2.Id],
+			null,
+			CancellationToken.None);
+
+		using ApplicationDbContext assert = CreateContext();
+		List<AuditLogEntity> mergeAudits = await assert.AuditLogs
+			.AsNoTracking()
+			.Where(a => a.Action == AuditAction.Merge)
+			.ToListAsync();
+
+		AuditLogEntity source1Audit = mergeAudits.Single(a => a.EntityId == source1.Id.ToString());
+		AuditLogEntity source2Audit = mergeAudits.Single(a => a.EntityId == source2.Id.ToString());
+		source1Audit.ChangesJson.Should().Contain("\"movedTransactionCount\":2");
+		source2Audit.ChangesJson.Should().Contain("\"movedTransactionCount\":3");
+
+		AuditLogEntity targetAudit = mergeAudits.Single(a => a.EntityId == target.Id.ToString());
+		targetAudit.ChangesJson.Should().Contain("\"movedTransactionCount\":5");
+	}
+
+	[Fact]
 	public async Task MergeCardsAsync_WithInvalidWinner_Throws()
 	{
 		AccountEntity target = AccountEntityGenerator.Generate();

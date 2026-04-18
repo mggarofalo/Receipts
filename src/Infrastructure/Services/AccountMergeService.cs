@@ -15,6 +15,7 @@ public class AccountMergeService(
 	public const string TargetAccountNotFound = "Target account not found.";
 	public const string SourceCardNotFound = "One or more source cards not found.";
 	public const string InvalidWinnerAccount = "Winner account id must match one of the accounts involved in the merge.";
+	public const string PartialSourceAccountMerge = "Source account would be partially merged: all of its cards must be included in the merge, or none.";
 
 	public async Task<MergeCardsResult> MergeCardsAsync(
 		Guid targetAccountId,
@@ -79,6 +80,9 @@ public class AccountMergeService(
 				.IgnoreAutoIncludes()
 				.Where(t => sourceAccountIds.Contains(t.AccountId))
 				.ToListAsync(cancellationToken);
+			Dictionary<Guid, int> transactionCountBySource = transactionsToMove
+				.GroupBy(t => t.AccountId)
+				.ToDictionary(g => g.Key, g => g.Count());
 			foreach (TransactionEntity transaction in transactionsToMove)
 			{
 				transaction.AccountId = targetAccountId;
@@ -125,13 +129,14 @@ public class AccountMergeService(
 				List<Guid> cardsMovedFromThisAccount = [.. originalCardAccountIds
 					.Where(kvp => kvp.Value == sourceAccountId)
 					.Select(kvp => kvp.Key)];
+				int movedFromThisSource = transactionCountBySource.GetValueOrDefault(sourceAccountId, 0);
 				mergeEntries.Add(CreateMergeAuditEntry(
 					sourceAccountId,
 					new
 					{
 						targetAccountId,
 						mergedCardIds = cardsMovedFromThisAccount,
-						movedTransactionCount,
+						movedTransactionCount = movedFromThisSource,
 					},
 					now));
 			}
@@ -195,6 +200,24 @@ public class AccountMergeService(
 			.Where(id => id.HasValue && id.Value != targetAccountId)
 			.Select(id => id!.Value)
 			.Distinct()];
+
+		// Ensure each source account is being fully merged. Partial merges (leaving behind
+		// cards on a source account that is about to be deleted) would silently orphan the
+		// remaining cards and reassign their unrelated transactions — reject instead.
+		if (sourceAccountIds.Count > 0)
+		{
+			HashSet<Guid> mergedCardIdSet = [.. distinctCardIds];
+			int cardsLeftBehindCount = await context.Cards
+				.AsNoTracking()
+				.CountAsync(c => c.AccountId.HasValue
+					&& sourceAccountIds.Contains(c.AccountId.Value)
+					&& !mergedCardIdSet.Contains(c.Id),
+					cancellationToken);
+			if (cardsLeftBehindCount > 0)
+			{
+				throw new ArgumentException(PartialSourceAccountMerge, nameof(distinctCardIds));
+			}
+		}
 
 		List<Guid> allAccountIds = [.. sourceAccountIds, targetAccountId];
 

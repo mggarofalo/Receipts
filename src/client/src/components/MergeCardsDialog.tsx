@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import client from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +54,10 @@ export function MergeCardsDialog({
   const [newAccountName, setNewAccountName] = useState<string>("");
   const [conflict, setConflict] = useState<MergeCardsConflict | null>(null);
   const [winnerAccountId, setWinnerAccountId] = useState<string | null>(null);
+  // Tracks an account the dialog created as the merge target. If the user closes
+  // the dialog before the merge lands, the account is deleted to avoid leaking
+  // empty accounts into the DB.
+  const pendingCreatedAccountIdRef = useRef<string | null>(null);
 
   const { data: accountsData } = useAccounts(0, 500, "name", "asc", true);
   const createAccount = useCreateAccount();
@@ -60,6 +65,12 @@ export function MergeCardsDialog({
 
   function handleOpenChange(next: boolean) {
     if (!next) {
+      const leaked = pendingCreatedAccountIdRef.current;
+      if (leaked) {
+        pendingCreatedAccountIdRef.current = null;
+        // Fire-and-forget cleanup; we don't want to block the dialog close.
+        void client.DELETE("/api/accounts/{id}", { params: { path: { id: leaked } } });
+      }
       setTargetMode("existing");
       setTargetAccountId("");
       setNewAccountName("");
@@ -84,13 +95,17 @@ export function MergeCardsDialog({
 
     let resolvedTargetId = targetAccountId;
 
-    if (targetMode === "new") {
+    if (targetMode === "new" && !pendingCreatedAccountIdRef.current) {
       const created = await createAccount.mutateAsync({
         name: newAccountName.trim(),
         isActive: true,
       });
       if (!created?.id) return;
       resolvedTargetId = created.id;
+      pendingCreatedAccountIdRef.current = created.id;
+    } else if (pendingCreatedAccountIdRef.current) {
+      // Second submit after conflict resolution — reuse the already-created account.
+      resolvedTargetId = pendingCreatedAccountIdRef.current;
     }
 
     try {
@@ -99,6 +114,9 @@ export function MergeCardsDialog({
         sourceCardIds: selectedCards.map((c) => c.id),
         ynabMappingWinnerAccountId: winnerAccountId,
       });
+      // Merge succeeded — the created account (if any) now owns the merged cards,
+      // so it is no longer leaked; clear the ref before closing.
+      pendingCreatedAccountIdRef.current = null;
       handleOpenChange(false);
       onMergeComplete?.();
     } catch (err) {

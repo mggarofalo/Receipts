@@ -109,6 +109,8 @@ function Cards() {
     });
   }, []);
 
+  const handleMergeComplete = useCallback(() => setSelectedIds(new Set()), []);
+
   useEffect(() => {
     function onNewItem() {
       setCreateOpen(true);
@@ -146,6 +148,14 @@ function Cards() {
   const filteredResults = useMemo(() => {
     return results.map((r) => r.item);
   }, [results]);
+
+  const selectedMergeCards = useMemo(
+    () =>
+      data
+        .filter((card) => selectedIds.has(card.id))
+        .map((card) => ({ id: card.id, name: card.name, cardCode: card.cardCode })),
+    [data, selectedIds],
+  );
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -340,10 +350,8 @@ function Cards() {
       <MergeCardsDialog
         open={mergeOpen}
         onOpenChange={setMergeOpen}
-        selectedCards={data
-          .filter((card) => selectedIds.has(card.id))
-          .map((card) => ({ id: card.id, name: card.name, cardCode: card.cardCode }))}
-        onMergeComplete={() => setSelectedIds(new Set())}
+        selectedCards={selectedMergeCards}
+        onMergeComplete={handleMergeComplete}
       />
 
       {/* Create Dialog */}
