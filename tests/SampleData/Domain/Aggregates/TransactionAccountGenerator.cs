@@ -8,7 +8,7 @@ public static class TransactionAccountGenerator
 {
 	public static TransactionAccount Generate()
 	{
-		Card account = CardGenerator.Generate();
+		Account account = AccountGenerator.Generate();
 		Transaction transaction = TransactionGenerator.Generate();
 
 		return new TransactionAccount()

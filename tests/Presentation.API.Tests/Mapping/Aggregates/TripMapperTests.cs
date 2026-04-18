@@ -51,9 +51,8 @@ public class TripMapperTests
 			new DateOnly(2025, 5, 20)
 		);
 
-		Card account = new(
+		Account account = new(
 			accountId,
-			"DEBIT-001",
 			"Debit Card",
 			true
 		);
@@ -99,7 +98,6 @@ public class TripMapperTests
 
 		// Assert — Account
 		Assert.Equal(accountId, actualTxn.Account.Id);
-		Assert.Equal("DEBIT-001", actualTxn.Account.CardCode);
 		Assert.Equal("Debit Card", actualTxn.Account.Name);
 		Assert.True(actualTxn.Account.IsActive);
 	}
@@ -134,7 +132,7 @@ public class TripMapperTests
 			new DateOnly(2025, 6, 10)
 		);
 
-		Card acct1 = new(acct1Id, "CASH-001", "Cash", true);
+		Account acct1 = new(acct1Id, "Cash", true);
 
 		Transaction txn2 = new(
 			txn2Id,
@@ -142,7 +140,7 @@ public class TripMapperTests
 			new DateOnly(2025, 6, 10)
 		);
 
-		Card acct2 = new(acct2Id, "VISA-001", "Visa Card", true);
+		Account acct2 = new(acct2Id, "Visa Card", true);
 
 		Trip trip = new()
 		{
@@ -165,11 +163,11 @@ public class TripMapperTests
 		List<TransactionAccountResponse> txns = [.. actual.Transactions];
 		Assert.Equal(txn1Id, txns[0].Transaction.Id);
 		Assert.Equal((double)30.00m, txns[0].Transaction.Amount);
-		Assert.Equal("CASH-001", txns[0].Account.CardCode);
+		Assert.Equal("Cash", txns[0].Account.Name);
 
 		Assert.Equal(txn2Id, txns[1].Transaction.Id);
 		Assert.Equal((double)15.45m, txns[1].Transaction.Amount);
-		Assert.Equal("VISA-001", txns[1].Account.CardCode);
+		Assert.Equal("Visa Card", txns[1].Account.Name);
 	}
 
 	[Fact]

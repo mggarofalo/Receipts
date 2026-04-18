@@ -12,16 +12,16 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 	public async Task Handle_ShouldReturnTransactionAccount_WhenTransactionAndAccountExist()
 	{
 		// Arrange
-		Domain.Core.Card expectedAccount = CardGenerator.Generate();
+		Domain.Core.Account expectedAccount = AccountGenerator.Generate();
 		Domain.Core.Transaction expectedTransaction = TransactionGenerator.Generate();
 
 		Mock<ITransactionService> mockTransactionService = new();
 		mockTransactionService.Setup(r => r.GetByIdAsync(expectedTransaction.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
-		Mock<ICardService> mockCardService = new();
-		mockCardService.Setup(r => r.GetByTransactionIdAsync(expectedTransaction.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
+		Mock<IAccountService> mockAccountService = new();
+		mockAccountService.Setup(r => r.GetByTransactionIdAsync(expectedTransaction.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedAccount);
 
-		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockCardService.Object);
+		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id);
 
 		// Act
@@ -41,9 +41,9 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 		Mock<ITransactionService> mockTransactionService = new();
 		mockTransactionService.Setup(r => r.GetByIdAsync(missingTransactionId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Transaction?)null);
 
-		Mock<ICardService> mockCardService = new();
+		Mock<IAccountService> mockAccountService = new();
 
-		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockCardService.Object);
+		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountByTransactionIdQuery query = new(missingTransactionId);
 
 		// Act
@@ -63,10 +63,10 @@ public class GetTransactionAccountByTransactionIdQueryHandlerTests
 		Mock<ITransactionService> mockTransactionService = new();
 		mockTransactionService.Setup(r => r.GetByIdAsync(expectedTransaction.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedTransaction);
 
-		Mock<ICardService> mockCardService = new();
-		mockCardService.Setup(r => r.GetByIdAsync(missingAccountId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Card?)null);
+		Mock<IAccountService> mockAccountService = new();
+		mockAccountService.Setup(r => r.GetByIdAsync(missingAccountId, It.IsAny<CancellationToken>())).ReturnsAsync((Domain.Core.Account?)null);
 
-		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockCardService.Object);
+		GetTransactionAccountByTransactionIdQueryHandler handler = new(mockTransactionService.Object, mockAccountService.Object);
 		GetTransactionAccountByTransactionIdQuery query = new(expectedTransaction.Id);
 
 		// Act

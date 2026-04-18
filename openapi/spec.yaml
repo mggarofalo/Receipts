@@ -42,6 +42,202 @@ paths:
                 $ref: "#/components/schemas/EnumMetadataResponse"
 
   # ──────────────────────────────────────────────
+  # Accounts
+  # ──────────────────────────────────────────────
+
+  /api/accounts/{id}:
+    get:
+      operationId: GetAccountById
+      tags: [Accounts]
+      summary: Get an account by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "404":
+          description: Not Found
+    put:
+      operationId: UpdateAccount
+      tags: [Accounts]
+      summary: Update a single account
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountRequest"
+      responses:
+        "204":
+          description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
+        "404":
+          description: Not Found
+    delete:
+      operationId: DeleteAccount
+      tags: [Accounts]
+      summary: Hard-delete an account
+      description: >
+        Permanently deletes an account. Requires the Admin role. Returns 409
+        Conflict if cards reference this account.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict — cards reference this account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  cardCount:
+                    type: integer
+                required:
+                  - message
+                  - cardCount
+
+  /api/accounts:
+    get:
+      operationId: GetAllAccounts
+      tags: [Accounts]
+      summary: Get all accounts
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateAccount
+      tags: [Accounts]
+      summary: Create a single account
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountRequest"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+  /api/accounts/batch:
+    post:
+      operationId: CreateAccounts
+      tags: [Accounts]
+      summary: Create accounts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/CreateAccountRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountResponse"
+    put:
+      operationId: UpdateAccounts
+      tags: [Accounts]
+      summary: Update accounts in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/UpdateAccountRequest"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+
+  # ──────────────────────────────────────────────
   # Cards
   # ──────────────────────────────────────────────
 
@@ -4686,6 +4882,61 @@ components:
 
     # ── Card ─────────────────────────────────────
 
+    # ── Account ──────────────────────────────────
+
+    CreateAccountRequest:
+      type: object
+      required: [name, isActive]
+      properties:
+        name:
+          type: string
+        isActive:
+          type: boolean
+
+    UpdateAccountRequest:
+      type: object
+      required: [id, name, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        isActive:
+          type: boolean
+
+    AccountResponse:
+      type: object
+      required: [id, name, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        isActive:
+          type: boolean
+
+    AccountListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+
+    # ── Card ──────────────────────────────────────
+
     CreateCardRequest:
       type: object
       required: [cardCode, name, isActive]
@@ -5671,16 +5922,13 @@ components:
           description: "Soft validation warnings (do not block saves)"
 
     TransactionAccountResponse:
-      # TransactionAccount is preserved: transactions conceptually belong to
-      # accounts, not cards. Stage 2 introduces the logical Account layer;
-      # until then, the `account` field is a Card (physical entrypoint).
       type: object
       required: [transaction, account]
       properties:
         transaction:
           $ref: "#/components/schemas/TransactionResponse"
         account:
-          $ref: "#/components/schemas/CardResponse"
+          $ref: "#/components/schemas/AccountResponse"
 
     TripResponse:
       type: object

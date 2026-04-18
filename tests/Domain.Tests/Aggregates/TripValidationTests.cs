@@ -41,9 +41,8 @@ public class TripValidationTests
 			new Money(amount),
 			date ?? DateOnly.FromDateTime(DateTime.Now));
 
-		Card account = new(
+		Account account = new(
 			Guid.NewGuid(),
-			"ACC001",
 			"Test Account",
 			true);
 

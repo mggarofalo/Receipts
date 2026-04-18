@@ -8,7 +8,7 @@ using Infrastructure.Mapping;
 
 namespace Infrastructure.Services;
 
-public class TransactionService(ITransactionRepository repository, TransactionMapper mapper, CardMapper cardMapper) : ITransactionService
+public class TransactionService(ITransactionRepository repository, TransactionMapper mapper, AccountMapper accountMapper) : ITransactionService
 {
 	public async Task<List<Transaction>> CreateAsync(List<Transaction> models, Guid receiptId, CancellationToken cancellationToken)
 	{
@@ -91,7 +91,7 @@ public class TransactionService(ITransactionRepository repository, TransactionMa
 				.Select(e => new TransactionAccount
 				{
 					Transaction = mapper.ToDomain(e),
-					Account = cardMapper.ToDomain(e.Account!)
+					Account = accountMapper.ToDomain(e.Account!)
 				})
 		];
 	}

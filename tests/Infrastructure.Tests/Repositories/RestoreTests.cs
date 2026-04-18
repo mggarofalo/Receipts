@@ -172,12 +172,15 @@ public class RestoreTests
 	{
 		// Arrange
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
-		CardEntity account = CardEntityGenerator.Generate();
+		AccountEntity account = AccountEntityGenerator.Generate();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Cards.AddAsync(account);
+			await context.Accounts.AddAsync(account);
+			CardEntity card = CardEntityGenerator.Generate();
+			card.AccountId = account.Id;
+			await context.Cards.AddAsync(card);
 			await context.Receipts.AddAsync(receipt);
 			TransactionEntity transaction1 = TransactionEntityGenerator.Generate(receiptId: receipt.Id, accountId: account.Id);
 			TransactionEntity transaction2 = TransactionEntityGenerator.Generate(receiptId: receipt.Id, accountId: account.Id);

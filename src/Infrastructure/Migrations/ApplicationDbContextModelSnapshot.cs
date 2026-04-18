@@ -247,6 +247,24 @@ namespace Infrastructure.Migrations
                     b.ToTable("AuthAuditLogs");
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.Core.AccountEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Accounts");
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.AdjustmentEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -295,6 +313,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("CardCode")
                         .IsRequired()
                         .HasColumnType("text");
@@ -307,6 +328,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
 
                     b.ToTable("Cards");
                 });
@@ -1162,6 +1185,16 @@ namespace Infrastructure.Migrations
                     b.Navigation("Receipt");
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.Core.CardEntity", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.Core.AccountEntity", "ParentAccount")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ParentAccount");
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.ReceiptItemEntity", b =>
                 {
                     b.HasOne("Infrastructure.Entities.Core.ReceiptEntity", "Receipt")
@@ -1186,7 +1219,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Infrastructure.Entities.Core.TransactionEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Entities.Core.CardEntity", "Account")
+                    b.HasOne("Infrastructure.Entities.Core.AccountEntity", "Account")
                         .WithMany()
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1205,7 +1238,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Infrastructure.Entities.Core.YnabAccountMappingEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Entities.Core.CardEntity", "Account")
+                    b.HasOne("Infrastructure.Entities.Core.AccountEntity", "Account")
                         .WithMany()
                         .HasForeignKey("ReceiptsAccountId")
                         .OnDelete(DeleteBehavior.Cascade)

@@ -2,7 +2,7 @@ using Domain.Core;
 
 namespace Domain.Tests.Core;
 
-public class AccountTests
+public class CardTests
 {
 	[Fact]
 	public void Constructor_ValidInput_CreatesAccount()
@@ -60,7 +60,7 @@ public class AccountTests
 	[InlineData("")]
 	[InlineData(" ")]
 	[InlineData(null)]
-	public void Constructor_InvalidCardCode_ThrowsArgumentException(string invalidCardCode)
+	public void Constructor_InvalidCardCode_ThrowsArgumentException(string? invalidCardCode)
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -68,7 +68,7 @@ public class AccountTests
 		bool isActive = true;
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, invalidCardCode, name, isActive));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, invalidCardCode!, name, isActive));
 		Assert.StartsWith(Card.CardCodeCannotBeEmpty, exception.Message);
 	}
 
@@ -76,7 +76,7 @@ public class AccountTests
 	[InlineData("")]
 	[InlineData(" ")]
 	[InlineData(null)]
-	public void Constructor_InvalidName_ThrowsArgumentException(string invalidName)
+	public void Constructor_InvalidName_ThrowsArgumentException(string? invalidName)
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -84,7 +84,7 @@ public class AccountTests
 		bool isActive = true;
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, accountCode, invalidName, isActive));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, accountCode, invalidName!, isActive));
 		Assert.StartsWith(Card.NameCannotBeEmpty, exception.Message);
 	}
 }

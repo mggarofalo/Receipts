@@ -25,9 +25,18 @@ public class CardRepository(IDbContextFactory<ApplicationDbContext> contextFacto
 	public async Task<CardEntity?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Transactions
+		Guid? accountId = await context.Transactions
 			.Where(t => t.Id == transactionId)
-			.Select(t => t.Account)
+			.Select(t => (Guid?)t.AccountId)
+			.FirstOrDefaultAsync(cancellationToken);
+
+		if (accountId == null)
+		{
+			return null;
+		}
+
+		return await context.Cards
+			.Where(c => c.AccountId == accountId.Value)
 			.FirstOrDefaultAsync(cancellationToken);
 	}
 

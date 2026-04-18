@@ -6,6 +6,7 @@ public class Card
 	public string CardCode { get; set; }
 	public string Name { get; set; }
 	public bool IsActive { get; set; }
+	public Guid? AccountId { get; set; }
 
 	public const string CardCodeCannotBeEmpty = "Card code cannot be empty";
 	public const string NameCannotBeEmpty = "Name cannot be empty";

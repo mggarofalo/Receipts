@@ -34,6 +34,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	{
 	}
 
+	public virtual DbSet<AccountEntity> Accounts { get; set; } = null!;
 	public virtual DbSet<CardEntity> Cards { get; set; } = null!;
 	public virtual DbSet<CategoryEntity> Categories { get; set; } = null!;
 	public virtual DbSet<SubcategoryEntity> Subcategories { get; set; } = null!;
