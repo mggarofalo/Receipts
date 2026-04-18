@@ -1,0 +1,397 @@
+using Application.Models.Merge;
+using FluentAssertions;
+using Infrastructure.Entities.Audit;
+using Infrastructure.Entities.Core;
+using Infrastructure.Services;
+using Infrastructure.Tests.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using SampleData.Entities;
+
+namespace Infrastructure.Tests.Services;
+
+public class AccountMergeServiceTests : IDisposable
+{
+	private readonly string _dbName;
+	private readonly DbContextOptions<ApplicationDbContext> _options;
+	private readonly MockCurrentUserAccessor _userAccessor;
+	private readonly AccountMergeService _service;
+
+	public AccountMergeServiceTests()
+	{
+		_dbName = Guid.NewGuid().ToString();
+		_options = new DbContextOptionsBuilder<ApplicationDbContext>()
+			.UseInMemoryDatabase(databaseName: _dbName)
+			.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+			.Options;
+
+		_userAccessor = new MockCurrentUserAccessor { UserId = "test-user" };
+
+		TestFactory factory = new(_options, _userAccessor);
+		_service = new AccountMergeService(factory, _userAccessor);
+	}
+
+	public void Dispose()
+	{
+		using ApplicationDbContext context = new(_options, _userAccessor);
+		context.Database.EnsureDeleted();
+		GC.SuppressFinalize(this);
+	}
+
+	private ApplicationDbContext CreateContext() => new(_options, _userAccessor);
+
+	[Fact]
+	public async Task MergeCardsAsync_WithFewerThanTwoCards_Throws()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.Add(target);
+			await seed.SaveChangesAsync();
+		}
+
+		Func<Task> act = () => _service.MergeCardsAsync(target.Id, [Guid.NewGuid()], null, CancellationToken.None);
+
+		await act.Should().ThrowAsync<ArgumentException>();
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_WithTargetNotFound_Throws()
+	{
+		Func<Task> act = () => _service.MergeCardsAsync(
+			Guid.NewGuid(),
+			[Guid.NewGuid(), Guid.NewGuid()],
+			null,
+			CancellationToken.None);
+
+		await act.Should().ThrowAsync<KeyNotFoundException>()
+			.WithMessage(AccountMergeService.TargetAccountNotFound);
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_WithMissingSourceCard_Throws()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.Add(target);
+			await seed.SaveChangesAsync();
+		}
+
+		Func<Task> act = () => _service.MergeCardsAsync(
+			target.Id,
+			[Guid.NewGuid(), Guid.NewGuid()],
+			null,
+			CancellationToken.None);
+
+		await act.Should().ThrowAsync<KeyNotFoundException>()
+			.WithMessage(AccountMergeService.SourceCardNotFound);
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_WithAllCardsAlreadyOnTarget_ReturnsSuccessWithoutChanges()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		CardEntity card1 = CardEntityGenerator.Generate();
+		CardEntity card2 = CardEntityGenerator.Generate();
+		card1.AccountId = target.Id;
+		card2.AccountId = target.Id;
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.Add(target);
+			seed.Cards.AddRange(card1, card2);
+			await seed.SaveChangesAsync();
+		}
+
+		MergeCardsResult result = await _service.MergeCardsAsync(
+			target.Id,
+			[card1.Id, card2.Id],
+			null,
+			CancellationToken.None);
+
+		result.Success.Should().BeTrue();
+		result.Conflicts.Should().BeNull();
+
+		using ApplicationDbContext assert = CreateContext();
+		(await assert.AuditLogs.Where(a => a.Action == AuditAction.Merge).ToListAsync())
+			.Should().BeEmpty();
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_HappyPath_RepointsCardsAndTransactionsAndDeletesOrphans()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		AccountEntity source1 = AccountEntityGenerator.Generate();
+		AccountEntity source2 = AccountEntityGenerator.Generate();
+
+		CardEntity cardOnSource1 = CardEntityGenerator.Generate();
+		cardOnSource1.AccountId = source1.Id;
+		CardEntity cardOnSource2 = CardEntityGenerator.Generate();
+		cardOnSource2.AccountId = source2.Id;
+
+		TransactionEntity txOnSource1 = TransactionEntityGenerator.Generate(accountId: source1.Id);
+		TransactionEntity txOnSource2 = TransactionEntityGenerator.Generate(accountId: source2.Id);
+		TransactionEntity txOnTarget = TransactionEntityGenerator.Generate(accountId: target.Id);
+
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.AddRange(target, source1, source2);
+			seed.Cards.AddRange(cardOnSource1, cardOnSource2);
+			seed.Transactions.AddRange(txOnSource1, txOnSource2, txOnTarget);
+			await seed.SaveChangesAsync();
+		}
+
+		// Pre-merge: verify transactions exist.
+		using (ApplicationDbContext preAssert = CreateContext())
+		{
+			int preCount = await preAssert.Transactions.IgnoreQueryFilters().CountAsync();
+			int preAccountCount = await preAssert.Accounts.CountAsync();
+			int preCardCount = await preAssert.Cards.CountAsync();
+			(preCount, preAccountCount, preCardCount).Should().Be((3, 3, 2), "initial seed state");
+		}
+
+		MergeCardsResult result = await _service.MergeCardsAsync(
+			target.Id,
+			[cardOnSource1.Id, cardOnSource2.Id],
+			null,
+			CancellationToken.None);
+
+		result.Success.Should().BeTrue();
+		result.Conflicts.Should().BeNull();
+
+		using ApplicationDbContext assert = CreateContext();
+		List<CardEntity> cards = await assert.Cards.AsNoTracking().ToListAsync();
+		cards.Should().OnlyContain(c => c.AccountId == target.Id);
+
+		// IgnoreAutoIncludes avoids the InMemory provider filtering out rows whose
+		// auto-included Receipt does not exist in the seed data.
+		List<TransactionEntity> transactions = await assert.Transactions
+			.IgnoreAutoIncludes().AsNoTracking().ToListAsync();
+		transactions.Should().HaveCount(3);
+		transactions.Should().OnlyContain(t => t.AccountId == target.Id);
+
+		List<AccountEntity> remainingAccounts = await assert.Accounts.AsNoTracking().ToListAsync();
+		remainingAccounts.Select(a => a.Id).Should().BeEquivalentTo([target.Id]);
+
+		List<AuditLogEntity> auditLogs = await assert.AuditLogs.AsNoTracking()
+			.Where(a => a.Action == AuditAction.Merge)
+			.ToListAsync();
+		auditLogs.Should().HaveCount(3); // 2 sources + 1 target
+		auditLogs.Should().OnlyContain(a => a.EntityType == "Account");
+		auditLogs.Should().OnlyContain(a => a.ChangedByUserId == "test-user");
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_WithSingleMappingOnSource_MovesMappingToTarget()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		AccountEntity source = AccountEntityGenerator.Generate();
+		CardEntity card1 = CardEntityGenerator.Generate();
+		CardEntity card2 = CardEntityGenerator.Generate();
+		card1.AccountId = source.Id;
+		card2.AccountId = source.Id;
+
+		YnabAccountMappingEntity sourceMapping = new()
+		{
+			Id = Guid.NewGuid(),
+			ReceiptsAccountId = source.Id,
+			YnabAccountId = "ynab-1",
+			YnabAccountName = "Source YNAB",
+			YnabBudgetId = "budget-1",
+			CreatedAt = DateTimeOffset.UtcNow,
+			UpdatedAt = DateTimeOffset.UtcNow,
+		};
+
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.AddRange(target, source);
+			seed.Cards.AddRange(card1, card2);
+			seed.YnabAccountMappings.Add(sourceMapping);
+			await seed.SaveChangesAsync();
+		}
+
+		MergeCardsResult result = await _service.MergeCardsAsync(
+			target.Id,
+			[card1.Id, card2.Id],
+			null,
+			CancellationToken.None);
+
+		result.Success.Should().BeTrue();
+		result.Conflicts.Should().BeNull();
+
+		using ApplicationDbContext assert = CreateContext();
+		List<YnabAccountMappingEntity> mappings = await assert.YnabAccountMappings.AsNoTracking().ToListAsync();
+		mappings.Should().ContainSingle(m => m.ReceiptsAccountId == target.Id && m.YnabAccountId == "ynab-1");
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_WithConflictingMappings_ReturnsConflictsWithoutMutation()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		AccountEntity source1 = AccountEntityGenerator.Generate();
+		AccountEntity source2 = AccountEntityGenerator.Generate();
+		CardEntity card1 = CardEntityGenerator.Generate();
+		CardEntity card2 = CardEntityGenerator.Generate();
+		card1.AccountId = source1.Id;
+		card2.AccountId = source2.Id;
+
+		YnabAccountMappingEntity mapping1 = new()
+		{
+			Id = Guid.NewGuid(),
+			ReceiptsAccountId = source1.Id,
+			YnabAccountId = "ynab-1",
+			YnabAccountName = "Source1 YNAB",
+			YnabBudgetId = "budget-1",
+			CreatedAt = DateTimeOffset.UtcNow,
+			UpdatedAt = DateTimeOffset.UtcNow,
+		};
+		YnabAccountMappingEntity mapping2 = new()
+		{
+			Id = Guid.NewGuid(),
+			ReceiptsAccountId = source2.Id,
+			YnabAccountId = "ynab-2",
+			YnabAccountName = "Source2 YNAB",
+			YnabBudgetId = "budget-1",
+			CreatedAt = DateTimeOffset.UtcNow,
+			UpdatedAt = DateTimeOffset.UtcNow,
+		};
+
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.AddRange(target, source1, source2);
+			seed.Cards.AddRange(card1, card2);
+			seed.YnabAccountMappings.AddRange(mapping1, mapping2);
+			await seed.SaveChangesAsync();
+		}
+
+		MergeCardsResult result = await _service.MergeCardsAsync(
+			target.Id,
+			[card1.Id, card2.Id],
+			null,
+			CancellationToken.None);
+
+		result.Success.Should().BeFalse();
+		result.Conflicts.Should().HaveCount(2);
+		result.Conflicts!.Select(c => c.YnabAccountId).Should().BeEquivalentTo(["ynab-1", "ynab-2"]);
+
+		using ApplicationDbContext assert = CreateContext();
+		List<CardEntity> cards = await assert.Cards.AsNoTracking().ToListAsync();
+		cards.Single(c => c.Id == card1.Id).AccountId.Should().Be(source1.Id);
+		cards.Single(c => c.Id == card2.Id).AccountId.Should().Be(source2.Id);
+		(await assert.Accounts.AsNoTracking().ToListAsync()).Should().HaveCount(3);
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_WithResolvedConflict_KeepsWinnerMapping()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		AccountEntity source1 = AccountEntityGenerator.Generate();
+		AccountEntity source2 = AccountEntityGenerator.Generate();
+		CardEntity card1 = CardEntityGenerator.Generate();
+		CardEntity card2 = CardEntityGenerator.Generate();
+		card1.AccountId = source1.Id;
+		card2.AccountId = source2.Id;
+
+		YnabAccountMappingEntity winnerMapping = new()
+		{
+			Id = Guid.NewGuid(),
+			ReceiptsAccountId = source1.Id,
+			YnabAccountId = "ynab-winner",
+			YnabAccountName = "Winner YNAB",
+			YnabBudgetId = "budget-1",
+			CreatedAt = DateTimeOffset.UtcNow,
+			UpdatedAt = DateTimeOffset.UtcNow,
+		};
+		YnabAccountMappingEntity loserMapping = new()
+		{
+			Id = Guid.NewGuid(),
+			ReceiptsAccountId = source2.Id,
+			YnabAccountId = "ynab-loser",
+			YnabAccountName = "Loser YNAB",
+			YnabBudgetId = "budget-1",
+			CreatedAt = DateTimeOffset.UtcNow,
+			UpdatedAt = DateTimeOffset.UtcNow,
+		};
+
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.AddRange(target, source1, source2);
+			seed.Cards.AddRange(card1, card2);
+			seed.YnabAccountMappings.AddRange(winnerMapping, loserMapping);
+			await seed.SaveChangesAsync();
+		}
+
+		MergeCardsResult result = await _service.MergeCardsAsync(
+			target.Id,
+			[card1.Id, card2.Id],
+			source1.Id,
+			CancellationToken.None);
+
+		result.Success.Should().BeTrue();
+		result.Conflicts.Should().BeNull();
+
+		using ApplicationDbContext assert = CreateContext();
+		List<YnabAccountMappingEntity> mappings = await assert.YnabAccountMappings.AsNoTracking().ToListAsync();
+		mappings.Should().ContainSingle();
+		mappings[0].YnabAccountId.Should().Be("ynab-winner");
+		mappings[0].ReceiptsAccountId.Should().Be(target.Id);
+	}
+
+	[Fact]
+	public async Task MergeCardsAsync_WithInvalidWinner_Throws()
+	{
+		AccountEntity target = AccountEntityGenerator.Generate();
+		AccountEntity source1 = AccountEntityGenerator.Generate();
+		AccountEntity source2 = AccountEntityGenerator.Generate();
+		CardEntity card1 = CardEntityGenerator.Generate();
+		CardEntity card2 = CardEntityGenerator.Generate();
+		card1.AccountId = source1.Id;
+		card2.AccountId = source2.Id;
+
+		YnabAccountMappingEntity mapping1 = new()
+		{
+			Id = Guid.NewGuid(),
+			ReceiptsAccountId = source1.Id,
+			YnabAccountId = "ynab-1",
+			YnabAccountName = "Source1 YNAB",
+			YnabBudgetId = "budget-1",
+			CreatedAt = DateTimeOffset.UtcNow,
+			UpdatedAt = DateTimeOffset.UtcNow,
+		};
+		YnabAccountMappingEntity mapping2 = new()
+		{
+			Id = Guid.NewGuid(),
+			ReceiptsAccountId = source2.Id,
+			YnabAccountId = "ynab-2",
+			YnabAccountName = "Source2 YNAB",
+			YnabBudgetId = "budget-1",
+			CreatedAt = DateTimeOffset.UtcNow,
+			UpdatedAt = DateTimeOffset.UtcNow,
+		};
+
+		using (ApplicationDbContext seed = CreateContext())
+		{
+			seed.Accounts.AddRange(target, source1, source2);
+			seed.Cards.AddRange(card1, card2);
+			seed.YnabAccountMappings.AddRange(mapping1, mapping2);
+			await seed.SaveChangesAsync();
+		}
+
+		Func<Task> act = () => _service.MergeCardsAsync(
+			target.Id,
+			[card1.Id, card2.Id],
+			Guid.NewGuid(),
+			CancellationToken.None);
+
+		await act.Should().ThrowAsync<ArgumentException>()
+			.WithMessage(AccountMergeService.InvalidWinnerAccount + "*");
+	}
+
+	private sealed class TestFactory(
+		DbContextOptions<ApplicationDbContext> options,
+		Application.Interfaces.Services.ICurrentUserAccessor accessor)
+		: IDbContextFactory<ApplicationDbContext>
+	{
+		public ApplicationDbContext CreateDbContext() => new(options, accessor);
+	}
+}

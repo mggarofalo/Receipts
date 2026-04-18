@@ -13,6 +13,13 @@ vi.mock("@/hooks/useCards", () => ({
   useCreateCard: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateCard: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteCard: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useMergeCards: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  isMergeCardsConflict: vi.fn(() => false),
+}));
+
+vi.mock("@/hooks/useAccounts", () => ({
+  useAccounts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useCreateAccount: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/hooks/usePermission", () => ({
@@ -531,6 +538,40 @@ describe("Cards", () => {
     expect(useCards).toHaveBeenCalledWith(
       expect.anything(), expect.anything(), expect.anything(), expect.anything(), false,
     );
+  });
+
+  it("merge button is disabled until at least 2 cards are selected", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const items = [
+      mockCardResponse({ id: "1", cardCode: "A1", name: "Alpha", isActive: true }),
+      mockCardResponse({ id: "2", cardCode: "A2", name: "Beta", isActive: true }),
+    ];
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+    const { useCards } = await import("@/hooks/useCards");
+    vi.mocked(useCards).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Cards />);
+
+    const mergeButton = screen.getByRole("button", { name: /merge selected cards/i });
+    expect(mergeButton).toBeDisabled();
+
+    await user.click(screen.getByLabelText("Select Alpha"));
+    expect(mergeButton).toBeDisabled();
+
+    await user.click(screen.getByLabelText("Select Beta"));
+    expect(mergeButton).not.toBeDisabled();
   });
 
 });

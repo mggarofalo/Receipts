@@ -114,3 +114,72 @@ export function useDeleteCard() {
     },
   });
 }
+
+export interface YnabMappingConflict {
+  accountId: string;
+  accountName: string;
+  ynabBudgetId: string;
+  ynabAccountId: string;
+  ynabAccountName: string;
+}
+
+export interface MergeCardsConflict {
+  conflict: true;
+  message: string;
+  conflicts: YnabMappingConflict[];
+}
+
+export interface MergeCardsInput {
+  targetAccountId: string;
+  sourceCardIds: string[];
+  ynabMappingWinnerAccountId?: string | null;
+}
+
+export function useMergeCards() {
+  const queryClient = useQueryClient();
+  return useMutation<void, MergeCardsConflict | unknown, MergeCardsInput>({
+    mutationFn: async (input) => {
+      const { error, response } = await client.POST("/api/cards/merge", {
+        body: {
+          targetAccountId: input.targetAccountId,
+          sourceCardIds: input.sourceCardIds,
+          ynabMappingWinnerAccountId: input.ynabMappingWinnerAccountId ?? null,
+        },
+      });
+      if (error) {
+        if (response.status === 409) {
+          const body = error as unknown as { message: string; conflicts: YnabMappingConflict[] };
+          const conflict: MergeCardsConflict = {
+            conflict: true,
+            message: body.message,
+            conflicts: body.conflicts,
+          };
+          throw conflict;
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cards"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Cards merged");
+    },
+    onError: (error: unknown) => {
+      const err = error as Partial<MergeCardsConflict>;
+      if (err.conflict) {
+        // Caller handles conflict via onError or by inspecting mutation state.
+        return;
+      }
+      toast.error("Failed to merge cards");
+    },
+  });
+}
+
+export function isMergeCardsConflict(error: unknown): error is MergeCardsConflict {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { conflict?: boolean }).conflict === true &&
+    Array.isArray((error as { conflicts?: unknown }).conflicts)
+  );
+}

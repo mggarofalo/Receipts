@@ -42,6 +42,7 @@ public static class EnumLabels
 		new() { Value = "Update", Label = "Updated" },
 		new() { Value = "Delete", Label = "Deleted" },
 		new() { Value = "Restore", Label = "Restored" },
+		new() { Value = "Merge", Label = "Merged" },
 	];
 
 	public static readonly EnumValuePair[] EntityTypes =

@@ -118,6 +118,7 @@ public static class InfrastructureService
 		services
 			.AddScoped<IReceiptService, ReceiptService>()
 			.AddScoped<IAccountService, AccountService>()
+			.AddScoped<IAccountMergeService, AccountMergeService>()
 			.AddScoped<ICardService, CardService>()
 			.AddScoped<ICategoryService, CategoryService>()
 			.AddScoped<ISubcategoryService, SubcategoryService>()

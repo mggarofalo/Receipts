@@ -6,4 +6,5 @@ public enum AuditAction
 	Update,
 	Delete,
 	Restore,
+	Merge,
 }

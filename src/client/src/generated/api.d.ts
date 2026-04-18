@@ -154,6 +154,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cards/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge cards into a target account
+         * @description Repoints the listed cards (and their transactions) to the target account and deletes any now-orphaned accounts. Requires the Admin role. Returns 409 Conflict if the source/target accounts have differing YNAB account mappings; resubmit with `ynabMappingWinnerAccountId` to resolve.
+         */
+        post: operations["MergeCards"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/categories/{id}": {
         parameters: {
             query?: never;
@@ -2405,6 +2425,31 @@ export interface components {
             /** Format: int32 */
             limit: number;
         };
+        MergeCardsRequest: {
+            /** Format: uuid */
+            targetAccountId: string;
+            sourceCardIds: string[];
+            /**
+             * Format: uuid
+             * @description The account whose YNAB mapping should be retained when mappings conflict. Omit on first submit; if conflicts are returned, resubmit with this field.
+             */
+            ynabMappingWinnerAccountId?: string | null;
+        };
+        MergeCardsResponse: {
+            success: boolean;
+        };
+        YnabMappingConflict: {
+            /** Format: uuid */
+            accountId: string;
+            accountName: string;
+            ynabBudgetId: string;
+            ynabAccountId: string;
+            ynabAccountName: string;
+        };
+        MergeCardsConflictResponse: {
+            message: string;
+            conflicts: components["schemas"]["YnabMappingConflict"][];
+        };
         CreateCategoryRequest: {
             name: string;
             description?: string | null;
@@ -3834,6 +3879,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardResponse"][];
+                };
+            };
+        };
+    };
+    MergeCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeCardsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeCardsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found — target account or source card missing */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict — source accounts have differing YNAB mappings */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeCardsConflictResponse"];
                 };
             };
         };

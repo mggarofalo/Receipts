@@ -24,6 +24,8 @@ import {
   useCreateCard,
   useUpdateCard,
   useDeleteCard,
+  useMergeCards,
+  isMergeCardsConflict,
 } from "./useCards";
 
 function createWrapper() {
@@ -191,6 +193,70 @@ describe("useCards", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to delete card");
+    });
+  });
+
+  it("merge mutation succeeds and shows success toast", async () => {
+    (client.POST as Mock).mockResolvedValue({ data: { success: true }, error: undefined, response: { status: 200 } });
+
+    const { result } = renderHook(() => useMergeCards(), {
+      wrapper: createWrapper(),
+    });
+
+    await result.current.mutateAsync({
+      targetAccountId: "target",
+      sourceCardIds: ["c1", "c2"],
+    });
+
+    expect(client.POST).toHaveBeenCalledWith("/api/cards/merge", {
+      body: {
+        targetAccountId: "target",
+        sourceCardIds: ["c1", "c2"],
+        ynabMappingWinnerAccountId: null,
+      },
+    });
+    expect(toast.success).toHaveBeenCalledWith("Cards merged");
+  });
+
+  it("merge mutation rejects with conflict object on 409 and does not toast error", async () => {
+    (client.POST as Mock).mockResolvedValue({
+      error: { message: "conflict", conflicts: [{ accountId: "a", accountName: "A", ynabBudgetId: "b", ynabAccountId: "y", ynabAccountName: "Y" }] },
+      response: { status: 409 },
+    });
+
+    const { result } = renderHook(() => useMergeCards(), {
+      wrapper: createWrapper(),
+    });
+
+    let caught: unknown = null;
+    try {
+      await result.current.mutateAsync({ targetAccountId: "t", sourceCardIds: ["c1", "c2"] });
+    } catch (err) {
+      caught = err;
+    }
+
+    expect(isMergeCardsConflict(caught)).toBe(true);
+    await waitFor(() => {
+      expect(toast.error).not.toHaveBeenCalled();
+    });
+  });
+
+  it("merge mutation shows generic error toast on non-409 failure", async () => {
+    (client.POST as Mock).mockResolvedValue({
+      error: { message: "boom" },
+      response: { status: 500 },
+    });
+
+    const { result } = renderHook(() => useMergeCards(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(
+      result.current.mutateAsync({ targetAccountId: "t", sourceCardIds: ["c1", "c2"] }),
+    ).rejects.toThrow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to merge cards");
     });
   });
 
