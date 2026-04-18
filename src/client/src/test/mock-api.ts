@@ -16,6 +16,7 @@ import type { components } from "@/generated/api";
 // ---------------------------------------------------------------------------
 // Type aliases for readability
 // ---------------------------------------------------------------------------
+type AccountResponse = components["schemas"]["AccountResponse"];
 type CardResponse = components["schemas"]["CardResponse"];
 type CategoryResponse = components["schemas"]["CategoryResponse"];
 type SubcategoryResponse = components["schemas"]["SubcategoryResponse"];
@@ -97,6 +98,18 @@ export function mockCardResponse(
     id: nextId(),
     cardCode: "CARD-001",
     name: "Test Card",
+    isActive: true,
+    ...overrides,
+  };
+}
+
+/** Creates a single `AccountResponse` with sensible defaults. */
+export function mockAccountResponse(
+  overrides?: Partial<AccountResponse>,
+): AccountResponse {
+  return {
+    id: nextId(),
+    name: "Test Account",
     isActive: true,
     ...overrides,
   };

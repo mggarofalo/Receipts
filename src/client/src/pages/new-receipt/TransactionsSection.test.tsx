@@ -9,12 +9,12 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
 }));
 
-vi.mock("@/hooks/useCards", () => ({
-  useCards: vi.fn(() =>
+vi.mock("@/hooks/useAccounts", () => ({
+  useAccounts: vi.fn(() =>
     mockQueryResult({
       data: [
-        { id: "acct-1", name: "Checking", cardCode: "CHK" },
-        { id: "acct-2", name: "Credit Card", cardCode: "CC" },
+        { id: "acct-1", name: "Checking", isActive: true },
+        { id: "acct-2", name: "Credit Card", isActive: true },
       ],
       total: 2,
       isLoading: false,

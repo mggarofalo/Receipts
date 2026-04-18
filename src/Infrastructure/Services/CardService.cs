@@ -49,6 +49,12 @@ public class CardService(ICardRepository repository, CardMapper mapper) : ICardS
 		return cardEntity == null ? null : mapper.ToDomain(cardEntity);
 	}
 
+	public async Task<List<Card>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
+	{
+		List<CardEntity> entities = await repository.GetByAccountIdAsync(accountId, cancellationToken);
+		return [.. entities.Select(mapper.ToDomain)];
+	}
+
 	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
 	{
 		return await repository.GetCountAsync(cancellationToken);

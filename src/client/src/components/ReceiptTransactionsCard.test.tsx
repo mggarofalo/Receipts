@@ -5,11 +5,11 @@ import { ReceiptTransactionsCard } from "./ReceiptTransactionsCard";
 import { renderWithQueryClient } from "@/test/test-utils";
 import { mockMutationResult } from "@/test/mock-hooks";
 
-vi.mock("@/hooks/useCards", () => ({
-  useCards: vi.fn(() => ({
+vi.mock("@/hooks/useAccounts", () => ({
+  useAccounts: vi.fn(() => ({
     data: [
-      { id: "acc-1", name: "Checking", cardCode: "1001" },
-      { id: "acc-2", name: "Savings", cardCode: "2001" },
+      { id: "acc-1", name: "Checking", isActive: true },
+      { id: "acc-2", name: "Savings", isActive: false },
     ],
     isLoading: false,
   })),

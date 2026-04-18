@@ -40,6 +40,16 @@ public class CardRepository(IDbContextFactory<ApplicationDbContext> contextFacto
 			.FirstOrDefaultAsync(cancellationToken);
 	}
 
+	public async Task<List<CardEntity>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
+	{
+		using ApplicationDbContext context = contextFactory.CreateDbContext();
+		return await context.Cards
+			.AsNoTracking()
+			.Where(c => c.AccountId == accountId)
+			.OrderBy(c => c.Name)
+			.ToListAsync(cancellationToken);
+	}
+
 	public async Task<List<CardEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken, bool? isActive = null)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();

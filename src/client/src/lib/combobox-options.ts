@@ -6,6 +6,11 @@ interface CardLike {
   cardCode: string;
 }
 
+interface AccountLike {
+  id: string;
+  name: string;
+}
+
 interface ReceiptLike {
   id: string;
   location: string;
@@ -17,6 +22,13 @@ export function cardToOption(card: CardLike): ComboboxOption {
     value: card.id,
     label: card.name,
     sublabel: card.cardCode,
+  };
+}
+
+export function accountToOption(account: AccountLike): ComboboxOption {
+  return {
+    value: account.id,
+    label: account.name,
   };
 }
 

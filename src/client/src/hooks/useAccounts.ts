@@ -31,6 +31,32 @@ export function useAccount(id: string | null) {
   });
 }
 
+export function useAccountCards(accountId: string | null) {
+  // Keyed under "cards" so mutations in useCards (useUpdateCard, useDeleteCard,
+  // useMergeCards) that invalidate ["cards"] also invalidate these per-account
+  // card lists via React Query's prefix matching.
+  const query = useQuery({
+    queryKey: ["cards", "byAccount", accountId],
+    enabled: !!accountId,
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/accounts/{id}/cards", {
+        params: { path: { id: accountId! } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+  return useMemo(
+    () => ({
+      data: query.data,
+      isLoading: query.isLoading,
+      isError: query.isError,
+      error: query.error,
+    }),
+    [query.data, query.isLoading, query.isError, query.error],
+  );
+}
+
 export function useCreateAccount() {
   const queryClient = useQueryClient();
   return useMutation({

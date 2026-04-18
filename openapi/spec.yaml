@@ -137,6 +137,36 @@ paths:
                   - message
                   - cardCount
 
+  /api/accounts/{id}/cards:
+    get:
+      operationId: GetCardsForAccount
+      tags: [Accounts]
+      summary: Get cards for an account
+      description: >
+        Returns the physical Cards (aliases) that belong to the given logical
+        Account. Returns 404 if the account does not exist.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CardResponse"
+        "404":
+          description: Not Found
+
   /api/accounts:
     get:
       operationId: GetAllAccounts

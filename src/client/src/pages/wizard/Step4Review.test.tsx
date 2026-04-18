@@ -5,8 +5,8 @@ import "@/test/setup-combobox-polyfills";
 import { Step4Review } from "./Step4Review";
 import type { WizardState } from "./wizardReducer";
 
-vi.mock("@/hooks/useCards", () => ({
-  useCards: vi.fn(() =>
+vi.mock("@/hooks/useAccounts", () => ({
+  useAccounts: vi.fn(() =>
     mockQueryResult({
       data: [
         { id: "acct-1", name: "Checking" },
