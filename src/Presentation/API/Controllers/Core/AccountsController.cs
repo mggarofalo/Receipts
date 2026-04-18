@@ -39,7 +39,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 	public async Task<Results<Ok<AccountResponse>, NotFound>> GetAccountById([FromRoute] Guid id)
 	{
 		GetAccountByIdQuery query = new(id);
-		Account? result = await mediator.Send(query);
+		Account? result = await mediator.Send(query, HttpContext.RequestAborted);
 
 		if (result == null)
 		{
@@ -77,7 +77,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllAccountsQuery query = new(offset, limit, sort, isActive);
-		PagedResult<Account> result = await mediator.Send(query);
+		PagedResult<Account> result = await mediator.Send(query, HttpContext.RequestAborted);
 
 		return TypedResults.Ok(new AccountListResponse
 		{
@@ -100,7 +100,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 		}
 
 		GetCardsByAccountIdQuery query = new(id);
-		List<Card> cards = await mediator.Send(query);
+		List<Card> cards = await mediator.Send(query, HttpContext.RequestAborted);
 		return TypedResults.Ok(cards.Select(cardMapper.ToResponse).ToList());
 	}
 
@@ -109,7 +109,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 	public async Task<Ok<AccountResponse>> CreateAccount([FromBody] CreateAccountRequest model)
 	{
 		CreateAccountCommand command = new([mapper.ToDomain(model)]);
-		List<Account> accounts = await mediator.Send(command);
+		List<Account> accounts = await mediator.Send(command, HttpContext.RequestAborted);
 		await notifier.NotifyCreated("account", accounts[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(accounts[0]));
 	}
@@ -119,7 +119,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 	public async Task<Ok<List<AccountResponse>>> CreateAccounts([FromBody] List<CreateAccountRequest> models)
 	{
 		CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
-		List<Account> accounts = await mediator.Send(command);
+		List<Account> accounts = await mediator.Send(command, HttpContext.RequestAborted);
 		await notifier.NotifyBulkChanged("account", "created", accounts.Select(a => a.Id));
 		return TypedResults.Ok(accounts.Select(mapper.ToResponse).ToList());
 	}
@@ -129,7 +129,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 	public async Task<Results<NoContent, NotFound>> UpdateAccount([FromRoute] Guid id, [FromBody] UpdateAccountRequest model)
 	{
 		UpdateAccountCommand command = new([mapper.ToDomain(model)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, HttpContext.RequestAborted);
 
 		if (!result)
 		{
@@ -146,7 +146,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 	public async Task<Results<NoContent, NotFound>> UpdateAccounts([FromBody] List<UpdateAccountRequest> models)
 	{
 		UpdateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, HttpContext.RequestAborted);
 
 		if (!result)
 		{
@@ -172,7 +172,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 		}
 
 		DeleteAccountCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, HttpContext.RequestAborted);
 
 		if (!result)
 		{
