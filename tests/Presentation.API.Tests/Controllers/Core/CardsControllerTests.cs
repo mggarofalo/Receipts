@@ -4,9 +4,11 @@ using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Card.Create;
 using Application.Commands.Card.Delete;
+using Application.Commands.Card.Merge;
 using Application.Commands.Card.Update;
 using Application.Interfaces.Services;
 using Application.Models;
+using Application.Models.Merge;
 using Application.Queries.Core.Card;
 using Domain.Core;
 using FluentAssertions;
@@ -457,5 +459,104 @@ public class CardsControllerTests
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
+	}
+
+	[Fact]
+	public async Task MergeCards_WithFewerThanTwoCards_ReturnsBadRequest()
+	{
+		MergeCardsRequest request = new()
+		{
+			TargetAccountId = Guid.NewGuid(),
+			SourceCardIds = [Guid.NewGuid()],
+		};
+
+		Results<Ok<MergeCardsResponse>, BadRequest<string>, NotFound, Conflict<MergeCardsConflictResponse>> result =
+			await _controller.MergeCards(request);
+
+		Assert.IsType<BadRequest<string>>(result.Result);
+	}
+
+	[Fact]
+	public async Task MergeCards_WhenServiceSucceeds_ReturnsOk()
+	{
+		MergeCardsRequest request = new()
+		{
+			TargetAccountId = Guid.NewGuid(),
+			SourceCardIds = [Guid.NewGuid(), Guid.NewGuid()],
+		};
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<MergeCardsIntoAccountCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new MergeCardsResult(true, null));
+
+		Results<Ok<MergeCardsResponse>, BadRequest<string>, NotFound, Conflict<MergeCardsConflictResponse>> result =
+			await _controller.MergeCards(request);
+
+		Ok<MergeCardsResponse> ok = Assert.IsType<Ok<MergeCardsResponse>>(result.Result);
+		ok.Value!.Success.Should().BeTrue();
+		_notifierMock.Verify(n => n.NotifyBulkChanged("card", "updated", It.IsAny<IEnumerable<Guid>>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task MergeCards_WhenServiceReturnsConflicts_ReturnsConflict()
+	{
+		MergeCardsRequest request = new()
+		{
+			TargetAccountId = Guid.NewGuid(),
+			SourceCardIds = [Guid.NewGuid(), Guid.NewGuid()],
+		};
+
+		List<Application.Models.Merge.YnabMappingConflict> conflicts =
+		[
+			new(Guid.NewGuid(), "A", "b", "y1", "Y1"),
+			new(Guid.NewGuid(), "B", "b", "y2", "Y2"),
+		];
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<MergeCardsIntoAccountCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new MergeCardsResult(false, conflicts));
+
+		Results<Ok<MergeCardsResponse>, BadRequest<string>, NotFound, Conflict<MergeCardsConflictResponse>> result =
+			await _controller.MergeCards(request);
+
+		Conflict<MergeCardsConflictResponse> conflict = Assert.IsType<Conflict<MergeCardsConflictResponse>>(result.Result);
+		conflict.Value!.Conflicts.Should().HaveCount(2);
+	}
+
+	[Fact]
+	public async Task MergeCards_WhenTargetNotFound_ReturnsNotFound()
+	{
+		MergeCardsRequest request = new()
+		{
+			TargetAccountId = Guid.NewGuid(),
+			SourceCardIds = [Guid.NewGuid(), Guid.NewGuid()],
+		};
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<MergeCardsIntoAccountCommand>(),
+			It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new KeyNotFoundException("not found"));
+
+		Results<Ok<MergeCardsResponse>, BadRequest<string>, NotFound, Conflict<MergeCardsConflictResponse>> result =
+			await _controller.MergeCards(request);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task MergeCards_WithInvalidCommand_ReturnsBadRequest()
+	{
+		MergeCardsRequest request = new()
+		{
+			TargetAccountId = Guid.Empty,
+			SourceCardIds = [Guid.NewGuid(), Guid.NewGuid()],
+		};
+
+		Results<Ok<MergeCardsResponse>, BadRequest<string>, NotFound, Conflict<MergeCardsConflictResponse>> result =
+			await _controller.MergeCards(request);
+
+		Assert.IsType<BadRequest<string>>(result.Result);
 	}
 }

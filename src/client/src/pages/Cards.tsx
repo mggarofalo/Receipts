@@ -15,6 +15,7 @@ import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import type { FuseSearchConfig } from "@/lib/search";
 import { CardForm } from "@/components/CardForm";
+import { MergeCardsDialog } from "@/components/MergeCardsDialog";
 import { FuzzySearchInput } from "@/components/FuzzySearchInput";
 import { SearchHighlight } from "@/components/SearchHighlight";
 import { getMatchIndices } from "@/lib/search-highlight";
@@ -79,8 +80,36 @@ function Cards() {
   const { isAdmin } = usePermission();
   const [createOpen, setCreateOpen] = useState(false);
   const [editCard, setEditCard] = useState<CardResponse | null>(null);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const anyDialogOpen = createOpen || editCard !== null;
+  const anyDialogOpen = createOpen || editCard !== null || mergeOpen;
+
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllVisible = useCallback((ids: string[], allSelected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        for (const id of ids) next.delete(id);
+      } else {
+        for (const id of ids) next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleMergeComplete = useCallback(() => setSelectedIds(new Set()), []);
 
   useEffect(() => {
     function onNewItem() {
@@ -104,7 +133,7 @@ function Cards() {
     });
   }, [updateCard]);
 
-  const data = (cardsData as CardResponse[] | undefined) ?? [];
+  const data = useMemo(() => (cardsData as CardResponse[] | undefined) ?? [], [cardsData]);
 
   const { search, setSearch, results, totalCount, clearSearch } =
     useFuzzySearch({ data, config: SEARCH_CONFIG });
@@ -119,6 +148,14 @@ function Cards() {
   const filteredResults = useMemo(() => {
     return results.map((r) => r.item);
   }, [results]);
+
+  const selectedMergeCards = useMemo(
+    () =>
+      data
+        .filter((card) => selectedIds.has(card.id))
+        .map((card) => ({ id: card.id, name: card.name, cardCode: card.cardCode })),
+    [data, selectedIds],
+  );
 
   const matchMap = useMemo(() => {
     const map = new Map<string, (typeof results)[number]>();
@@ -155,7 +192,17 @@ function Cards() {
           totalCount={totalCount}
           className="max-w-sm"
         />
-        <Button onClick={() => setCreateOpen(true)}>New Card</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setMergeOpen(true)}
+            disabled={selectedIds.size < 2}
+            aria-label="Merge selected cards into an account"
+          >
+            Merge into Account… ({selectedIds.size})
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>New Card</Button>
+        </div>
       </div>
 
       <Tabs value={statusFilter} onValueChange={handleStatusChange}>
@@ -200,6 +247,19 @@ function Cards() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all cards on this page"
+                      checked={filteredResults.length > 0 && filteredResults.every((c) => selectedIds.has(c.id))}
+                      onChange={() =>
+                        toggleSelectAllVisible(
+                          filteredResults.map((c) => c.id),
+                          filteredResults.length > 0 && filteredResults.every((c) => selectedIds.has(c.id)),
+                        )
+                      }
+                    />
+                  </TableHead>
                   <SortableTableHead column="cardCode" label="Card Code" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
@@ -220,6 +280,15 @@ function Cards() {
                         setFocusedIndex(index);
                       }}
                     >
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${card.name}`}
+                          checked={selectedIds.has(card.id)}
+                          onChange={() => toggleSelected(card.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </TableCell>
                       <TableCell className="font-mono">
                         <SearchHighlight
                           text={card.cardCode}
@@ -277,6 +346,13 @@ function Cards() {
           />
         </>
       )}
+
+      <MergeCardsDialog
+        open={mergeOpen}
+        onOpenChange={setMergeOpen}
+        selectedCards={selectedMergeCards}
+        onMergeComplete={handleMergeComplete}
+      />
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

@@ -433,6 +433,47 @@ paths:
         "404":
           description: Not Found
 
+  /api/cards/merge:
+    post:
+      operationId: MergeCards
+      tags: [Cards]
+      summary: Merge cards into a target account
+      description: >
+        Repoints the listed cards (and their transactions) to the target account
+        and deletes any now-orphaned accounts. Requires the Admin role. Returns
+        409 Conflict if the source/target accounts have differing YNAB account
+        mappings; resubmit with `ynabMappingWinnerAccountId` to resolve.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeCardsRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeCardsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: Not Found — target account or source card missing
+        "409":
+          description: Conflict — source accounts have differing YNAB mappings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeCardsConflictResponse"
+
   # ──────────────────────────────────────────────
   # Categories
   # ──────────────────────────────────────────────
@@ -4993,6 +5034,62 @@ components:
         limit:
           type: integer
           format: int32
+
+    MergeCardsRequest:
+      type: object
+      required: [targetAccountId, sourceCardIds]
+      properties:
+        targetAccountId:
+          type: string
+          format: uuid
+        sourceCardIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 2
+        ynabMappingWinnerAccountId:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: >
+            The account whose YNAB mapping should be retained when mappings conflict.
+            Omit on first submit; if conflicts are returned, resubmit with this field.
+
+    MergeCardsResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    YnabMappingConflict:
+      type: object
+      required: [accountId, accountName, ynabBudgetId, ynabAccountId, ynabAccountName]
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        accountName:
+          type: string
+        ynabBudgetId:
+          type: string
+        ynabAccountId:
+          type: string
+        ynabAccountName:
+          type: string
+
+    MergeCardsConflictResponse:
+      type: object
+      required: [message, conflicts]
+      properties:
+        message:
+          type: string
+        conflicts:
+          type: array
+          items:
+            $ref: "#/components/schemas/YnabMappingConflict"
 
     # ── Category ──────────────────────────────────
 

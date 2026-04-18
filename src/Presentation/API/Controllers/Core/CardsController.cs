@@ -3,9 +3,11 @@ using API.Mapping.Core;
 using API.Services;
 using Application.Commands.Card.Create;
 using Application.Commands.Card.Delete;
+using Application.Commands.Card.Merge;
 using Application.Commands.Card.Update;
 using Application.Interfaces.Services;
 using Application.Models;
+using Application.Models.Merge;
 using Application.Queries.Core.Card;
 using Asp.Versioning;
 using Domain.Core;
@@ -30,6 +32,7 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 	public const string RouteUpdate = "{id}";
 	public const string RouteUpdateBatch = "batch";
 	public const string RouteDelete = "{id}";
+	public const string RouteMerge = "merge";
 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a card by ID")]
@@ -164,5 +167,65 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 		await notifier.NotifyDeleted("card", id);
 		return TypedResults.NoContent();
+	}
+
+	[HttpPost(RouteMerge)]
+	[Authorize(Policy = "RequireAdmin")]
+	[EndpointSummary("Merge cards into a target account")]
+	[EndpointDescription("Repoints the listed cards (and their transactions) to the target account and deletes any now-orphaned accounts. Requires the Admin role. Returns 409 Conflict if the source/target accounts have differing YNAB account mappings; resubmit with ynabMappingWinnerAccountId to resolve.")]
+	public async Task<Results<Ok<MergeCardsResponse>, BadRequest<string>, NotFound, Conflict<MergeCardsConflictResponse>>> MergeCards([FromBody] MergeCardsRequest model)
+	{
+		if (model.SourceCardIds is null || model.SourceCardIds.Count < 2)
+		{
+			return TypedResults.BadRequest("sourceCardIds must contain at least 2 card ids");
+		}
+
+		MergeCardsIntoAccountCommand command;
+		try
+		{
+			command = new MergeCardsIntoAccountCommand(
+				model.TargetAccountId,
+				[.. model.SourceCardIds],
+				model.YnabMappingWinnerAccountId);
+		}
+		catch (ArgumentException ex)
+		{
+			return TypedResults.BadRequest(ex.Message);
+		}
+
+		MergeCardsResult result;
+		try
+		{
+			result = await mediator.Send(command, HttpContext.RequestAborted);
+		}
+		catch (KeyNotFoundException ex)
+		{
+			logger.LogWarning("Merge failed — {Message}", ex.Message);
+			return TypedResults.NotFound();
+		}
+		catch (ArgumentException ex)
+		{
+			return TypedResults.BadRequest(ex.Message);
+		}
+
+		if (result.Conflicts is not null)
+		{
+			MergeCardsConflictResponse body = new()
+			{
+				Message = "Source cards have differing YNAB mappings. Resubmit with ynabMappingWinnerAccountId set to the account whose mapping should be retained.",
+				Conflicts = [.. result.Conflicts.Select(c => new API.Generated.Dtos.YnabMappingConflict
+				{
+					AccountId = c.AccountId,
+					AccountName = c.AccountName,
+					YnabBudgetId = c.YnabBudgetId,
+					YnabAccountId = c.YnabAccountId,
+					YnabAccountName = c.YnabAccountName,
+				})],
+			};
+			return TypedResults.Conflict(body);
+		}
+
+		await notifier.NotifyBulkChanged("card", "updated", model.SourceCardIds);
+		return TypedResults.Ok(new MergeCardsResponse { Success = true });
 	}
 }
