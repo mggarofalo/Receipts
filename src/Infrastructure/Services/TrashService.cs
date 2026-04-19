@@ -40,6 +40,24 @@ public class TrashService(ApplicationDbContext context) : ITrashService
 			.Where(e => e.DeletedAt != null)
 			.ExecuteDeleteAsync(cancellationToken);
 
+		// Delete both soft-deleted subcategories AND active subcategories
+		// whose parent Category is about to be purged. The Subcategory → Category
+		// FK is configured OnDelete(Cascade), so without this explicit step the
+		// Category delete below would silently cascade-destroy any active
+		// Subcategory rows pointing at a soft-deleted parent.
+		await context.Subcategories
+			.IgnoreQueryFilters()
+			.Where(s => s.DeletedAt != null
+				|| context.Categories
+					.IgnoreQueryFilters()
+					.Any(c => c.Id == s.CategoryId && c.DeletedAt != null))
+			.ExecuteDeleteAsync(cancellationToken);
+
+		await context.Categories
+			.IgnoreQueryFilters()
+			.Where(e => e.DeletedAt != null)
+			.ExecuteDeleteAsync(cancellationToken);
+
 		await transaction.CommitAsync(cancellationToken);
 	}
 }
