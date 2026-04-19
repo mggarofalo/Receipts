@@ -47,6 +47,17 @@ function toTitleCase(slug: string): string {
     .join(" ");
 }
 
+const GUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isGuid(value: string): boolean {
+  return GUID_PATTERN.test(value);
+}
+
+function formatSegmentLabel(part: string): string {
+  return isGuid(part) ? part.slice(-12).toLowerCase() : toTitleCase(part);
+}
+
 export interface BreadcrumbSegment {
   label: string;
   path: string;
@@ -73,7 +84,9 @@ export function useBreadcrumbs(): BreadcrumbSegment[] {
       for (const part of parts) {
         accumulated += `/${part}`;
         const segLabel =
-          routeLabels[accumulated] ?? segmentOverrides[part] ?? toTitleCase(part);
+          routeLabels[accumulated] ??
+          segmentOverrides[part] ??
+          formatSegmentLabel(part);
         crumbs.push({ label: segLabel, path: accumulated });
       }
     }
