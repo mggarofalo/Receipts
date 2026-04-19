@@ -102,4 +102,114 @@ public class CardMapperTests
 		Assert.Equal(expectedId, actual.Id);
 		Assert.False(actual.IsActive);
 	}
+
+	[Fact]
+	public void ToDomain_FromCreateRequest_MapsAccountId()
+	{
+		// Arrange
+		Guid expectedAccountId = Guid.NewGuid();
+		CreateCardRequest request = new()
+		{
+			CardCode = "ACC-001",
+			Name = "Child Card",
+			IsActive = true,
+			AccountId = expectedAccountId
+		};
+
+		// Act
+		Card actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Equal(expectedAccountId, actual.AccountId);
+	}
+
+	[Fact]
+	public void ToDomain_FromCreateRequest_MapsNullAccountId()
+	{
+		// Arrange
+		CreateCardRequest request = new()
+		{
+			CardCode = "ACC-001",
+			Name = "Orphan Card",
+			IsActive = true,
+			AccountId = null
+		};
+
+		// Act
+		Card actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Null(actual.AccountId);
+	}
+
+	[Fact]
+	public void ToDomain_FromUpdateRequest_MapsAccountId()
+	{
+		// Arrange
+		Guid expectedAccountId = Guid.NewGuid();
+		UpdateCardRequest request = new()
+		{
+			Id = Guid.NewGuid(),
+			CardCode = "ACC-001",
+			Name = "Child Card",
+			IsActive = true,
+			AccountId = expectedAccountId
+		};
+
+		// Act
+		Card actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Equal(expectedAccountId, actual.AccountId);
+	}
+
+	[Fact]
+	public void ToDomain_FromUpdateRequest_MapsNullAccountIdToClearAssignment()
+	{
+		// Arrange
+		UpdateCardRequest request = new()
+		{
+			Id = Guid.NewGuid(),
+			CardCode = "ACC-001",
+			Name = "Detached Card",
+			IsActive = true,
+			AccountId = null
+		};
+
+		// Act
+		Card actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Null(actual.AccountId);
+	}
+
+	[Fact]
+	public void ToResponse_IncludesAccountId()
+	{
+		// Arrange
+		Guid expectedAccountId = Guid.NewGuid();
+		Card card = new(Guid.NewGuid(), "CARD-A", "Primary Card", true)
+		{
+			AccountId = expectedAccountId
+		};
+
+		// Act
+		CardResponse actual = _mapper.ToResponse(card);
+
+		// Assert
+		Assert.Equal(expectedAccountId, actual.AccountId);
+	}
+
+	[Fact]
+	public void ToResponse_OmitsAccountIdWhenUnassigned()
+	{
+		// Arrange
+		Card card = new(Guid.NewGuid(), "CARD-ORPHAN", "Unassigned Card", true);
+
+		// Act
+		CardResponse actual = _mapper.ToResponse(card);
+
+		// Assert
+		Assert.Null(actual.AccountId);
+	}
 }

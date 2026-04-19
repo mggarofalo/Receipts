@@ -6,6 +6,7 @@ import {
   useUpdateCard,
   useDeleteCard,
 } from "@/hooks/useCards";
+import { useAccounts } from "@/hooks/useAccounts";
 import { usePermission } from "@/hooks/usePermission";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
@@ -49,6 +50,7 @@ interface CardResponse {
   cardCode: string;
   name: string;
   isActive: boolean;
+  accountId?: string | null;
 }
 
 const SEARCH_CONFIG: FuseSearchConfig<CardResponse> = {
@@ -74,6 +76,14 @@ function Cards() {
   });
   const isActiveParam = statusFilter === "all" ? undefined : statusFilter === "true";
   const { data: cardsData, total: serverTotal, isLoading } = useCards(offset, limit, sortBy, sortDirection, isActiveParam);
+  const { data: accountsData } = useAccounts(0, 500, "name", "asc", null);
+  const accountsById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of (accountsData as { id: string; name: string }[] | undefined) ?? []) {
+      map.set(a.id, a.name);
+    }
+    return map;
+  }, [accountsData]);
   const createCard = useCreateCard();
   const updateCard = useUpdateCard();
   const deleteCard = useDeleteCard();
@@ -130,6 +140,7 @@ function Cards() {
       cardCode: card.cardCode,
       name: card.name,
       isActive: checked,
+      accountId: card.accountId ?? null,
     });
   }, [updateCard]);
 
@@ -262,6 +273,7 @@ function Cards() {
                   </TableHead>
                   <SortableTableHead column="cardCode" label="Card Code" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
+                  <TableHead>Account</TableHead>
                   <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
@@ -300,6 +312,9 @@ function Cards() {
                           text={card.name}
                           indices={getMatchIndices(matches, "name")}
                         />
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {card.accountId ? (accountsById.get(card.accountId) ?? "—") : "—"}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -365,9 +380,10 @@ function Cards() {
             isSubmitting={createCard.isPending}
             onCancel={() => setCreateOpen(false)}
             onSubmit={(values) => {
-              createCard.mutate(values, {
-                onSuccess: () => setCreateOpen(false),
-              });
+              createCard.mutate(
+                { ...values, accountId: values.accountId ?? null },
+                { onSuccess: () => setCreateOpen(false) },
+              );
             }}
           />
         </DialogContent>
@@ -389,12 +405,13 @@ function Cards() {
                 cardCode: editCard.cardCode,
                 name: editCard.name,
                 isActive: editCard.isActive,
+                accountId: editCard.accountId ?? "",
               }}
               isSubmitting={updateCard.isPending}
               onCancel={() => setEditCard(null)}
               onSubmit={(values) => {
                 updateCard.mutate(
-                  { id: editCard.id, ...values },
+                  { id: editCard.id, ...values, accountId: values.accountId ?? null },
                   { onSuccess: () => setEditCard(null) },
                 );
               }}

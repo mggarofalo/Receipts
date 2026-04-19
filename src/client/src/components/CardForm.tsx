@@ -1,11 +1,13 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
+import { useAccounts } from "@/hooks/useAccounts";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +33,7 @@ const cardSchema = z.object({
   cardCode: z.string().min(1, "Card code is required"),
   name: z.string().min(1, "Name is required"),
   isActive: z.boolean(),
+  accountId: z.string().optional(),
 });
 
 type CardFormValues = z.infer<typeof cardSchema>;
@@ -38,13 +41,15 @@ type CardFormValues = z.infer<typeof cardSchema>;
 interface CardFormProps {
   mode: "create" | "edit";
   defaultValues?: CardFormValues;
-  onSubmit: (values: CardFormValues) => void;
+  onSubmit: (values: CardFormValues, event?: unknown) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
   onDelete?: () => void;
   isDeleting?: boolean;
   isAdmin?: boolean;
 }
+
+const NONE_OPTION = { value: "", label: "— None —" } as const;
 
 export function CardForm({
   mode,
@@ -58,6 +63,12 @@ export function CardForm({
 }: CardFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
+  const { data: accounts } = useAccounts(0, 500, "name", "asc", true);
+
+  const accountOptions = useMemo(() => {
+    const active = (accounts as { id: string; name: string }[] | undefined) ?? [];
+    return [NONE_OPTION, ...active.map((a) => ({ value: a.id, label: a.name }))];
+  }, [accounts]);
 
   const form = useForm<CardFormValues>({
     resolver: zodResolver(cardSchema),
@@ -65,12 +76,23 @@ export function CardForm({
       cardCode: "",
       name: "",
       isActive: true,
+      accountId: "",
     },
   });
 
+  const handleSubmit = (values: CardFormValues, event?: unknown) => {
+    onSubmit(
+      {
+        ...values,
+        accountId: values.accountId ? values.accountId : undefined,
+      },
+      event,
+    );
+  };
+
   return (
     <Form {...form}>
-      <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form ref={formRef} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="cardCode"
@@ -93,6 +115,28 @@ export function CardForm({
               <FormLabel required>Name</FormLabel>
               <FormControl>
                 <Input aria-required="true" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="accountId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Account</FormLabel>
+              <FormControl>
+                <Combobox
+                  options={accountOptions}
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                  placeholder="Select an account..."
+                  searchPlaceholder="Search accounts..."
+                  emptyMessage="No active accounts."
+                  aria-label="Account"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

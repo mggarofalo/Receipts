@@ -324,6 +324,12 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
+        "400":
+          description: Bad Request — returned when `accountId` is provided but does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
         "404":
           description: Not Found
     delete:
@@ -417,6 +423,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CardResponse"
+        "400":
+          description: Bad Request — returned when `accountId` is provided but does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
   /api/cards/batch:
     post:
       operationId: CreateCards
@@ -442,6 +454,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CardResponse"
+        "400":
+          description: Bad Request — returned when any entry's `accountId` does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
     put:
       operationId: UpdateCards
       tags: [Cards]
@@ -460,6 +478,12 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Bad Request — returned when any entry's `accountId` does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
         "404":
           description: Not Found
 
@@ -5018,6 +5042,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Optional parent logical Account. Null/omitted leaves the card unassigned.
 
     UpdateCardRequest:
       type: object
@@ -5032,6 +5060,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Optional parent logical Account. Send null to clear the assignment.
 
     CardResponse:
       type: object
@@ -5046,6 +5078,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Parent logical Account, if assigned.
 
     CardListResponse:
       type: object

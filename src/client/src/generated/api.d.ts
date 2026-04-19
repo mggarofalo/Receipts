@@ -2421,6 +2421,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Optional parent logical Account. Null/omitted leaves the card unassigned.
+             */
+            accountId?: string | null;
         };
         UpdateCardRequest: {
             /** Format: uuid */
@@ -2428,6 +2433,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Optional parent logical Account. Send null to clear the assignment.
+             */
+            accountId?: string | null;
         };
         CardResponse: {
             /** Format: uuid */
@@ -2435,6 +2445,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Parent logical Account, if assigned.
+             */
+            accountId?: string | null;
         };
         CardListResponse: {
             data: components["schemas"]["CardResponse"][];
@@ -3770,6 +3785,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Bad Request — returned when `accountId` is provided but does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
@@ -3877,6 +3901,15 @@ export interface operations {
                     "application/json": components["schemas"]["CardResponse"];
                 };
             };
+            /** @description Bad Request — returned when `accountId` is provided but does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     UpdateCards: {
@@ -3898,6 +3931,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request — returned when any entry's `accountId` does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
             /** @description Not Found */
             404: {
@@ -3928,6 +3970,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardResponse"][];
+                };
+            };
+            /** @description Bad Request — returned when any entry's `accountId` does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };

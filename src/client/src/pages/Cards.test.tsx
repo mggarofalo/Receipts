@@ -1,3 +1,4 @@
+import "@/test/setup-combobox-polyfills";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockQueryResult, mockMutationResult } from "@/test/mock-hooks";
@@ -17,8 +18,13 @@ vi.mock("@/hooks/useCards", () => ({
   isMergeCardsConflict: vi.fn(() => false),
 }));
 
+const mockAccountList = [
+  { id: "acct-1", name: "Primary Checking", isActive: true },
+  { id: "acct-2", name: "Rewards Visa", isActive: true },
+];
+
 vi.mock("@/hooks/useAccounts", () => ({
-  useAccounts: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useAccounts: vi.fn(() => ({ data: mockAccountList, total: mockAccountList.length, isLoading: false })),
   useCreateAccount: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
 }));
 
@@ -538,6 +544,101 @@ describe("Cards", () => {
     expect(useCards).toHaveBeenCalledWith(
       expect.anything(), expect.anything(), expect.anything(), expect.anything(), false,
     );
+  });
+
+  it("renders the parent Account name in the table row", async () => {
+    const items = [
+      mockCardResponse({ id: "1", cardCode: "CARD-001", name: "Checking", accountId: "acct-1" }),
+      mockCardResponse({ id: "2", cardCode: "CARD-002", name: "Savings" }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useCards } = await import("@/hooks/useCards");
+    vi.mocked(useCards).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Cards />);
+    expect(screen.getByText("Primary Checking")).toBeInTheDocument();
+  });
+
+  it("preserves accountId when toggling active via the row switch", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useUpdateCard } = await import("@/hooks/useCards");
+    vi.mocked(useUpdateCard).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    const items = [
+      mockCardResponse({ id: "1", cardCode: "CARD-001", name: "Checking", isActive: true, accountId: "acct-1" }),
+    ];
+
+    const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
+    vi.mocked(useFuzzySearch).mockReturnValue(mockQueryResult({
+      search: "",
+      setSearch: vi.fn(),
+      results: items.map((item) => ({ item, matches: [], score: 0, refIndex: 0 })),
+      totalCount: items.length,
+      isSearching: false,
+      clearSearch: vi.fn(),
+    }));
+
+    const { useCards } = await import("@/hooks/useCards");
+    vi.mocked(useCards).mockReturnValue(mockQueryResult({
+      data: items,
+      total: items.length,
+      isLoading: false,
+    }));
+
+    renderWithProviders(<Cards />);
+    await user.click(screen.getByRole("switch"));
+
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "1",
+        isActive: false,
+        accountId: "acct-1",
+      }),
+    );
+  });
+
+  it("forwards accountId to createCard.mutate when a parent Account is selected", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useCreateCard } = await import("@/hooks/useCards");
+    vi.mocked(useCreateCard).mockReturnValue(mockMutationResult({
+      mutate: mockMutate,
+      isPending: false,
+    }));
+
+    renderWithProviders(<Cards />);
+    await user.click(screen.getByRole("button", { name: /new card/i }));
+
+    await user.type(screen.getByLabelText(/card code/i), "CARD-NEW");
+    await user.type(screen.getByLabelText(/^name/i), "New Card");
+    await user.click(screen.getByRole("combobox", { name: /^account/i }));
+    await user.click(await screen.findByText("Rewards Visa"));
+    await user.click(screen.getByRole("button", { name: /create card/i }));
+
+    await vi.waitFor(() => {
+      expect(mockMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ accountId: "acct-2" }),
+        expect.anything(),
+      );
+    });
   });
 
   it("merge button is disabled until at least 2 cards are selected", async () => {
