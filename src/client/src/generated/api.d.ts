@@ -1491,6 +1491,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/item-similarity/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request an out-of-band refresh of the item-similarity edge set
+         * @description Admin-only. Signals the background refresher to recompute edges at its next opportunity (after the debounce window). Returns immediately; clients should refetch item-similarity to observe the updated results. Useful when the automatic refresh appears stalled.
+         */
+        post: operations["RefreshItemSimilarity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/item-descriptions": {
         parameters: {
             query?: never;
@@ -2228,6 +2248,11 @@ export interface components {
              */
             totalCount: number;
             groups: components["schemas"]["ItemSimilarityGroup"][];
+            /**
+             * Format: date-time
+             * @description Timestamp of the most recent edge-set refresh. Null when the background refresher has not yet populated edges.
+             */
+            computedAt?: string | null;
         };
         ItemSimilarityGroup: {
             /** @description Most frequent description in the cluster (ties broken by longest). */
@@ -2246,6 +2271,10 @@ export interface components {
              * @description Highest pairwise similarity score within this cluster.
              */
             maxSimilarity: number;
+        };
+        RefreshItemSimilarityResponse: {
+            /** @description Always true — a 202 response is only returned when the signal was accepted. */
+            accepted: boolean;
         };
         ItemSimilarityRenameRequest: {
             /** @description IDs of receipt items to rename. */
@@ -7097,6 +7126,35 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    RefreshItemSimilarity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted — refresh signal dispatched. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshItemSimilarityResponse"];
+                };
+            };
+            /** @description Forbidden — admin role required. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

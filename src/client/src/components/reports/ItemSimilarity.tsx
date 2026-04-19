@@ -1,9 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 import {
   useItemSimilarityReport,
+  useRefreshItemSimilarity,
   useRenameItemSimilarityGroup,
   type ItemSimilarityParams,
 } from "@/hooks/useItemSimilarityReport";
+import { usePermission } from "@/hooks/usePermission";
 import {
   Table,
   TableBody,
@@ -78,6 +81,8 @@ export default function ItemSimilarity() {
 
   const { data, isLoading, isError } = useItemSimilarityReport(params);
   const renameMutation = useRenameItemSimilarityGroup();
+  const refreshMutation = useRefreshItemSimilarity();
+  const { isAdmin } = usePermission();
 
   function handleSort(column: SortColumn) {
     if (sortBy === column) {
@@ -170,6 +175,24 @@ export default function ItemSimilarity() {
           <p className="text-sm text-muted-foreground">Groups Found</p>
           <p className="text-2xl font-bold">{data?.totalCount ?? 0}</p>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs text-muted-foreground">
+          {data?.computedAt
+            ? `Last updated ${formatDistanceToNow(new Date(data.computedAt), { addSuffix: true })}`
+            : "Report not yet computed — the background refresher will populate edges shortly."}
+        </p>
+        {isAdmin() && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refreshMutation.mutate()}
+            disabled={refreshMutation.isPending}
+          >
+            {refreshMutation.isPending ? "Requesting…" : "Refresh now"}
+          </Button>
+        )}
       </div>
 
       {!data || data.totalCount === 0 ? (

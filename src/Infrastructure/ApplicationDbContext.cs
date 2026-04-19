@@ -21,11 +21,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	private const string DatabaseProviderNotSupported = "Database provider {0} not supported";
 
 	private readonly ICurrentUserAccessor? _currentUserAccessor;
+	private readonly IDescriptionChangeSignal? _descriptionChangeSignal;
 
-	public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserAccessor currentUserAccessor)
+	public ApplicationDbContext(
+		DbContextOptions<ApplicationDbContext> options,
+		ICurrentUserAccessor currentUserAccessor,
+		IDescriptionChangeSignal? descriptionChangeSignal = null)
 		: base(options)
 	{
 		_currentUserAccessor = currentUserAccessor;
+		_descriptionChangeSignal = descriptionChangeSignal;
 	}
 
 	[ActivatorUtilitiesConstructor]
@@ -45,6 +50,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
 	public virtual DbSet<ItemTemplateEntity> ItemTemplates { get; set; } = null!;
 	public virtual DbSet<ItemEmbeddingEntity> ItemEmbeddings { get; set; } = null!;
+	public virtual DbSet<DistinctDescriptionEntity> DistinctDescriptions { get; set; } = null!;
+	public virtual DbSet<ItemSimilarityEdgeEntity> ItemSimilarityEdges { get; set; } = null!;
 	public virtual DbSet<AuditLogEntity> AuditLogs { get; set; } = null!;
 	public virtual DbSet<AuthAuditLogEntity> AuthAuditLogs { get; set; } = null!;
 	public virtual DbSet<SeedHistoryEntry> SeedHistory { get; set; } = null!;
@@ -78,6 +85,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		HandleSoftDelete();
 
 		List<AuditEntry> auditEntries = CollectAuditEntries();
+		HashSet<string> touchedDescriptions = CollectTouchedReceiptItemDescriptions();
 
 		int result = await base.SaveChangesAsync(cancellationToken);
 
@@ -100,7 +108,85 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			await base.SaveChangesAsync(cancellationToken);
 		}
 
+		if (touchedDescriptions.Count > 0)
+		{
+			await ReconcileDistinctDescriptionsAsync(touchedDescriptions, cancellationToken);
+		}
+
 		return result;
+	}
+
+	private HashSet<string> CollectTouchedReceiptItemDescriptions()
+	{
+		HashSet<string> touched = [];
+		foreach (EntityEntry<ReceiptItemEntity> entry in ChangeTracker.Entries<ReceiptItemEntity>())
+		{
+			if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
+			{
+				continue;
+			}
+
+			string? current = entry.Entity.Description;
+			if (!string.IsNullOrEmpty(current))
+			{
+				touched.Add(current);
+			}
+
+			if (entry.State == EntityState.Modified)
+			{
+				string? original = entry.OriginalValues[nameof(ReceiptItemEntity.Description)] as string;
+				if (!string.IsNullOrEmpty(original))
+				{
+					touched.Add(original);
+				}
+			}
+		}
+		return touched;
+	}
+
+	private async Task ReconcileDistinctDescriptionsAsync(HashSet<string> descriptions, CancellationToken cancellationToken)
+	{
+		// Skip providers that don't support the pg_trgm machinery — keeps InMemory tests simple.
+		if (Database.ProviderName != PostgreSQL)
+		{
+			return;
+		}
+
+		bool changed = false;
+		foreach (string desc in descriptions)
+		{
+			int activeCount = await ReceiptItems
+				.AsNoTracking()
+				.CountAsync(ri => ri.Description == desc && ri.DeletedAt == null, cancellationToken);
+
+			DistinctDescriptionEntity? existing = await DistinctDescriptions
+				.FirstOrDefaultAsync(d => d.Description == desc, cancellationToken);
+
+			if (activeCount > 0 && existing is null)
+			{
+				DistinctDescriptions.Add(new DistinctDescriptionEntity { Description = desc, ProcessedAt = null });
+				changed = true;
+			}
+			else if (activeCount == 0 && existing is not null)
+			{
+				// Cascades edges via FK ON DELETE CASCADE.
+				DistinctDescriptions.Remove(existing);
+				changed = true;
+			}
+		}
+
+		if (changed)
+		{
+			await base.SaveChangesAsync(cancellationToken);
+		}
+
+		// Even if no rows were added/removed, the edited description may have shifted similarity
+		// relative to neighbors; nothing to do here (edges are derived from the SET of descriptions,
+		// which didn't change). If the set did change, signal the refresher to process.
+		if (changed)
+		{
+			_descriptionChangeSignal?.NotifyDirty();
+		}
 	}
 
 	private sealed class AuditEntry(AuditLogEntity auditLog, EntityEntry? trackedEntry = null)
