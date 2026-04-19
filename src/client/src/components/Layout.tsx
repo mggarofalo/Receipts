@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Link,
   Outlet,
@@ -12,6 +12,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { useSignalR } from "@/hooks/useSignalR";
 import type { SignalRConnectionState } from "@/hooks/useSignalR";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
+import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 import { ShortcutsHelp } from "@/components/ShortcutsHelp";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
+import { CommandPalette } from "@/components/CommandPalette";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   NavigationMenu,
@@ -150,6 +151,8 @@ export function Layout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   useGlobalShortcuts();
+  const openSearch = useCallback(() => setSearchOpen(true), []);
+  useKeyboardShortcut({ key: "k", handler: openSearch });
 
   function isLinkActive(to: string) {
     return to === "/"
@@ -479,7 +482,9 @@ export function Layout() {
         </SheetContent>
       </Sheet>
 
-      <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+      {searchOpen && (
+        <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      )}
       <ShortcutsHelp />
     </div>
   );
