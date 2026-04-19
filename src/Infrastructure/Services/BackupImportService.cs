@@ -61,7 +61,7 @@ public class BackupImportService(
 
 		try
 		{
-			await using SqliteConnection sqlite = new($"Data Source={sqlitePath};Mode=ReadOnly");
+			await using SqliteConnection sqlite = new($"Data Source={sqlitePath};Mode=ReadOnly;Pooling=False");
 			await sqlite.OpenAsync(cancellationToken);
 
 			int exportVersion = ReadExportVersion(sqlite);
