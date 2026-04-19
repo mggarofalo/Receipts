@@ -200,4 +200,39 @@ describe("useBreadcrumbs", () => {
       { label: "YNAB", path: "/settings/ynab" },
     ]);
   });
+
+  it("renders a GUID segment as the last 12 hex chars, lowercased", () => {
+    const guid = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper(`/receipts/${guid}`),
+    });
+    expect(result.current).toEqual([
+      { label: "Home", path: "/" },
+      { label: "Receipts", path: "/receipts" },
+      { label: "2c963f66afa6", path: `/receipts/${guid}` },
+    ]);
+  });
+
+  it("lowercases uppercase GUID segments", () => {
+    const guid = "3FA85F64-5717-4562-B3FC-2C963F66AFA6";
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper(`/receipts/${guid}`),
+    });
+    expect(result.current[2]).toEqual({
+      label: "2c963f66afa6",
+      path: `/receipts/${guid}`,
+    });
+  });
+
+  it("still title-cases non-GUID hex-looking segments", () => {
+    // "abc-123" superficially looks hex but is not a canonical GUID,
+    // so it should fall through to the normal title-case branch.
+    const { result } = renderHook(() => useBreadcrumbs(), {
+      wrapper: createWrapper("/receipts/abc-123"),
+    });
+    expect(result.current[2]).toEqual({
+      label: "Abc 123",
+      path: "/receipts/abc-123",
+    });
+  });
 });

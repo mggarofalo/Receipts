@@ -415,6 +415,19 @@ namespace Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.Core.DistinctDescriptionEntity", b =>
+                {
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.HasKey("Description");
+
+                    b.ToTable("DistinctDescriptions", (string)null);
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.ItemEmbeddingEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -449,6 +462,32 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ItemEmbeddings", (string)null);
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Core.ItemSimilarityEdgeEntity", b =>
+                {
+                    b.Property<string>("DescA")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DescB")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("ComputedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<double>("Score")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("DescA", "DescB");
+
+                    b.HasIndex("DescB");
+
+                    b.HasIndex("Score");
+
+                    b.ToTable("ItemSimilarityEdges", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ItemSimilarityEdges_CanonicalOrder", "\"DescA\" < \"DescB\"");
+                        });
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.Core.ItemTemplateEntity", b =>
@@ -810,6 +849,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("CardId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("CascadeDeletedByParentId")
                         .HasColumnType("uuid");
 
@@ -831,6 +873,8 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId");
+
+                    b.HasIndex("CardId");
 
                     b.HasIndex("ReceiptId");
 
@@ -1195,6 +1239,21 @@ namespace Infrastructure.Migrations
                     b.Navigation("ParentAccount");
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.Core.ItemSimilarityEdgeEntity", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.Core.DistinctDescriptionEntity", null)
+                        .WithMany()
+                        .HasForeignKey("DescA")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Infrastructure.Entities.Core.DistinctDescriptionEntity", null)
+                        .WithMany()
+                        .HasForeignKey("DescB")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.ReceiptItemEntity", b =>
                 {
                     b.HasOne("Infrastructure.Entities.Core.ReceiptEntity", "Receipt")
@@ -1225,6 +1284,11 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Infrastructure.Entities.Core.CardEntity", "Card")
+                        .WithMany()
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Infrastructure.Entities.Core.ReceiptEntity", "Receipt")
                         .WithMany()
                         .HasForeignKey("ReceiptId")
@@ -1232,6 +1296,8 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+
+                    b.Navigation("Card");
 
                     b.Navigation("Receipt");
                 });

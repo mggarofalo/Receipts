@@ -1491,6 +1491,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/item-similarity/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request an out-of-band refresh of the item-similarity edge set
+         * @description Admin-only. Signals the background refresher to recompute edges at its next opportunity (after the debounce window). Returns immediately; clients should refetch item-similarity to observe the updated results. Useful when the automatic refresh appears stalled.
+         */
+        post: operations["RefreshItemSimilarity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/item-descriptions": {
         parameters: {
             query?: never;
@@ -2228,6 +2248,11 @@ export interface components {
              */
             totalCount: number;
             groups: components["schemas"]["ItemSimilarityGroup"][];
+            /**
+             * Format: date-time
+             * @description Timestamp of the most recent edge-set refresh. Null when the background refresher has not yet populated edges.
+             */
+            computedAt?: string | null;
         };
         ItemSimilarityGroup: {
             /** @description Most frequent description in the cluster (ties broken by longest). */
@@ -2246,6 +2271,10 @@ export interface components {
              * @description Highest pairwise similarity score within this cluster.
              */
             maxSimilarity: number;
+        };
+        RefreshItemSimilarityResponse: {
+            /** @description Always true — a 202 response is only returned when the signal was accepted. */
+            accepted: boolean;
         };
         ItemSimilarityRenameRequest: {
             /** @description IDs of receipt items to rename. */
@@ -2421,6 +2450,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Optional parent logical Account. Null/omitted leaves the card unassigned.
+             */
+            accountId?: string | null;
         };
         UpdateCardRequest: {
             /** Format: uuid */
@@ -2428,6 +2462,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Optional parent logical Account. Send null to clear the assignment.
+             */
+            accountId?: string | null;
         };
         CardResponse: {
             /** Format: uuid */
@@ -2435,6 +2474,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Parent logical Account, if assigned.
+             */
+            accountId?: string | null;
         };
         CardListResponse: {
             data: components["schemas"]["CardResponse"][];
@@ -2811,6 +2855,11 @@ export interface components {
             date: string;
             /** Format: uuid */
             accountId: string;
+            /**
+             * Format: uuid
+             * @description RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes.
+             */
+            cardId?: string;
         };
         UpdateTransactionRequest: {
             /** Format: uuid */
@@ -2821,6 +2870,11 @@ export interface components {
             date: string;
             /** Format: uuid */
             accountId: string;
+            /**
+             * Format: uuid
+             * @description RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes.
+             */
+            cardId?: string;
         };
         TransactionResponse: {
             /** Format: uuid */
@@ -2829,6 +2883,11 @@ export interface components {
             receiptId: string;
             /** Format: uuid */
             accountId: string;
+            /**
+             * Format: uuid
+             * @description RECEIPTS-553: originating Card. Nullable for rows that existed before the backfill.
+             */
+            cardId?: string;
             /** Format: double */
             amount: number;
             /** Format: date */
@@ -3770,6 +3829,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Bad Request — returned when `accountId` is provided but does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
@@ -3877,6 +3945,15 @@ export interface operations {
                     "application/json": components["schemas"]["CardResponse"];
                 };
             };
+            /** @description Bad Request — returned when `accountId` is provided but does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
         };
     };
     UpdateCards: {
@@ -3898,6 +3975,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request — returned when any entry's `accountId` does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
             /** @description Not Found */
             404: {
@@ -3928,6 +4014,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardResponse"][];
+                };
+            };
+            /** @description Bad Request — returned when any entry's `accountId` does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };
@@ -4883,6 +4978,10 @@ export interface operations {
                 /** @description Column name to sort by. Allowed values depend on the entity type. */
                 sortBy?: components["parameters"]["SortBy"];
                 sortDirection?: components["parameters"]["SortDirection"];
+                /** @description Filter to receipts with at least one transaction on a card belonging to this account. */
+                accountId?: string;
+                /** @description Filter to receipts with at least one transaction on this card. */
+                cardId?: string;
             };
             header?: never;
             path?: never;
@@ -7032,6 +7131,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    RefreshItemSimilarity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted — refresh signal dispatched. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshItemSimilarityResponse"];
                 };
             };
         };

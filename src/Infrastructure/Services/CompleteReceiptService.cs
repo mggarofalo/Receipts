@@ -25,13 +25,15 @@ public class CompleteReceiptService(
 		ReceiptEntity receiptEntity = receiptMapper.ToEntity(receipt);
 		receiptEntity.Id = Guid.NewGuid();
 
-		// Map transactions, assigning FK and AccountId
+		// Map transactions, assigning FK, AccountId, and CardId.
+		// Both AccountId and CardId are carried through until AccountId is dropped in a follow-up (RECEIPTS-553).
 		List<TransactionEntity> transactionEntities = transactions.Select(t =>
 		{
 			TransactionEntity entity = transactionMapper.ToEntity(t);
 			entity.Id = Guid.NewGuid();
 			entity.ReceiptId = receiptEntity.Id;
 			entity.AccountId = t.AccountId;
+			entity.CardId = t.CardId;
 			return entity;
 		}).ToList();
 

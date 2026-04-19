@@ -132,6 +132,7 @@ public class EmbeddingGenerationService(
 				x => x.Embeddings.DefaultIfEmpty(),
 				(x, e) => new { x.Template, Embedding = e })
 			.Where(x => x.Embedding == null || x.Embedding.EntityText != x.Template.Name)
+			.OrderBy(x => x.Template.Id)
 			.Select(x => new PendingItem("ItemTemplate", x.Template.Id, x.Template.Name))
 			.Take(BatchSize)
 			.ToListAsync(cancellationToken);
@@ -155,6 +156,7 @@ public class EmbeddingGenerationService(
 				x => x.Embeddings.DefaultIfEmpty(),
 				(x, e) => new { x.ReceiptItem, Embedding = e })
 			.Where(x => x.Embedding == null || x.Embedding.EntityText != x.ReceiptItem.Description)
+			.OrderBy(x => x.ReceiptItem.Id)
 			.Select(x => new PendingItem("ReceiptItem", x.ReceiptItem.Id, x.ReceiptItem.Description))
 			.Take(remaining)
 			.ToListAsync(cancellationToken);

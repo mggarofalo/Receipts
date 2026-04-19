@@ -112,7 +112,8 @@ public static class InfrastructureService
 			DbContextOptions<ApplicationDbContext> options =
 				sp.GetRequiredService<DbContextOptions<ApplicationDbContext>>();
 			ICurrentUserAccessor accessor = sp.GetRequiredService<ICurrentUserAccessor>();
-			return new ApplicationDbContext(options, accessor);
+			IDescriptionChangeSignal? signal = sp.GetService<IDescriptionChangeSignal>();
+			return new ApplicationDbContext(options, accessor, signal);
 		});
 
 		services
@@ -212,6 +213,9 @@ public static class InfrastructureService
 		services.AddHostedService<EmbeddingGenerationService>();
 
 		services.AddHostedService<AuthAuditCleanupService>();
+
+		services.AddSingleton<IDescriptionChangeSignal, DescriptionChangeSignal>();
+		services.AddHostedService<ItemSimilarityEdgeRefresher>();
 
 		services
 			.AddSingleton<AccountMapper>()

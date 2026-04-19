@@ -76,3 +76,24 @@ export function useRenameItemSimilarityGroup() {
     },
   });
 }
+
+export function useRefreshItemSimilarity() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await client.POST(
+        "/api/reports/item-similarity/refresh",
+        {},
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success(
+        "Refresh requested — report will update in about a minute.",
+      );
+    },
+    onError: () => {
+      toast.error("Failed to request refresh.");
+    },
+  });
+}

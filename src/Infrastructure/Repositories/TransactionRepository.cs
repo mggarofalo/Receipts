@@ -36,6 +36,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 				Id = t.Id,
 				ReceiptId = t.ReceiptId,
 				AccountId = t.AccountId,
+				CardId = t.CardId,
 				Amount = t.Amount,
 				AmountCurrency = t.AmountCurrency,
 				Date = t.Date
@@ -77,6 +78,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 				Id = t.Id,
 				ReceiptId = t.ReceiptId,
 				AccountId = t.AccountId,
+				CardId = t.CardId,
 				Amount = t.Amount,
 				AmountCurrency = t.AmountCurrency,
 				Date = t.Date
@@ -98,6 +100,7 @@ public class TransactionRepository(IDbContextFactory<ApplicationDbContext> conte
 				Id = t.Id,
 				ReceiptId = t.ReceiptId,
 				AccountId = t.AccountId,
+				CardId = t.CardId,
 				Amount = t.Amount,
 				AmountCurrency = t.AmountCurrency,
 				Date = t.Date,

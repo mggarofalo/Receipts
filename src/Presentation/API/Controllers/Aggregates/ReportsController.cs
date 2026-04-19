@@ -194,8 +194,19 @@ public class ReportsController(IMediator mediator) : ControllerBase
 				ItemIds = g.ItemIds,
 				Occurrences = g.Occurrences,
 				MaxSimilarity = g.MaxSimilarity
-			}).ToList()
+			}).ToList(),
+			ComputedAt = result.ComputedAt
 		});
+	}
+
+	[HttpPost("item-similarity/refresh")]
+	[Authorize(Policy = "RequireAdmin")]
+	[EndpointSummary("Request an out-of-band refresh of the item-similarity edge set")]
+	[EndpointDescription("Admin-only. Signals the background refresher to recompute edges at its next opportunity (after the debounce window). Returns immediately.")]
+	public async Task<Accepted<RefreshItemSimilarityResponse>> RefreshItemSimilarity(CancellationToken cancellationToken)
+	{
+		await mediator.Send(new RefreshItemSimilarityCommand(), cancellationToken);
+		return TypedResults.Accepted((string?)null, new RefreshItemSimilarityResponse { Accepted = true });
 	}
 
 	[HttpPost("item-similarity/rename")]
@@ -308,14 +319,14 @@ public class ReportsController(IMediator mediator) : ControllerBase
 		[FromQuery] double? totalTolerance,
 		CancellationToken cancellationToken)
 	{
-		string match = matchOn ?? "DateAndLocation";
+		string match = matchOn ?? "dateAndLocation";
 		string locTol = locationTolerance ?? "exact";
 		decimal totTol = (decimal)(totalTolerance ?? 0);
 
-		string[] validMatchOn = ["DateAndLocation", "DateAndTotal", "DateAndLocationAndTotal"];
-		if (!validMatchOn.Contains(match))
+		string[] validMatchOn = ["dateAndLocation", "dateAndTotal", "dateAndLocationAndTotal"];
+		if (!validMatchOn.Contains(match, StringComparer.OrdinalIgnoreCase))
 		{
-			return TypedResults.BadRequest($"Invalid matchOn '{match}'. Allowed: DateAndLocation, DateAndTotal, DateAndLocationAndTotal");
+			return TypedResults.BadRequest($"Invalid matchOn '{match}'. Allowed: dateAndLocation, dateAndTotal, dateAndLocationAndTotal");
 		}
 
 		string[] validLocTolerance = ["exact", "normalized"];

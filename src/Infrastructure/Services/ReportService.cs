@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
 using Application.Interfaces.Services;
 using Application.Models.Reports;
+using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace Infrastructure.Services;
 
@@ -156,65 +156,60 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 	{
 		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-		// Step 1: Find similar pairs using DISTINCT descriptions to avoid O(n^2) on all items.
-		// With ~2000 items but only ~100-300 unique descriptions, this reduces comparisons dramatically.
-		const string sql = """
-			WITH distinct_descs AS (
-				SELECT "Description", COUNT(*) AS "OccurrenceCount"
-				FROM "ReceiptItems"
-				WHERE "DeletedAt" IS NULL
-				GROUP BY "Description"
-			)
-			SELECT
-				a."Description" AS "DescA",
-				a."OccurrenceCount" AS "CountA",
-				b."Description" AS "DescB",
-				b."OccurrenceCount" AS "CountB",
-				similarity(a."Description", b."Description") AS "Score"
-			FROM distinct_descs a
-			JOIN distinct_descs b
-				ON a."Description" < b."Description"
-				AND similarity(a."Description", b."Description") >= @threshold
-			""";
+		// Step 1: Load precomputed edges matching the threshold.
+		// ItemSimilarityEdgeRefresher (BackgroundService) maintains this table — see
+		// RECEIPTS-557. The read path no longer runs pg_trgm; clustering is pure in-memory.
+		List<ItemSimilarityEdgeEntity> matchingEdges = await context.ItemSimilarityEdges
+			.AsNoTracking()
+			.Where(e => e.Score >= threshold)
+			.ToListAsync(cancellationToken);
 
-		List<DescriptionSimilarityEdge> edges = [];
+		// ComputedAt reflects the freshness of the underlying edge set. Always query the full
+		// table, not just the threshold-matching subset — the refresher's ON CONFLICT DO UPDATE
+		// only fires for unprocessed descriptions, so once all descriptions are processed the
+		// timestamps on filtered-out edges may be newer than any in `matchingEdges`.
+		DateTimeOffset? computedAt = await context.ItemSimilarityEdges
+			.AsNoTracking()
+			.MaxAsync(e => (DateTimeOffset?)e.ComputedAt, cancellationToken);
 
-		await using (NpgsqlConnection connection = (NpgsqlConnection)context.Database.GetDbConnection())
+		if (matchingEdges.Count == 0)
 		{
-			await connection.OpenAsync(cancellationToken);
-
-			await using NpgsqlCommand command = new(sql, connection);
-			command.Parameters.AddWithValue("@threshold", threshold);
-
-			await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
-			while (await reader.ReadAsync(cancellationToken))
-			{
-				edges.Add(new DescriptionSimilarityEdge(
-					reader.GetString(0),
-					(int)reader.GetInt64(1),
-					reader.GetString(2),
-					(int)reader.GetInt64(3),
-					reader.GetDouble(4)));
-			}
+			return new ItemSimilarityResult([], 0, computedAt);
 		}
 
-		if (edges.Count == 0)
+		// Step 2: Load active receipt-items for descriptions appearing in the filtered edges.
+		// Drives both per-description occurrence counts (for canonical selection) and item IDs.
+		HashSet<string> edgeDescriptions = [];
+		foreach (ItemSimilarityEdgeEntity edge in matchingEdges)
 		{
-			return new ItemSimilarityResult([], 0);
+			edgeDescriptions.Add(edge.DescA);
+			edgeDescriptions.Add(edge.DescB);
 		}
 
-		// Step 2: Build connected components via union-find on description strings.
+		var itemLookup = await context.ReceiptItems
+			.AsNoTracking()
+			.Where(ri => ri.DeletedAt == null && edgeDescriptions.Contains(ri.Description))
+			.Select(ri => new { ri.Id, ri.Description })
+			.ToListAsync(cancellationToken);
+
+		Dictionary<string, List<Guid>> descriptionItemIds = [];
 		Dictionary<string, int> descriptionCounts = [];
-		foreach (DescriptionSimilarityEdge edge in edges)
+		foreach (var item in itemLookup)
 		{
-			descriptionCounts.TryAdd(edge.DescA, edge.CountA);
-			descriptionCounts.TryAdd(edge.DescB, edge.CountB);
+			if (!descriptionItemIds.TryGetValue(item.Description, out List<Guid>? ids))
+			{
+				ids = [];
+				descriptionItemIds[item.Description] = ids;
+			}
+			ids.Add(item.Id);
+			descriptionCounts[item.Description] = descriptionCounts.GetValueOrDefault(item.Description) + 1;
 		}
 
+		// Step 3: Union-find on descriptions using matching edges as union operations.
 		Dictionary<string, string> parent = [];
 		Dictionary<string, int> rank = [];
 
-		foreach (string desc in descriptionCounts.Keys)
+		foreach (string desc in edgeDescriptions)
 		{
 			parent[desc] = desc;
 			rank[desc] = 0;
@@ -254,16 +249,14 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 			}
 		}
 
-		Dictionary<string, double> clusterMaxSimilarity = [];
-
-		foreach (DescriptionSimilarityEdge edge in edges)
+		foreach (ItemSimilarityEdgeEntity edge in matchingEdges)
 		{
 			Union(edge.DescA, edge.DescB);
 		}
 
-		// Step 3: Build clusters from the union-find structure.
+		// Step 4: Bucket descriptions by cluster root and track per-cluster max similarity.
 		Dictionary<string, List<string>> clusters = [];
-		foreach (string desc in descriptionCounts.Keys)
+		foreach (string desc in edgeDescriptions)
 		{
 			string root = Find(desc);
 			if (!clusters.TryGetValue(root, out List<string>? members))
@@ -274,8 +267,8 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 			members.Add(desc);
 		}
 
-		// Compute max similarity per cluster
-		foreach (DescriptionSimilarityEdge edge in edges)
+		Dictionary<string, double> clusterMaxSimilarity = [];
+		foreach (ItemSimilarityEdgeEntity edge in matchingEdges)
 		{
 			string root = Find(edge.DescA);
 			if (!clusterMaxSimilarity.TryGetValue(root, out double current) || edge.Score > current)
@@ -284,73 +277,26 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 			}
 		}
 
-		// Step 4: Collect all descriptions that appear in multi-description clusters
-		// so we can look up their item IDs in a single query.
-		HashSet<string> clusterDescriptions = [];
-		foreach ((string root, List<string> members) in clusters)
-		{
-			if (members.Count < 2)
-			{
-				continue;
-			}
-
-			foreach (string desc in members)
-			{
-				clusterDescriptions.Add(desc);
-			}
-		}
-
-		// Look up item IDs for all clustered descriptions in one query
-		Dictionary<string, List<Guid>> descriptionItemIds = [];
-		if (clusterDescriptions.Count > 0)
-		{
-			var itemLookup = await context.ReceiptItems
-				.AsNoTracking()
-				.Where(ri => ri.DeletedAt == null && clusterDescriptions.Contains(ri.Description))
-				.Select(ri => new { ri.Id, ri.Description })
-				.ToListAsync(cancellationToken);
-
-			foreach (var item in itemLookup)
-			{
-				if (!descriptionItemIds.TryGetValue(item.Description, out List<Guid>? ids))
-				{
-					ids = [];
-					descriptionItemIds[item.Description] = ids;
-				}
-				ids.Add(item.Id);
-			}
-		}
-
-		// Step 5: Build result groups.
+		// Step 5: Build result groups. Every cluster has at least 2 members because edges connect pairs.
 		List<ItemSimilarityGroup> groups = [];
 		foreach ((string root, List<string> members) in clusters)
 		{
-			if (members.Count < 2)
-			{
-				continue;
-			}
-
-			// Collect all item IDs across all descriptions in this cluster
 			List<Guid> allItemIds = [];
-			Dictionary<string, int> descFrequency = [];
 			foreach (string desc in members)
 			{
-				int count = descriptionCounts.GetValueOrDefault(desc, 0);
-				descFrequency[desc] = count;
 				if (descriptionItemIds.TryGetValue(desc, out List<Guid>? ids))
 				{
 					allItemIds.AddRange(ids);
 				}
 			}
 
-			// Canonical = most frequent, ties broken by longest string
-			string canonical = descFrequency
-				.OrderByDescending(kv => kv.Value)
-				.ThenByDescending(kv => kv.Key.Length)
-				.First()
-				.Key;
+			// Canonical = most frequent, ties broken by longest string.
+			string canonical = members
+				.OrderByDescending(d => descriptionCounts.GetValueOrDefault(d))
+				.ThenByDescending(d => d.Length)
+				.First();
 
-			List<string> variants = descFrequency.Keys.OrderBy(d => d).ToList();
+			List<string> variants = members.OrderBy(d => d).ToList();
 			double maxSim = clusterMaxSimilarity.GetValueOrDefault(root, 0.0);
 
 			groups.Add(new ItemSimilarityGroup(
@@ -361,7 +307,7 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 				maxSim));
 		}
 
-		// Step 6: Sort
+		// Step 6: Sort.
 		IEnumerable<ItemSimilarityGroup> sorted = (sortBy.ToLowerInvariant(), sortDirection.ToLowerInvariant()) switch
 		{
 			("canonicalname", "asc") => groups.OrderBy(g => g.CanonicalName),
@@ -374,13 +320,13 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 
 		int totalCount = groups.Count;
 
-		// Step 7: Paginate
+		// Step 7: Paginate.
 		List<ItemSimilarityGroup> pagedGroups = sorted
 			.Skip((page - 1) * pageSize)
 			.Take(pageSize)
 			.ToList();
 
-		return new ItemSimilarityResult(pagedGroups, totalCount);
+		return new ItemSimilarityResult(pagedGroups, totalCount, computedAt);
 	}
 
 	public async Task<int> RenameItemsAsync(
@@ -801,6 +747,4 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 
 		return new UncategorizedItemsResult(pagedItems, totalCount);
 	}
-
-	private record DescriptionSimilarityEdge(string DescA, int CountA, string DescB, int CountB, double Score);
 }

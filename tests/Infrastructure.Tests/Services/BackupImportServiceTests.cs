@@ -248,7 +248,7 @@ public class BackupImportServiceTests : IDisposable
 	private string CreateEmptySqliteDatabase()
 	{
 		string path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.sqlite");
-		using SqliteConnection conn = new($"Data Source={path}");
+		using SqliteConnection conn = new($"Data Source={path};Pooling=False");
 		conn.Open();
 		// Force SQLite to write the file header by creating and dropping a dummy table
 		using SqliteCommand cmd = conn.CreateCommand();
@@ -260,7 +260,7 @@ public class BackupImportServiceTests : IDisposable
 	private string CreateSqliteDatabaseWithAccounts(params (Guid Id, string CardCode, string Name, bool IsActive)[] accounts)
 	{
 		string path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.sqlite");
-		using SqliteConnection conn = new($"Data Source={path}");
+		using SqliteConnection conn = new($"Data Source={path};Pooling=False");
 		conn.Open();
 
 		using SqliteCommand createCmd = conn.CreateCommand();
@@ -290,7 +290,7 @@ public class BackupImportServiceTests : IDisposable
 	private string CreateSqliteDatabaseWithCategories(params (Guid Id, string Name, string? Description, bool IsActive)[] categories)
 	{
 		string path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.sqlite");
-		using SqliteConnection conn = new($"Data Source={path}");
+		using SqliteConnection conn = new($"Data Source={path};Pooling=False");
 		conn.Open();
 
 		using SqliteCommand createCmd = conn.CreateCommand();
@@ -320,7 +320,7 @@ public class BackupImportServiceTests : IDisposable
 	private string CreateSqliteDatabaseWithReceipts(params (Guid Id, string Location, string Date, decimal TaxAmount, string TaxAmountCurrency)[] receipts)
 	{
 		string path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.sqlite");
-		using SqliteConnection conn = new($"Data Source={path}");
+		using SqliteConnection conn = new($"Data Source={path};Pooling=False");
 		conn.Open();
 
 		using SqliteCommand createCmd = conn.CreateCommand();

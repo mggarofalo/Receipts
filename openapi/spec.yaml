@@ -324,6 +324,12 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
+        "400":
+          description: Bad Request — returned when `accountId` is provided but does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
         "404":
           description: Not Found
     delete:
@@ -417,6 +423,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CardResponse"
+        "400":
+          description: Bad Request — returned when `accountId` is provided but does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
   /api/cards/batch:
     post:
       operationId: CreateCards
@@ -442,6 +454,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CardResponse"
+        "400":
+          description: Bad Request — returned when any entry's `accountId` does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
     put:
       operationId: UpdateCards
       tags: [Cards]
@@ -460,6 +478,12 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Bad Request — returned when any entry's `accountId` does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
         "404":
           description: Not Found
 
@@ -1370,6 +1394,20 @@ paths:
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/SortBy"
         - $ref: "#/components/parameters/SortDirection"
+        - name: accountId
+          in: query
+          required: false
+          description: Filter to receipts with at least one transaction on a card belonging to this account.
+          schema:
+            type: string
+            format: uuid
+        - name: cardId
+          in: query
+          required: false
+          description: Filter to receipts with at least one transaction on this card.
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: OK
@@ -3432,6 +3470,23 @@ paths:
               schema:
                 type: string
 
+  /api/reports/item-similarity/refresh:
+    post:
+      operationId: RefreshItemSimilarity
+      tags: [Reports]
+      summary: Request an out-of-band refresh of the item-similarity edge set
+      description: Admin-only. Signals the background refresher to recompute edges at its next opportunity (after the debounce window). Returns immediately; clients should refetch item-similarity to observe the updated results. Useful when the automatic refresh appears stalled.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "202":
+          description: Accepted — refresh signal dispatched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshItemSimilarityResponse"
+
   /api/reports/item-descriptions:
     get:
       operationId: GetItemDescriptions
@@ -4616,6 +4671,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ItemSimilarityGroup"
+        computedAt:
+          type: [string, "null"]
+          format: date-time
+          description: Timestamp of the most recent edge-set refresh. Null when the background refresher has not yet populated edges.
 
     ItemSimilarityGroup:
       type: object
@@ -4643,6 +4702,14 @@ components:
           type: number
           format: double
           description: Highest pairwise similarity score within this cluster.
+
+    RefreshItemSimilarityResponse:
+      type: object
+      required: [accepted]
+      properties:
+        accepted:
+          type: boolean
+          description: Always true — a 202 response is only returned when the signal was accepted.
 
     ItemSimilarityRenameRequest:
       type: object
@@ -5018,6 +5085,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Optional parent logical Account. Null/omitted leaves the card unassigned.
 
     UpdateCardRequest:
       type: object
@@ -5032,6 +5103,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Optional parent logical Account. Send null to clear the assignment.
 
     CardResponse:
       type: object
@@ -5046,6 +5121,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Parent logical Account, if assigned.
 
     CardListResponse:
       type: object
@@ -5868,6 +5947,10 @@ components:
         accountId:
           type: string
           format: uuid
+        cardId:
+          type: string
+          format: uuid
+          description: "RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes."
 
     UpdateTransactionRequest:
       type: object
@@ -5885,6 +5968,10 @@ components:
         accountId:
           type: string
           format: uuid
+        cardId:
+          type: string
+          format: uuid
+          description: "RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes."
 
     TransactionResponse:
       type: object
@@ -5899,6 +5986,10 @@ components:
         accountId:
           type: string
           format: uuid
+        cardId:
+          type: string
+          format: uuid
+          description: "RECEIPTS-553: originating Card. Nullable for rows that existed before the backfill."
         amount:
           type: number
           format: double
