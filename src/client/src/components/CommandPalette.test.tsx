@@ -194,6 +194,8 @@ describe("CommandPalette", () => {
     const item = screen.getByText("New Account").closest("[cmdk-item]");
     expect(item).not.toBeNull();
     expect(within(item as HTMLElement).getByText("⇧ N")).toBeInTheDocument();
+    // Screen readers see spelled-out text instead of the glyph
+    expect(within(item as HTMLElement).getByText("Shift+N")).toBeInTheDocument();
   });
 
   it("does not show ⇧ N hint on create commands that don't match current route", () => {
@@ -207,21 +209,30 @@ describe("CommandPalette", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("clears query state on close", async () => {
+  it("query state resets when the palette unmounts and remounts", async () => {
+    // Layout mounts <CommandPalette> conditionally on `searchOpen`, so each
+    // open is a fresh instance. Simulate that here with unmount + remount.
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
-    const { rerender } = renderWithQueryClient(
+    const { unmount } = renderWithQueryClient(
       <CommandPalette open={true} onOpenChange={onOpenChange} />,
     );
-    const input = screen.getByPlaceholderText(/type a command or search/i);
-    await user.type(input, "xyz");
+    await user.type(
+      screen.getByPlaceholderText(/type a command or search/i),
+      "xyz",
+    );
     await user.keyboard("{Escape}");
     expect(onOpenChange).toHaveBeenCalledWith(false);
-    // Re-open with a fresh props; clearing happens inside handleOpenChange.
-    rerender(<CommandPalette open={true} onOpenChange={onOpenChange} />);
+    unmount();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={onOpenChange} />,
+    );
     expect(
-      (screen.getByPlaceholderText(/type a command or search/i) as HTMLInputElement)
-        .value,
+      (
+        screen.getByPlaceholderText(
+          /type a command or search/i,
+        ) as HTMLInputElement
+      ).value,
     ).toBe("");
   });
 

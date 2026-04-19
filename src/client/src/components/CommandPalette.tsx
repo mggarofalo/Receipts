@@ -1,4 +1,4 @@
-import { Fragment, useContext, useMemo, useState } from "react";
+import { Fragment, useCallback, useContext, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -42,6 +42,17 @@ function commandSearchValue(cmd: Command): string {
   return [cmd.id, cmd.label, ...(cmd.keywords ?? [])].join(" ").toLowerCase();
 }
 
+/** Spell out keyboard-shortcut glyphs so screen readers don't read them as symbols. */
+function spokenShortcut(shortcut: string): string {
+  return shortcut
+    .replace(/⇧\s*/g, "Shift+")
+    .replace(/⌘\s*/g, "Command+")
+    .replace(/⌃\s*/g, "Control+")
+    .replace(/⌥\s*/g, "Option+")
+    .replace(/↵/g, "Enter")
+    .trim();
+}
+
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,16 +64,23 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const admin = isAdmin();
-  const close = () => onOpenChange(false);
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+  const openShortcutsHelp = useCallback(
+    () => shortcutsCtx?.setHelpOpen(true),
+    [shortcutsCtx],
+  );
 
-  const ctx: CommandContext = {
-    navigate,
-    close,
-    currentPath: location.pathname,
-    setTheme,
-    logout,
-    openShortcutsHelp: () => shortcutsCtx?.setHelpOpen(true),
-  };
+  const ctx = useMemo<CommandContext>(
+    () => ({
+      navigate,
+      close,
+      currentPath: location.pathname,
+      setTheme,
+      logout,
+      openShortcutsHelp,
+    }),
+    [navigate, close, location.pathname, setTheme, logout, openShortcutsHelp],
+  );
 
   const visibleCommands = useMemo(
     () => COMMANDS.filter((c) => !c.requiresAdmin || admin),
@@ -93,16 +111,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     });
   }
 
-  function handleOpenChange(next: boolean) {
-    if (!next) {
-      setQuery("");
-      setExpandedGroups(new Set());
-    }
-    onOpenChange(next);
-  }
-
   return (
-    <CommandDialog open={open} onOpenChange={handleOpenChange}>
+    <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
         placeholder="Type a command or search…"
         value={query}
@@ -125,6 +135,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                   const showShiftN =
                     cmd.group === "create" &&
                     cmd.targetPath === location.pathname;
+                  const shortcutGlyph = showShiftN
+                    ? "⇧ N"
+                    : cmd.shortcut ?? null;
                   return (
                     <CommandItem
                       key={cmd.id}
@@ -133,12 +146,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                         void cmd.run(ctx);
                       }}
                     >
-                      <Icon className="mr-2 h-4 w-4" />
+                      <Icon aria-hidden="true" className="mr-2 h-4 w-4" />
                       <span>{cmd.label}</span>
-                      {showShiftN ? (
-                        <CommandShortcut>⇧ N</CommandShortcut>
-                      ) : cmd.shortcut ? (
-                        <CommandShortcut>{cmd.shortcut}</CommandShortcut>
+                      {shortcutGlyph ? (
+                        <CommandShortcut>
+                          <span aria-hidden="true">{shortcutGlyph}</span>
+                          <span className="sr-only">
+                            {spokenShortcut(shortcutGlyph)}
+                          </span>
+                        </CommandShortcut>
                       ) : null}
                     </CommandItem>
                   );
@@ -170,7 +186,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                         navigate(item.href);
                       }}
                     >
-                      <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <Icon
+                        aria-hidden="true"
+                        className="mr-2 h-4 w-4 text-muted-foreground"
+                      />
                       <span className="truncate">{item.label}</span>
                       {item.meta ? (
                         <span className="ml-2 truncate font-mono text-xs text-muted-foreground">
@@ -185,8 +204,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                       value={`show-more-${group.id}`}
                       onSelect={() => toggleGroupExpanded(group.id)}
                       className="text-muted-foreground"
+                      aria-expanded={expanded}
                     >
-                      <ChevronDown className="mr-2 h-4 w-4" />
+                      <ChevronDown aria-hidden="true" className="mr-2 h-4 w-4" />
                       <span>
                         Show {hiddenCount} more {group.heading.toLowerCase()}
                       </span>
