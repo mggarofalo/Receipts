@@ -3158,9 +3158,9 @@ export interface components {
         };
         BackupImportResponse: {
             /** Format: int32 */
-            accountsCreated: number;
+            cardsCreated: number;
             /** Format: int32 */
-            accountsUpdated: number;
+            cardsUpdated: number;
             /** Format: int32 */
             categoriesCreated: number;
             /** Format: int32 */

@@ -1,8 +1,8 @@
 namespace Application.Models;
 
 public record BackupImportResult(
-	int AccountsCreated,
-	int AccountsUpdated,
+	int CardsCreated,
+	int CardsUpdated,
 	int CategoriesCreated,
 	int CategoriesUpdated,
 	int SubcategoriesCreated,
@@ -18,11 +18,11 @@ public record BackupImportResult(
 	int AdjustmentsCreated,
 	int AdjustmentsUpdated)
 {
-	public int TotalCreated => AccountsCreated + CategoriesCreated + SubcategoriesCreated +
+	public int TotalCreated => CardsCreated + CategoriesCreated + SubcategoriesCreated +
 		ItemTemplatesCreated + ReceiptsCreated + ReceiptItemsCreated +
 		TransactionsCreated + AdjustmentsCreated;
 
-	public int TotalUpdated => AccountsUpdated + CategoriesUpdated + SubcategoriesUpdated +
+	public int TotalUpdated => CardsUpdated + CategoriesUpdated + SubcategoriesUpdated +
 		ItemTemplatesUpdated + ReceiptsUpdated + ReceiptItemsUpdated +
 		TransactionsUpdated + AdjustmentsUpdated;
 }

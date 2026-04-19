@@ -162,7 +162,7 @@ public class BackupControllerTests : IDisposable
 		// Assert
 		Ok<BackupImportResponse> okResult = Assert.IsType<Ok<BackupImportResponse>>(result.Result);
 		BackupImportResponse response = okResult.Value!;
-		response.AccountsCreated.Should().Be(1);
+		response.CardsCreated.Should().Be(1);
 		response.CategoriesCreated.Should().Be(2);
 		response.SubcategoriesCreated.Should().Be(3);
 		response.ReceiptsCreated.Should().Be(5);
@@ -241,7 +241,7 @@ public class BackupControllerTests : IDisposable
 	{
 		// Arrange
 		BackupImportResult importResult = new(
-			AccountsCreated: 2, AccountsUpdated: 1,
+			CardsCreated: 2, CardsUpdated: 1,
 			CategoriesCreated: 3, CategoriesUpdated: 2,
 			SubcategoriesCreated: 5, SubcategoriesUpdated: 3,
 			ItemTemplatesCreated: 4, ItemTemplatesUpdated: 1,
@@ -265,8 +265,8 @@ public class BackupControllerTests : IDisposable
 		// Assert
 		Ok<BackupImportResponse> okResult = Assert.IsType<Ok<BackupImportResponse>>(result.Result);
 		BackupImportResponse response = okResult.Value!;
-		response.AccountsCreated.Should().Be(2);
-		response.AccountsUpdated.Should().Be(1);
+		response.CardsCreated.Should().Be(2);
+		response.CardsUpdated.Should().Be(1);
 		response.CategoriesCreated.Should().Be(3);
 		response.CategoriesUpdated.Should().Be(2);
 		response.SubcategoriesCreated.Should().Be(5);
