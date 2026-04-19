@@ -67,7 +67,7 @@ public class BackupImportService(
 			int exportVersion = ReadExportVersion(sqlite);
 
 			// Import in dependency order: independent entities first, then dependent ones.
-			(int accountsCreated, int accountsUpdated) = await UpsertCardsAsync(context, sqlite, exportVersion, cancellationToken);
+			(int cardsCreated, int cardsUpdated) = await UpsertCardsAsync(context, sqlite, exportVersion, cancellationToken);
 			(int categoriesCreated, int categoriesUpdated) = await UpsertCategoriesAsync(context, sqlite, cancellationToken);
 			(int subcategoriesCreated, int subcategoriesUpdated) = await UpsertSubcategoriesAsync(context, sqlite, cancellationToken);
 			(int itemTemplatesCreated, int itemTemplatesUpdated) = await UpsertItemTemplatesAsync(context, sqlite, cancellationToken);
@@ -79,7 +79,7 @@ public class BackupImportService(
 			await transaction.CommitAsync(cancellationToken);
 
 			BackupImportResult result = new(
-				accountsCreated, accountsUpdated,
+				cardsCreated, cardsUpdated,
 				categoriesCreated, categoriesUpdated,
 				subcategoriesCreated, subcategoriesUpdated,
 				itemTemplatesCreated, itemTemplatesUpdated,

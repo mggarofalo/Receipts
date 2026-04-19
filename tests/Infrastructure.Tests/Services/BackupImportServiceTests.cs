@@ -97,8 +97,8 @@ public class BackupImportServiceTests : IDisposable
 		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
 
 		// Assert
-		result.AccountsCreated.Should().Be(1);
-		result.AccountsUpdated.Should().Be(0);
+		result.CardsCreated.Should().Be(1);
+		result.CardsUpdated.Should().Be(0);
 
 		await using ApplicationDbContext assertCtx = CreateAssertionContext();
 		CardEntity? account = await assertCtx.Cards.FindAsync(accountId);
@@ -135,8 +135,8 @@ public class BackupImportServiceTests : IDisposable
 		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
 
 		// Assert
-		result.AccountsCreated.Should().Be(0);
-		result.AccountsUpdated.Should().Be(1);
+		result.CardsCreated.Should().Be(0);
+		result.CardsUpdated.Should().Be(1);
 
 		await using ApplicationDbContext assertCtx = CreateAssertionContext();
 		CardEntity? account = await assertCtx.Cards.FindAsync(accountId);
@@ -218,8 +218,8 @@ public class BackupImportServiceTests : IDisposable
 		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
 
 		// Assert
-		result.AccountsCreated.Should().Be(1);
-		result.AccountsUpdated.Should().Be(1);
+		result.CardsCreated.Should().Be(1);
+		result.CardsUpdated.Should().Be(1);
 	}
 
 	[Fact]
@@ -235,7 +235,7 @@ public class BackupImportServiceTests : IDisposable
 		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
 
 		// Assert
-		result.AccountsCreated.Should().Be(1);
+		result.CardsCreated.Should().Be(1);
 		result.CategoriesCreated.Should().Be(0);
 		result.ReceiptsCreated.Should().Be(0);
 		result.ReceiptItemsCreated.Should().Be(0);

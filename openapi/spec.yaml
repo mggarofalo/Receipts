@@ -4672,7 +4672,7 @@ components:
           items:
             $ref: "#/components/schemas/ItemSimilarityGroup"
         computedAt:
-          type: [string, "null"]
+          type: [["string", "null"], "null"]
           format: date-time
           description: Timestamp of the most recent edge-set refresh. Null when the background refresher has not yet populated edges.
 
@@ -6576,8 +6576,8 @@ components:
     BackupImportResponse:
       type: object
       required:
-        - accountsCreated
-        - accountsUpdated
+        - cardsCreated
+        - cardsUpdated
         - categoriesCreated
         - categoriesUpdated
         - subcategoriesCreated
@@ -6595,10 +6595,10 @@ components:
         - totalCreated
         - totalUpdated
       properties:
-        accountsCreated:
+        cardsCreated:
           type: integer
           format: int32
-        accountsUpdated:
+        cardsUpdated:
           type: integer
           format: int32
         categoriesCreated:
