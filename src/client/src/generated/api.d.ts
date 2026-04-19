@@ -2826,6 +2826,11 @@ export interface components {
             date: string;
             /** Format: uuid */
             accountId: string;
+            /**
+             * Format: uuid
+             * @description RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes.
+             */
+            cardId?: string;
         };
         UpdateTransactionRequest: {
             /** Format: uuid */
@@ -2836,6 +2841,11 @@ export interface components {
             date: string;
             /** Format: uuid */
             accountId: string;
+            /**
+             * Format: uuid
+             * @description RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes.
+             */
+            cardId?: string;
         };
         TransactionResponse: {
             /** Format: uuid */
@@ -2844,6 +2854,11 @@ export interface components {
             receiptId: string;
             /** Format: uuid */
             accountId: string;
+            /**
+             * Format: uuid
+             * @description RECEIPTS-553: originating Card. Nullable for rows that existed before the backfill.
+             */
+            cardId?: string;
             /** Format: double */
             amount: number;
             /** Format: date */
@@ -4934,6 +4949,10 @@ export interface operations {
                 /** @description Column name to sort by. Allowed values depend on the entity type. */
                 sortBy?: components["parameters"]["SortBy"];
                 sortDirection?: components["parameters"]["SortDirection"];
+                /** @description Filter to receipts with at least one transaction on a card belonging to this account. */
+                accountId?: string;
+                /** @description Filter to receipts with at least one transaction on this card. */
+                cardId?: string;
             };
             header?: never;
             path?: never;

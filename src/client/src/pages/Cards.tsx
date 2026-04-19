@@ -331,7 +331,11 @@ function Cards() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Link to="/receipts" className="text-sm text-primary hover:underline">
+                        <Link
+                          to={`/receipts?cardId=${card.id}`}
+                          className="text-sm text-primary hover:underline"
+                          aria-label={`View receipts for ${card.name}`}
+                        >
                           Receipts
                         </Link>
                       </TableCell>

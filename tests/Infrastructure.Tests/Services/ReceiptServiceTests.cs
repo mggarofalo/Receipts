@@ -75,8 +75,8 @@ public class ReceiptServiceTests
 		// Arrange
 		List<ReceiptEntity> entities = ReceiptEntityGenerator.GenerateList(3);
 
-		_mockRepository.Setup(r => r.GetCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
-		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+		_mockRepository.Setup(r => r.GetCountAsync(null, null, It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
+		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), null, null, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
 
 		// Act
 		PagedResult<Receipt> actual = await _service.GetAllAsync(0, 50, SortParams.Default, CancellationToken.None);
@@ -86,6 +86,25 @@ public class ReceiptServiceTests
 		Assert.Equal(entities.Count, actual.Total);
 		Assert.Equal(0, actual.Offset);
 		Assert.Equal(50, actual.Limit);
+	}
+
+	[Fact]
+	public async Task GetAllAsync_WithAccountAndCardFilters_PassesThroughToRepository()
+	{
+		// Arrange
+		Guid accountId = Guid.NewGuid();
+		Guid cardId = Guid.NewGuid();
+		List<ReceiptEntity> entities = ReceiptEntityGenerator.GenerateList(1);
+
+		_mockRepository.Setup(r => r.GetCountAsync(accountId, cardId, It.IsAny<CancellationToken>())).ReturnsAsync(entities.Count);
+		_mockRepository.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), accountId, cardId, It.IsAny<CancellationToken>())).ReturnsAsync(entities);
+
+		// Act
+		PagedResult<Receipt> actual = await _service.GetAllAsync(0, 50, SortParams.Default, accountId, cardId, CancellationToken.None);
+
+		// Assert
+		Assert.Equal(entities.Count, actual.Data.Count);
+		_mockRepository.Verify(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), accountId, cardId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]

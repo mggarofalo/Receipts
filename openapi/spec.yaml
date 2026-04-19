@@ -1394,6 +1394,20 @@ paths:
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/SortBy"
         - $ref: "#/components/parameters/SortDirection"
+        - name: accountId
+          in: query
+          required: false
+          description: Filter to receipts with at least one transaction on a card belonging to this account.
+          schema:
+            type: string
+            format: uuid
+        - name: cardId
+          in: query
+          required: false
+          description: Filter to receipts with at least one transaction on this card.
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: OK
@@ -5904,6 +5918,10 @@ components:
         accountId:
           type: string
           format: uuid
+        cardId:
+          type: string
+          format: uuid
+          description: "RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes."
 
     UpdateTransactionRequest:
       type: object
@@ -5921,6 +5939,10 @@ components:
         accountId:
           type: string
           format: uuid
+        cardId:
+          type: string
+          format: uuid
+          description: "RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes."
 
     TransactionResponse:
       type: object
@@ -5935,6 +5957,10 @@ components:
         accountId:
           type: string
           format: uuid
+        cardId:
+          type: string
+          format: uuid
+          description: "RECEIPTS-553: originating Card. Nullable for rows that existed before the backfill."
         amount:
           type: number
           format: double
