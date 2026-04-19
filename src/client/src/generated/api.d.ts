@@ -7153,15 +7153,6 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshItemSimilarityResponse"];
                 };
             };
-            /** @description Forbidden — admin role required. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
         };
     };
     GetItemDescriptions: {
