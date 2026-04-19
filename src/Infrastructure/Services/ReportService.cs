@@ -179,14 +179,16 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 
 		List<DescriptionSimilarityEdge> edges = [];
 
-		await using (NpgsqlConnection connection = (NpgsqlConnection)context.Database.GetDbConnection())
+		// The connection returned by GetDbConnection() is owned by the DbContext — do not dispose it.
+		// EF still needs this connection for the ReceiptItems query later in this method.
+		NpgsqlConnection connection = (NpgsqlConnection)context.Database.GetDbConnection();
+		await context.Database.OpenConnectionAsync(cancellationToken);
+
+		await using NpgsqlCommand command = new(sql, connection);
+		command.Parameters.AddWithValue("@threshold", threshold);
+
+		await using (NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken))
 		{
-			await connection.OpenAsync(cancellationToken);
-
-			await using NpgsqlCommand command = new(sql, connection);
-			command.Parameters.AddWithValue("@threshold", threshold);
-
-			await using NpgsqlDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
 			while (await reader.ReadAsync(cancellationToken))
 			{
 				edges.Add(new DescriptionSimilarityEdge(
