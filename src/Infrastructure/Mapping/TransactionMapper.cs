@@ -15,6 +15,7 @@ public partial class TransactionMapper
 	[MapperIgnoreTarget(nameof(TransactionEntity.Receipt))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.ReceiptId))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.Account))]
+	[MapperIgnoreTarget(nameof(TransactionEntity.Card))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedAt))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedByUserId))]
 	[MapperIgnoreTarget(nameof(TransactionEntity.DeletedByApiKeyId))]
@@ -25,6 +26,7 @@ public partial class TransactionMapper
 
 	[MapperIgnoreSource(nameof(TransactionEntity.Receipt))]
 	[MapperIgnoreSource(nameof(TransactionEntity.Account))]
+	[MapperIgnoreSource(nameof(TransactionEntity.Card))]
 	[MapperIgnoreSource(nameof(TransactionEntity.AmountCurrency))]
 	[MapperIgnoreSource(nameof(TransactionEntity.DeletedAt))]
 	[MapperIgnoreSource(nameof(TransactionEntity.DeletedByUserId))]

@@ -5,6 +5,7 @@ public class Transaction
 	public Guid Id { get; set; }
 	public Guid ReceiptId { get; set; }
 	public Guid AccountId { get; set; }
+	public Guid? CardId { get; set; }
 	public Money Amount { get; set; }
 	public DateOnly Date { get; set; }
 

@@ -72,14 +72,21 @@ const FILTER_DEFS: FilterDefinition[] = [
   { key: "taxAmount", type: "numberRange", field: "taxAmount" },
 ];
 
-const HIGHLIGHT_PARAMS = ["highlight"] as const;
+const HIGHLIGHT_PARAMS = ["highlight", "accountId", "cardId"] as const;
 
 function Receipts() {
   usePageTitle("Receipts");
-  const { params: linkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
+  const { params: linkParams, clearParams: clearLinkParams } = useEntityLinkParams(HIGHLIGHT_PARAMS);
   const { sortBy, sortDirection, toggleSort } = useServerSort({ defaultSortBy: "date", defaultSortDirection: "desc" });
   const { offset, limit, currentPage, pageSize, totalPages, setPage, setPageSize, resetPage } = useServerPagination({ sortBy, sortDirection });
-  const { data: receiptsData, total: serverTotal, isLoading } = useReceipts(offset, limit, sortBy, sortDirection);
+  const { data: receiptsData, total: serverTotal, isLoading } = useReceipts(
+    offset,
+    limit,
+    sortBy,
+    sortDirection,
+    linkParams.accountId,
+    linkParams.cardId,
+  );
   const createReceipt = useCreateReceipt();
   const updateReceipt = useUpdateReceipt();
   const deleteReceipts = useDeleteReceipts();
@@ -217,6 +224,28 @@ function Receipts() {
           setFilterValues(preset.values as FilterValues)
         }
       />
+
+      {(linkParams.accountId || linkParams.cardId) && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between gap-4">
+            <span>
+              Filtered to receipts with transactions on the selected{" "}
+              {linkParams.cardId ? "card" : "account"}.
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                clearLinkParams();
+                resetPage();
+              }}
+            >
+              Clear filter
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {highlightMissing && (
         <Alert>

@@ -1,4 +1,5 @@
 import { Fragment, useState, useMemo, useEffect, useCallback } from "react";
+import { Link } from "react-router";
 import {
   useAccounts,
   useAccountCards,
@@ -260,6 +261,7 @@ function Accounts() {
                   <TableHead className="w-10" />
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
+                  <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -313,6 +315,15 @@ function Accounts() {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <Link
+                            to={`/receipts?accountId=${account.id}`}
+                            className="text-sm text-primary hover:underline"
+                            aria-label={`View receipts for ${account.name}`}
+                          >
+                            Receipts
+                          </Link>
+                        </TableCell>
+                        <TableCell>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -328,7 +339,7 @@ function Accounts() {
                           className="bg-muted/30 hover:bg-muted/30"
                         >
                           <TableCell />
-                          <TableCell colSpan={3} className="py-3">
+                          <TableCell colSpan={4} className="py-3">
                             <AccountCardsRow accountId={account.id} />
                           </TableCell>
                         </TableRow>
