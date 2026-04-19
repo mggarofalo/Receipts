@@ -610,6 +610,32 @@ describe("CommandPalette", () => {
     });
   });
 
+  it("Empty Trash keeps the palette open when the purge mutation fails", async () => {
+    purgeTrashMutateAsync.mockRejectedValueOnce(new Error("network"));
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: () => true,
+      isAdmin: () => true,
+    });
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Empty Trash"));
+    const dialog = await screen.findByRole("alertdialog");
+    const confirm = within(dialog).getByRole("button", {
+      name: /empty trash/i,
+    });
+    await user.click(confirm);
+    await waitFor(() => {
+      expect(purgeTrashMutateAsync).toHaveBeenCalled();
+    });
+    // Palette must stay open so the user can retry.
+    expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
   it("cancelling Empty Trash closes the dialog without calling purge", async () => {
     const { usePermission } = await import("@/hooks/usePermission");
     vi.mocked(usePermission).mockReturnValue({

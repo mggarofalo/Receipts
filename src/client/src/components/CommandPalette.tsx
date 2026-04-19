@@ -111,9 +111,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [recentIds, setRecentIds] = useState<string[]>(() => getRecent());
   const [confirmingEmptyTrash, setConfirmingEmptyTrash] = useState(false);
 
-  const bulkPushYnab = useBulkPushYnabTransactions();
-  const backupExport = useBackupExport();
-  const purgeTrash = usePurgeTrash();
+  // Destructure stable callbacks — TanStack Query guarantees mutate/mutateAsync
+  // are stable refs, but the surrounding mutation object is not.
+  const { mutate: bulkPushYnabMutate } = useBulkPushYnabTransactions();
+  const { mutate: backupExportMutate } = useBackupExport();
+  const { mutateAsync: purgeTrashMutateAsync, isPending: purgeTrashPending } =
+    usePurgeTrash();
 
   const admin = isAdmin();
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
@@ -130,16 +133,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           toast.info("No receipts to sync");
           return;
         }
-        bulkPushYnab.mutate(ids);
+        bulkPushYnabMutate(ids);
       } catch {
         toast.error("Failed to load receipts for YNAB sync");
       }
     })();
-  }, [bulkPushYnab]);
+  }, [bulkPushYnabMutate]);
 
   const exportBackup = useCallback(() => {
-    backupExport.mutate();
-  }, [backupExport]);
+    backupExportMutate();
+  }, [backupExportMutate]);
 
   const confirmEmptyTrash = useCallback(() => {
     setConfirmingEmptyTrash(true);
@@ -147,12 +150,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const handleConfirmEmptyTrash = useCallback(async () => {
     try {
-      await purgeTrash.mutateAsync();
-    } finally {
+      await purgeTrashMutateAsync();
       setConfirmingEmptyTrash(false);
       onOpenChange(false);
+    } catch {
+      // Purge failed — keep the palette open so the user can retry. The
+      // error toast is surfaced by usePurgeTrash.onError.
+      setConfirmingEmptyTrash(false);
     }
-  }, [purgeTrash, onOpenChange]);
+  }, [purgeTrashMutateAsync, onOpenChange]);
 
   const ctx = useMemo<CommandContext>(
     () => ({
@@ -395,7 +401,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     <AlertDialog
       open={confirmingEmptyTrash}
       onOpenChange={(next) => {
-        if (!purgeTrash.isPending) setConfirmingEmptyTrash(next);
+        if (!purgeTrashPending) setConfirmingEmptyTrash(next);
       }}
     >
       <AlertDialogContent>
@@ -407,18 +413,18 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={purgeTrash.isPending}>
+          <AlertDialogCancel disabled={purgeTrashPending}>
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
-            disabled={purgeTrash.isPending}
+            disabled={purgeTrashPending}
             onClick={(e) => {
               e.preventDefault();
               void handleConfirmEmptyTrash();
             }}
           >
-            {purgeTrash.isPending ? "Emptying…" : "Empty Trash"}
+            {purgeTrashPending ? "Emptying…" : "Empty Trash"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
