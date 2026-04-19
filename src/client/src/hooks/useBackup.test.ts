@@ -68,12 +68,14 @@ describe("useBackupExport", () => {
       wrapper: createWrapper(),
     });
 
+    // mutateAsync awaits the mutationFn; onSuccess/onError run synchronously
+    // after resolution, so showSuccess/URL spies are observable immediately.
     await act(async () => {
-      result.current.mutate();
+      await result.current.mutateAsync();
     });
-    await waitFor(() => {
-      expect(showSuccess).toHaveBeenCalledWith("Backup exported successfully.");
-    });
+
+    expect(showSuccess).toHaveBeenCalledWith("Backup exported successfully.");
+    expect(showError).not.toHaveBeenCalled();
     expect(globalThis.URL.createObjectURL).toHaveBeenCalled();
     expect(globalThis.URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock");
   });
