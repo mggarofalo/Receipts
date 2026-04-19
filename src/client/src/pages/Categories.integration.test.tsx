@@ -217,4 +217,16 @@ describe("Categories (integration)", () => {
       expect(screen.getByRole("heading", { name: /create category/i })).toBeInTheDocument();
     });
   });
+
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithQueryClient(<Categories />, {
+      route: { pathname: "/categories", state: { openNew: true } },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /create category/i }),
+      ).toBeInTheDocument();
+    });
+  });
 });

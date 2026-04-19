@@ -135,25 +135,30 @@ describe("command registry", () => {
     dispatchSpy.mockRestore();
   });
 
-  it("create:account navigates then dispatches when on a different page", () => {
-    vi.useFakeTimers();
+  it("create:account navigates with openNew state when on a different page", () => {
     const dispatchSpy = vi.spyOn(window, "dispatchEvent");
     const ctx = makeCtx({ currentPath: "/" });
     COMMANDS.find((c) => c.id === "create:account")!.run(ctx);
-    expect(ctx.navigate).toHaveBeenCalledWith("/accounts");
+    expect(ctx.close).toHaveBeenCalled();
+    expect(ctx.navigate).toHaveBeenCalledWith("/accounts", {
+      state: { openNew: true },
+    });
     expect(
       dispatchSpy.mock.calls.some(
         ([e]) => (e as CustomEvent).type === "shortcut:new-item",
       ),
     ).toBe(false);
-    vi.advanceTimersByTime(100);
-    expect(
-      dispatchSpy.mock.calls.some(
-        ([e]) => (e as CustomEvent).type === "shortcut:new-item",
-      ),
-    ).toBe(true);
     dispatchSpy.mockRestore();
-    vi.useRealTimers();
+  });
+
+  it("create:user navigates to /admin/users with openNew state", () => {
+    const dispatchSpy = vi.spyOn(window, "dispatchEvent");
+    const ctx = makeCtx({ currentPath: "/" });
+    COMMANDS.find((c) => c.id === "create:user")!.run(ctx);
+    expect(ctx.navigate).toHaveBeenCalledWith("/admin/users", {
+      state: { openNew: true },
+    });
+    dispatchSpy.mockRestore();
   });
 
   it("create:receipt navigates directly (no event dispatch)", () => {

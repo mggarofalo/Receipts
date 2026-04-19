@@ -30,35 +30,27 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import type { Command } from "./types";
+import type { Command, CommandContext } from "./types";
 
 /**
- * Dispatches the app's existing per-page "open new-item dialog" handler.
- * If already on the target page, dispatch immediately; otherwise navigate
- * first and dispatch after a short delay so the target page's effect has
- * mounted and registered its listener.
+ * Open a list page's create dialog from the command palette.
+ *
+ * Same-page: dispatch the `shortcut:new-item` event — the page's listener is
+ * already mounted. Cross-page: navigate with `state.openNew` so the target
+ * page's `useOpenNewItem` hook opens the dialog on mount. The earlier
+ * dispatch-after-setTimeout approach raced with the listener's mount and
+ * silently dropped the event on slow devices or under StrictMode.
  */
 function runNewItem(
   targetPath: string,
-  {
-    navigate,
-    close,
-    currentPath,
-  }: {
-    navigate: (path: string) => void;
-    close: () => void;
-    currentPath: string;
-  },
+  { navigate, close, currentPath }: CommandContext,
 ) {
   close();
   if (currentPath === targetPath) {
     window.dispatchEvent(new CustomEvent("shortcut:new-item"));
     return;
   }
-  navigate(targetPath);
-  setTimeout(() => {
-    window.dispatchEvent(new CustomEvent("shortcut:new-item"));
-  }, 50);
+  navigate(targetPath, { state: { openNew: true } });
 }
 
 function goTo(path: string) {

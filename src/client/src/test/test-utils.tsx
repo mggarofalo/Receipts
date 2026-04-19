@@ -14,9 +14,11 @@ const defaultAuth: AuthContextValue = {
   changePassword: async () => {},
 };
 
+type RouteEntry = string | { pathname: string; search?: string; state?: unknown };
+
 interface WrapperOptions {
   auth?: Partial<AuthContextValue>;
-  route?: string;
+  route?: RouteEntry;
 }
 
 export function createWrapper({ auth, route = "/" }: WrapperOptions = {}) {

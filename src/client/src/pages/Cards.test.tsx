@@ -273,6 +273,17 @@ describe("Cards", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithProviders(<Cards />, {
+      route: { pathname: "/cards", state: { openNew: true } },
+    });
+
+    await screen.findByRole("heading", { name: /create card/i });
+    expect(
+      screen.getByRole("heading", { name: /create card/i }),
+    ).toBeInTheDocument();
+  });
+
   it("submits create form and calls createCard.mutate", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const mockMutate = vi.fn();

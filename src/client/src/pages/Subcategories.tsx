@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo, useEffect, useCallback } from "react";
+import { Fragment, useState, useMemo, useCallback } from "react";
 import { generateId } from "@/lib/id";
 import { Link } from "react-router";
 import {
@@ -13,6 +13,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { useCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
+import { useOpenNewItem } from "@/hooks/useOpenNewItem";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
@@ -125,13 +126,8 @@ function Subcategories() {
 
   const anyDialogOpen = createOpen || editSubcategory !== null || conflictData !== null;
 
-  useEffect(() => {
-    function onNewItem() {
-      setCreateOpen(true);
-    }
-    window.addEventListener("shortcut:new-item", onNewItem);
-    return () => window.removeEventListener("shortcut:new-item", onNewItem);
-  }, []);
+  const openCreate = useCallback(() => setCreateOpen(true), []);
+  useOpenNewItem(openCreate);
 
   const handleSort = useCallback((column: string) => {
     toggleSort(column);
