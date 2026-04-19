@@ -10,6 +10,9 @@ function makeCtx(overrides: Partial<CommandContext> = {}): CommandContext {
     setTheme: vi.fn(),
     logout: vi.fn(async () => {}),
     openShortcutsHelp: vi.fn(),
+    syncYnab: vi.fn(),
+    exportBackup: vi.fn(),
+    confirmEmptyTrash: vi.fn(),
     ...overrides,
   };
 }
@@ -68,8 +71,37 @@ describe("command registry", () => {
         "nav:trash",
         "nav:backup",
         "create:user",
+        "action:backup-export",
+        "action:trash-empty",
       ]),
     );
+  });
+
+  it("exposes action commands outside of the admin-gated set when appropriate", () => {
+    const sync = COMMANDS.find((c) => c.id === "action:ynab-sync")!;
+    expect(sync.requiresAdmin).toBeFalsy();
+    expect(sync.group).toBe("actions");
+  });
+
+  it("action:ynab-sync closes and delegates to syncYnab", () => {
+    const ctx = makeCtx();
+    COMMANDS.find((c) => c.id === "action:ynab-sync")!.run(ctx);
+    expect(ctx.close).toHaveBeenCalled();
+    expect(ctx.syncYnab).toHaveBeenCalled();
+  });
+
+  it("action:backup-export closes and delegates to exportBackup", () => {
+    const ctx = makeCtx();
+    COMMANDS.find((c) => c.id === "action:backup-export")!.run(ctx);
+    expect(ctx.close).toHaveBeenCalled();
+    expect(ctx.exportBackup).toHaveBeenCalled();
+  });
+
+  it("action:trash-empty opens the confirm dialog without closing the palette", () => {
+    const ctx = makeCtx();
+    COMMANDS.find((c) => c.id === "action:trash-empty")!.run(ctx);
+    expect(ctx.confirmEmptyTrash).toHaveBeenCalled();
+    expect(ctx.close).not.toHaveBeenCalled();
   });
 
   it("exposes one command per documented report", () => {
