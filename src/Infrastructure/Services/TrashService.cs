@@ -40,6 +40,16 @@ public class TrashService(ApplicationDbContext context) : ITrashService
 			.Where(e => e.DeletedAt != null)
 			.ExecuteDeleteAsync(cancellationToken);
 
+		await context.Subcategories
+			.IgnoreQueryFilters()
+			.Where(e => e.DeletedAt != null)
+			.ExecuteDeleteAsync(cancellationToken);
+
+		await context.Categories
+			.IgnoreQueryFilters()
+			.Where(e => e.DeletedAt != null)
+			.ExecuteDeleteAsync(cancellationToken);
+
 		await transaction.CommitAsync(cancellationToken);
 	}
 }
