@@ -193,4 +193,29 @@ describe("Accounts", () => {
 
     expect(await screen.findByText(/no cards linked/i)).toBeInTheDocument();
   });
+
+  it("opens create dialog on shortcut:new-item event", async () => {
+    const { act } = await import("@testing-library/react");
+    renderWithProviders(<Accounts />);
+
+    act(() => {
+      window.dispatchEvent(new Event("shortcut:new-item"));
+    });
+
+    await screen.findByRole("heading", { name: /create account/i });
+    expect(
+      screen.getByRole("heading", { name: /create account/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithProviders(<Accounts />, {
+      route: { pathname: "/accounts", state: { openNew: true } },
+    });
+
+    await screen.findByRole("heading", { name: /create account/i });
+    expect(
+      screen.getByRole("heading", { name: /create account/i }),
+    ).toBeInTheDocument();
+  });
 });

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router";
 import {
   useCategories,
@@ -9,6 +9,7 @@ import {
 import { usePermission } from "@/hooks/usePermission";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
+import { useOpenNewItem } from "@/hooks/useOpenNewItem";
 import { useFuzzySearch } from "@/hooks/useFuzzySearch";
 import { useSavedFilters } from "@/hooks/useSavedFilters";
 import { useServerPagination } from "@/hooks/useServerPagination";
@@ -95,13 +96,8 @@ function Categories() {
 
   const anyDialogOpen = createOpen || editCategory !== null;
 
-  useEffect(() => {
-    function onNewItem() {
-      setCreateOpen(true);
-    }
-    window.addEventListener("shortcut:new-item", onNewItem);
-    return () => window.removeEventListener("shortcut:new-item", onNewItem);
-  }, []);
+  const openCreate = useCallback(() => setCreateOpen(true), []);
+  useOpenNewItem(openCreate);
 
   const handleSort = useCallback((column: string) => {
     toggleSort(column);

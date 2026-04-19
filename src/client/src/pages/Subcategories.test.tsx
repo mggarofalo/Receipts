@@ -372,6 +372,17 @@ describe("Subcategories", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithProviders(<Subcategories />, {
+      route: { pathname: "/subcategories", state: { openNew: true } },
+    });
+
+    await screen.findByRole("heading", { name: /create subcategory/i });
+    expect(
+      screen.getByRole("heading", { name: /create subcategory/i }),
+    ).toBeInTheDocument();
+  });
+
   it("does not render receipt-items links in expanded rows", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     await setupWithData();

@@ -10,9 +10,11 @@ export function useReceipts(
   sortDirection?: string | null,
   accountId?: string | null,
   cardId?: string | null,
+  q?: string | null,
 ) {
+  const trimmedQ = q?.trim() || undefined;
   const query = useQuery({
-    queryKey: ["receipts", "list", offset, limit, sortBy, sortDirection, accountId, cardId],
+    queryKey: ["receipts", "list", offset, limit, sortBy, sortDirection, accountId, cardId, trimmedQ],
     queryFn: async () => {
       const { data, error } = await client.GET("/api/receipts", {
         params: {
@@ -23,6 +25,7 @@ export function useReceipts(
             sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined,
             accountId: accountId ?? undefined,
             cardId: cardId ?? undefined,
+            q: trimmedQ,
           },
         },
       });

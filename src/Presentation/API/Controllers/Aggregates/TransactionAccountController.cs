@@ -20,7 +20,7 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 	[HttpGet("")]
 	[EndpointSummary("Get transaction accounts")]
 	[EndpointDescription("Returns transaction accounts filtered by transaction ID or receipt ID.")]
-	public async Task<Results<Ok<List<TransactionAccountResponse>>, BadRequest<string>>> GetTransactionAccounts([FromQuery] Guid? transactionId = null, [FromQuery] Guid? receiptId = null)
+	public async Task<Results<Ok<List<TransactionAccountResponse>>, BadRequest<string>>> GetTransactionAccounts([FromQuery] Guid? transactionId = null, [FromQuery] Guid? receiptId = null, CancellationToken cancellationToken = default)
 	{
 		if (transactionId.HasValue && receiptId.HasValue)
 		{
@@ -30,7 +30,7 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 		if (transactionId.HasValue)
 		{
 			GetTransactionAccountByTransactionIdQuery query = new(transactionId.Value);
-			TransactionAccount? result = await mediator.Send(query);
+			TransactionAccount? result = await mediator.Send(query, cancellationToken);
 
 			List<TransactionAccountResponse> model = result != null
 				? [mapper.ToResponse(result)]
@@ -41,7 +41,7 @@ public class TransactionAccountController(IMediator mediator, TransactionAccount
 		if (receiptId.HasValue)
 		{
 			GetTransactionAccountsByReceiptIdQuery query = new(receiptId.Value);
-			List<TransactionAccount>? result = await mediator.Send(query);
+			List<TransactionAccount>? result = await mediator.Send(query, cancellationToken);
 
 			List<TransactionAccountResponse> model = [.. (result ?? []).Select(mapper.ToResponse)];
 			return TypedResults.Ok(model);

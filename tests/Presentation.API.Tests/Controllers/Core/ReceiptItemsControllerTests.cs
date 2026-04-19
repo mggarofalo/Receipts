@@ -190,6 +190,48 @@ public class ReceiptItemsControllerTests
 	}
 
 	[Fact]
+	public async Task GetAllReceiptItems_ForwardsTrimmedSearchQuery_ToMediator()
+	{
+		// Arrange
+		List<ReceiptItem> mediatorReturn = ReceiptItemGenerator.GenerateList(1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetAllReceiptItemsQuery>(q => q.Q == "Apples"),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<ReceiptItem>(mediatorReturn, mediatorReturn.Count, 0, 50));
+
+		// Act
+		Results<Ok<ReceiptItemListResponse>, BadRequest<string>> result = await _controller.GetAllReceiptItems(null, 0, 50, null, null, "  Apples  ");
+
+		// Assert
+		Assert.IsType<Ok<ReceiptItemListResponse>>(result.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAllReceiptItemsQuery>(q => q.Q == "Apples"),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Theory]
+	[InlineData(null)]
+	[InlineData("")]
+	[InlineData("   ")]
+	public async Task GetAllReceiptItems_NormalizesBlankSearchQuery_ToNull(string? q)
+	{
+		// Arrange
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetAllReceiptItemsQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<ReceiptItem>([], 0, 0, 50));
+
+		// Act
+		await _controller.GetAllReceiptItems(null, 0, 50, null, null, q);
+
+		// Assert
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetAllReceiptItemsQuery>(query => query.Q == null),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
 	public async Task GetAllReceiptItems_WithReceiptId_ReturnsOkResult_WithReceiptItems()
 	{
 		// Arrange

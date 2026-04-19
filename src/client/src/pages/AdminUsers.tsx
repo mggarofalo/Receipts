@@ -11,6 +11,7 @@ import {
 } from "@/hooks/useUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useOpenNewItem } from "@/hooks/useOpenNewItem";
 import { useServerPagination } from "@/hooks/useServerPagination";
 import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
@@ -123,6 +124,9 @@ function AdminUsers() {
     id: string;
     email: string;
   } | null>(null);
+
+  const openCreate = useCallback(() => setCreateOpen(true), []);
+  useOpenNewItem(openCreate);
 
   const items = usersData ?? [];
 

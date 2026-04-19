@@ -17,11 +17,11 @@ public class TrashController(IMediator mediator, ILogger<TrashController> logger
 {
 	[HttpPost("purge")]
 	[EndpointSummary("Permanently delete all soft-deleted items")]
-	public async Task<NoContent> PurgeTrash()
+	public async Task<NoContent> PurgeTrash(CancellationToken cancellationToken = default)
 	{
 		logger.LogWarning("PurgeTrash called — permanently deleting all soft-deleted items");
 		PurgeTrashCommand command = new();
-		await mediator.Send(command);
+		await mediator.Send(command, cancellationToken);
 
 		string[] entityTypes = ["receipt", "receipt-item", "transaction", "adjustment", "account", "category", "subcategory", "item-template"];
 		foreach (string entityType in entityTypes)

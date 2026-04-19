@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, edited, synchronize, labeled, unlabeled, reopened]
     branches: ["main", "develop"]
 
 env:
@@ -16,7 +16,7 @@ env:
 jobs:
   source-branch-check:
     name: Source Branch Policy
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.action != 'labeled' && github.event.action != 'unlabeled'
     runs-on: ubuntu-latest
 
     steps:
@@ -79,7 +79,7 @@ jobs:
   build:
     name: Build & Test
     needs: [pr-title]
-    if: ${{ !cancelled() && (needs.pr-title.result == 'success' || needs.pr-title.result == 'skipped') }}
+    if: ${{ !cancelled() && (needs.pr-title.result == 'success' || needs.pr-title.result == 'skipped') && github.event.action != 'labeled' && github.event.action != 'unlabeled' }}
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -144,7 +144,7 @@ jobs:
   frontend-test:
     name: Frontend Test (Shard ${{ matrix.shard }}/2)
     needs: [pr-title]
-    if: ${{ !cancelled() && (needs.pr-title.result == 'success' || needs.pr-title.result == 'skipped') }}
+    if: ${{ !cancelled() && (needs.pr-title.result == 'success' || needs.pr-title.result == 'skipped') && github.event.action != 'labeled' && github.event.action != 'unlabeled' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -187,7 +187,7 @@ jobs:
   frontend-test-report:
     name: Frontend Coverage Report
     needs: [pr-title, frontend-test]
-    if: ${{ !cancelled() && (needs.frontend-test.result == 'success' || needs.frontend-test.result == 'failure') }}
+    if: ${{ !cancelled() && (needs.frontend-test.result == 'success' || needs.frontend-test.result == 'failure') && github.event.action != 'labeled' && github.event.action != 'unlabeled' }}
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -238,7 +238,7 @@ jobs:
   lint:
     name: Code Formatting
     needs: [pr-title]
-    if: ${{ !cancelled() && (needs.pr-title.result == 'success' || needs.pr-title.result == 'skipped') }}
+    if: ${{ !cancelled() && (needs.pr-title.result == 'success' || needs.pr-title.result == 'skipped') && github.event.action != 'labeled' && github.event.action != 'unlabeled' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -266,7 +266,7 @@ jobs:
   security:
     name: Vulnerability Scan
     needs: [pr-title]
-    if: ${{ !cancelled() && (needs.pr-title.result == 'success' || needs.pr-title.result == 'skipped') }}
+    if: ${{ !cancelled() && (needs.pr-title.result == 'success' || needs.pr-title.result == 'skipped') && github.event.action != 'labeled' && github.event.action != 'unlabeled' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -291,7 +291,7 @@ jobs:
   docker-build:
     name: Docker Build Check
     needs: [pr-title]
-    if: ${{ needs.pr-title.result == 'success' }}
+    if: ${{ needs.pr-title.result == 'success' && github.event.action != 'labeled' && github.event.action != 'unlabeled' }}
     runs-on: ubuntu-latest
 
     steps:

@@ -10,6 +10,7 @@ public interface IReceiptItemRepository
 	Task<List<ReceiptItemEntity>> GetByReceiptIdAsync(Guid receiptId, int offset, int limit, SortParams sort, CancellationToken cancellationToken);
 	Task<int> GetByReceiptIdCountAsync(Guid receiptId, CancellationToken cancellationToken);
 	Task<List<ReceiptItemEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken);
+	Task<List<ReceiptItemEntity>> GetAllAsync(int offset, int limit, SortParams sort, string? q, CancellationToken cancellationToken);
 	Task<List<ReceiptItemEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken);
 	Task<int> GetDeletedCountAsync(CancellationToken cancellationToken);
 	Task<List<ReceiptItemEntity>> CreateAsync(List<ReceiptItemEntity> entities, CancellationToken cancellationToken);
@@ -17,6 +18,7 @@ public interface IReceiptItemRepository
 	Task DeleteAsync(List<Guid> ids, CancellationToken cancellationToken);
 	Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken);
 	Task<int> GetCountAsync(CancellationToken cancellationToken);
+	Task<int> GetCountAsync(string? q, CancellationToken cancellationToken);
 	Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken);
 	Task<List<ReceiptItemSuggestion>> GetSuggestionsAsync(string itemCode, string? location, int limit, CancellationToken cancellationToken);
 }

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -214,8 +215,22 @@ public static class InfrastructureService
 
 		services.AddHostedService<AuthAuditCleanupService>();
 
+		// TryAdd so callers (tests, specific deployments) can override with a FakeTimeProvider.
+		services.TryAddSingleton(TimeProvider.System);
+
 		services.AddSingleton<IDescriptionChangeSignal, DescriptionChangeSignal>();
-		services.AddHostedService<ItemSimilarityEdgeRefresher>();
+		// Register the refresher as a singleton so both the hosted service and the
+		// ItemSimilarityRefresherHealthCheck see the same instance (and therefore the
+		// same consecutive-failure / last-success state).
+		services.AddSingleton<ItemSimilarityEdgeRefresher>();
+		services.AddHostedService(sp => sp.GetRequiredService<ItemSimilarityEdgeRefresher>());
+
+		services.AddHealthChecks()
+			.AddCheck<ItemSimilarityRefresherHealthCheck>(
+				"item_similarity_refresher",
+				failureStatus: HealthStatus.Unhealthy,
+				// Tagged "background" (not "ready") so stale edges don't gate traffic.
+				tags: ["background"]);
 
 		services
 			.AddSingleton<AccountMapper>()

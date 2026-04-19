@@ -350,4 +350,15 @@ describe("Categories", () => {
       screen.getByRole("heading", { name: /create category/i }),
     ).toBeInTheDocument();
   });
+
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithProviders(<Categories />, {
+      route: { pathname: "/categories", state: { openNew: true } },
+    });
+
+    await screen.findByRole("heading", { name: /create category/i });
+    expect(
+      screen.getByRole("heading", { name: /create category/i }),
+    ).toBeInTheDocument();
+  });
 });

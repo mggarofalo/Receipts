@@ -96,8 +96,8 @@ public class BackupController(
 
 			return TypedResults.Ok(new BackupImportResponse
 			{
-				AccountsCreated = result.AccountsCreated,
-				AccountsUpdated = result.AccountsUpdated,
+				CardsCreated = result.CardsCreated,
+				CardsUpdated = result.CardsUpdated,
 				CategoriesCreated = result.CategoriesCreated,
 				CategoriesUpdated = result.CategoriesUpdated,
 				SubcategoriesCreated = result.SubcategoriesCreated,

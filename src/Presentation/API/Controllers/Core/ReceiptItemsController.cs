@@ -40,10 +40,10 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a receipt item by ID")]
 	[EndpointDescription("Returns a single receipt item matching the provided GUID.")]
-	public async Task<Results<Ok<ReceiptItemResponse>, NotFound>> GetReceiptItemById([FromRoute] Guid id)
+	public async Task<Results<Ok<ReceiptItemResponse>, NotFound>> GetReceiptItemById([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		GetReceiptItemByIdQuery query = new(id);
-		ReceiptItem? result = await mediator.Send(query);
+		ReceiptItem? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{
@@ -57,7 +57,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipt items")]
-	public async Task<Results<Ok<ReceiptItemListResponse>, BadRequest<string>>> GetAllReceiptItems([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<ReceiptItemListResponse>, BadRequest<string>>> GetAllReceiptItems([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, [FromQuery] string? q = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -84,7 +84,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 		if (receiptId.HasValue)
 		{
 			GetReceiptItemsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit, sort);
-			PagedResult<ReceiptItem> byReceiptResult = await mediator.Send(byReceiptQuery);
+			PagedResult<ReceiptItem> byReceiptResult = await mediator.Send(byReceiptQuery, cancellationToken);
 
 			return TypedResults.Ok(new ReceiptItemListResponse
 			{
@@ -95,8 +95,9 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 			});
 		}
 
-		GetAllReceiptItemsQuery query = new(offset, limit, sort);
-		PagedResult<ReceiptItem> result = await mediator.Send(query);
+		string? normalizedQ = string.IsNullOrWhiteSpace(q) ? null : q.Trim();
+		GetAllReceiptItemsQuery query = new(offset, limit, sort, normalizedQ);
+		PagedResult<ReceiptItem> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new ReceiptItemListResponse
 		{
@@ -110,7 +111,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted receipt items")]
 	[EndpointDescription("Returns all receipt items that have been soft-deleted.")]
-	public async Task<Results<Ok<ReceiptItemListResponse>, BadRequest<string>>> GetDeletedReceiptItems([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<ReceiptItemListResponse>, BadRequest<string>>> GetDeletedReceiptItems([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -134,7 +135,7 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetDeletedReceiptItemsQuery query = new(offset, limit, sort);
-		PagedResult<ReceiptItem> result = await mediator.Send(query);
+		PagedResult<ReceiptItem> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new ReceiptItemListResponse
 		{
@@ -147,30 +148,30 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single receipt item")]
-	public async Task<Ok<ReceiptItemResponse>> CreateReceiptItem([FromBody] CreateReceiptItemRequest model, [FromRoute] Guid receiptId)
+	public async Task<Ok<ReceiptItemResponse>> CreateReceiptItem([FromBody] CreateReceiptItemRequest model, [FromRoute] Guid receiptId, CancellationToken cancellationToken = default)
 	{
 		CreateReceiptItemCommand command = new([mapper.ToDomain(model)], receiptId);
-		List<ReceiptItem> receiptItems = await mediator.Send(command);
+		List<ReceiptItem> receiptItems = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyCreated("receipt-item", receiptItems[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(receiptItems[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create receipt items in batch")]
-	public async Task<Ok<List<ReceiptItemResponse>>> CreateReceiptItems([FromBody] List<CreateReceiptItemRequest> models, [FromRoute] Guid receiptId)
+	public async Task<Ok<List<ReceiptItemResponse>>> CreateReceiptItems([FromBody] List<CreateReceiptItemRequest> models, [FromRoute] Guid receiptId, CancellationToken cancellationToken = default)
 	{
 		CreateReceiptItemCommand command = new([.. models.Select(mapper.ToDomain)], receiptId);
-		List<ReceiptItem> receiptItems = await mediator.Send(command);
+		List<ReceiptItem> receiptItems = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyBulkChanged("receipt-item", "created", receiptItems.Select(ri => ri.Id));
 		return TypedResults.Ok(receiptItems.Select(mapper.ToResponse).ToList());
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single receipt item")]
-	public async Task<Results<NoContent, NotFound>> UpdateReceiptItem([FromBody] UpdateReceiptItemRequest model, [FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> UpdateReceiptItem([FromBody] UpdateReceiptItemRequest model, [FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		UpdateReceiptItemCommand command = new([mapper.ToDomain(model)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -184,10 +185,10 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update receipt items in batch")]
-	public async Task<Results<NoContent, NotFound>> UpdateReceiptItems([FromBody] List<UpdateReceiptItemRequest> models)
+	public async Task<Results<NoContent, NotFound>> UpdateReceiptItems([FromBody] List<UpdateReceiptItemRequest> models, CancellationToken cancellationToken = default)
 	{
 		UpdateReceiptItemCommand command = new([.. models.Select(mapper.ToDomain)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -202,10 +203,10 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[HttpDelete(RouteDelete)]
 	[EndpointSummary("Delete receipt items")]
 	[EndpointDescription("Deletes one or more receipt items by their IDs. Returns 404 if any item is not found.")]
-	public async Task<Results<NoContent, NotFound>> DeleteReceiptItems([FromBody] List<Guid> ids)
+	public async Task<Results<NoContent, NotFound>> DeleteReceiptItems([FromBody] List<Guid> ids, CancellationToken cancellationToken = default)
 	{
 		DeleteReceiptItemCommand command = new(ids);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -220,10 +221,10 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[HttpPost(RouteRestore)]
 	[EndpointSummary("Restore a soft-deleted receipt item")]
 	[EndpointDescription("Restores a previously soft-deleted receipt item by clearing its DeletedAt timestamp.")]
-	public async Task<Results<NoContent, NotFound>> RestoreReceiptItem([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> RestoreReceiptItem([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		RestoreReceiptItemCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -238,10 +239,10 @@ public class ReceiptItemsController(IMediator mediator, ReceiptItemMapper mapper
 	[HttpGet(RouteGetSuggestions)]
 	[EndpointSummary("Get item code suggestions from receipt history")]
 	[EndpointDescription("Returns suggestions for receipt item entry based on historical receipt items, grouped by itemCode and optionally filtered by location.")]
-	public async Task<Ok<List<ReceiptItemSuggestionResponse>>> GetSuggestions([FromQuery] string itemCode, [FromQuery] string? location = null, [FromQuery] int limit = 10)
+	public async Task<Ok<List<ReceiptItemSuggestionResponse>>> GetSuggestions([FromQuery] string itemCode, [FromQuery] string? location = null, [FromQuery] int limit = 10, CancellationToken cancellationToken = default)
 	{
 		GetReceiptItemSuggestionsQuery query = new(itemCode, location, limit);
-		IEnumerable<ReceiptItemSuggestion> results = await mediator.Send(query);
+		IEnumerable<ReceiptItemSuggestion> results = await mediator.Send(query, cancellationToken);
 
 		List<ReceiptItemSuggestionResponse> response = [.. results.Select(r => new ReceiptItemSuggestionResponse
 		{

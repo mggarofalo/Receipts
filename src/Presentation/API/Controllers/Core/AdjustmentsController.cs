@@ -34,10 +34,10 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get an adjustment by ID")]
 	[EndpointDescription("Returns a single adjustment matching the provided GUID.")]
-	public async Task<Results<Ok<AdjustmentResponse>, NotFound>> GetAdjustmentById([FromRoute] Guid id)
+	public async Task<Results<Ok<AdjustmentResponse>, NotFound>> GetAdjustmentById([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		GetAdjustmentByIdQuery query = new(id);
-		Adjustment? result = await mediator.Send(query);
+		Adjustment? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{
@@ -51,7 +51,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all adjustments")]
-	public async Task<Results<Ok<AdjustmentListResponse>, BadRequest<string>>> GetAllAdjustments([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<AdjustmentListResponse>, BadRequest<string>>> GetAllAdjustments([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -78,7 +78,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 		if (receiptId.HasValue)
 		{
 			GetAdjustmentsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit, sort);
-			PagedResult<Adjustment> byReceiptResult = await mediator.Send(byReceiptQuery);
+			PagedResult<Adjustment> byReceiptResult = await mediator.Send(byReceiptQuery, cancellationToken);
 
 			return TypedResults.Ok(new AdjustmentListResponse
 			{
@@ -90,7 +90,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 		}
 
 		GetAllAdjustmentsQuery query = new(offset, limit, sort);
-		PagedResult<Adjustment> result = await mediator.Send(query);
+		PagedResult<Adjustment> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new AdjustmentListResponse
 		{
@@ -104,7 +104,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted adjustments")]
 	[EndpointDescription("Returns all adjustments that have been soft-deleted.")]
-	public async Task<Results<Ok<AdjustmentListResponse>, BadRequest<string>>> GetDeletedAdjustments([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<AdjustmentListResponse>, BadRequest<string>>> GetDeletedAdjustments([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -128,7 +128,7 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetDeletedAdjustmentsQuery query = new(offset, limit, sort);
-		PagedResult<Adjustment> result = await mediator.Send(query);
+		PagedResult<Adjustment> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new AdjustmentListResponse
 		{
@@ -141,20 +141,20 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single adjustment")]
-	public async Task<Ok<AdjustmentResponse>> CreateAdjustment([FromBody] CreateAdjustmentRequest model, [FromRoute] Guid receiptId)
+	public async Task<Ok<AdjustmentResponse>> CreateAdjustment([FromBody] CreateAdjustmentRequest model, [FromRoute] Guid receiptId, CancellationToken cancellationToken = default)
 	{
 		CreateAdjustmentCommand command = new([mapper.ToDomain(model)], receiptId);
-		List<Adjustment> adjustments = await mediator.Send(command);
+		List<Adjustment> adjustments = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyCreated("adjustment", adjustments[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(adjustments[0]));
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single adjustment")]
-	public async Task<Results<NoContent, NotFound>> UpdateAdjustment([FromBody] UpdateAdjustmentRequest model, [FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> UpdateAdjustment([FromBody] UpdateAdjustmentRequest model, [FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		UpdateAdjustmentCommand command = new([mapper.ToDomain(model)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -169,10 +169,10 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[HttpDelete(RouteDelete)]
 	[EndpointSummary("Delete adjustments")]
 	[EndpointDescription("Deletes one or more adjustments by their IDs. Returns 404 if any adjustment is not found.")]
-	public async Task<Results<NoContent, NotFound>> DeleteAdjustments([FromBody] List<Guid> ids)
+	public async Task<Results<NoContent, NotFound>> DeleteAdjustments([FromBody] List<Guid> ids, CancellationToken cancellationToken = default)
 	{
 		DeleteAdjustmentCommand command = new(ids);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -187,10 +187,10 @@ public class AdjustmentsController(IMediator mediator, AdjustmentMapper mapper, 
 	[HttpPost(RouteRestore)]
 	[EndpointSummary("Restore a soft-deleted adjustment")]
 	[EndpointDescription("Restores a previously soft-deleted adjustment by clearing its DeletedAt timestamp.")]
-	public async Task<Results<NoContent, NotFound>> RestoreAdjustment([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> RestoreAdjustment([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		RestoreAdjustmentCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{

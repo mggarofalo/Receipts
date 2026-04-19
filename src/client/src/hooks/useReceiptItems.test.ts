@@ -70,6 +70,31 @@ describe("useReceiptItems", () => {
     });
   });
 
+  it("list query passes trimmed q to the server when provided", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useReceiptItems(0, 50, null, null, "  Apples  "), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.GET).toHaveBeenCalledWith("/api/receipt-items", {
+      params: { query: { offset: 0, limit: 50, q: "Apples" } },
+    });
+  });
+
+  it("list query omits q when the value is blank", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 0, limit: 50 }, error: undefined });
+
+    const { result } = renderHook(() => useReceiptItems(0, 50, null, null, "   "), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const call = (client.GET as Mock).mock.calls[0];
+    expect(call[1].params.query.q).toBeUndefined();
+  });
+
   it("single query is disabled when id is null", () => {
     const { result } = renderHook(() => useReceiptItem(null), {
       wrapper: createWrapper(),

@@ -36,10 +36,10 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a transaction by ID")]
 	[EndpointDescription("Returns a single transaction matching the provided GUID.")]
-	public async Task<Results<Ok<TransactionResponse>, NotFound>> GetTransactionById([FromRoute] Guid id)
+	public async Task<Results<Ok<TransactionResponse>, NotFound>> GetTransactionById([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		GetTransactionByIdQuery query = new(id);
-		Transaction? result = await mediator.Send(query);
+		Transaction? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{
@@ -53,7 +53,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all transactions")]
-	public async Task<Results<Ok<TransactionListResponse>, BadRequest<string>>> GetAllTransactions([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<TransactionListResponse>, BadRequest<string>>> GetAllTransactions([FromQuery] Guid? receiptId = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -80,7 +80,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		if (receiptId.HasValue)
 		{
 			GetTransactionsByReceiptIdQuery byReceiptQuery = new(receiptId.Value, offset, limit, sort);
-			PagedResult<Transaction> byReceiptResult = await mediator.Send(byReceiptQuery);
+			PagedResult<Transaction> byReceiptResult = await mediator.Send(byReceiptQuery, cancellationToken);
 
 			return TypedResults.Ok(new TransactionListResponse
 			{
@@ -92,7 +92,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		}
 
 		GetAllTransactionsQuery query = new(offset, limit, sort);
-		PagedResult<Transaction> result = await mediator.Send(query);
+		PagedResult<Transaction> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new TransactionListResponse
 		{
@@ -106,7 +106,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted transactions")]
 	[EndpointDescription("Returns all transactions that have been soft-deleted.")]
-	public async Task<Results<Ok<TransactionListResponse>, BadRequest<string>>> GetDeletedTransactions([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<TransactionListResponse>, BadRequest<string>>> GetDeletedTransactions([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -130,7 +130,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetDeletedTransactionsQuery query = new(offset, limit, sort);
-		PagedResult<Transaction> result = await mediator.Send(query);
+		PagedResult<Transaction> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new TransactionListResponse
 		{
@@ -143,19 +143,19 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single transaction")]
-	public async Task<Ok<TransactionResponse>> CreateTransaction([FromBody] CreateTransactionRequest model, [FromRoute] Guid receiptId)
+	public async Task<Ok<TransactionResponse>> CreateTransaction([FromBody] CreateTransactionRequest model, [FromRoute] Guid receiptId, CancellationToken cancellationToken = default)
 	{
 		Transaction transaction = mapper.ToDomain(model);
 		transaction.AccountId = model.AccountId;
 		CreateTransactionCommand command = new([transaction], receiptId);
-		List<Transaction> transactions = await mediator.Send(command);
+		List<Transaction> transactions = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyCreated("transaction", transactions[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(transactions[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create transactions in batch")]
-	public async Task<Ok<List<TransactionResponse>>> CreateTransactions([FromBody] List<CreateTransactionRequest> models, [FromRoute] Guid receiptId)
+	public async Task<Ok<List<TransactionResponse>>> CreateTransactions([FromBody] List<CreateTransactionRequest> models, [FromRoute] Guid receiptId, CancellationToken cancellationToken = default)
 	{
 		List<Transaction> transactions = [.. models.Select(m =>
 		{
@@ -165,7 +165,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		})];
 
 		CreateTransactionCommand command = new(transactions, receiptId);
-		List<Transaction> result = await mediator.Send(command);
+		List<Transaction> result = await mediator.Send(command, cancellationToken);
 
 		List<TransactionResponse> results = [.. result.Select(mapper.ToResponse)];
 		await notifier.NotifyBulkChanged("transaction", "created", result.Select(t => t.Id));
@@ -174,12 +174,12 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single transaction")]
-	public async Task<Results<NoContent, NotFound>> UpdateTransaction([FromBody] UpdateTransactionRequest model, [FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> UpdateTransaction([FromBody] UpdateTransactionRequest model, [FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		Transaction transaction = mapper.ToDomain(model);
 		transaction.AccountId = model.AccountId;
 		UpdateTransactionCommand command = new([transaction]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -193,7 +193,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update transactions in batch")]
-	public async Task<Results<NoContent, NotFound>> UpdateTransactions([FromBody] List<UpdateTransactionRequest> models)
+	public async Task<Results<NoContent, NotFound>> UpdateTransactions([FromBody] List<UpdateTransactionRequest> models, CancellationToken cancellationToken = default)
 	{
 		List<Transaction> transactions = [.. models.Select(m =>
 		{
@@ -203,7 +203,7 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 		})];
 
 		UpdateTransactionCommand command = new(transactions);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -218,10 +218,10 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[HttpDelete(RouteDelete)]
 	[EndpointSummary("Delete transactions")]
 	[EndpointDescription("Deletes one or more transactions by their IDs. Returns 404 if any transaction is not found.")]
-	public async Task<Results<NoContent, NotFound>> DeleteTransactions([FromBody] List<Guid> ids)
+	public async Task<Results<NoContent, NotFound>> DeleteTransactions([FromBody] List<Guid> ids, CancellationToken cancellationToken = default)
 	{
 		DeleteTransactionCommand command = new(ids);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -236,10 +236,10 @@ public class TransactionsController(IMediator mediator, TransactionMapper mapper
 	[HttpPost(RouteRestore)]
 	[EndpointSummary("Restore a soft-deleted transaction")]
 	[EndpointDescription("Restores a previously soft-deleted transaction by clearing its DeletedAt timestamp.")]
-	public async Task<Results<NoContent, NotFound>> RestoreTransaction([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> RestoreTransaction([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		RestoreTransactionCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{

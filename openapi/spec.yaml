@@ -1408,6 +1408,12 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: q
+          in: query
+          required: false
+          description: Case-insensitive substring filter applied to the receipt Location column. Whitespace-only values are ignored.
+          schema:
+            type: string
       responses:
         "200":
           description: OK
@@ -1808,6 +1814,12 @@ paths:
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/SortBy"
         - $ref: "#/components/parameters/SortDirection"
+        - name: q
+          in: query
+          required: false
+          description: Case-insensitive substring filter applied across Description, ReceiptItemCode, Category, and Subcategory. Whitespace-only values are ignored. Ignored when receiptId is supplied.
+          schema:
+            type: string
       responses:
         "200":
           description: OK
@@ -4672,7 +4684,7 @@ components:
           items:
             $ref: "#/components/schemas/ItemSimilarityGroup"
         computedAt:
-          type: [string, "null"]
+          type: ["string", "null"]
           format: date-time
           description: Timestamp of the most recent edge-set refresh. Null when the background refresher has not yet populated edges.
 
@@ -6576,8 +6588,8 @@ components:
     BackupImportResponse:
       type: object
       required:
-        - accountsCreated
-        - accountsUpdated
+        - cardsCreated
+        - cardsUpdated
         - categoriesCreated
         - categoriesUpdated
         - subcategoriesCreated
@@ -6595,10 +6607,10 @@ components:
         - totalCreated
         - totalUpdated
       properties:
-        accountsCreated:
+        cardsCreated:
           type: integer
           format: int32
-        accountsUpdated:
+        cardsUpdated:
           type: integer
           format: int32
         categoriesCreated:

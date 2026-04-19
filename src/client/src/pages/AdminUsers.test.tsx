@@ -653,4 +653,29 @@ describe("AdminUsers", () => {
     const roleBadge = screen.getByText("User", { selector: "[data-slot='badge']" });
     expect(roleBadge).toBeInTheDocument();
   });
+
+  it("opens create dialog on shortcut:new-item event", async () => {
+    const { act } = await import("@testing-library/react");
+    renderWithProviders(<AdminUsers />);
+
+    act(() => {
+      window.dispatchEvent(new Event("shortcut:new-item"));
+    });
+
+    await screen.findByRole("heading", { name: /create user/i });
+    expect(
+      screen.getByRole("heading", { name: /create user/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithProviders(<AdminUsers />, {
+      route: { pathname: "/admin/users", state: { openNew: true } },
+    });
+
+    await screen.findByRole("heading", { name: /create user/i });
+    expect(
+      screen.getByRole("heading", { name: /create user/i }),
+    ).toBeInTheDocument();
+  });
 });

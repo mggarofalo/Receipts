@@ -248,6 +248,17 @@ describe("ApiKeys", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithQueryClient(<ApiKeys />, {
+      route: { pathname: "/api-keys", state: { openNew: true } },
+    });
+
+    await screen.findByRole("heading", { name: /create api key/i });
+    expect(
+      screen.getByRole("heading", { name: /create api key/i }),
+    ).toBeInTheDocument();
+  });
+
   it("shows loading skeleton when data is loading", async () => {
     const { useQuery } = await import("@tanstack/react-query");
     vi.mocked(useQuery).mockReturnValue(mockQueryResult({

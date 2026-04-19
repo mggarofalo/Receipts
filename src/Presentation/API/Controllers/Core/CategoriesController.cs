@@ -37,10 +37,10 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a category by ID")]
 	[EndpointDescription("Returns a single category matching the provided GUID.")]
-	public async Task<Results<Ok<CategoryResponse>, NotFound>> GetCategoryById([FromRoute] Guid id)
+	public async Task<Results<Ok<CategoryResponse>, NotFound>> GetCategoryById([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		GetCategoryByIdQuery query = new(id);
-		Category? result = await mediator.Send(query);
+		Category? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{
@@ -54,7 +54,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all categories")]
-	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetAllCategories([FromQuery] bool? isActive = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetAllCategories([FromQuery] bool? isActive = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -78,7 +78,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllCategoriesQuery query = new(offset, limit, sort, isActive);
-		PagedResult<Category> result = await mediator.Send(query);
+		PagedResult<Category> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new CategoryListResponse
 		{
@@ -92,7 +92,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted categories")]
 	[EndpointDescription("Returns all categories that have been soft-deleted.")]
-	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetDeletedCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<CategoryListResponse>, BadRequest<string>>> GetDeletedCategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -116,7 +116,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetDeletedCategoriesQuery query = new(offset, limit, sort);
-		PagedResult<Category> result = await mediator.Send(query);
+		PagedResult<Category> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new CategoryListResponse
 		{
@@ -129,30 +129,30 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single category")]
-	public async Task<Ok<CategoryResponse>> CreateCategory([FromBody] CreateCategoryRequest model)
+	public async Task<Ok<CategoryResponse>> CreateCategory([FromBody] CreateCategoryRequest model, CancellationToken cancellationToken = default)
 	{
 		CreateCategoryCommand command = new([mapper.ToDomain(model)]);
-		List<Category> categories = await mediator.Send(command);
+		List<Category> categories = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyCreated("category", categories[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(categories[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create categories in batch")]
-	public async Task<Ok<List<CategoryResponse>>> CreateCategories([FromBody] List<CreateCategoryRequest> models)
+	public async Task<Ok<List<CategoryResponse>>> CreateCategories([FromBody] List<CreateCategoryRequest> models, CancellationToken cancellationToken = default)
 	{
 		CreateCategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
-		List<Category> categories = await mediator.Send(command);
+		List<Category> categories = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyBulkChanged("category", "created", categories.Select(c => c.Id));
 		return TypedResults.Ok(categories.Select(mapper.ToResponse).ToList());
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single category")]
-	public async Task<Results<NoContent, NotFound>> UpdateCategory([FromRoute] Guid id, [FromBody] UpdateCategoryRequest model)
+	public async Task<Results<NoContent, NotFound>> UpdateCategory([FromRoute] Guid id, [FromBody] UpdateCategoryRequest model, CancellationToken cancellationToken = default)
 	{
 		UpdateCategoryCommand command = new([mapper.ToDomain(model)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -166,10 +166,10 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update categories in batch")]
-	public async Task<Results<NoContent, NotFound>> UpdateCategories([FromBody] List<UpdateCategoryRequest> models)
+	public async Task<Results<NoContent, NotFound>> UpdateCategories([FromBody] List<UpdateCategoryRequest> models, CancellationToken cancellationToken = default)
 	{
 		UpdateCategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -184,24 +184,24 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[HttpDelete(RouteDelete)]
 	[EndpointSummary("Soft-delete a category")]
 	[EndpointDescription("Soft-deletes a category and cascade soft-deletes its subcategories. Returns 409 Conflict if receipt items reference this category or any of its subcategories.")]
-	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteCategory([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteCategory([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
-		Category? category = await mediator.Send(new GetCategoryByIdQuery(id));
+		Category? category = await mediator.Send(new GetCategoryByIdQuery(id), cancellationToken);
 		if (category == null)
 		{
 			logger.LogWarning("Category {Id} not found for deletion", id);
 			return TypedResults.NotFound();
 		}
 
-		int receiptItemCount = await categoryService.GetReceiptItemCountByCategoryNameAsync(category.Name, HttpContext.RequestAborted);
+		int receiptItemCount = await categoryService.GetReceiptItemCountByCategoryNameAsync(category.Name, cancellationToken);
 		if (receiptItemCount > 0)
 		{
 			logger.LogWarning("Category {Id} cannot be deleted — {Count} receipt items reference its category name", id, receiptItemCount);
 			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {receiptItemCount} receipt item(s) use this category", receiptItemCount });
 		}
 
-		List<string> subcategoryNames = await categoryService.GetSubcategoryNamesAsync(id, HttpContext.RequestAborted);
-		int subReceiptItemCount = await categoryService.GetReceiptItemCountBySubcategoryNamesAsync(subcategoryNames, HttpContext.RequestAborted);
+		List<string> subcategoryNames = await categoryService.GetSubcategoryNamesAsync(id, cancellationToken);
+		int subReceiptItemCount = await categoryService.GetReceiptItemCountBySubcategoryNamesAsync(subcategoryNames, cancellationToken);
 		if (subReceiptItemCount > 0)
 		{
 			logger.LogWarning("Category {Id} cannot be deleted — {Count} receipt items reference its subcategories", id, subReceiptItemCount);
@@ -209,7 +209,7 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 		}
 
 		DeleteCategoryCommand command = new([id]);
-		await mediator.Send(command);
+		await mediator.Send(command, cancellationToken);
 
 		await notifier.NotifyDeleted("category", id);
 		return TypedResults.NoContent();
@@ -218,10 +218,10 @@ public class CategoriesController(IMediator mediator, CategoryMapper mapper, ILo
 	[HttpPost(RouteRestore)]
 	[EndpointSummary("Restore a soft-deleted category")]
 	[EndpointDescription("Restores a previously soft-deleted category and its cascade-deleted subcategories.")]
-	public async Task<Results<NoContent, NotFound>> RestoreCategory([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> RestoreCategory([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		RestoreCategoryCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{

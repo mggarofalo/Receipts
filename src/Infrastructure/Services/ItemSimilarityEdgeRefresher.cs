@@ -7,30 +7,67 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 
-public class ItemSimilarityEdgeRefresher(
-	IServiceScopeFactory scopeFactory,
-	IDescriptionChangeSignal signal,
-	ILogger<ItemSimilarityEdgeRefresher> logger) : BackgroundService
+public class ItemSimilarityEdgeRefresher : BackgroundService
 {
+	private readonly IServiceScopeFactory _scopeFactory;
+	private readonly IDescriptionChangeSignal _signal;
+	private readonly ILogger<ItemSimilarityEdgeRefresher> _logger;
+	private readonly TimeProvider _timeProvider;
+
 	// Matches the UI floor in ReportsController.GetItemSimilarity (threshold >= 0.3).
 	// Edges below this would never be returned, so we don't store them.
 	private const double MinThreshold = 0.3;
 
 	// After this many consecutive failures, rethrow so .NET's default
 	// BackgroundServiceExceptionBehavior.StopHost crashes the host. Docker restarts the container.
-	private const int MaxConsecutiveFailures = 3;
+	public const int MaxConsecutiveFailures = 3;
 
 	// Safety net: even if no signal arrives, refresh at least this often.
-	private static readonly TimeSpan MaxIdleInterval = TimeSpan.FromHours(4);
+	// Public so the health check can compute staleness against the same bound.
+	public static readonly TimeSpan MaxIdleInterval = TimeSpan.FromHours(4);
 
 	// Debounce window: after a signal, wait this long before refreshing so a burst of mutations
 	// coalesces into a single refresh cycle.
 	private static readonly TimeSpan DebounceQuietWindow = TimeSpan.FromSeconds(30);
 
+	// Observability state (read by ItemSimilarityRefresherHealthCheck on HTTP request threads).
+	private long _lastSuccessfulRefreshUtcTicks;
+	private int _consecutiveFailures;
+
+	public ItemSimilarityEdgeRefresher(
+		IServiceScopeFactory scopeFactory,
+		IDescriptionChangeSignal signal,
+		ILogger<ItemSimilarityEdgeRefresher> logger,
+		TimeProvider? timeProvider = null)
+	{
+		_scopeFactory = scopeFactory;
+		_signal = signal;
+		_logger = logger;
+		_timeProvider = timeProvider ?? TimeProvider.System;
+	}
+
+	public DateTimeOffset? LastSuccessfulRefreshAt
+	{
+		get
+		{
+			long ticks = Interlocked.Read(ref _lastSuccessfulRefreshUtcTicks);
+			return ticks == 0 ? null : new DateTimeOffset(ticks, TimeSpan.Zero);
+		}
+		internal set
+		{
+			long ticks = value.HasValue ? value.Value.UtcTicks : 0;
+			Interlocked.Exchange(ref _lastSuccessfulRefreshUtcTicks, ticks);
+		}
+	}
+
+	public int ConsecutiveFailures
+	{
+		get => Volatile.Read(ref _consecutiveFailures);
+		internal set => Volatile.Write(ref _consecutiveFailures, value);
+	}
+
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
-		int consecutiveFailures = 0;
-
 		while (!stoppingToken.IsCancellationRequested)
 		{
 			// Wait for a dirty signal or the safety-timer deadline, whichever comes first.
@@ -39,7 +76,7 @@ public class ItemSimilarityEdgeRefresher(
 				waitCts.CancelAfter(MaxIdleInterval);
 				try
 				{
-					await signal.Reader.ReadAsync(waitCts.Token);
+					await _signal.Reader.ReadAsync(waitCts.Token);
 				}
 				catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
 				{
@@ -61,14 +98,15 @@ public class ItemSimilarityEdgeRefresher(
 			}
 
 			// Drain any additional dirty signals that arrived during the debounce window.
-			while (signal.Reader.TryRead(out _))
+			while (_signal.Reader.TryRead(out _))
 			{
 			}
 
 			try
 			{
 				await RefreshAsync(stoppingToken);
-				consecutiveFailures = 0;
+				LastSuccessfulRefreshAt = _timeProvider.GetUtcNow();
+				ConsecutiveFailures = 0;
 			}
 			catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
 			{
@@ -76,17 +114,17 @@ public class ItemSimilarityEdgeRefresher(
 			}
 			catch (Exception ex)
 			{
-				consecutiveFailures++;
+				int failures = Interlocked.Increment(ref _consecutiveFailures);
 				// Sentry.AspNetCore's ILogger integration forwards LogError calls to Sentry
 				// automatically (see Program.cs UseSentry configuration). No explicit
 				// SentrySdk.CaptureException needed here.
-				logger.LogError(
+				_logger.LogError(
 					ex,
 					"Item-similarity refresh failed (attempt {Attempt}/{Max})",
-					consecutiveFailures,
+					failures,
 					MaxConsecutiveFailures);
 
-				if (consecutiveFailures >= MaxConsecutiveFailures)
+				if (failures >= MaxConsecutiveFailures)
 				{
 					// Rethrow so the host crashes (BackgroundServiceExceptionBehavior.StopHost
 					// default). Docker restarts the container.
@@ -98,7 +136,7 @@ public class ItemSimilarityEdgeRefresher(
 
 	public async Task RefreshAsync(CancellationToken cancellationToken)
 	{
-		using IServiceScope scope = scopeFactory.CreateScope();
+		using IServiceScope scope = _scopeFactory.CreateScope();
 		IDbContextFactory<ApplicationDbContext> contextFactory =
 			scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
 
@@ -143,7 +181,7 @@ public class ItemSimilarityEdgeRefresher(
 		await transaction.CommitAsync(cancellationToken);
 
 		int edgeCount = await context.ItemSimilarityEdges.AsNoTracking().CountAsync(cancellationToken);
-		logger.LogInformation(
+		_logger.LogInformation(
 			"Refreshed item-similarity edges: total={EdgeCount}, elapsed={ElapsedMs} ms",
 			edgeCount,
 			sw.ElapsedMilliseconds);
