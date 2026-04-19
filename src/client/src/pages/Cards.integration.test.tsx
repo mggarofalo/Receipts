@@ -205,4 +205,16 @@ describe("Cards (integration)", () => {
       expect(screen.getByRole("heading", { name: /create card/i })).toBeInTheDocument();
     });
   });
+
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithQueryClient(<Cards />, {
+      route: { pathname: "/cards", state: { openNew: true } },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /create card/i }),
+      ).toBeInTheDocument();
+    });
+  });
 });

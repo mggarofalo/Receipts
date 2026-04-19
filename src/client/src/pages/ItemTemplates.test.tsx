@@ -454,6 +454,17 @@ describe("ItemTemplates", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithProviders(<ItemTemplates />, {
+      route: { pathname: "/item-templates", state: { openNew: true } },
+    });
+
+    await screen.findByRole("heading", { name: /create item template/i });
+    expect(
+      screen.getByRole("heading", { name: /create item template/i }),
+    ).toBeInTheDocument();
+  });
+
   it("shows Hide button in edit modal when user is admin", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [

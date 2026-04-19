@@ -271,4 +271,16 @@ describe("ItemTemplates (integration)", () => {
       expect(screen.getByRole("heading", { name: /create item template/i })).toBeInTheDocument();
     });
   });
+
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithQueryClient(<ItemTemplates />, {
+      route: { pathname: "/item-templates", state: { openNew: true } },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /create item template/i }),
+      ).toBeInTheDocument();
+    });
+  });
 });

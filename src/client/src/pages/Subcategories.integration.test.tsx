@@ -299,4 +299,16 @@ describe("Subcategories (integration)", () => {
       expect(screen.getByRole("heading", { name: /create subcategory/i })).toBeInTheDocument();
     });
   });
+
+  it("opens create dialog when navigated with openNew state", async () => {
+    renderWithQueryClient(<Subcategories />, {
+      route: { pathname: "/subcategories", state: { openNew: true } },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /create subcategory/i }),
+      ).toBeInTheDocument();
+    });
+  });
 });

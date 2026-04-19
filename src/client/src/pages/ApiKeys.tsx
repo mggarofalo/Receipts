@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { usePermission } from "@/hooks/usePermission";
+import { useOpenNewItem } from "@/hooks/useOpenNewItem";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -152,13 +153,7 @@ function ApiKeys() {
     setCreateOpen(true);
   }, [createForm]);
 
-  useEffect(() => {
-    function onNewItem() {
-      handleCreateOpen();
-    }
-    window.addEventListener("shortcut:new-item", onNewItem);
-    return () => window.removeEventListener("shortcut:new-item", onNewItem);
-  }, [handleCreateOpen]);
+  useOpenNewItem(handleCreateOpen);
 
   function handleCreateSubmit(values: CreateKeyFormValues) {
     createMutation.mutate(values);
