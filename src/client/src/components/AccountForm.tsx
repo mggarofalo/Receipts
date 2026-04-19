@@ -28,7 +28,6 @@ import {
 import { Trash2 } from "lucide-react";
 
 const accountSchema = z.object({
-  accountCode: z.string().min(1, "Account code is required"),
   name: z.string().min(1, "Name is required"),
   isActive: z.boolean(),
 });
@@ -62,7 +61,6 @@ export function AccountForm({
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
     defaultValues: defaultValues ?? {
-      accountCode: "",
       name: "",
       isActive: true,
     },
@@ -71,20 +69,6 @@ export function AccountForm({
   return (
     <Form {...form}>
       <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="accountCode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel required>Account Code</FormLabel>
-              <FormControl>
-                <Input aria-required="true" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name="name"
@@ -138,7 +122,8 @@ export function AccountForm({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Account?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete this account. This action
+                    This will permanently delete this logical account. Any cards
+                    that currently point at it will be unlinked. This action
                     cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

@@ -2,19 +2,19 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { accounts } from "@/test/msw/fixtures/accounts";
+import { cards } from "@/test/msw/fixtures/cards";
 import { createListHandlers } from "@/test/msw/handler-factories";
 import { renderWithQueryClient } from "@/test/test-utils";
-import Accounts from "./Accounts";
+import Cards from "./Cards";
 
 beforeEach(() => {
   localStorage.clear();
-  server.use(...createListHandlers("accounts", accounts));
+  server.use(...createListHandlers("cards", cards));
 });
 
-describe("Accounts (integration)", () => {
-  it("fetches and renders accounts from the API", async () => {
-    renderWithQueryClient(<Accounts />);
+describe("Cards (integration)", () => {
+  it("fetches and renders cards from the API", async () => {
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
       expect(screen.getByText("Cash")).toBeInTheDocument();
@@ -25,12 +25,10 @@ describe("Accounts (integration)", () => {
   });
 
   it("shows loading skeleton then resolves to data", async () => {
-    const { container } = renderWithQueryClient(<Accounts />);
+    const { container } = renderWithQueryClient(<Cards />);
 
-    // Skeleton appears while loading
     expect(container.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
 
-    // Data replaces skeleton
     await waitFor(() => {
       expect(screen.getByText("Cash")).toBeInTheDocument();
     });
@@ -39,38 +37,35 @@ describe("Accounts (integration)", () => {
 
   it("renders empty state when API returns no data", async () => {
     server.use(
-      http.get("*/api/accounts", () => {
+      http.get("*/api/cards", () => {
         return HttpResponse.json({ data: [], total: 0, offset: 0, limit: 50 });
       }),
     );
 
-    renderWithQueryClient(<Accounts />);
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
-      expect(screen.getByText(/no accounts yet/i)).toBeInTheDocument();
+      expect(screen.getByText(/no cards yet/i)).toBeInTheDocument();
     });
   });
 
-  it("defaults to showing only active accounts", async () => {
-    renderWithQueryClient(<Accounts />);
+  it("defaults to showing only active cards", async () => {
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
       expect(screen.getByText("Cash")).toBeInTheDocument();
     });
 
-    // Active accounts visible
     expect(screen.getByText("Credit Card")).toBeInTheDocument();
-    // Inactive account filtered out
     expect(screen.queryByText("Closed Savings")).not.toBeInTheDocument();
 
-    // Active tab selected
     const activeTab = screen.getByRole("tab", { name: "Active" });
     expect(activeTab).toHaveAttribute("data-state", "active");
   });
 
-  it("shows inactive accounts when Inactive tab is clicked", async () => {
+  it("shows inactive cards when Inactive tab is clicked", async () => {
     const user = userEvent.setup();
-    renderWithQueryClient(<Accounts />);
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
       expect(screen.getByText("Cash")).toBeInTheDocument();
@@ -82,9 +77,9 @@ describe("Accounts (integration)", () => {
     expect(screen.getByText("Closed Savings")).toBeInTheDocument();
   });
 
-  it("shows all accounts when All tab is clicked", async () => {
+  it("shows all cards when All tab is clicked", async () => {
     const user = userEvent.setup();
-    renderWithQueryClient(<Accounts />);
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
       expect(screen.getByText("Cash")).toBeInTheDocument();
@@ -99,7 +94,7 @@ describe("Accounts (integration)", () => {
 
   it("persists status filter in localStorage", async () => {
     const user = userEvent.setup();
-    renderWithQueryClient(<Accounts />);
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
       expect(screen.getByText("Cash")).toBeInTheDocument();
@@ -107,15 +102,15 @@ describe("Accounts (integration)", () => {
 
     await user.click(screen.getByRole("tab", { name: "All" }));
 
-    expect(localStorage.getItem("accounts-status-filter")).toBe("all");
+    expect(localStorage.getItem("cards-status-filter")).toBe("all");
   });
 
-  it("opens create dialog and submits a new account via API", async () => {
+  it("opens create dialog and submits a new card via API", async () => {
     const user = userEvent.setup();
     let capturedBody: Record<string, unknown> | null = null;
 
     server.use(
-      http.post("*/api/accounts", async ({ request }) => {
+      http.post("*/api/cards", async ({ request }) => {
         capturedBody = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json(
           { id: "new-id", ...capturedBody },
@@ -124,24 +119,24 @@ describe("Accounts (integration)", () => {
       }),
     );
 
-    renderWithQueryClient(<Accounts />);
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
       expect(screen.getByText("Cash")).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /new account/i }));
-    expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /new card/i }));
+    expect(screen.getByRole("heading", { name: /create card/i })).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/account code/i), "4000");
+    await user.type(screen.getByLabelText(/card code/i), "4000");
     await user.type(screen.getByLabelText(/^name$/i), "New Checking");
-    await user.click(screen.getByRole("button", { name: /create account/i }));
+    await user.click(screen.getByRole("button", { name: /create card/i }));
 
     await waitFor(() => {
       expect(capturedBody).not.toBeNull();
     });
     expect(capturedBody).toMatchObject({
-      accountCode: "4000",
+      cardCode: "4000",
       name: "New Checking",
       isActive: true,
     });
@@ -152,28 +147,27 @@ describe("Accounts (integration)", () => {
     let capturedBody: Record<string, unknown> | null = null;
 
     server.use(
-      http.put("*/api/accounts/:id", async ({ request }) => {
+      http.put("*/api/cards/:id", async ({ request }) => {
         capturedBody = (await request.json()) as Record<string, unknown>;
         return new HttpResponse(null, { status: 204 });
       }),
     );
 
-    renderWithQueryClient(<Accounts />);
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
       expect(screen.getByText("Cash")).toBeInTheDocument();
     });
 
-    // Click the first edit button
     const editButtons = screen.getAllByRole("button", { name: /edit/i });
     await user.click(editButtons[0]);
 
-    expect(screen.getByRole("heading", { name: /edit account/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /edit card/i })).toBeInTheDocument();
 
     const nameInput = screen.getByLabelText(/^name$/i);
     await user.clear(nameInput);
     await user.type(nameInput, "Updated Cash");
-    await user.click(screen.getByRole("button", { name: /update account/i }));
+    await user.click(screen.getByRole("button", { name: /update card/i }));
 
     await waitFor(() => {
       expect(capturedBody).not.toBeNull();
@@ -183,32 +177,32 @@ describe("Accounts (integration)", () => {
 
   it("closes create dialog when Cancel is clicked", async () => {
     const user = userEvent.setup();
-    renderWithQueryClient(<Accounts />);
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /new account/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /new card/i })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /new account/i }));
-    expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /new card/i }));
+    expect(screen.getByRole("heading", { name: /create card/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /cancel/i }));
     await waitFor(() => {
-      expect(screen.queryByRole("heading", { name: /create account/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: /create card/i })).not.toBeInTheDocument();
     });
   });
 
   it("opens create dialog on shortcut:new-item event", async () => {
-    renderWithQueryClient(<Accounts />);
+    renderWithQueryClient(<Cards />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /new account/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /new card/i })).toBeInTheDocument();
     });
 
     window.dispatchEvent(new Event("shortcut:new-item"));
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /create card/i })).toBeInTheDocument();
     });
   });
 });

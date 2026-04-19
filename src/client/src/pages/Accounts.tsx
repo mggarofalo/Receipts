@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { Link } from "react-router";
+import { Fragment, useState, useMemo, useEffect, useCallback } from "react";
 import {
   useAccounts,
+  useAccountCards,
   useCreateAccount,
   useUpdateAccount,
   useDeleteAccount,
@@ -41,26 +41,68 @@ import {
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, Pencil } from "lucide-react";
+import { ChevronDown, ChevronRight, Info, Pencil } from "lucide-react";
 
-interface AccountResponse {
+interface AccountRow {
   id: string;
-  accountCode: string;
   name: string;
   isActive: boolean;
 }
 
-const SEARCH_CONFIG: FuseSearchConfig<AccountResponse> = {
-  keys: [
-    { name: "name", weight: 2 },
-    { name: "accountCode", weight: 1 },
-  ],
+const SEARCH_CONFIG: FuseSearchConfig<AccountRow> = {
+  keys: [{ name: "name", weight: 1 }],
 };
 
 const STATUS_STORAGE_KEY = "accounts-status-filter";
 type StatusFilter = "all" | "true" | "false";
 
 const HIGHLIGHT_PARAMS = ["highlight"] as const;
+
+const getAccountId = (a: AccountRow) => a.id;
+
+function AccountCardsRow({ accountId }: { accountId: string }) {
+  const { data, isLoading } = useAccountCards(accountId);
+
+  if (isLoading) {
+    return (
+      <div className="text-sm text-muted-foreground">Loading cards…</div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground italic">
+        No cards linked to this account yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="text-xs font-medium text-muted-foreground">
+        Cards ({data.length})
+      </div>
+      <ul className="space-y-1">
+        {data.map((card) => (
+          <li
+            key={card.id}
+            className="flex items-center gap-3 rounded border px-3 py-1.5 text-sm"
+          >
+            <span className="font-mono text-xs text-muted-foreground">
+              {card.cardCode}
+            </span>
+            <span>{card.name}</span>
+            {!card.isActive && (
+              <Badge variant="secondary" className="ml-auto">
+                Inactive
+              </Badge>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 function Accounts() {
   usePageTitle("Accounts");
@@ -75,12 +117,26 @@ function Accounts() {
   const { data: accountsData, total: serverTotal, isLoading } = useAccounts(offset, limit, sortBy, sortDirection, isActiveParam);
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
+  const { mutate: mutateUpdateAccount } = updateAccount;
   const deleteAccount = useDeleteAccount();
   const { isAdmin } = usePermission();
   const [createOpen, setCreateOpen] = useState(false);
-  const [editAccount, setEditAccount] = useState<AccountResponse | null>(null);
+  const [editAccount, setEditAccount] = useState<AccountRow | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const anyDialogOpen = createOpen || editAccount !== null;
+
+  const toggleExpanded = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     function onNewItem() {
@@ -95,16 +151,17 @@ function Accounts() {
     resetPage();
   }, [toggleSort, resetPage]);
 
-  const handleToggleActive = useCallback((account: AccountResponse, checked: boolean) => {
-    updateAccount.mutate({
+  const handleToggleActive = useCallback((account: AccountRow, checked: boolean) => {
+    mutateUpdateAccount({
       id: account.id,
-      accountCode: account.accountCode,
       name: account.name,
       isActive: checked,
     });
-  }, [updateAccount]);
+  }, [mutateUpdateAccount]);
 
-  const data = (accountsData as AccountResponse[] | undefined) ?? [];
+  const handleOpen = useCallback((a: AccountRow) => setEditAccount(a), []);
+
+  const data = useMemo(() => (accountsData as AccountRow[] | undefined) ?? [], [accountsData]);
 
   const { search, setSearch, results, totalCount, clearSearch } =
     useFuzzySearch({ data, config: SEARCH_CONFIG });
@@ -133,9 +190,9 @@ function Accounts() {
 
   const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
     items: filteredResults,
-    getId: (a) => a.id,
+    getId: getAccountId,
     enabled: !anyDialogOpen,
-    onOpen: (a) => setEditAccount(a),
+    onOpen: handleOpen,
   });
 
   if (isLoading) {
@@ -200,10 +257,9 @@ function Accounts() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableTableHead column="accountCode" label="Account Code" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
+                  <TableHead className="w-10" />
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
                   <SortableTableHead column="isActive" label="Status" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
-                  <TableHead>Related</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -211,57 +267,73 @@ function Accounts() {
                 {filteredResults.map((account, index) => {
                   const result = matchMap.get(account.id);
                   const matches = result?.matches;
+                  const isExpanded = expandedIds.has(account.id);
                   return (
-                    <TableRow
-                      key={account.id}
-                      className={`cursor-pointer ${focusedId === account.id ? "bg-accent" : ""} ${linkParams.highlight === account.id ? "ring-2 ring-primary" : ""}`}
-                      onClick={(e) => {
-                        if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
-                        setFocusedIndex(index);
-                      }}
-                    >
-                      <TableCell className="font-mono">
-                        <SearchHighlight
-                          text={account.accountCode}
-                          indices={getMatchIndices(matches, "accountCode")}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <SearchHighlight
-                          text={account.name}
-                          indices={getMatchIndices(matches, "name")}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={account.isActive}
-                            onCheckedChange={(checked) => handleToggleActive(account, checked)}
-                            aria-label={`Toggle ${account.name} active status`}
-                          />
-                          <Badge
-                            variant={account.isActive ? "default" : "secondary"}
+                    <Fragment key={account.id}>
+                      <TableRow
+                        className={`cursor-pointer ${focusedId === account.id ? "bg-accent" : ""} ${linkParams.highlight === account.id ? "ring-2 ring-primary" : ""}`}
+                        onClick={(e) => {
+                          if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
+                          setFocusedIndex(index);
+                        }}
+                      >
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={isExpanded ? "Collapse cards" : "Expand cards"}
+                            aria-expanded={isExpanded}
+                            onClick={() => toggleExpanded(account.id)}
                           >
-                            {account.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Link to="/receipts" className="text-sm text-primary hover:underline">
-                          Receipts
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Edit"
-                          onClick={() => setEditAccount(account)}
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <SearchHighlight
+                            text={account.name}
+                            indices={getMatchIndices(matches, "name")}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={account.isActive}
+                              onCheckedChange={(checked) => handleToggleActive(account, checked)}
+                              aria-label={`Toggle ${account.name} active status`}
+                            />
+                            <Badge
+                              variant={account.isActive ? "default" : "secondary"}
+                            >
+                              {account.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Edit"
+                            onClick={() => setEditAccount(account)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && (
+                        <TableRow
+                          className="bg-muted/30 hover:bg-muted/30"
                         >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                          <TableCell />
+                          <TableCell colSpan={3} className="py-3">
+                            <AccountCardsRow accountId={account.id} />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
                   );
                 })}
               </TableBody>
@@ -310,7 +382,6 @@ function Accounts() {
             <AccountForm
               mode="edit"
               defaultValues={{
-                accountCode: editAccount.accountCode,
                 name: editAccount.name,
                 isActive: editAccount.isActive,
               }}

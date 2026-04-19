@@ -101,9 +101,9 @@ public class BackupImportServiceTests : IDisposable
 		result.AccountsUpdated.Should().Be(0);
 
 		await using ApplicationDbContext assertCtx = CreateAssertionContext();
-		AccountEntity? account = await assertCtx.Accounts.FindAsync(accountId);
+		CardEntity? account = await assertCtx.Cards.FindAsync(accountId);
 		account.Should().NotBeNull();
-		account!.AccountCode.Should().Be("ACC001");
+		account!.CardCode.Should().Be("ACC001");
 		account.Name.Should().Be("Test Account");
 		account.IsActive.Should().BeTrue();
 	}
@@ -115,10 +115,10 @@ public class BackupImportServiceTests : IDisposable
 		Guid accountId = Guid.NewGuid();
 		await using (ApplicationDbContext seedCtx = CreateAssertionContext())
 		{
-			seedCtx.Accounts.Add(new AccountEntity
+			seedCtx.Cards.Add(new CardEntity
 			{
 				Id = accountId,
-				AccountCode = "OLD001",
+				CardCode = "OLD001",
 				Name = "Old Name",
 				IsActive = false,
 			});
@@ -139,9 +139,9 @@ public class BackupImportServiceTests : IDisposable
 		result.AccountsUpdated.Should().Be(1);
 
 		await using ApplicationDbContext assertCtx = CreateAssertionContext();
-		AccountEntity? account = await assertCtx.Accounts.FindAsync(accountId);
+		CardEntity? account = await assertCtx.Cards.FindAsync(accountId);
 		account.Should().NotBeNull();
-		account!.AccountCode.Should().Be("NEW001");
+		account!.CardCode.Should().Be("NEW001");
 		account.Name.Should().Be("New Name");
 		account.IsActive.Should().BeTrue();
 	}
@@ -197,10 +197,10 @@ public class BackupImportServiceTests : IDisposable
 		Guid existingId = Guid.NewGuid();
 		await using (ApplicationDbContext seedCtx = CreateAssertionContext())
 		{
-			seedCtx.Accounts.Add(new AccountEntity
+			seedCtx.Cards.Add(new CardEntity
 			{
 				Id = existingId,
-				AccountCode = "EXIST",
+				CardCode = "EXIST",
 				Name = "Existing",
 				IsActive = true,
 			});
@@ -257,7 +257,7 @@ public class BackupImportServiceTests : IDisposable
 		return path;
 	}
 
-	private string CreateSqliteDatabaseWithAccounts(params (Guid Id, string AccountCode, string Name, bool IsActive)[] accounts)
+	private string CreateSqliteDatabaseWithAccounts(params (Guid Id, string CardCode, string Name, bool IsActive)[] accounts)
 	{
 		string path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.sqlite");
 		using SqliteConnection conn = new($"Data Source={path}");

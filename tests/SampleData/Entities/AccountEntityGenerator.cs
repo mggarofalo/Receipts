@@ -9,7 +9,6 @@ public static class AccountEntityGenerator
 		return new AccountEntity
 		{
 			Id = Guid.NewGuid(),
-			AccountCode = "TestAccountCode",
 			Name = "Test Account",
 			IsActive = true
 		};

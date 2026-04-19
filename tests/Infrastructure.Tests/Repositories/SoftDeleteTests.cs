@@ -121,6 +121,9 @@ public class SoftDeleteTests
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			await context.Accounts.AddAsync(account);
+			CardEntity card = CardEntityGenerator.Generate();
+			card.AccountId = account.Id;
+			await context.Cards.AddAsync(card);
 			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 			await context.Receipts.AddAsync(receipt);
 			TransactionEntity transaction1 = TransactionEntityGenerator.Generate(receiptId: receipt.Id, accountId: account.Id);
@@ -340,6 +343,9 @@ public class SoftDeleteTests
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			await context.Accounts.AddAsync(account);
+			CardEntity card = CardEntityGenerator.Generate();
+			card.AccountId = account.Id;
+			await context.Cards.AddAsync(card);
 			await context.Receipts.AddAsync(receipt);
 			TransactionEntity transaction = TransactionEntityGenerator.Generate(receiptId: receipt.Id, accountId: account.Id);
 			await context.Transactions.AddAsync(transaction);
@@ -538,6 +544,9 @@ public class SoftDeleteTests
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			await context.Accounts.AddAsync(account);
+			CardEntity card = CardEntityGenerator.Generate();
+			card.AccountId = account.Id;
+			await context.Cards.AddAsync(card);
 			await context.Receipts.AddAsync(receipt);
 			await context.Transactions.AddAsync(transaction);
 			YnabSyncRecordEntity syncRecord1 = YnabSyncRecordEntityGenerator.Generate(localTransactionId: transaction.Id);
@@ -581,7 +590,7 @@ public class SoftDeleteTests
 		// Act — for every foreign key where BOTH sides are ISoftDeletable, verify both
 		// have a query filter. A mismatch triggers EF Core warning
 		// CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteraction.
-		// Relationships to non-soft-deletable entities (e.g. AccountEntity) are excluded
+		// Relationships to non-soft-deletable entities (e.g. CardEntity) are excluded
 		// because they intentionally lack query filters.
 		List<string> mismatches = [];
 

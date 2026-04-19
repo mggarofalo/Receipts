@@ -13,8 +13,8 @@ vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() =>
     mockQueryResult({
       data: [
-        { id: "acct-1", name: "Checking", accountCode: "CHK" },
-        { id: "acct-2", name: "Credit Card", accountCode: "CC" },
+        { id: "acct-1", name: "Checking", isActive: true },
+        { id: "acct-2", name: "Credit Card", isActive: true },
       ],
       total: 2,
       isLoading: false,

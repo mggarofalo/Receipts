@@ -11,7 +11,6 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 {
 	private static readonly Dictionary<string, Expression<Func<AccountEntity, object>>> AllowedSortColumns = new(StringComparer.OrdinalIgnoreCase)
 	{
-		["accountCode"] = e => e.AccountCode,
 		["name"] = e => e.Name,
 		["isActive"] = e => e.IsActive,
 	};
@@ -47,7 +46,6 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 			.Select(a => new AccountEntity
 			{
 				Id = a.Id,
-				AccountCode = a.AccountCode,
 				Name = a.Name,
 				IsActive = a.IsActive
 			})
@@ -108,11 +106,10 @@ public class AccountRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		}
 	}
 
-	public async Task<int> GetTransactionCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
+	public async Task<int> GetCardCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.Transactions
-			.IgnoreQueryFilters()
-			.CountAsync(t => t.AccountId == accountId, cancellationToken);
+		return await context.Cards
+			.CountAsync(c => c.AccountId == accountId, cancellationToken);
 	}
 }

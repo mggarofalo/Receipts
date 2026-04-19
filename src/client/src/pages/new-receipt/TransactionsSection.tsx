@@ -62,12 +62,7 @@ export function TransactionsSection({
   useFormShortcuts({ formRef });
 
   const accountOptions = useMemo(
-    () =>
-      (
-        (accounts as
-          | { id: string; name: string; accountCode: string }[]
-          | undefined) ?? []
-      ).map(accountToOption),
+    () => (accounts ?? []).map(accountToOption),
     [accounts],
   );
 

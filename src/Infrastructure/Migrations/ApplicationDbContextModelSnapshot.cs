@@ -253,10 +253,6 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AccountCode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -309,6 +305,33 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ReceiptId");
 
                     b.ToTable("Adjustments");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Core.CardEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CardCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("Cards");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.Core.CategoryEntity", b =>
@@ -1160,6 +1183,16 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Receipt");
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Core.CardEntity", b =>
+                {
+                    b.HasOne("Infrastructure.Entities.Core.AccountEntity", "ParentAccount")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ParentAccount");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.Core.ReceiptItemEntity", b =>

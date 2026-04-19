@@ -197,15 +197,15 @@ public class AccountServiceTests
 	}
 
 	[Fact]
-	public async Task GetTransactionCountByAccountIdAsync_ReturnsCorrectCount()
+	public async Task GetCardCountByAccountIdAsync_ReturnsCorrectCount()
 	{
 		// Arrange
 		Guid accountId = Guid.NewGuid();
 		int expected = 3;
-		_mockRepository.Setup(r => r.GetTransactionCountByAccountIdAsync(accountId, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+		_mockRepository.Setup(r => r.GetCardCountByAccountIdAsync(accountId, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
 		// Act
-		int actual = await _service.GetTransactionCountByAccountIdAsync(accountId, CancellationToken.None);
+		int actual = await _service.GetCardCountByAccountIdAsync(accountId, CancellationToken.None);
 
 		// Assert
 		Assert.Equal(expected, actual);

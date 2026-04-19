@@ -14,7 +14,6 @@ public class AccountMapperTests
 		// Arrange
 		CreateAccountRequest request = new()
 		{
-			AccountCode = "ACC-001",
 			Name = "Test Checking Account",
 			IsActive = true
 		};
@@ -24,7 +23,6 @@ public class AccountMapperTests
 
 		// Assert
 		Assert.Equal(Guid.Empty, actual.Id);
-		Assert.Equal("ACC-001", actual.AccountCode);
 		Assert.Equal("Test Checking Account", actual.Name);
 		Assert.True(actual.IsActive);
 	}
@@ -35,7 +33,6 @@ public class AccountMapperTests
 		// Arrange
 		CreateAccountRequest request = new()
 		{
-			AccountCode = "ACC-002",
 			Name = "Inactive Account",
 			IsActive = false
 		};
@@ -56,7 +53,6 @@ public class AccountMapperTests
 		UpdateAccountRequest request = new()
 		{
 			Id = expected,
-			AccountCode = "ACC-UPD-001",
 			Name = "Updated Account Name",
 			IsActive = false
 		};
@@ -66,7 +62,6 @@ public class AccountMapperTests
 
 		// Assert
 		Assert.Equal(expected, actual.Id);
-		Assert.Equal("ACC-UPD-001", actual.AccountCode);
 		Assert.Equal("Updated Account Name", actual.Name);
 		Assert.False(actual.IsActive);
 	}
@@ -76,14 +71,13 @@ public class AccountMapperTests
 	{
 		// Arrange
 		Guid expectedId = Guid.NewGuid();
-		Account account = new(expectedId, "ACC-RES-001", "Response Account", true);
+		Account account = new(expectedId, "Response Account", true);
 
 		// Act
 		AccountResponse actual = _mapper.ToResponse(account);
 
 		// Assert
 		Assert.Equal(expectedId, actual.Id);
-		Assert.Equal("ACC-RES-001", actual.AccountCode);
 		Assert.Equal("Response Account", actual.Name);
 		Assert.True(actual.IsActive);
 	}
@@ -93,7 +87,7 @@ public class AccountMapperTests
 	{
 		// Arrange
 		Guid expectedId = Guid.NewGuid();
-		Account account = new(expectedId, "ACC-RES-002", "Inactive Response Account", false);
+		Account account = new(expectedId, "Inactive Response Account", false);
 
 		// Act
 		AccountResponse actual = _mapper.ToResponse(account);

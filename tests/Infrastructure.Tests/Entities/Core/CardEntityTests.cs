@@ -2,10 +2,10 @@ using Infrastructure.Entities.Core;
 
 namespace Infrastructure.Tests.Entities.Core;
 
-public class AccountEntityTests
+public class CardEntityTests
 {
 	[Fact]
-	public void Constructor_ValidInput_CreatesAccountEntity()
+	public void Constructor_ValidInput_CreatesCardEntity()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
@@ -14,17 +14,17 @@ public class AccountEntityTests
 		bool isActive = true;
 
 		// Act
-		AccountEntity account = new()
+		CardEntity account = new()
 		{
 			Id = id,
-			AccountCode = accountCode,
+			CardCode = accountCode,
 			Name = name,
 			IsActive = isActive
 		};
 
 		// Assert
 		Assert.Equal(id, account.Id);
-		Assert.Equal(accountCode, account.AccountCode);
+		Assert.Equal(accountCode, account.CardCode);
 		Assert.Equal(name, account.Name);
 		Assert.Equal(isActive, account.IsActive);
 	}

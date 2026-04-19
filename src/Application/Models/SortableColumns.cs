@@ -2,7 +2,8 @@ namespace Application.Models;
 
 public static class SortableColumns
 {
-	public static readonly IReadOnlySet<string> Account = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "accountCode", "name", "isActive" };
+	public static readonly IReadOnlySet<string> Account = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "name", "isActive" };
+	public static readonly IReadOnlySet<string> Card = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "cardCode", "name", "isActive" };
 	public static readonly IReadOnlySet<string> Receipt = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "location", "date", "taxAmount" };
 	public static readonly IReadOnlySet<string> Transaction = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "amount", "date" };
 	public static readonly IReadOnlySet<string> ReceiptItem = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "description", "quantity", "unitPrice", "totalAmount", "category" };

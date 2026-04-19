@@ -106,7 +106,7 @@ paths:
       summary: Hard-delete an account
       description: >
         Permanently deletes an account. Requires the Admin role. Returns 409
-        Conflict if transactions reference this account.
+        Conflict if cards reference this account.
       security:
         - BearerAuth: []
         - ApiKey: []
@@ -123,7 +123,7 @@ paths:
         "404":
           description: Not Found
         "409":
-          description: Conflict — transactions reference this account
+          description: Conflict — cards reference this account
           content:
             application/json:
               schema:
@@ -131,11 +131,41 @@ paths:
                 properties:
                   message:
                     type: string
-                  transactionCount:
+                  cardCount:
                     type: integer
                 required:
                   - message
-                  - transactionCount
+                  - cardCount
+
+  /api/accounts/{id}/cards:
+    get:
+      operationId: GetCardsForAccount
+      tags: [Accounts]
+      summary: Get cards for an account
+      description: >
+        Returns the physical Cards (aliases) that belong to the given logical
+        Account. Returns 404 if the account does not exist.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CardResponse"
+        "404":
+          description: Not Found
 
   /api/accounts:
     get:
@@ -236,6 +266,243 @@ paths:
           description: No Content
         "404":
           description: Not Found
+
+  # ──────────────────────────────────────────────
+  # Cards
+  # ──────────────────────────────────────────────
+
+  /api/cards/{id}:
+    get:
+      operationId: GetCardById
+      tags: [Cards]
+      summary: Get a card by ID
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardResponse"
+        "404":
+          description: Not Found
+    put:
+      operationId: UpdateCard
+      tags: [Cards]
+      summary: Update a single card
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCardRequest"
+      responses:
+        "204":
+          description: No Content
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
+        "404":
+          description: Not Found
+    delete:
+      operationId: DeleteCard
+      tags: [Cards]
+      summary: Hard-delete a card
+      description: >
+        Permanently deletes a card. Requires the Admin role. Returns 409
+        Conflict if transactions reference this card.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict — transactions reference this card
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  transactionCount:
+                    type: integer
+                required:
+                  - message
+                  - transactionCount
+
+  /api/cards:
+    get:
+      operationId: GetAllCards
+      tags: [Cards]
+      summary: Get all cards
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      operationId: CreateCard
+      tags: [Cards]
+      summary: Create a single card
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCardRequest"
+      responses:
+        "200":
+          description: OK
+          headers:
+            X-Resource-Id:
+              $ref: "#/components/headers/X-Resource-Id"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardResponse"
+  /api/cards/batch:
+    post:
+      operationId: CreateCards
+      tags: [Cards]
+      summary: Create cards in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/CreateCardRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CardResponse"
+    put:
+      operationId: UpdateCards
+      tags: [Cards]
+      summary: Update cards in batch
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/UpdateCardRequest"
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+
+  /api/cards/merge:
+    post:
+      operationId: MergeCards
+      tags: [Cards]
+      summary: Merge cards into a target account
+      description: >
+        Repoints the listed cards (and their transactions) to the target account
+        and deletes any now-orphaned accounts. Requires the Admin role. Returns
+        409 Conflict if the source/target accounts have differing YNAB account
+        mappings; resubmit with `ynabMappingWinnerAccountId` to resolve.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeCardsRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeCardsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: Not Found — target account or source card missing
+        "409":
+          description: Conflict — source accounts have differing YNAB mappings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeCardsConflictResponse"
 
   # ──────────────────────────────────────────────
   # Categories
@@ -4684,14 +4951,14 @@ components:
           type: integer
           format: int32
 
+    # ── Card ─────────────────────────────────────
+
     # ── Account ──────────────────────────────────
 
     CreateAccountRequest:
       type: object
-      required: [accountCode, name, isActive]
+      required: [name, isActive]
       properties:
-        accountCode:
-          type: string
         name:
           type: string
         isActive:
@@ -4699,13 +4966,11 @@ components:
 
     UpdateAccountRequest:
       type: object
-      required: [id, accountCode, name, isActive]
+      required: [id, name, isActive]
       properties:
         id:
           type: string
           format: uuid
-        accountCode:
-          type: string
         name:
           type: string
         isActive:
@@ -4713,13 +4978,11 @@ components:
 
     AccountResponse:
       type: object
-      required: [id, accountCode, name, isActive]
+      required: [id, name, isActive]
       properties:
         id:
           type: string
           format: uuid
-        accountCode:
-          type: string
         name:
           type: string
         isActive:
@@ -4742,6 +5005,121 @@ components:
         limit:
           type: integer
           format: int32
+
+    # ── Card ──────────────────────────────────────
+
+    CreateCardRequest:
+      type: object
+      required: [cardCode, name, isActive]
+      properties:
+        cardCode:
+          type: string
+        name:
+          type: string
+        isActive:
+          type: boolean
+
+    UpdateCardRequest:
+      type: object
+      required: [id, cardCode, name, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        cardCode:
+          type: string
+        name:
+          type: string
+        isActive:
+          type: boolean
+
+    CardResponse:
+      type: object
+      required: [id, cardCode, name, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        cardCode:
+          type: string
+        name:
+          type: string
+        isActive:
+          type: boolean
+
+    CardListResponse:
+      type: object
+      required: [data, total, offset, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardResponse"
+        total:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+
+    MergeCardsRequest:
+      type: object
+      required: [targetAccountId, sourceCardIds]
+      properties:
+        targetAccountId:
+          type: string
+          format: uuid
+        sourceCardIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 2
+        ynabMappingWinnerAccountId:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: >
+            The account whose YNAB mapping should be retained when mappings conflict.
+            Omit on first submit; if conflicts are returned, resubmit with this field.
+
+    MergeCardsResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    YnabMappingConflict:
+      type: object
+      required: [accountId, accountName, ynabBudgetId, ynabAccountId, ynabAccountName]
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        accountName:
+          type: string
+        ynabBudgetId:
+          type: string
+        ynabAccountId:
+          type: string
+        ynabAccountName:
+          type: string
+
+    MergeCardsConflictResponse:
+      type: object
+      required: [message, conflicts]
+      properties:
+        message:
+          type: string
+        conflicts:
+          type: array
+          items:
+            $ref: "#/components/schemas/YnabMappingConflict"
 
     # ── Category ──────────────────────────────────
 

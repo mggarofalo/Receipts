@@ -118,6 +118,8 @@ public static class InfrastructureService
 		services
 			.AddScoped<IReceiptService, ReceiptService>()
 			.AddScoped<IAccountService, AccountService>()
+			.AddScoped<IAccountMergeService, AccountMergeService>()
+			.AddScoped<ICardService, CardService>()
 			.AddScoped<ICategoryService, CategoryService>()
 			.AddScoped<ISubcategoryService, SubcategoryService>()
 			.AddScoped<ITransactionService, TransactionService>()
@@ -129,6 +131,7 @@ public static class InfrastructureService
 			.AddScoped<IItemTemplateSimilarityService, ItemTemplateSimilarityService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
 			.AddScoped<IAccountRepository, AccountRepository>()
+			.AddScoped<ICardRepository, CardRepository>()
 			.AddScoped<ICategoryRepository, CategoryRepository>()
 			.AddScoped<ISubcategoryRepository, SubcategoryRepository>()
 			.AddScoped<ITransactionRepository, TransactionRepository>()
@@ -212,6 +215,7 @@ public static class InfrastructureService
 
 		services
 			.AddSingleton<AccountMapper>()
+			.AddSingleton<CardMapper>()
 			.AddSingleton<CategoryMapper>()
 			.AddSingleton<SubcategoryMapper>()
 			.AddSingleton<ReceiptMapper>()

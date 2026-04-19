@@ -233,7 +233,7 @@ describe("useSignalR", () => {
       expect(toast.info).not.toHaveBeenCalled();
     });
 
-    it("invalidates account query keys and buffers toast for account updated", async () => {
+    it("invalidates card query keys and buffers toast for card updated", async () => {
       const mockQueryClient = vi.mocked(useQueryClient)();
 
       await renderEnabled();
@@ -242,18 +242,18 @@ describe("useSignalR", () => {
       expect(handler).toBeDefined();
 
       act(() => {
-        handler!({ entityType: "account", changeType: "updated", id: "abc-123", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
+        handler!({ entityType: "card", changeType: "updated", id: "abc-123", count: 1, userId: "other-user-id", authMethod: "jwt", connectionId: "other-conn" });
       });
 
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-        queryKey: ["accounts"],
+        queryKey: ["cards"],
         refetchType: "active",
       });
       expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
         queryKey: ["transaction-accounts"],
         refetchType: "active",
       });
-      expect(bufferToast).toHaveBeenCalledWith("account", "updated", 1, "other-user");
+      expect(bufferToast).toHaveBeenCalledWith("card", "updated", 1, "other-user");
       expect(toast.info).not.toHaveBeenCalled();
     });
 

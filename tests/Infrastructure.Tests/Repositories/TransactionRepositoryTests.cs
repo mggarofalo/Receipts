@@ -20,6 +20,10 @@ public class TransactionRepositoryTests
 		AccountEntity account = AccountEntityGenerator.Generate();
 		await context.Accounts.AddAsync(account);
 
+		CardEntity card = CardEntityGenerator.Generate();
+		card.AccountId = account.Id;
+		await context.Cards.AddAsync(card);
+
 		await context.SaveChangesAsync(CancellationToken.None);
 		return (receipt, account);
 	}

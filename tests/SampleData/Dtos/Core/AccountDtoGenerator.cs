@@ -8,8 +8,7 @@ public static class AccountDtoGenerator
 	{
 		return new CreateAccountRequest
 		{
-			AccountCode = "Test Account",
-			Name = "Test Description",
+			Name = "Test Account",
 			IsActive = true
 		};
 	}
@@ -24,8 +23,7 @@ public static class AccountDtoGenerator
 		return new UpdateAccountRequest
 		{
 			Id = Guid.NewGuid(),
-			AccountCode = "Test Account",
-			Name = "Test Description",
+			Name = "Test Account",
 			IsActive = true
 		};
 	}

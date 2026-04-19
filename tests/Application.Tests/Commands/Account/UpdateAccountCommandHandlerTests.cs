@@ -16,6 +16,10 @@ public class UpdateAccountCommandHandlerTests
 		List<Domain.Core.Account> input = AccountGenerator.GenerateList(2);
 
 		mockService.Setup(r => r
+			.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		mockService.Setup(r => r
 			.UpdateAsync(It.IsAny<List<Domain.Core.Account>>(), It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 

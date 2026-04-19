@@ -1,5 +1,5 @@
 import { authHandlers } from "./auth";
-import { accountHandlers } from "./accounts";
+import { cardHandlers } from "./cards";
 import { categoryHandlers } from "./categories";
 import { subcategoryHandlers } from "./subcategories";
 import { receiptHandlers } from "./receipts";
@@ -11,7 +11,7 @@ import { scanHandlers } from "./scan";
 
 export const handlers = [
   ...authHandlers,
-  ...accountHandlers,
+  ...cardHandlers,
   ...categoryHandlers,
   ...subcategoryHandlers,
   ...receiptHandlers,

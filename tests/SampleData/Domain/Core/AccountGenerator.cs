@@ -9,7 +9,6 @@ public static class AccountGenerator
 		return new Account(
 			Guid.NewGuid(),
 			"Test Account",
-			"Test Description",
 			true
 		);
 	}

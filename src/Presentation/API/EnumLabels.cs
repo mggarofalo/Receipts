@@ -42,11 +42,13 @@ public static class EnumLabels
 		new() { Value = "Update", Label = "Updated" },
 		new() { Value = "Delete", Label = "Deleted" },
 		new() { Value = "Restore", Label = "Restored" },
+		new() { Value = "Merge", Label = "Merged" },
 	];
 
 	public static readonly EnumValuePair[] EntityTypes =
 	[
 		new() { Value = "Account", Label = "Account" },
+		new() { Value = "Card", Label = "Card" },
 		new() { Value = "Receipt", Label = "Receipt" },
 		new() { Value = "ReceiptItem", Label = "Receipt Item" },
 		new() { Value = "Transaction", Label = "Transaction" },

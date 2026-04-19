@@ -6,11 +6,11 @@ namespace Application.Commands.Ynab.AccountMapping;
 
 public class CreateYnabAccountMappingCommandHandler(
 	IYnabAccountMappingService accountMappingService,
-	IAccountService accountService) : IRequestHandler<CreateYnabAccountMappingCommand, YnabAccountMappingDto>
+	ICardService cardService) : IRequestHandler<CreateYnabAccountMappingCommand, YnabAccountMappingDto>
 {
 	public async Task<YnabAccountMappingDto> Handle(CreateYnabAccountMappingCommand request, CancellationToken cancellationToken)
 	{
-		bool accountExists = await accountService.ExistsAsync(request.ReceiptsAccountId, cancellationToken);
+		bool accountExists = await cardService.ExistsAsync(request.ReceiptsAccountId, cancellationToken);
 		if (!accountExists)
 		{
 			throw new ArgumentException($"Account with ID '{request.ReceiptsAccountId}' does not exist.", nameof(request));

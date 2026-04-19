@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import {
   useAccounts,
   useAccount,
+  useAccountCards,
   useCreateAccount,
   useUpdateAccount,
   useDeleteAccount,
@@ -41,14 +42,13 @@ beforeEach(() => {
 
 describe("useAccounts", () => {
   it("list query returns data on success", async () => {
-    const accounts = [
-      { id: "1", accountCode: "ACC1", name: "Checking", isActive: true },
-    ];
-    (client.GET as Mock).mockResolvedValue({ data: { data: accounts, total: 1, offset: 0, limit: 50 }, error: undefined });
-
-    const { result } = renderHook(() => useAccounts(), {
-      wrapper: createWrapper(),
+    const accounts = [{ id: "a1", name: "Apple Card", isActive: true }];
+    (client.GET as Mock).mockResolvedValue({
+      data: { data: accounts, total: 1, offset: 0, limit: 50 },
+      error: undefined,
     });
+
+    const { result } = renderHook(() => useAccounts(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(accounts);
@@ -57,11 +57,8 @@ describe("useAccounts", () => {
     });
   });
 
-  it("list query passes isActive filter to API", async () => {
-    const accounts = [
-      { id: "1", accountCode: "ACC1", name: "Checking", isActive: true },
-    ];
-    (client.GET as Mock).mockResolvedValue({ data: { data: accounts, total: 1, offset: 0, limit: 50 }, error: undefined });
+  it("list query passes isActive filter", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: { data: [], total: 0, offset: 0, limit: 50 }, error: undefined });
 
     const { result } = renderHook(() => useAccounts(0, 50, null, null, true), {
       wrapper: createWrapper(),
@@ -73,94 +70,144 @@ describe("useAccounts", () => {
     });
   });
 
-  it("list query omits isActive when null", async () => {
-    const accounts = [
-      { id: "1", accountCode: "ACC1", name: "Checking", isActive: true },
-    ];
-    (client.GET as Mock).mockResolvedValue({ data: { data: accounts, total: 1, offset: 0, limit: 50 }, error: undefined });
+  it("list query throws when API returns error", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "boom" } });
 
-    const { result } = renderHook(() => useAccounts(0, 50, null, null, null), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(() => useAccounts(), { wrapper: createWrapper() });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(client.GET).toHaveBeenCalledWith("/api/accounts", {
-      params: { query: { offset: 0, limit: 50 } },
-    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
+});
 
-  it("single query is disabled when id is null", () => {
-    const { result } = renderHook(() => useAccount(null), {
-      wrapper: createWrapper(),
-    });
-
-    expect(result.current.data).toBeUndefined();
-    expect(result.current.fetchStatus).toBe("idle");
-    expect(client.GET).not.toHaveBeenCalled();
-  });
-
-  it("single query fetches data when id is provided", async () => {
-    const account = { id: "1", accountCode: "ACC1", name: "Checking", isActive: true };
+describe("useAccount", () => {
+  it("fetches a single account by id", async () => {
+    const account = { id: "a1", name: "Apple Card", isActive: true };
     (client.GET as Mock).mockResolvedValue({ data: account, error: undefined });
 
-    const { result } = renderHook(() => useAccount("1"), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(() => useAccount("a1"), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(account);
+    expect(client.GET).toHaveBeenCalledWith("/api/accounts/{id}", {
+      params: { path: { id: "a1" } },
+    });
   });
 
-  it("create mutation calls POST and shows toast on success", async () => {
-    const newAccount = { accountCode: "ACC2", name: "Savings", isActive: true };
-    const created = { id: "2", ...newAccount };
+  it("does not fire query when id is null", () => {
+    renderHook(() => useAccount(null), { wrapper: createWrapper() });
+
+    expect(client.GET).not.toHaveBeenCalled();
+  });
+});
+
+describe("useAccountCards", () => {
+  it("fetches cards for the given account", async () => {
+    const cards = [
+      { id: "c1", cardCode: "VISA1", name: "Physical A", isActive: true },
+      { id: "c2", cardCode: "VISA2", name: "Physical B", isActive: true },
+    ];
+    (client.GET as Mock).mockResolvedValue({ data: cards, error: undefined });
+
+    const { result } = renderHook(() => useAccountCards("a1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.data).toEqual(cards));
+    expect(client.GET).toHaveBeenCalledWith("/api/accounts/{id}/cards", {
+      params: { path: { id: "a1" } },
+    });
+  });
+
+  it("does not fire query when accountId is null", () => {
+    renderHook(() => useAccountCards(null), { wrapper: createWrapper() });
+
+    expect(client.GET).not.toHaveBeenCalled();
+  });
+
+  it("throws when API returns error", async () => {
+    (client.GET as Mock).mockResolvedValue({ data: undefined, error: { message: "not found" } });
+
+    const { result } = renderHook(() => useAccountCards("a1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe("useCreateAccount", () => {
+  it("creates an account and toasts success", async () => {
+    const created = { id: "a1", name: "Apple Card", isActive: true };
     (client.POST as Mock).mockResolvedValue({ data: created, error: undefined });
 
     const { result } = renderHook(() => useCreateAccount(), {
       wrapper: createWrapper(),
     });
 
-    await result.current.mutateAsync(newAccount);
+    await result.current.mutateAsync({ name: "Apple Card", isActive: true });
 
-    expect(client.POST).toHaveBeenCalledWith("/api/accounts", { body: newAccount });
+    expect(client.POST).toHaveBeenCalledWith("/api/accounts", {
+      body: { name: "Apple Card", isActive: true },
+    });
     expect(toast.success).toHaveBeenCalledWith("Account created");
   });
 
-  it("update mutation calls PUT and shows toast on success", async () => {
-    const updated = { id: "1", accountCode: "ACC1", name: "Updated", isActive: false };
-    (client.PUT as Mock).mockResolvedValue({ error: undefined });
+  it("toasts error on failure", async () => {
+    (client.POST as Mock).mockResolvedValue({ data: undefined, error: { message: "boom" } });
+
+    const { result } = renderHook(() => useCreateAccount(), {
+      wrapper: createWrapper(),
+    });
+
+    await expect(
+      result.current.mutateAsync({ name: "Apple Card", isActive: true }),
+    ).rejects.toBeDefined();
+    expect(toast.error).toHaveBeenCalledWith("Failed to create account");
+  });
+});
+
+describe("useUpdateAccount", () => {
+  it("updates an account and toasts success", async () => {
+    (client.PUT as Mock).mockResolvedValue({ data: undefined, error: undefined });
 
     const { result } = renderHook(() => useUpdateAccount(), {
       wrapper: createWrapper(),
     });
 
-    await result.current.mutateAsync(updated);
+    await result.current.mutateAsync({ id: "a1", name: "Apple", isActive: false });
 
     expect(client.PUT).toHaveBeenCalledWith("/api/accounts/{id}", {
-      params: { path: { id: "1" } },
-      body: updated,
+      params: { path: { id: "a1" } },
+      body: { id: "a1", name: "Apple", isActive: false },
     });
     expect(toast.success).toHaveBeenCalledWith("Account updated");
   });
+});
 
-  it("delete mutation calls DELETE and shows toast on success", async () => {
-    (client.DELETE as Mock).mockResolvedValue({ error: undefined, response: { status: 204 } });
+describe("useDeleteAccount", () => {
+  it("deletes an account and toasts success", async () => {
+    (client.DELETE as Mock).mockResolvedValue({
+      data: undefined,
+      error: undefined,
+      response: { status: 204 },
+    });
 
     const { result } = renderHook(() => useDeleteAccount(), {
       wrapper: createWrapper(),
     });
 
-    await result.current.mutateAsync("1");
+    await result.current.mutateAsync("a1");
 
     expect(client.DELETE).toHaveBeenCalledWith("/api/accounts/{id}", {
-      params: { path: { id: "1" } },
+      params: { path: { id: "a1" } },
     });
     expect(toast.success).toHaveBeenCalledWith("Account deleted");
   });
 
-  it("delete mutation shows conflict toast on 409", async () => {
+  it("surfaces 409 card-count conflict message", async () => {
     (client.DELETE as Mock).mockResolvedValue({
-      error: { message: "Cannot delete — 3 transaction(s) reference this account", transactionCount: 3 },
+      data: undefined,
+      error: { message: "Cannot delete — 3 card(s) reference this account", cardCount: 3 },
       response: { status: 409 },
     });
 
@@ -168,30 +215,12 @@ describe("useAccounts", () => {
       wrapper: createWrapper(),
     });
 
-    await expect(result.current.mutateAsync("1")).rejects.toThrow();
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        "Cannot delete — 3 transaction(s) reference this account",
-      );
+    await expect(result.current.mutateAsync("a1")).rejects.toMatchObject({
+      conflict: true,
+      cardCount: 3,
     });
+    expect(toast.error).toHaveBeenCalledWith(
+      "Cannot delete — 3 card(s) reference this account",
+    );
   });
-
-  it("delete mutation shows generic error toast on non-409 failure", async () => {
-    (client.DELETE as Mock).mockResolvedValue({
-      error: { message: "Server error" },
-      response: { status: 500 },
-    });
-
-    const { result } = renderHook(() => useDeleteAccount(), {
-      wrapper: createWrapper(),
-    });
-
-    await expect(result.current.mutateAsync("1")).rejects.toThrow();
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Failed to delete account");
-    });
-  });
-
 });

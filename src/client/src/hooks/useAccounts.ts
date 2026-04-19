@@ -3,8 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "@/lib/api-client";
 import { toast } from "sonner";
 
-// Note: Accounts are hard-delete entities (no soft-delete/restore).
-
 export function useAccounts(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null, isActive?: boolean | null) {
   const query = useQuery({
     queryKey: ["accounts", "list", offset, limit, sortBy, sortDirection, isActive],
@@ -33,11 +31,36 @@ export function useAccount(id: string | null) {
   });
 }
 
+export function useAccountCards(accountId: string | null) {
+  // Keyed under "cards" so mutations in useCards (useUpdateCard, useDeleteCard,
+  // useMergeCards) that invalidate ["cards"] also invalidate these per-account
+  // card lists via React Query's prefix matching.
+  const query = useQuery({
+    queryKey: ["cards", "byAccount", accountId],
+    enabled: !!accountId,
+    queryFn: async () => {
+      const { data, error } = await client.GET("/api/accounts/{id}/cards", {
+        params: { path: { id: accountId! } },
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+  return useMemo(
+    () => ({
+      data: query.data,
+      isLoading: query.isLoading,
+      isError: query.isError,
+      error: query.error,
+    }),
+    [query.data, query.isLoading, query.isError, query.error],
+  );
+}
+
 export function useCreateAccount() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: {
-      accountCode: string;
       name: string;
       isActive: boolean;
     }) => {
@@ -60,7 +83,6 @@ export function useUpdateAccount() {
   return useMutation({
     mutationFn: async (body: {
       id: string;
-      accountCode: string;
       name: string;
       isActive: boolean;
     }) => {
@@ -82,7 +104,7 @@ export function useUpdateAccount() {
 
 export interface DeleteAccountConflict {
   message: string;
-  transactionCount: number;
+  cardCount: number;
 }
 
 export function useDeleteAccount() {
@@ -105,13 +127,12 @@ export function useDeleteAccount() {
       toast.success("Account deleted");
     },
     onError: (error: unknown) => {
-      const err = error as { conflict?: boolean; message?: string; transactionCount?: number };
+      const err = error as { conflict?: boolean; message?: string; cardCount?: number };
       if (err.conflict) {
-        toast.error(err.message ?? "Cannot delete — transactions reference this account");
+        toast.error(err.message ?? "Cannot delete — cards reference this account");
       } else {
         toast.error("Failed to delete account");
       }
     },
   });
 }
-

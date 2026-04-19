@@ -8,8 +8,8 @@ import { mockMutationResult } from "@/test/mock-hooks";
 vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() => ({
     data: [
-      { id: "acc-1", name: "Checking", accountCode: "1001" },
-      { id: "acc-2", name: "Savings", accountCode: "2001" },
+      { id: "acc-1", name: "Checking", isActive: true },
+      { id: "acc-2", name: "Savings", isActive: false },
     ],
     isLoading: false,
   })),
@@ -26,7 +26,6 @@ const mockTransactions = [
     transaction: { id: "txn-1", amount: 50.0, date: "2024-01-15" },
     account: {
       id: "acc-1",
-      accountCode: "1001",
       name: "Checking",
       isActive: true,
     },
@@ -35,7 +34,6 @@ const mockTransactions = [
     transaction: { id: "txn-2", amount: 25.5, date: "2024-01-16" },
     account: {
       id: "acc-2",
-      accountCode: "2001",
       name: "Savings",
       isActive: false,
     },
@@ -68,8 +66,8 @@ describe("ReceiptTransactionsCard", () => {
     expect(screen.getByText("Transactions (2)")).toBeInTheDocument();
     expect(screen.getByText("Checking")).toBeInTheDocument();
     expect(screen.getByText("Savings")).toBeInTheDocument();
-    expect(screen.getByText("1001")).toBeInTheDocument();
-    expect(screen.getByText("2001")).toBeInTheDocument();
+    expect(screen.getByText("Checking")).toBeInTheDocument();
+    expect(screen.getByText("Savings")).toBeInTheDocument();
   });
 
   it("renders table headers when transactions exist", () => {
@@ -82,8 +80,7 @@ describe("ReceiptTransactionsCard", () => {
     );
     expect(screen.getByText("Amount")).toBeInTheDocument();
     expect(screen.getByText("Date")).toBeInTheDocument();
-    expect(screen.getByText("Account Code")).toBeInTheDocument();
-    expect(screen.getByText("Account Name")).toBeInTheDocument();
+    expect(screen.getByText("Account")).toBeInTheDocument();
     expect(screen.getByText("Status")).toBeInTheDocument();
     expect(screen.getByText("Actions")).toBeInTheDocument();
   });

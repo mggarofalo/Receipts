@@ -12,11 +12,11 @@ public partial class AccountMapper
 
 	public Account ToDomain(CreateAccountRequest source)
 	{
-		return new Account(Guid.Empty, source.AccountCode, source.Name, source.IsActive);
+		return new Account(Guid.Empty, source.Name, source.IsActive);
 	}
 
 	public Account ToDomain(UpdateAccountRequest source)
 	{
-		return new Account(source.Id, source.AccountCode, source.Name, source.IsActive);
+		return new Account(source.Id, source.Name, source.IsActive);
 	}
 }

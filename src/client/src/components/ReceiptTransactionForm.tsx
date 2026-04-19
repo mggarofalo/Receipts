@@ -52,12 +52,7 @@ export function ReceiptTransactionForm({
   const { data: accounts, isLoading: accountsLoading } = useAccounts(0, 50, undefined, undefined, true);
 
   const accountOptions = useMemo(
-    () =>
-      (
-        (accounts as
-          | { id: string; name: string; accountCode: string }[]
-          | undefined) ?? []
-      ).map(accountToOption),
+    () => (accounts ?? []).map(accountToOption),
     [accounts],
   );
 

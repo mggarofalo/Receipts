@@ -23,6 +23,10 @@ vi.mock("@/hooks/useAccounts", () => ({
   useAccounts: vi.fn(() => ({ data: undefined })),
 }));
 
+vi.mock("@/hooks/useCards", () => ({
+  useCards: vi.fn(() => ({ data: undefined })),
+}));
+
 vi.mock("@/hooks/useReceipts", () => ({
   useReceipts: vi.fn(() => ({ data: undefined })),
 }));
@@ -61,6 +65,7 @@ describe("GlobalSearchDialog", () => {
     expect(screen.getByText("Navigation")).toBeInTheDocument();
     expect(screen.getByText("Home")).toBeInTheDocument();
     expect(screen.getByText("Accounts")).toBeInTheDocument();
+    expect(screen.getByText("Cards")).toBeInTheDocument();
     expect(screen.getByText("Receipts")).toBeInTheDocument();
   });
 
@@ -68,8 +73,43 @@ describe("GlobalSearchDialog", () => {
     const { useAccounts } = await import("@/hooks/useAccounts");
     vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
       data: [
-        { id: "acc-1", accountCode: "ACC001", name: "Checking" },
-        { id: "acc-2", accountCode: "ACC002", name: "Savings" },
+        { id: "acct-1", name: "Apple Card", isActive: true },
+        { id: "acct-2", name: "Chase Sapphire", isActive: true },
+      ],
+      total: 2,
+    }));
+
+    renderWithQueryClient(
+      <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
+    );
+    // "Accounts" appears both as a nav item and a group heading; the group items
+    // are the logical account names.
+    expect(screen.getByText("Apple Card")).toBeInTheDocument();
+    expect(screen.getByText("Chase Sapphire")).toBeInTheDocument();
+  });
+
+  it("selecting an account item navigates to /accounts and closes the dialog", async () => {
+    const { useAccounts } = await import("@/hooks/useAccounts");
+    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+      data: [{ id: "acct-1", name: "Apple Card", isActive: true }],
+      total: 1,
+    }));
+
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <GlobalSearchDialog open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Apple Card"));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("renders card items when cards data is available", async () => {
+    const { useCards } = await import("@/hooks/useCards");
+    vi.mocked(useCards).mockReturnValue(mockQueryResult({
+      data: [
+        { id: "acc-1", cardCode: "CARD001", name: "Checking" },
+        { id: "acc-2", cardCode: "CARD002", name: "Savings" },
       ],
       total: 2,
     }));
@@ -78,7 +118,7 @@ describe("GlobalSearchDialog", () => {
       <GlobalSearchDialog open={true} onOpenChange={vi.fn()} />,
     );
     expect(screen.getByText("Checking")).toBeInTheDocument();
-    expect(screen.getByText("ACC001")).toBeInTheDocument();
+    expect(screen.getByText("CARD001")).toBeInTheDocument();
     expect(screen.getByText("Savings")).toBeInTheDocument();
   });
 
@@ -199,11 +239,11 @@ describe("GlobalSearchDialog", () => {
     expect(screen.getByText("Store B")).toBeInTheDocument();
   });
 
-  it("selecting an account item closes dialog", async () => {
-    const { useAccounts } = await import("@/hooks/useAccounts");
-    vi.mocked(useAccounts).mockReturnValue(mockQueryResult({
+  it("selecting a card item closes dialog", async () => {
+    const { useCards } = await import("@/hooks/useCards");
+    vi.mocked(useCards).mockReturnValue(mockQueryResult({
       data: [
-        { id: "acc-1", accountCode: "ACC001", name: "Checking" },
+        { id: "acc-1", cardCode: "CARD001", name: "Checking" },
       ],
       total: 1,
     }));

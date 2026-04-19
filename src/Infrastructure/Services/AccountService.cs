@@ -65,8 +65,8 @@ public class AccountService(IAccountRepository repository, AccountMapper mapper)
 		await repository.DeleteAsync(id, cancellationToken);
 	}
 
-	public async Task<int> GetTransactionCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
+	public async Task<int> GetCardCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
 	{
-		return await repository.GetTransactionCountByAccountIdAsync(accountId, cancellationToken);
+		return await repository.GetCardCountByAccountIdAsync(accountId, cancellationToken);
 	}
 }

@@ -1,17 +1,17 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { useAccounts } from "./useAccounts";
+import { useCards } from "./useCards";
 import { createQueryWrapper } from "@/test/test-utils";
 
-describe("useAccounts (integration)", () => {
-  it("returns account list from API", async () => {
+describe("useCards (integration)", () => {
+  it("returns card list from API", async () => {
     server.use(
-      http.get("*/api/accounts", () => {
+      http.get("*/api/cards", () => {
         return HttpResponse.json({
           data: [
-            { id: "11111111-1111-1111-1111-111111111111", accountCode: "1000", name: "Cash", isActive: true },
-            { id: "22222222-2222-2222-2222-222222222222", accountCode: "2000", name: "Credit Card", isActive: true },
+            { id: "11111111-1111-1111-1111-111111111111", cardCode: "1000", name: "Cash", isActive: true },
+            { id: "22222222-2222-2222-2222-222222222222", cardCode: "2000", name: "Credit Card", isActive: true },
           ],
           total: 2,
           offset: 0,
@@ -20,7 +20,7 @@ describe("useAccounts (integration)", () => {
       }),
     );
 
-    const { result } = renderHook(() => useAccounts(), {
+    const { result } = renderHook(() => useCards(), {
       wrapper: createQueryWrapper(),
     });
 
@@ -31,12 +31,12 @@ describe("useAccounts (integration)", () => {
 
   it("surfaces API errors", async () => {
     server.use(
-      http.get("*/api/accounts", () => {
+      http.get("*/api/cards", () => {
         return HttpResponse.json({ message: "Internal Server Error" }, { status: 500 });
       }),
     );
 
-    const { result } = renderHook(() => useAccounts(), {
+    const { result } = renderHook(() => useCards(), {
       wrapper: createQueryWrapper(),
     });
 

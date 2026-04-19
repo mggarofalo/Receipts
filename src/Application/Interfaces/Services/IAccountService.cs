@@ -10,5 +10,5 @@ public interface IAccountService : IService<Account>
 	Task<List<Account>> CreateAsync(List<Account> models, CancellationToken cancellationToken);
 	Task UpdateAsync(List<Account> models, CancellationToken cancellationToken);
 	Task DeleteAsync(Guid id, CancellationToken cancellationToken);
-	Task<int> GetTransactionCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken);
+	Task<int> GetCardCountByAccountIdAsync(Guid accountId, CancellationToken cancellationToken);
 }

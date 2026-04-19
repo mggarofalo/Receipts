@@ -7,6 +7,15 @@ public class UpdateAccountCommandHandler(IAccountService accountService) : IRequ
 {
 	public async Task<bool> Handle(UpdateAccountCommand request, CancellationToken cancellationToken)
 	{
+		foreach (Domain.Core.Account account in request.Accounts)
+		{
+			bool exists = await accountService.ExistsAsync(account.Id, cancellationToken);
+			if (!exists)
+			{
+				return false;
+			}
+		}
+
 		await accountService.UpdateAsync([.. request.Accounts], cancellationToken);
 		return true;
 	}

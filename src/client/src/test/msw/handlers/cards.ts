@@ -1,16 +1,16 @@
 import { http, HttpResponse } from "msw";
-import { accounts } from "../fixtures";
+import { cards } from "../fixtures";
 
-export const accountHandlers = [
-  http.get("*/api/accounts", ({ request }) => {
+export const cardHandlers = [
+  http.get("*/api/cards", ({ request }) => {
     const url = new URL(request.url);
     const offset = Number(url.searchParams.get("offset") ?? 0);
     const limit = Number(url.searchParams.get("limit") ?? 50);
     const isActiveParam = url.searchParams.get("isActive");
-    let filtered = accounts;
+    let filtered = cards;
     if (isActiveParam !== null) {
       const isActive = isActiveParam === "true";
-      filtered = accounts.filter((a) => a.isActive === isActive);
+      filtered = cards.filter((a) => a.isActive === isActive);
     }
     const page = filtered.slice(offset, offset + limit);
     return HttpResponse.json({
@@ -21,13 +21,13 @@ export const accountHandlers = [
     });
   }),
 
-  http.get("*/api/accounts/:id", ({ params }) => {
-    const account = accounts.find((a) => a.id === params.id);
-    if (!account) return HttpResponse.json({ message: "Not Found" }, { status: 404 });
-    return HttpResponse.json(account);
+  http.get("*/api/cards/:id", ({ params }) => {
+    const card = cards.find((a) => a.id === params.id);
+    if (!card) return HttpResponse.json({ message: "Not Found" }, { status: 404 });
+    return HttpResponse.json(card);
   }),
 
-  http.post("*/api/accounts", async ({ request }) => {
+  http.post("*/api/cards", async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     return HttpResponse.json({
       id: "00000000-0000-0000-0000-000000000001",
@@ -35,11 +35,11 @@ export const accountHandlers = [
     });
   }),
 
-  http.put("*/api/accounts/batch", () => {
+  http.put("*/api/cards/batch", () => {
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.put("*/api/accounts/:id", () => {
+  http.put("*/api/cards/:id", () => {
     return new HttpResponse(null, { status: 204 });
   }),
 ];

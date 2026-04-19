@@ -7,6 +7,7 @@ using Application.Commands.Account.Update;
 using Application.Interfaces.Services;
 using Application.Models;
 using Application.Queries.Core.Account;
+using Application.Queries.Core.Card;
 using Asp.Versioning;
 using Domain.Core;
 using MediatR;
@@ -21,10 +22,11 @@ namespace API.Controllers.Core;
 [Route("api/accounts")]
 [Produces("application/json")]
 [Authorize]
-public class AccountsController(IMediator mediator, AccountMapper mapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier, IAccountService accountService) : ControllerBase
+public class AccountsController(IMediator mediator, AccountMapper mapper, CardMapper cardMapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier, IAccountService accountService) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
+	public const string RouteGetCards = "{id}/cards";
 	public const string RouteCreate = "";
 	public const string RouteCreateBatch = "batch";
 	public const string RouteUpdate = "{id}";
@@ -37,7 +39,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public async Task<Results<Ok<AccountResponse>, NotFound>> GetAccountById([FromRoute] Guid id)
 	{
 		GetAccountByIdQuery query = new(id);
-		Account? result = await mediator.Send(query);
+		Account? result = await mediator.Send(query, HttpContext.RequestAborted);
 
 		if (result == null)
 		{
@@ -75,7 +77,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllAccountsQuery query = new(offset, limit, sort, isActive);
-		PagedResult<Account> result = await mediator.Send(query);
+		PagedResult<Account> result = await mediator.Send(query, HttpContext.RequestAborted);
 
 		return TypedResults.Ok(new AccountListResponse
 		{
@@ -86,12 +88,28 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 		});
 	}
 
+	[HttpGet(RouteGetCards)]
+	[EndpointSummary("Get cards for an account")]
+	[EndpointDescription("Returns the physical Cards (aliases) that belong to the given logical Account. Returns 404 if the account does not exist.")]
+	public async Task<Results<Ok<List<CardResponse>>, NotFound>> GetCardsForAccount([FromRoute] Guid id)
+	{
+		if (!await accountService.ExistsAsync(id, HttpContext.RequestAborted))
+		{
+			logger.LogWarning("Account {Id} not found when fetching cards", id);
+			return TypedResults.NotFound();
+		}
+
+		GetCardsByAccountIdQuery query = new(id);
+		List<Card> cards = await mediator.Send(query, HttpContext.RequestAborted);
+		return TypedResults.Ok(cards.Select(cardMapper.ToResponse).ToList());
+	}
+
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single account")]
 	public async Task<Ok<AccountResponse>> CreateAccount([FromBody] CreateAccountRequest model)
 	{
 		CreateAccountCommand command = new([mapper.ToDomain(model)]);
-		List<Account> accounts = await mediator.Send(command);
+		List<Account> accounts = await mediator.Send(command, HttpContext.RequestAborted);
 		await notifier.NotifyCreated("account", accounts[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(accounts[0]));
 	}
@@ -101,7 +119,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public async Task<Ok<List<AccountResponse>>> CreateAccounts([FromBody] List<CreateAccountRequest> models)
 	{
 		CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
-		List<Account> accounts = await mediator.Send(command);
+		List<Account> accounts = await mediator.Send(command, HttpContext.RequestAborted);
 		await notifier.NotifyBulkChanged("account", "created", accounts.Select(a => a.Id));
 		return TypedResults.Ok(accounts.Select(mapper.ToResponse).ToList());
 	}
@@ -111,7 +129,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public async Task<Results<NoContent, NotFound>> UpdateAccount([FromRoute] Guid id, [FromBody] UpdateAccountRequest model)
 	{
 		UpdateAccountCommand command = new([mapper.ToDomain(model)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, HttpContext.RequestAborted);
 
 		if (!result)
 		{
@@ -128,7 +146,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	public async Task<Results<NoContent, NotFound>> UpdateAccounts([FromBody] List<UpdateAccountRequest> models)
 	{
 		UpdateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, HttpContext.RequestAborted);
 
 		if (!result)
 		{
@@ -143,18 +161,18 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, ILogge
 	[HttpDelete(RouteDelete)]
 	[Authorize(Policy = "RequireAdmin")]
 	[EndpointSummary("Hard-delete an account")]
-	[EndpointDescription("Permanently deletes an account. Requires the Admin role. Returns 409 Conflict if transactions reference this account.")]
+	[EndpointDescription("Permanently deletes an account. Requires the Admin role. Returns 409 Conflict if cards reference this account.")]
 	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteAccount([FromRoute] Guid id)
 	{
-		int transactionCount = await accountService.GetTransactionCountByAccountIdAsync(id, HttpContext.RequestAborted);
-		if (transactionCount > 0)
+		int cardCount = await accountService.GetCardCountByAccountIdAsync(id, HttpContext.RequestAborted);
+		if (cardCount > 0)
 		{
-			logger.LogWarning("Account {Id} cannot be deleted — {Count} transactions reference it", id, transactionCount);
-			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {transactionCount} transaction(s) reference this account", transactionCount });
+			logger.LogWarning("Account {Id} cannot be deleted — {Count} cards reference it", id, cardCount);
+			return TypedResults.Conflict<object>(new { message = $"Cannot delete — {cardCount} card(s) reference this account", cardCount });
 		}
 
 		DeleteAccountCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, HttpContext.RequestAborted);
 
 		if (!result)
 		{

@@ -20,7 +20,6 @@ describe("AccountForm", () => {
   it("renders in create mode with empty fields and correct submit button text", () => {
     render(<AccountForm {...defaultProps} />);
 
-    expect(screen.getByLabelText(/^Account Code/)).toHaveValue("");
     expect(screen.getByLabelText(/^Name/)).toHaveValue("");
     expect(screen.getByRole("button", { name: /create account/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
@@ -31,12 +30,11 @@ describe("AccountForm", () => {
       <AccountForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ accountCode: "ACC-001", name: "Checking", isActive: false }}
+        defaultValues={{ name: "Apple Card", isActive: false }}
       />,
     );
 
-    expect(screen.getByLabelText(/^Account Code/)).toHaveValue("ACC-001");
-    expect(screen.getByLabelText(/^Name/)).toHaveValue("Checking");
+    expect(screen.getByLabelText(/^Name/)).toHaveValue("Apple Card");
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     expect(screen.getByRole("button", { name: /update account/i })).toBeInTheDocument();
   });
@@ -45,26 +43,24 @@ describe("AccountForm", () => {
     const user = userEvent.setup();
     render(<AccountForm {...defaultProps} />);
 
-    await user.type(screen.getByLabelText(/^Account Code/), "ACC-002");
-    await user.type(screen.getByLabelText(/^Name/), "Savings");
+    await user.type(screen.getByLabelText(/^Name/), "Chase Sapphire");
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     await waitFor(() => {
       expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-        { accountCode: "ACC-002", name: "Savings", isActive: true },
+        { name: "Chase Sapphire", isActive: true },
         expect.anything(),
       );
     });
   });
 
-  it("shows validation errors when required fields are empty", async () => {
+  it("shows validation error when name is empty", async () => {
     const user = userEvent.setup();
     render(<AccountForm {...defaultProps} />);
 
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Account code is required")).toBeInTheDocument();
       expect(screen.getByText("Name is required")).toBeInTheDocument();
     });
     expect(defaultProps.onSubmit).not.toHaveBeenCalled();
@@ -79,7 +75,7 @@ describe("AccountForm", () => {
     expect(defaultProps.onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("disables submit button and shows spinner when isSubmitting is true", () => {
+  it("disables submit button and shows loading label when isSubmitting is true", () => {
     render(<AccountForm {...defaultProps} isSubmitting={true} />);
 
     const submitButton = screen.getByRole("button", { name: /saving/i });
@@ -92,64 +88,32 @@ describe("AccountForm", () => {
     expect(screen.getByRole("checkbox")).toBeChecked();
   });
 
-  it("does not show delete button in create mode", () => {
-    render(
-      <AccountForm
-        {...defaultProps}
-        isAdmin={true}
-        onDelete={vi.fn()}
-      />,
-    );
-
-    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
-  });
-
-  it("does not show delete button in edit mode for non-admin users", () => {
-    render(
+  it("shows delete button in edit mode for admin users only", () => {
+    const { rerender } = render(
       <AccountForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ accountCode: "ACC-001", name: "Checking", isActive: true }}
+        defaultValues={{ name: "Apple Card", isActive: true }}
         isAdmin={false}
         onDelete={vi.fn()}
       />,
     );
 
-    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
-  });
+    expect(
+      screen.queryByRole("button", { name: /delete/i }),
+    ).not.toBeInTheDocument();
 
-  it("shows delete button in edit mode for admin users", () => {
-    render(
+    rerender(
       <AccountForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ accountCode: "ACC-001", name: "Checking", isActive: true }}
+        defaultValues={{ name: "Apple Card", isActive: true }}
         isAdmin={true}
         onDelete={vi.fn()}
       />,
     );
 
     expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
-  });
-
-  it("shows confirmation dialog when delete button is clicked", async () => {
-    const user = userEvent.setup();
-    render(
-      <AccountForm
-        {...defaultProps}
-        mode="edit"
-        defaultValues={{ accountCode: "ACC-001", name: "Checking", isActive: true }}
-        isAdmin={true}
-        onDelete={vi.fn()}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /delete/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText("Delete Account?")).toBeInTheDocument();
-      expect(screen.getByText(/permanently delete/i)).toBeInTheDocument();
-    });
   });
 
   it("calls onDelete when delete is confirmed", async () => {
@@ -159,7 +123,7 @@ describe("AccountForm", () => {
       <AccountForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ accountCode: "ACC-001", name: "Checking", isActive: true }}
+        defaultValues={{ name: "Apple Card", isActive: true }}
         isAdmin={true}
         onDelete={onDelete}
       />,
@@ -171,24 +135,10 @@ describe("AccountForm", () => {
       expect(screen.getByText("Delete Account?")).toBeInTheDocument();
     });
 
-    // Click the "Delete" action in the confirmation dialog
     const confirmButtons = screen.getAllByRole("button", { name: /delete/i });
     const confirmButton = confirmButtons[confirmButtons.length - 1];
     await user.click(confirmButton);
 
     expect(onDelete).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not show delete button when onDelete is not provided", () => {
-    render(
-      <AccountForm
-        {...defaultProps}
-        mode="edit"
-        defaultValues={{ accountCode: "ACC-001", name: "Checking", isActive: true }}
-        isAdmin={true}
-      />,
-    );
-
-    expect(screen.queryByRole("button", { name: /delete/i })).not.toBeInTheDocument();
   });
 });

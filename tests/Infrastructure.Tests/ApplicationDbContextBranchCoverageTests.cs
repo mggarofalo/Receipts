@@ -194,26 +194,26 @@ public class ApplicationDbContextBranchCoverageTests
 		// Arrange — create receipt with a child of a different child type than what CollectOwnedChildren is iterating
 		// All three owned child types (ReceiptItem, Transaction, Adjustment) are for Receipt,
 		// so we exercise the entry.Entity.GetType() != child.ChildType continue branch
-		// by ensuring there are entities of non-child types (e.g., Account) in the tracker
+		// by ensuring there are entities of non-child types (e.g., Card) in the tracker
 		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
 
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity account = CardEntityGenerator.Generate();
 		ReceiptItemEntity item = ReceiptItemEntityGenerator.Generate(receipt.Id);
 
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			await context.Receipts.AddAsync(receipt);
-			await context.Accounts.AddAsync(account);
+			await context.Cards.AddAsync(account);
 			await context.ReceiptItems.AddAsync(item);
 			await context.SaveChangesAsync();
 		}
 
-		// Act — delete receipt with Account also tracked (Account is not a child type)
+		// Act — delete receipt with Card also tracked (Card is not a child type)
 		using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
 			ReceiptEntity r = await context.Receipts.FirstAsync();
-			await context.Accounts.LoadAsync();
+			await context.Cards.LoadAsync();
 			await context.ReceiptItems.Where(i => i.ReceiptId == receipt.Id).LoadAsync();
 			context.Receipts.Remove(r);
 			await context.SaveChangesAsync();
@@ -226,7 +226,7 @@ public class ApplicationDbContextBranchCoverageTests
 			items.Should().HaveCount(1);
 			items[0].DeletedAt.Should().NotBeNull();
 
-			List<AccountEntity> accounts = await context.Accounts.ToListAsync();
+			List<CardEntity> accounts = await context.Cards.ToListAsync();
 			accounts.Should().HaveCount(1);
 		}
 
@@ -326,18 +326,18 @@ public class ApplicationDbContextBranchCoverageTests
 		// Arrange — modify an entity's state to Modified without changing values
 		// This covers the changes.Count == 0 skip at L192
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act — mark as modified without changing anything
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
+			CardEntity account = await context.Cards.FirstAsync();
 			context.Entry(account).State = EntityState.Modified;
 			await context.SaveChangesAsync();
 		}
@@ -396,18 +396,18 @@ public class ApplicationDbContextBranchCoverageTests
 	{
 		// Covers the non-Create EntityId branch at L202 for Update action
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act — update
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
+			CardEntity account = await context.Cards.FirstAsync();
 			account.Name = "Updated Name";
 			await context.SaveChangesAsync();
 		}
@@ -434,18 +434,18 @@ public class ApplicationDbContextBranchCoverageTests
 		// Arrange — load entity, don't change anything, save
 		// This covers the entry.State is not (Added or Modified or Deleted) continue at L183
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act — just load and save without changes
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.FirstAsync();
+			await context.Cards.FirstAsync();
 			await context.SaveChangesAsync();
 		}
 
@@ -652,10 +652,10 @@ public class ApplicationDbContextBranchCoverageTests
 		// This covers the SaveChangesAsync loop for AuditAction.Create where TrackedEntry is not null
 		// and idValue is not null (L83-88)
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = new()
+		CardEntity entity = new()
 		{
 			Id = Guid.Empty, // Will be generated
-			AccountCode = "NEW",
+			CardCode = "NEW",
 			Name = "New Account",
 			IsActive = true
 		};
@@ -663,7 +663,7 @@ public class ApplicationDbContextBranchCoverageTests
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
@@ -720,18 +720,18 @@ public class ApplicationDbContextBranchCoverageTests
 		// Covers the property.IsModified check in GetFieldChanges — properties that are
 		// not modified should not appear in the changes list
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
-		// Act — only change Name, not AccountCode or IsActive
+		// Act — only change Name, not CardCode or IsActive
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
+			CardEntity account = await context.Cards.FirstAsync();
 			account.Name = "Only Name Changed";
 			await context.SaveChangesAsync();
 		}
@@ -745,7 +745,7 @@ public class ApplicationDbContextBranchCoverageTests
 
 			List<FieldChange> changes = updateLog!.GetChanges();
 			changes.Should().ContainSingle(c => c.FieldName == "Name");
-			changes.Should().NotContain(c => c.FieldName == "AccountCode");
+			changes.Should().NotContain(c => c.FieldName == "CardCode");
 			changes.Should().NotContain(c => c.FieldName == "IsActive");
 		}
 
@@ -763,20 +763,20 @@ public class ApplicationDbContextBranchCoverageTests
 		// Force a property into IsModified = true while keeping the same value,
 		// so the audit system sees it as modified but the serialized old/new values are equal.
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act — force IsModified on Name without changing its value
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
+			CardEntity account = await context.Cards.FirstAsync();
 			// Force the property to be marked as modified even though the value is unchanged
-			context.Entry(account).Property(nameof(AccountEntity.Name)).IsModified = true;
+			context.Entry(account).Property(nameof(CardEntity.Name)).IsModified = true;
 			await context.SaveChangesAsync();
 		}
 

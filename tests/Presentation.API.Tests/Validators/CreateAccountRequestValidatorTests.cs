@@ -11,7 +11,7 @@ public class CreateAccountRequestValidatorTests
 	public void Should_Pass_When_AllFieldsValid()
 	{
 		// Arrange
-		CreateAccountRequest request = new() { AccountCode = "ABC", Name = "Test" };
+		CreateAccountRequest request = new() { Name = "Test" };
 
 		// Act
 		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
@@ -21,24 +21,10 @@ public class CreateAccountRequestValidatorTests
 	}
 
 	[Fact]
-	public void Should_Fail_When_AccountCodeIsEmpty()
-	{
-		// Arrange
-		CreateAccountRequest request = new() { AccountCode = "", Name = "Test" };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateAccountRequestValidator.AccountCodeMustNotBeEmpty);
-	}
-
-	[Fact]
 	public void Should_Fail_When_NameIsEmpty()
 	{
 		// Arrange
-		CreateAccountRequest request = new() { AccountCode = "ABC", Name = "" };
+		CreateAccountRequest request = new() { Name = "" };
 
 		// Act
 		FluentValidation.Results.ValidationResult result = _validator.Validate(request);

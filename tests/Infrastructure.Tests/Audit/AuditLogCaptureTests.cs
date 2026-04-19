@@ -15,12 +15,12 @@ public class AuditLogCaptureTests
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
@@ -32,7 +32,7 @@ public class AuditLogCaptureTests
 
 			AuditLogEntity log = auditLogs[0];
 			log.Action.Should().Be(AuditAction.Create);
-			log.EntityType.Should().Be("Account");
+			log.EntityType.Should().Be("Card");
 
 			List<FieldChange> changes = log.GetChanges();
 			changes.Should().NotBeEmpty();
@@ -47,18 +47,18 @@ public class AuditLogCaptureTests
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
+			CardEntity account = await context.Cards.FirstAsync();
 			account.Name = "Updated Name";
 			await context.SaveChangesAsync();
 		}
@@ -74,7 +74,7 @@ public class AuditLogCaptureTests
 			AuditLogEntity log = auditLogs[0];
 			List<FieldChange> changes = log.GetChanges();
 			FieldChange nameChange = changes.Should().ContainSingle(c => c.FieldName == "Name").Subject;
-			nameChange.OldValue.Should().Be("Test Account");
+			nameChange.OldValue.Should().Be("Test Card");
 			nameChange.NewValue.Should().Be("Updated Name");
 		}
 
@@ -86,18 +86,18 @@ public class AuditLogCaptureTests
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			AccountEntity account = await context.Accounts.FirstAsync();
+			CardEntity account = await context.Cards.FirstAsync();
 			account.Name = "Only Name Changed";
 			await context.SaveChangesAsync();
 		}
@@ -226,12 +226,12 @@ public class AuditLogCaptureTests
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		List<AccountEntity> entities = AccountEntityGenerator.GenerateList(3);
+		List<CardEntity> entities = CardEntityGenerator.GenerateList(3);
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddRangeAsync(entities);
+			await context.Cards.AddRangeAsync(entities);
 			await context.SaveChangesAsync();
 		}
 
@@ -242,7 +242,7 @@ public class AuditLogCaptureTests
 				.Where(a => a.Action == AuditAction.Create)
 				.ToListAsync();
 			auditLogs.Should().HaveCount(3);
-			auditLogs.Should().AllSatisfy(a => a.EntityType.Should().Be("Account"));
+			auditLogs.Should().AllSatisfy(a => a.EntityType.Should().Be("Card"));
 		}
 
 		contextFactory.ResetDatabase();
@@ -255,12 +255,12 @@ public class AuditLogCaptureTests
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor accessor) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
 		accessor.UserId = "test-user-123";
 		accessor.IpAddress = "192.168.1.1";
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
@@ -283,12 +283,12 @@ public class AuditLogCaptureTests
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor accessor) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
 		Guid apiKeyId = Guid.NewGuid();
 		accessor.ApiKeyId = apiKeyId;
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 
@@ -308,12 +308,12 @@ public class AuditLogCaptureTests
 	{
 		// Arrange
 		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
-		AccountEntity entity = AccountEntityGenerator.Generate();
+		CardEntity entity = CardEntityGenerator.Generate();
 
 		// Act
 		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
 		{
-			await context.Accounts.AddAsync(entity);
+			await context.Cards.AddAsync(entity);
 			await context.SaveChangesAsync();
 		}
 

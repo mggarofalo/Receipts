@@ -64,14 +64,16 @@ public class BackupImportService(
 			await using SqliteConnection sqlite = new($"Data Source={sqlitePath};Mode=ReadOnly");
 			await sqlite.OpenAsync(cancellationToken);
 
+			int exportVersion = ReadExportVersion(sqlite);
+
 			// Import in dependency order: independent entities first, then dependent ones.
-			(int accountsCreated, int accountsUpdated) = await UpsertAccountsAsync(context, sqlite, cancellationToken);
+			(int accountsCreated, int accountsUpdated) = await UpsertCardsAsync(context, sqlite, exportVersion, cancellationToken);
 			(int categoriesCreated, int categoriesUpdated) = await UpsertCategoriesAsync(context, sqlite, cancellationToken);
 			(int subcategoriesCreated, int subcategoriesUpdated) = await UpsertSubcategoriesAsync(context, sqlite, cancellationToken);
 			(int itemTemplatesCreated, int itemTemplatesUpdated) = await UpsertItemTemplatesAsync(context, sqlite, cancellationToken);
 			(int receiptsCreated, int receiptsUpdated) = await UpsertReceiptsAsync(context, sqlite, cancellationToken);
 			(int receiptItemsCreated, int receiptItemsUpdated) = await UpsertReceiptItemsAsync(context, sqlite, cancellationToken);
-			(int transactionsCreated, int transactionsUpdated) = await UpsertTransactionsAsync(context, sqlite, cancellationToken);
+			(int transactionsCreated, int transactionsUpdated) = await UpsertTransactionsAsync(context, sqlite, exportVersion, cancellationToken);
 			(int adjustmentsCreated, int adjustmentsUpdated) = await UpsertAdjustmentsAsync(context, sqlite, cancellationToken);
 
 			await transaction.CommitAsync(cancellationToken);
@@ -136,40 +138,65 @@ public class BackupImportService(
 		return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
 	}
 
-	private static async Task<(int Created, int Updated)> UpsertAccountsAsync(
-		ApplicationDbContext context, SqliteConnection sqlite, CancellationToken cancellationToken)
+	// Reads the export_version from backup_metadata; defaults to 1 for legacy backups
+	// that predate version bumps or were written without metadata.
+	private static int ReadExportVersion(SqliteConnection sqlite)
 	{
-		if (!TableExists(sqlite, "accounts"))
+		if (!TableExists(sqlite, "backup_metadata"))
+		{
+			return 1;
+		}
+
+		using SqliteCommand cmd = sqlite.CreateCommand();
+		cmd.CommandText = "SELECT value FROM backup_metadata WHERE key = 'export_version'";
+		object? result = cmd.ExecuteScalar();
+		if (result is null || result is DBNull)
+		{
+			return 1;
+		}
+
+		return int.TryParse(result.ToString(), out int version) ? version : 1;
+	}
+
+	private static async Task<(int Created, int Updated)> UpsertCardsAsync(
+		ApplicationDbContext context, SqliteConnection sqlite, int exportVersion, CancellationToken cancellationToken)
+	{
+		// v2+ writes to `cards`/`card_code`; v1 wrote to `accounts`/`account_code`.
+		bool isLegacy = exportVersion < 2;
+		string tableName = isLegacy ? "accounts" : "cards";
+		string codeColumn = isLegacy ? "account_code" : "card_code";
+
+		if (!TableExists(sqlite, tableName))
 		{
 			return (0, 0);
 		}
 
 		int created = 0, updated = 0;
 		await using SqliteCommand cmd = sqlite.CreateCommand();
-		cmd.CommandText = "SELECT id, account_code, name, is_active FROM accounts";
+		cmd.CommandText = $"SELECT id, {codeColumn}, name, is_active FROM {tableName}";
 		await using SqliteDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
 		while (await reader.ReadAsync(cancellationToken))
 		{
 			Guid id = Guid.Parse(reader.GetString(0));
-			string accountCode = reader.GetString(1);
+			string cardCode = reader.GetString(1);
 			string name = reader.GetString(2);
 			bool isActive = reader.GetBoolean(3);
 
-			AccountEntity? existing = await context.Accounts.FindAsync([id], cancellationToken);
+			CardEntity? existing = await context.Cards.FindAsync([id], cancellationToken);
 			if (existing is not null)
 			{
-				existing.AccountCode = accountCode;
+				existing.CardCode = cardCode;
 				existing.Name = name;
 				existing.IsActive = isActive;
 				updated++;
 			}
 			else
 			{
-				context.Accounts.Add(new AccountEntity
+				context.Cards.Add(new CardEntity
 				{
 					Id = id,
-					AccountCode = accountCode,
+					CardCode = cardCode,
 					Name = name,
 					IsActive = isActive,
 				});
@@ -467,16 +494,20 @@ public class BackupImportService(
 	}
 
 	private static async Task<(int Created, int Updated)> UpsertTransactionsAsync(
-		ApplicationDbContext context, SqliteConnection sqlite, CancellationToken cancellationToken)
+		ApplicationDbContext context, SqliteConnection sqlite, int exportVersion, CancellationToken cancellationToken)
 	{
 		if (!TableExists(sqlite, "transactions"))
 		{
 			return (0, 0);
 		}
 
+		// v2+ uses `card_id`; v1 used `account_id`. The TransactionEntity.AccountId column
+		// name is preserved on the receipts side — only the imported backup's column differs.
+		string cardColumn = exportVersion < 2 ? "account_id" : "card_id";
+
 		int created = 0, updated = 0;
 		await using SqliteCommand cmd = sqlite.CreateCommand();
-		cmd.CommandText = "SELECT id, receipt_id, account_id, amount, amount_currency, date FROM transactions";
+		cmd.CommandText = $"SELECT id, receipt_id, {cardColumn}, amount, amount_currency, date FROM transactions";
 		await using SqliteDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
 		while (await reader.ReadAsync(cancellationToken))

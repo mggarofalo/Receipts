@@ -66,7 +66,7 @@ public class PushYnabTransactionsFailedRetryTests
 		tx.AccountId = _accountId;
 		tx.ReceiptId = _receiptId;
 
-		Domain.Core.Account account = new(_accountId, "CHK001", "Checking", true);
+		Domain.Core.Account account = new(_accountId, "Checking", true);
 		_transactionServiceMock.Setup(s => s.GetTransactionAccountsByReceiptIdAsync(_receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync([new TransactionAccount { Transaction = tx, Account = account }]);
 

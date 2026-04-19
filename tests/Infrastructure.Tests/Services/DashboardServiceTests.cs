@@ -399,4 +399,131 @@ public class DashboardServiceTests
 
 		contextFactory.ResetDatabase();
 	}
+
+	[Fact]
+	public async Task GetSpendingByAccountAsync_ResolvesNamesFromAccountsTable_NotCards()
+	{
+		// Regression test for RECEIPTS-546: the service used to resolve names by
+		// joining Transactions.AccountId against the Cards table. Transactions
+		// reference the logical Accounts table (RECEIPTS-543 Stage 2), and this
+		// join silently breaks once a card has been merged into another account
+		// and its 1:1 account row has been deleted.
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid receiptId = Guid.NewGuid();
+		Guid accountId = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Accounts.Add(new AccountEntity
+			{
+				Id = accountId,
+				Name = "Chase Sapphire",
+				IsActive = true,
+			});
+
+			context.Receipts.Add(new ReceiptEntity
+			{
+				Id = receiptId,
+				Location = "Costco",
+				Date = new DateOnly(2025, 5, 1),
+				TaxAmount = 0,
+			});
+
+			context.Transactions.Add(new TransactionEntity
+			{
+				Id = Guid.NewGuid(),
+				ReceiptId = receiptId,
+				AccountId = accountId,
+				Amount = 42.00m,
+				Date = new DateOnly(2025, 5, 1),
+			});
+
+			await context.SaveChangesAsync();
+		}
+
+		DashboardService service = new(contextFactory);
+
+		// Act
+		SpendingByAccountResult result = await service.GetSpendingByAccountAsync(
+			new DateOnly(2025, 5, 1),
+			new DateOnly(2025, 5, 31),
+			CancellationToken.None);
+
+		// Assert
+		result.Items.Should().ContainSingle();
+		result.Items[0].AccountId.Should().Be(accountId);
+		result.Items[0].AccountName.Should().Be("Chase Sapphire");
+		result.Items[0].Amount.Should().Be(42.00m);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetSpendingByAccountAsync_MergedAccount_RollsUpTransactionsFromAllCards()
+	{
+		// Simulates the Stage 3 post-merge state: two Cards have been merged
+		// into a single Account, so all of their transactions reference the
+		// surviving account. The widget should show a single row.
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		Guid survivingAccountId = Guid.NewGuid();
+		Guid receiptId1 = Guid.NewGuid();
+		Guid receiptId2 = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.Accounts.Add(new AccountEntity
+			{
+				Id = survivingAccountId,
+				Name = "Apple Card",
+				IsActive = true,
+			});
+
+			context.Receipts.AddRange(
+				new ReceiptEntity { Id = receiptId1, Location = "Store A", Date = new DateOnly(2025, 6, 1), TaxAmount = 0 },
+				new ReceiptEntity { Id = receiptId2, Location = "Store B", Date = new DateOnly(2025, 6, 2), TaxAmount = 0 });
+
+			context.Transactions.AddRange(
+				new TransactionEntity { Id = Guid.NewGuid(), ReceiptId = receiptId1, AccountId = survivingAccountId, Amount = 10.00m, Date = new DateOnly(2025, 6, 1) },
+				new TransactionEntity { Id = Guid.NewGuid(), ReceiptId = receiptId2, AccountId = survivingAccountId, Amount = 20.00m, Date = new DateOnly(2025, 6, 2) });
+
+			await context.SaveChangesAsync();
+		}
+
+		DashboardService service = new(contextFactory);
+
+		// Act
+		SpendingByAccountResult result = await service.GetSpendingByAccountAsync(
+			new DateOnly(2025, 6, 1),
+			new DateOnly(2025, 6, 30),
+			CancellationToken.None);
+
+		// Assert
+		result.Items.Should().ContainSingle();
+		result.Items[0].AccountName.Should().Be("Apple Card");
+		result.Items[0].Amount.Should().Be(30.00m);
+		result.Items[0].Percentage.Should().Be(100m);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetSpendingByAccountAsync_EmptyRange_ReturnsEmptyItems()
+	{
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+
+		DashboardService service = new(contextFactory);
+
+		// Act
+		SpendingByAccountResult result = await service.GetSpendingByAccountAsync(
+			new DateOnly(2025, 1, 1),
+			new DateOnly(2025, 1, 31),
+			CancellationToken.None);
+
+		// Assert
+		result.Items.Should().BeEmpty();
+
+		contextFactory.ResetDatabase();
+	}
 }

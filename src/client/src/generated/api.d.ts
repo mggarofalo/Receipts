@@ -52,9 +52,29 @@ export interface paths {
         post?: never;
         /**
          * Hard-delete an account
-         * @description Permanently deletes an account. Requires the Admin role. Returns 409 Conflict if transactions reference this account.
+         * @description Permanently deletes an account. Requires the Admin role. Returns 409 Conflict if cards reference this account.
          */
         delete: operations["DeleteAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/accounts/{id}/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get cards for an account
+         * @description Returns the physical Cards (aliases) that belong to the given logical Account. Returns 404 if the account does not exist.
+         */
+        get: operations["GetCardsForAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -90,6 +110,84 @@ export interface paths {
         put: operations["UpdateAccounts"];
         /** Create accounts in batch */
         post: operations["CreateAccounts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a card by ID */
+        get: operations["GetCardById"];
+        /** Update a single card */
+        put: operations["UpdateCard"];
+        post?: never;
+        /**
+         * Hard-delete a card
+         * @description Permanently deletes a card. Requires the Admin role. Returns 409 Conflict if transactions reference this card.
+         */
+        delete: operations["DeleteCard"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all cards */
+        get: operations["GetAllCards"];
+        put?: never;
+        /** Create a single card */
+        post: operations["CreateCard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cards/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update cards in batch */
+        put: operations["UpdateCards"];
+        /** Create cards in batch */
+        post: operations["CreateCards"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cards/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge cards into a target account
+         * @description Repoints the listed cards (and their transactions) to the target account and deletes any now-orphaned accounts. Requires the Admin role. Returns 409 Conflict if the source/target accounts have differing YNAB account mappings; resubmit with `ynabMappingWinnerAccountId` to resolve.
+         */
+        post: operations["MergeCards"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2295,21 +2393,18 @@ export interface components {
             year: number;
         };
         CreateAccountRequest: {
-            accountCode: string;
             name: string;
             isActive: boolean;
         };
         UpdateAccountRequest: {
             /** Format: uuid */
             id: string;
-            accountCode: string;
             name: string;
             isActive: boolean;
         };
         AccountResponse: {
             /** Format: uuid */
             id: string;
-            accountCode: string;
             name: string;
             isActive: boolean;
         };
@@ -2321,6 +2416,59 @@ export interface components {
             offset: number;
             /** Format: int32 */
             limit: number;
+        };
+        CreateCardRequest: {
+            cardCode: string;
+            name: string;
+            isActive: boolean;
+        };
+        UpdateCardRequest: {
+            /** Format: uuid */
+            id: string;
+            cardCode: string;
+            name: string;
+            isActive: boolean;
+        };
+        CardResponse: {
+            /** Format: uuid */
+            id: string;
+            cardCode: string;
+            name: string;
+            isActive: boolean;
+        };
+        CardListResponse: {
+            data: components["schemas"]["CardResponse"][];
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            offset: number;
+            /** Format: int32 */
+            limit: number;
+        };
+        MergeCardsRequest: {
+            /** Format: uuid */
+            targetAccountId: string;
+            sourceCardIds: string[];
+            /**
+             * Format: uuid
+             * @description The account whose YNAB mapping should be retained when mappings conflict. Omit on first submit; if conflicts are returned, resubmit with this field.
+             */
+            ynabMappingWinnerAccountId?: string | null;
+        };
+        MergeCardsResponse: {
+            success: boolean;
+        };
+        YnabMappingConflict: {
+            /** Format: uuid */
+            accountId: string;
+            accountName: string;
+            ynabBudgetId: string;
+            ynabAccountId: string;
+            ynabAccountName: string;
+        };
+        MergeCardsConflictResponse: {
+            message: string;
+            conflicts: components["schemas"]["YnabMappingConflict"][];
         };
         CreateCategoryRequest: {
             name: string;
@@ -3412,7 +3560,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Conflict — transactions reference this account */
+            /** @description Conflict — cards reference this account */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3420,9 +3568,38 @@ export interface operations {
                 content: {
                     "application/json": {
                         message: string;
-                        transactionCount: number;
+                        cardCount: number;
                     };
                 };
+            };
+        };
+    };
+    GetCardsForAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3536,6 +3713,270 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountResponse"][];
+                };
+            };
+        };
+    };
+    GetCardById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "X-Resource-Id": components["headers"]["X-Resource-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpdateCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCardRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    "X-Resource-Id": components["headers"]["X-Resource-Id"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DeleteCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict — transactions reference this card */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                        transactionCount: number;
+                    };
+                };
+            };
+        };
+    };
+    GetAllCards: {
+        parameters: {
+            query?: {
+                isActive?: boolean;
+                offset?: components["parameters"]["Offset"];
+                limit?: components["parameters"]["Limit"];
+                /** @description Column name to sort by. Allowed values depend on the entity type. */
+                sortBy?: components["parameters"]["SortBy"];
+                sortDirection?: components["parameters"]["SortDirection"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    CreateCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCardRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "X-Resource-Id": components["headers"]["X-Resource-Id"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"];
+                };
+            };
+        };
+    };
+    UpdateCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCardRequest"][];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCardRequest"][];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardResponse"][];
+                };
+            };
+        };
+    };
+    MergeCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeCardsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeCardsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found — target account or source card missing */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict — source accounts have differing YNAB mappings */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeCardsConflictResponse"];
                 };
             };
         };

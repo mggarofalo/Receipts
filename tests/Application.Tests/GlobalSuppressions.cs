@@ -5,4 +5,4 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Usage", "xUnit1012:Null should only be used for nullable parameters", Justification = "<Pending>", Scope = "member", Target = "~M:Domain.Tests.Core.AccountTests.Constructor_InvalidAccountCode_ThrowsArgumentException(System.String)")]
+[assembly: SuppressMessage("Usage", "xUnit1012:Null should only be used for nullable parameters", Justification = "<Pending>", Scope = "member", Target = "~M:Domain.Tests.Core.AccountTests.Constructor_InvalidCardCode_ThrowsArgumentException(System.String)")]
