@@ -28,18 +28,29 @@ describe("useBackupExport", () => {
   const originalFetch = globalThis.fetch;
   const originalCreateObjectURL = globalThis.URL.createObjectURL;
   const originalRevokeObjectURL = globalThis.URL.revokeObjectURL;
+  const originalCreateElement = document.createElement.bind(document);
 
   beforeEach(() => {
     vi.clearAllMocks();
     // Minimal URL mocks — jsdom doesn't implement blob URLs.
     globalThis.URL.createObjectURL = vi.fn(() => "blob:mock");
     globalThis.URL.revokeObjectURL = vi.fn();
+    // jsdom warns/throws on anchor.click() because it cannot navigate. Stub
+    // the created anchor's click with a no-op so the happy-path test is stable.
+    vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+      const el = originalCreateElement(tagName);
+      if (tagName.toLowerCase() === "a") {
+        (el as HTMLAnchorElement).click = vi.fn();
+      }
+      return el;
+    });
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
     globalThis.URL.createObjectURL = originalCreateObjectURL;
     globalThis.URL.revokeObjectURL = originalRevokeObjectURL;
+    vi.restoreAllMocks();
   });
 
   it("downloads the blob and toasts success on 200", async () => {
