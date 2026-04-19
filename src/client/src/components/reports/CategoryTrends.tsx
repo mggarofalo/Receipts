@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { differenceInDays, parseISO } from "date-fns";
+import { differenceInDays, format, parseISO, subMonths } from "date-fns";
 import { ChartCard, StackedAreaChart } from "@/components/charts";
 import { DateRangeSelector } from "@/components/dashboard/DateRangeSelector";
 import type { DateRange } from "@/hooks/useDashboard";
@@ -14,6 +14,14 @@ import {
 } from "@/components/ui/select";
 
 type Granularity = "daily" | "monthly" | "quarterly" | "yearly";
+
+function getDefaultRange(): DateRange {
+  const now = new Date();
+  return {
+    startDate: format(subMonths(now, 1), "yyyy-MM-dd"),
+    endDate: format(now, "yyyy-MM-dd"),
+  };
+}
 
 const granularityOptions: { value: Granularity; label: string }[] = [
   { value: "daily", label: "Day" },
@@ -47,10 +55,7 @@ function formatCompactCurrency(value: number): string {
 }
 
 export default function CategoryTrends() {
-  const [dateRange, setDateRange] = useState<DateRange>(() => ({
-    startDate: undefined,
-    endDate: undefined,
-  }));
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange);
   const [granularityOverride, setGranularityOverride] =
     useState<Granularity | null>(null);
   const [topN, setTopN] = useState(5);
