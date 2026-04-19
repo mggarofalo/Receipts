@@ -38,10 +38,10 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get an item template by ID")]
 	[EndpointDescription("Returns a single item template matching the provided GUID.")]
-	public async Task<Results<Ok<ItemTemplateResponse>, NotFound>> GetItemTemplateById([FromRoute] Guid id)
+	public async Task<Results<Ok<ItemTemplateResponse>, NotFound>> GetItemTemplateById([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		GetItemTemplateByIdQuery query = new(id);
-		ItemTemplate? result = await mediator.Send(query);
+		ItemTemplate? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{
@@ -55,7 +55,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all item templates")]
-	public async Task<Results<Ok<ItemTemplateListResponse>, BadRequest<string>>> GetAllItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<ItemTemplateListResponse>, BadRequest<string>>> GetAllItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -79,7 +79,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllItemTemplatesQuery query = new(offset, limit, sort);
-		PagedResult<ItemTemplate> result = await mediator.Send(query);
+		PagedResult<ItemTemplate> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new ItemTemplateListResponse
 		{
@@ -93,7 +93,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted item templates")]
 	[EndpointDescription("Returns all item templates that have been soft-deleted.")]
-	public async Task<Results<Ok<ItemTemplateListResponse>, BadRequest<string>>> GetDeletedItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<ItemTemplateListResponse>, BadRequest<string>>> GetDeletedItemTemplates([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -117,7 +117,7 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetDeletedItemTemplatesQuery query = new(offset, limit, sort);
-		PagedResult<ItemTemplate> result = await mediator.Send(query);
+		PagedResult<ItemTemplate> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new ItemTemplateListResponse
 		{
@@ -130,20 +130,20 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single item template")]
-	public async Task<Ok<ItemTemplateResponse>> CreateItemTemplate([FromBody] CreateItemTemplateRequest model)
+	public async Task<Ok<ItemTemplateResponse>> CreateItemTemplate([FromBody] CreateItemTemplateRequest model, CancellationToken cancellationToken = default)
 	{
 		CreateItemTemplateCommand command = new([mapper.ToDomain(model)]);
-		List<ItemTemplate> itemTemplates = await mediator.Send(command);
+		List<ItemTemplate> itemTemplates = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyCreated("item-template", itemTemplates[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(itemTemplates[0]));
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single item template")]
-	public async Task<Results<NoContent, NotFound>> UpdateItemTemplate([FromRoute] Guid id, [FromBody] UpdateItemTemplateRequest model)
+	public async Task<Results<NoContent, NotFound>> UpdateItemTemplate([FromRoute] Guid id, [FromBody] UpdateItemTemplateRequest model, CancellationToken cancellationToken = default)
 	{
 		UpdateItemTemplateCommand command = new([mapper.ToDomain(model)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -158,10 +158,10 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[HttpDelete(RouteDelete)]
 	[EndpointSummary("Delete item templates")]
 	[EndpointDescription("Deletes one or more item templates by their IDs. Returns 404 if any item template is not found.")]
-	public async Task<Results<NoContent, NotFound>> DeleteItemTemplates([FromBody] List<Guid> ids)
+	public async Task<Results<NoContent, NotFound>> DeleteItemTemplates([FromBody] List<Guid> ids, CancellationToken cancellationToken = default)
 	{
 		DeleteItemTemplateCommand command = new(ids);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -176,10 +176,10 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[HttpPost(RouteRestore)]
 	[EndpointSummary("Restore a soft-deleted item template")]
 	[EndpointDescription("Restores a previously soft-deleted item template by clearing its DeletedAt timestamp.")]
-	public async Task<Results<NoContent, NotFound>> RestoreItemTemplate([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> RestoreItemTemplate([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		RestoreItemTemplateCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -194,10 +194,10 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[HttpGet(RouteGetSimilar)]
 	[EndpointSummary("Find similar items by hybrid similarity")]
 	[EndpointDescription("Returns items from templates and receipt history that are similar to the provided search text, ranked by a weighted combination of trigram and semantic (embedding) similarity.")]
-	public async Task<Ok<List<SimilarItemResponse>>> GetSimilarItems([FromQuery] string q, [FromQuery] int limit = 5, [FromQuery] double threshold = 0.3, [FromQuery] bool semantic = true)
+	public async Task<Ok<List<SimilarItemResponse>>> GetSimilarItems([FromQuery] string q, [FromQuery] int limit = 5, [FromQuery] double threshold = 0.3, [FromQuery] bool semantic = true, CancellationToken cancellationToken = default)
 	{
 		GetSimilarItemsQuery query = new(q, limit, threshold, semantic);
-		IEnumerable<SimilarItemResult> results = await mediator.Send(query);
+		IEnumerable<SimilarItemResult> results = await mediator.Send(query, cancellationToken);
 
 		List<SimilarItemResponse> response = [.. results.Select(r => new SimilarItemResponse
 		{
@@ -219,10 +219,10 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 	[HttpGet(RouteGetCategorySuggestions)]
 	[EndpointSummary("Get category/subcategory recommendations")]
 	[EndpointDescription("Returns ranked category and subcategory suggestions based on semantic and trigram similarity to existing items and receipt history.")]
-	public async Task<Ok<List<CategoryRecommendationResponse>>> GetCategorySuggestions([FromQuery] string q, [FromQuery] int limit = 5)
+	public async Task<Ok<List<CategoryRecommendationResponse>>> GetCategorySuggestions([FromQuery] string q, [FromQuery] int limit = 5, CancellationToken cancellationToken = default)
 	{
 		GetCategoryRecommendationsQuery query = new(q, limit);
-		IEnumerable<CategoryRecommendation> results = await mediator.Send(query);
+		IEnumerable<CategoryRecommendation> results = await mediator.Send(query, cancellationToken);
 
 		List<CategoryRecommendationResponse> response = [.. results.Select(r => new CategoryRecommendationResponse
 		{

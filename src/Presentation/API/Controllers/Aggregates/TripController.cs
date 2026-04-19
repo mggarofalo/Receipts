@@ -22,10 +22,10 @@ public class TripController(IMediator mediator, TripMapper mapper, ILogger<TripC
 	[HttpGet(RouteByReceiptId)]
 	[EndpointSummary("Get a trip by receipt ID")]
 	[EndpointDescription("Returns the full trip aggregate for a receipt, including the receipt, its items, transactions, and associated accounts.")]
-	public async Task<Results<Ok<TripResponse>, NotFound>> GetTripByReceiptId([FromQuery] Guid receiptId)
+	public async Task<Results<Ok<TripResponse>, NotFound>> GetTripByReceiptId([FromQuery] Guid receiptId, CancellationToken cancellationToken = default)
 	{
 		GetTripByReceiptIdQuery query = new(receiptId);
-		Trip? result = await mediator.Send(query);
+		Trip? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{

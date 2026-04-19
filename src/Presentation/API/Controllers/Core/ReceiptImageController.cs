@@ -30,7 +30,8 @@ public class ReceiptImageController(
 	[EndpointDescription("Accepts a JPEG or PNG image, saves the original, runs preprocessing (grayscale, adaptive threshold, deskew), and returns both image paths.")]
 	public async Task<Results<Ok<UploadReceiptImageResponse>, NotFound, BadRequest<string>, StatusCodeHttpResult>> UploadImage(
 		[FromRoute] Guid receiptId,
-		IFormFile? file)
+		IFormFile? file,
+		CancellationToken cancellationToken = default)
 	{
 		if (file is null || file.Length == 0)
 		{
@@ -56,7 +57,7 @@ public class ReceiptImageController(
 		byte[] imageBytes;
 		using (MemoryStream ms = new())
 		{
-			await file.CopyToAsync(ms);
+			await file.CopyToAsync(ms, cancellationToken);
 			imageBytes = ms.ToArray();
 		}
 
@@ -73,7 +74,7 @@ public class ReceiptImageController(
 		UploadReceiptImageResult result;
 		try
 		{
-			result = await mediator.Send(command);
+			result = await mediator.Send(command, cancellationToken);
 		}
 		catch (KeyNotFoundException)
 		{
