@@ -3785,6 +3785,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Bad Request — returned when `accountId` is provided but does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
@@ -3892,12 +3901,14 @@ export interface operations {
                     "application/json": components["schemas"]["CardResponse"];
                 };
             };
-            /** @description Parent Account not found when `accountId` is provided but does not refer to an existing Account. */
-            404: {
+            /** @description Bad Request — returned when `accountId` is provided but does not refer to an existing Account. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": string;
+                };
             };
         };
     };
@@ -3920,6 +3931,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request — returned when any entry's `accountId` does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
             /** @description Not Found */
             404: {
@@ -3950,6 +3970,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardResponse"][];
+                };
+            };
+            /** @description Bad Request — returned when any entry's `accountId` does not refer to an existing Account. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };

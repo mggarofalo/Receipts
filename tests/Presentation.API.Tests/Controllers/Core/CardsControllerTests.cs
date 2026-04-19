@@ -213,7 +213,7 @@ public class CardsControllerTests
 		CreateCardRequest controllerInput = CardDtoGenerator.GenerateCreateRequest();
 
 		// Act
-		Results<Ok<CardResponse>, NotFound> result = await _controller.CreateCard(controllerInput);
+		Results<Ok<CardResponse>, BadRequest<string>> result = await _controller.CreateCard(controllerInput);
 
 		// Assert
 		Ok<CardResponse> okResult = Assert.IsType<Ok<CardResponse>>(result.Result);
@@ -242,7 +242,7 @@ public class CardsControllerTests
 			.ReturnsAsync([createdCard]);
 
 		// Act
-		Results<Ok<CardResponse>, NotFound> result = await _controller.CreateCard(controllerInput);
+		Results<Ok<CardResponse>, BadRequest<string>> result = await _controller.CreateCard(controllerInput);
 
 		// Assert
 		Ok<CardResponse> okResult = Assert.IsType<Ok<CardResponse>>(result.Result);
@@ -250,7 +250,7 @@ public class CardsControllerTests
 	}
 
 	[Fact]
-	public async Task CreateCard_ReturnsNotFound_WhenAccountIdDoesNotExist()
+	public async Task CreateCard_ReturnsBadRequest_WhenAccountIdDoesNotExist()
 	{
 		// Arrange
 		Guid missingAccountId = Guid.NewGuid();
@@ -261,10 +261,10 @@ public class CardsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		Results<Ok<CardResponse>, NotFound> result = await _controller.CreateCard(controllerInput);
+		Results<Ok<CardResponse>, BadRequest<string>> result = await _controller.CreateCard(controllerInput);
 
 		// Assert
-		Assert.IsType<NotFound>(result.Result);
+		Assert.IsType<BadRequest<string>>(result.Result);
 		_mediatorMock.Verify(m => m.Send(It.IsAny<CreateCardCommand>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
@@ -283,11 +283,30 @@ public class CardsControllerTests
 		controllerInput.AccountId = null;
 
 		// Act
-		Results<Ok<CardResponse>, NotFound> result = await _controller.CreateCard(controllerInput);
+		Results<Ok<CardResponse>, BadRequest<string>> result = await _controller.CreateCard(controllerInput);
 
 		// Assert
 		Assert.IsType<Ok<CardResponse>>(result.Result);
 		_accountServiceMock.Verify(s => s.ExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task CreateCards_ReturnsBadRequest_WhenAnyAccountIdDoesNotExist()
+	{
+		// Arrange
+		Guid missingAccountId = Guid.NewGuid();
+		List<CreateCardRequest> controllerInput = CardDtoGenerator.GenerateCreateRequestList(2);
+		controllerInput[1].AccountId = missingAccountId;
+
+		_accountServiceMock.Setup(s => s.ExistsAsync(missingAccountId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		Results<Ok<List<CardResponse>>, BadRequest<string>> result = await _controller.CreateCards(controllerInput);
+
+		// Assert
+		Assert.IsType<BadRequest<string>>(result.Result);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<CreateCardCommand>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	[Fact]
@@ -323,10 +342,11 @@ public class CardsControllerTests
 		List<CreateCardRequest> controllerInput = CardDtoGenerator.GenerateCreateRequestList(2);
 
 		// Act
-		Ok<List<CardResponse>> result = await _controller.CreateCards(controllerInput);
+		Results<Ok<List<CardResponse>>, BadRequest<string>> result = await _controller.CreateCards(controllerInput);
 
 		// Assert
-		List<CardResponse> actualReturn = result.Value!;
+		Ok<List<CardResponse>> okResult = Assert.IsType<Ok<List<CardResponse>>>(result.Result);
+		List<CardResponse> actualReturn = okResult.Value!;
 
 		actualReturn.Should().BeEquivalentTo(expectedReturn);
 	}
@@ -342,7 +362,7 @@ public class CardsControllerTests
 			.ThrowsAsync(new Exception());
 
 		// Act
-		Func<Task> act = () => _controller.CreateCards(controllerInput);
+		Func<Task> act = async () => await _controller.CreateCards(controllerInput);
 
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
@@ -360,7 +380,7 @@ public class CardsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		Results<NoContent, NotFound> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound, BadRequest<string>> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
 
 		// Assert
 		Assert.IsType<NoContent>(result.Result);
@@ -378,7 +398,7 @@ public class CardsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		Results<NoContent, NotFound> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound, BadRequest<string>> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
 
 		// Assert
 		Assert.IsType<NotFound>(result.Result);
@@ -419,14 +439,14 @@ public class CardsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		Results<NoContent, NotFound> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound, BadRequest<string>> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
 
 		// Assert
 		Assert.IsType<NoContent>(result.Result);
 	}
 
 	[Fact]
-	public async Task UpdateCard_ReturnsNotFound_WhenAccountIdDoesNotExist()
+	public async Task UpdateCard_ReturnsBadRequest_WhenAccountIdDoesNotExist()
 	{
 		// Arrange
 		Guid missingAccountId = Guid.NewGuid();
@@ -437,10 +457,29 @@ public class CardsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		Results<NoContent, NotFound> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound, BadRequest<string>> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
 
 		// Assert
-		Assert.IsType<NotFound>(result.Result);
+		Assert.IsType<BadRequest<string>>(result.Result);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateCardCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task UpdateCards_ReturnsBadRequest_WhenAnyAccountIdDoesNotExist()
+	{
+		// Arrange
+		Guid missingAccountId = Guid.NewGuid();
+		List<UpdateCardRequest> controllerInput = CardDtoGenerator.GenerateUpdateRequestList(2);
+		controllerInput[0].AccountId = missingAccountId;
+
+		_accountServiceMock.Setup(s => s.ExistsAsync(missingAccountId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(false);
+
+		// Act
+		Results<NoContent, NotFound, BadRequest<string>> result = await _controller.UpdateCards(controllerInput);
+
+		// Assert
+		Assert.IsType<BadRequest<string>>(result.Result);
 		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateCardCommand>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
@@ -457,7 +496,7 @@ public class CardsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		Results<NoContent, NotFound> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
+		Results<NoContent, NotFound, BadRequest<string>> result = await _controller.UpdateCard(controllerInput.Id, controllerInput);
 
 		// Assert
 		Assert.IsType<NoContent>(result.Result);
@@ -476,7 +515,7 @@ public class CardsControllerTests
 			.ReturnsAsync(true);
 
 		// Act
-		Results<NoContent, NotFound> result = await _controller.UpdateCards(controllerInput);
+		Results<NoContent, NotFound, BadRequest<string>> result = await _controller.UpdateCards(controllerInput);
 
 		// Assert
 		Assert.IsType<NoContent>(result.Result);
@@ -494,7 +533,7 @@ public class CardsControllerTests
 			.ReturnsAsync(false);
 
 		// Act
-		Results<NoContent, NotFound> result = await _controller.UpdateCards(controllerInput);
+		Results<NoContent, NotFound, BadRequest<string>> result = await _controller.UpdateCards(controllerInput);
 
 		// Assert
 		Assert.IsType<NotFound>(result.Result);

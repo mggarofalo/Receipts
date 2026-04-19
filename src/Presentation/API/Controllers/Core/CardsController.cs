@@ -91,12 +91,12 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single card")]
-	public async Task<Results<Ok<CardResponse>, NotFound>> CreateCard([FromBody] CreateCardRequest model)
+	public async Task<Results<Ok<CardResponse>, BadRequest<string>>> CreateCard([FromBody] CreateCardRequest model)
 	{
-		if (model.AccountId.HasValue && !await accountService.ExistsAsync(model.AccountId.Value, HttpContext.RequestAborted))
+		if (await MissingAccountIdAsync(model.AccountId, HttpContext.RequestAborted))
 		{
-			logger.LogWarning("Card create rejected — parent account {AccountId} not found", model.AccountId.Value);
-			return TypedResults.NotFound();
+			logger.LogWarning("Card create rejected — parent account {AccountId} not found", model.AccountId);
+			return TypedResults.BadRequest($"Account {model.AccountId} does not exist.");
 		}
 
 		CreateCardCommand command = new([mapper.ToDomain(model)]);
@@ -107,8 +107,15 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create cards in batch")]
-	public async Task<Ok<List<CardResponse>>> CreateCards([FromBody] List<CreateCardRequest> models)
+	public async Task<Results<Ok<List<CardResponse>>, BadRequest<string>>> CreateCards([FromBody] List<CreateCardRequest> models)
 	{
+		Guid? missing = await FirstMissingAccountIdAsync(models.Select(m => m.AccountId), HttpContext.RequestAborted);
+		if (missing.HasValue)
+		{
+			logger.LogWarning("Cards batch create rejected — parent account {AccountId} not found", missing.Value);
+			return TypedResults.BadRequest($"Account {missing.Value} does not exist.");
+		}
+
 		CreateCardCommand command = new([.. models.Select(mapper.ToDomain)]);
 		List<Card> cards = await mediator.Send(command);
 		await notifier.NotifyBulkChanged("card", "created", cards.Select(a => a.Id));
@@ -117,12 +124,12 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single card")]
-	public async Task<Results<NoContent, NotFound>> UpdateCard([FromRoute] Guid id, [FromBody] UpdateCardRequest model)
+	public async Task<Results<NoContent, NotFound, BadRequest<string>>> UpdateCard([FromRoute] Guid id, [FromBody] UpdateCardRequest model)
 	{
-		if (model.AccountId.HasValue && !await accountService.ExistsAsync(model.AccountId.Value, HttpContext.RequestAborted))
+		if (await MissingAccountIdAsync(model.AccountId, HttpContext.RequestAborted))
 		{
-			logger.LogWarning("Card {Id} update rejected — parent account {AccountId} not found", id, model.AccountId.Value);
-			return TypedResults.NotFound();
+			logger.LogWarning("Card {Id} update rejected — parent account {AccountId} not found", id, model.AccountId);
+			return TypedResults.BadRequest($"Account {model.AccountId} does not exist.");
 		}
 
 		UpdateCardCommand command = new([mapper.ToDomain(model)]);
@@ -140,8 +147,15 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update cards in batch")]
-	public async Task<Results<NoContent, NotFound>> UpdateCards([FromBody] List<UpdateCardRequest> models)
+	public async Task<Results<NoContent, NotFound, BadRequest<string>>> UpdateCards([FromBody] List<UpdateCardRequest> models)
 	{
+		Guid? missing = await FirstMissingAccountIdAsync(models.Select(m => m.AccountId), HttpContext.RequestAborted);
+		if (missing.HasValue)
+		{
+			logger.LogWarning("Cards batch update rejected — parent account {AccountId} not found", missing.Value);
+			return TypedResults.BadRequest($"Account {missing.Value} does not exist.");
+		}
+
 		UpdateCardCommand command = new([.. models.Select(mapper.ToDomain)]);
 		bool result = await mediator.Send(command);
 
@@ -153,6 +167,24 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 		await notifier.NotifyBulkChanged("card", "updated", models.Select(m => m.Id));
 		return TypedResults.NoContent();
+	}
+
+	private async Task<bool> MissingAccountIdAsync(Guid? accountId, CancellationToken cancellationToken)
+	{
+		return accountId.HasValue && !await accountService.ExistsAsync(accountId.Value, cancellationToken);
+	}
+
+	private async Task<Guid?> FirstMissingAccountIdAsync(IEnumerable<Guid?> accountIds, CancellationToken cancellationToken)
+	{
+		foreach (Guid accountId in accountIds.Where(id => id.HasValue).Select(id => id!.Value).Distinct())
+		{
+			if (!await accountService.ExistsAsync(accountId, cancellationToken))
+			{
+				return accountId;
+			}
+		}
+
+		return null;
 	}
 
 	[HttpDelete(RouteDelete)]

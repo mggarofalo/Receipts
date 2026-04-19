@@ -324,6 +324,12 @@ paths:
           headers:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
+        "400":
+          description: Bad Request — returned when `accountId` is provided but does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
         "404":
           description: Not Found
     delete:
@@ -417,8 +423,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CardResponse"
-        "404":
-          description: Parent Account not found when `accountId` is provided but does not refer to an existing Account.
+        "400":
+          description: Bad Request — returned when `accountId` is provided but does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
   /api/cards/batch:
     post:
       operationId: CreateCards
@@ -444,6 +454,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CardResponse"
+        "400":
+          description: Bad Request — returned when any entry's `accountId` does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
     put:
       operationId: UpdateCards
       tags: [Cards]
@@ -462,6 +478,12 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Bad Request — returned when any entry's `accountId` does not refer to an existing Account.
+          content:
+            application/json:
+              schema:
+                type: string
         "404":
           description: Not Found
 
