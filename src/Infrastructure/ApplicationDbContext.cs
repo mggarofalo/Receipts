@@ -21,11 +21,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	private const string DatabaseProviderNotSupported = "Database provider {0} not supported";
 
 	private readonly ICurrentUserAccessor? _currentUserAccessor;
+	private readonly IDescriptionChangeSignal? _descriptionChangeSignal;
 
-	public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ICurrentUserAccessor currentUserAccessor)
+	public ApplicationDbContext(
+		DbContextOptions<ApplicationDbContext> options,
+		ICurrentUserAccessor currentUserAccessor,
+		IDescriptionChangeSignal? descriptionChangeSignal = null)
 		: base(options)
 	{
 		_currentUserAccessor = currentUserAccessor;
+		_descriptionChangeSignal = descriptionChangeSignal;
 	}
 
 	[ActivatorUtilitiesConstructor]
@@ -45,6 +50,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
 	public virtual DbSet<ItemTemplateEntity> ItemTemplates { get; set; } = null!;
 	public virtual DbSet<ItemEmbeddingEntity> ItemEmbeddings { get; set; } = null!;
+	public virtual DbSet<DistinctDescriptionEntity> DistinctDescriptions { get; set; } = null!;
+	public virtual DbSet<ItemSimilarityEdgeEntity> ItemSimilarityEdges { get; set; } = null!;
 	public virtual DbSet<AuditLogEntity> AuditLogs { get; set; } = null!;
 	public virtual DbSet<AuthAuditLogEntity> AuthAuditLogs { get; set; } = null!;
 	public virtual DbSet<SeedHistoryEntry> SeedHistory { get; set; } = null!;
@@ -78,6 +85,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 		HandleSoftDelete();
 
 		List<AuditEntry> auditEntries = CollectAuditEntries();
+		HashSet<string> touchedDescriptions = CollectTouchedReceiptItemDescriptions();
 
 		int result = await base.SaveChangesAsync(cancellationToken);
 
@@ -100,7 +108,90 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			await base.SaveChangesAsync(cancellationToken);
 		}
 
+		if (touchedDescriptions.Count > 0)
+		{
+			await ReconcileDistinctDescriptionsAsync(touchedDescriptions, cancellationToken);
+		}
+
 		return result;
+	}
+
+	private HashSet<string> CollectTouchedReceiptItemDescriptions()
+	{
+		HashSet<string> touched = [];
+		foreach (EntityEntry<ReceiptItemEntity> entry in ChangeTracker.Entries<ReceiptItemEntity>())
+		{
+			if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
+			{
+				continue;
+			}
+
+			string? current = entry.Entity.Description;
+			if (!string.IsNullOrEmpty(current))
+			{
+				touched.Add(current);
+			}
+
+			if (entry.State == EntityState.Modified)
+			{
+				string? original = entry.OriginalValues[nameof(ReceiptItemEntity.Description)] as string;
+				if (!string.IsNullOrEmpty(original))
+				{
+					touched.Add(original);
+				}
+			}
+		}
+		return touched;
+	}
+
+	private async Task ReconcileDistinctDescriptionsAsync(HashSet<string> descriptions, CancellationToken cancellationToken)
+	{
+		// Skip providers that don't support the pg_trgm machinery — keeps InMemory tests simple.
+		if (Database.ProviderName != PostgreSQL)
+		{
+			return;
+		}
+
+		// Use raw SQL for both insert and delete so the reconciliation is atomic per description
+		// and idempotent under concurrent saves. An EF check-then-write pattern here would race
+		// on the PK (two concurrent adds of the same new description → second INSERT hits 23505).
+		bool signalDirty = false;
+		foreach (string desc in descriptions)
+		{
+			// INSERT when there is at least one active ReceiptItem with this description.
+			// DELETE when there are no active ReceiptItems (descriptive cascade wipes any edges).
+			// The NOT EXISTS guard on DELETE makes it race-safe: if a concurrent insert is adding
+			// a receipt item with this description, the subquery will find it and the DELETE
+			// becomes a no-op.
+			int rowsInserted = await Database.ExecuteSqlRawAsync(
+				"""
+				INSERT INTO "DistinctDescriptions" ("Description", "ProcessedAt")
+				SELECT {0}, NULL
+				WHERE EXISTS (SELECT 1 FROM "ReceiptItems" WHERE "Description" = {0} AND "DeletedAt" IS NULL)
+				ON CONFLICT ("Description") DO NOTHING;
+				""",
+				[desc],
+				cancellationToken);
+
+			int rowsDeleted = await Database.ExecuteSqlRawAsync(
+				"""
+				DELETE FROM "DistinctDescriptions"
+				WHERE "Description" = {0}
+				  AND NOT EXISTS (SELECT 1 FROM "ReceiptItems" WHERE "Description" = {0} AND "DeletedAt" IS NULL);
+				""",
+				[desc],
+				cancellationToken);
+
+			if (rowsInserted > 0 || rowsDeleted > 0)
+			{
+				signalDirty = true;
+			}
+		}
+
+		if (signalDirty)
+		{
+			_descriptionChangeSignal?.NotifyDirty();
+		}
 	}
 
 	private sealed class AuditEntry(AuditLogEntity auditLog, EntityEntry? trackedEntry = null)

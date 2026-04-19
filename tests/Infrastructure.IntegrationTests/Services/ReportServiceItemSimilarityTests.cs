@@ -1,9 +1,12 @@
+using Application.Interfaces.Services;
 using Application.Models.Reports;
 using FluentAssertions;
 using Infrastructure.Entities.Core;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using SampleData.Entities;
 
 namespace Infrastructure.IntegrationTests.Services;
@@ -13,14 +16,10 @@ namespace Infrastructure.IntegrationTests.Services;
 public class ReportServiceItemSimilarityTests(PostgresFixture fixture)
 {
 	[Fact]
-	public async Task GetItemSimilarityAsync_ReturnsClusters_WithoutDisposingBorrowedConnection()
+	public async Task GetItemSimilarityAsync_ReturnsClusters_AfterBackgroundRefresh()
 	{
-		// Regression test for RECEIPTS-556: before the fix, this threw
-		// ObjectDisposedException on the ReceiptItems follow-up query because the
-		// raw-SQL block disposed the DbContext's borrowed NpgsqlConnection.
-
 		// Arrange
-		await ResetItemTablesAsync();
+		await ResetItemAndEdgeTablesAsync();
 
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		List<ReceiptItemEntity> items =
@@ -38,6 +37,14 @@ public class ReportServiceItemSimilarityTests(PostgresFixture fixture)
 			await setup.SaveChangesAsync();
 		}
 
+		// DistinctDescriptions are populated by the DbContext reconciliation hook. However, the
+		// test fixture's DbContext factory uses the parameterless ctor, so the reconciliation
+		// doesn't run automatically here — seed it explicitly.
+		await SeedDistinctDescriptionsFromReceiptItemsAsync();
+
+		// Run a refresh cycle so the edges table is populated for the assertions.
+		await RunRefreshAsync();
+
 		ReportService service = new(new FixtureDbContextFactory(fixture));
 
 		// Act
@@ -49,20 +56,21 @@ public class ReportServiceItemSimilarityTests(PostgresFixture fixture)
 			pageSize: 50,
 			CancellationToken.None);
 
-		// Assert — the call completes (no ObjectDisposedException) and returns the cola cluster
+		// Assert
 		result.Groups.Should().NotBeEmpty();
 		ItemSimilarityGroup colaCluster = result.Groups
 			.Should().ContainSingle(g => g.Variants.Any(v => v.Contains("COLA", StringComparison.OrdinalIgnoreCase)))
 			.Subject;
 		colaCluster.Variants.Should().Contain(["COCA COLA", "COCA-COLA", "COCACOLA"]);
 		colaCluster.ItemIds.Should().HaveCount(3);
+		result.ComputedAt.Should().NotBeNull("the refresher populated ComputedAt on each edge");
 	}
 
 	[Fact]
 	public async Task GetItemSimilarityAsync_ReturnsEmpty_WhenNoSimilarDescriptions()
 	{
 		// Arrange
-		await ResetItemTablesAsync();
+		await ResetItemAndEdgeTablesAsync();
 
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		List<ReceiptItemEntity> items =
@@ -78,6 +86,9 @@ public class ReportServiceItemSimilarityTests(PostgresFixture fixture)
 			setup.ReceiptItems.AddRange(items);
 			await setup.SaveChangesAsync();
 		}
+
+		await SeedDistinctDescriptionsFromReceiptItemsAsync();
+		await RunRefreshAsync();
 
 		ReportService service = new(new FixtureDbContextFactory(fixture));
 
@@ -95,11 +106,112 @@ public class ReportServiceItemSimilarityTests(PostgresFixture fixture)
 		result.TotalCount.Should().Be(0);
 	}
 
-	private async Task ResetItemTablesAsync()
+	[Fact]
+	public async Task ItemSimilarityEdgeRefresher_RepeatsProduceSameEdgeSet()
+	{
+		// Arrange
+		await ResetItemAndEdgeTablesAsync();
+
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+		await using (ApplicationDbContext setup = fixture.CreateDbContext())
+		{
+			setup.Receipts.Add(receipt);
+			setup.ReceiptItems.AddRange(
+				WithDescription(receipt.Id, "BANANA"),
+				WithDescription(receipt.Id, "BANANAS"),
+				WithDescription(receipt.Id, "APPLE"));
+			await setup.SaveChangesAsync();
+		}
+
+		await SeedDistinctDescriptionsFromReceiptItemsAsync();
+
+		// Act — run twice in a row
+		await RunRefreshAsync();
+		int firstCount = await EdgeCountAsync();
+		await RunRefreshAsync();
+		int secondCount = await EdgeCountAsync();
+
+		// Assert — idempotent: re-running doesn't duplicate or lose edges
+		secondCount.Should().Be(firstCount);
+		firstCount.Should().BeGreaterThan(0, "BANANA and BANANAS share trigrams above 0.3");
+	}
+
+	[Fact]
+	public async Task ItemSimilarityEdgeRefresher_CascadesEdgeDeletion_WhenDescriptionRemoved()
+	{
+		// Arrange
+		await ResetItemAndEdgeTablesAsync();
+
+		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
+		await using (ApplicationDbContext setup = fixture.CreateDbContext())
+		{
+			setup.Receipts.Add(receipt);
+			setup.ReceiptItems.AddRange(
+				WithDescription(receipt.Id, "ORANGE"),
+				WithDescription(receipt.Id, "ORANGES"));
+			await setup.SaveChangesAsync();
+		}
+
+		await SeedDistinctDescriptionsFromReceiptItemsAsync();
+		await RunRefreshAsync();
+		(await EdgeCountAsync()).Should().BeGreaterThan(0);
+
+		// Remove one description entirely — should cascade-delete edges referencing it.
+		await using (ApplicationDbContext remove = fixture.CreateDbContext())
+		{
+			DistinctDescriptionEntity? toRemove = await remove.DistinctDescriptions
+				.FirstOrDefaultAsync(d => d.Description == "ORANGE");
+			toRemove.Should().NotBeNull();
+			remove.DistinctDescriptions.Remove(toRemove!);
+			await remove.SaveChangesAsync();
+		}
+
+		// Assert — edges involving ORANGE are gone (FK ON DELETE CASCADE)
+		(await EdgeCountAsync()).Should().Be(0);
+	}
+
+	private async Task ResetItemAndEdgeTablesAsync()
+	{
+		await using ApplicationDbContext context = fixture.CreateDbContext();
+		// DistinctDescriptions cascades to ItemSimilarityEdges via FK; TRUNCATE CASCADE covers both.
+		await context.Database.ExecuteSqlRawAsync(
+			"""TRUNCATE "ReceiptItems", "Receipts", "DistinctDescriptions" RESTART IDENTITY CASCADE;""");
+	}
+
+	private async Task SeedDistinctDescriptionsFromReceiptItemsAsync()
 	{
 		await using ApplicationDbContext context = fixture.CreateDbContext();
 		await context.Database.ExecuteSqlRawAsync(
-			"""TRUNCATE "ReceiptItems", "Receipts" RESTART IDENTITY CASCADE;""");
+			"""
+			INSERT INTO "DistinctDescriptions" ("Description", "ProcessedAt")
+			SELECT DISTINCT "Description", NULL
+			FROM "ReceiptItems"
+			WHERE "DeletedAt" IS NULL
+			ON CONFLICT DO NOTHING;
+			""");
+	}
+
+	private async Task RunRefreshAsync()
+	{
+		// Build a minimal DI scope exposing the fixture's context factory, then call
+		// ItemSimilarityEdgeRefresher.RefreshAsync directly (bypasses the ExecuteAsync loop).
+		ServiceCollection services = new();
+		services.AddSingleton<IDbContextFactory<ApplicationDbContext>>(new FixtureDbContextFactory(fixture));
+		services.AddSingleton<IDescriptionChangeSignal, DescriptionChangeSignal>();
+		ServiceProvider provider = services.BuildServiceProvider();
+
+		ItemSimilarityEdgeRefresher refresher = new(
+			provider.GetRequiredService<IServiceScopeFactory>(),
+			provider.GetRequiredService<IDescriptionChangeSignal>(),
+			NullLogger<ItemSimilarityEdgeRefresher>.Instance);
+
+		await refresher.RefreshAsync(CancellationToken.None);
+	}
+
+	private async Task<int> EdgeCountAsync()
+	{
+		await using ApplicationDbContext context = fixture.CreateDbContext();
+		return await context.ItemSimilarityEdges.AsNoTracking().CountAsync();
 	}
 
 	private static ReceiptItemEntity WithDescription(Guid receiptId, string description)

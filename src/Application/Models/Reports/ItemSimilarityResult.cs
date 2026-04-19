@@ -9,4 +9,5 @@ public record ItemSimilarityGroup(
 
 public record ItemSimilarityResult(
 	List<ItemSimilarityGroup> Groups,
-	int TotalCount);
+	int TotalCount,
+	DateTimeOffset? ComputedAt = null);

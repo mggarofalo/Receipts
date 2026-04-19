@@ -194,8 +194,19 @@ public class ReportsController(IMediator mediator) : ControllerBase
 				ItemIds = g.ItemIds,
 				Occurrences = g.Occurrences,
 				MaxSimilarity = g.MaxSimilarity
-			}).ToList()
+			}).ToList(),
+			ComputedAt = result.ComputedAt
 		});
+	}
+
+	[HttpPost("item-similarity/refresh")]
+	[Authorize(Policy = "RequireAdmin")]
+	[EndpointSummary("Request an out-of-band refresh of the item-similarity edge set")]
+	[EndpointDescription("Admin-only. Signals the background refresher to recompute edges at its next opportunity (after the debounce window). Returns immediately.")]
+	public async Task<Accepted<RefreshItemSimilarityResponse>> RefreshItemSimilarity(CancellationToken cancellationToken)
+	{
+		await mediator.Send(new RefreshItemSimilarityCommand(), cancellationToken);
+		return TypedResults.Accepted((string?)null, new RefreshItemSimilarityResponse { Accepted = true });
 	}
 
 	[HttpPost("item-similarity/rename")]
