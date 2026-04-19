@@ -37,10 +37,10 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a card by ID")]
 	[EndpointDescription("Returns a single card matching the provided GUID.")]
-	public async Task<Results<Ok<CardResponse>, NotFound>> GetCardById([FromRoute] Guid id)
+	public async Task<Results<Ok<CardResponse>, NotFound>> GetCardById([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		GetCardByIdQuery query = new(id);
-		Card? result = await mediator.Send(query);
+		Card? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{
@@ -54,7 +54,7 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all cards")]
-	public async Task<Results<Ok<CardListResponse>, BadRequest<string>>> GetAllCards([FromQuery] bool? isActive = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<CardListResponse>, BadRequest<string>>> GetAllCards([FromQuery] bool? isActive = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -78,7 +78,7 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetAllCardsQuery query = new(offset, limit, sort, isActive);
-		PagedResult<Card> result = await mediator.Send(query);
+		PagedResult<Card> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new CardListResponse
 		{
@@ -91,25 +91,25 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single card")]
-	public async Task<Results<Ok<CardResponse>, BadRequest<string>>> CreateCard([FromBody] CreateCardRequest model)
+	public async Task<Results<Ok<CardResponse>, BadRequest<string>>> CreateCard([FromBody] CreateCardRequest model, CancellationToken cancellationToken = default)
 	{
-		if (await MissingAccountIdAsync(model.AccountId, HttpContext.RequestAborted))
+		if (await MissingAccountIdAsync(model.AccountId, cancellationToken))
 		{
 			logger.LogWarning("Card create rejected — parent account {AccountId} not found", model.AccountId);
 			return TypedResults.BadRequest($"Account {model.AccountId} does not exist.");
 		}
 
 		CreateCardCommand command = new([mapper.ToDomain(model)]);
-		List<Card> cards = await mediator.Send(command);
+		List<Card> cards = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyCreated("card", cards[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(cards[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create cards in batch")]
-	public async Task<Results<Ok<List<CardResponse>>, BadRequest<string>>> CreateCards([FromBody] List<CreateCardRequest> models)
+	public async Task<Results<Ok<List<CardResponse>>, BadRequest<string>>> CreateCards([FromBody] List<CreateCardRequest> models, CancellationToken cancellationToken = default)
 	{
-		Guid? missing = await FirstMissingAccountIdAsync(models.Select(m => m.AccountId), HttpContext.RequestAborted);
+		Guid? missing = await FirstMissingAccountIdAsync(models.Select(m => m.AccountId), cancellationToken);
 		if (missing.HasValue)
 		{
 			logger.LogWarning("Cards batch create rejected — parent account {AccountId} not found", missing.Value);
@@ -117,23 +117,23 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 		}
 
 		CreateCardCommand command = new([.. models.Select(mapper.ToDomain)]);
-		List<Card> cards = await mediator.Send(command);
+		List<Card> cards = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyBulkChanged("card", "created", cards.Select(a => a.Id));
 		return TypedResults.Ok(cards.Select(mapper.ToResponse).ToList());
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single card")]
-	public async Task<Results<NoContent, NotFound, BadRequest<string>>> UpdateCard([FromRoute] Guid id, [FromBody] UpdateCardRequest model)
+	public async Task<Results<NoContent, NotFound, BadRequest<string>>> UpdateCard([FromRoute] Guid id, [FromBody] UpdateCardRequest model, CancellationToken cancellationToken = default)
 	{
-		if (await MissingAccountIdAsync(model.AccountId, HttpContext.RequestAborted))
+		if (await MissingAccountIdAsync(model.AccountId, cancellationToken))
 		{
 			logger.LogWarning("Card {Id} update rejected — parent account {AccountId} not found", id, model.AccountId);
 			return TypedResults.BadRequest($"Account {model.AccountId} does not exist.");
 		}
 
 		UpdateCardCommand command = new([mapper.ToDomain(model)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -147,9 +147,9 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update cards in batch")]
-	public async Task<Results<NoContent, NotFound, BadRequest<string>>> UpdateCards([FromBody] List<UpdateCardRequest> models)
+	public async Task<Results<NoContent, NotFound, BadRequest<string>>> UpdateCards([FromBody] List<UpdateCardRequest> models, CancellationToken cancellationToken = default)
 	{
-		Guid? missing = await FirstMissingAccountIdAsync(models.Select(m => m.AccountId), HttpContext.RequestAborted);
+		Guid? missing = await FirstMissingAccountIdAsync(models.Select(m => m.AccountId), cancellationToken);
 		if (missing.HasValue)
 		{
 			logger.LogWarning("Cards batch update rejected — parent account {AccountId} not found", missing.Value);
@@ -157,7 +157,7 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 		}
 
 		UpdateCardCommand command = new([.. models.Select(mapper.ToDomain)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -191,9 +191,9 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 	[Authorize(Policy = "RequireAdmin")]
 	[EndpointSummary("Hard-delete a card")]
 	[EndpointDescription("Permanently deletes a card. Requires the Admin role. Returns 409 Conflict if transactions reference this card.")]
-	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteCard([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteCard([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
-		int transactionCount = await cardService.GetTransactionCountByCardIdAsync(id, HttpContext.RequestAborted);
+		int transactionCount = await cardService.GetTransactionCountByCardIdAsync(id, cancellationToken);
 		if (transactionCount > 0)
 		{
 			logger.LogWarning("Card {Id} cannot be deleted — {Count} transactions reference it", id, transactionCount);
@@ -201,7 +201,7 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 		}
 
 		DeleteCardCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -217,7 +217,7 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 	[Authorize(Policy = "RequireAdmin")]
 	[EndpointSummary("Merge cards into a target account")]
 	[EndpointDescription("Repoints the listed cards (and their transactions) to the target account and deletes any now-orphaned accounts. Requires the Admin role. Returns 409 Conflict if the source/target accounts have differing YNAB account mappings; resubmit with ynabMappingWinnerAccountId to resolve.")]
-	public async Task<Results<Ok<MergeCardsResponse>, BadRequest<string>, NotFound, Conflict<MergeCardsConflictResponse>>> MergeCards([FromBody] MergeCardsRequest model)
+	public async Task<Results<Ok<MergeCardsResponse>, BadRequest<string>, NotFound, Conflict<MergeCardsConflictResponse>>> MergeCards([FromBody] MergeCardsRequest model, CancellationToken cancellationToken = default)
 	{
 		if (model.SourceCardIds is null || model.SourceCardIds.Count < 2)
 		{
@@ -240,7 +240,7 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 		MergeCardsResult result;
 		try
 		{
-			result = await mediator.Send(command, HttpContext.RequestAborted);
+			result = await mediator.Send(command, cancellationToken);
 		}
 		catch (KeyNotFoundException ex)
 		{

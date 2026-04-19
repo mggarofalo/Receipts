@@ -35,7 +35,8 @@ public class ReceiptScanController(
 	[EndpointDescription("Accepts a JPEG or PNG image, or a PDF document. For images, runs preprocessing, OCR, and parsing. For PDFs, extracts text from the text layer or renders pages for OCR. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted.")]
 	[ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
 	public async Task<Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>>> ScanReceipt(
-		IFormFile? file)
+		IFormFile? file,
+		CancellationToken cancellationToken = default)
 	{
 		if (file is null || file.Length == 0)
 		{
@@ -55,7 +56,7 @@ public class ReceiptScanController(
 		byte[] imageBytes;
 		using (MemoryStream ms = new())
 		{
-			await file.CopyToAsync(ms);
+			await file.CopyToAsync(ms, cancellationToken);
 			imageBytes = ms.ToArray();
 		}
 
@@ -72,7 +73,7 @@ public class ReceiptScanController(
 		ScanReceiptResult result;
 		try
 		{
-			result = await mediator.Send(command);
+			result = await mediator.Send(command, cancellationToken);
 		}
 		catch (OcrNoTextException ex)
 		{

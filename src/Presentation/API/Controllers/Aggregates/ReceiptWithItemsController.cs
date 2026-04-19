@@ -22,10 +22,10 @@ public class ReceiptWithItemsController(IMediator mediator, ReceiptWithItemsMapp
 	[HttpGet(RouteByReceiptId)]
 	[EndpointSummary("Get a receipt with its items")]
 	[EndpointDescription("Returns a receipt and all its associated line items as a single aggregate, looked up by receipt ID.")]
-	public async Task<Results<Ok<ReceiptWithItemsResponse>, NotFound>> GetReceiptWithItemsByReceiptId([FromQuery] Guid receiptId)
+	public async Task<Results<Ok<ReceiptWithItemsResponse>, NotFound>> GetReceiptWithItemsByReceiptId([FromQuery] Guid receiptId, CancellationToken cancellationToken = default)
 	{
 		GetReceiptWithItemsByReceiptIdQuery query = new(receiptId);
-		ReceiptWithItems? result = await mediator.Send(query);
+		ReceiptWithItems? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{

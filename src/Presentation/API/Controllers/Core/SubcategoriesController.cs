@@ -37,10 +37,10 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[HttpGet(RouteGetById)]
 	[EndpointSummary("Get a subcategory by ID")]
 	[EndpointDescription("Returns a single subcategory matching the provided GUID.")]
-	public async Task<Results<Ok<SubcategoryResponse>, NotFound>> GetSubcategoryById([FromRoute] Guid id)
+	public async Task<Results<Ok<SubcategoryResponse>, NotFound>> GetSubcategoryById([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		GetSubcategoryByIdQuery query = new(id);
-		Subcategory? result = await mediator.Send(query);
+		Subcategory? result = await mediator.Send(query, cancellationToken);
 
 		if (result == null)
 		{
@@ -54,7 +54,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all subcategories")]
-	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetAllSubcategories([FromQuery] Guid? categoryId = null, [FromQuery] bool? isActive = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetAllSubcategories([FromQuery] Guid? categoryId = null, [FromQuery] bool? isActive = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -81,7 +81,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		if (categoryId.HasValue)
 		{
 			GetSubcategoriesByCategoryIdQuery byCategoryQuery = new(categoryId.Value, offset, limit, sort, isActive);
-			PagedResult<Subcategory> byCategoryResult = await mediator.Send(byCategoryQuery);
+			PagedResult<Subcategory> byCategoryResult = await mediator.Send(byCategoryQuery, cancellationToken);
 
 			return TypedResults.Ok(new SubcategoryListResponse
 			{
@@ -93,7 +93,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		}
 
 		GetAllSubcategoriesQuery query = new(offset, limit, sort, isActive);
-		PagedResult<Subcategory> result = await mediator.Send(query);
+		PagedResult<Subcategory> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new SubcategoryListResponse
 		{
@@ -107,7 +107,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[HttpGet(RouteGetDeleted)]
 	[EndpointSummary("Get all soft-deleted subcategories")]
 	[EndpointDescription("Returns all subcategories that have been soft-deleted.")]
-	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetDeletedSubcategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null)
+	public async Task<Results<Ok<SubcategoryListResponse>, BadRequest<string>>> GetDeletedSubcategories([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -131,7 +131,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 
 		SortParams sort = new(sortBy, sortDirection);
 		GetDeletedSubcategoriesQuery query = new(offset, limit, sort);
-		PagedResult<Subcategory> result = await mediator.Send(query);
+		PagedResult<Subcategory> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new SubcategoryListResponse
 		{
@@ -144,30 +144,30 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single subcategory")]
-	public async Task<Ok<SubcategoryResponse>> CreateSubcategory([FromBody] CreateSubcategoryRequest model)
+	public async Task<Ok<SubcategoryResponse>> CreateSubcategory([FromBody] CreateSubcategoryRequest model, CancellationToken cancellationToken = default)
 	{
 		CreateSubcategoryCommand command = new([mapper.ToDomain(model)]);
-		List<Subcategory> subcategories = await mediator.Send(command);
+		List<Subcategory> subcategories = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyCreated("subcategory", subcategories[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(subcategories[0]));
 	}
 
 	[HttpPost(RouteCreateBatch)]
 	[EndpointSummary("Create subcategories in batch")]
-	public async Task<Ok<List<SubcategoryResponse>>> CreateSubcategories([FromBody] List<CreateSubcategoryRequest> models)
+	public async Task<Ok<List<SubcategoryResponse>>> CreateSubcategories([FromBody] List<CreateSubcategoryRequest> models, CancellationToken cancellationToken = default)
 	{
 		CreateSubcategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
-		List<Subcategory> subcategories = await mediator.Send(command);
+		List<Subcategory> subcategories = await mediator.Send(command, cancellationToken);
 		await notifier.NotifyBulkChanged("subcategory", "created", subcategories.Select(s => s.Id));
 		return TypedResults.Ok(subcategories.Select(mapper.ToResponse).ToList());
 	}
 
 	[HttpPut(RouteUpdate)]
 	[EndpointSummary("Update a single subcategory")]
-	public async Task<Results<NoContent, NotFound>> UpdateSubcategory([FromRoute] Guid id, [FromBody] UpdateSubcategoryRequest model)
+	public async Task<Results<NoContent, NotFound>> UpdateSubcategory([FromRoute] Guid id, [FromBody] UpdateSubcategoryRequest model, CancellationToken cancellationToken = default)
 	{
 		UpdateSubcategoryCommand command = new([mapper.ToDomain(model)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -181,10 +181,10 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 
 	[HttpPut(RouteUpdateBatch)]
 	[EndpointSummary("Update subcategories in batch")]
-	public async Task<Results<NoContent, NotFound>> UpdateSubcategories([FromBody] List<UpdateSubcategoryRequest> models)
+	public async Task<Results<NoContent, NotFound>> UpdateSubcategories([FromBody] List<UpdateSubcategoryRequest> models, CancellationToken cancellationToken = default)
 	{
 		UpdateSubcategoryCommand command = new([.. models.Select(mapper.ToDomain)]);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
@@ -199,20 +199,20 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[HttpDelete(RouteDelete)]
 	[EndpointSummary("Soft-delete a subcategory")]
 	[EndpointDescription("Soft-deletes a subcategory. Returns 409 Conflict if receipt items reference this subcategory.")]
-	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteSubcategory([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound, Conflict<object>>> DeleteSubcategory([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
-		Subcategory? subcategory = await mediator.Send(new GetSubcategoryByIdQuery(id));
+		Subcategory? subcategory = await mediator.Send(new GetSubcategoryByIdQuery(id), cancellationToken);
 		if (subcategory == null)
 		{
 			logger.LogWarning("Subcategory {Id} not found for deletion", id);
 			return TypedResults.NotFound();
 		}
 
-		int receiptItemCount = await subcategoryService.GetReceiptItemCountBySubcategoryNameAsync(subcategory.Name, HttpContext.RequestAborted);
+		int receiptItemCount = await subcategoryService.GetReceiptItemCountBySubcategoryNameAsync(subcategory.Name, cancellationToken);
 		if (receiptItemCount > 0)
 		{
 			logger.LogWarning("Subcategory {Id} cannot be deleted — {Count} receipt items reference it", id, receiptItemCount);
-			List<(Guid ReceiptId, DateOnly Date, string Location)> affected = await subcategoryService.GetAffectedReceiptsBySubcategoryNameAsync(subcategory.Name, 20, HttpContext.RequestAborted);
+			List<(Guid ReceiptId, DateOnly Date, string Location)> affected = await subcategoryService.GetAffectedReceiptsBySubcategoryNameAsync(subcategory.Name, 20, cancellationToken);
 			return TypedResults.Conflict<object>(new
 			{
 				message = $"Cannot delete — {receiptItemCount} receipt item(s) use this subcategory",
@@ -222,7 +222,7 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 		}
 
 		DeleteSubcategoryCommand command = new([id]);
-		await mediator.Send(command);
+		await mediator.Send(command, cancellationToken);
 
 		await notifier.NotifyDeleted("subcategory", id);
 		return TypedResults.NoContent();
@@ -231,10 +231,10 @@ public class SubcategoriesController(IMediator mediator, SubcategoryMapper mappe
 	[HttpPost(RouteRestore)]
 	[EndpointSummary("Restore a soft-deleted subcategory")]
 	[EndpointDescription("Restores a previously soft-deleted subcategory by clearing its DeletedAt timestamp.")]
-	public async Task<Results<NoContent, NotFound>> RestoreSubcategory([FromRoute] Guid id)
+	public async Task<Results<NoContent, NotFound>> RestoreSubcategory([FromRoute] Guid id, CancellationToken cancellationToken = default)
 	{
 		RestoreSubcategoryCommand command = new(id);
-		bool result = await mediator.Send(command);
+		bool result = await mediator.Send(command, cancellationToken);
 
 		if (!result)
 		{
