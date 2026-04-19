@@ -4672,7 +4672,7 @@ components:
           items:
             $ref: "#/components/schemas/ItemSimilarityGroup"
         computedAt:
-          type: [["string", "null"], "null"]
+          type: ["string", "null"]
           format: date-time
           description: Timestamp of the most recent edge-set refresh. Null when the background refresher has not yet populated edges.
 
