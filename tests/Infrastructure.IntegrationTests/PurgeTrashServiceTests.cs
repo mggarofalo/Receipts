@@ -30,13 +30,19 @@ public class PurgeTrashServiceTests(PostgresFixture fixture)
 		CategoryEntity deletedCategory = CategoryEntityGenerator.Generate();
 		deletedCategory.DeletedAt = deletedAt;
 
-		// Children — all reference the active parents so FKs are satisfied
-		// regardless of which parent is soft-deleted.
+		// Children — most reference the active parents so FKs are satisfied.
+		// `orphanedActiveSubcategory` specifically references the soft-deleted
+		// Category to exercise the cascade-destruction guard: without the
+		// defensive delete in TrashService, Postgres' OnDelete(Cascade) FK
+		// would silently destroy this active row when its parent Category is
+		// purged.
 		SubcategoryEntity activeSubcategory = SubcategoryEntityGenerator.Generate();
 		activeSubcategory.CategoryId = activeCategory.Id;
 		SubcategoryEntity deletedSubcategory = SubcategoryEntityGenerator.Generate();
 		deletedSubcategory.CategoryId = activeCategory.Id;
 		deletedSubcategory.DeletedAt = deletedAt;
+		SubcategoryEntity orphanedActiveSubcategory = SubcategoryEntityGenerator.Generate();
+		orphanedActiveSubcategory.CategoryId = deletedCategory.Id;
 
 		ReceiptItemEntity activeReceiptItem = ReceiptItemEntityGenerator.Generate(activeReceipt.Id);
 		ReceiptItemEntity deletedReceiptItem = ReceiptItemEntityGenerator.Generate(activeReceipt.Id);
@@ -67,7 +73,7 @@ public class PurgeTrashServiceTests(PostgresFixture fixture)
 			setup.Categories.AddRange(activeCategory, deletedCategory);
 			await setup.SaveChangesAsync();
 
-			setup.Subcategories.AddRange(activeSubcategory, deletedSubcategory);
+			setup.Subcategories.AddRange(activeSubcategory, deletedSubcategory, orphanedActiveSubcategory);
 			setup.ReceiptItems.AddRange(activeReceiptItem, deletedReceiptItem);
 			setup.Transactions.AddRange(activeTransaction, deletedTransaction);
 			setup.Adjustments.AddRange(activeAdjustment, deletedAdjustment);
@@ -95,6 +101,9 @@ public class PurgeTrashServiceTests(PostgresFixture fixture)
 
 		(await verify.Subcategories.IgnoreQueryFilters().AnyAsync(e => e.Id == deletedSubcategory.Id)).Should().BeFalse();
 		(await verify.Subcategories.IgnoreQueryFilters().AnyAsync(e => e.Id == activeSubcategory.Id)).Should().BeTrue();
+		// Active subcategory whose parent Category was soft-deleted must also
+		// be purged — the explicit delete prevents silent cascade destruction.
+		(await verify.Subcategories.IgnoreQueryFilters().AnyAsync(e => e.Id == orphanedActiveSubcategory.Id)).Should().BeFalse();
 
 		(await verify.Receipts.IgnoreQueryFilters().AnyAsync(e => e.Id == deletedReceipt.Id)).Should().BeFalse();
 		(await verify.Receipts.IgnoreQueryFilters().AnyAsync(e => e.Id == activeReceipt.Id)).Should().BeTrue();
