@@ -152,38 +152,43 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 			return;
 		}
 
-		bool changed = false;
+		// Use raw SQL for both insert and delete so the reconciliation is atomic per description
+		// and idempotent under concurrent saves. An EF check-then-write pattern here would race
+		// on the PK (two concurrent adds of the same new description → second INSERT hits 23505).
+		bool signalDirty = false;
 		foreach (string desc in descriptions)
 		{
-			int activeCount = await ReceiptItems
-				.AsNoTracking()
-				.CountAsync(ri => ri.Description == desc && ri.DeletedAt == null, cancellationToken);
+			// INSERT when there is at least one active ReceiptItem with this description.
+			// DELETE when there are no active ReceiptItems (descriptive cascade wipes any edges).
+			// The NOT EXISTS guard on DELETE makes it race-safe: if a concurrent insert is adding
+			// a receipt item with this description, the subquery will find it and the DELETE
+			// becomes a no-op.
+			int rowsInserted = await Database.ExecuteSqlRawAsync(
+				"""
+				INSERT INTO "DistinctDescriptions" ("Description", "ProcessedAt")
+				SELECT {0}, NULL
+				WHERE EXISTS (SELECT 1 FROM "ReceiptItems" WHERE "Description" = {0} AND "DeletedAt" IS NULL)
+				ON CONFLICT ("Description") DO NOTHING;
+				""",
+				[desc],
+				cancellationToken);
 
-			DistinctDescriptionEntity? existing = await DistinctDescriptions
-				.FirstOrDefaultAsync(d => d.Description == desc, cancellationToken);
+			int rowsDeleted = await Database.ExecuteSqlRawAsync(
+				"""
+				DELETE FROM "DistinctDescriptions"
+				WHERE "Description" = {0}
+				  AND NOT EXISTS (SELECT 1 FROM "ReceiptItems" WHERE "Description" = {0} AND "DeletedAt" IS NULL);
+				""",
+				[desc],
+				cancellationToken);
 
-			if (activeCount > 0 && existing is null)
+			if (rowsInserted > 0 || rowsDeleted > 0)
 			{
-				DistinctDescriptions.Add(new DistinctDescriptionEntity { Description = desc, ProcessedAt = null });
-				changed = true;
-			}
-			else if (activeCount == 0 && existing is not null)
-			{
-				// Cascades edges via FK ON DELETE CASCADE.
-				DistinctDescriptions.Remove(existing);
-				changed = true;
+				signalDirty = true;
 			}
 		}
 
-		if (changed)
-		{
-			await base.SaveChangesAsync(cancellationToken);
-		}
-
-		// Even if no rows were added/removed, the edited description may have shifted similarity
-		// relative to neighbors; nothing to do here (edges are derived from the SET of descriptions,
-		// which didn't change). If the set did change, signal the refresher to process.
-		if (changed)
+		if (signalDirty)
 		{
 			_descriptionChangeSignal?.NotifyDirty();
 		}

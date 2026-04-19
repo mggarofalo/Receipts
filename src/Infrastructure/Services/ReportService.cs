@@ -164,13 +164,13 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 			.Where(e => e.Score >= threshold)
 			.ToListAsync(cancellationToken);
 
-		// ComputedAt reflects the freshness of the underlying edge set. Surface it even when the
-		// filter returns no groups, so the UI can show "last updated" staleness.
-		DateTimeOffset? computedAt = matchingEdges.Count > 0
-			? matchingEdges.Max(e => e.ComputedAt)
-			: await context.ItemSimilarityEdges
-				.AsNoTracking()
-				.MaxAsync(e => (DateTimeOffset?)e.ComputedAt, cancellationToken);
+		// ComputedAt reflects the freshness of the underlying edge set. Always query the full
+		// table, not just the threshold-matching subset — the refresher's ON CONFLICT DO UPDATE
+		// only fires for unprocessed descriptions, so once all descriptions are processed the
+		// timestamps on filtered-out edges may be newer than any in `matchingEdges`.
+		DateTimeOffset? computedAt = await context.ItemSimilarityEdges
+			.AsNoTracking()
+			.MaxAsync(e => (DateTimeOffset?)e.ComputedAt, cancellationToken);
 
 		if (matchingEdges.Count == 0)
 		{
