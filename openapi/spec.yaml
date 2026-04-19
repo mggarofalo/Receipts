@@ -417,6 +417,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CardResponse"
+        "404":
+          description: Parent Account not found when `accountId` is provided but does not refer to an existing Account.
   /api/cards/batch:
     post:
       operationId: CreateCards
@@ -5018,6 +5020,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Optional parent logical Account. Null/omitted leaves the card unassigned.
 
     UpdateCardRequest:
       type: object
@@ -5032,6 +5038,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Optional parent logical Account. Send null to clear the assignment.
 
     CardResponse:
       type: object
@@ -5046,6 +5056,10 @@ components:
           type: string
         isActive:
           type: boolean
+        accountId:
+          type: ["string", "null"]
+          format: uuid
+          description: Parent logical Account, if assigned.
 
     CardListResponse:
       type: object

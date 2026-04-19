@@ -2421,6 +2421,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Optional parent logical Account. Null/omitted leaves the card unassigned.
+             */
+            accountId?: string | null;
         };
         UpdateCardRequest: {
             /** Format: uuid */
@@ -2428,6 +2433,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Optional parent logical Account. Send null to clear the assignment.
+             */
+            accountId?: string | null;
         };
         CardResponse: {
             /** Format: uuid */
@@ -2435,6 +2445,11 @@ export interface components {
             cardCode: string;
             name: string;
             isActive: boolean;
+            /**
+             * Format: uuid
+             * @description Parent logical Account, if assigned.
+             */
+            accountId?: string | null;
         };
         CardListResponse: {
             data: components["schemas"]["CardResponse"][];
@@ -3876,6 +3891,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CardResponse"];
                 };
+            };
+            /** @description Parent Account not found when `accountId` is provided but does not refer to an existing Account. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

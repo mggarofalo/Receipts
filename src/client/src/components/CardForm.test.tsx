@@ -1,9 +1,23 @@
+import "@/test/setup-combobox-polyfills";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CardForm } from "./CardForm";
 
 vi.mock("@/hooks/useFormShortcuts", () => ({
   useFormShortcuts: vi.fn(),
+}));
+
+const mockAccounts = [
+  { id: "acct-1", name: "Checking", isActive: true },
+  { id: "acct-2", name: "Savings", isActive: true },
+];
+
+vi.mock("@/hooks/useAccounts", () => ({
+  useAccounts: vi.fn(() => ({
+    data: mockAccounts,
+    total: mockAccounts.length,
+    isLoading: false,
+  })),
 }));
 
 describe("CardForm", () => {
@@ -51,7 +65,85 @@ describe("CardForm", () => {
 
     await waitFor(() => {
       expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-        { cardCode: "CARD-002", name: "Savings", isActive: true },
+        { cardCode: "CARD-002", name: "Savings", isActive: true, accountId: undefined },
+        expect.anything(),
+      );
+    });
+  });
+
+  it("renders parent Account dropdown with active accounts and '— None —'", async () => {
+    const user = userEvent.setup();
+    render(<CardForm {...defaultProps} />);
+
+    const accountTrigger = screen.getByRole("combobox", { name: /^account/i });
+    expect(accountTrigger).toHaveTextContent("— None —");
+
+    await user.click(accountTrigger);
+    await waitFor(() => {
+      expect(screen.getByText("Checking")).toBeInTheDocument();
+      expect(screen.getByText("Savings")).toBeInTheDocument();
+    });
+  });
+
+  it("pre-populates the parent Account in edit mode", () => {
+    render(
+      <CardForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{
+          cardCode: "CARD-001",
+          name: "Checking",
+          isActive: true,
+          accountId: "acct-1",
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("combobox", { name: /^account/i }),
+    ).toHaveTextContent("Checking");
+  });
+
+  it("submits the selected accountId when an Account is chosen", async () => {
+    const user = userEvent.setup();
+    render(<CardForm {...defaultProps} />);
+
+    await user.type(screen.getByLabelText(/^Card Code/), "CARD-003");
+    await user.type(screen.getByLabelText(/^Name/), "Brokerage");
+    await user.click(screen.getByRole("combobox", { name: /^account/i }));
+    await user.click(await screen.findByText("Savings"));
+    await user.click(screen.getByRole("button", { name: /create card/i }));
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ accountId: "acct-2" }),
+        expect.anything(),
+      );
+    });
+  });
+
+  it("submits accountId as undefined when '— None —' is selected", async () => {
+    const user = userEvent.setup();
+    render(
+      <CardForm
+        {...defaultProps}
+        mode="edit"
+        defaultValues={{
+          cardCode: "CARD-004",
+          name: "Orphan",
+          isActive: true,
+          accountId: "acct-1",
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox", { name: /^account/i }));
+    await user.click(await screen.findByText("— None —"));
+    await user.click(screen.getByRole("button", { name: /update card/i }));
+
+    await waitFor(() => {
+      expect(defaultProps.onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ accountId: undefined }),
         expect.anything(),
       );
     });

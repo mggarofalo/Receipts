@@ -23,7 +23,7 @@ namespace API.Controllers.Core;
 [Route("api/cards")]
 [Produces("application/json")]
 [Authorize]
-public class CardsController(IMediator mediator, CardMapper mapper, ILogger<CardsController> logger, IEntityChangeNotifier notifier, ICardService cardService) : ControllerBase
+public class CardsController(IMediator mediator, CardMapper mapper, ILogger<CardsController> logger, IEntityChangeNotifier notifier, ICardService cardService, IAccountService accountService) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -91,8 +91,14 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 
 	[HttpPost(RouteCreate)]
 	[EndpointSummary("Create a single card")]
-	public async Task<Ok<CardResponse>> CreateCard([FromBody] CreateCardRequest model)
+	public async Task<Results<Ok<CardResponse>, NotFound>> CreateCard([FromBody] CreateCardRequest model)
 	{
+		if (model.AccountId.HasValue && !await accountService.ExistsAsync(model.AccountId.Value, HttpContext.RequestAborted))
+		{
+			logger.LogWarning("Card create rejected — parent account {AccountId} not found", model.AccountId.Value);
+			return TypedResults.NotFound();
+		}
+
 		CreateCardCommand command = new([mapper.ToDomain(model)]);
 		List<Card> cards = await mediator.Send(command);
 		await notifier.NotifyCreated("card", cards[0].Id);
@@ -113,6 +119,12 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 	[EndpointSummary("Update a single card")]
 	public async Task<Results<NoContent, NotFound>> UpdateCard([FromRoute] Guid id, [FromBody] UpdateCardRequest model)
 	{
+		if (model.AccountId.HasValue && !await accountService.ExistsAsync(model.AccountId.Value, HttpContext.RequestAborted))
+		{
+			logger.LogWarning("Card {Id} update rejected — parent account {AccountId} not found", id, model.AccountId.Value);
+			return TypedResults.NotFound();
+		}
+
 		UpdateCardCommand command = new([mapper.ToDomain(model)]);
 		bool result = await mediator.Send(command);
 
