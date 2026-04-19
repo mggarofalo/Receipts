@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useContext, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Star } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
   CommandDialog,
@@ -23,6 +23,13 @@ import {
   type CommandGroupId,
 } from "@/lib/command-palette/types";
 import { useEntityResults } from "@/lib/command-palette/entity-results";
+import {
+  addRecent,
+  getPinned,
+  getRecent,
+  togglePinned,
+} from "@/lib/command-palette/command-history";
+import { cn } from "@/lib/utils";
 
 const ENTITY_GROUP_VISIBLE_LIMIT = 8;
 
@@ -38,8 +45,20 @@ const GROUP_ORDER: CommandGroupId[] = [
   "preferences",
 ];
 
-function commandSearchValue(cmd: Command): string {
-  return [cmd.id, cmd.label, ...(cmd.keywords ?? [])].join(" ").toLowerCase();
+/**
+ * Build the cmdk `value` for a row. The Pinned/Recent sections may render
+ * the same command that also appears in its regular group during filtering,
+ * so we prefix those two sections to keep per-row identity unique. Regular
+ * groups use the raw base value — prefixing them would make group names like
+ * "navigate" and "preferences" accidentally matchable.
+ */
+function commandSearchValue(cmd: Command, section: string): string {
+  const base = [cmd.id, cmd.label, ...(cmd.keywords ?? [])]
+    .join(" ")
+    .toLowerCase();
+  return section === "pinned" || section === "recent"
+    ? `${section}:${base}`
+    : base;
 }
 
 /** Spell out keyboard-shortcut glyphs so screen readers don't read them as symbols. */
@@ -53,6 +72,14 @@ function spokenShortcut(shortcut: string): string {
     .trim();
 }
 
+/** Map ids from localStorage back into Command objects, dropping unknown ids. */
+function resolveCommands(ids: string[], registry: Command[]): Command[] {
+  const byId = new Map(registry.map((c) => [c.id, c]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((c): c is Command => c !== undefined);
+}
+
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,6 +89,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const shortcutsCtx = useContext(ShortcutsContext);
   const [query, setQuery] = useState("");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [pinnedIds, setPinnedIds] = useState<string[]>(() => getPinned());
+  const [recentIds, setRecentIds] = useState<string[]>(() => getRecent());
 
   const admin = isAdmin();
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
@@ -98,9 +127,26 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     return map;
   }, [visibleCommands]);
 
+  const pinnedSet = useMemo(() => new Set(pinnedIds), [pinnedIds]);
+
+  const pinnedCommands = useMemo(
+    () => resolveCommands(pinnedIds, visibleCommands),
+    [pinnedIds, visibleCommands],
+  );
+
+  const recentCommands = useMemo(
+    () =>
+      resolveCommands(
+        recentIds.filter((id) => !pinnedSet.has(id)),
+        visibleCommands,
+      ),
+    [recentIds, pinnedSet, visibleCommands],
+  );
+
   const entityGroups = useEntityResults({ isAdmin: admin });
 
   const showEntities = query.trim().length > 0;
+  const showTopSections = !showEntities;
 
   function toggleGroupExpanded(id: string) {
     setExpandedGroups((prev) => {
@@ -109,6 +155,65 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       else next.add(id);
       return next;
     });
+  }
+
+  const runCommand = useCallback(
+    (cmd: Command) => {
+      setRecentIds(addRecent(cmd.id));
+      Promise.resolve(cmd.run(ctx)).catch((err) => {
+        console.error(`Command ${cmd.id} failed:`, err);
+      });
+    },
+    [ctx],
+  );
+
+  const handleTogglePin = useCallback((id: string) => {
+    setPinnedIds(togglePinned(id));
+  }, []);
+
+  function renderCommandItem(cmd: Command, section: string) {
+    const Icon = cmd.icon;
+    const showShiftN =
+      cmd.group === "create" && cmd.targetPath === location.pathname;
+    const shortcutGlyph = showShiftN ? "⇧ N" : cmd.shortcut ?? null;
+    const pinned = pinnedSet.has(cmd.id);
+    return (
+      <CommandItem
+        key={`${section}:${cmd.id}`}
+        value={commandSearchValue(cmd, section)}
+        onSelect={() => runCommand(cmd)}
+      >
+        <Icon aria-hidden="true" className="mr-2 h-4 w-4" />
+        <span>{cmd.label}</span>
+        <div className="ml-auto flex items-center gap-2">
+          {shortcutGlyph ? (
+            <CommandShortcut className="ml-0">
+              <span aria-hidden="true">{shortcutGlyph}</span>
+              <span className="sr-only">{spokenShortcut(shortcutGlyph)}</span>
+            </CommandShortcut>
+          ) : null}
+          <button
+            type="button"
+            aria-label={pinned ? `Unpin ${cmd.label}` : `Pin ${cmd.label}`}
+            aria-pressed={pinned}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTogglePin(cmd.id);
+            }}
+            className={cn(
+              "rounded p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring transition-opacity",
+              pinned ? "opacity-100" : "opacity-40 hover:opacity-100",
+            )}
+          >
+            <Star
+              aria-hidden="true"
+              className={cn("h-3.5 w-3.5", pinned && "fill-current")}
+            />
+          </button>
+        </div>
+      </CommandItem>
+    );
   }
 
   return (
@@ -123,44 +228,38 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           No matches. Try a different word or press Esc to close.
         </CommandEmpty>
 
+        {showTopSections && pinnedCommands.length > 0 && (
+          <CommandGroup heading="Pinned">
+            {pinnedCommands.map((cmd) => renderCommandItem(cmd, "pinned"))}
+          </CommandGroup>
+        )}
+
+        {showTopSections && recentCommands.length > 0 && (
+          <Fragment>
+            {pinnedCommands.length > 0 && <CommandSeparator />}
+            <CommandGroup heading="Recent">
+              {recentCommands.map((cmd) => renderCommandItem(cmd, "recent"))}
+            </CommandGroup>
+          </Fragment>
+        )}
+
         {GROUP_ORDER.map((groupId, index) => {
-          const commands = commandsByGroup[groupId];
+          // When the Pinned section is visible, hide those commands from
+          // their regular group to avoid rendering the same row twice.
+          // Recent is intentionally not hidden — it's a brief MRU hint, not
+          // a replacement for the command's canonical home.
+          const commands = showTopSections
+            ? commandsByGroup[groupId].filter((cmd) => !pinnedSet.has(cmd.id))
+            : commandsByGroup[groupId];
           if (commands.length === 0) return null;
+          const hasTopSections =
+            showTopSections &&
+            (pinnedCommands.length > 0 || recentCommands.length > 0);
           return (
             <Fragment key={groupId}>
-              {index > 0 && <CommandSeparator />}
+              {(hasTopSections || index > 0) && <CommandSeparator />}
               <CommandGroup heading={COMMAND_GROUP_LABELS[groupId]}>
-                {commands.map((cmd) => {
-                  const Icon = cmd.icon;
-                  const showShiftN =
-                    cmd.group === "create" &&
-                    cmd.targetPath === location.pathname;
-                  const shortcutGlyph = showShiftN
-                    ? "⇧ N"
-                    : cmd.shortcut ?? null;
-                  return (
-                    <CommandItem
-                      key={cmd.id}
-                      value={commandSearchValue(cmd)}
-                      onSelect={() => {
-                        Promise.resolve(cmd.run(ctx)).catch((err) => {
-                          console.error(`Command ${cmd.id} failed:`, err);
-                        });
-                      }}
-                    >
-                      <Icon aria-hidden="true" className="mr-2 h-4 w-4" />
-                      <span>{cmd.label}</span>
-                      {shortcutGlyph ? (
-                        <CommandShortcut>
-                          <span aria-hidden="true">{shortcutGlyph}</span>
-                          <span className="sr-only">
-                            {spokenShortcut(shortcutGlyph)}
-                          </span>
-                        </CommandShortcut>
-                      ) : null}
-                    </CommandItem>
-                  );
-                })}
+                {commands.map((cmd) => renderCommandItem(cmd, groupId))}
               </CommandGroup>
             </Fragment>
           );
