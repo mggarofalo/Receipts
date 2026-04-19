@@ -546,4 +546,178 @@ public class ReportsControllerTests
 				q.StartDate == start && q.EndDate == end && q.Granularity == "quarterly" && q.TopN == 5),
 			It.IsAny<CancellationToken>()), Times.Once);
 	}
+
+	// ── GetDuplicates ──────────────────────────────
+
+	[Fact]
+	public async Task GetDuplicates_ReturnsOkResult_WithDefaultParameters()
+	{
+		// Arrange
+		AppReports.DuplicateDetectionResult reportResult = new([], 0, 0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDuplicateDetectionReportQuery>(q =>
+				q.MatchOn == "dateAndLocation" && q.LocationTolerance == "exact" && q.TotalTolerance == 0m),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<DuplicatesResponse>, BadRequest<string>> result =
+			await _controller.GetDuplicates(null, null, null, CancellationToken.None);
+
+		// Assert
+		Ok<DuplicatesResponse> okResult = Assert.IsType<Ok<DuplicatesResponse>>(result.Result);
+		okResult.Value!.GroupCount.Should().Be(0);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetDuplicateDetectionReportQuery>(q =>
+				q.MatchOn == "dateAndLocation" && q.LocationTolerance == "exact" && q.TotalTolerance == 0m),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Theory]
+	[InlineData("dateAndLocation")]
+	[InlineData("dateAndTotal")]
+	[InlineData("dateAndLocationAndTotal")]
+	public async Task GetDuplicates_AcceptsValidMatchOnValues(string matchOn)
+	{
+		// Arrange
+		AppReports.DuplicateDetectionResult reportResult = new([], 0, 0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetDuplicateDetectionReportQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<DuplicatesResponse>, BadRequest<string>> result =
+			await _controller.GetDuplicates(matchOn, null, null, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<Ok<DuplicatesResponse>>(result.Result);
+	}
+
+	[Theory]
+	[InlineData("DateAndLocation")]
+	[InlineData("DATEANDLOCATION")]
+	[InlineData("DateAndTotal")]
+	[InlineData("DateAndLocationAndTotal")]
+	public async Task GetDuplicates_AcceptsMatchOnCaseInsensitively(string matchOn)
+	{
+		// Arrange
+		AppReports.DuplicateDetectionResult reportResult = new([], 0, 0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetDuplicateDetectionReportQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<DuplicatesResponse>, BadRequest<string>> result =
+			await _controller.GetDuplicates(matchOn, null, null, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<Ok<DuplicatesResponse>>(result.Result);
+	}
+
+	[Fact]
+	public async Task GetDuplicates_ReturnsBadRequest_WhenInvalidMatchOn()
+	{
+		// Act
+		Results<Ok<DuplicatesResponse>, BadRequest<string>> result =
+			await _controller.GetDuplicates("bogus", null, null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Contain("Invalid matchOn");
+		badResult.Value.Should().Contain("dateAndLocation");
+	}
+
+	[Fact]
+	public async Task GetDuplicates_ReturnsBadRequest_WhenInvalidLocationTolerance()
+	{
+		// Act
+		Results<Ok<DuplicatesResponse>, BadRequest<string>> result =
+			await _controller.GetDuplicates(null, "fuzzy", null, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Contain("Invalid locationTolerance");
+	}
+
+	[Fact]
+	public async Task GetDuplicates_ReturnsBadRequest_WhenNegativeTotalTolerance()
+	{
+		// Act
+		Results<Ok<DuplicatesResponse>, BadRequest<string>> result =
+			await _controller.GetDuplicates(null, null, -0.01, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Be("totalTolerance must be >= 0");
+	}
+
+	[Fact]
+	public async Task GetDuplicates_PassesCustomParameters()
+	{
+		// Arrange
+		AppReports.DuplicateDetectionResult reportResult = new([], 0, 0);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetDuplicateDetectionReportQuery>(q =>
+				q.MatchOn == "dateAndLocationAndTotal" && q.LocationTolerance == "normalized" && q.TotalTolerance == 0.05m),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<DuplicatesResponse>, BadRequest<string>> result =
+			await _controller.GetDuplicates("dateAndLocationAndTotal", "normalized", 0.05, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<Ok<DuplicatesResponse>>(result.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetDuplicateDetectionReportQuery>(q =>
+				q.MatchOn == "dateAndLocationAndTotal" && q.LocationTolerance == "normalized" && q.TotalTolerance == 0.05m),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetDuplicates_MapsResponseFieldsCorrectly()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		DateOnly date = new(2025, 7, 4);
+
+		AppReports.DuplicateDetectionResult reportResult = new(
+		[
+			new AppReports.DuplicateGroup(
+				"2025-07-04|Test Store",
+				[new AppReports.DuplicateReceiptSummary(receiptId, "Test Store", date, 42.99m)]),
+		], 1, 1);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetDuplicateDetectionReportQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<DuplicatesResponse>, BadRequest<string>> result =
+			await _controller.GetDuplicates(null, null, null, CancellationToken.None);
+
+		// Assert
+		Ok<DuplicatesResponse> okResult = Assert.IsType<Ok<DuplicatesResponse>>(result.Result);
+		DuplicatesResponse response = okResult.Value!;
+		response.GroupCount.Should().Be(1);
+		response.TotalDuplicateReceipts.Should().Be(1);
+		response.Groups.Should().ContainSingle();
+
+		DuplicateGroup group = response.Groups.First();
+		group.MatchKey.Should().Be("2025-07-04|Test Store");
+		group.Receipts.Should().ContainSingle();
+
+		DuplicateReceipt receipt = group.Receipts.First();
+		receipt.ReceiptId.Should().Be(receiptId);
+		receipt.Location.Should().Be("Test Store");
+		receipt.Date.Should().Be(date);
+		receipt.TransactionTotal.Should().Be(42.99);
+	}
 }
