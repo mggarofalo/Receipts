@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
@@ -116,20 +117,39 @@ public static class Extensions
 
 	public static WebApplication MapDefaultEndpoints(this WebApplication app)
 	{
-		// Adding health checks endpoints to applications in non-development environments has security implications.
-		// See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.
+		// Aspire's default template only exposed /health and /alive in Development because
+		// health-check response bodies can leak internals (stack traces, per-check detail).
+		// We expose them everywhere, but in non-Development we use a status-only response
+		// writer that writes just Healthy/Degraded/Unhealthy as plain text — no payload.
+		// See https://aka.ms/dotnet/aspire/healthchecks for the underlying guidance.
 		if (app.Environment.IsDevelopment())
 		{
-			// All health checks must pass for app to be considered ready to accept traffic after starting
+			// Full payload in Dev (useful in Aspire dashboard for debugging).
 			app.MapHealthChecks(HealthEndpointPath);
-
-			// Only health checks tagged with the "live" tag must pass for app to be considered alive
 			app.MapHealthChecks(AlivenessEndpointPath, new HealthCheckOptions
 			{
 				Predicate = r => r.Tags.Contains("live")
 			});
 		}
+		else
+		{
+			app.MapHealthChecks(HealthEndpointPath, new HealthCheckOptions
+			{
+				ResponseWriter = WriteStatusOnlyAsync,
+			});
+			app.MapHealthChecks(AlivenessEndpointPath, new HealthCheckOptions
+			{
+				Predicate = r => r.Tags.Contains("live"),
+				ResponseWriter = WriteStatusOnlyAsync,
+			});
+		}
 
 		return app;
+	}
+
+	private static Task WriteStatusOnlyAsync(HttpContext context, HealthReport report)
+	{
+		context.Response.ContentType = "text/plain; charset=utf-8";
+		return context.Response.WriteAsync(report.Status.ToString());
 	}
 }
