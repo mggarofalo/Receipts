@@ -213,6 +213,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 				.Where(ri => ri.Receipt != null && ri.Receipt.Location.ToLower() == lowerLocation)
 				.Where(ri => ri.ReceiptItemCode!.ToLower().Contains(lowerItemCode))
 				.GroupBy(ri => ri.ReceiptItemCode!.ToLower())
+				.OrderByDescending(g => g.Count())
 				.Select(g => new ReceiptItemSuggestion
 				{
 					ItemCode = g.OrderByDescending(ri => ri.Id).First().ReceiptItemCode!,
@@ -237,6 +238,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 			.Where(ri => ri.ReceiptItemCode != null && ri.ReceiptItemCode != "")
 			.Where(ri => ri.ReceiptItemCode!.ToLower().Contains(lowerItemCode))
 			.GroupBy(ri => ri.ReceiptItemCode!.ToLower())
+			.OrderByDescending(g => g.Count())
 			.Select(g => new ReceiptItemSuggestion
 			{
 				ItemCode = g.OrderByDescending(ri => ri.Id).First().ReceiptItemCode!,
