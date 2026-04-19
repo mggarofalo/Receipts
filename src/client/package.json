@@ -1,7 +1,7 @@
 {
   "name": "client",
   "private": true,
-  "version": "0.1.41",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "generate:types:write": "openapi-typescript ../../openapi/spec.yaml -o src/generated/api.d.ts",
