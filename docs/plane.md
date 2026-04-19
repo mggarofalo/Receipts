@@ -22,7 +22,16 @@ Issues labeled `epic` are parent containers — skip and work their children.
 
 ## Modules
 
-Phases are tracked as Plane **modules**. Use `plane module list --all -p RECEIPTS` to discover them. Active: Phase 15 (Logical Accounts). Planned: Phase 16 (UX Polish). Completed: Phases 0–12, 14, and Ad-hoc & Legacy (historical catch-all for ad-hoc work that sat outside any phase). Cancelled: Phase 13 (Paperless Integration).
+Phases are tracked as Plane **modules**. Use `plane module list --all -p RECEIPTS` to discover them. Active: Phase 15 (Logical Accounts). Planned: Phase 16 (UX Polish), Maintenance Backlog. Completed: Phases 0–12, 14, and Ad-hoc & Legacy (historical catch-all for ad-hoc work that sat outside any phase). Cancelled: Phase 13 (Paperless Integration).
+
+**Every issue must be attached to a module.** `plane issue create` does NOT accept a `--module-id` flag — attach via a separate call after creation:
+
+```bash
+ID=$(plane issue create --name "..." --labels backend --priority medium --id-only -p RECEIPTS -w dev)
+plane module add-work-items --module-id "Maintenance Backlog" --issues "$ID" -p RECEIPTS -w dev
+```
+
+If no phase fits, use **Maintenance Backlog** — the default bucket for small hardening, bug fixes, and test stabilization that don't belong to a larger phase.
 
 ## Priority
 
@@ -41,4 +50,4 @@ Priority reflects **execution readiness**, not importance: Urgent = ready now, H
 
 **Finish:** `plane issue update <id> -p RECEIPTS --state Done` — check if this unblocks downstream issues
 
-**Create:** Always use `-p RECEIPTS`, assign a module, set priority by readiness, add at least one layer label
+**Create:** Always use `-p RECEIPTS`, attach a module via `plane module add-work-items` (see Modules section — default to `Maintenance Backlog` if no phase fits), set priority by readiness, add at least one layer label
