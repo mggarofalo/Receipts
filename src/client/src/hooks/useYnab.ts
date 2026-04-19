@@ -659,7 +659,7 @@ export function useBulkPushYnabTransactions() {
 
 const ALL_RECEIPTS_PAGE_SIZE = 500;
 
-async function fetchAllReceiptIds(): Promise<{
+export async function fetchAllReceiptIds(): Promise<{
   ids: string[];
   total: number;
 }> {

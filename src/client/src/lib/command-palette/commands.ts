@@ -6,6 +6,7 @@ import {
   ChartColumn,
   CreditCard,
   Database,
+  Download,
   FolderTree,
   Home,
   Key,
@@ -153,6 +154,43 @@ export const COMMANDS: Command[] = [
     targetPath: "/admin/users",
     requiresAdmin: true,
     run: (ctx) => runNewItem("/admin/users", ctx),
+  },
+
+  // ---- Actions (direct-action commands that invoke mutations) ----
+  {
+    id: "action:ynab-sync",
+    label: "Sync YNAB Now",
+    group: "actions",
+    icon: ArrowRightLeft,
+    keywords: ["push", "update", "budget", "transactions"],
+    run: (ctx) => {
+      ctx.close();
+      ctx.syncYnab();
+    },
+  },
+  {
+    id: "action:backup-export",
+    label: "Export Backup",
+    group: "actions",
+    icon: Download,
+    keywords: ["download", "save", "sqlite", "admin"],
+    requiresAdmin: true,
+    run: (ctx) => {
+      ctx.close();
+      ctx.exportBackup();
+    },
+  },
+  {
+    id: "action:trash-empty",
+    label: "Empty Trash",
+    group: "actions",
+    icon: Trash2,
+    keywords: ["purge", "delete", "clear", "recycle", "admin"],
+    requiresAdmin: true,
+    run: (ctx) => {
+      // Do not close — the confirmation dialog manages the palette lifecycle.
+      ctx.confirmEmptyTrash();
+    },
   },
 
   // ---- Navigate ----

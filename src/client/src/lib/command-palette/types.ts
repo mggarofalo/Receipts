@@ -3,6 +3,7 @@ import type { NavigateFunction } from "react-router";
 
 export type CommandGroupId =
   | "create"
+  | "actions"
   | "navigate"
   | "reports"
   | "preferences";
@@ -14,6 +15,9 @@ export interface CommandContext {
   setTheme: (theme: "light" | "dark" | "system") => void;
   logout: () => Promise<void>;
   openShortcutsHelp: () => void;
+  syncYnab: () => void;
+  exportBackup: () => void;
+  confirmEmptyTrash: () => void;
 }
 
 export interface Command {
@@ -31,6 +35,7 @@ export interface Command {
 
 export const COMMAND_GROUP_LABELS: Record<CommandGroupId, string> = {
   create: "Create",
+  actions: "Actions",
   navigate: "Go to",
   reports: "Reports",
   preferences: "Preferences",

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CommandPalette } from "./CommandPalette";
 import { renderWithQueryClient } from "@/test/test-utils";
@@ -60,8 +60,31 @@ vi.mock("@/hooks/useUsers", () => ({
   useUsers: vi.fn(() => mockQueryResult()),
 }));
 
+const bulkPushMutate = vi.fn();
+const backupExportMutate = vi.fn();
+const purgeTrashMutateAsync = vi.fn(async () => {});
+const fetchAllReceiptIdsMock = vi.fn(async () => ({ ids: ["r1", "r2"], total: 2 }));
+
+vi.mock("@/hooks/useYnab", () => ({
+  fetchAllReceiptIds: () => fetchAllReceiptIdsMock(),
+  useBulkPushYnabTransactions: () => ({ mutate: bulkPushMutate, isPending: false }),
+}));
+
+vi.mock("@/hooks/useBackup", () => ({
+  useBackupExport: () => ({ mutate: backupExportMutate, isPending: false }),
+}));
+
+vi.mock("@/hooks/useTrash", () => ({
+  usePurgeTrash: () => ({ mutateAsync: purgeTrashMutateAsync, isPending: false }),
+}));
+
 beforeEach(async () => {
   navigateMock.mockClear();
+  bulkPushMutate.mockClear();
+  backupExportMutate.mockClear();
+  purgeTrashMutateAsync.mockClear();
+  fetchAllReceiptIdsMock.mockClear();
+  fetchAllReceiptIdsMock.mockResolvedValue({ ids: ["r1", "r2"], total: 2 });
   localStorage.clear();
   const { usePermission } = await import("@/hooks/usePermission");
   vi.mocked(usePermission).mockReturnValue({
@@ -463,6 +486,174 @@ describe("CommandPalette", () => {
       .getByText("Pinned")
       .closest("[cmdk-group]") as HTMLElement;
     expect(within(pinnedGroup).getByText("Go to Receipts")).toBeInTheDocument();
+  });
+
+  it("renders the Actions group with Sync YNAB Now for every user", () => {
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={vi.fn()} />,
+    );
+    expect(screen.getByText("Actions")).toBeInTheDocument();
+    expect(screen.getByText("Sync YNAB Now")).toBeInTheDocument();
+  });
+
+  it("hides admin-only action commands when user is not admin", () => {
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={vi.fn()} />,
+    );
+    expect(screen.queryByText("Export Backup")).not.toBeInTheDocument();
+    expect(screen.queryByText("Empty Trash")).not.toBeInTheDocument();
+  });
+
+  it("shows admin-only action commands for admins", async () => {
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: () => true,
+      isAdmin: () => true,
+    });
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={vi.fn()} />,
+    );
+    expect(screen.getByText("Export Backup")).toBeInTheDocument();
+    expect(screen.getByText("Empty Trash")).toBeInTheDocument();
+  });
+
+  it("Sync YNAB Now fetches receipt IDs, fires bulk push, and closes the palette", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Sync YNAB Now"));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    await waitFor(() => {
+      expect(fetchAllReceiptIdsMock).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(bulkPushMutate).toHaveBeenCalledWith(["r1", "r2"]);
+    });
+  });
+
+  it("Sync YNAB Now skips the push when there are no receipts", async () => {
+    fetchAllReceiptIdsMock.mockResolvedValueOnce({ ids: [], total: 0 });
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={vi.fn()} />,
+    );
+    await user.click(screen.getByText("Sync YNAB Now"));
+    await waitFor(() => {
+      expect(fetchAllReceiptIdsMock).toHaveBeenCalled();
+    });
+    expect(bulkPushMutate).not.toHaveBeenCalled();
+  });
+
+  it("Export Backup fires the export mutation and closes the palette", async () => {
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: () => true,
+      isAdmin: () => true,
+    });
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Export Backup"));
+    expect(backupExportMutate).toHaveBeenCalled();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("Empty Trash opens a confirmation dialog without closing the palette", async () => {
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: () => true,
+      isAdmin: () => true,
+    });
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Empty Trash"));
+    expect(
+      await screen.findByRole("alertdialog", { name: /empty trash/i }),
+    ).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(purgeTrashMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("confirming Empty Trash fires purge and closes the palette", async () => {
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: () => true,
+      isAdmin: () => true,
+    });
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Empty Trash"));
+    const dialog = await screen.findByRole("alertdialog");
+    const confirm = within(dialog).getByRole("button", {
+      name: /empty trash/i,
+    });
+    await user.click(confirm);
+    await waitFor(() => {
+      expect(purgeTrashMutateAsync).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it("Empty Trash keeps the palette open when the purge mutation fails", async () => {
+    purgeTrashMutateAsync.mockRejectedValueOnce(new Error("network"));
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: () => true,
+      isAdmin: () => true,
+    });
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Empty Trash"));
+    const dialog = await screen.findByRole("alertdialog");
+    const confirm = within(dialog).getByRole("button", {
+      name: /empty trash/i,
+    });
+    await user.click(confirm);
+    await waitFor(() => {
+      expect(purgeTrashMutateAsync).toHaveBeenCalled();
+    });
+    // Palette must stay open so the user can retry.
+    expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
+  it("cancelling Empty Trash closes the dialog without calling purge", async () => {
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: () => true,
+      isAdmin: () => true,
+    });
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={onOpenChange} />,
+    );
+    await user.click(screen.getByText("Empty Trash"));
+    const dialog = await screen.findByRole("alertdialog");
+    const cancel = within(dialog).getByRole("button", { name: /cancel/i });
+    await user.click(cancel);
+    expect(purgeTrashMutateAsync).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalled();
   });
 
   it("collapses large entity groups to a Show N more trailer", async () => {

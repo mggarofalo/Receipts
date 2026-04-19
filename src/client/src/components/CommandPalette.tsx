@@ -2,6 +2,7 @@ import { Fragment, useCallback, useContext, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { ChevronDown, Star } from "lucide-react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import {
   CommandDialog,
   CommandEmpty,
@@ -12,8 +13,24 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
+import { useBackupExport } from "@/hooks/useBackup";
+import { usePurgeTrash } from "@/hooks/useTrash";
+import {
+  fetchAllReceiptIds,
+  useBulkPushYnabTransactions,
+} from "@/hooks/useYnab";
 import { ShortcutsContext } from "@/contexts/shortcuts-context";
 import { COMMANDS } from "@/lib/command-palette/commands";
 import {
@@ -40,6 +57,7 @@ interface CommandPaletteProps {
 
 const GROUP_ORDER: CommandGroupId[] = [
   "create",
+  "actions",
   "navigate",
   "reports",
   "preferences",
@@ -91,6 +109,14 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [pinnedIds, setPinnedIds] = useState<string[]>(() => getPinned());
   const [recentIds, setRecentIds] = useState<string[]>(() => getRecent());
+  const [confirmingEmptyTrash, setConfirmingEmptyTrash] = useState(false);
+
+  // Destructure stable callbacks — TanStack Query guarantees mutate/mutateAsync
+  // are stable refs, but the surrounding mutation object is not.
+  const { mutate: bulkPushYnabMutate } = useBulkPushYnabTransactions();
+  const { mutate: backupExportMutate } = useBackupExport();
+  const { mutateAsync: purgeTrashMutateAsync, isPending: purgeTrashPending } =
+    usePurgeTrash();
 
   const admin = isAdmin();
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
@@ -98,6 +124,41 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     () => shortcutsCtx?.setHelpOpen(true),
     [shortcutsCtx],
   );
+
+  const syncYnab = useCallback(() => {
+    void (async () => {
+      try {
+        const { ids } = await fetchAllReceiptIds();
+        if (ids.length === 0) {
+          toast.info("No receipts to sync");
+          return;
+        }
+        bulkPushYnabMutate(ids);
+      } catch {
+        toast.error("Failed to load receipts for YNAB sync");
+      }
+    })();
+  }, [bulkPushYnabMutate]);
+
+  const exportBackup = useCallback(() => {
+    backupExportMutate();
+  }, [backupExportMutate]);
+
+  const confirmEmptyTrash = useCallback(() => {
+    setConfirmingEmptyTrash(true);
+  }, []);
+
+  const handleConfirmEmptyTrash = useCallback(async () => {
+    try {
+      await purgeTrashMutateAsync();
+      setConfirmingEmptyTrash(false);
+      onOpenChange(false);
+    } catch {
+      // Purge failed — keep the palette open so the user can retry. The
+      // error toast is surfaced by usePurgeTrash.onError.
+      setConfirmingEmptyTrash(false);
+    }
+  }, [purgeTrashMutateAsync, onOpenChange]);
 
   const ctx = useMemo<CommandContext>(
     () => ({
@@ -107,8 +168,21 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       setTheme,
       logout,
       openShortcutsHelp,
+      syncYnab,
+      exportBackup,
+      confirmEmptyTrash,
     }),
-    [navigate, close, location.pathname, setTheme, logout, openShortcutsHelp],
+    [
+      navigate,
+      close,
+      location.pathname,
+      setTheme,
+      logout,
+      openShortcutsHelp,
+      syncYnab,
+      exportBackup,
+      confirmEmptyTrash,
+    ],
   );
 
   const visibleCommands = useMemo(
@@ -119,6 +193,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const commandsByGroup = useMemo(() => {
     const map: Record<CommandGroupId, Command[]> = {
       create: [],
+      actions: [],
       navigate: [],
       reports: [],
       preferences: [],
@@ -220,6 +295,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   );
 
   return (
+    <>
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
         placeholder="Type a command or search…"
@@ -322,5 +398,37 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           })}
       </CommandList>
     </CommandDialog>
+    <AlertDialog
+      open={confirmingEmptyTrash}
+      onOpenChange={(next) => {
+        if (!purgeTrashPending) setConfirmingEmptyTrash(next);
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Empty Trash?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete every item in the Recycle Bin. This
+            action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={purgeTrashPending}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={purgeTrashPending}
+            onClick={(e) => {
+              e.preventDefault();
+              void handleConfirmEmptyTrash();
+            }}
+          >
+            {purgeTrashPending ? "Emptying…" : "Empty Trash"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
