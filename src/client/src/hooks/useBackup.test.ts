@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, waitFor, act } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 
@@ -54,15 +54,22 @@ describe("useBackupExport", () => {
   });
 
   it("downloads the blob and toasts success on 200", async () => {
-    const blob = new Blob(["backup-bytes"], { type: "application/octet-stream" });
-    globalThis.fetch = vi.fn(async () =>
-      new Response(blob, {
-        status: 200,
-        headers: {
-          "Content-Disposition": 'attachment; filename="my-backup.sqlite"',
-        },
-      }),
-    ) as typeof fetch;
+    const fakeBlob = { size: 12, type: "application/octet-stream" } as Blob;
+    // Hand-rolled response rather than `new Response(blob, ...)` — node's
+    // undici Response requires the init body to expose `.stream()`, which
+    // jsdom's Blob doesn't in CI, causing a TypeError before the mutationFn
+    // can observe the response.
+    globalThis.fetch = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (name: string) =>
+          name.toLowerCase() === "content-disposition"
+            ? 'attachment; filename="my-backup.sqlite"'
+            : null,
+      },
+      blob: async () => fakeBlob,
+    })) as unknown as typeof fetch;
 
     const { result } = renderHook(() => useBackupExport(), {
       wrapper: createWrapper(),
@@ -76,43 +83,41 @@ describe("useBackupExport", () => {
 
     expect(showSuccess).toHaveBeenCalledWith("Backup exported successfully.");
     expect(showError).not.toHaveBeenCalled();
-    expect(globalThis.URL.createObjectURL).toHaveBeenCalled();
+    expect(globalThis.URL.createObjectURL).toHaveBeenCalledWith(fakeBlob);
     expect(globalThis.URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock");
   });
 
   it("toasts a permission error on 403", async () => {
-    globalThis.fetch = vi.fn(
-      async () => new Response("", { status: 403 }),
-    ) as typeof fetch;
+    globalThis.fetch = vi.fn(async () => ({
+      ok: false,
+      status: 403,
+    })) as unknown as typeof fetch;
 
     const { result } = renderHook(() => useBackupExport(), {
       wrapper: createWrapper(),
     });
 
     await act(async () => {
-      result.current.mutate();
+      await result.current.mutateAsync().catch(() => {});
     });
-    await waitFor(() => {
-      expect(showError).toHaveBeenCalledWith(
-        "You do not have permission to export backups.",
-      );
-    });
+    expect(showError).toHaveBeenCalledWith(
+      "You do not have permission to export backups.",
+    );
   });
 
   it("toasts a generic error on other failures", async () => {
-    globalThis.fetch = vi.fn(
-      async () => new Response("", { status: 500 }),
-    ) as typeof fetch;
+    globalThis.fetch = vi.fn(async () => ({
+      ok: false,
+      status: 500,
+    })) as unknown as typeof fetch;
 
     const { result } = renderHook(() => useBackupExport(), {
       wrapper: createWrapper(),
     });
 
     await act(async () => {
-      result.current.mutate();
+      await result.current.mutateAsync().catch(() => {});
     });
-    await waitFor(() => {
-      expect(showError).toHaveBeenCalledWith("Export failed (500).");
-    });
+    expect(showError).toHaveBeenCalledWith("Export failed (500).");
   });
 });
