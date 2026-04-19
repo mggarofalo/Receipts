@@ -34,7 +34,7 @@ export function useOpenNewItem(open: () => void) {
     const state = location.state as OpenNewItemState | null;
     if (state?.openNew) {
       open();
-      navigate(location.pathname + location.search, {
+      navigate(location.pathname + location.search + location.hash, {
         replace: true,
         state: null,
       });

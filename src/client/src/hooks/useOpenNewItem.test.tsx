@@ -88,6 +88,31 @@ describe("useOpenNewItem", () => {
     expect(result.current).toBeNull();
   });
 
+  it("preserves pathname, search, and hash when clearing state", () => {
+    const open = vi.fn();
+
+    function HookAndLocation() {
+      useOpenNewItem(open);
+      const location = useLocation();
+      return location;
+    }
+
+    const { result } = renderHook(() => HookAndLocation(), {
+      wrapper: createWrapper({
+        pathname: "/accounts",
+        search: "?foo=bar",
+        hash: "#section",
+        state: { openNew: true },
+      } as unknown as Parameters<typeof createWrapper>[0]),
+    });
+
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(result.current.pathname).toBe("/accounts");
+    expect(result.current.search).toBe("?foo=bar");
+    expect(result.current.hash).toBe("#section");
+    expect(result.current.state).toBeNull();
+  });
+
   it("does nothing when mounted without openNew state", () => {
     const open = vi.fn();
     renderHook(() => useOpenNewItem(open), {
