@@ -171,50 +171,53 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     setPinnedIds(togglePinned(id));
   }, []);
 
-  function renderCommandItem(cmd: Command, section: string) {
-    const Icon = cmd.icon;
-    const showShiftN =
-      cmd.group === "create" && cmd.targetPath === location.pathname;
-    const shortcutGlyph = showShiftN ? "⇧ N" : cmd.shortcut ?? null;
-    const pinned = pinnedSet.has(cmd.id);
-    return (
-      <CommandItem
-        key={`${section}:${cmd.id}`}
-        value={commandSearchValue(cmd, section)}
-        onSelect={() => runCommand(cmd)}
-      >
-        <Icon aria-hidden="true" className="mr-2 h-4 w-4" />
-        <span>{cmd.label}</span>
-        <div className="ml-auto flex items-center gap-2">
-          {shortcutGlyph ? (
-            <CommandShortcut className="ml-0">
-              <span aria-hidden="true">{shortcutGlyph}</span>
-              <span className="sr-only">{spokenShortcut(shortcutGlyph)}</span>
-            </CommandShortcut>
-          ) : null}
-          <button
-            type="button"
-            aria-label={pinned ? `Unpin ${cmd.label}` : `Pin ${cmd.label}`}
-            aria-pressed={pinned}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTogglePin(cmd.id);
-            }}
-            className={cn(
-              "rounded p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring transition-opacity",
-              pinned ? "opacity-100" : "opacity-40 hover:opacity-100",
-            )}
-          >
-            <Star
-              aria-hidden="true"
-              className={cn("h-3.5 w-3.5", pinned && "fill-current")}
-            />
-          </button>
-        </div>
-      </CommandItem>
-    );
-  }
+  const renderCommandItem = useCallback(
+    (cmd: Command, section: string) => {
+      const Icon = cmd.icon;
+      const showShiftN =
+        cmd.group === "create" && cmd.targetPath === location.pathname;
+      const shortcutGlyph = showShiftN ? "⇧ N" : cmd.shortcut ?? null;
+      const pinned = pinnedSet.has(cmd.id);
+      return (
+        <CommandItem
+          key={`${section}:${cmd.id}`}
+          value={commandSearchValue(cmd, section)}
+          onSelect={() => runCommand(cmd)}
+        >
+          <Icon aria-hidden="true" className="mr-2 h-4 w-4" />
+          <span>{cmd.label}</span>
+          <div className="ml-auto flex items-center gap-2">
+            {shortcutGlyph ? (
+              <CommandShortcut className="ml-0">
+                <span aria-hidden="true">{shortcutGlyph}</span>
+                <span className="sr-only">{spokenShortcut(shortcutGlyph)}</span>
+              </CommandShortcut>
+            ) : null}
+            <button
+              type="button"
+              aria-label={pinned ? `Unpin ${cmd.label}` : `Pin ${cmd.label}`}
+              aria-pressed={pinned}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTogglePin(cmd.id);
+              }}
+              className={cn(
+                "rounded p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring transition-opacity",
+                pinned ? "opacity-100" : "opacity-40 hover:opacity-100",
+              )}
+            >
+              <Star
+                aria-hidden="true"
+                className={cn("h-3.5 w-3.5", pinned && "fill-current")}
+              />
+            </button>
+          </div>
+        </CommandItem>
+      );
+    },
+    [pinnedSet, runCommand, handleTogglePin, location.pathname],
+  );
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
