@@ -17,6 +17,7 @@ import { useItemTemplates } from "@/hooks/useItemTemplates";
 import { useReceipts } from "@/hooks/useReceipts";
 import { useReceiptItems } from "@/hooks/useReceiptItems";
 import { useUsers } from "@/hooks/useUsers";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 /** Effectively "all" for small reference datasets; capped for large ones. */
 const SMALL_LIMIT = 1000;
@@ -56,14 +57,27 @@ function tokens(...parts: Array<string | null | undefined>): string {
     .toLowerCase();
 }
 
-export function useEntityResults({ isAdmin }: { isAdmin: boolean }): EntityResultGroup[] {
+export function useEntityResults({
+  isAdmin,
+  query = "",
+}: {
+  isAdmin: boolean;
+  /**
+   * Current palette input. When non-empty, the debounced value is sent to the
+   * backend `q=` filter on receipts and receipt items so matches against
+   * entities older than the LARGE_LIMIT page still surface.
+   */
+  query?: string;
+}): EntityResultGroup[] {
+  const debouncedQuery = useDebouncedValue(query, 200);
+  const entitySearch = debouncedQuery.trim() || undefined;
   const accounts = useAccounts(0, SMALL_LIMIT);
   const cards = useCards(0, SMALL_LIMIT);
   const categories = useCategories(0, SMALL_LIMIT);
   const subcategories = useSubcategories(0, SMALL_LIMIT);
   const itemTemplates = useItemTemplates(0, SMALL_LIMIT);
-  const receipts = useReceipts(0, LARGE_LIMIT);
-  const receiptItems = useReceiptItems(0, LARGE_LIMIT);
+  const receipts = useReceipts(0, LARGE_LIMIT, null, null, null, null, entitySearch);
+  const receiptItems = useReceiptItems(0, LARGE_LIMIT, null, null, entitySearch);
   const users = useUsers(0, SMALL_LIMIT, undefined, undefined, { enabled: isAdmin });
 
   return useMemo<EntityResultGroup[]>(() => {

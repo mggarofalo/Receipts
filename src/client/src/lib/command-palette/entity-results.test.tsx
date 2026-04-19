@@ -141,4 +141,51 @@ describe("useEntityResults", () => {
     expect(users!.items[0].label).toBe("Bob Roy");
     expect(users!.items[0].meta).toBe("bob@example.com");
   });
+
+  it("omits q from receipt hooks when query is empty", async () => {
+    const { useReceipts } = await import("@/hooks/useReceipts");
+    const { useReceiptItems } = await import("@/hooks/useReceiptItems");
+    renderHook(() => useEntityResults({ isAdmin: false, query: "" }));
+    expect(vi.mocked(useReceipts)).toHaveBeenCalledWith(
+      0,
+      expect.any(Number),
+      null,
+      null,
+      null,
+      null,
+      undefined,
+    );
+    expect(vi.mocked(useReceiptItems)).toHaveBeenCalledWith(
+      0,
+      expect.any(Number),
+      null,
+      null,
+      undefined,
+    );
+  });
+
+  it("forwards debounced query as q to receipt hooks after the delay", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { useReceipts } = await import("@/hooks/useReceipts");
+      const { useReceiptItems } = await import("@/hooks/useReceiptItems");
+      const { rerender } = renderHook(
+        ({ query }: { query: string }) => useEntityResults({ isAdmin: false, query }),
+        { initialProps: { query: "" } },
+      );
+
+      vi.mocked(useReceipts).mockClear();
+      vi.mocked(useReceiptItems).mockClear();
+      rerender({ query: "  Walmart  " });
+      vi.advanceTimersByTime(250);
+      rerender({ query: "  Walmart  " });
+
+      const receiptsCalls = vi.mocked(useReceipts).mock.calls;
+      const receiptItemsCalls = vi.mocked(useReceiptItems).mock.calls;
+      expect(receiptsCalls.at(-1)).toEqual([0, expect.any(Number), null, null, null, null, "Walmart"]);
+      expect(receiptItemsCalls.at(-1)).toEqual([0, expect.any(Number), null, null, "Walmart"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

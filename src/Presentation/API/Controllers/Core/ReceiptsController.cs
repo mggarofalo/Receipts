@@ -62,7 +62,7 @@ public class ReceiptsController(
 
 	[HttpGet(RouteGetAll)]
 	[EndpointSummary("Get all receipts")]
-	public async Task<Results<Ok<ReceiptListResponse>, BadRequest<string>>> GetAllReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, [FromQuery] Guid? accountId = null, [FromQuery] Guid? cardId = null, CancellationToken cancellationToken = default)
+	public async Task<Results<Ok<ReceiptListResponse>, BadRequest<string>>> GetAllReceipts([FromQuery] int offset = 0, [FromQuery] int limit = 50, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null, [FromQuery] Guid? accountId = null, [FromQuery] Guid? cardId = null, [FromQuery] string? q = null, CancellationToken cancellationToken = default)
 	{
 		if (offset < 0)
 		{
@@ -84,8 +84,9 @@ public class ReceiptsController(
 			return TypedResults.BadRequest($"Invalid sortDirection '{sortDirection}'. Allowed: asc, desc");
 		}
 
+		string? normalizedQ = string.IsNullOrWhiteSpace(q) ? null : q.Trim();
 		SortParams sort = new(sortBy, sortDirection);
-		GetAllReceiptsQuery query = new(offset, limit, sort, accountId, cardId);
+		GetAllReceiptsQuery query = new(offset, limit, sort, accountId, cardId, normalizedQ);
 		PagedResult<Receipt> result = await mediator.Send(query, cancellationToken);
 
 		return TypedResults.Ok(new ReceiptListResponse

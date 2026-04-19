@@ -4982,6 +4982,8 @@ export interface operations {
                 accountId?: string;
                 /** @description Filter to receipts with at least one transaction on this card. */
                 cardId?: string;
+                /** @description Case-insensitive substring filter applied to the receipt Location column. Whitespace-only values are ignored. */
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -5409,6 +5411,8 @@ export interface operations {
                 /** @description Column name to sort by. Allowed values depend on the entity type. */
                 sortBy?: components["parameters"]["SortBy"];
                 sortDirection?: components["parameters"]["SortDirection"];
+                /** @description Case-insensitive substring filter applied across Description, ReceiptItemCode, Category, and Subcategory. Whitespace-only values are ignored. Ignored when receiptId is supplied. */
+                q?: string;
             };
             header?: never;
             path?: never;

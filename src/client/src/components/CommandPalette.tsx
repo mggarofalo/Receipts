@@ -143,7 +143,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     [recentIds, pinnedSet, visibleCommands],
   );
 
-  const entityGroups = useEntityResults({ isAdmin: admin });
+  const entityGroups = useEntityResults({ isAdmin: admin, query });
 
   const showEntities = query.trim().length > 0;
   const showTopSections = !showEntities;

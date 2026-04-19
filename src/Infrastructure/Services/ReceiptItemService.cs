@@ -35,8 +35,13 @@ public class ReceiptItemService(IReceiptItemRepository repository, ReceiptItemMa
 
 	public async Task<PagedResult<ReceiptItem>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
 	{
-		int total = await repository.GetCountAsync(cancellationToken);
-		List<ReceiptItemEntity> entities = await repository.GetAllAsync(offset, limit, sort, cancellationToken);
+		return await GetAllAsync(offset, limit, sort, q: null, cancellationToken);
+	}
+
+	public async Task<PagedResult<ReceiptItem>> GetAllAsync(int offset, int limit, SortParams sort, string? q, CancellationToken cancellationToken)
+	{
+		int total = await repository.GetCountAsync(q, cancellationToken);
+		List<ReceiptItemEntity> entities = await repository.GetAllAsync(offset, limit, sort, q, cancellationToken);
 		List<ReceiptItem> data = [.. entities.Select(mapper.ToDomain)];
 		return new PagedResult<ReceiptItem>(data, total, offset, limit);
 	}

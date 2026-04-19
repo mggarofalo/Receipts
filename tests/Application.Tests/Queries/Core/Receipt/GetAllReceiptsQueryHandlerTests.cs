@@ -15,7 +15,7 @@ public class GetAllReceiptsQueryHandlerTests
 		List<Domain.Core.Receipt> expected = ReceiptGenerator.GenerateList(2);
 
 		Mock<IReceiptService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), null, null, It.IsAny<CancellationToken>()))
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), null, null, null, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Domain.Core.Receipt>(expected, expected.Count, 0, 50));
 
 		GetAllReceiptsQueryHandler handler = new(mockService.Object);
@@ -34,7 +34,7 @@ public class GetAllReceiptsQueryHandlerTests
 		List<Domain.Core.Receipt> expected = ReceiptGenerator.GenerateList(1);
 
 		Mock<IReceiptService> mockService = new();
-		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), accountId, cardId, It.IsAny<CancellationToken>()))
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), accountId, cardId, null, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Domain.Core.Receipt>(expected, expected.Count, 0, 50));
 
 		GetAllReceiptsQueryHandler handler = new(mockService.Object);
@@ -43,6 +43,25 @@ public class GetAllReceiptsQueryHandlerTests
 		PagedResult<Domain.Core.Receipt> result = await handler.Handle(query, CancellationToken.None);
 
 		result.Data.Should().BeSameAs(expected);
-		mockService.Verify(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), accountId, cardId, It.IsAny<CancellationToken>()), Times.Once);
+		mockService.Verify(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), accountId, cardId, null, It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_ShouldPassSearchQueryToService()
+	{
+		List<Domain.Core.Receipt> expected = ReceiptGenerator.GenerateList(1);
+		const string searchQuery = "Walmart";
+
+		Mock<IReceiptService> mockService = new();
+		mockService.Setup(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), null, null, searchQuery, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PagedResult<Domain.Core.Receipt>(expected, expected.Count, 0, 50));
+
+		GetAllReceiptsQueryHandler handler = new(mockService.Object);
+		GetAllReceiptsQuery query = new(0, 50, SortParams.Default, null, null, searchQuery);
+
+		PagedResult<Domain.Core.Receipt> result = await handler.Handle(query, CancellationToken.None);
+
+		result.Data.Should().BeSameAs(expected);
+		mockService.Verify(r => r.GetAllAsync(0, 50, It.IsAny<SortParams>(), null, null, searchQuery, It.IsAny<CancellationToken>()), Times.Once);
 	}
 }

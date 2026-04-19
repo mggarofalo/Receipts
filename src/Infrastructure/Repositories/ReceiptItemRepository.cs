@@ -61,12 +61,17 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 			.CountAsync(cancellationToken);
 	}
 
-	public async Task<List<ReceiptItemEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
+	public Task<List<ReceiptItemEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
+		=> GetAllAsync(offset, limit, sort, q: null, cancellationToken);
+
+	public async Task<List<ReceiptItemEntity>> GetAllAsync(int offset, int limit, SortParams sort, string? q, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.ReceiptItems
+		IQueryable<ReceiptItemEntity> query = context.ReceiptItems
 			.IgnoreAutoIncludes()
-			.AsNoTracking()
+			.AsNoTracking();
+		query = ApplySearchFilter(query, q);
+		return await query
 			.ApplySort(sort, AllowedSortColumns, e => e.Description)
 			.Skip(offset)
 			.Take(limit)
@@ -86,6 +91,21 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 				PricingMode = ri.PricingMode
 			})
 			.ToListAsync(cancellationToken);
+	}
+
+	private static IQueryable<ReceiptItemEntity> ApplySearchFilter(IQueryable<ReceiptItemEntity> query, string? q)
+	{
+		if (string.IsNullOrWhiteSpace(q))
+		{
+			return query;
+		}
+
+		string pattern = "%" + q.Trim().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
+		return query.Where(ri =>
+			EF.Functions.ILike(ri.Description, pattern)
+			|| (ri.ReceiptItemCode != null && EF.Functions.ILike(ri.ReceiptItemCode, pattern))
+			|| EF.Functions.ILike(ri.Category, pattern)
+			|| (ri.Subcategory != null && EF.Functions.ILike(ri.Subcategory, pattern)));
 	}
 
 	public async Task<List<ReceiptItemEntity>> GetDeletedAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
@@ -171,10 +191,15 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 		return await context.ReceiptItems.AnyAsync(e => e.Id == id, cancellationToken);
 	}
 
-	public async Task<int> GetCountAsync(CancellationToken cancellationToken)
+	public Task<int> GetCountAsync(CancellationToken cancellationToken)
+		=> GetCountAsync(q: null, cancellationToken);
+
+	public async Task<int> GetCountAsync(string? q, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		return await context.ReceiptItems.CountAsync(cancellationToken);
+		IQueryable<ReceiptItemEntity> query = context.ReceiptItems.IgnoreAutoIncludes().AsNoTracking();
+		query = ApplySearchFilter(query, q);
+		return await query.CountAsync(cancellationToken);
 	}
 
 	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)

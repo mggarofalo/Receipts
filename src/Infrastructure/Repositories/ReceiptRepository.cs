@@ -23,12 +23,13 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 	}
 
 	public Task<List<ReceiptEntity>> GetAllAsync(int offset, int limit, SortParams sort, CancellationToken cancellationToken)
-		=> GetAllAsync(offset, limit, sort, accountId: null, cardId: null, cancellationToken);
+		=> GetAllAsync(offset, limit, sort, accountId: null, cardId: null, q: null, cancellationToken);
 
-	public async Task<List<ReceiptEntity>> GetAllAsync(int offset, int limit, SortParams sort, Guid? accountId, Guid? cardId, CancellationToken cancellationToken)
+	public async Task<List<ReceiptEntity>> GetAllAsync(int offset, int limit, SortParams sort, Guid? accountId, Guid? cardId, string? q, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		IQueryable<ReceiptEntity> query = ApplyTransactionFilters(context, context.Receipts.AsNoTracking(), accountId, cardId);
+		query = ApplySearchFilter(query, q);
 		return await query
 			.ApplySort(sort, AllowedSortColumns, e => e.Date, defaultDescending: true)
 			.Skip(offset)
@@ -42,6 +43,17 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 				TaxAmountCurrency = r.TaxAmountCurrency
 			})
 			.ToListAsync(cancellationToken);
+	}
+
+	private static IQueryable<ReceiptEntity> ApplySearchFilter(IQueryable<ReceiptEntity> query, string? q)
+	{
+		if (string.IsNullOrWhiteSpace(q))
+		{
+			return query;
+		}
+
+		string pattern = "%" + q.Trim().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_") + "%";
+		return query.Where(r => EF.Functions.ILike(r.Location, pattern));
 	}
 
 	// Filter receipts down to those with at least one transaction matching the supplied
@@ -158,12 +170,13 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 	}
 
 	public Task<int> GetCountAsync(CancellationToken cancellationToken)
-		=> GetCountAsync(accountId: null, cardId: null, cancellationToken);
+		=> GetCountAsync(accountId: null, cardId: null, q: null, cancellationToken);
 
-	public async Task<int> GetCountAsync(Guid? accountId, Guid? cardId, CancellationToken cancellationToken)
+	public async Task<int> GetCountAsync(Guid? accountId, Guid? cardId, string? q, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		IQueryable<ReceiptEntity> query = ApplyTransactionFilters(context, context.Receipts.AsNoTracking(), accountId, cardId);
+		query = ApplySearchFilter(query, q);
 		return await query.CountAsync(cancellationToken);
 	}
 
