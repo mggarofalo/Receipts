@@ -257,6 +257,59 @@ describe("CommandPalette", () => {
     expect(within(pinnedGroup).getByText("Go to Receipts")).toBeInTheDocument();
   });
 
+  it("removes a pinned command from its regular group while query is empty", () => {
+    localStorage.setItem(
+      "receipts:palette-pinned",
+      JSON.stringify(["nav:receipts"]),
+    );
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={vi.fn()} />,
+    );
+    const goToGroup = screen
+      .getByText("Go to")
+      .closest("[cmdk-group]") as HTMLElement;
+    expect(within(goToGroup).queryByText("Go to Receipts")).not.toBeInTheDocument();
+    // Only one "Go to Receipts" row rendered (in Pinned, not in Go to).
+    expect(screen.getAllByText("Go to Receipts")).toHaveLength(1);
+  });
+
+  it("restores a pinned command to its regular group while the user is typing", async () => {
+    localStorage.setItem(
+      "receipts:palette-pinned",
+      JSON.stringify(["nav:receipts"]),
+    );
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={vi.fn()} />,
+    );
+    await user.type(
+      screen.getByPlaceholderText(/type a command or search/i),
+      "receipts",
+    );
+    // With Pinned hidden and the pinned command restored to Go to, the row is
+    // still reachable via typing.
+    expect(screen.getByText("Go to Receipts")).toBeInTheDocument();
+  });
+
+  it("does not match regular-group commands when the user types a group name", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(
+      <CommandPalette open={true} onOpenChange={vi.fn()} />,
+    );
+    // Sanity: "Go to Receipts" is visible in the default empty-query render.
+    expect(screen.getByText("Go to Receipts")).toBeInTheDocument();
+    await user.type(
+      screen.getByPlaceholderText(/type a command or search/i),
+      "preferences",
+    );
+    // Typing the group name "preferences" should not match any preference
+    // command — keywords on those commands don't include the group name,
+    // and the cmdk value must not leak the group id either.
+    expect(screen.queryByText("Light Theme")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dark Theme")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sign Out")).not.toBeInTheDocument();
+  });
+
   it("renders Recent section below Pinned when recent history exists and query is empty", () => {
     localStorage.setItem(
       "receipts:palette-pinned",

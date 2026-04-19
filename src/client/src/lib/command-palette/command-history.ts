@@ -28,15 +28,18 @@ export function getRecent(): string[] {
 }
 
 /**
- * Prepend `id` to the recent list. Exact-match dedupe (command IDs are opaque
- * identifiers like "create:account" — no case-folding). Cap at 5 entries.
+ * Prepend `id` to the recent list and return the new array. Exact-match dedupe
+ * (command IDs are opaque identifiers like "create:account" — no case-folding).
+ * Cap at 5 entries. Returning the new list lets callers sync React state in a
+ * single read, mirroring `togglePinned`.
  */
-export function addRecent(id: string): void {
-  if (!id) return;
+export function addRecent(id: string): string[] {
+  if (!id) return getRecent();
   const recent = getRecent().filter((r) => r !== id);
   recent.unshift(id);
   if (recent.length > MAX_RECENT) recent.length = MAX_RECENT;
   writeStringArray(RECENT_KEY, recent);
+  return recent;
 }
 
 export function clearRecent(): void {

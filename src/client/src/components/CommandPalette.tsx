@@ -45,10 +45,20 @@ const GROUP_ORDER: CommandGroupId[] = [
   "preferences",
 ];
 
+/**
+ * Build the cmdk `value` for a row. The Pinned/Recent sections may render
+ * the same command that also appears in its regular group during filtering,
+ * so we prefix those two sections to keep per-row identity unique. Regular
+ * groups use the raw base value — prefixing them would make group names like
+ * "navigate" and "preferences" accidentally matchable.
+ */
 function commandSearchValue(cmd: Command, section: string): string {
-  return [section, cmd.id, cmd.label, ...(cmd.keywords ?? [])]
+  const base = [cmd.id, cmd.label, ...(cmd.keywords ?? [])]
     .join(" ")
     .toLowerCase();
+  return section === "pinned" || section === "recent"
+    ? `${section}:${base}`
+    : base;
 }
 
 /** Spell out keyboard-shortcut glyphs so screen readers don't read them as symbols. */
@@ -149,8 +159,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const runCommand = useCallback(
     (cmd: Command) => {
-      addRecent(cmd.id);
-      setRecentIds(getRecent());
+      setRecentIds(addRecent(cmd.id));
       Promise.resolve(cmd.run(ctx)).catch((err) => {
         console.error(`Command ${cmd.id} failed:`, err);
       });
@@ -235,7 +244,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         )}
 
         {GROUP_ORDER.map((groupId, index) => {
-          const commands = commandsByGroup[groupId];
+          // When the Pinned section is visible, hide those commands from
+          // their regular group to avoid rendering the same row twice.
+          // Recent is intentionally not hidden — it's a brief MRU hint, not
+          // a replacement for the command's canonical home.
+          const commands = showTopSections
+            ? commandsByGroup[groupId].filter((cmd) => !pinnedSet.has(cmd.id))
+            : commandsByGroup[groupId];
           if (commands.length === 0) return null;
           const hasTopSections =
             showTopSections &&

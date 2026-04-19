@@ -53,6 +53,12 @@ describe("addRecent", () => {
     expect(getRecent()).toEqual(["create:card", "nav:receipts"]);
   });
 
+  it("returns the new list so callers can sync state in one read", () => {
+    addRecent("nav:receipts");
+    const next = addRecent("create:card");
+    expect(next).toEqual(["create:card", "nav:receipts"]);
+  });
+
   it("dedupes on exact match and moves existing id to the front", () => {
     addRecent("nav:receipts");
     addRecent("create:card");
@@ -78,6 +84,11 @@ describe("addRecent", () => {
   it("is a no-op for empty ids", () => {
     addRecent("");
     expect(getRecent()).toEqual([]);
+  });
+
+  it("returns the current list when called with an empty id", () => {
+    addRecent("nav:receipts");
+    expect(addRecent("")).toEqual(["nav:receipts"]);
   });
 
   it("does not throw when localStorage.setItem throws (quota exceeded)", () => {
