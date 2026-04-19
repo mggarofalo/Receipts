@@ -99,6 +99,15 @@ describe("command registry", () => {
     expect(ctx.navigate).toHaveBeenCalledWith("/login");
   });
 
+  it("sign-out still navigates to /login when logout throws", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const ctx = makeCtx({ logout: vi.fn(async () => { throw new Error("network"); }) });
+    await COMMANDS.find((c) => c.id === "pref:sign-out")!.run(ctx);
+    expect(ctx.logout).toHaveBeenCalled();
+    expect(ctx.navigate).toHaveBeenCalledWith("/login");
+    errorSpy.mockRestore();
+  });
+
   it("shortcuts-help opens the help modal", () => {
     const ctx = makeCtx();
     COMMANDS.find((c) => c.id === "pref:shortcuts-help")!.run(ctx);

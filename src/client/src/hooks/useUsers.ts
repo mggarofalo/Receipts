@@ -7,9 +7,17 @@ import {
 import client, { attemptTokenRefresh } from "@/lib/api-client";
 import { toast } from "sonner";
 
-export function useUsers(offset = 0, limit = 50, sortBy?: string | null, sortDirection?: string | null) {
+export function useUsers(
+  offset = 0,
+  limit = 50,
+  sortBy?: string | null,
+  sortDirection?: string | null,
+  options: { enabled?: boolean } = {},
+) {
+  const { enabled = true } = options;
   const query = useQuery({
     queryKey: ["users", "list", offset, limit, sortBy, sortDirection],
+    enabled,
     queryFn: async () => {
       const { data, error } = await client.GET("/api/users", {
         params: { query: { offset, limit, sortBy: sortBy ?? undefined, sortDirection: (sortDirection ?? undefined) as "asc" | "desc" | undefined } },

@@ -346,7 +346,11 @@ export const COMMANDS: Command[] = [
     keywords: ["logout", "exit"],
     run: async (ctx) => {
       ctx.close();
-      await ctx.logout();
+      try {
+        await ctx.logout();
+      } catch (err) {
+        console.error("Logout failed; navigating to login anyway.", err);
+      }
       ctx.navigate("/login");
     },
   },

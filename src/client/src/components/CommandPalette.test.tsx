@@ -60,8 +60,14 @@ vi.mock("@/hooks/useUsers", () => ({
   useUsers: vi.fn(() => mockQueryResult()),
 }));
 
-beforeEach(() => {
+beforeEach(async () => {
   navigateMock.mockClear();
+  const { usePermission } = await import("@/hooks/usePermission");
+  vi.mocked(usePermission).mockReturnValue({
+    roles: [],
+    hasRole: () => false,
+    isAdmin: () => false,
+  });
 });
 
 describe("CommandPalette", () => {

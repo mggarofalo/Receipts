@@ -102,6 +102,30 @@ describe("useEntityResults", () => {
     expect(result.current.find((g) => g.id === "users")).toBeUndefined();
   });
 
+  it("passes enabled=false to useUsers when not admin (no API storm)", async () => {
+    const { useUsers } = await import("@/hooks/useUsers");
+    renderHook(() => useEntityResults({ isAdmin: false }));
+    expect(vi.mocked(useUsers)).toHaveBeenCalledWith(
+      0,
+      expect.any(Number),
+      undefined,
+      undefined,
+      { enabled: false },
+    );
+  });
+
+  it("passes enabled=true to useUsers when admin", async () => {
+    const { useUsers } = await import("@/hooks/useUsers");
+    renderHook(() => useEntityResults({ isAdmin: true }));
+    expect(vi.mocked(useUsers)).toHaveBeenCalledWith(
+      0,
+      expect.any(Number),
+      undefined,
+      undefined,
+      { enabled: true },
+    );
+  });
+
   it("shows user group when admin", async () => {
     const { useUsers } = await import("@/hooks/useUsers");
     vi.mocked(useUsers).mockReturnValue(

@@ -64,7 +64,7 @@ export function useEntityResults({ isAdmin }: { isAdmin: boolean }): EntityResul
   const itemTemplates = useItemTemplates(0, SMALL_LIMIT);
   const receipts = useReceipts(0, LARGE_LIMIT);
   const receiptItems = useReceiptItems(0, LARGE_LIMIT);
-  const users = useUsers(0, SMALL_LIMIT);
+  const users = useUsers(0, SMALL_LIMIT, undefined, undefined, { enabled: isAdmin });
 
   return useMemo<EntityResultGroup[]>(() => {
     const groups: EntityResultGroup[] = [];

@@ -143,7 +143,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                       key={cmd.id}
                       value={commandSearchValue(cmd)}
                       onSelect={() => {
-                        void cmd.run(ctx);
+                        Promise.resolve(cmd.run(ctx)).catch((err) => {
+                          console.error(`Command ${cmd.id} failed:`, err);
+                        });
                       }}
                     >
                       <Icon aria-hidden="true" className="mr-2 h-4 w-4" />
