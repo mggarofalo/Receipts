@@ -89,6 +89,28 @@ describe("ReceiptTransactionForm", () => {
     );
   });
 
+  it("allows saving in edit mode when the Card field is empty (legacy rows)", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    renderWithProviders(
+      <ReceiptTransactionForm
+        mode="edit"
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+        defaultValues={{ cardId: "", accountId: "acct-1", amount: 42, date: "2024-01-15" }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /update transaction/i }));
+
+    expect(onSubmit.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        cardId: "",
+        accountId: "acct-1",
+      }),
+    );
+  });
+
   it("leaves Account alone when the selected Card has no parent account", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();

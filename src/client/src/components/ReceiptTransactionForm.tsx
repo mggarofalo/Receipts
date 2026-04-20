@@ -20,15 +20,26 @@ import {
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/spinner";
 
-const receiptTransactionSchema = z.object({
-  cardId: z.string().min(1, "Card is required"),
+const baseTransactionSchema = z.object({
   accountId: z.string().min(1, "Account is required"),
   amount: z.number().refine((v) => v !== 0, "Amount is required"),
   date: z.string().min(1, "Date is required"),
 });
 
+const createTransactionSchema = baseTransactionSchema.extend({
+  cardId: z.string().min(1, "Card is required"),
+});
+
+// Edit mode keeps cardId string-typed but skips the min(1) check so legacy
+// transactions with cardId = null can still be edited (amount, date, account)
+// without forcing the user to assign a card first. RECEIPTS-574 will tighten
+// this once all rows are backfilled.
+const editTransactionSchema = baseTransactionSchema.extend({
+  cardId: z.string(),
+});
+
 export type ReceiptTransactionFormValues = z.output<
-  typeof receiptTransactionSchema
+  typeof createTransactionSchema
 >;
 
 interface ReceiptTransactionFormProps {
@@ -70,9 +81,10 @@ export function ReceiptTransactionForm({
     return map;
   }, [cards]);
 
+  const schema = mode === "create" ? createTransactionSchema : editTransactionSchema;
   const form = useForm<ReceiptTransactionFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(receiptTransactionSchema) as any,
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       cardId: "",
       accountId: "",
