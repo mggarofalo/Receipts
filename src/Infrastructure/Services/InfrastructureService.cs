@@ -226,6 +226,10 @@ public static class InfrastructureService
 		services.AddSingleton<ItemSimilarityEdgeRefresher>();
 		services.AddHostedService(sp => sp.GetRequiredService<ItemSimilarityEdgeRefresher>());
 
+		// Resolver for RECEIPTS-578 — scans unresolved ReceiptItems, groups by description,
+		// and links each to a NormalizedDescription via NormalizedDescriptionService.
+		services.AddHostedService<NormalizedDescriptionResolutionService>();
+
 		services.AddHealthChecks()
 			.AddCheck<ItemSimilarityRefresherHealthCheck>(
 				"item_similarity_refresher",
