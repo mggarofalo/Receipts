@@ -24,6 +24,16 @@ public class ReceiptItemEntityConfiguration : IEntityTypeConfiguration<ReceiptIt
 		builder.Navigation(e => e.Receipt)
 			.AutoInclude();
 
+		builder.HasOne(e => e.NormalizedDescription)
+			.WithMany()
+			.HasForeignKey(e => e.NormalizedDescriptionId)
+			.OnDelete(DeleteBehavior.SetNull);
+
+		builder.Navigation(e => e.NormalizedDescription)
+			.AutoInclude();
+
+		builder.HasIndex(e => e.NormalizedDescriptionId);
+
 		builder.HasQueryFilter(e => e.DeletedAt == null);
 	}
 }

@@ -17,6 +17,8 @@ public class ReceiptItemEntity : ISoftDeletable, IOwnedBy<ReceiptEntity>
 	public string Category { get; set; } = string.Empty;
 	public string? Subcategory { get; set; }
 	public PricingMode PricingMode { get; set; } = PricingMode.Quantity;
+	public Guid? NormalizedDescriptionId { get; set; }
+	public virtual NormalizedDescriptionEntity? NormalizedDescription { get; set; }
 	public virtual ReceiptEntity? Receipt { get; set; }
 	public DateTimeOffset? DeletedAt { get; set; }
 	public string? DeletedByUserId { get; set; }

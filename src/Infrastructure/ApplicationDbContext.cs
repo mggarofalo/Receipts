@@ -50,6 +50,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	public virtual DbSet<ApiKeyEntity> ApiKeys { get; set; } = null!;
 	public virtual DbSet<ItemTemplateEntity> ItemTemplates { get; set; } = null!;
 	public virtual DbSet<ItemEmbeddingEntity> ItemEmbeddings { get; set; } = null!;
+	public virtual DbSet<NormalizedDescriptionEntity> NormalizedDescriptions { get; set; } = null!;
 	public virtual DbSet<DistinctDescriptionEntity> DistinctDescriptions { get; set; } = null!;
 	public virtual DbSet<ItemSimilarityEdgeEntity> ItemSimilarityEdges { get; set; } = null!;
 	public virtual DbSet<AuditLogEntity> AuditLogs { get; set; } = null!;
@@ -77,6 +78,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 				.HasConversion(
 					v => string.Join(';', v.ToArray()),
 					v => new Pgvector.Vector(v.Split(';').Select(float.Parse).ToArray()));
+
+			modelBuilder.Entity<NormalizedDescriptionEntity>()
+				.Property(e => e.Embedding)
+				.HasColumnType(null)
+				.HasConversion(
+					v => v == null ? null : string.Join(';', v.ToArray()),
+					v => string.IsNullOrEmpty(v) ? null : new Pgvector.Vector(v.Split(';').Select(float.Parse).ToArray()));
 		}
 	}
 
