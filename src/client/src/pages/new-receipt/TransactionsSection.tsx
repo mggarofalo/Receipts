@@ -1,11 +1,12 @@
 import { useMemo, useCallback, useRef, useEffect } from "react";
 import { generateId } from "@/lib/id";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useAccounts } from "@/hooks/useAccounts";
-import { accountToOption } from "@/lib/combobox-options";
+import { useCards } from "@/hooks/useCards";
+import { accountToOption, cardToOption } from "@/lib/combobox-options";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,7 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 
 const txnSchema = z.object({
+  cardId: z.string().min(1, "Card is required"),
   accountId: z.string().min(1, "Account is required"),
   amount: z.number().refine((v) => v !== 0, "Amount is required"),
   date: z.string().min(1, "Date is required"),
@@ -40,6 +42,7 @@ type TxnFormValues = z.output<typeof txnSchema>;
 
 export interface ReceiptTransaction {
   id: string;
+  cardId: string;
   accountId: string;
   amount: number;
   date: string;
@@ -57,13 +60,19 @@ export function TransactionsSection({
   onChange,
 }: TransactionsSectionProps) {
   const formRef = useRef<HTMLFormElement>(null);
-  const accountRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLButtonElement>(null);
   const { data: accounts } = useAccounts(0, 50, undefined, undefined, true);
+  const { data: cards } = useCards(0, 500, undefined, undefined, true);
   useFormShortcuts({ formRef });
 
   const accountOptions = useMemo(
     () => (accounts ?? []).map(accountToOption),
     [accounts],
+  );
+
+  const cardOptions = useMemo(
+    () => (cards ?? []).map(cardToOption),
+    [cards],
   );
 
   const accountNameMap = useMemo(() => {
@@ -74,15 +83,43 @@ export function TransactionsSection({
     return map;
   }, [accountOptions]);
 
+  const cardNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const opt of cardOptions) {
+      map.set(opt.value, opt.label);
+    }
+    return map;
+  }, [cardOptions]);
+
+  const cardById = useMemo(() => {
+    const map = new Map<string, { id: string; accountId?: string | null }>();
+    for (const c of cards ?? []) map.set(c.id, c);
+    return map;
+  }, [cards]);
+
   const form = useForm<TxnFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(txnSchema) as any,
     defaultValues: {
+      cardId: "",
       accountId: "",
       amount: 0,
       date: defaultDate,
     },
   });
+
+  const selectedCardId = useWatch({ control: form.control, name: "cardId" });
+  const prevCardIdRef = useRef(selectedCardId);
+
+  useEffect(() => {
+    if (selectedCardId && selectedCardId !== prevCardIdRef.current) {
+      const card = cardById.get(selectedCardId);
+      if (card?.accountId) {
+        form.setValue("accountId", card.accountId, { shouldValidate: true });
+      }
+    }
+    prevCardIdRef.current = selectedCardId;
+  }, [selectedCardId, cardById, form]);
 
   // Sync the date field when the receipt date changes and the field is empty
   const prevDefaultDateRef = useRef(defaultDate);
@@ -110,16 +147,16 @@ export function TransactionsSection({
       };
       onChange([...transactions, newTxn]);
       (document.activeElement as HTMLElement)?.blur?.();
-      form.reset({ accountId: "", amount: 0, date: defaultDate });
+      form.reset({ cardId: "", accountId: "", amount: 0, date: defaultDate });
     },
     [form, defaultDate, transactions, onChange],
   );
 
-  // Focus account field after adding a transaction for rapid entry
+  // Focus card field after adding a transaction for rapid entry
   const prevCountRef = useRef(transactions.length);
   useEffect(() => {
     if (transactions.length > prevCountRef.current) {
-      accountRef.current?.focus();
+      cardRef.current?.focus();
     }
     prevCountRef.current = transactions.length;
   }, [transactions.length]);
@@ -146,8 +183,31 @@ export function TransactionsSection({
           <form
             ref={formRef}
             onSubmit={form.handleSubmit(handleAdd)}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto_auto_auto] sm:items-end"
           >
+            <FormField
+              control={form.control}
+              name="cardId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel required>Card</FormLabel>
+                  <FormControl>
+                    <Combobox
+                      ref={cardRef}
+                      options={cardOptions}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      placeholder="Select card..."
+                      searchPlaceholder="Search cards..."
+                      emptyMessage="No cards found."
+                      aria-required="true"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="accountId"
@@ -156,7 +216,6 @@ export function TransactionsSection({
                   <FormLabel required>Account</FormLabel>
                   <FormControl>
                     <Combobox
-                      ref={accountRef}
                       options={accountOptions}
                       value={field.value}
                       onValueChange={field.onChange}
@@ -210,6 +269,7 @@ export function TransactionsSection({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Card</TableHead>
                 <TableHead>Account</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Date</TableHead>
@@ -221,6 +281,9 @@ export function TransactionsSection({
             <TableBody>
               {transactions.map((txn) => (
                 <TableRow key={txn.id}>
+                  <TableCell>
+                    {cardNameMap.get(txn.cardId) ?? txn.cardId}
+                  </TableCell>
                   <TableCell>
                     {accountNameMap.get(txn.accountId) ?? txn.accountId}
                   </TableCell>

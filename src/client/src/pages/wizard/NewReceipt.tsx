@@ -79,6 +79,7 @@ export default function NewReceipt() {
             taxAmount: state.receipt.taxAmount,
           },
           transactions: state.transactions.map((txn) => ({
+            cardId: txn.cardId ?? "",
             accountId: txn.accountId,
             amount: txn.amount,
             date: txn.date,
