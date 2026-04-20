@@ -131,6 +131,7 @@ public static class InfrastructureService
 			.AddScoped<IBackupImportService, BackupImportService>()
 			.AddScoped<IItemTemplateService, ItemTemplateService>()
 			.AddScoped<IItemTemplateSimilarityService, ItemTemplateSimilarityService>()
+			.AddScoped<INormalizedDescriptionService, NormalizedDescriptionService>()
 			.AddScoped<IReceiptRepository, ReceiptRepository>()
 			.AddScoped<IAccountRepository, AccountRepository>()
 			.AddScoped<ICardRepository, CardRepository>()
@@ -241,7 +242,8 @@ public static class InfrastructureService
 			.AddSingleton<ReceiptItemMapper>()
 			.AddSingleton<TransactionMapper>()
 			.AddSingleton<AdjustmentMapper>()
-			.AddSingleton<ItemTemplateMapper>();
+			.AddSingleton<ItemTemplateMapper>()
+			.AddSingleton<NormalizedDescriptionMapper>();
 
 		return services;
 	}
