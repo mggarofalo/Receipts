@@ -15,7 +15,7 @@ A full-stack receipt management application built with .NET 10 Clean Architectur
 | State & Routing | TanStack Query, React Router |
 | Forms | React Hook Form, Zod |
 | Database | PostgreSQL + EF Core 10 + pgvector |
-| Embeddings | all-MiniLM-L6-v2 via ONNX Runtime (local, no API key) |
+| Embeddings | bge-large-en-v1.5 via ONNX Runtime (local, no API key, 1024-dim, CLS pooling) |
 | CQRS | MediatR 14 |
 | Mapping | Mapperly (compile-time, zero-reflection) |
 | Validation | FluentValidation |

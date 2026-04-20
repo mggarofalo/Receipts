@@ -20,7 +20,7 @@ public class OnnxEmbeddingServiceFixture : IDisposable
 	{
 		get
 		{
-			string modelPath = Path.Combine(AppContext.BaseDirectory, "Models", "AllMiniLmL6V2", "model.onnx");
+			string modelPath = Path.Combine(AppContext.BaseDirectory, "Models", "BgeLargeEnV15", "model.onnx");
 			return File.Exists(modelPath);
 		}
 	}

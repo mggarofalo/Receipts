@@ -42,7 +42,7 @@ if (checkOnly)
         missing.Add("src/client/src/generated/api.d.ts — run: cd src/client && npm run generate:types:write");
     }
 
-    if (!File.Exists(Path.Combine(repoRoot, "src", "Infrastructure", "Models", "AllMiniLmL6V2", "model.onnx")))
+    if (!File.Exists(Path.Combine(repoRoot, "src", "Infrastructure", "Models", "BgeLargeEnV15", "model.onnx")))
     {
         missing.Add("ONNX model — run: dotnet run scripts/download-onnx-model.cs");
     }

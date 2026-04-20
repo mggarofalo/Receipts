@@ -79,9 +79,9 @@ Migrations run automatically on API startup via `IDatabaseMigratorService`.
 
 ### Vector Similarity Search
 
-The system uses pgvector for semantic similarity search on item names and descriptions. Embeddings are generated locally via ONNX Runtime using the `all-MiniLM-L6-v2` model (384-dimensional vectors). No external API keys are required.
+The system uses pgvector for semantic similarity search on item names and descriptions. Embeddings are generated locally via ONNX Runtime using the `bge-large-en-v1.5` model (1024-dimensional vectors, CLS pooling). No external API keys are required.
 
-- **`OnnxEmbeddingService`** — Singleton service that loads the ONNX model and tokenizer at startup, generates 384-dim L2-normalized embeddings
+- **`OnnxEmbeddingService`** — Singleton service that loads the ONNX model and tokenizer at startup, generates 1024-dim L2-normalized embeddings
 - **`EmbeddingGenerationService`** — Background service that polls every 30s, generates embeddings for new/changed ItemTemplates and ReceiptItems in batches of 50
 - **`ItemTemplateSimilarityService`** — Hybrid search combining trigram similarity (0.4 weight) and cosine vector similarity (0.6 weight) with HNSW indexing
 

@@ -3,6 +3,7 @@ using FluentAssertions;
 using Infrastructure.Entities;
 using Infrastructure.Entities.Core;
 using Infrastructure.IntegrationTests.Fixtures;
+using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Pgvector;
 using SampleData.Entities;
@@ -215,7 +216,7 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 	{
 		// Arrange — pgvector column type
 		await using ApplicationDbContext context = fixture.CreateDbContext();
-		float[] values = new float[384];
+		float[] values = new float[OnnxEmbeddingService.EmbeddingDimension];
 		for (int i = 0; i < values.Length; i++)
 		{
 			values[i] = i * 0.001f;
@@ -228,7 +229,7 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 			EntityId = Guid.NewGuid(),
 			EntityText = "Test embedding text",
 			Embedding = new Vector(values),
-			ModelVersion = "all-MiniLM-L6-v2",
+			ModelVersion = OnnxEmbeddingService.ModelName,
 			CreatedAt = DateTimeOffset.UtcNow,
 		};
 
@@ -243,8 +244,8 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 
 		loaded.Should().NotBeNull();
 		loaded!.EntityType.Should().Be("ItemTemplate");
-		loaded.Embedding.ToArray().Should().HaveCount(384);
+		loaded.Embedding.ToArray().Should().HaveCount(OnnxEmbeddingService.EmbeddingDimension);
 		loaded.Embedding.ToArray()[0].Should().BeApproximately(0f, 0.001f);
-		loaded.ModelVersion.Should().Be("all-MiniLM-L6-v2");
+		loaded.ModelVersion.Should().Be(OnnxEmbeddingService.ModelName);
 	}
 }
