@@ -68,17 +68,21 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 	[Fact]
 	public async Task TransactionEntity_RoundTrips_WithForeignKeys()
 	{
-		// Arrange — FK to Receipt and Account
-		// Transaction.AccountId references the Accounts table (post-RECEIPTS-543),
-		// so seed an AccountEntity — not just a Card — before inserting the Transaction.
+		// Arrange — FK to Receipt, Account, and Card.
+		// Transaction.AccountId references Accounts (post-RECEIPTS-543);
+		// Transaction.CardId is now NOT NULL and references Cards (post-RECEIPTS-574).
+		// Card.AccountId is also required and references Accounts (post-RECEIPTS-575).
 		await using ApplicationDbContext context = fixture.CreateDbContext();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity card = CardEntityGenerator.Generate();
+		card.AccountId = account.Id;
 		context.Receipts.Add(receipt);
 		context.Accounts.Add(account);
+		context.Cards.Add(card);
 		await context.SaveChangesAsync();
 
-		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id, card.Id);
 
 		// Act
 		context.Transactions.Add(transaction);
@@ -91,6 +95,7 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 		loaded.Should().NotBeNull();
 		loaded!.ReceiptId.Should().Be(receipt.Id);
 		loaded.AccountId.Should().Be(account.Id);
+		loaded.CardId.Should().Be(card.Id);
 		loaded.Amount.Should().Be(transaction.Amount);
 		loaded.AmountCurrency.Should().Be(Currency.USD);
 		loaded.Date.Should().Be(transaction.Date);
