@@ -6588,6 +6588,8 @@ components:
     BackupImportResponse:
       type: object
       required:
+        - accountsCreated
+        - accountsUpdated
         - cardsCreated
         - cardsUpdated
         - categoriesCreated
@@ -6607,6 +6609,12 @@ components:
         - totalCreated
         - totalUpdated
       properties:
+        accountsCreated:
+          type: integer
+          format: int32
+        accountsUpdated:
+          type: integer
+          format: int32
         cardsCreated:
           type: integer
           format: int32

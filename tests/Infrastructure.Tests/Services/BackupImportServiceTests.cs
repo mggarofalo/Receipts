@@ -256,7 +256,8 @@ public class BackupImportServiceTests : IDisposable
 		Guid cardId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
 		string sqlitePath = CreateV3SqliteDatabaseWithCards(
-			(cardId, "ACC001", "Test Card", true, accountId));
+			[(cardId, "ACC001", "Test Card", true, accountId)],
+			(accountId, "Primary Checking", true));
 
 		await using FileStream stream = File.OpenRead(sqlitePath);
 
@@ -264,6 +265,7 @@ public class BackupImportServiceTests : IDisposable
 		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
 
 		// Assert
+		result.AccountsCreated.Should().Be(1);
 		result.CardsCreated.Should().Be(1);
 
 		await using ApplicationDbContext assertCtx = CreateAssertionContext();
@@ -273,6 +275,41 @@ public class BackupImportServiceTests : IDisposable
 
 		AccountEntity? parent = await assertCtx.Accounts.FindAsync(accountId);
 		parent.Should().NotBeNull();
+		parent!.Name.Should().Be("Primary Checking", "v3 import must use the exported Account name, not the Card name");
+	}
+
+	[Fact]
+	public async Task ImportFromSqliteAsync_V3BackupSharedAccount_ImportsSharedParent()
+	{
+		// Arrange: two cards sharing a single Account — the exact case the bug-finder flagged.
+		Guid sharedAccountId = Guid.NewGuid();
+		Guid card1Id = Guid.NewGuid();
+		Guid card2Id = Guid.NewGuid();
+		string sqlitePath = CreateV3SqliteDatabaseWithCards(
+			[
+				(card1Id, "DEBIT-1", "Personal Debit", true, sharedAccountId),
+				(card2Id, "DEBIT-2", "Shared Debit", true, sharedAccountId),
+			],
+			(sharedAccountId, "Joint Checking", true));
+
+		await using FileStream stream = File.OpenRead(sqlitePath);
+
+		// Act
+		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
+
+		// Assert — one Account upserted, both Cards point at it.
+		result.AccountsCreated.Should().Be(1);
+		result.CardsCreated.Should().Be(2);
+
+		await using ApplicationDbContext assertCtx = CreateAssertionContext();
+		AccountEntity? shared = await assertCtx.Accounts.FindAsync(sharedAccountId);
+		shared.Should().NotBeNull();
+		shared!.Name.Should().Be("Joint Checking");
+
+		CardEntity? c1 = await assertCtx.Cards.FindAsync(card1Id);
+		CardEntity? c2 = await assertCtx.Cards.FindAsync(card2Id);
+		c1!.AccountId.Should().Be(sharedAccountId);
+		c2!.AccountId.Should().Be(sharedAccountId);
 	}
 
 	[Fact]
@@ -280,8 +317,10 @@ public class BackupImportServiceTests : IDisposable
 	{
 		// Arrange: v3 backup where one card row has a NULL account_id — must fail fast.
 		Guid cardId = Guid.NewGuid();
+		Guid accountId = Guid.NewGuid();
 		string sqlitePath = CreateV3SqliteDatabaseWithCards(
-			(cardId, "ACC001", "Orphan Card", true, (Guid?)null));
+			[(cardId, "ACC001", "Orphan Card", true, (Guid?)null)],
+			(accountId, "Dummy Account", true));
 
 		await using FileStream stream = File.OpenRead(sqlitePath);
 
@@ -392,7 +431,9 @@ public class BackupImportServiceTests : IDisposable
 		return path;
 	}
 
-	private string CreateV3SqliteDatabaseWithCards(params (Guid Id, string CardCode, string Name, bool IsActive, Guid? AccountId)[] cards)
+	private string CreateV3SqliteDatabaseWithCards(
+		(Guid Id, string CardCode, string Name, bool IsActive, Guid? AccountId)[] cards,
+		params (Guid Id, string Name, bool IsActive)[] accounts)
 	{
 		string path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.sqlite");
 		using SqliteConnection conn = new($"Data Source={path};Pooling=False");
@@ -409,6 +450,25 @@ public class BackupImportServiceTests : IDisposable
 		using SqliteCommand metaInsert = conn.CreateCommand();
 		metaInsert.CommandText = "INSERT INTO backup_metadata (key, value) VALUES ('export_version', '3')";
 		metaInsert.ExecuteNonQuery();
+
+		using SqliteCommand accountsCreate = conn.CreateCommand();
+		accountsCreate.CommandText = @"
+			CREATE TABLE accounts (
+				id TEXT NOT NULL PRIMARY KEY,
+				name TEXT NOT NULL,
+				is_active INTEGER NOT NULL
+			)";
+		accountsCreate.ExecuteNonQuery();
+
+		foreach ((Guid accountId, string accountName, bool accountActive) in accounts)
+		{
+			using SqliteCommand insertCmd = conn.CreateCommand();
+			insertCmd.CommandText = "INSERT INTO accounts (id, name, is_active) VALUES (@id, @name, @active)";
+			insertCmd.Parameters.AddWithValue("@id", accountId.ToString());
+			insertCmd.Parameters.AddWithValue("@name", accountName);
+			insertCmd.Parameters.AddWithValue("@active", accountActive);
+			insertCmd.ExecuteNonQuery();
+		}
 
 		using SqliteCommand createCmd = conn.CreateCommand();
 		createCmd.CommandText = @"
