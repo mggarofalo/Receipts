@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useRef, useEffect } from "react";
 import { generateId } from "@/lib/id";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
@@ -85,11 +85,9 @@ export function TransactionsSection({
 
   const cardNameMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const opt of cardOptions) {
-      map.set(opt.value, opt.label);
-    }
+    for (const c of cards ?? []) map.set(c.id, c.name);
     return map;
-  }, [cardOptions]);
+  }, [cards]);
 
   const cardById = useMemo(() => {
     const map = new Map<string, { id: string; accountId?: string | null }>();
@@ -108,18 +106,13 @@ export function TransactionsSection({
     },
   });
 
-  const selectedCardId = useWatch({ control: form.control, name: "cardId" });
-  const prevCardIdRef = useRef(selectedCardId);
-
-  useEffect(() => {
-    if (selectedCardId && selectedCardId !== prevCardIdRef.current) {
-      const card = cardById.get(selectedCardId);
-      if (card?.accountId) {
-        form.setValue("accountId", card.accountId, { shouldValidate: true });
-      }
+  function handleCardChange(value: string) {
+    form.setValue("cardId", value, { shouldValidate: true });
+    const card = cardById.get(value);
+    if (card?.accountId) {
+      form.setValue("accountId", card.accountId, { shouldValidate: true });
     }
-    prevCardIdRef.current = selectedCardId;
-  }, [selectedCardId, cardById, form]);
+  }
 
   // Sync the date field when the receipt date changes and the field is empty
   const prevDefaultDateRef = useRef(defaultDate);
@@ -196,7 +189,7 @@ export function TransactionsSection({
                       ref={cardRef}
                       options={cardOptions}
                       value={field.value}
-                      onValueChange={field.onChange}
+                      onValueChange={handleCardChange}
                       placeholder="Select card..."
                       searchPlaceholder="Search cards..."
                       emptyMessage="No cards found."
@@ -282,7 +275,7 @@ export function TransactionsSection({
               {transactions.map((txn) => (
                 <TableRow key={txn.id}>
                   <TableCell>
-                    {cardNameMap.get(txn.cardId) ?? txn.cardId}
+                    {cardNameMap.get(txn.cardId) ?? ""}
                   </TableCell>
                   <TableCell>
                     {accountNameMap.get(txn.accountId) ?? txn.accountId}

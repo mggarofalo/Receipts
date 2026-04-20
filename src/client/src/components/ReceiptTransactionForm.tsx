@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useMemo, useRef } from "react";
+import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
@@ -82,18 +82,13 @@ export function ReceiptTransactionForm({
     },
   });
 
-  const selectedCardId = useWatch({ control: form.control, name: "cardId" });
-  const prevCardIdRef = useRef(selectedCardId);
-
-  useEffect(() => {
-    if (selectedCardId && selectedCardId !== prevCardIdRef.current) {
-      const card = cardById.get(selectedCardId);
-      if (card?.accountId) {
-        form.setValue("accountId", card.accountId, { shouldValidate: true });
-      }
+  function handleCardChange(value: string) {
+    form.setValue("cardId", value, { shouldValidate: true });
+    const card = cardById.get(value);
+    if (card?.accountId) {
+      form.setValue("accountId", card.accountId, { shouldValidate: true });
     }
-    prevCardIdRef.current = selectedCardId;
-  }, [selectedCardId, cardById, form]);
+  }
 
   return (
     <Form {...form}>
@@ -112,7 +107,7 @@ export function ReceiptTransactionForm({
                 <Combobox
                   options={cardOptions}
                   value={field.value}
-                  onValueChange={field.onChange}
+                  onValueChange={handleCardChange}
                   placeholder="Select a card..."
                   searchPlaceholder="Search cards..."
                   emptyMessage="No cards found."
