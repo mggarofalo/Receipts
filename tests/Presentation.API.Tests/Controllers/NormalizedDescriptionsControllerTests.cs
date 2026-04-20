@@ -1,7 +1,12 @@
 using API.Controllers;
 using API.Generated.Dtos;
+using Application.Commands.NormalizedDescription.Merge;
+using Application.Commands.NormalizedDescription.Split;
 using Application.Commands.NormalizedDescription.UpdateSettings;
+using Application.Commands.NormalizedDescription.UpdateStatus;
 using Application.Models.NormalizedDescriptions;
+using Application.Queries.NormalizedDescription.GetAll;
+using Application.Queries.NormalizedDescription.GetById;
 using Application.Queries.NormalizedDescription.GetSettings;
 using Application.Queries.NormalizedDescription.PreviewThresholdImpact;
 using Application.Queries.NormalizedDescription.TestMatch;
@@ -10,6 +15,8 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
+using DomainStatus = Domain.NormalizedDescriptions.NormalizedDescriptionStatus;
+using DtoStatus = API.Generated.Dtos.NormalizedDescriptionStatus;
 
 namespace Presentation.API.Tests.Controllers;
 
@@ -278,5 +285,330 @@ public class NormalizedDescriptionsControllerTests
 		bad.Value.Should().Be(expectedMessage);
 
 		_mediatorMock.Verify(m => m.Send(It.IsAny<PreviewThresholdImpactQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	// ── GET list ─────────────────────────────────────────────────
+
+	[Fact]
+	public async Task GetAllNormalizedDescriptions_NoFilter_ReturnsOkWithAllItems()
+	{
+		List<NormalizedDescription> items =
+		[
+			new(Guid.NewGuid(), "coffee beans", DomainStatus.Active, new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero)),
+			new(Guid.NewGuid(), "whole milk", DomainStatus.PendingReview, new DateTimeOffset(2026, 4, 2, 0, 0, 0, TimeSpan.Zero)),
+		];
+
+		_mediatorMock
+			.Setup(m => m.Send(It.Is<GetAllNormalizedDescriptionsQuery>(q => q.StatusFilter == null), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(items);
+
+		Results<Ok<NormalizedDescriptionListResponse>, BadRequest<string>> result =
+			await _controller.GetAllNormalizedDescriptions(status: null, CancellationToken.None);
+
+		Ok<NormalizedDescriptionListResponse> ok = Assert.IsType<Ok<NormalizedDescriptionListResponse>>(result.Result);
+		ok.Value!.Items.Should().HaveCount(2);
+		ok.Value.TotalCount.Should().Be(2);
+		ok.Value.Items.First().CanonicalName.Should().Be("coffee beans");
+	}
+
+	[Theory]
+	[InlineData("Active", DomainStatus.Active)]
+	[InlineData("PendingReview", DomainStatus.PendingReview)]
+	[InlineData("active", DomainStatus.Active)]
+	[InlineData("pendingreview", DomainStatus.PendingReview)]
+	public async Task GetAllNormalizedDescriptions_WithStatusFilter_ForwardsToQuery(string status, DomainStatus expected)
+	{
+		_mediatorMock
+			.Setup(m => m.Send(It.Is<GetAllNormalizedDescriptionsQuery>(q => q.StatusFilter == expected), It.IsAny<CancellationToken>()))
+			.ReturnsAsync([]);
+
+		Results<Ok<NormalizedDescriptionListResponse>, BadRequest<string>> result =
+			await _controller.GetAllNormalizedDescriptions(status, CancellationToken.None);
+
+		Ok<NormalizedDescriptionListResponse> ok = Assert.IsType<Ok<NormalizedDescriptionListResponse>>(result.Result);
+		ok.Value!.Items.Should().BeEmpty();
+		ok.Value.TotalCount.Should().Be(0);
+		_mediatorMock.Verify(m => m.Send(It.Is<GetAllNormalizedDescriptionsQuery>(q => q.StatusFilter == expected), It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetAllNormalizedDescriptions_InvalidStatusFilter_ReturnsBadRequest()
+	{
+		Results<Ok<NormalizedDescriptionListResponse>, BadRequest<string>> result =
+			await _controller.GetAllNormalizedDescriptions(status: "archived", CancellationToken.None);
+
+		BadRequest<string> bad = Assert.IsType<BadRequest<string>>(result.Result);
+		bad.Value.Should().Be(NormalizedDescriptionsController.InvalidStatusFilter);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<GetAllNormalizedDescriptionsQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	// ── GET by id ────────────────────────────────────────────────
+
+	[Fact]
+	public async Task GetNormalizedDescriptionById_Found_ReturnsOkWithMappedResponse()
+	{
+		Guid id = Guid.NewGuid();
+		NormalizedDescription item = new(
+			id,
+			"cherry cola",
+			DomainStatus.PendingReview,
+			new DateTimeOffset(2026, 4, 19, 0, 0, 0, TimeSpan.Zero));
+
+		_mediatorMock
+			.Setup(m => m.Send(It.Is<GetNormalizedDescriptionByIdQuery>(q => q.Id == id), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(item);
+
+		Results<Ok<NormalizedDescriptionResponse>, NotFound, BadRequest<string>> result =
+			await _controller.GetNormalizedDescriptionById(id, CancellationToken.None);
+
+		Ok<NormalizedDescriptionResponse> ok = Assert.IsType<Ok<NormalizedDescriptionResponse>>(result.Result);
+		ok.Value!.Id.Should().Be(id);
+		ok.Value.CanonicalName.Should().Be("cherry cola");
+		ok.Value.Status.Should().Be(DtoStatus.PendingReview);
+		ok.Value.CreatedAt.Should().Be(item.CreatedAt);
+	}
+
+	[Fact]
+	public async Task GetNormalizedDescriptionById_NotFound_ReturnsNotFound()
+	{
+		Guid id = Guid.NewGuid();
+		_mediatorMock
+			.Setup(m => m.Send(It.Is<GetNormalizedDescriptionByIdQuery>(q => q.Id == id), It.IsAny<CancellationToken>()))
+			.ReturnsAsync((NormalizedDescription?)null);
+
+		Results<Ok<NormalizedDescriptionResponse>, NotFound, BadRequest<string>> result =
+			await _controller.GetNormalizedDescriptionById(id, CancellationToken.None);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task GetNormalizedDescriptionById_EmptyGuid_ReturnsBadRequest()
+	{
+		Results<Ok<NormalizedDescriptionResponse>, NotFound, BadRequest<string>> result =
+			await _controller.GetNormalizedDescriptionById(Guid.Empty, CancellationToken.None);
+
+		BadRequest<string> bad = Assert.IsType<BadRequest<string>>(result.Result);
+		bad.Value.Should().Be(NormalizedDescriptionsController.IdCannotBeEmpty);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<GetNormalizedDescriptionByIdQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	// ── POST merge ───────────────────────────────────────────────
+
+	[Fact]
+	public async Task MergeNormalizedDescriptions_ValidRequest_ReturnsOkWithRelinkCount()
+	{
+		Guid keepId = Guid.NewGuid();
+		Guid discardId = Guid.NewGuid();
+		MergeNormalizedDescriptionRequest request = new() { DiscardId = discardId };
+
+		_mediatorMock
+			.Setup(m => m.Send(
+				It.Is<MergeNormalizedDescriptionsCommand>(c => c.KeepId == keepId && c.DiscardId == discardId),
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync(12);
+
+		Results<Ok<MergeNormalizedDescriptionsResponse>, BadRequest<string>> result =
+			await _controller.MergeNormalizedDescriptions(keepId, request, CancellationToken.None);
+
+		Ok<MergeNormalizedDescriptionsResponse> ok = Assert.IsType<Ok<MergeNormalizedDescriptionsResponse>>(result.Result);
+		ok.Value!.ItemsRelinkedCount.Should().Be(12);
+	}
+
+	[Fact]
+	public async Task MergeNormalizedDescriptions_EmptyKeepId_ReturnsBadRequest()
+	{
+		MergeNormalizedDescriptionRequest request = new() { DiscardId = Guid.NewGuid() };
+
+		Results<Ok<MergeNormalizedDescriptionsResponse>, BadRequest<string>> result =
+			await _controller.MergeNormalizedDescriptions(Guid.Empty, request, CancellationToken.None);
+
+		BadRequest<string> bad = Assert.IsType<BadRequest<string>>(result.Result);
+		bad.Value.Should().Be(NormalizedDescriptionsController.IdCannotBeEmpty);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<MergeNormalizedDescriptionsCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task MergeNormalizedDescriptions_EmptyDiscardId_ReturnsBadRequest()
+	{
+		MergeNormalizedDescriptionRequest request = new() { DiscardId = Guid.Empty };
+
+		Results<Ok<MergeNormalizedDescriptionsResponse>, BadRequest<string>> result =
+			await _controller.MergeNormalizedDescriptions(Guid.NewGuid(), request, CancellationToken.None);
+
+		BadRequest<string> bad = Assert.IsType<BadRequest<string>>(result.Result);
+		bad.Value.Should().Be(NormalizedDescriptionsController.DiscardIdCannotBeEmpty);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<MergeNormalizedDescriptionsCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task MergeNormalizedDescriptions_SameKeepAndDiscard_ReturnsBadRequest()
+	{
+		Guid id = Guid.NewGuid();
+		MergeNormalizedDescriptionRequest request = new() { DiscardId = id };
+
+		Results<Ok<MergeNormalizedDescriptionsResponse>, BadRequest<string>> result =
+			await _controller.MergeNormalizedDescriptions(id, request, CancellationToken.None);
+
+		BadRequest<string> bad = Assert.IsType<BadRequest<string>>(result.Result);
+		bad.Value.Should().Be(NormalizedDescriptionsController.MergeIdsMustDiffer);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<MergeNormalizedDescriptionsCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	// ── POST split ───────────────────────────────────────────────
+
+	[Fact]
+	public async Task SplitNormalizedDescription_ValidRequest_ReturnsOkWithNewResource()
+	{
+		Guid currentId = Guid.NewGuid();
+		Guid receiptItemId = Guid.NewGuid();
+		Guid newId = Guid.NewGuid();
+		SplitNormalizedDescriptionRequest request = new() { ReceiptItemId = receiptItemId };
+
+		NormalizedDescription created = new(
+			newId,
+			"reese cup",
+			DomainStatus.Active,
+			new DateTimeOffset(2026, 4, 19, 12, 0, 0, TimeSpan.Zero));
+
+		_mediatorMock
+			.Setup(m => m.Send(
+				It.Is<SplitNormalizedDescriptionCommand>(c => c.ReceiptItemId == receiptItemId),
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync(created);
+
+		Results<Ok<NormalizedDescriptionResponse>, NotFound, BadRequest<string>> result =
+			await _controller.SplitNormalizedDescription(currentId, request, CancellationToken.None);
+
+		Ok<NormalizedDescriptionResponse> ok = Assert.IsType<Ok<NormalizedDescriptionResponse>>(result.Result);
+		ok.Value!.Id.Should().Be(newId);
+		ok.Value.CanonicalName.Should().Be("reese cup");
+		ok.Value.Status.Should().Be(DtoStatus.Active);
+	}
+
+	[Fact]
+	public async Task SplitNormalizedDescription_ReceiptItemMissing_ReturnsNotFound()
+	{
+		Guid currentId = Guid.NewGuid();
+		Guid missingReceiptItemId = Guid.NewGuid();
+		SplitNormalizedDescriptionRequest request = new() { ReceiptItemId = missingReceiptItemId };
+
+		_mediatorMock
+			.Setup(m => m.Send(
+				It.Is<SplitNormalizedDescriptionCommand>(c => c.ReceiptItemId == missingReceiptItemId),
+				It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new KeyNotFoundException("Receipt item not found."));
+
+		Results<Ok<NormalizedDescriptionResponse>, NotFound, BadRequest<string>> result =
+			await _controller.SplitNormalizedDescription(currentId, request, CancellationToken.None);
+
+		Assert.IsType<NotFound>(result.Result);
+	}
+
+	[Fact]
+	public async Task SplitNormalizedDescription_EmptyId_ReturnsBadRequest()
+	{
+		SplitNormalizedDescriptionRequest request = new() { ReceiptItemId = Guid.NewGuid() };
+
+		Results<Ok<NormalizedDescriptionResponse>, NotFound, BadRequest<string>> result =
+			await _controller.SplitNormalizedDescription(Guid.Empty, request, CancellationToken.None);
+
+		BadRequest<string> bad = Assert.IsType<BadRequest<string>>(result.Result);
+		bad.Value.Should().Be(NormalizedDescriptionsController.IdCannotBeEmpty);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<SplitNormalizedDescriptionCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task SplitNormalizedDescription_EmptyReceiptItemId_ReturnsBadRequest()
+	{
+		SplitNormalizedDescriptionRequest request = new() { ReceiptItemId = Guid.Empty };
+
+		Results<Ok<NormalizedDescriptionResponse>, NotFound, BadRequest<string>> result =
+			await _controller.SplitNormalizedDescription(Guid.NewGuid(), request, CancellationToken.None);
+
+		BadRequest<string> bad = Assert.IsType<BadRequest<string>>(result.Result);
+		bad.Value.Should().Be(NormalizedDescriptionsController.ReceiptItemIdCannotBeEmpty);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<SplitNormalizedDescriptionCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	// ── PATCH status ─────────────────────────────────────────────
+
+	[Fact]
+	public async Task UpdateNormalizedDescriptionStatus_ExistingRow_ReturnsNoContent()
+	{
+		Guid id = Guid.NewGuid();
+		UpdateNormalizedDescriptionStatusRequest request = new() { Status = DtoStatus.PendingReview };
+
+		NormalizedDescription existing = new(id, "whole milk", DomainStatus.Active, DateTimeOffset.UtcNow);
+		_mediatorMock
+			.Setup(m => m.Send(It.Is<GetNormalizedDescriptionByIdQuery>(q => q.Id == id), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(existing);
+		_mediatorMock
+			.Setup(m => m.Send(
+				It.Is<UpdateNormalizedDescriptionStatusCommand>(c => c.Id == id && c.Status == DomainStatus.PendingReview),
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound, BadRequest<string>> result =
+			await _controller.UpdateNormalizedDescriptionStatus(id, request, CancellationToken.None);
+
+		Assert.IsType<NoContent>(result.Result);
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<UpdateNormalizedDescriptionStatusCommand>(c => c.Id == id && c.Status == DomainStatus.PendingReview),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task UpdateNormalizedDescriptionStatus_ActiveStatus_MapsToDomainCorrectly()
+	{
+		Guid id = Guid.NewGuid();
+		UpdateNormalizedDescriptionStatusRequest request = new() { Status = DtoStatus.Active };
+
+		NormalizedDescription existing = new(id, "whole milk", DomainStatus.PendingReview, DateTimeOffset.UtcNow);
+		_mediatorMock
+			.Setup(m => m.Send(It.Is<GetNormalizedDescriptionByIdQuery>(q => q.Id == id), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(existing);
+		_mediatorMock
+			.Setup(m => m.Send(
+				It.Is<UpdateNormalizedDescriptionStatusCommand>(c => c.Id == id && c.Status == DomainStatus.Active),
+				It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		Results<NoContent, NotFound, BadRequest<string>> result =
+			await _controller.UpdateNormalizedDescriptionStatus(id, request, CancellationToken.None);
+
+		Assert.IsType<NoContent>(result.Result);
+	}
+
+	[Fact]
+	public async Task UpdateNormalizedDescriptionStatus_MissingRow_ReturnsNotFound()
+	{
+		Guid id = Guid.NewGuid();
+		UpdateNormalizedDescriptionStatusRequest request = new() { Status = DtoStatus.Active };
+
+		_mediatorMock
+			.Setup(m => m.Send(It.Is<GetNormalizedDescriptionByIdQuery>(q => q.Id == id), It.IsAny<CancellationToken>()))
+			.ReturnsAsync((NormalizedDescription?)null);
+
+		Results<NoContent, NotFound, BadRequest<string>> result =
+			await _controller.UpdateNormalizedDescriptionStatus(id, request, CancellationToken.None);
+
+		Assert.IsType<NotFound>(result.Result);
+		// Should never reach the update command when the existence check fails.
+		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateNormalizedDescriptionStatusCommand>(), It.IsAny<CancellationToken>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task UpdateNormalizedDescriptionStatus_EmptyId_ReturnsBadRequest()
+	{
+		UpdateNormalizedDescriptionStatusRequest request = new() { Status = DtoStatus.Active };
+
+		Results<NoContent, NotFound, BadRequest<string>> result =
+			await _controller.UpdateNormalizedDescriptionStatus(Guid.Empty, request, CancellationToken.None);
+
+		BadRequest<string> bad = Assert.IsType<BadRequest<string>>(result.Result);
+		bad.Value.Should().Be(NormalizedDescriptionsController.IdCannotBeEmpty);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<GetNormalizedDescriptionByIdQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+		_mediatorMock.Verify(m => m.Send(It.IsAny<UpdateNormalizedDescriptionStatusCommand>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 }
