@@ -298,6 +298,8 @@ describe("Cards", () => {
 
     await user.type(screen.getByLabelText(/card code/i), "CARD-NEW");
     await user.type(screen.getByLabelText(/^name/i), "New Card");
+    await user.click(screen.getByRole("combobox", { name: /^account/i }));
+    await user.click(await screen.findByText("Primary Checking"));
     await user.click(screen.getByRole("button", { name: /create card/i }));
 
     await vi.waitFor(() => {

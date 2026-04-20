@@ -223,6 +223,81 @@ public class BackupImportServiceTests : IDisposable
 	}
 
 	[Fact]
+	public async Task ImportFromSqliteAsync_LegacyBackup_InfersAccountIdFromCardId()
+	{
+		// Legacy (v<3) backups have no account_id. Import must fall back to AccountId = Card.Id
+		// so the Card → Account FK invariant is preserved after RECEIPTS-575.
+		// Arrange
+		Guid cardId = Guid.NewGuid();
+		string sqlitePath = CreateSqliteDatabaseWithAccounts(
+			(cardId, "ACC001", "Test Card", true));
+
+		await using FileStream stream = File.OpenRead(sqlitePath);
+
+		// Act
+		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
+
+		// Assert
+		result.CardsCreated.Should().Be(1);
+
+		await using ApplicationDbContext assertCtx = CreateAssertionContext();
+		CardEntity? card = await assertCtx.Cards.FindAsync(cardId);
+		card.Should().NotBeNull();
+		card!.AccountId.Should().Be(cardId);
+
+		AccountEntity? parent = await assertCtx.Accounts.FindAsync(cardId);
+		parent.Should().NotBeNull("legacy import should upsert a parent Account with same Id as the Card");
+	}
+
+	[Fact]
+	public async Task ImportFromSqliteAsync_V3BackupWithAccountId_ImportsCorrectly()
+	{
+		// Arrange
+		Guid cardId = Guid.NewGuid();
+		Guid accountId = Guid.NewGuid();
+		string sqlitePath = CreateV3SqliteDatabaseWithCards(
+			(cardId, "ACC001", "Test Card", true, accountId));
+
+		await using FileStream stream = File.OpenRead(sqlitePath);
+
+		// Act
+		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
+
+		// Assert
+		result.CardsCreated.Should().Be(1);
+
+		await using ApplicationDbContext assertCtx = CreateAssertionContext();
+		CardEntity? card = await assertCtx.Cards.FindAsync(cardId);
+		card.Should().NotBeNull();
+		card!.AccountId.Should().Be(accountId);
+
+		AccountEntity? parent = await assertCtx.Accounts.FindAsync(accountId);
+		parent.Should().NotBeNull();
+	}
+
+	[Fact]
+	public async Task ImportFromSqliteAsync_V3BackupWithNullAccountId_Throws()
+	{
+		// Arrange: v3 backup where one card row has a NULL account_id — must fail fast.
+		Guid cardId = Guid.NewGuid();
+		string sqlitePath = CreateV3SqliteDatabaseWithCards(
+			(cardId, "ACC001", "Orphan Card", true, (Guid?)null));
+
+		await using FileStream stream = File.OpenRead(sqlitePath);
+
+		// Act
+		Func<Task> act = () => _service.ImportFromSqliteAsync(stream, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage($"*{cardId}*missing account_id*");
+
+		await using ApplicationDbContext assertCtx = CreateAssertionContext();
+		CardEntity? card = await assertCtx.Cards.FindAsync(cardId);
+		card.Should().BeNull("transaction must roll back when any card row is missing account_id");
+	}
+
+	[Fact]
 	public async Task ImportFromSqliteAsync_MissingTables_SkipsGracefully()
 	{
 		// Arrange - SQLite with only accounts table, no other tables
@@ -311,6 +386,50 @@ public class BackupImportServiceTests : IDisposable
 			insertCmd.Parameters.AddWithValue("@name", name);
 			insertCmd.Parameters.AddWithValue("@desc", (object?)description ?? DBNull.Value);
 			insertCmd.Parameters.AddWithValue("@active", isActive);
+			insertCmd.ExecuteNonQuery();
+		}
+
+		return path;
+	}
+
+	private string CreateV3SqliteDatabaseWithCards(params (Guid Id, string CardCode, string Name, bool IsActive, Guid? AccountId)[] cards)
+	{
+		string path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.sqlite");
+		using SqliteConnection conn = new($"Data Source={path};Pooling=False");
+		conn.Open();
+
+		using SqliteCommand metaCreate = conn.CreateCommand();
+		metaCreate.CommandText = @"
+			CREATE TABLE backup_metadata (
+				key TEXT NOT NULL PRIMARY KEY,
+				value TEXT NOT NULL
+			)";
+		metaCreate.ExecuteNonQuery();
+
+		using SqliteCommand metaInsert = conn.CreateCommand();
+		metaInsert.CommandText = "INSERT INTO backup_metadata (key, value) VALUES ('export_version', '3')";
+		metaInsert.ExecuteNonQuery();
+
+		using SqliteCommand createCmd = conn.CreateCommand();
+		createCmd.CommandText = @"
+			CREATE TABLE cards (
+				id TEXT NOT NULL PRIMARY KEY,
+				card_code TEXT NOT NULL,
+				name TEXT NOT NULL,
+				is_active INTEGER NOT NULL,
+				account_id TEXT
+			)";
+		createCmd.ExecuteNonQuery();
+
+		foreach ((Guid id, string cardCode, string name, bool isActive, Guid? accountId) in cards)
+		{
+			using SqliteCommand insertCmd = conn.CreateCommand();
+			insertCmd.CommandText = "INSERT INTO cards (id, card_code, name, is_active, account_id) VALUES (@id, @code, @name, @active, @accountId)";
+			insertCmd.Parameters.AddWithValue("@id", id.ToString());
+			insertCmd.Parameters.AddWithValue("@code", cardCode);
+			insertCmd.Parameters.AddWithValue("@name", name);
+			insertCmd.Parameters.AddWithValue("@active", isActive);
+			insertCmd.Parameters.AddWithValue("@accountId", (object?)accountId?.ToString() ?? DBNull.Value);
 			insertCmd.ExecuteNonQuery();
 		}
 

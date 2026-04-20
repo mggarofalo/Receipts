@@ -12,11 +12,13 @@ public class CardMapperTests
 	public void ToDomain_FromCreateRequest_MapsAllPropertiesWithEmptyId()
 	{
 		// Arrange
+		Guid accountId = Guid.NewGuid();
 		CreateCardRequest request = new()
 		{
 			CardCode = "ACC-001",
 			Name = "Test Checking Account",
-			IsActive = true
+			IsActive = true,
+			AccountId = accountId
 		};
 
 		// Act
@@ -27,6 +29,7 @@ public class CardMapperTests
 		Assert.Equal("ACC-001", actual.CardCode);
 		Assert.Equal("Test Checking Account", actual.Name);
 		Assert.True(actual.IsActive);
+		Assert.Equal(accountId, actual.AccountId);
 	}
 
 	[Fact]
@@ -37,7 +40,8 @@ public class CardMapperTests
 		{
 			CardCode = "ACC-002",
 			Name = "Inactive Account",
-			IsActive = false
+			IsActive = false,
+			AccountId = Guid.NewGuid()
 		};
 
 		// Act
@@ -53,12 +57,14 @@ public class CardMapperTests
 	{
 		// Arrange
 		Guid expected = Guid.NewGuid();
+		Guid accountId = Guid.NewGuid();
 		UpdateCardRequest request = new()
 		{
 			Id = expected,
 			CardCode = "ACC-UPD-001",
 			Name = "Updated Card Name",
-			IsActive = false
+			IsActive = false,
+			AccountId = accountId
 		};
 
 		// Act
@@ -69,6 +75,7 @@ public class CardMapperTests
 		Assert.Equal("ACC-UPD-001", actual.CardCode);
 		Assert.Equal("Updated Card Name", actual.Name);
 		Assert.False(actual.IsActive);
+		Assert.Equal(accountId, actual.AccountId);
 	}
 
 	[Fact]
@@ -76,16 +83,18 @@ public class CardMapperTests
 	{
 		// Arrange
 		Guid expectedId = Guid.NewGuid();
-		Card account = new(expectedId, "ACC-RES-001", "Response Account", true);
+		Guid accountId = Guid.NewGuid();
+		Card card = new(expectedId, "ACC-RES-001", "Response Account", accountId, true);
 
 		// Act
-		CardResponse actual = _mapper.ToResponse(account);
+		CardResponse actual = _mapper.ToResponse(card);
 
 		// Assert
 		Assert.Equal(expectedId, actual.Id);
 		Assert.Equal("ACC-RES-001", actual.CardCode);
 		Assert.Equal("Response Account", actual.Name);
 		Assert.True(actual.IsActive);
+		Assert.Equal(accountId, actual.AccountId);
 	}
 
 	[Fact]
@@ -93,10 +102,10 @@ public class CardMapperTests
 	{
 		// Arrange
 		Guid expectedId = Guid.NewGuid();
-		Card account = new(expectedId, "ACC-RES-002", "Inactive Response Account", false);
+		Card card = new(expectedId, "ACC-RES-002", "Inactive Response Account", Guid.NewGuid(), false);
 
 		// Act
-		CardResponse actual = _mapper.ToResponse(account);
+		CardResponse actual = _mapper.ToResponse(card);
 
 		// Assert
 		Assert.Equal(expectedId, actual.Id);
@@ -124,25 +133,6 @@ public class CardMapperTests
 	}
 
 	[Fact]
-	public void ToDomain_FromCreateRequest_MapsNullAccountId()
-	{
-		// Arrange
-		CreateCardRequest request = new()
-		{
-			CardCode = "ACC-001",
-			Name = "Orphan Card",
-			IsActive = true,
-			AccountId = null
-		};
-
-		// Act
-		Card actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Null(actual.AccountId);
-	}
-
-	[Fact]
 	public void ToDomain_FromUpdateRequest_MapsAccountId()
 	{
 		// Arrange
@@ -164,52 +154,16 @@ public class CardMapperTests
 	}
 
 	[Fact]
-	public void ToDomain_FromUpdateRequest_MapsNullAccountIdToClearAssignment()
-	{
-		// Arrange
-		UpdateCardRequest request = new()
-		{
-			Id = Guid.NewGuid(),
-			CardCode = "ACC-001",
-			Name = "Detached Card",
-			IsActive = true,
-			AccountId = null
-		};
-
-		// Act
-		Card actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Null(actual.AccountId);
-	}
-
-	[Fact]
 	public void ToResponse_IncludesAccountId()
 	{
 		// Arrange
 		Guid expectedAccountId = Guid.NewGuid();
-		Card card = new(Guid.NewGuid(), "CARD-A", "Primary Card", true)
-		{
-			AccountId = expectedAccountId
-		};
+		Card card = new(Guid.NewGuid(), "CARD-A", "Primary Card", expectedAccountId, true);
 
 		// Act
 		CardResponse actual = _mapper.ToResponse(card);
 
 		// Assert
 		Assert.Equal(expectedAccountId, actual.AccountId);
-	}
-
-	[Fact]
-	public void ToResponse_OmitsAccountIdWhenUnassigned()
-	{
-		// Arrange
-		Card card = new(Guid.NewGuid(), "CARD-ORPHAN", "Unassigned Card", true);
-
-		// Act
-		CardResponse actual = _mapper.ToResponse(card);
-
-		// Assert
-		Assert.Null(actual.AccountId);
 	}
 }

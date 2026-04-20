@@ -11,7 +11,7 @@ public class CreateCardRequestValidatorTests
 	public void Should_Pass_When_AllFieldsValid()
 	{
 		// Arrange
-		CreateCardRequest request = new() { CardCode = "ABC", Name = "Test" };
+		CreateCardRequest request = new() { CardCode = "ABC", Name = "Test", AccountId = Guid.NewGuid() };
 
 		// Act
 		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
@@ -24,7 +24,7 @@ public class CreateCardRequestValidatorTests
 	public void Should_Fail_When_CardCodeIsEmpty()
 	{
 		// Arrange
-		CreateCardRequest request = new() { CardCode = "", Name = "Test" };
+		CreateCardRequest request = new() { CardCode = "", Name = "Test", AccountId = Guid.NewGuid() };
 
 		// Act
 		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
@@ -38,7 +38,7 @@ public class CreateCardRequestValidatorTests
 	public void Should_Fail_When_NameIsEmpty()
 	{
 		// Arrange
-		CreateCardRequest request = new() { CardCode = "ABC", Name = "" };
+		CreateCardRequest request = new() { CardCode = "ABC", Name = "", AccountId = Guid.NewGuid() };
 
 		// Act
 		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
@@ -46,5 +46,19 @@ public class CreateCardRequestValidatorTests
 		// Assert
 		Assert.False(result.IsValid);
 		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateCardRequestValidator.NameMustNotBeEmpty);
+	}
+
+	[Fact]
+	public void Should_Fail_When_AccountIdIsEmpty()
+	{
+		// Arrange
+		CreateCardRequest request = new() { CardCode = "ABC", Name = "Test", AccountId = Guid.Empty };
+
+		// Act
+		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
+
+		// Assert
+		Assert.False(result.IsValid);
+		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateCardRequestValidator.AccountIdMustNotBeEmpty);
 	}
 }

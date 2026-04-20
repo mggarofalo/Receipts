@@ -99,6 +99,7 @@ export function mockCardResponse(
     cardCode: "CARD-001",
     name: "Test Card",
     isActive: true,
+    accountId: nextId(),
     ...overrides,
   };
 }

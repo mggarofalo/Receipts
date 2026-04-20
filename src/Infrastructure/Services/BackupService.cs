@@ -67,7 +67,8 @@ public class BackupService(
 				id TEXT NOT NULL PRIMARY KEY,
 				card_code TEXT NOT NULL,
 				name TEXT NOT NULL,
-				is_active INTEGER NOT NULL
+				is_active INTEGER NOT NULL,
+				account_id TEXT NOT NULL
 			)
 			""",
 			"""
@@ -164,7 +165,7 @@ public class BackupService(
 	{
 		List<CardEntity> cards = await source.Cards.AsNoTracking().ToListAsync(cancellationToken);
 
-		const string sql = "INSERT INTO cards (id, card_code, name, is_active) VALUES ($id, $code, $name, $active)";
+		const string sql = "INSERT INTO cards (id, card_code, name, is_active, account_id) VALUES ($id, $code, $name, $active, $accountId)";
 		foreach (CardEntity card in cards)
 		{
 			await using SqliteCommand cmd = sqlite.CreateCommand();
@@ -173,6 +174,7 @@ public class BackupService(
 			cmd.Parameters.AddWithValue("$code", card.CardCode);
 			cmd.Parameters.AddWithValue("$name", card.Name);
 			cmd.Parameters.AddWithValue("$active", card.IsActive ? 1 : 0);
+			cmd.Parameters.AddWithValue("$accountId", card.AccountId.ToString());
 			await cmd.ExecuteNonQueryAsync(cancellationToken);
 		}
 	}
@@ -353,7 +355,7 @@ public class BackupService(
 	{
 		Dictionary<string, string> metadata = new()
 		{
-			["export_version"] = "2",
+			["export_version"] = "3",
 			["exported_at"] = DateTimeOffset.UtcNow.ToString("O"),
 			["format"] = "receipts-sqlite-backup",
 		};

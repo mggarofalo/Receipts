@@ -2452,9 +2452,9 @@ export interface components {
             isActive: boolean;
             /**
              * Format: uuid
-             * @description Optional parent logical Account. Null/omitted leaves the card unassigned.
+             * @description Parent logical Account ID. Required — cards must have a parent.
              */
-            accountId?: string | null;
+            accountId: string;
         };
         UpdateCardRequest: {
             /** Format: uuid */
@@ -2464,9 +2464,9 @@ export interface components {
             isActive: boolean;
             /**
              * Format: uuid
-             * @description Optional parent logical Account. Send null to clear the assignment.
+             * @description Parent logical Account ID. Required — cards must have a parent.
              */
-            accountId?: string | null;
+            accountId: string;
         };
         CardResponse: {
             /** Format: uuid */
@@ -2476,9 +2476,9 @@ export interface components {
             isActive: boolean;
             /**
              * Format: uuid
-             * @description Parent logical Account, if assigned.
+             * @description Parent logical Account ID.
              */
-            accountId?: string | null;
+            accountId: string;
         };
         CardListResponse: {
             data: components["schemas"]["CardResponse"][];
@@ -3829,7 +3829,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Bad Request — returned when `accountId` is provided but does not refer to an existing Account. */
+            /** @description Bad Request — returned when `accountId` does not refer to an existing Account. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3945,7 +3945,7 @@ export interface operations {
                     "application/json": components["schemas"]["CardResponse"];
                 };
             };
-            /** @description Bad Request — returned when `accountId` is provided but does not refer to an existing Account. */
+            /** @description Bad Request — returned when `accountId` does not refer to an existing Account. */
             400: {
                 headers: {
                     [name: string]: unknown;

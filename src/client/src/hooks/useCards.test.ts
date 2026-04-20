@@ -114,7 +114,7 @@ describe("useCards", () => {
   });
 
   it("create mutation calls POST and shows toast on success", async () => {
-    const newCard = { cardCode: "CARD2", name: "Savings", isActive: true };
+    const newCard = { cardCode: "CARD2", name: "Savings", isActive: true, accountId: "acct-1" };
     const created = { id: "2", ...newCard };
     (client.POST as Mock).mockResolvedValue({ data: created, error: undefined });
 
@@ -129,7 +129,7 @@ describe("useCards", () => {
   });
 
   it("update mutation calls PUT and shows toast on success", async () => {
-    const updated = { id: "1", cardCode: "CARD1", name: "Updated", isActive: false };
+    const updated = { id: "1", cardCode: "CARD1", name: "Updated", isActive: false, accountId: "acct-1" };
     (client.PUT as Mock).mockResolvedValue({ error: undefined });
 
     const { result } = renderHook(() => useUpdateCard(), {

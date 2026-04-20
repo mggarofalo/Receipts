@@ -10,7 +10,8 @@ public static class CardDtoGenerator
 		{
 			CardCode = "Test Card",
 			Name = "Test Description",
-			IsActive = true
+			IsActive = true,
+			AccountId = Guid.NewGuid()
 		};
 	}
 
@@ -26,7 +27,8 @@ public static class CardDtoGenerator
 			Id = Guid.NewGuid(),
 			CardCode = "Test Card",
 			Name = "Test Description",
-			IsActive = true
+			IsActive = true,
+			AccountId = Guid.NewGuid()
 		};
 	}
 

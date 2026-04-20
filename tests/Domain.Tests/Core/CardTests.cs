@@ -11,49 +11,54 @@ public class CardTests
 		Guid id = Guid.NewGuid();
 		string accountCode = "ACC001";
 		string name = "Test Account";
+		Guid accountId = Guid.NewGuid();
 		bool isActive = true;
 
 		// Act
-		Card account = new(id, accountCode, name, isActive);
+		Card card = new(id, accountCode, name, accountId, isActive);
 
 		// Assert
-		Assert.Equal(id, account.Id);
-		Assert.Equal(accountCode, account.CardCode);
-		Assert.Equal(name, account.Name);
-		Assert.Equal(isActive, account.IsActive);
+		Assert.Equal(id, card.Id);
+		Assert.Equal(accountCode, card.CardCode);
+		Assert.Equal(name, card.Name);
+		Assert.Equal(accountId, card.AccountId);
+		Assert.Equal(isActive, card.IsActive);
 	}
 
 	[Fact]
-	public void Constructor_EmptyId_CreatesAccountWithEmptyId()
+	public void Constructor_EmptyId_CreatesCardWithEmptyId()
 	{
 		// Arrange
 		string accountCode = "ACC001";
 		string name = "Test Account";
+		Guid accountId = Guid.NewGuid();
 		bool isActive = true;
 
 		// Act
-		Card account = new(Guid.Empty, accountCode, name, isActive);
+		Card card = new(Guid.Empty, accountCode, name, accountId, isActive);
 
 		// Assert
-		Assert.Equal(Guid.Empty, account.Id);
-		Assert.Equal(accountCode, account.CardCode);
-		Assert.Equal(name, account.Name);
-		Assert.Equal(isActive, account.IsActive);
+		Assert.Equal(Guid.Empty, card.Id);
+		Assert.Equal(accountCode, card.CardCode);
+		Assert.Equal(name, card.Name);
+		Assert.Equal(accountId, card.AccountId);
+		Assert.Equal(isActive, card.IsActive);
 	}
 
 	[Fact]
-	public void Constructor_DefaultIsActive_CreatesActiveAccount()
+	public void Constructor_DefaultIsActive_CreatesActiveCard()
 	{
 		// Arrange
 		Guid id = Guid.NewGuid();
 		string accountCode = "ACC001";
 		string name = "Test Account";
+		Guid accountId = Guid.NewGuid();
 
 		// Act
-		Card account = new(id, accountCode, name);
+		Card card = new(id, accountCode, name, accountId);
 
 		// Assert
-		Assert.True(account.IsActive);
+		Assert.True(card.IsActive);
 	}
 
 	[Theory]
@@ -65,10 +70,11 @@ public class CardTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		string name = "Test Account";
+		Guid accountId = Guid.NewGuid();
 		bool isActive = true;
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, invalidCardCode!, name, isActive));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, invalidCardCode!, name, accountId, isActive));
 		Assert.StartsWith(Card.CardCodeCannotBeEmpty, exception.Message);
 	}
 
@@ -81,10 +87,25 @@ public class CardTests
 		// Arrange
 		Guid id = Guid.NewGuid();
 		string accountCode = "ACC001";
+		Guid accountId = Guid.NewGuid();
 		bool isActive = true;
 
 		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, accountCode, invalidName!, isActive));
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, accountCode, invalidName!, accountId, isActive));
 		Assert.StartsWith(Card.NameCannotBeEmpty, exception.Message);
+	}
+
+	[Fact]
+	public void Constructor_EmptyAccountId_ThrowsArgumentException()
+	{
+		// Arrange
+		Guid id = Guid.NewGuid();
+		string accountCode = "ACC001";
+		string name = "Test Account";
+		bool isActive = true;
+
+		// Act & Assert
+		ArgumentException exception = Assert.Throws<ArgumentException>(() => new Card(id, accountCode, name, Guid.Empty, isActive));
+		Assert.StartsWith(Card.AccountIdCannotBeEmpty, exception.Message);
 	}
 }

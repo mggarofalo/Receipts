@@ -162,7 +162,11 @@ public class BackupImportService(
 		ApplicationDbContext context, SqliteConnection sqlite, int exportVersion, CancellationToken cancellationToken)
 	{
 		// v2+ writes to `cards`/`card_code`; v1 wrote to `accounts`/`account_code`.
+		// v3+ adds `account_id`. For legacy (<3) backups we infer AccountId = Card.Id,
+		// matching the 1:1 Account-per-Card seeding from the IntroduceAccountAggregate
+		// migration — so every legacy card gets a valid parent Account upserted below.
 		bool isLegacy = exportVersion < 2;
+		bool hasAccountIdColumn = exportVersion >= 3;
 		string tableName = isLegacy ? "accounts" : "cards";
 		string codeColumn = isLegacy ? "account_code" : "card_code";
 
@@ -172,8 +176,11 @@ public class BackupImportService(
 		}
 
 		int created = 0, updated = 0;
+		string selectColumns = hasAccountIdColumn
+			? $"id, {codeColumn}, name, is_active, account_id"
+			: $"id, {codeColumn}, name, is_active";
 		await using SqliteCommand cmd = sqlite.CreateCommand();
-		cmd.CommandText = $"SELECT id, {codeColumn}, name, is_active FROM {tableName}";
+		cmd.CommandText = $"SELECT {selectColumns} FROM {tableName}";
 		await using SqliteDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
 		while (await reader.ReadAsync(cancellationToken))
@@ -183,12 +190,40 @@ public class BackupImportService(
 			string name = reader.GetString(2);
 			bool isActive = reader.GetBoolean(3);
 
+			Guid accountId;
+			if (hasAccountIdColumn)
+			{
+				if (reader.IsDBNull(4))
+				{
+					throw new InvalidOperationException($"Backup card {id} is missing account_id (export_version={exportVersion} requires it).");
+				}
+				accountId = Guid.Parse(reader.GetString(4));
+			}
+			else
+			{
+				// Legacy fallback: AccountId = Card.Id (1:1 with Account).
+				accountId = id;
+			}
+
+			// Ensure the parent Account exists so the FK constraint can be satisfied in Postgres.
+			AccountEntity? parentAccount = await context.Accounts.FindAsync([accountId], cancellationToken);
+			if (parentAccount is null)
+			{
+				context.Accounts.Add(new AccountEntity
+				{
+					Id = accountId,
+					Name = name,
+					IsActive = isActive,
+				});
+			}
+
 			CardEntity? existing = await context.Cards.FindAsync([id], cancellationToken);
 			if (existing is not null)
 			{
 				existing.CardCode = cardCode;
 				existing.Name = name;
 				existing.IsActive = isActive;
+				existing.AccountId = accountId;
 				updated++;
 			}
 			else
@@ -199,6 +234,7 @@ public class BackupImportService(
 					CardCode = cardCode,
 					Name = name,
 					IsActive = isActive,
+					AccountId = accountId,
 				});
 				created++;
 			}
