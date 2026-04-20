@@ -629,8 +629,8 @@ public class BackupImportService(
 		// Resolve Transaction.AccountId by joining the Card's parent Account at import time.
 		// The backup transactions table does not carry a separate account_id column (v3
 		// introduced accounts as a distinct table but did not denormalize onto transactions).
-		// Cards have already been upserted above, so Card.AccountId is populated.
-		Dictionary<Guid, Guid?> cardAccountIdByCardId = await context.Cards
+		// Cards have already been upserted above; Card.AccountId is non-nullable post-575.
+		Dictionary<Guid, Guid> cardAccountIdByCardId = await context.Cards
 			.AsNoTracking()
 			.ToDictionaryAsync(c => c.Id, c => c.AccountId, cancellationToken);
 
@@ -648,11 +648,10 @@ public class BackupImportService(
 			Currency amountCurrency = Enum.Parse<Currency>(reader.GetString(4));
 			DateOnly date = DateOnly.Parse(reader.GetString(5));
 
-			// Fall back to cardId when the Card has no parent Account (legacy / unmigrated
-			// rows). Account aggregate introduction seeded Account.Id = Card.Id, so this
-			// preserves the historical association even in degraded states.
-			Guid accountId = cardAccountIdByCardId.TryGetValue(cardId, out Guid? parent) && parent.HasValue
-				? parent.Value
+			// Fall back to cardId when the Card is missing from the lookup (shouldn't happen
+			// in practice — Cards are upserted before Transactions — but defensive).
+			Guid accountId = cardAccountIdByCardId.TryGetValue(cardId, out Guid parent)
+				? parent
 				: cardId;
 
 			TransactionEntity? existing = await context.Transactions

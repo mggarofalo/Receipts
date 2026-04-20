@@ -337,6 +337,55 @@ public class BackupImportServiceTests : IDisposable
 	}
 
 	[Fact]
+	public async Task ImportFromSqliteAsync_TransactionsV2_DerivesAccountIdFromCardsParent()
+	{
+		// RECEIPTS-574 regression guard: v2 exports only carry card_id. The importer must
+		// derive Transaction.AccountId from the Card's parent Account, not from card_id
+		// itself (which is the bug the PR #454 bug-finder caught).
+		Guid accountId = Guid.NewGuid();
+		Guid cardId = Guid.NewGuid();
+		Guid receiptId = Guid.NewGuid();
+		Guid txId = Guid.NewGuid();
+
+		await using (ApplicationDbContext seedCtx = CreateAssertionContext())
+		{
+			seedCtx.Accounts.Add(new AccountEntity { Id = accountId, Name = "Checking", IsActive = true });
+			seedCtx.Cards.Add(new CardEntity
+			{
+				Id = cardId,
+				CardCode = "CARD01",
+				Name = "Primary",
+				IsActive = true,
+				AccountId = accountId,
+			});
+			seedCtx.Receipts.Add(new ReceiptEntity
+			{
+				Id = receiptId,
+				Location = "Walmart",
+				Date = new DateOnly(2025, 6, 1),
+				TaxAmount = 0,
+				TaxAmountCurrency = Currency.USD,
+			});
+			await seedCtx.SaveChangesAsync();
+		}
+
+		string sqlitePath = CreateSqliteDatabaseWithTransactionsV2(
+			(txId, receiptId, cardId, 19.99m, "USD", "2025-06-01"));
+
+		await using FileStream stream = File.OpenRead(sqlitePath);
+
+		BackupImportResult result = await _service.ImportFromSqliteAsync(stream, CancellationToken.None);
+
+		result.TransactionsCreated.Should().Be(1);
+
+		await using ApplicationDbContext assertCtx = CreateAssertionContext();
+		TransactionEntity? imported = await assertCtx.Transactions.FindAsync(txId);
+		imported.Should().NotBeNull();
+		imported!.CardId.Should().Be(cardId);
+		imported.AccountId.Should().Be(accountId, "AccountId must be derived from Card.AccountId, not reused from card_id");
+	}
+
+	[Fact]
 	public async Task ImportFromSqliteAsync_MissingTables_SkipsGracefully()
 	{
 		// Arrange - SQLite with only accounts table, no other tables
@@ -522,6 +571,47 @@ public class BackupImportServiceTests : IDisposable
 			insertCmd.Parameters.AddWithValue("@date", date);
 			insertCmd.Parameters.AddWithValue("@tax", (double)taxAmount);
 			insertCmd.Parameters.AddWithValue("@currency", taxAmountCurrency);
+			insertCmd.ExecuteNonQuery();
+		}
+
+		return path;
+	}
+
+	private string CreateSqliteDatabaseWithTransactionsV2(params (Guid Id, Guid ReceiptId, Guid CardId, decimal Amount, string AmountCurrency, string Date)[] transactions)
+	{
+		string path = Path.Combine(_tempDir, $"{Guid.NewGuid():N}.sqlite");
+		using SqliteConnection conn = new($"Data Source={path};Pooling=False");
+		conn.Open();
+
+		using SqliteCommand metaCmd = conn.CreateCommand();
+		metaCmd.CommandText = """
+			CREATE TABLE backup_metadata (key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL);
+			INSERT INTO backup_metadata (key, value) VALUES ('export_version', '2');
+			""";
+		metaCmd.ExecuteNonQuery();
+
+		using SqliteCommand createCmd = conn.CreateCommand();
+		createCmd.CommandText = @"
+			CREATE TABLE transactions (
+				id TEXT NOT NULL PRIMARY KEY,
+				receipt_id TEXT NOT NULL,
+				card_id TEXT NOT NULL,
+				amount TEXT NOT NULL,
+				amount_currency TEXT NOT NULL,
+				date TEXT NOT NULL
+			)";
+		createCmd.ExecuteNonQuery();
+
+		foreach ((Guid id, Guid receiptId, Guid cardId, decimal amount, string amountCurrency, string date) in transactions)
+		{
+			using SqliteCommand insertCmd = conn.CreateCommand();
+			insertCmd.CommandText = "INSERT INTO transactions (id, receipt_id, card_id, amount, amount_currency, date) VALUES (@id, @rid, @cid, @amt, @cur, @date)";
+			insertCmd.Parameters.AddWithValue("@id", id.ToString());
+			insertCmd.Parameters.AddWithValue("@rid", receiptId.ToString());
+			insertCmd.Parameters.AddWithValue("@cid", cardId.ToString());
+			insertCmd.Parameters.AddWithValue("@amt", amount.ToString("G"));
+			insertCmd.Parameters.AddWithValue("@cur", amountCurrency);
+			insertCmd.Parameters.AddWithValue("@date", date);
 			insertCmd.ExecuteNonQuery();
 		}
 
