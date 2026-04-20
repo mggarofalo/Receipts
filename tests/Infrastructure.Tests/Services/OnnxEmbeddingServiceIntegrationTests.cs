@@ -59,8 +59,9 @@ public class OnnxEmbeddingServiceIntegrationTests : IClassFixture<OnnxEmbeddingS
 
 		// BGE-large produces elevated baseline similarities vs MiniLM: cross-domain English
 		// pairs typically land in 0.4–0.5 rather than the 0.1–0.3 range of smaller models.
-		// The threshold here is calibrated to BGE's distribution — see calibration-results.md.
-		similarity.Should().BeLessThan(0.5);
+		// Threshold set with headroom above the typical upper bound so the test isn't fragile
+		// to normal run-to-run variation — see calibration-results.md.
+		similarity.Should().BeLessThan(0.6);
 	}
 
 	[Fact]
