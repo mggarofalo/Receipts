@@ -8,9 +8,16 @@ namespace Infrastructure.Services;
 
 public sealed class OnnxEmbeddingService : IEmbeddingService, IDisposable
 {
-	public const string ModelName = "all-MiniLM-L6-v2";
-	public const int EmbeddingDimension = 384;
-	private const int MaxTokens = 256;
+	public const string ModelName = "bge-large-en-v1.5";
+	public const int EmbeddingDimension = 1024;
+
+	// BGE models are trained with CLS-token pooling (see 1_Pooling/config.json in the
+	// BAAI/bge-large-en-v1.5 repo). Mean-pooling the token embeddings gives noticeably
+	// worse discrimination than using the first token's output.
+	public const string PoolingStrategyName = "CLS";
+
+	private const int MaxTokens = 512;
+	private const string ModelDirectoryName = "BgeLargeEnV15";
 
 	private readonly InferenceSession _session;
 	private readonly BertTokenizer _tokenizer;
@@ -23,8 +30,8 @@ public sealed class OnnxEmbeddingService : IEmbeddingService, IDisposable
 		_logger = logger;
 
 		string baseDir = AppContext.BaseDirectory;
-		string modelPath = Path.Combine(baseDir, "Models", "AllMiniLmL6V2", "model.onnx");
-		string vocabPath = Path.Combine(baseDir, "Models", "AllMiniLmL6V2", "vocab.txt");
+		string modelPath = Path.Combine(baseDir, "Models", ModelDirectoryName, "model.onnx");
+		string vocabPath = Path.Combine(baseDir, "Models", ModelDirectoryName, "vocab.txt");
 
 		if (!File.Exists(modelPath) || !File.Exists(vocabPath))
 		{
@@ -101,28 +108,16 @@ public sealed class OnnxEmbeddingService : IEmbeddingService, IDisposable
 
 		using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = _session.Run(inputs);
 
-		// The model outputs token_embeddings with shape [1, seq_len, 384]
+		// BGE's ONNX export returns last_hidden_state with shape [1, seq_len, 1024].
+		// CLS pooling: take only the [CLS] token (index 0), which is the model's
+		// dedicated sentence-representation output.
 		DisposableNamedOnnxValue tokenEmbeddings = results.First();
 		float[] data = tokenEmbeddings.AsEnumerable<float>().ToArray();
 
-		// Mean pooling over all tokens (no padding since EncodeToIds doesn't pad)
 		float[] pooled = new float[EmbeddingDimension];
+		Array.Copy(data, 0, pooled, 0, EmbeddingDimension);
 
-		for (int i = 0; i < seqLen; i++)
-		{
-			int offset = i * EmbeddingDimension;
-			for (int j = 0; j < EmbeddingDimension; j++)
-			{
-				pooled[j] += data[offset + j];
-			}
-		}
-
-		for (int j = 0; j < EmbeddingDimension; j++)
-		{
-			pooled[j] /= seqLen;
-		}
-
-		// L2 normalize
+		// L2 normalize — required for cosine similarity via dot product.
 		float norm = 0;
 		for (int j = 0; j < EmbeddingDimension; j++)
 		{

@@ -1,18 +1,18 @@
 #!/usr/bin/env dotnet
 
 string repoRoot = GetRepoRoot();
-string modelDir = Path.Combine(repoRoot, "src", "Infrastructure", "Models", "AllMiniLmL6V2");
+string modelDir = Path.Combine(repoRoot, "src", "Infrastructure", "Models", "BgeLargeEnV15");
 Directory.CreateDirectory(modelDir);
 
-string onnxUrl = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx";
-string vocabUrl = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/vocab.txt";
+string onnxUrl = "https://huggingface.co/BAAI/bge-large-en-v1.5/resolve/main/onnx/model.onnx";
+string vocabUrl = "https://huggingface.co/BAAI/bge-large-en-v1.5/resolve/main/vocab.txt";
 
-using HttpClient http = new();
+using HttpClient http = new() { Timeout = TimeSpan.FromMinutes(30) };
 
 string onnxPath = Path.Combine(modelDir, "model.onnx");
 if (!File.Exists(onnxPath))
 {
-    Console.WriteLine("Downloading all-MiniLM-L6-v2 ONNX model...");
+    Console.WriteLine("Downloading bge-large-en-v1.5 ONNX model (~1.34 GB)...");
     using Stream onnxStream = await http.GetStreamAsync(onnxUrl);
     using FileStream onnxFs = File.Create(onnxPath);
     await onnxStream.CopyToAsync(onnxFs);

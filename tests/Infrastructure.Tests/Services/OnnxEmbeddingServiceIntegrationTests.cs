@@ -57,7 +57,10 @@ public class OnnxEmbeddingServiceIntegrationTests : IClassFixture<OnnxEmbeddingS
 
 		double similarity = CosineSimilarity(a, b);
 
-		similarity.Should().BeLessThan(0.3);
+		// BGE-large produces elevated baseline similarities vs MiniLM: cross-domain English
+		// pairs typically land in 0.4–0.5 rather than the 0.1–0.3 range of smaller models.
+		// The threshold here is calibrated to BGE's distribution — see calibration-results.md.
+		similarity.Should().BeLessThan(0.5);
 	}
 
 	[Fact]

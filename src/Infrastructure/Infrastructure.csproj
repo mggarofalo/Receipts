@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Models\AllMiniLmL6V2\model.onnx" Condition="Exists('Models\AllMiniLmL6V2\model.onnx')" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Models\AllMiniLmL6V2\vocab.txt" Condition="Exists('Models\AllMiniLmL6V2\vocab.txt')" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Models\BgeLargeEnV15\model.onnx" Condition="Exists('Models\BgeLargeEnV15\model.onnx')" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Models\BgeLargeEnV15\vocab.txt" Condition="Exists('Models\BgeLargeEnV15\vocab.txt')" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Models\Tessdata\eng.traineddata" Condition="Exists('Models\Tessdata\eng.traineddata')" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
