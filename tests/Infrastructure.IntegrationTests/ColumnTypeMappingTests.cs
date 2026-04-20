@@ -17,23 +17,30 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 	[Fact]
 	public async Task CardEntity_RoundTrips_AllColumnTypes()
 	{
-		// Arrange — uuid, text, boolean
+		// Arrange — uuid, text, boolean, nullable-uuid FK. AccountId is nullable,
+		// so the row inserts without a parent Account, but that leaves the FK column
+		// untested. Seed a parent AccountEntity and populate AccountId so every
+		// column on CardEntity round-trips.
 		await using ApplicationDbContext context = fixture.CreateDbContext();
-		CardEntity account = CardEntityGenerator.Generate();
+		AccountEntity parent = AccountEntityGenerator.Generate();
+		CardEntity card = CardEntityGenerator.Generate();
+		card.AccountId = parent.Id;
 
 		// Act
-		context.Cards.Add(account);
+		context.Accounts.Add(parent);
+		context.Cards.Add(card);
 		await context.SaveChangesAsync();
 
 		// Assert
 		await using ApplicationDbContext readContext = fixture.CreateDbContext();
-		CardEntity? loaded = await readContext.Cards.FirstOrDefaultAsync(a => a.Id == account.Id);
+		CardEntity? loaded = await readContext.Cards.FirstOrDefaultAsync(a => a.Id == card.Id);
 
 		loaded.Should().NotBeNull();
-		loaded!.Id.Should().Be(account.Id);
-		loaded.CardCode.Should().Be(account.CardCode);
-		loaded.Name.Should().Be(account.Name);
-		loaded.IsActive.Should().Be(account.IsActive);
+		loaded!.Id.Should().Be(card.Id);
+		loaded.CardCode.Should().Be(card.CardCode);
+		loaded.Name.Should().Be(card.Name);
+		loaded.IsActive.Should().Be(card.IsActive);
+		loaded.AccountId.Should().Be(parent.Id);
 	}
 
 	[Fact]
@@ -61,15 +68,21 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 	[Fact]
 	public async Task TransactionEntity_RoundTrips_WithForeignKeys()
 	{
-		// Arrange — FK to Receipt and Account
+		// Arrange — FK to Receipt, Account, and Card.
+		// Transaction.AccountId references Accounts (post-RECEIPTS-543);
+		// Transaction.CardId is now NOT NULL and references Cards (post-RECEIPTS-574).
+		// Card.AccountId is also required and references Accounts (post-RECEIPTS-575).
 		await using ApplicationDbContext context = fixture.CreateDbContext();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		CardEntity account = CardEntityGenerator.Generate();
+		AccountEntity account = AccountEntityGenerator.Generate();
+		CardEntity card = CardEntityGenerator.Generate();
+		card.AccountId = account.Id;
 		context.Receipts.Add(receipt);
-		context.Cards.Add(account);
+		context.Accounts.Add(account);
+		context.Cards.Add(card);
 		await context.SaveChangesAsync();
 
-		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id, card.Id);
 
 		// Act
 		context.Transactions.Add(transaction);
@@ -82,6 +95,7 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 		loaded.Should().NotBeNull();
 		loaded!.ReceiptId.Should().Be(receipt.Id);
 		loaded.AccountId.Should().Be(account.Id);
+		loaded.CardId.Should().Be(card.Id);
 		loaded.Amount.Should().Be(transaction.Amount);
 		loaded.AmountCurrency.Should().Be(Currency.USD);
 		loaded.Date.Should().Be(transaction.Date);
