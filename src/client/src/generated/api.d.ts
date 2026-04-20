@@ -1793,6 +1793,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/spending-by-normalized-description": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get spending by normalized description report
+         * @description Aggregates receipt item spending grouped by normalized description canonical name. Items without a normalized description bucket into a synthetic "(Not Normalized)" group.
+         */
+        get: operations["GetSpendingByNormalizedDescriptionReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dashboard/summary": {
         parameters: {
             query?: never;
@@ -2541,6 +2561,45 @@ export interface components {
             category: string;
             subcategory?: string | null;
             pricingMode: string;
+        };
+        SpendingByNormalizedDescriptionResponse: {
+            items: components["schemas"]["SpendingByNormalizedDescriptionItem"][];
+            /**
+             * Format: date-time
+             * @description Inclusive lower bound on receipt date, echoed from the request.
+             */
+            fromDate?: string | null;
+            /**
+             * Format: date-time
+             * @description Inclusive upper bound on receipt date, echoed from the request.
+             */
+            toDate?: string | null;
+        };
+        SpendingByNormalizedDescriptionItem: {
+            /** @description Canonical name of the normalized description, or "(Not Normalized)" for receipt items without a normalized description. */
+            canonicalName: string;
+            /**
+             * Format: double
+             * @description Sum of ReceiptItem.TotalAmount for items in this bucket.
+             */
+            totalAmount: number;
+            /** @description Dominant currency across the items in this bucket. */
+            currency: string;
+            /**
+             * Format: int32
+             * @description Number of receipt items in this bucket.
+             */
+            itemCount: number;
+            /**
+             * Format: date-time
+             * @description Earliest receipt date among items in this bucket.
+             */
+            firstSeen?: string | null;
+            /**
+             * Format: date-time
+             * @description Latest receipt date among items in this bucket.
+             */
+            lastSeen?: string | null;
         };
         DashboardSummaryResponse: {
             /** Format: int32 */
@@ -7978,6 +8037,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UncategorizedItemsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    GetSpendingByNormalizedDescriptionReport: {
+        parameters: {
+            query?: {
+                /** @description Inclusive lower bound on receipt date (ISO 8601 date-time string). Defaults to all time when omitted. */
+                from?: string;
+                /** @description Inclusive upper bound on receipt date (ISO 8601 date-time string). Defaults to all time when omitted. */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpendingByNormalizedDescriptionResponse"];
                 };
             };
             /** @description Bad Request */

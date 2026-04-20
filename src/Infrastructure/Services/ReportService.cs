@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Application.Interfaces.Services;
 using Application.Models.Reports;
+using Common;
 using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
 
@@ -690,6 +691,86 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 
 		return periods;
 	}
+
+	public async Task<SpendingByNormalizedDescriptionResult> GetSpendingByNormalizedDescriptionAsync(
+		DateTimeOffset? from,
+		DateTimeOffset? to,
+		CancellationToken cancellationToken)
+	{
+		await using ApplicationDbContext context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+		// Receipt.Date is DateOnly; convert the caller-supplied DateTimeOffset bounds to DateOnly
+		// using the UTC day so filtering is deterministic regardless of the caller's offset.
+		DateOnly? fromDate = from.HasValue ? DateOnly.FromDateTime(from.Value.UtcDateTime) : null;
+		DateOnly? toDate = to.HasValue ? DateOnly.FromDateTime(to.Value.UtcDateTime) : null;
+
+		var receiptsQuery = context.Receipts.AsNoTracking()
+			.Where(r => r.DeletedAt == null);
+
+		if (fromDate.HasValue)
+		{
+			receiptsQuery = receiptsQuery.Where(r => r.Date >= fromDate.Value);
+		}
+
+		if (toDate.HasValue)
+		{
+			receiptsQuery = receiptsQuery.Where(r => r.Date <= toDate.Value);
+		}
+
+		// LEFT JOIN ReceiptItems -> NormalizedDescriptions (via nullable FK).
+		// Soft-deleted receipts already excluded above; exclude soft-deleted items here.
+		// The join via Receipt.Id enforces the date filter on the item side as well.
+		var joined = from ri in context.ReceiptItems.AsNoTracking().Where(ri => ri.DeletedAt == null)
+					 join r in receiptsQuery on ri.ReceiptId equals r.Id
+					 join n in context.NormalizedDescriptions.AsNoTracking() on ri.NormalizedDescriptionId equals n.Id into gj
+					 from n in gj.DefaultIfEmpty()
+					 select new
+					 {
+						 CanonicalName = n != null ? n.CanonicalName : null,
+						 ri.TotalAmount,
+						 ri.TotalAmountCurrency,
+						 r.Date,
+					 };
+
+		var materialized = await joined.ToListAsync(cancellationToken);
+
+		// Group by the canonical name; NULL FK buckets into a synthetic "(Not Normalized)" group.
+		const string NotNormalizedLabel = "(Not Normalized)";
+		List<SpendingByNormalizedDescriptionItem> items = materialized
+			.GroupBy(x => x.CanonicalName ?? NotNormalizedLabel)
+			.Select(g =>
+			{
+				decimal total = g.Sum(x => x.TotalAmount);
+				int count = g.Count();
+				DateOnly minDate = g.Min(x => x.Date);
+				DateOnly maxDate = g.Max(x => x.Date);
+
+				// Dominant currency: most common across the bucket. Ties broken by name asc
+				// (stable via Currency enum ordering). Empty groups fall back to USD.
+				string currency = g
+					.GroupBy(x => x.TotalAmountCurrency)
+					.OrderByDescending(cg => cg.Count())
+					.ThenBy(cg => cg.Key)
+					.Select(cg => cg.Key.ToString())
+					.FirstOrDefault() ?? Currency.USD.ToString();
+
+				return new SpendingByNormalizedDescriptionItem(
+					g.Key,
+					total,
+					currency,
+					count,
+					ToDateTimeOffset(minDate),
+					ToDateTimeOffset(maxDate));
+			})
+			.OrderByDescending(x => x.TotalAmount)
+			.ThenBy(x => x.CanonicalName)
+			.ToList();
+
+		return new SpendingByNormalizedDescriptionResult(items, from, to);
+	}
+
+	private static DateTimeOffset ToDateTimeOffset(DateOnly date) =>
+		new(date.Year, date.Month, date.Day, 0, 0, 0, TimeSpan.Zero);
 
 	public async Task<UncategorizedItemsResult> GetUncategorizedItemsAsync(
 		string sortBy,
