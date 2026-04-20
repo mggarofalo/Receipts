@@ -157,13 +157,13 @@ public class ReportServiceItemSimilarityTests(PostgresFixture fixture)
 		(await EdgeCountAsync()).Should().BeGreaterThan(0);
 
 		// Remove one description entirely — should cascade-delete edges referencing it.
+		// Raw SQL (not EF): DistinctDescriptions has no Id column, so EF change tracking
+		// on delete trips code paths that assume every tracked entity has an Id property.
 		await using (ApplicationDbContext remove = fixture.CreateDbContext())
 		{
-			DistinctDescriptionEntity? toRemove = await remove.DistinctDescriptions
-				.FirstOrDefaultAsync(d => d.Description == "ORANGE");
-			toRemove.Should().NotBeNull();
-			remove.DistinctDescriptions.Remove(toRemove!);
-			await remove.SaveChangesAsync();
+			int rowsDeleted = await remove.Database.ExecuteSqlInterpolatedAsync(
+				$"""DELETE FROM "DistinctDescriptions" WHERE "Description" = {"ORANGE"};""");
+			rowsDeleted.Should().Be(1, "the ORANGE description must exist before the cascade test");
 		}
 
 		// Assert — edges involving ORANGE are gone (FK ON DELETE CASCADE)
@@ -184,7 +184,7 @@ public class ReportServiceItemSimilarityTests(PostgresFixture fixture)
 		await context.Database.ExecuteSqlRawAsync(
 			"""
 			INSERT INTO "DistinctDescriptions" ("Description", "ProcessedAt")
-			SELECT DISTINCT "Description", NULL
+			SELECT DISTINCT "Description", NULL::timestamptz
 			FROM "ReceiptItems"
 			WHERE "DeletedAt" IS NULL
 			ON CONFLICT DO NOTHING;
