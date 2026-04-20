@@ -7,6 +7,7 @@ public class CreateCardRequestValidator : AbstractValidator<CreateCardRequest>
 {
 	public const string CardCodeMustNotBeEmpty = "Card code must not be empty.";
 	public const string NameMustNotBeEmpty = "Name must not be empty.";
+	public const string AccountIdMustNotBeEmpty = "Account ID must not be empty.";
 
 	public CreateCardRequestValidator()
 	{
@@ -17,5 +18,9 @@ public class CreateCardRequestValidator : AbstractValidator<CreateCardRequest>
 		RuleFor(x => x.Name)
 			.NotEmpty()
 			.WithMessage(NameMustNotBeEmpty);
+
+		RuleFor(x => x.AccountId)
+			.NotEqual(Guid.Empty)
+			.WithMessage(AccountIdMustNotBeEmpty);
 	}
 }

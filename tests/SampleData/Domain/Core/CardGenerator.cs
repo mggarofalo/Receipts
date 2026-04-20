@@ -10,6 +10,7 @@ public static class CardGenerator
 			Guid.NewGuid(),
 			"Test Card",
 			"Test Description",
+			Guid.NewGuid(),
 			true
 		);
 	}

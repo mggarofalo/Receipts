@@ -35,7 +35,7 @@ public class AccountMergeService(
 		}
 
 		// Phase 0: validate + detect conflicts using read-only snapshot.
-		(List<Guid> sourceAccountIds, List<YnabAccountMappingEntity> mappings, Dictionary<Guid, string> accountNamesById, Dictionary<Guid, Guid?> originalCardAccountIds) =
+		(List<Guid> sourceAccountIds, List<YnabAccountMappingEntity> mappings, Dictionary<Guid, string> accountNamesById, Dictionary<Guid, Guid> originalCardAccountIds) =
 			await LoadStateAsync(targetAccountId, distinctCardIds, cancellationToken);
 
 		if (sourceAccountIds.Count == 0)
@@ -168,7 +168,7 @@ public class AccountMergeService(
 		return new MergeCardsResult(true, null);
 	}
 
-	private async Task<(List<Guid> SourceAccountIds, List<YnabAccountMappingEntity> Mappings, Dictionary<Guid, string> AccountNamesById, Dictionary<Guid, Guid?> OriginalCardAccountIds)> LoadStateAsync(
+	private async Task<(List<Guid> SourceAccountIds, List<YnabAccountMappingEntity> Mappings, Dictionary<Guid, string> AccountNamesById, Dictionary<Guid, Guid> OriginalCardAccountIds)> LoadStateAsync(
 		Guid targetAccountId,
 		List<Guid> distinctCardIds,
 		CancellationToken cancellationToken)
@@ -193,12 +193,11 @@ public class AccountMergeService(
 			throw new KeyNotFoundException(SourceCardNotFound);
 		}
 
-		Dictionary<Guid, Guid?> originalCardAccountIds = sourceCards
+		Dictionary<Guid, Guid> originalCardAccountIds = sourceCards
 			.ToDictionary(c => c.Id, c => c.AccountId);
 
 		List<Guid> sourceAccountIds = [.. originalCardAccountIds.Values
-			.Where(id => id.HasValue && id.Value != targetAccountId)
-			.Select(id => id!.Value)
+			.Where(id => id != targetAccountId)
 			.Distinct()];
 
 		// Ensure each source account is being fully merged. Partial merges (leaving behind
@@ -209,8 +208,7 @@ public class AccountMergeService(
 			HashSet<Guid> mergedCardIdSet = [.. distinctCardIds];
 			int cardsLeftBehindCount = await context.Cards
 				.AsNoTracking()
-				.CountAsync(c => c.AccountId.HasValue
-					&& sourceAccountIds.Contains(c.AccountId.Value)
+				.CountAsync(c => sourceAccountIds.Contains(c.AccountId)
 					&& !mergedCardIdSet.Contains(c.Id),
 					cancellationToken);
 			if (cardsLeftBehindCount > 0)

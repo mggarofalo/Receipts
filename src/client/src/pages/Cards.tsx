@@ -51,7 +51,7 @@ interface CardResponse {
   cardCode: string;
   name: string;
   isActive: boolean;
-  accountId?: string | null;
+  accountId: string;
 }
 
 const SEARCH_CONFIG: FuseSearchConfig<CardResponse> = {
@@ -136,7 +136,7 @@ function Cards() {
       cardCode: card.cardCode,
       name: card.name,
       isActive: checked,
-      accountId: card.accountId ?? null,
+      accountId: card.accountId,
     });
   }, [updateCard]);
 
@@ -381,7 +381,7 @@ function Cards() {
             onCancel={() => setCreateOpen(false)}
             onSubmit={(values) => {
               createCard.mutate(
-                { ...values, accountId: values.accountId ?? null },
+                values,
                 { onSuccess: () => setCreateOpen(false) },
               );
             }}
@@ -405,13 +405,13 @@ function Cards() {
                 cardCode: editCard.cardCode,
                 name: editCard.name,
                 isActive: editCard.isActive,
-                accountId: editCard.accountId ?? "",
+                accountId: editCard.accountId,
               }}
               isSubmitting={updateCard.isPending}
               onCancel={() => setEditCard(null)}
               onSubmit={(values) => {
                 updateCard.mutate(
-                  { id: editCard.id, ...values, accountId: values.accountId ?? null },
+                  { id: editCard.id, ...values },
                   { onSuccess: () => setEditCard(null) },
                 );
               }}

@@ -325,7 +325,7 @@ paths:
             X-Resource-Id:
               $ref: "#/components/headers/X-Resource-Id"
         "400":
-          description: Bad Request — returned when `accountId` is provided but does not refer to an existing Account.
+          description: Bad Request — returned when `accountId` does not refer to an existing Account.
           content:
             application/json:
               schema:
@@ -424,7 +424,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/CardResponse"
         "400":
-          description: Bad Request — returned when `accountId` is provided but does not refer to an existing Account.
+          description: Bad Request — returned when `accountId` does not refer to an existing Account.
           content:
             application/json:
               schema:
@@ -5089,7 +5089,7 @@ components:
 
     CreateCardRequest:
       type: object
-      required: [cardCode, name, isActive]
+      required: [cardCode, name, isActive, accountId]
       properties:
         cardCode:
           type: string
@@ -5098,13 +5098,13 @@ components:
         isActive:
           type: boolean
         accountId:
-          type: ["string", "null"]
+          type: string
           format: uuid
-          description: Optional parent logical Account. Null/omitted leaves the card unassigned.
+          description: Parent logical Account ID. Required — cards must have a parent.
 
     UpdateCardRequest:
       type: object
-      required: [id, cardCode, name, isActive]
+      required: [id, cardCode, name, isActive, accountId]
       properties:
         id:
           type: string
@@ -5116,13 +5116,13 @@ components:
         isActive:
           type: boolean
         accountId:
-          type: ["string", "null"]
+          type: string
           format: uuid
-          description: Optional parent logical Account. Send null to clear the assignment.
+          description: Parent logical Account ID. Required — cards must have a parent.
 
     CardResponse:
       type: object
-      required: [id, cardCode, name, isActive]
+      required: [id, cardCode, name, isActive, accountId]
       properties:
         id:
           type: string
@@ -5134,9 +5134,9 @@ components:
         isActive:
           type: boolean
         accountId:
-          type: ["string", "null"]
+          type: string
           format: uuid
-          description: Parent logical Account, if assigned.
+          description: Parent logical Account ID.
 
     CardListResponse:
       type: object
@@ -6588,6 +6588,8 @@ components:
     BackupImportResponse:
       type: object
       required:
+        - accountsCreated
+        - accountsUpdated
         - cardsCreated
         - cardsUpdated
         - categoriesCreated
@@ -6607,6 +6609,12 @@ components:
         - totalCreated
         - totalUpdated
       properties:
+        accountsCreated:
+          type: integer
+          format: int32
+        accountsUpdated:
+          type: integer
+          format: int32
         cardsCreated:
           type: integer
           format: int32

@@ -26,6 +26,7 @@ public class BackupService(
 		try
 		{
 			await CreateSchemaAsync(sqlite, cancellationToken);
+			await ExportAccountsAsync(source, sqlite, cancellationToken);
 			await ExportCardsAsync(source, sqlite, cancellationToken);
 			await ExportCategoriesAsync(source, sqlite, cancellationToken);
 			await ExportSubcategoriesAsync(source, sqlite, cancellationToken);
@@ -63,11 +64,20 @@ public class BackupService(
 			)
 			""",
 			"""
+			CREATE TABLE accounts (
+				id TEXT NOT NULL PRIMARY KEY,
+				name TEXT NOT NULL,
+				is_active INTEGER NOT NULL
+			)
+			""",
+			"""
 			CREATE TABLE cards (
 				id TEXT NOT NULL PRIMARY KEY,
 				card_code TEXT NOT NULL,
 				name TEXT NOT NULL,
-				is_active INTEGER NOT NULL
+				is_active INTEGER NOT NULL,
+				account_id TEXT NOT NULL,
+				FOREIGN KEY (account_id) REFERENCES accounts(id)
 			)
 			""",
 			"""
@@ -160,11 +170,27 @@ public class BackupService(
 		}
 	}
 
+	private static async Task ExportAccountsAsync(ApplicationDbContext source, SqliteConnection sqlite, CancellationToken cancellationToken)
+	{
+		List<AccountEntity> accounts = await source.Accounts.AsNoTracking().ToListAsync(cancellationToken);
+
+		const string sql = "INSERT INTO accounts (id, name, is_active) VALUES ($id, $name, $active)";
+		foreach (AccountEntity account in accounts)
+		{
+			await using SqliteCommand cmd = sqlite.CreateCommand();
+			cmd.CommandText = sql;
+			cmd.Parameters.AddWithValue("$id", account.Id.ToString());
+			cmd.Parameters.AddWithValue("$name", account.Name);
+			cmd.Parameters.AddWithValue("$active", account.IsActive ? 1 : 0);
+			await cmd.ExecuteNonQueryAsync(cancellationToken);
+		}
+	}
+
 	private static async Task ExportCardsAsync(ApplicationDbContext source, SqliteConnection sqlite, CancellationToken cancellationToken)
 	{
 		List<CardEntity> cards = await source.Cards.AsNoTracking().ToListAsync(cancellationToken);
 
-		const string sql = "INSERT INTO cards (id, card_code, name, is_active) VALUES ($id, $code, $name, $active)";
+		const string sql = "INSERT INTO cards (id, card_code, name, is_active, account_id) VALUES ($id, $code, $name, $active, $accountId)";
 		foreach (CardEntity card in cards)
 		{
 			await using SqliteCommand cmd = sqlite.CreateCommand();
@@ -173,6 +199,7 @@ public class BackupService(
 			cmd.Parameters.AddWithValue("$code", card.CardCode);
 			cmd.Parameters.AddWithValue("$name", card.Name);
 			cmd.Parameters.AddWithValue("$active", card.IsActive ? 1 : 0);
+			cmd.Parameters.AddWithValue("$accountId", card.AccountId.ToString());
 			await cmd.ExecuteNonQueryAsync(cancellationToken);
 		}
 	}
@@ -353,7 +380,7 @@ public class BackupService(
 	{
 		Dictionary<string, string> metadata = new()
 		{
-			["export_version"] = "2",
+			["export_version"] = "3",
 			["exported_at"] = DateTimeOffset.UtcNow.ToString("O"),
 			["format"] = "receipts-sqlite-backup",
 		};

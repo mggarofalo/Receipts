@@ -76,7 +76,8 @@ public class CardRepository(IDbContextFactory<ApplicationDbContext> contextFacto
 				Id = a.Id,
 				CardCode = a.CardCode,
 				Name = a.Name,
-				IsActive = a.IsActive
+				IsActive = a.IsActive,
+				AccountId = a.AccountId
 			})
 			.ToListAsync(cancellationToken);
 	}

@@ -40,7 +40,7 @@ export function useCreateCard() {
       cardCode: string;
       name: string;
       isActive: boolean;
-      accountId?: string | null;
+      accountId: string;
     }) => {
       const { data, error } = await client.POST("/api/cards", { body });
       if (error) throw error;
@@ -64,7 +64,7 @@ export function useUpdateCard() {
       cardCode: string;
       name: string;
       isActive: boolean;
-      accountId?: string | null;
+      accountId: string;
     }) => {
       const { error } = await client.PUT("/api/cards/{id}", {
         params: { path: { id: body.id } },
