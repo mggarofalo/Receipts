@@ -180,6 +180,7 @@ function ReceiptDetail() {
               category: i.category,
               subcategory: i.subcategory,
               pricingMode: i.pricingMode,
+              normalizedDescriptionName: i.normalizedDescriptionName,
             }))}
             subtotal={subtotal}
             location={trip.receipt.receipt.location}

@@ -491,6 +491,188 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/normalized-descriptions/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the current normalized-description threshold settings
+         * @description Returns the live auto-accept and pending-review thresholds used by the
+         *     resolver when classifying new receipt item descriptions. Admin-only.
+         */
+        get: operations["GetNormalizedDescriptionSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update the normalized-description threshold settings
+         * @description Updates the auto-accept and pending-review thresholds. Both values must
+         *     satisfy `0 <= pendingReviewThreshold < autoAcceptThreshold <= 1`. Admin-only.
+         */
+        patch: operations["UpdateNormalizedDescriptionSettings"];
+        trace?: never;
+    };
+    "/api/normalized-descriptions/settings/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview the impact of changing threshold settings
+         * @description Returns current vs. proposed classification counts (auto-accepted,
+         *     pending-review, unresolved) and the reclassification deltas that a
+         *     threshold change would produce, computed against the live
+         *     `NormalizedDescriptionMatchScore` column on receipt items. Admin-only.
+         */
+        post: operations["PreviewNormalizedDescriptionThresholdImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/normalized-descriptions/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Probe the classifier for a given description
+         * @description Returns the top-N ANN candidates for the supplied description along with
+         *     the classification branch the production resolver would take under the
+         *     supplied threshold overrides (or the live DB settings when absent).
+         *     Admin-only.
+         */
+        post: operations["TestNormalizedDescriptionMatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/normalized-descriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List normalized descriptions
+         * @description Returns all canonical normalized-description rows, optionally filtered by
+         *     status. Not paginated — the row count is bounded by the number of unique
+         *     receipt-item descriptions ever seen. Admin-only.
+         */
+        get: operations["GetAllNormalizedDescriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/normalized-descriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a normalized description by ID
+         * @description Returns a single canonical normalized-description row by GUID. Admin-only.
+         */
+        get: operations["GetNormalizedDescriptionById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/normalized-descriptions/{id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge two normalized descriptions
+         * @description Re-links every ReceiptItem currently pointing at `discardId` to the
+         *     canonical row identified by the path `{id}` ("keep"), then deletes the
+         *     discarded row. Returns the count of re-linked items — zero when either
+         *     id was missing or the two ids were identical. Admin-only.
+         */
+        post: operations["MergeNormalizedDescriptions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/normalized-descriptions/{id}/split": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Detach a receipt item from its normalized description
+         * @description Creates a new canonical row for the supplied ReceiptItem's raw description
+         *     and re-points the item at it. Used to unpick bad auto-merges. The path
+         *     `{id}` is the current NormalizedDescription the item is being split away
+         *     from; the body identifies the specific ReceiptItem to isolate. Admin-only.
+         */
+        post: operations["SplitNormalizedDescription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/normalized-descriptions/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update the status of a normalized description
+         * @description Flips a NormalizedDescription between Active and PendingReview. Returns
+         *     204 when the status was changed and 404 when the row does not exist or
+         *     already has the requested status. Admin-only.
+         */
+        patch: operations["UpdateNormalizedDescriptionStatus"];
+        trace?: never;
+    };
     "/api/receipts/{id}": {
         parameters: {
             query?: never;
@@ -1611,6 +1793,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/spending-by-normalized-description": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get spending by normalized description report
+         * @description Aggregates receipt item spending grouped by normalized description canonical name. Items without a normalized description bucket into a synthetic "(Not Normalized)" group.
+         */
+        get: operations["GetSpendingByNormalizedDescriptionReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dashboard/summary": {
         parameters: {
             query?: never;
@@ -2360,6 +2562,45 @@ export interface components {
             subcategory?: string | null;
             pricingMode: string;
         };
+        SpendingByNormalizedDescriptionResponse: {
+            items: components["schemas"]["SpendingByNormalizedDescriptionItem"][];
+            /**
+             * Format: date-time
+             * @description Inclusive lower bound on receipt date, echoed from the request.
+             */
+            fromDate?: string | null;
+            /**
+             * Format: date-time
+             * @description Inclusive upper bound on receipt date, echoed from the request.
+             */
+            toDate?: string | null;
+        };
+        SpendingByNormalizedDescriptionItem: {
+            /** @description Canonical name of the normalized description, or "(Not Normalized)" for receipt items without a normalized description. */
+            canonicalName: string;
+            /**
+             * Format: double
+             * @description Sum of ReceiptItem.TotalAmount for items in this bucket.
+             */
+            totalAmount: number;
+            /** @description Dominant currency across the items in this bucket. */
+            currency: string;
+            /**
+             * Format: int32
+             * @description Number of receipt items in this bucket.
+             */
+            itemCount: number;
+            /**
+             * Format: date-time
+             * @description Earliest receipt date among items in this bucket.
+             */
+            firstSeen?: string | null;
+            /**
+             * Format: date-time
+             * @description Latest receipt date among items in this bucket.
+             */
+            lastSeen?: string | null;
+        };
         DashboardSummaryResponse: {
             /** Format: int32 */
             totalReceipts: number;
@@ -2665,6 +2906,160 @@ export interface components {
              */
             occurrenceCount: number;
         };
+        NormalizedDescriptionSettingsResponse: {
+            /**
+             * Format: uuid
+             * @description Fixed singleton identifier for the settings row.
+             */
+            id: string;
+            /**
+             * Format: double
+             * @description Cosine-similarity floor at which the resolver re-uses an existing canonical entry.
+             */
+            autoAcceptThreshold: number;
+            /**
+             * Format: double
+             * @description Cosine-similarity floor at which the resolver creates a PendingReview entry instead of a new Active one.
+             */
+            pendingReviewThreshold: number;
+            /**
+             * Format: date-time
+             * @description When the settings were last changed.
+             */
+            updatedAt: string;
+        };
+        UpdateNormalizedDescriptionSettingsRequest: {
+            /** Format: double */
+            autoAcceptThreshold: number;
+            /** Format: double */
+            pendingReviewThreshold: number;
+        };
+        TestMatchRequest: {
+            /** @description Description to classify. Must be non-empty after trim. */
+            description: string;
+            /**
+             * Format: int32
+             * @description Number of ANN candidates to return (ranked by cosine similarity).
+             * @default 5
+             */
+            topN: number;
+            /**
+             * Format: double
+             * @description Override the live auto-accept threshold for simulation. Falls back to DB settings when null.
+             */
+            autoAcceptThresholdOverride?: number | null;
+            /**
+             * Format: double
+             * @description Override the live pending-review threshold for simulation. Falls back to DB settings when null.
+             */
+            pendingReviewThresholdOverride?: number | null;
+        };
+        MatchTestResultResponse: {
+            candidates: components["schemas"]["MatchCandidateDto"][];
+            /** @description One of: AutoAccept, PendingReview, CreateNew, EmbeddingUnavailable. */
+            simulatedOutcome: string;
+            /**
+             * Format: uuid
+             * @description ID of the normalized-description row the resolver would reuse (AutoAccept) or null for CreateNew / PendingReview / EmbeddingUnavailable.
+             */
+            simulatedTargetId?: string | null;
+        };
+        MatchCandidateDto: {
+            /** Format: uuid */
+            normalizedDescriptionId: string;
+            canonicalName: string;
+            /** Format: double */
+            cosineSimilarity: number;
+            /** @description Active or PendingReview. */
+            status: string;
+        };
+        PreviewThresholdImpactRequest: {
+            /** Format: double */
+            autoAcceptThreshold: number;
+            /** Format: double */
+            pendingReviewThreshold: number;
+        };
+        ThresholdImpactPreviewResponse: {
+            current: components["schemas"]["ClassificationCountsDto"];
+            proposed: components["schemas"]["ClassificationCountsDto"];
+            deltas: components["schemas"]["ReclassificationDeltasDto"];
+        };
+        ClassificationCountsDto: {
+            /** Format: int32 */
+            autoAccepted: number;
+            /** Format: int32 */
+            pendingReview: number;
+            /** Format: int32 */
+            unresolved: number;
+        };
+        ReclassificationDeltasDto: {
+            /**
+             * Format: int32
+             * @description Items currently auto-accepted that would fall back to pending-review under the proposal.
+             */
+            autoToPending: number;
+            /**
+             * Format: int32
+             * @description Items currently pending-review that would be auto-accepted under the proposal.
+             */
+            pendingToAuto: number;
+            /**
+             * Format: int32
+             * @description Items currently unresolved (below pending-review threshold) that would be auto-accepted under the proposal.
+             */
+            unresolvedToAuto: number;
+            /**
+             * Format: int32
+             * @description Items currently unresolved (below pending-review threshold) that would move up to pending-review under the proposal.
+             */
+            unresolvedToPending: number;
+        };
+        /**
+         * @description Active rows are confidently-classified and re-used as-is by the resolver; pendingReview rows are flagged for admin review before being promoted.
+         * @enum {string}
+         */
+        NormalizedDescriptionStatus: "active" | "pendingReview";
+        NormalizedDescriptionResponse: {
+            /** Format: uuid */
+            id: string;
+            /** @description The canonical name shared by every receipt item linked to this row. */
+            canonicalName: string;
+            status: components["schemas"]["NormalizedDescriptionStatus"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        NormalizedDescriptionListResponse: {
+            items: components["schemas"]["NormalizedDescriptionResponse"][];
+            /**
+             * Format: int32
+             * @description Total number of rows returned. Matches the length of `items` since the endpoint is not paginated.
+             */
+            totalCount: number;
+        };
+        MergeNormalizedDescriptionRequest: {
+            /**
+             * Format: uuid
+             * @description ID of the NormalizedDescription to merge away. All ReceiptItems pointing at this row will be re-linked to the kept row.
+             */
+            discardId: string;
+        };
+        SplitNormalizedDescriptionRequest: {
+            /**
+             * Format: uuid
+             * @description ID of the ReceiptItem to detach from its current NormalizedDescription.
+             */
+            receiptItemId: string;
+        };
+        UpdateNormalizedDescriptionStatusRequest: {
+            status: components["schemas"]["NormalizedDescriptionStatus"];
+        };
+        MergeNormalizedDescriptionsResponse: {
+            /**
+             * Format: int32
+             * @description Number of ReceiptItems that were re-linked from the discarded row to the kept row. Zero when either id was missing or the two ids were identical.
+             */
+            itemsRelinkedCount: number;
+        };
         CreateReceiptRequest: {
             location: string;
             /** Format: date */
@@ -2817,6 +3212,18 @@ export interface components {
             subcategory?: string | null;
             /** @description Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price) */
             pricingMode: string;
+            /**
+             * Format: uuid
+             * @description FK to the canonical NormalizedDescription. Null until the resolver links this item.
+             */
+            normalizedDescriptionId?: string | null;
+            /** @description Denormalized CanonicalName from the linked NormalizedDescription for display. */
+            normalizedDescriptionName?: string | null;
+            /**
+             * Format: double
+             * @description Cosine similarity captured when the resolver linked this item; null for unresolved or no-match-created items.
+             */
+            normalizedDescriptionMatchScore?: number | null;
         };
         ReceiptItemListResponse: {
             data: components["schemas"]["ReceiptItemResponse"][];
@@ -4902,6 +5309,314 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetNormalizedDescriptionSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizedDescriptionSettingsResponse"];
+                };
+            };
+        };
+    };
+    UpdateNormalizedDescriptionSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNormalizedDescriptionSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizedDescriptionSettingsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    PreviewNormalizedDescriptionThresholdImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewThresholdImpactRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThresholdImpactPreviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    TestNormalizedDescriptionMatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestMatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchTestResultResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    GetAllNormalizedDescriptions: {
+        parameters: {
+            query?: {
+                /** @description Optional status filter. When absent, returns rows of both statuses. Matching is case-insensitive. */
+                status?: "Active" | "PendingReview";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizedDescriptionListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    GetNormalizedDescriptionById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizedDescriptionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MergeNormalizedDescriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID of the canonical row to keep (all items from `discardId` move here). */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeNormalizedDescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MergeNormalizedDescriptionsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    SplitNormalizedDescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID of the NormalizedDescription the item is being split away from. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SplitNormalizedDescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizedDescriptionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpdateNormalizedDescriptionStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNormalizedDescriptionStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
             /** @description Not Found */
             404: {
@@ -7338,6 +8053,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UncategorizedItemsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    GetSpendingByNormalizedDescriptionReport: {
+        parameters: {
+            query?: {
+                /** @description Inclusive lower bound on receipt date (ISO 8601 date-time string). Defaults to all time when omitted. */
+                from?: string;
+                /** @description Inclusive upper bound on receipt date (ISO 8601 date-time string). Defaults to all time when omitted. */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpendingByNormalizedDescriptionResponse"];
                 };
             };
             /** @description Bad Request */

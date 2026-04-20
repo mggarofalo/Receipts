@@ -589,6 +589,63 @@ namespace Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Infrastructure.Entities.Core.NormalizedDescriptionEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CanonicalName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.Property<Vector>("Embedding")
+                        .HasColumnType("vector(1024)");
+
+                    b.Property<string>("EmbeddingModelVersion")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NormalizedDescriptions", (string)null);
+                });
+
+            modelBuilder.Entity("Infrastructure.Entities.Core.NormalizedDescriptionSettingsEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("AutoAcceptThreshold")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("PendingReviewThreshold")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NormalizedDescriptionSettings", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000001"),
+                            AutoAcceptThreshold = 0.81000000000000005,
+                            PendingReviewThreshold = 0.68000000000000005,
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 4, 19, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
+                        });
+                });
+
             modelBuilder.Entity("Infrastructure.Entities.Core.ReceiptEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -660,6 +717,12 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("NormalizedDescriptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double?>("NormalizedDescriptionMatchScore")
+                        .HasColumnType("double precision");
+
                     b.Property<string>("PricingMode")
                         .IsRequired()
                         .HasMaxLength(8)
@@ -692,6 +755,10 @@ namespace Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("NormalizedDescriptionId");
+
+                    b.HasIndex("NormalizedDescriptionMatchScore");
 
                     b.HasIndex("ReceiptId");
 
@@ -1257,11 +1324,18 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Infrastructure.Entities.Core.ReceiptItemEntity", b =>
                 {
+                    b.HasOne("Infrastructure.Entities.Core.NormalizedDescriptionEntity", "NormalizedDescription")
+                        .WithMany()
+                        .HasForeignKey("NormalizedDescriptionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Infrastructure.Entities.Core.ReceiptEntity", "Receipt")
                         .WithMany()
                         .HasForeignKey("ReceiptId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("NormalizedDescription");
 
                     b.Navigation("Receipt");
                 });

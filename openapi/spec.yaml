@@ -1322,6 +1322,311 @@ paths:
           description: Not Found
 
   # ──────────────────────────────────────────────
+  # Normalized Descriptions (admin-only)
+  # ──────────────────────────────────────────────
+
+  /api/normalized-descriptions/settings:
+    get:
+      operationId: GetNormalizedDescriptionSettings
+      tags: [NormalizedDescriptions]
+      summary: Get the current normalized-description threshold settings
+      description: |
+        Returns the live auto-accept and pending-review thresholds used by the
+        resolver when classifying new receipt item descriptions. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedDescriptionSettingsResponse"
+    patch:
+      operationId: UpdateNormalizedDescriptionSettings
+      tags: [NormalizedDescriptions]
+      summary: Update the normalized-description threshold settings
+      description: |
+        Updates the auto-accept and pending-review thresholds. Both values must
+        satisfy `0 <= pendingReviewThreshold < autoAcceptThreshold <= 1`. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNormalizedDescriptionSettingsRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedDescriptionSettingsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/normalized-descriptions/settings/preview:
+    post:
+      operationId: PreviewNormalizedDescriptionThresholdImpact
+      tags: [NormalizedDescriptions]
+      summary: Preview the impact of changing threshold settings
+      description: |
+        Returns current vs. proposed classification counts (auto-accepted,
+        pending-review, unresolved) and the reclassification deltas that a
+        threshold change would produce, computed against the live
+        `NormalizedDescriptionMatchScore` column on receipt items. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewThresholdImpactRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThresholdImpactPreviewResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/normalized-descriptions/test:
+    post:
+      operationId: TestNormalizedDescriptionMatch
+      tags: [NormalizedDescriptions]
+      summary: Probe the classifier for a given description
+      description: |
+        Returns the top-N ANN candidates for the supplied description along with
+        the classification branch the production resolver would take under the
+        supplied threshold overrides (or the live DB settings when absent).
+        Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestMatchRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchTestResultResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/normalized-descriptions:
+    get:
+      operationId: GetAllNormalizedDescriptions
+      tags: [NormalizedDescriptions]
+      summary: List normalized descriptions
+      description: |
+        Returns all canonical normalized-description rows, optionally filtered by
+        status. Not paginated — the row count is bounded by the number of unique
+        receipt-item descriptions ever seen. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Active, PendingReview]
+          description: Optional status filter. When absent, returns rows of both statuses. Matching is case-insensitive.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedDescriptionListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/normalized-descriptions/{id}:
+    get:
+      operationId: GetNormalizedDescriptionById
+      tags: [NormalizedDescriptions]
+      summary: Get a normalized description by ID
+      description: Returns a single canonical normalized-description row by GUID. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedDescriptionResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+
+  /api/normalized-descriptions/{id}/merge:
+    post:
+      operationId: MergeNormalizedDescriptions
+      tags: [NormalizedDescriptions]
+      summary: Merge two normalized descriptions
+      description: |
+        Re-links every ReceiptItem currently pointing at `discardId` to the
+        canonical row identified by the path `{id}` ("keep"), then deletes the
+        discarded row. Returns the count of re-linked items — zero when either
+        id was missing or the two ids were identical. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the canonical row to keep (all items from `discardId` move here).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeNormalizedDescriptionRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeNormalizedDescriptionsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/normalized-descriptions/{id}/split:
+    post:
+      operationId: SplitNormalizedDescription
+      tags: [NormalizedDescriptions]
+      summary: Detach a receipt item from its normalized description
+      description: |
+        Creates a new canonical row for the supplied ReceiptItem's raw description
+        and re-points the item at it. Used to unpick bad auto-merges. The path
+        `{id}` is the current NormalizedDescription the item is being split away
+        from; the body identifies the specific ReceiptItem to isolate. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the NormalizedDescription the item is being split away from.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SplitNormalizedDescriptionRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedDescriptionResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+
+  /api/normalized-descriptions/{id}/status:
+    patch:
+      operationId: UpdateNormalizedDescriptionStatus
+      tags: [NormalizedDescriptions]
+      summary: Update the status of a normalized description
+      description: |
+        Flips a NormalizedDescription between Active and PendingReview. Returns
+        204 when the status was changed and 404 when the row does not exist or
+        already has the requested status. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNormalizedDescriptionStatusRequest"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+
+  # ──────────────────────────────────────────────
   # Receipts
   # ──────────────────────────────────────────────
 
@@ -3766,6 +4071,46 @@ paths:
                 type: string
 
   # ──────────────────────────────────────────────
+
+  /api/reports/spending-by-normalized-description:
+    get:
+      operationId: GetSpendingByNormalizedDescriptionReport
+      tags: [Reports]
+      summary: Get spending by normalized description report
+      description: Aggregates receipt item spending grouped by normalized description canonical name. Items without a normalized description bucket into a synthetic "(Not Normalized)" group.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Inclusive lower bound on receipt date (ISO 8601 date-time string). Defaults to all time when omitted.
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Inclusive upper bound on receipt date (ISO 8601 date-time string). Defaults to all time when omitted.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendingByNormalizedDescriptionResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
   # Dashboard
   # ──────────────────────────────────────────────
 
@@ -4899,6 +5244,50 @@ components:
         pricingMode:
           type: string
 
+    SpendingByNormalizedDescriptionResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpendingByNormalizedDescriptionItem"
+        fromDate:
+          type: ["string", "null"]
+          format: date-time
+          description: Inclusive lower bound on receipt date, echoed from the request.
+        toDate:
+          type: ["string", "null"]
+          format: date-time
+          description: Inclusive upper bound on receipt date, echoed from the request.
+
+    SpendingByNormalizedDescriptionItem:
+      type: object
+      required: [canonicalName, totalAmount, currency, itemCount]
+      properties:
+        canonicalName:
+          type: string
+          description: Canonical name of the normalized description, or "(Not Normalized)" for receipt items without a normalized description.
+        totalAmount:
+          type: number
+          format: double
+          description: Sum of ReceiptItem.TotalAmount for items in this bucket.
+        currency:
+          type: string
+          description: Dominant currency across the items in this bucket.
+        itemCount:
+          type: integer
+          format: int32
+          description: Number of receipt items in this bucket.
+        firstSeen:
+          type: ["string", "null"]
+          format: date-time
+          description: Earliest receipt date among items in this bucket.
+        lastSeen:
+          type: ["string", "null"]
+          format: date-time
+          description: Latest receipt date among items in this bucket.
+
     # ── Dashboard ──────────────────────────────────
 
     DashboardSummaryResponse:
@@ -5546,6 +5935,233 @@ components:
           format: int32
           description: Number of similar items with this category
 
+    # ── Normalized Descriptions ──────────────────
+
+    NormalizedDescriptionSettingsResponse:
+      type: object
+      required: [id, autoAcceptThreshold, pendingReviewThreshold, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Fixed singleton identifier for the settings row.
+        autoAcceptThreshold:
+          type: number
+          format: double
+          description: Cosine-similarity floor at which the resolver re-uses an existing canonical entry.
+        pendingReviewThreshold:
+          type: number
+          format: double
+          description: Cosine-similarity floor at which the resolver creates a PendingReview entry instead of a new Active one.
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the settings were last changed.
+
+    UpdateNormalizedDescriptionSettingsRequest:
+      type: object
+      required: [autoAcceptThreshold, pendingReviewThreshold]
+      properties:
+        autoAcceptThreshold:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        pendingReviewThreshold:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+
+    TestMatchRequest:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+          minLength: 1
+          description: Description to classify. Must be non-empty after trim.
+        topN:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 20
+          default: 5
+          description: Number of ANN candidates to return (ranked by cosine similarity).
+        autoAcceptThresholdOverride:
+          type: ["number", "null"]
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+          description: Override the live auto-accept threshold for simulation. Falls back to DB settings when null.
+        pendingReviewThresholdOverride:
+          type: ["number", "null"]
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+          description: Override the live pending-review threshold for simulation. Falls back to DB settings when null.
+
+    MatchTestResultResponse:
+      type: object
+      required: [candidates, simulatedOutcome]
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchCandidateDto"
+        simulatedOutcome:
+          type: string
+          description: "One of: AutoAccept, PendingReview, CreateNew, EmbeddingUnavailable."
+        simulatedTargetId:
+          type: ["string", "null"]
+          format: uuid
+          description: ID of the normalized-description row the resolver would reuse (AutoAccept) or null for CreateNew / PendingReview / EmbeddingUnavailable.
+
+    MatchCandidateDto:
+      type: object
+      required: [normalizedDescriptionId, canonicalName, cosineSimilarity, status]
+      properties:
+        normalizedDescriptionId:
+          type: string
+          format: uuid
+        canonicalName:
+          type: string
+        cosineSimilarity:
+          type: number
+          format: double
+        status:
+          type: string
+          description: "Active or PendingReview."
+
+    PreviewThresholdImpactRequest:
+      type: object
+      required: [autoAcceptThreshold, pendingReviewThreshold]
+      properties:
+        autoAcceptThreshold:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        pendingReviewThreshold:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+
+    ThresholdImpactPreviewResponse:
+      type: object
+      required: [current, proposed, deltas]
+      properties:
+        current:
+          $ref: "#/components/schemas/ClassificationCountsDto"
+        proposed:
+          $ref: "#/components/schemas/ClassificationCountsDto"
+        deltas:
+          $ref: "#/components/schemas/ReclassificationDeltasDto"
+
+    ClassificationCountsDto:
+      type: object
+      required: [autoAccepted, pendingReview, unresolved]
+      properties:
+        autoAccepted:
+          type: integer
+          format: int32
+        pendingReview:
+          type: integer
+          format: int32
+        unresolved:
+          type: integer
+          format: int32
+
+    ReclassificationDeltasDto:
+      type: object
+      required: [autoToPending, pendingToAuto, unresolvedToAuto, unresolvedToPending]
+      properties:
+        autoToPending:
+          type: integer
+          format: int32
+          description: Items currently auto-accepted that would fall back to pending-review under the proposal.
+        pendingToAuto:
+          type: integer
+          format: int32
+          description: Items currently pending-review that would be auto-accepted under the proposal.
+        unresolvedToAuto:
+          type: integer
+          format: int32
+          description: Items currently unresolved (below pending-review threshold) that would be auto-accepted under the proposal.
+        unresolvedToPending:
+          type: integer
+          format: int32
+          description: Items currently unresolved (below pending-review threshold) that would move up to pending-review under the proposal.
+
+    NormalizedDescriptionStatus:
+      type: string
+      enum: [active, pendingReview]
+      description: Active rows are confidently-classified and re-used as-is by the resolver; pendingReview rows are flagged for admin review before being promoted.
+
+    NormalizedDescriptionResponse:
+      type: object
+      required: [id, canonicalName, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        canonicalName:
+          type: string
+          description: The canonical name shared by every receipt item linked to this row.
+        status:
+          $ref: "#/components/schemas/NormalizedDescriptionStatus"
+        createdAt:
+          type: string
+          format: date-time
+
+    NormalizedDescriptionListResponse:
+      type: object
+      required: [items, totalCount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/NormalizedDescriptionResponse"
+        totalCount:
+          type: integer
+          format: int32
+          description: Total number of rows returned. Matches the length of `items` since the endpoint is not paginated.
+
+    MergeNormalizedDescriptionRequest:
+      type: object
+      required: [discardId]
+      properties:
+        discardId:
+          type: string
+          format: uuid
+          description: ID of the NormalizedDescription to merge away. All ReceiptItems pointing at this row will be re-linked to the kept row.
+
+    SplitNormalizedDescriptionRequest:
+      type: object
+      required: [receiptItemId]
+      properties:
+        receiptItemId:
+          type: string
+          format: uuid
+          description: ID of the ReceiptItem to detach from its current NormalizedDescription.
+
+    UpdateNormalizedDescriptionStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/NormalizedDescriptionStatus"
+
+    MergeNormalizedDescriptionsResponse:
+      type: object
+      required: [itemsRelinkedCount]
+      properties:
+        itemsRelinkedCount:
+          type: integer
+          format: int32
+          description: Number of ReceiptItems that were re-linked from the discarded row to the kept row. Zero when either id was missing or the two ids were identical.
+
     # ── Receipt ──────────────────────────────────
 
     CreateReceiptRequest:
@@ -5897,6 +6513,17 @@ components:
         pricingMode:
           type: string
           description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
+        normalizedDescriptionId:
+          type: ["string", "null"]
+          format: uuid
+          description: "FK to the canonical NormalizedDescription. Null until the resolver links this item."
+        normalizedDescriptionName:
+          type: ["string", "null"]
+          description: "Denormalized CanonicalName from the linked NormalizedDescription for display."
+        normalizedDescriptionMatchScore:
+          type: ["number", "null"]
+          format: double
+          description: "Cosine similarity captured when the resolver linked this item; null for unresolved or no-match-created items."
 
     ReceiptItemListResponse:
       type: object

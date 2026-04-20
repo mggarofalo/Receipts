@@ -66,4 +66,9 @@ public interface IReportService
 		int page,
 		int pageSize,
 		CancellationToken cancellationToken);
+
+	Task<SpendingByNormalizedDescriptionResult> GetSpendingByNormalizedDescriptionAsync(
+		DateTimeOffset? from,
+		DateTimeOffset? to,
+		CancellationToken cancellationToken);
 }

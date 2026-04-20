@@ -1,6 +1,24 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/test-utils";
 import Reports, { REPORTS, DEFAULT_REPORT } from "./Reports";
+
+// jsdom polyfills required by Radix UI Select (used for the report picker).
+beforeAll(() => {
+  if (
+    !(Element.prototype as unknown as { hasPointerCapture?: unknown })
+      .hasPointerCapture
+  ) {
+    Element.prototype.hasPointerCapture = () => false;
+    Element.prototype.releasePointerCapture = () => {};
+    Element.prototype.setPointerCapture = () => {};
+  }
+  if (
+    !(Element.prototype as unknown as { scrollIntoView?: unknown }).scrollIntoView
+  ) {
+    Element.prototype.scrollIntoView = () => {};
+  }
+});
 
 vi.mock("@/hooks/usePageTitle", () => ({
   usePageTitle: vi.fn(),
@@ -46,7 +64,40 @@ vi.mock("@/components/reports/UncategorizedItems", () => ({
   ),
 }));
 
+vi.mock("@/components/reports/SpendingByNormalizedDescription", () => ({
+  default: () => (
+    <div data-testid="report-spending-by-normalized-description">
+      Spending by Normalized Description
+    </div>
+  ),
+}));
+
+vi.mock("@/components/reports/NormalizedDescriptions", () => ({
+  default: () => (
+    <div data-testid="report-normalized-descriptions">
+      Normalized Descriptions
+    </div>
+  ),
+}));
+
+vi.mock("@/hooks/usePermission", () => ({
+  usePermission: vi.fn(() => ({
+    roles: ["User"],
+    hasRole: (role: string) => role === "User",
+    isAdmin: () => false,
+  })),
+}));
+
 describe("Reports", () => {
+  beforeEach(async () => {
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["User"],
+      hasRole: (role: string) => role === "User",
+      isAdmin: () => false,
+    });
+  });
+
   it("renders the page heading", () => {
     renderWithProviders(<Reports />, { route: "/reports" });
     expect(
@@ -104,10 +155,43 @@ describe("Reports", () => {
   });
 
   it("exports REPORTS config with correct number of reports", () => {
-    expect(REPORTS).toHaveLength(7);
+    expect(REPORTS).toHaveLength(9);
   });
 
   it("exports DEFAULT_REPORT as out-of-balance", () => {
     expect(DEFAULT_REPORT).toBe("out-of-balance");
+  });
+
+  it("hides admin-only reports for non-admin users", async () => {
+    renderWithProviders(<Reports />, { route: "/reports" });
+    const trigger = screen.getByRole("combobox");
+    await userEvent.click(trigger);
+    expect(
+      screen.queryByRole("option", { name: /normalized descriptions/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows admin-only reports for admin users", async () => {
+    const { usePermission } = await import("@/hooks/usePermission");
+    vi.mocked(usePermission).mockReturnValue({
+      roles: ["Admin"],
+      hasRole: (role: string) => role === "Admin",
+      isAdmin: () => true,
+    });
+    renderWithProviders(<Reports />, { route: "/reports" });
+    const trigger = screen.getByRole("combobox");
+    await userEvent.click(trigger);
+    expect(
+      screen.getByRole("option", { name: /normalized descriptions/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to default when admin-only slug is used by non-admin", async () => {
+    renderWithProviders(<Reports />, {
+      route: "/reports?report=normalized-descriptions",
+    });
+    expect(
+      await screen.findByTestId("report-out-of-balance"),
+    ).toBeInTheDocument();
   });
 });
