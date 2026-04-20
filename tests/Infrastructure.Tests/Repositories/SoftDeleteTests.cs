@@ -123,6 +123,7 @@ public class SoftDeleteTests
 			await context.Accounts.AddAsync(account);
 			CardEntity card = CardEntityGenerator.Generate();
 			card.AccountId = account.Id;
+			card.Id = account.Id;
 			await context.Cards.AddAsync(card);
 			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 			await context.Receipts.AddAsync(receipt);
@@ -345,6 +346,7 @@ public class SoftDeleteTests
 			await context.Accounts.AddAsync(account);
 			CardEntity card = CardEntityGenerator.Generate();
 			card.AccountId = account.Id;
+			card.Id = account.Id;
 			await context.Cards.AddAsync(card);
 			await context.Receipts.AddAsync(receipt);
 			TransactionEntity transaction = TransactionEntityGenerator.Generate(receiptId: receipt.Id, accountId: account.Id);
@@ -546,6 +548,7 @@ public class SoftDeleteTests
 			await context.Accounts.AddAsync(account);
 			CardEntity card = CardEntityGenerator.Generate();
 			card.AccountId = account.Id;
+			card.Id = account.Id;
 			await context.Cards.AddAsync(card);
 			await context.Receipts.AddAsync(receipt);
 			await context.Transactions.AddAsync(transaction);

@@ -5948,7 +5948,7 @@ components:
 
     CreateTransactionRequest:
       type: object
-      required: [amount, date, accountId]
+      required: [amount, date, accountId, cardId]
       properties:
         amount:
           type: number
@@ -5962,11 +5962,11 @@ components:
         cardId:
           type: string
           format: uuid
-          description: "RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes."
+          description: "Originating card. The card's parent account is derivable via Card.AccountId."
 
     UpdateTransactionRequest:
       type: object
-      required: [id, amount, date, accountId]
+      required: [id, amount, date, accountId, cardId]
       properties:
         id:
           type: string
@@ -5983,11 +5983,11 @@ components:
         cardId:
           type: string
           format: uuid
-          description: "RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes."
+          description: "Originating card. The card's parent account is derivable via Card.AccountId."
 
     TransactionResponse:
       type: object
-      required: [id, receiptId, accountId, amount, date]
+      required: [id, receiptId, accountId, cardId, amount, date]
       properties:
         id:
           type: string
@@ -6001,7 +6001,7 @@ components:
         cardId:
           type: string
           format: uuid
-          description: "RECEIPTS-553: originating Card. Nullable for rows that existed before the backfill."
+          description: "Originating card. The card's parent account is derivable via Card.AccountId."
         amount:
           type: number
           format: double

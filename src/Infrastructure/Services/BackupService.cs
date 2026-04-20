@@ -346,7 +346,7 @@ public class BackupService(
 			cmd.CommandText = sql;
 			cmd.Parameters.AddWithValue("$id", txn.Id.ToString());
 			cmd.Parameters.AddWithValue("$receiptId", txn.ReceiptId.ToString());
-			cmd.Parameters.AddWithValue("$cardId", txn.AccountId.ToString());
+			cmd.Parameters.AddWithValue("$cardId", txn.CardId.ToString());
 			cmd.Parameters.AddWithValue("$amt", txn.Amount.ToString("G"));
 			cmd.Parameters.AddWithValue("$amtCurrency", txn.AmountCurrency.ToString());
 			cmd.Parameters.AddWithValue("$date", txn.Date.ToString("O"));

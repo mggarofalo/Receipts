@@ -25,27 +25,14 @@ public class CardRepository(IDbContextFactory<ApplicationDbContext> contextFacto
 	public async Task<CardEntity?> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		// Prefer the direct Transaction→Card link restored in RECEIPTS-553. Fall back to
-		// Transaction.AccountId → Card.AccountId for rows not yet backfilled (should be
-		// none in prod post-deploy, but defensive for pre-migration test fixtures).
-		var row = await context.Transactions
+		Guid? cardId = await context.Transactions
 			.Where(t => t.Id == transactionId)
-			.Select(t => new { t.CardId, t.AccountId })
+			.Select(t => (Guid?)t.CardId)
 			.FirstOrDefaultAsync(cancellationToken);
 
-		if (row is null)
-		{
-			return null;
-		}
-
-		if (row.CardId is { } cardId)
-		{
-			return await context.Cards.FindAsync([cardId], cancellationToken);
-		}
-
-		return await context.Cards
-			.Where(c => c.AccountId == row.AccountId)
-			.FirstOrDefaultAsync(cancellationToken);
+		return cardId.HasValue
+			? await context.Cards.FindAsync([cardId.Value], cancellationToken)
+			: null;
 	}
 
 	public async Task<List<CardEntity>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
@@ -139,10 +126,8 @@ public class CardRepository(IDbContextFactory<ApplicationDbContext> contextFacto
 	public async Task<int> GetTransactionCountByCardIdAsync(Guid cardId, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
-		// Prefer CardId (restored in RECEIPTS-553). Fall back to AccountId for rows
-		// not yet backfilled — covers pre-migration tests and any residual NULL CardIds.
 		return await context.Transactions
 			.IgnoreQueryFilters()
-			.CountAsync(t => t.CardId == cardId || (t.CardId == null && t.AccountId == cardId), cancellationToken);
+			.CountAsync(t => t.CardId == cardId, cancellationToken);
 	}
 }

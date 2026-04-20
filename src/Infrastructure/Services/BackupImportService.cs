@@ -621,9 +621,18 @@ public class BackupImportService(
 			return (0, 0);
 		}
 
-		// v2+ uses `card_id`; v1 used `account_id`. The TransactionEntity.AccountId column
-		// name is preserved on the receipts side — only the imported backup's column differs.
+		// v2+ exports carry `card_id`; v1 only had `account_id` (which was effectively the
+		// card id — Account.Id == Card.Id in the pre-aggregate schema). In both cases the
+		// column value is the originating Card's Id.
 		string cardColumn = exportVersion < 2 ? "account_id" : "card_id";
+
+		// Resolve Transaction.AccountId by joining the Card's parent Account at import time.
+		// The backup transactions table does not carry a separate account_id column (v3
+		// introduced accounts as a distinct table but did not denormalize onto transactions).
+		// Cards have already been upserted above, so Card.AccountId is populated.
+		Dictionary<Guid, Guid?> cardAccountIdByCardId = await context.Cards
+			.AsNoTracking()
+			.ToDictionaryAsync(c => c.Id, c => c.AccountId, cancellationToken);
 
 		int created = 0, updated = 0;
 		await using SqliteCommand cmd = sqlite.CreateCommand();
@@ -634,10 +643,17 @@ public class BackupImportService(
 		{
 			Guid id = Guid.Parse(reader.GetString(0));
 			Guid receiptId = Guid.Parse(reader.GetString(1));
-			Guid accountId = Guid.Parse(reader.GetString(2));
+			Guid cardId = Guid.Parse(reader.GetString(2));
 			decimal amount = reader.GetDecimal(3);
 			Currency amountCurrency = Enum.Parse<Currency>(reader.GetString(4));
 			DateOnly date = DateOnly.Parse(reader.GetString(5));
+
+			// Fall back to cardId when the Card has no parent Account (legacy / unmigrated
+			// rows). Account aggregate introduction seeded Account.Id = Card.Id, so this
+			// preserves the historical association even in degraded states.
+			Guid accountId = cardAccountIdByCardId.TryGetValue(cardId, out Guid? parent) && parent.HasValue
+				? parent.Value
+				: cardId;
 
 			TransactionEntity? existing = await context.Transactions
 				.IgnoreQueryFilters()
@@ -646,6 +662,7 @@ public class BackupImportService(
 			{
 				existing.ReceiptId = receiptId;
 				existing.AccountId = accountId;
+				existing.CardId = cardId;
 				existing.Amount = amount;
 				existing.AmountCurrency = amountCurrency;
 				existing.Date = date;
@@ -659,6 +676,7 @@ public class BackupImportService(
 					Id = id,
 					ReceiptId = receiptId,
 					AccountId = accountId,
+					CardId = cardId,
 					Amount = amount,
 					AmountCurrency = amountCurrency,
 					Date = date,

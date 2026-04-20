@@ -8,7 +8,7 @@ public class TransactionEntity : ISoftDeletable, IOwnedBy<ReceiptEntity>
 	public Guid Id { get; set; }
 	public Guid ReceiptId { get; set; }
 	public Guid AccountId { get; set; }
-	public Guid? CardId { get; set; }
+	public Guid CardId { get; set; }
 	public decimal Amount { get; set; }
 	public Currency AmountCurrency { get; set; }
 	public DateOnly Date { get; set; }

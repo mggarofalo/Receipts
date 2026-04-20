@@ -64,7 +64,7 @@ public class GetReceiptYnabSplitComparisonQueryHandlerTests
 		_adjustmentServiceMock.Setup(s => s.GetByReceiptIdAsync(_receiptId, 0, 10000, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Domain.Core.Adjustment>([], 0, 0, 10000));
 
-		Domain.Core.Transaction tx = new(_transactionId, new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+		Domain.Core.Transaction tx = new(_transactionId, Guid.NewGuid(), new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 		tx.AccountId = _accountId;
 		tx.ReceiptId = _receiptId;
 
