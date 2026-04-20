@@ -62,11 +62,13 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 	public async Task TransactionEntity_RoundTrips_WithForeignKeys()
 	{
 		// Arrange — FK to Receipt and Account
+		// Transaction.AccountId references the Accounts table (post-RECEIPTS-543),
+		// so seed an AccountEntity — not just a Card — before inserting the Transaction.
 		await using ApplicationDbContext context = fixture.CreateDbContext();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-		CardEntity account = CardEntityGenerator.Generate();
+		AccountEntity account = AccountEntityGenerator.Generate();
 		context.Receipts.Add(receipt);
-		context.Cards.Add(account);
+		context.Accounts.Add(account);
 		await context.SaveChangesAsync();
 
 		TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);

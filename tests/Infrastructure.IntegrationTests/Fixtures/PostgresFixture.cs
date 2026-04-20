@@ -21,9 +21,17 @@ public class PostgresFixture : IAsyncLifetime
 		dataSourceBuilder.UseVector();
 		_dataSource = dataSourceBuilder.Build();
 
-		// Run migrations to create the schema
-		await using ApplicationDbContext context = CreateDbContext();
-		await context.Database.MigrateAsync();
+		// Run migrations to create the schema. The first connection caches
+		// npgsql's type info before the pgvector extension exists, so
+		// UseVector()'s vector mapping can't resolve. Reload types after
+		// migrations so the cache picks up the newly-created extension.
+		await using (ApplicationDbContext context = CreateDbContext())
+		{
+			await context.Database.MigrateAsync();
+		}
+
+		await using NpgsqlConnection reloadConnection = await _dataSource.OpenConnectionAsync();
+		await reloadConnection.ReloadTypesAsync();
 	}
 
 	public ApplicationDbContext CreateDbContext()
