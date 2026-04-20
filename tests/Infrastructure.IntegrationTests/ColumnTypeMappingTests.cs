@@ -17,23 +17,30 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 	[Fact]
 	public async Task CardEntity_RoundTrips_AllColumnTypes()
 	{
-		// Arrange — uuid, text, boolean
+		// Arrange — uuid, text, boolean, nullable-uuid FK. AccountId is nullable,
+		// so the row inserts without a parent Account, but that leaves the FK column
+		// untested. Seed a parent AccountEntity and populate AccountId so every
+		// column on CardEntity round-trips.
 		await using ApplicationDbContext context = fixture.CreateDbContext();
-		CardEntity account = CardEntityGenerator.Generate();
+		AccountEntity parent = AccountEntityGenerator.Generate();
+		CardEntity card = CardEntityGenerator.Generate();
+		card.AccountId = parent.Id;
 
 		// Act
-		context.Cards.Add(account);
+		context.Accounts.Add(parent);
+		context.Cards.Add(card);
 		await context.SaveChangesAsync();
 
 		// Assert
 		await using ApplicationDbContext readContext = fixture.CreateDbContext();
-		CardEntity? loaded = await readContext.Cards.FirstOrDefaultAsync(a => a.Id == account.Id);
+		CardEntity? loaded = await readContext.Cards.FirstOrDefaultAsync(a => a.Id == card.Id);
 
 		loaded.Should().NotBeNull();
-		loaded!.Id.Should().Be(account.Id);
-		loaded.CardCode.Should().Be(account.CardCode);
-		loaded.Name.Should().Be(account.Name);
-		loaded.IsActive.Should().Be(account.IsActive);
+		loaded!.Id.Should().Be(card.Id);
+		loaded.CardCode.Should().Be(card.CardCode);
+		loaded.Name.Should().Be(card.Name);
+		loaded.IsActive.Should().Be(card.IsActive);
+		loaded.AccountId.Should().Be(parent.Id);
 	}
 
 	[Fact]
