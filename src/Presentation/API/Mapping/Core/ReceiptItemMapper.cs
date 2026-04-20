@@ -12,12 +12,6 @@ public partial class ReceiptItemMapper
 	[MapProperty(nameof(ReceiptItem.UnitPrice.Amount), nameof(ReceiptItemResponse.UnitPrice))]
 	[MapperIgnoreSource(nameof(ReceiptItem.TotalAmount))]
 	[MapperIgnoreSource(nameof(ReceiptItem.PricingMode))]
-	// NormalizedDescription FK, name, and match score are deliberately not exposed on the API
-	// response here — RECEIPTS-583 will add them. Ignore them so Mapperly does not flag the
-	// unmapped members.
-	[MapperIgnoreSource(nameof(ReceiptItem.NormalizedDescriptionId))]
-	[MapperIgnoreSource(nameof(ReceiptItem.NormalizedDescriptionName))]
-	[MapperIgnoreSource(nameof(ReceiptItem.NormalizedDescriptionMatchScore))]
 	[MapperIgnoreTarget(nameof(ReceiptItemResponse.AdditionalProperties))]
 	[MapperIgnoreTarget(nameof(ReceiptItemResponse.PricingMode))]
 	private partial ReceiptItemResponse ToResponsePartial(ReceiptItem source);
