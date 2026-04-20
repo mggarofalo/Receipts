@@ -491,6 +491,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/normalized-descriptions/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the current normalized-description threshold settings
+         * @description Returns the live auto-accept and pending-review thresholds used by the
+         *     resolver when classifying new receipt item descriptions. Admin-only.
+         */
+        get: operations["GetNormalizedDescriptionSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update the normalized-description threshold settings
+         * @description Updates the auto-accept and pending-review thresholds. Both values must
+         *     satisfy `0 <= pendingReviewThreshold < autoAcceptThreshold <= 1`. Admin-only.
+         */
+        patch: operations["UpdateNormalizedDescriptionSettings"];
+        trace?: never;
+    };
+    "/api/normalized-descriptions/settings/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview the impact of changing threshold settings
+         * @description Returns current vs. proposed classification counts (auto-accepted,
+         *     pending-review, unresolved) and the reclassification deltas that a
+         *     threshold change would produce, computed against the live
+         *     `NormalizedDescriptionMatchScore` column on receipt items. Admin-only.
+         */
+        post: operations["PreviewNormalizedDescriptionThresholdImpact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/normalized-descriptions/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Probe the classifier for a given description
+         * @description Returns the top-N ANN candidates for the supplied description along with
+         *     the classification branch the production resolver would take under the
+         *     supplied threshold overrides (or the live DB settings when absent).
+         *     Admin-only.
+         */
+        post: operations["TestNormalizedDescriptionMatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/receipts/{id}": {
         parameters: {
             query?: never;
@@ -2664,6 +2736,114 @@ export interface components {
              * @description Number of similar items with this category
              */
             occurrenceCount: number;
+        };
+        NormalizedDescriptionSettingsResponse: {
+            /**
+             * Format: uuid
+             * @description Fixed singleton identifier for the settings row.
+             */
+            id: string;
+            /**
+             * Format: double
+             * @description Cosine-similarity floor at which the resolver re-uses an existing canonical entry.
+             */
+            autoAcceptThreshold: number;
+            /**
+             * Format: double
+             * @description Cosine-similarity floor at which the resolver creates a PendingReview entry instead of a new Active one.
+             */
+            pendingReviewThreshold: number;
+            /**
+             * Format: date-time
+             * @description When the settings were last changed.
+             */
+            updatedAt: string;
+        };
+        UpdateNormalizedDescriptionSettingsRequest: {
+            /** Format: double */
+            autoAcceptThreshold: number;
+            /** Format: double */
+            pendingReviewThreshold: number;
+        };
+        TestMatchRequest: {
+            /** @description Description to classify. Must be non-empty after trim. */
+            description: string;
+            /**
+             * Format: int32
+             * @description Number of ANN candidates to return (ranked by cosine similarity).
+             * @default 5
+             */
+            topN: number;
+            /**
+             * Format: double
+             * @description Override the live auto-accept threshold for simulation. Falls back to DB settings when null.
+             */
+            autoAcceptThresholdOverride?: number | null;
+            /**
+             * Format: double
+             * @description Override the live pending-review threshold for simulation. Falls back to DB settings when null.
+             */
+            pendingReviewThresholdOverride?: number | null;
+        };
+        MatchTestResultResponse: {
+            candidates: components["schemas"]["MatchCandidateDto"][];
+            /** @description One of: AutoAccept, PendingReview, CreateNew, EmbeddingUnavailable. */
+            simulatedOutcome: string;
+            /**
+             * Format: uuid
+             * @description ID of the normalized-description row the resolver would reuse (AutoAccept) or null for CreateNew / PendingReview / EmbeddingUnavailable.
+             */
+            simulatedTargetId?: string | null;
+        };
+        MatchCandidateDto: {
+            /** Format: uuid */
+            normalizedDescriptionId: string;
+            canonicalName: string;
+            /** Format: double */
+            cosineSimilarity: number;
+            /** @description Active or PendingReview. */
+            status: string;
+        };
+        PreviewThresholdImpactRequest: {
+            /** Format: double */
+            autoAcceptThreshold: number;
+            /** Format: double */
+            pendingReviewThreshold: number;
+        };
+        ThresholdImpactPreviewResponse: {
+            current: components["schemas"]["ClassificationCountsDto"];
+            proposed: components["schemas"]["ClassificationCountsDto"];
+            deltas: components["schemas"]["ReclassificationDeltasDto"];
+        };
+        ClassificationCountsDto: {
+            /** Format: int32 */
+            autoAccepted: number;
+            /** Format: int32 */
+            pendingReview: number;
+            /** Format: int32 */
+            unresolved: number;
+        };
+        ReclassificationDeltasDto: {
+            /**
+             * Format: int32
+             * @description Items currently auto-accepted that would fall back to pending-review under the proposal.
+             */
+            autoToPending: number;
+            /**
+             * Format: int32
+             * @description Items currently pending-review that would be auto-accepted under the proposal.
+             */
+            pendingToAuto: number;
+            /**
+             * Format: int32
+             * @description Items currently unresolved (below pending-review threshold) that would be auto-accepted under the proposal.
+             */
+            unresolvedToAuto: number;
+            /**
+             * Format: int32
+             * @description Items currently unresolved (below pending-review threshold) that would move up to pending-review under the proposal.
+             */
+            unresolvedToPending: number;
         };
         CreateReceiptRequest: {
             location: string;
@@ -4905,6 +5085,125 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    GetNormalizedDescriptionSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizedDescriptionSettingsResponse"];
+                };
+            };
+        };
+    };
+    UpdateNormalizedDescriptionSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNormalizedDescriptionSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizedDescriptionSettingsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    PreviewNormalizedDescriptionThresholdImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewThresholdImpactRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThresholdImpactPreviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    TestNormalizedDescriptionMatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestMatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchTestResultResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
         };
     };

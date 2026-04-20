@@ -243,7 +243,8 @@ public static class InfrastructureService
 			.AddSingleton<TransactionMapper>()
 			.AddSingleton<AdjustmentMapper>()
 			.AddSingleton<ItemTemplateMapper>()
-			.AddSingleton<NormalizedDescriptionMapper>();
+			.AddSingleton<NormalizedDescriptionMapper>()
+			.AddSingleton<NormalizedDescriptionSettingsMapper>();
 
 		return services;
 	}
