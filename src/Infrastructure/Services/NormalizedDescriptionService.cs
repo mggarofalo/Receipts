@@ -121,10 +121,11 @@ public class NormalizedDescriptionService(
 			return 0;
 		}
 
-		// Re-link every ReceiptItem currently pointing at discard to point at keep.
+		// Re-link every live ReceiptItem currently pointing at discard to point at keep.
+		// Soft-deleted items are deliberately excluded via the default query filter — re-linking
+		// logically-deleted rows would inflate the returned count and muddy the audit trail.
 		List<ReceiptItemEntity> items = await context.ReceiptItems
 			.IgnoreAutoIncludes()
-			.IgnoreQueryFilters()
 			.Where(r => r.NormalizedDescriptionId == discardId)
 			.ToListAsync(cancellationToken);
 
@@ -151,12 +152,20 @@ public class NormalizedDescriptionService(
 			throw new KeyNotFoundException(ReceiptItemNotFound);
 		}
 
+		// Match the normalization contract from GetOrCreateAsync so that callers can't create
+		// whitespace-divergent duplicates via Split.
+		string canonicalName = (item.Description ?? string.Empty).Trim();
+		if (string.IsNullOrEmpty(canonicalName))
+		{
+			throw new ArgumentException(NormalizedDescription.CanonicalNameCannotBeEmpty, nameof(receiptItemId));
+		}
+
 		// Generate an embedding for the split item's raw description if possible, so the
 		// new entry is consistent with entries produced by GetOrCreateAsync.
 		Vector? embeddingVector = null;
 		if (embeddingService.IsConfigured)
 		{
-			float[] data = await embeddingService.GenerateEmbeddingAsync(item.Description, cancellationToken);
+			float[] data = await embeddingService.GenerateEmbeddingAsync(canonicalName, cancellationToken);
 			if (data.Length > 0)
 			{
 				embeddingVector = new Vector(data);
@@ -165,7 +174,7 @@ public class NormalizedDescriptionService(
 
 		NormalizedDescriptionEntity created = await InsertAsync(
 			context,
-			item.Description,
+			canonicalName,
 			NormalizedDescriptionStatus.Active,
 			embeddingVector,
 			cancellationToken);
