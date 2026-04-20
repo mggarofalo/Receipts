@@ -56,6 +56,7 @@ public class CardRepositoryTests
 		await context.Accounts.AddAsync(parentAccount);
 		CardEntity accountEntity = CardEntityGenerator.Generate();
 		accountEntity.AccountId = parentAccount.Id;
+		accountEntity.Id = parentAccount.Id;
 		await context.Cards.AddAsync(accountEntity);
 		TransactionEntity transactionEntity = TransactionEntityGenerator.Generate(accountId: parentAccount.Id);
 		await context.Transactions.AddAsync(transactionEntity);

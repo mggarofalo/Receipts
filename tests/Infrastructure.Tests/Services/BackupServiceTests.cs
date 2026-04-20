@@ -175,6 +175,7 @@ public class BackupServiceTests : IDisposable
 				Id = Guid.NewGuid(),
 				ReceiptId = receiptId,
 				AccountId = accountId,
+				CardId = accountId,
 				Amount = 25.50m,
 				AmountCurrency = Currency.USD,
 				Date = new DateOnly(2024, 1, 15),

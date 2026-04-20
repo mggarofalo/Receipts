@@ -48,7 +48,7 @@ public class CreateTransactionCommandHandlerTests
 		Guid accountId = Guid.NewGuid();
 		List<Domain.Core.Transaction> input =
 		[
-			new(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId }
+			new(Guid.NewGuid(), Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId }
 		];
 		SetupReceiptData(receiptId);
 
@@ -75,8 +75,8 @@ public class CreateTransactionCommandHandlerTests
 		Guid accountId1 = Guid.NewGuid();
 		Guid accountId2 = Guid.NewGuid();
 
-		Domain.Core.Transaction tx1 = new(Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 };
-		Domain.Core.Transaction tx2 = new(Guid.NewGuid(), new Money(5), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 };
+		Domain.Core.Transaction tx1 = new(Guid.NewGuid(), Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 };
+		Domain.Core.Transaction tx2 = new(Guid.NewGuid(), Guid.NewGuid(), new Money(5), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 };
 		List<Domain.Core.Transaction> input = [tx1, tx2];
 
 		SetupReceiptData(receiptId);
@@ -109,8 +109,8 @@ public class CreateTransactionCommandHandlerTests
 		// Total = $100 + $50 = $150 ≠ ExpectedTotal of $15
 		List<Domain.Core.Transaction> input =
 		[
-			new(Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 },
-			new(Guid.NewGuid(), new Money(50), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 }
+			new(Guid.NewGuid(), Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 },
+			new(Guid.NewGuid(), Guid.NewGuid(), new Money(50), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 }
 		];
 		SetupReceiptData(receiptId);
 
@@ -142,7 +142,7 @@ public class CreateTransactionCommandHandlerTests
 
 		List<Domain.Core.Transaction> input =
 		[
-			new(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }
+			new(Guid.NewGuid(), Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }
 		];
 
 		CreateTransactionCommandHandler handler = CreateHandler();

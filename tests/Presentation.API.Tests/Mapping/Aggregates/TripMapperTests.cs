@@ -47,6 +47,7 @@ public class TripMapperTests
 
 		Transaction transaction = new(
 			transactionId,
+			Guid.NewGuid(),
 			new Money(53.88m, Currency.USD),
 			new DateOnly(2025, 5, 20)
 		);
@@ -128,6 +129,7 @@ public class TripMapperTests
 
 		Transaction txn1 = new(
 			txn1Id,
+			Guid.NewGuid(),
 			new Money(30.00m, Currency.USD),
 			new DateOnly(2025, 6, 10)
 		);
@@ -136,6 +138,7 @@ public class TripMapperTests
 
 		Transaction txn2 = new(
 			txn2Id,
+			Guid.NewGuid(),
 			new Money(15.45m, Currency.USD),
 			new DateOnly(2025, 6, 10)
 		);

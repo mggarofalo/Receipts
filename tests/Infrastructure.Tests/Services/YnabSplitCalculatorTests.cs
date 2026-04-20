@@ -24,7 +24,7 @@ public class YnabSplitCalculatorTests
 		=> new(Guid.NewGuid(), type, new Money(amount));
 
 	private static Transaction MakeTransaction(decimal amount)
-		=> new(Guid.NewGuid(), new Money(amount), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+		=> new(Guid.NewGuid(), Guid.NewGuid(), new Money(amount), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 
 	private static Dictionary<string, string> MakeMappings(params string[] categories)
 	{

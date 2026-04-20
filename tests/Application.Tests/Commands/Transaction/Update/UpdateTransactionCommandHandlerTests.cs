@@ -31,7 +31,7 @@ public class UpdateTransactionCommandHandlerTests
 		// ExpectedTotal = Subtotal($5) + TaxAmount($10) + Adjustments($0) = $15
 
 		// The handler calls GetByIdAsync to look up the receiptId from the first transaction
-		Domain.Core.Transaction existingForLookup = new(firstTxId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { ReceiptId = receiptId };
+		Domain.Core.Transaction existingForLookup = new(firstTxId, Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { ReceiptId = receiptId };
 		_transactionService.Setup(s => s.GetByIdAsync(firstTxId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingForLookup);
 
@@ -52,10 +52,10 @@ public class UpdateTransactionCommandHandlerTests
 		Guid receiptId = Guid.NewGuid();
 		Guid accountId = Guid.NewGuid();
 		Guid txId = Guid.NewGuid();
-		Domain.Core.Transaction existing = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now));
+		Domain.Core.Transaction existing = new(txId, Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now));
 		SetupReceiptData(receiptId, txId, [existing]);
 
-		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId }];
+		List<Domain.Core.Transaction> updated = [new(txId, Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId }];
 
 		_transactionService.Setup(s => s.UpdateAsync(
 				It.IsAny<List<Domain.Core.Transaction>>(), receiptId, It.IsAny<CancellationToken>()))
@@ -81,14 +81,14 @@ public class UpdateTransactionCommandHandlerTests
 		Guid txId1 = Guid.NewGuid();
 		Guid txId2 = Guid.NewGuid();
 
-		Domain.Core.Transaction existing1 = new(txId1, new Money(10), DateOnly.FromDateTime(DateTime.Now));
-		Domain.Core.Transaction existing2 = new(txId2, new Money(5), DateOnly.FromDateTime(DateTime.Now));
+		Domain.Core.Transaction existing1 = new(txId1, Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now));
+		Domain.Core.Transaction existing2 = new(txId2, Guid.NewGuid(), new Money(5), DateOnly.FromDateTime(DateTime.Now));
 		SetupReceiptData(receiptId, txId1, [existing1, existing2]);
 
 		List<Domain.Core.Transaction> updated =
 		[
-			new(txId1, new Money(10), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 },
-			new(txId2, new Money(5), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 }
+			new(txId1, Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 },
+			new(txId2, Guid.NewGuid(), new Money(5), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 }
 		];
 
 		_transactionService.Setup(s => s.UpdateAsync(
@@ -117,15 +117,15 @@ public class UpdateTransactionCommandHandlerTests
 		Guid txId1 = Guid.NewGuid();
 		Guid txId2 = Guid.NewGuid();
 
-		Domain.Core.Transaction existing1 = new(txId1, new Money(10), DateOnly.FromDateTime(DateTime.Now));
-		Domain.Core.Transaction existing2 = new(txId2, new Money(5), DateOnly.FromDateTime(DateTime.Now));
+		Domain.Core.Transaction existing1 = new(txId1, Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now));
+		Domain.Core.Transaction existing2 = new(txId2, Guid.NewGuid(), new Money(5), DateOnly.FromDateTime(DateTime.Now));
 		SetupReceiptData(receiptId, txId1, [existing1, existing2]);
 
 		// Update to unbalanced totals: $100 + $50 = $150 ≠ $15
 		List<Domain.Core.Transaction> updated =
 		[
-			new(txId1, new Money(100), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 },
-			new(txId2, new Money(50), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 }
+			new(txId1, Guid.NewGuid(), new Money(100), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId1 },
+			new(txId2, Guid.NewGuid(), new Money(50), DateOnly.FromDateTime(DateTime.Now)) { AccountId = accountId2 }
 		];
 
 		UpdateTransactionCommandHandler handler = CreateHandler();
@@ -147,7 +147,7 @@ public class UpdateTransactionCommandHandlerTests
 		Guid receiptId = Guid.NewGuid();
 		Guid txId = Guid.NewGuid();
 
-		Domain.Core.Transaction existingForLookup = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { ReceiptId = receiptId };
+		Domain.Core.Transaction existingForLookup = new(txId, Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { ReceiptId = receiptId };
 		_transactionService.Setup(s => s.GetByIdAsync(txId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(existingForLookup);
 
@@ -160,7 +160,7 @@ public class UpdateTransactionCommandHandlerTests
 		_transactionService.Setup(s => s.GetByReceiptIdAsync(receiptId, 0, int.MaxValue, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Domain.Core.Transaction>([], 0, 0, int.MaxValue));
 
-		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }];
+		List<Domain.Core.Transaction> updated = [new(txId, Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }];
 
 		UpdateTransactionCommandHandler handler = CreateHandler();
 		UpdateTransactionCommand command = new(updated);
@@ -180,7 +180,7 @@ public class UpdateTransactionCommandHandlerTests
 		_transactionService.Setup(s => s.GetByIdAsync(txId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync((Domain.Core.Transaction?)null);
 
-		List<Domain.Core.Transaction> updated = [new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }];
+		List<Domain.Core.Transaction> updated = [new(txId, Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }];
 
 		UpdateTransactionCommandHandler handler = CreateHandler();
 		UpdateTransactionCommand command = new(updated);
@@ -201,14 +201,14 @@ public class UpdateTransactionCommandHandlerTests
 		Guid foreignTxId = Guid.NewGuid();
 
 		// existing transaction belongs to receiptId
-		Domain.Core.Transaction existing = new(txId, new Money(15), DateOnly.FromDateTime(DateTime.Now));
+		Domain.Core.Transaction existing = new(txId, Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now));
 		SetupReceiptData(receiptId, txId, [existing]);
 
 		// batch includes a transaction ID that doesn't exist in the receipt's transaction list
 		List<Domain.Core.Transaction> updated =
 		[
-			new(txId, new Money(10), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() },
-			new(foreignTxId, new Money(5), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }
+			new(txId, Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() },
+			new(foreignTxId, Guid.NewGuid(), new Money(5), DateOnly.FromDateTime(DateTime.Now)) { AccountId = Guid.NewGuid() }
 		];
 
 		UpdateTransactionCommandHandler handler = CreateHandler();

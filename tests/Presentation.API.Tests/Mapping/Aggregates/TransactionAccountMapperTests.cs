@@ -20,6 +20,7 @@ public class TransactionAccountMapperTests
 
 		Transaction transaction = new(
 			transactionId,
+			Guid.NewGuid(),
 			new Money(250.75m, Currency.USD),
 			new DateOnly(2025, 4, 15)
 		);
@@ -59,6 +60,7 @@ public class TransactionAccountMapperTests
 
 		Transaction transaction = new(
 			transactionId,
+			Guid.NewGuid(),
 			new Money(75.00m, Currency.USD),
 			new DateOnly(2025, 6, 1)
 		);
@@ -92,6 +94,7 @@ public class TransactionAccountMapperTests
 
 		Transaction transaction = new(
 			transactionId,
+			Guid.NewGuid(),
 			new Money(-500.50m, Currency.USD),
 			new DateOnly(2025, 8, 22)
 		);

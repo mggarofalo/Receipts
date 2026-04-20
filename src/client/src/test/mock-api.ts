@@ -95,11 +95,11 @@ export function mockCardResponse(
   overrides?: Partial<CardResponse>,
 ): CardResponse {
   return {
-    id: nextId(),
+    id: overrides?.id ?? nextId(),
     cardCode: "CARD-001",
     name: "Test Card",
     isActive: true,
-    accountId: nextId(),
+    accountId: overrides?.accountId ?? nextId(),
     ...overrides,
   };
 }
@@ -182,6 +182,7 @@ export function mockTransactionResponse(
     id: overrides?.id ?? nextId(),
     receiptId: overrides?.receiptId ?? nextId(),
     accountId: overrides?.accountId ?? nextId(),
+    cardId: overrides?.cardId ?? nextId(),
     amount: 25.0,
     date: "2025-01-15",
     ...overrides,

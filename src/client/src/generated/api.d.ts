@@ -2857,9 +2857,9 @@ export interface components {
             accountId: string;
             /**
              * Format: uuid
-             * @description RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes.
+             * @description Originating card. The card's parent account is derivable via Card.AccountId.
              */
-            cardId?: string;
+            cardId: string;
         };
         UpdateTransactionRequest: {
             /** Format: uuid */
@@ -2872,9 +2872,9 @@ export interface components {
             accountId: string;
             /**
              * Format: uuid
-             * @description RECEIPTS-553: originating Card. Optional during the additive-migration window; will become required once backfill completes.
+             * @description Originating card. The card's parent account is derivable via Card.AccountId.
              */
-            cardId?: string;
+            cardId: string;
         };
         TransactionResponse: {
             /** Format: uuid */
@@ -2885,9 +2885,9 @@ export interface components {
             accountId: string;
             /**
              * Format: uuid
-             * @description RECEIPTS-553: originating Card. Nullable for rows that existed before the backfill.
+             * @description Originating card. The card's parent account is derivable via Card.AccountId.
              */
-            cardId?: string;
+            cardId: string;
             /** Format: double */
             amount: number;
             /** Format: date */
