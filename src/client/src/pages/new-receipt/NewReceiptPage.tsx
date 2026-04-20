@@ -163,6 +163,7 @@ export default function NewReceiptPage({
           taxAmount: headerValues.taxAmount,
         },
         transactions: transactions.map((txn) => ({
+          cardId: txn.cardId,
           accountId: txn.accountId,
           amount: txn.amount,
           date: txn.date,

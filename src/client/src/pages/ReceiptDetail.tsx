@@ -253,6 +253,7 @@ function ReceiptDetail() {
                 id: ta.transaction.id,
                 amount: Number(ta.transaction.amount ?? 0),
                 date: ta.transaction.date,
+                cardId: ta.transaction.cardId ?? null,
               },
               account: {
                 id: ta.account.id,

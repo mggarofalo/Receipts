@@ -107,18 +107,18 @@ describe("useTransactions", () => {
 
     await result.current.mutateAsync({
       receiptId: "r-1",
-      body: { ...body, accountId: "acc-1" },
+      body: { ...body, accountId: "acc-1", cardId: "card-1" },
     });
 
     expect(client.POST).toHaveBeenCalledWith(
       "/api/receipts/{receiptId}/transactions",
-      { params: { path: { receiptId: "r-1" } }, body: { ...body, accountId: "acc-1" } },
+      { params: { path: { receiptId: "r-1" } }, body: { ...body, accountId: "acc-1", cardId: "card-1" } },
     );
     expect(toast.success).toHaveBeenCalledWith("Transaction created");
   });
 
   it("update mutation calls PUT and shows toast on success", async () => {
-    const body = { id: "1", amount: 250, date: "2025-03-02", accountId: "acc-1" };
+    const body = { id: "1", amount: 250, date: "2025-03-02", accountId: "acc-1", cardId: "card-1" };
     (client.PUT as Mock).mockResolvedValue({ error: undefined });
 
     const { result } = renderHook(() => useUpdateTransaction(), {
@@ -190,7 +190,7 @@ describe("useTransactions", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ receiptId: "r-1", body: { amount: 100, date: "2025-01-01", accountId: "acc-1" } });
+    result.current.mutate({ receiptId: "r-1", body: { amount: 100, date: "2025-01-01", accountId: "acc-1", cardId: "card-1" } });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to create transaction");
@@ -203,7 +203,7 @@ describe("useTransactions", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ receiptId: "r-1", body: [{ amount: 100, date: "2025-01-01", accountId: "acc-1" }] });
+    result.current.mutate({ receiptId: "r-1", body: [{ amount: 100, date: "2025-01-01", accountId: "acc-1", cardId: "card-1" }] });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to create transactions");
@@ -225,7 +225,7 @@ describe("useTransactions", () => {
       wrapper: Wrapper,
     });
 
-    result.current.mutate({ receiptId: "r-1", body: [{ amount: 100, date: "2025-01-01", accountId: "acc-1" }] });
+    result.current.mutate({ receiptId: "r-1", body: [{ amount: 100, date: "2025-01-01", accountId: "acc-1", cardId: "card-1" }] });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["transactions"] });
@@ -238,7 +238,7 @@ describe("useTransactions", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ body: { id: "1", amount: 100, date: "2025-01-01", accountId: "acc-1" } });
+    result.current.mutate({ body: { id: "1", amount: 100, date: "2025-01-01", accountId: "acc-1", cardId: "card-1" } });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to update transaction");
@@ -387,7 +387,7 @@ describe("useTransactions", () => {
       wrapper: Wrapper,
     });
 
-    result.current.mutate({ receiptId: "r-1", body: { amount: 100, date: "2025-01-01", accountId: "acc-1" } });
+    result.current.mutate({ receiptId: "r-1", body: { amount: 100, date: "2025-01-01", accountId: "acc-1", cardId: "card-1" } });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["trips"] });
@@ -409,7 +409,7 @@ describe("useTransactions", () => {
       wrapper: Wrapper,
     });
 
-    result.current.mutate({ body: { id: "1", amount: 100, date: "2025-01-01", accountId: "acc-1" } });
+    result.current.mutate({ body: { id: "1", amount: 100, date: "2025-01-01", accountId: "acc-1", cardId: "card-1" } });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["trips"] });

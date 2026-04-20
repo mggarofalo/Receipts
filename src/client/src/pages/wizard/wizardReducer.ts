@@ -6,6 +6,7 @@ export interface WizardReceiptData {
 
 export interface WizardTransaction {
   id: string;
+  cardId?: string;
   accountId: string;
   amount: number;
   date: string;

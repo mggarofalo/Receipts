@@ -154,7 +154,7 @@ export function useCreateCompleteReceipt() {
   return useMutation({
     mutationFn: async (body: {
       receipt: { location: string; date: string; taxAmount: number };
-      transactions: { amount: number; date: string; accountId: string }[];
+      transactions: { amount: number; date: string; accountId: string; cardId: string }[];
       items: {
         receiptItemCode: string;
         description: string;

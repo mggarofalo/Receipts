@@ -23,9 +23,23 @@ vi.mock("@/hooks/useAccounts", () => ({
   ),
 }));
 
+vi.mock("@/hooks/useCards", () => ({
+  useCards: vi.fn(() =>
+    mockQueryResult({
+      data: [
+        { id: "card-1", name: "Visa 4321", cardCode: "V4321", isActive: true, accountId: "acct-1" },
+        { id: "card-2", name: "Amex 7777", cardCode: "A7777", isActive: true, accountId: null },
+      ],
+      total: 2,
+      isLoading: false,
+      isSuccess: true,
+    }),
+  ),
+}));
+
 describe("TransactionsSection", () => {
   const defaultProps = {
-    transactions: [] as { id: string; accountId: string; amount: number; date: string }[],
+    transactions: [] as { id: string; cardId: string; accountId: string; amount: number; date: string }[],
     defaultDate: "2024-01-15",
     onChange: vi.fn(),
   };
@@ -59,27 +73,28 @@ describe("TransactionsSection", () => {
 
   it("renders existing transactions", () => {
     const transactions = [
-      { id: "1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
+      { id: "1", cardId: "card-1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
     ];
     renderWithProviders(
       <TransactionsSection {...defaultProps} transactions={transactions} />,
     );
     expect(screen.getByText("$25.50")).toBeInTheDocument();
     expect(screen.getByText("Checking")).toBeInTheDocument();
+    expect(screen.getByText("Visa 4321")).toBeInTheDocument();
   });
 
-  it("calls onChange when a transaction is added via form submit", async () => {
+  it("calls onChange when a transaction is added via form submit; card selection auto-fills account", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     renderWithProviders(
       <TransactionsSection {...defaultProps} onChange={onChange} />,
     );
 
-    // Select account via combobox
-    const combobox = screen.getByRole("combobox");
-    await user.click(combobox);
-    const checkingOption = await screen.findByText("Checking");
-    await user.click(checkingOption);
+    // Select card via combobox (first combobox is Card)
+    const [cardCombobox] = screen.getAllByRole("combobox");
+    await user.click(cardCombobox);
+    const cardOption = await screen.findByText("Visa 4321");
+    await user.click(cardOption);
 
     // Type amount
     const amountInput = screen.getByLabelText(/amount/i);
@@ -92,6 +107,7 @@ describe("TransactionsSection", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({
+          cardId: "card-1",
           accountId: "acct-1",
           amount: 42.5,
           date: "2024-01-15",
@@ -104,7 +120,7 @@ describe("TransactionsSection", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const transactions = [
-      { id: "1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
+      { id: "1", cardId: "card-1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
     ];
     renderWithProviders(
       <TransactionsSection
@@ -153,8 +169,8 @@ describe("TransactionsSection", () => {
 
   it("displays running total with existing transactions", () => {
     const transactions = [
-      { id: "1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
-      { id: "2", accountId: "acct-2", amount: 10.0, date: "2024-01-15" },
+      { id: "1", cardId: "card-1", accountId: "acct-1", amount: 25.5, date: "2024-01-15" },
+      { id: "2", cardId: "card-2", accountId: "acct-2", amount: 10.0, date: "2024-01-15" },
     ];
     renderWithProviders(
       <TransactionsSection {...defaultProps} transactions={transactions} />,
