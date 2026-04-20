@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { usePermission } from "@/hooks/usePermission";
 import {
   Select,
   SelectContent,
@@ -14,6 +15,7 @@ interface ReportConfig {
   slug: string;
   name: string;
   component: React.LazyExoticComponent<React.ComponentType>;
+  adminOnly?: boolean;
 }
 
 const REPORTS: ReportConfig[] = [
@@ -38,6 +40,13 @@ const REPORTS: ReportConfig[] = [
     component: lazy(() => import("@/components/reports/SpendingByLocation")),
   },
   {
+    slug: "spending-by-normalized-description",
+    name: "Spending by Normalized Description",
+    component: lazy(
+      () => import("@/components/reports/SpendingByNormalizedDescription"),
+    ),
+  },
+  {
     slug: "category-trends",
     name: "Category Trends",
     component: lazy(() => import("@/components/reports/CategoryTrends")),
@@ -52,10 +61,15 @@ const REPORTS: ReportConfig[] = [
     name: "Uncategorized Items",
     component: lazy(() => import("@/components/reports/UncategorizedItems")),
   },
+  {
+    slug: "normalized-descriptions",
+    name: "Normalized Descriptions",
+    component: lazy(() => import("@/components/reports/NormalizedDescriptions")),
+    adminOnly: true,
+  },
 ];
 
 const DEFAULT_REPORT = REPORTS[0].slug;
-const VALID_SLUGS = new Set(REPORTS.map((r) => r.slug));
 
 function ReportFallback() {
   return <Skeleton className="h-32 w-full rounded-lg" />;
@@ -63,13 +77,25 @@ function ReportFallback() {
 
 function Reports() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isAdmin } = usePermission();
+
+  const availableReports = useMemo(
+    () => REPORTS.filter((r) => !r.adminOnly || isAdmin()),
+    [isAdmin],
+  );
+  const validSlugs = useMemo(
+    () => new Set(availableReports.map((r) => r.slug)),
+    [availableReports],
+  );
+
   const rawReport = searchParams.get("report");
   const activeSlug =
-    rawReport && VALID_SLUGS.has(rawReport) ? rawReport : DEFAULT_REPORT;
+    rawReport && validSlugs.has(rawReport) ? rawReport : DEFAULT_REPORT;
 
   const activeReport = useMemo(
-    () => REPORTS.find((r) => r.slug === activeSlug)!,
-    [activeSlug],
+    () =>
+      availableReports.find((r) => r.slug === activeSlug) ?? availableReports[0],
+    [activeSlug, availableReports],
   );
 
   usePageTitle(`Reports - ${activeReport.name}`);
@@ -85,12 +111,12 @@ function Reports() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
-        <Select value={activeSlug} onValueChange={handleReportChange}>
-          <SelectTrigger className="w-[220px]" aria-label="Select report">
+        <Select value={activeReport.slug} onValueChange={handleReportChange}>
+          <SelectTrigger className="w-[260px]" aria-label="Select report">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {REPORTS.map((report) => (
+            {availableReports.map((report) => (
               <SelectItem key={report.slug} value={report.slug}>
                 {report.name}
               </SelectItem>
