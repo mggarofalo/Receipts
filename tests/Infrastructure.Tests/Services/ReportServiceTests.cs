@@ -649,4 +649,349 @@ public class ReportServiceTests
 
 		contextFactory.ResetDatabase();
 	}
+
+	// ── GetSpendingByNormalizedDescriptionAsync ──────────────────────────────
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescriptionAsync_GroupsByCanonicalName_AndBucketsNullFk()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		Guid receiptId = Guid.NewGuid();
+		Guid normalizedId = Guid.NewGuid();
+		DateOnly date = new(2025, 3, 1);
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.NormalizedDescriptions.Add(new NormalizedDescriptionEntity
+			{
+				Id = normalizedId,
+				CanonicalName = "Organic Milk",
+				Status = Domain.NormalizedDescriptions.NormalizedDescriptionStatus.Active,
+				CreatedAt = DateTimeOffset.UtcNow,
+			});
+
+			context.Receipts.Add(new ReceiptEntity
+			{
+				Id = receiptId,
+				Location = "Store A",
+				Date = date,
+				TaxAmount = 0m,
+			});
+
+			// Two items linked to "Organic Milk"
+			context.ReceiptItems.AddRange(
+				new ReceiptItemEntity
+				{
+					Id = Guid.NewGuid(),
+					ReceiptId = receiptId,
+					Description = "organic milk",
+					Quantity = 1,
+					UnitPrice = 4.00m,
+					TotalAmount = 4.00m,
+					Category = "Dairy",
+					NormalizedDescriptionId = normalizedId,
+				},
+				new ReceiptItemEntity
+				{
+					Id = Guid.NewGuid(),
+					ReceiptId = receiptId,
+					Description = "ORGANIC MILK",
+					Quantity = 1,
+					UnitPrice = 5.50m,
+					TotalAmount = 5.50m,
+					Category = "Dairy",
+					NormalizedDescriptionId = normalizedId,
+				},
+				// One item with no normalized description
+				new ReceiptItemEntity
+				{
+					Id = Guid.NewGuid(),
+					ReceiptId = receiptId,
+					Description = "Mystery Item",
+					Quantity = 1,
+					UnitPrice = 2.00m,
+					TotalAmount = 2.00m,
+					Category = "Uncategorized",
+					NormalizedDescriptionId = null,
+				});
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		SpendingByNormalizedDescriptionResult result = await service
+			.GetSpendingByNormalizedDescriptionAsync(from: null, to: null, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().HaveCount(2);
+		result.FromDate.Should().BeNull();
+		result.ToDate.Should().BeNull();
+
+		SpendingByNormalizedDescriptionItem milkBucket = result.Items.Single(i => i.CanonicalName == "Organic Milk");
+		milkBucket.TotalAmount.Should().Be(9.50m);
+		milkBucket.ItemCount.Should().Be(2);
+		milkBucket.Currency.Should().Be("USD");
+		milkBucket.FirstSeen.Should().NotBeNull();
+		milkBucket.LastSeen.Should().NotBeNull();
+
+		SpendingByNormalizedDescriptionItem notNormalizedBucket = result.Items.Single(i => i.CanonicalName == "(Not Normalized)");
+		notNormalizedBucket.TotalAmount.Should().Be(2.00m);
+		notNormalizedBucket.ItemCount.Should().Be(1);
+
+		// Ordered by total desc
+		result.Items[0].CanonicalName.Should().Be("Organic Milk");
+		result.Items[1].CanonicalName.Should().Be("(Not Normalized)");
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescriptionAsync_FiltersByDateRange()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		Guid normalizedId = Guid.NewGuid();
+
+		Guid receiptInRange = Guid.NewGuid();
+		Guid receiptOutOfRange = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.NormalizedDescriptions.Add(new NormalizedDescriptionEntity
+			{
+				Id = normalizedId,
+				CanonicalName = "Bananas",
+				Status = Domain.NormalizedDescriptions.NormalizedDescriptionStatus.Active,
+				CreatedAt = DateTimeOffset.UtcNow,
+			});
+
+			context.Receipts.AddRange(
+				new ReceiptEntity
+				{
+					Id = receiptInRange,
+					Location = "Store",
+					Date = new DateOnly(2025, 6, 15),
+					TaxAmount = 0m,
+				},
+				new ReceiptEntity
+				{
+					Id = receiptOutOfRange,
+					Location = "Store",
+					Date = new DateOnly(2024, 1, 1),
+					TaxAmount = 0m,
+				});
+
+			context.ReceiptItems.AddRange(
+				new ReceiptItemEntity
+				{
+					Id = Guid.NewGuid(),
+					ReceiptId = receiptInRange,
+					Description = "bananas",
+					Quantity = 1,
+					UnitPrice = 1.50m,
+					TotalAmount = 1.50m,
+					Category = "Produce",
+					NormalizedDescriptionId = normalizedId,
+				},
+				new ReceiptItemEntity
+				{
+					Id = Guid.NewGuid(),
+					ReceiptId = receiptOutOfRange,
+					Description = "bananas",
+					Quantity = 1,
+					UnitPrice = 99.99m,
+					TotalAmount = 99.99m,
+					Category = "Produce",
+					NormalizedDescriptionId = normalizedId,
+				});
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		DateTimeOffset from = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+		DateTimeOffset to = new(2025, 12, 31, 0, 0, 0, TimeSpan.Zero);
+
+		// Act
+		SpendingByNormalizedDescriptionResult result = await service
+			.GetSpendingByNormalizedDescriptionAsync(from, to, CancellationToken.None);
+
+		// Assert — only the receipt in range contributed
+		result.Items.Should().ContainSingle();
+		result.Items[0].TotalAmount.Should().Be(1.50m);
+		result.Items[0].ItemCount.Should().Be(1);
+		result.FromDate.Should().Be(from);
+		result.ToDate.Should().Be(to);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescriptionAsync_IgnoresSoftDeletedItemsAndReceipts()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		Guid normalizedId = Guid.NewGuid();
+		Guid liveReceipt = Guid.NewGuid();
+		Guid deletedReceipt = Guid.NewGuid();
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.NormalizedDescriptions.Add(new NormalizedDescriptionEntity
+			{
+				Id = normalizedId,
+				CanonicalName = "Eggs",
+				Status = Domain.NormalizedDescriptions.NormalizedDescriptionStatus.Active,
+				CreatedAt = DateTimeOffset.UtcNow,
+			});
+
+			context.Receipts.AddRange(
+				new ReceiptEntity
+				{
+					Id = liveReceipt,
+					Location = "Store",
+					Date = new DateOnly(2025, 3, 1),
+					TaxAmount = 0m,
+				},
+				new ReceiptEntity
+				{
+					Id = deletedReceipt,
+					Location = "Store",
+					Date = new DateOnly(2025, 3, 1),
+					TaxAmount = 0m,
+					DeletedAt = DateTimeOffset.UtcNow,
+				});
+
+			context.ReceiptItems.AddRange(
+				// Live item on live receipt — counted
+				new ReceiptItemEntity
+				{
+					Id = Guid.NewGuid(),
+					ReceiptId = liveReceipt,
+					Description = "eggs",
+					Quantity = 1,
+					UnitPrice = 3.00m,
+					TotalAmount = 3.00m,
+					Category = "Dairy",
+					NormalizedDescriptionId = normalizedId,
+				},
+				// Soft-deleted item on live receipt — excluded
+				new ReceiptItemEntity
+				{
+					Id = Guid.NewGuid(),
+					ReceiptId = liveReceipt,
+					Description = "eggs",
+					Quantity = 1,
+					UnitPrice = 100.00m,
+					TotalAmount = 100.00m,
+					Category = "Dairy",
+					NormalizedDescriptionId = normalizedId,
+					DeletedAt = DateTimeOffset.UtcNow,
+				},
+				// Live item on deleted receipt — excluded (because receipt is deleted)
+				new ReceiptItemEntity
+				{
+					Id = Guid.NewGuid(),
+					ReceiptId = deletedReceipt,
+					Description = "eggs",
+					Quantity = 1,
+					UnitPrice = 50.00m,
+					TotalAmount = 50.00m,
+					Category = "Dairy",
+					NormalizedDescriptionId = normalizedId,
+				});
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		SpendingByNormalizedDescriptionResult result = await service
+			.GetSpendingByNormalizedDescriptionAsync(null, null, CancellationToken.None);
+
+		// Assert — only the live item on the live receipt survives
+		result.Items.Should().ContainSingle();
+		result.Items[0].CanonicalName.Should().Be("Eggs");
+		result.Items[0].TotalAmount.Should().Be(3.00m);
+		result.Items[0].ItemCount.Should().Be(1);
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescriptionAsync_ReturnsEmpty_WhenNoItems()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		ReportService service = new(contextFactory);
+
+		// Act
+		SpendingByNormalizedDescriptionResult result = await service
+			.GetSpendingByNormalizedDescriptionAsync(null, null, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().BeEmpty();
+		result.FromDate.Should().BeNull();
+		result.ToDate.Should().BeNull();
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescriptionAsync_UsesFirstAndLastSeenDates()
+	{
+		// Arrange
+		IDbContextFactory<ApplicationDbContext> contextFactory = DbContextHelpers.CreateInMemoryContextFactory();
+		Guid normalizedId = Guid.NewGuid();
+		Guid r1 = Guid.NewGuid();
+		Guid r2 = Guid.NewGuid();
+		Guid r3 = Guid.NewGuid();
+
+		DateOnly day1 = new(2025, 1, 5);
+		DateOnly day2 = new(2025, 6, 20);
+		DateOnly day3 = new(2025, 11, 30);
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.NormalizedDescriptions.Add(new NormalizedDescriptionEntity
+			{
+				Id = normalizedId,
+				CanonicalName = "Coffee",
+				Status = Domain.NormalizedDescriptions.NormalizedDescriptionStatus.Active,
+				CreatedAt = DateTimeOffset.UtcNow,
+			});
+
+			context.Receipts.AddRange(
+				new ReceiptEntity { Id = r1, Location = "S", Date = day1, TaxAmount = 0m },
+				new ReceiptEntity { Id = r2, Location = "S", Date = day2, TaxAmount = 0m },
+				new ReceiptEntity { Id = r3, Location = "S", Date = day3, TaxAmount = 0m });
+
+			context.ReceiptItems.AddRange(
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = r1, Description = "coffee", Quantity = 1, UnitPrice = 4m, TotalAmount = 4m, Category = "Beverages", NormalizedDescriptionId = normalizedId },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = r2, Description = "coffee", Quantity = 1, UnitPrice = 4m, TotalAmount = 4m, Category = "Beverages", NormalizedDescriptionId = normalizedId },
+				new ReceiptItemEntity { Id = Guid.NewGuid(), ReceiptId = r3, Description = "coffee", Quantity = 1, UnitPrice = 4m, TotalAmount = 4m, Category = "Beverages", NormalizedDescriptionId = normalizedId });
+
+			await context.SaveChangesAsync();
+		}
+
+		ReportService service = new(contextFactory);
+
+		// Act
+		SpendingByNormalizedDescriptionResult result = await service
+			.GetSpendingByNormalizedDescriptionAsync(null, null, CancellationToken.None);
+
+		// Assert
+		result.Items.Should().ContainSingle();
+		SpendingByNormalizedDescriptionItem bucket = result.Items[0];
+		bucket.ItemCount.Should().Be(3);
+		bucket.FirstSeen.Should().Be(new DateTimeOffset(day1.Year, day1.Month, day1.Day, 0, 0, 0, TimeSpan.Zero));
+		bucket.LastSeen.Should().Be(new DateTimeOffset(day3.Year, day3.Month, day3.Day, 0, 0, 0, TimeSpan.Zero));
+
+		contextFactory.ResetDatabase();
+	}
 }

@@ -4071,6 +4071,46 @@ paths:
                 type: string
 
   # ──────────────────────────────────────────────
+
+  /api/reports/spending-by-normalized-description:
+    get:
+      operationId: GetSpendingByNormalizedDescriptionReport
+      tags: [Reports]
+      summary: Get spending by normalized description report
+      description: Aggregates receipt item spending grouped by normalized description canonical name. Items without a normalized description bucket into a synthetic "(Not Normalized)" group.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Inclusive lower bound on receipt date (ISO 8601 date-time string). Defaults to all time when omitted.
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Inclusive upper bound on receipt date (ISO 8601 date-time string). Defaults to all time when omitted.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpendingByNormalizedDescriptionResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # ──────────────────────────────────────────────
   # Dashboard
   # ──────────────────────────────────────────────
 
@@ -5203,6 +5243,50 @@ components:
           type: ["string", "null"]
         pricingMode:
           type: string
+
+    SpendingByNormalizedDescriptionResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpendingByNormalizedDescriptionItem"
+        fromDate:
+          type: ["string", "null"]
+          format: date-time
+          description: Inclusive lower bound on receipt date, echoed from the request.
+        toDate:
+          type: ["string", "null"]
+          format: date-time
+          description: Inclusive upper bound on receipt date, echoed from the request.
+
+    SpendingByNormalizedDescriptionItem:
+      type: object
+      required: [canonicalName, totalAmount, currency, itemCount]
+      properties:
+        canonicalName:
+          type: string
+          description: Canonical name of the normalized description, or "(Not Normalized)" for receipt items without a normalized description.
+        totalAmount:
+          type: number
+          format: double
+          description: Sum of ReceiptItem.TotalAmount for items in this bucket.
+        currency:
+          type: string
+          description: Dominant currency across the items in this bucket.
+        itemCount:
+          type: integer
+          format: int32
+          description: Number of receipt items in this bucket.
+        firstSeen:
+          type: ["string", "null"]
+          format: date-time
+          description: Earliest receipt date among items in this bucket.
+        lastSeen:
+          type: ["string", "null"]
+          format: date-time
+          description: Latest receipt date among items in this bucket.
 
     # ── Dashboard ──────────────────────────────────
 
