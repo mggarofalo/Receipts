@@ -342,6 +342,81 @@ describe("ReceiptItemsCard", () => {
     expect(submitButton).toBeInTheDocument();
   });
 
+  it("renders 'normalized as' label when normalizedDescriptionName is present and differs from description", () => {
+    const itemsWithNormalized = [
+      {
+        id: "item-norm-1",
+        receiptItemCode: "ITEM-NORM-1",
+        description: "Red Seedless Grapes 2LB",
+        quantity: 1,
+        unitPrice: 5.99,
+        category: "Groceries",
+        subcategory: "Produce",
+        pricingMode: "quantity",
+        normalizedDescriptionName: "Grapes",
+      },
+    ];
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={itemsWithNormalized}
+        subtotal={5.99}
+      />,
+    );
+    expect(screen.getByText("Red Seedless Grapes 2LB")).toBeInTheDocument();
+    expect(screen.getByText(/normalized as Grapes/i)).toBeInTheDocument();
+  });
+
+  it("does not render 'normalized as' label when normalizedDescriptionName is null", () => {
+    const itemsWithoutNormalized = [
+      {
+        id: "item-plain-1",
+        receiptItemCode: "ITEM-PLAIN-1",
+        description: "Eggs",
+        quantity: 1,
+        unitPrice: 3.49,
+        category: "Groceries",
+        subcategory: "Dairy",
+        pricingMode: "quantity",
+        normalizedDescriptionName: null,
+      },
+    ];
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={itemsWithoutNormalized}
+        subtotal={3.49}
+      />,
+    );
+    expect(screen.getByText("Eggs")).toBeInTheDocument();
+    expect(screen.queryByText(/normalized as/i)).not.toBeInTheDocument();
+  });
+
+  it("does not render 'normalized as' label when normalizedDescriptionName equals description", () => {
+    const itemsWithSameNormalized = [
+      {
+        id: "item-same-1",
+        receiptItemCode: "ITEM-SAME-1",
+        description: "Milk",
+        quantity: 1,
+        unitPrice: 4.29,
+        category: "Groceries",
+        subcategory: "Dairy",
+        pricingMode: "quantity",
+        normalizedDescriptionName: "Milk",
+      },
+    ];
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={itemsWithSameNormalized}
+        subtotal={4.29}
+      />,
+    );
+    expect(screen.getByText("Milk")).toBeInTheDocument();
+    expect(screen.queryByText(/normalized as/i)).not.toBeInTheDocument();
+  });
+
   it("cancels delete dialog without deleting", async () => {
     const { useDeleteReceiptItems } = await import(
       "@/hooks/useReceiptItems"

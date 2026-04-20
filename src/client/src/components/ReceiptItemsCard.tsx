@@ -48,6 +48,7 @@ interface ReceiptItem {
   category: string;
   subcategory?: string | null;
   pricingMode?: string | null;
+  normalizedDescriptionName?: string | null;
 }
 
 interface ReceiptItemsCardProps {
@@ -221,7 +222,19 @@ export function ReceiptItemsCard({
                       <TableCell className="font-mono">
                         {item.receiptItemCode ?? ""}
                       </TableCell>
-                      <TableCell>{item.description}</TableCell>
+                      <TableCell>
+                        <div>{item.description}</div>
+                        {item.normalizedDescriptionName &&
+                          item.normalizedDescriptionName !==
+                            item.description && (
+                            <div
+                              className="text-xs text-muted-foreground"
+                              data-testid={`normalized-as-${item.id}`}
+                            >
+                              normalized as {item.normalizedDescriptionName}
+                            </div>
+                          )}
+                      </TableCell>
                       <TableCell className="text-right">
                         {item.quantity}
                       </TableCell>

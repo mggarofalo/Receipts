@@ -635,4 +635,52 @@ public class ReceiptItemsControllerTests
 		// Assert
 		await act.Should().ThrowAsync<Exception>();
 	}
+
+	[Fact]
+	public async Task GetReceiptItemById_IncludesNormalizedDescriptionFields_WhenPopulated()
+	{
+		// Arrange - RECEIPTS-583: normalized description fields surface on the response
+		Guid normalizedId = Guid.NewGuid();
+		ReceiptItem mediatorReturn = ReceiptItemGenerator.Generate();
+		mediatorReturn.NormalizedDescriptionId = normalizedId;
+		mediatorReturn.NormalizedDescriptionName = "Grapes";
+		mediatorReturn.NormalizedDescriptionMatchScore = 0.87;
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetReceiptItemByIdQuery>(q => q.Id == mediatorReturn.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(mediatorReturn);
+
+		// Act
+		Results<Ok<ReceiptItemResponse>, NotFound> result = await _controller.GetReceiptItemById(mediatorReturn.Id);
+
+		// Assert
+		Ok<ReceiptItemResponse> okResult = Assert.IsType<Ok<ReceiptItemResponse>>(result.Result);
+		ReceiptItemResponse response = Assert.IsType<ReceiptItemResponse>(okResult.Value);
+		response.NormalizedDescriptionId.Should().Be(normalizedId);
+		response.NormalizedDescriptionName.Should().Be("Grapes");
+		response.NormalizedDescriptionMatchScore.Should().Be(0.87);
+	}
+
+	[Fact]
+	public async Task GetReceiptItemById_NormalizedDescriptionFieldsAreNull_WhenUnresolved()
+	{
+		// Arrange - RECEIPTS-583: unresolved items expose null normalized fields
+		ReceiptItem mediatorReturn = ReceiptItemGenerator.Generate();
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetReceiptItemByIdQuery>(q => q.Id == mediatorReturn.Id),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(mediatorReturn);
+
+		// Act
+		Results<Ok<ReceiptItemResponse>, NotFound> result = await _controller.GetReceiptItemById(mediatorReturn.Id);
+
+		// Assert
+		Ok<ReceiptItemResponse> okResult = Assert.IsType<Ok<ReceiptItemResponse>>(result.Result);
+		ReceiptItemResponse response = Assert.IsType<ReceiptItemResponse>(okResult.Value);
+		response.NormalizedDescriptionId.Should().BeNull();
+		response.NormalizedDescriptionName.Should().BeNull();
+		response.NormalizedDescriptionMatchScore.Should().BeNull();
+	}
 }

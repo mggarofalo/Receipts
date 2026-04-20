@@ -3212,6 +3212,18 @@ export interface components {
             subcategory?: string | null;
             /** @description Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price) */
             pricingMode: string;
+            /**
+             * Format: uuid
+             * @description FK to the canonical NormalizedDescription. Null until the resolver links this item.
+             */
+            normalizedDescriptionId?: string | null;
+            /** @description Denormalized CanonicalName from the linked NormalizedDescription for display. */
+            normalizedDescriptionName?: string | null;
+            /**
+             * Format: double
+             * @description Cosine similarity captured when the resolver linked this item; null for unresolved or no-match-created items.
+             */
+            normalizedDescriptionMatchScore?: number | null;
         };
         ReceiptItemListResponse: {
             data: components["schemas"]["ReceiptItemResponse"][];

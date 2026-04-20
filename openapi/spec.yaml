@@ -6513,6 +6513,17 @@ components:
         pricingMode:
           type: string
           description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
+        normalizedDescriptionId:
+          type: ["string", "null"]
+          format: uuid
+          description: "FK to the canonical NormalizedDescription. Null until the resolver links this item."
+        normalizedDescriptionName:
+          type: ["string", "null"]
+          description: "Denormalized CanonicalName from the linked NormalizedDescription for display."
+        normalizedDescriptionMatchScore:
+          type: ["number", "null"]
+          format: double
+          description: "Cosine similarity captured when the resolver linked this item; null for unresolved or no-match-created items."
 
     ReceiptItemListResponse:
       type: object
