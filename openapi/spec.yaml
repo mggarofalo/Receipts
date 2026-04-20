@@ -1439,6 +1439,193 @@ paths:
               schema:
                 type: string
 
+  /api/normalized-descriptions:
+    get:
+      operationId: GetAllNormalizedDescriptions
+      tags: [NormalizedDescriptions]
+      summary: List normalized descriptions
+      description: |
+        Returns all canonical normalized-description rows, optionally filtered by
+        status. Not paginated — the row count is bounded by the number of unique
+        receipt-item descriptions ever seen. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Active, PendingReview]
+          description: Optional status filter. When absent, returns rows of both statuses. Matching is case-insensitive.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedDescriptionListResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/normalized-descriptions/{id}:
+    get:
+      operationId: GetNormalizedDescriptionById
+      tags: [NormalizedDescriptions]
+      summary: Get a normalized description by ID
+      description: Returns a single canonical normalized-description row by GUID. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedDescriptionResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "404":
+          description: Not Found
+
+  /api/normalized-descriptions/{id}/merge:
+    post:
+      operationId: MergeNormalizedDescriptions
+      tags: [NormalizedDescriptions]
+      summary: Merge two normalized descriptions
+      description: |
+        Re-links every ReceiptItem currently pointing at `discardId` to the
+        canonical row identified by the path `{id}` ("keep"), then deletes the
+        discarded row. Returns the count of re-linked items — zero when either
+        id was missing or the two ids were identical. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the canonical row to keep (all items from `discardId` move here).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeNormalizedDescriptionRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeNormalizedDescriptionsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/normalized-descriptions/{id}/split:
+    post:
+      operationId: SplitNormalizedDescription
+      tags: [NormalizedDescriptions]
+      summary: Detach a receipt item from its normalized description
+      description: |
+        Creates a new canonical row for the supplied ReceiptItem's raw description
+        and re-points the item at it. Used to unpick bad auto-merges. The path
+        `{id}` is the current NormalizedDescription the item is being split away
+        from; the body identifies the specific ReceiptItem to isolate. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID of the NormalizedDescription the item is being split away from.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SplitNormalizedDescriptionRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedDescriptionResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+
+  /api/normalized-descriptions/{id}/status:
+    patch:
+      operationId: UpdateNormalizedDescriptionStatus
+      tags: [NormalizedDescriptions]
+      summary: Update the status of a normalized description
+      description: |
+        Flips a NormalizedDescription between Active and PendingReview. Returns
+        204 when the status was changed and 404 when the row does not exist or
+        already has the requested status. Admin-only.
+      security:
+        - BearerAuth: []
+        - ApiKey: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNormalizedDescriptionStatusRequest"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+
   # ──────────────────────────────────────────────
   # Receipts
   # ──────────────────────────────────────────────
@@ -5822,6 +6009,74 @@ components:
           type: integer
           format: int32
           description: Items currently unresolved (below pending-review threshold) that would move up to pending-review under the proposal.
+
+    NormalizedDescriptionStatus:
+      type: string
+      enum: [active, pendingReview]
+      description: Active rows are confidently-classified and re-used as-is by the resolver; pendingReview rows are flagged for admin review before being promoted.
+
+    NormalizedDescriptionResponse:
+      type: object
+      required: [id, canonicalName, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        canonicalName:
+          type: string
+          description: The canonical name shared by every receipt item linked to this row.
+        status:
+          $ref: "#/components/schemas/NormalizedDescriptionStatus"
+        createdAt:
+          type: string
+          format: date-time
+
+    NormalizedDescriptionListResponse:
+      type: object
+      required: [items, totalCount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/NormalizedDescriptionResponse"
+        totalCount:
+          type: integer
+          format: int32
+          description: Total number of rows returned. Matches the length of `items` since the endpoint is not paginated.
+
+    MergeNormalizedDescriptionRequest:
+      type: object
+      required: [discardId]
+      properties:
+        discardId:
+          type: string
+          format: uuid
+          description: ID of the NormalizedDescription to merge away. All ReceiptItems pointing at this row will be re-linked to the kept row.
+
+    SplitNormalizedDescriptionRequest:
+      type: object
+      required: [receiptItemId]
+      properties:
+        receiptItemId:
+          type: string
+          format: uuid
+          description: ID of the ReceiptItem to detach from its current NormalizedDescription.
+
+    UpdateNormalizedDescriptionStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/NormalizedDescriptionStatus"
+
+    MergeNormalizedDescriptionsResponse:
+      type: object
+      required: [itemsRelinkedCount]
+      properties:
+        itemsRelinkedCount:
+          type: integer
+          format: int32
+          description: Number of ReceiptItems that were re-linked from the discarded row to the kept row. Zero when either id was missing or the two ids were identical.
 
     # ── Receipt ──────────────────────────────────
 
