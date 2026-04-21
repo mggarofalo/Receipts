@@ -222,6 +222,61 @@ public class AuditLogCaptureTests
 	}
 
 	[Fact]
+	public async Task SaveChanges_DistinctDescriptionEntity_NotAudited()
+	{
+		// DistinctDescription uses Description (string) as its PK, so an EF-tracked
+		// save without excluding this type would crash CollectAuditEntries() on the
+		// `entry.Property("Id")` lookup.
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
+		DistinctDescriptionEntity entity = new() { Description = "COCA COLA", ProcessedAt = null };
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.DistinctDescriptions.AddAsync(entity);
+			Func<Task> act = async () => await context.SaveChangesAsync();
+			await act.Should().NotThrowAsync();
+		}
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			List<AuditLogEntity> auditLogs = await context.AuditLogs.ToListAsync();
+			auditLogs.Should().BeEmpty("DistinctDescription is infrastructure data, not a user-observable entity");
+		}
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
+	public async Task SaveChanges_ItemSimilarityEdgeEntity_NotAudited()
+	{
+		// ItemSimilarityEdge has a composite PK {DescA, DescB} and no `Id` column,
+		// so an EF-tracked save without excluding this type would crash CollectAuditEntries().
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
+		ItemSimilarityEdgeEntity entity = new()
+		{
+			DescA = "COCA COLA",
+			DescB = "COCA-COLA",
+			Score = 0.95,
+			ComputedAt = DateTimeOffset.UtcNow,
+		};
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			await context.ItemSimilarityEdges.AddAsync(entity);
+			Func<Task> act = async () => await context.SaveChangesAsync();
+			await act.Should().NotThrowAsync();
+		}
+
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			List<AuditLogEntity> auditLogs = await context.AuditLogs.ToListAsync();
+			auditLogs.Should().BeEmpty("ItemSimilarityEdge is derived data, not a user-observable entity");
+		}
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
 	public async Task SaveChanges_MultipleEntities_ProducesMultipleAuditLogs()
 	{
 		// Arrange
