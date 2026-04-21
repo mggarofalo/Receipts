@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/mggarofalo/receipts/compare/v0.3.0...v0.4.0) (2026-04-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* release develop to main ([#465](https://github.com/mggarofalo/receipts/issues/465))
+
+### Features
+
+* release develop to main ([#465](https://github.com/mggarofalo/receipts/issues/465)) ([0428285](https://github.com/mggarofalo/receipts/commit/04282854b409c5c66c6909f2e320e83aa2fd0642))
+
 ## [0.3.0](https://github.com/mggarofalo/receipts/compare/v0.2.1...v0.3.0) (2026-04-19)
 
 
