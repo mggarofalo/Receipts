@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/mggarofalo/receipts/compare/v0.4.0...v0.4.1) (2026-04-21)
+
+
+### Bug Fixes
+
+* **infrastructure:** self-heal orphan Cards in RequireAccountIdOnCards (RECEIPTS-604) ([#469](https://github.com/mggarofalo/receipts/issues/469)) ([c70ac88](https://github.com/mggarofalo/receipts/commit/c70ac8824ec6d8d8d74197f1456cd94d77fae91d))
+
 ## [0.4.0](https://github.com/mggarofalo/receipts/compare/v0.3.0...v0.4.0) (2026-04-21)
 
 
