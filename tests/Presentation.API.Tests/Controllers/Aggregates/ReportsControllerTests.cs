@@ -720,4 +720,173 @@ public class ReportsControllerTests
 		receipt.Date.Should().Be(date);
 		receipt.TransactionTotal.Should().Be(42.99);
 	}
+
+	// ── GetSpendingByNormalizedDescription ─────────────────
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescription_ReturnsOkResult_WithDefaultParameters()
+	{
+		// Arrange
+		AppReports.SpendingByNormalizedDescriptionResult reportResult = new([], null, null);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSpendingByNormalizedDescriptionQuery>(q => q.From == null && q.To == null),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<SpendingByNormalizedDescriptionResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByNormalizedDescription(null, null, CancellationToken.None);
+
+		// Assert
+		Ok<SpendingByNormalizedDescriptionResponse> okResult = Assert.IsType<Ok<SpendingByNormalizedDescriptionResponse>>(result.Result);
+		okResult.Value!.Items.Should().BeEmpty();
+		okResult.Value!.FromDate.Should().BeNull();
+		okResult.Value!.ToDate.Should().BeNull();
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescription_PassesDateRangeToMediator()
+	{
+		// Arrange
+		DateTimeOffset from = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+		DateTimeOffset to = new(2025, 12, 31, 0, 0, 0, TimeSpan.Zero);
+		AppReports.SpendingByNormalizedDescriptionResult reportResult = new([], from, to);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSpendingByNormalizedDescriptionQuery>(q => q.From == from && q.To == to),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<SpendingByNormalizedDescriptionResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByNormalizedDescription(from, to, CancellationToken.None);
+
+		// Assert
+		Ok<SpendingByNormalizedDescriptionResponse> okResult = Assert.IsType<Ok<SpendingByNormalizedDescriptionResponse>>(result.Result);
+		okResult.Value!.FromDate.Should().Be(from);
+		okResult.Value!.ToDate.Should().Be(to);
+
+		_mediatorMock.Verify(m => m.Send(
+			It.Is<GetSpendingByNormalizedDescriptionQuery>(q => q.From == from && q.To == to),
+			It.IsAny<CancellationToken>()), Times.Once);
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescription_ReturnsBadRequest_WhenFromAfterTo()
+	{
+		// Arrange
+		DateTimeOffset from = new(2025, 12, 31, 0, 0, 0, TimeSpan.Zero);
+		DateTimeOffset to = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+		// Act
+		Results<Ok<SpendingByNormalizedDescriptionResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByNormalizedDescription(from, to, CancellationToken.None);
+
+		// Assert
+		BadRequest<string> badResult = Assert.IsType<BadRequest<string>>(result.Result);
+		badResult.Value.Should().Contain("from must be before or equal to to");
+		_mediatorMock.Verify(
+			m => m.Send(It.IsAny<GetSpendingByNormalizedDescriptionQuery>(), It.IsAny<CancellationToken>()),
+			Times.Never);
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescription_MapsResponseFieldsCorrectly()
+	{
+		// Arrange
+		DateTimeOffset firstSeen = new(2025, 1, 5, 0, 0, 0, TimeSpan.Zero);
+		DateTimeOffset lastSeen = new(2025, 11, 30, 0, 0, 0, TimeSpan.Zero);
+
+		AppReports.SpendingByNormalizedDescriptionResult reportResult = new(
+		[
+			new AppReports.SpendingByNormalizedDescriptionItem("Organic Milk", 42.50m, "USD", 5, firstSeen, lastSeen),
+			new AppReports.SpendingByNormalizedDescriptionItem("(Not Normalized)", 12.00m, "USD", 2, null, null),
+		], null, null);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.IsAny<GetSpendingByNormalizedDescriptionQuery>(),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<SpendingByNormalizedDescriptionResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByNormalizedDescription(null, null, CancellationToken.None);
+
+		// Assert
+		Ok<SpendingByNormalizedDescriptionResponse> okResult = Assert.IsType<Ok<SpendingByNormalizedDescriptionResponse>>(result.Result);
+		SpendingByNormalizedDescriptionResponse response = okResult.Value!;
+		response.Items.Should().HaveCount(2);
+
+		SpendingByNormalizedDescriptionItem first = response.Items.First(i => i.CanonicalName == "Organic Milk");
+		first.TotalAmount.Should().Be(42.50);
+		first.Currency.Should().Be("USD");
+		first.ItemCount.Should().Be(5);
+		first.FirstSeen.Should().Be(firstSeen);
+		first.LastSeen.Should().Be(lastSeen);
+
+		SpendingByNormalizedDescriptionItem notNormalized = response.Items.First(i => i.CanonicalName == "(Not Normalized)");
+		notNormalized.TotalAmount.Should().Be(12.00);
+		notNormalized.ItemCount.Should().Be(2);
+		notNormalized.FirstSeen.Should().BeNull();
+		notNormalized.LastSeen.Should().BeNull();
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescription_AcceptsOnlyFromSet()
+	{
+		// Arrange
+		DateTimeOffset from = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+		AppReports.SpendingByNormalizedDescriptionResult reportResult = new([], from, null);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSpendingByNormalizedDescriptionQuery>(q => q.From == from && q.To == null),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<SpendingByNormalizedDescriptionResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByNormalizedDescription(from, null, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<Ok<SpendingByNormalizedDescriptionResponse>>(result.Result);
+	}
+
+	[Fact]
+	public async Task GetSpendingByNormalizedDescription_AcceptsOnlyToSet()
+	{
+		// Arrange
+		DateTimeOffset to = new(2025, 12, 31, 0, 0, 0, TimeSpan.Zero);
+		AppReports.SpendingByNormalizedDescriptionResult reportResult = new([], null, to);
+
+		_mediatorMock.Setup(m => m.Send(
+			It.Is<GetSpendingByNormalizedDescriptionQuery>(q => q.From == null && q.To == to),
+			It.IsAny<CancellationToken>()))
+			.ReturnsAsync(reportResult);
+
+		// Act
+		Results<Ok<SpendingByNormalizedDescriptionResponse>, BadRequest<string>> result =
+			await _controller.GetSpendingByNormalizedDescription(null, to, CancellationToken.None);
+
+		// Assert
+		Assert.IsType<Ok<SpendingByNormalizedDescriptionResponse>>(result.Result);
+	}
+
+	[Fact]
+	public void GetSpendingByNormalizedDescription_RequiresAuthorization()
+	{
+		// Assert — the ReportsController-level [Authorize] attribute applies to this action.
+		System.Reflection.MethodInfo method = typeof(ReportsController)
+			.GetMethod(nameof(ReportsController.GetSpendingByNormalizedDescription))!;
+
+		bool classAttribute = typeof(ReportsController)
+			.GetCustomAttributes(typeof(Microsoft.AspNetCore.Authorization.AuthorizeAttribute), inherit: true)
+			.Length > 0;
+		bool methodAllowsAnonymous = method
+			.GetCustomAttributes(typeof(Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute), inherit: true)
+			.Length > 0;
+
+		classAttribute.Should().BeTrue("ReportsController requires authentication at the class level");
+		methodAllowsAnonymous.Should().BeFalse("GetSpendingByNormalizedDescription should not bypass authorization");
+	}
 }

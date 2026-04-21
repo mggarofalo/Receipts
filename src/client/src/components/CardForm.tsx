@@ -33,7 +33,7 @@ const cardSchema = z.object({
   cardCode: z.string().min(1, "Card code is required"),
   name: z.string().min(1, "Name is required"),
   isActive: z.boolean(),
-  accountId: z.string().optional(),
+  accountId: z.string().min(1, "Account is required"),
 });
 
 type CardFormValues = z.infer<typeof cardSchema>;
@@ -48,8 +48,6 @@ interface CardFormProps {
   isDeleting?: boolean;
   isAdmin?: boolean;
 }
-
-const NONE_OPTION = { value: "", label: "— None —" } as const;
 
 export function CardForm({
   mode,
@@ -67,7 +65,7 @@ export function CardForm({
 
   const accountOptions = useMemo(() => {
     const active = (accounts as { id: string; name: string }[] | undefined) ?? [];
-    return [NONE_OPTION, ...active.map((a) => ({ value: a.id, label: a.name }))];
+    return active.map((a) => ({ value: a.id, label: a.name }));
   }, [accounts]);
 
   const form = useForm<CardFormValues>({
@@ -81,13 +79,7 @@ export function CardForm({
   });
 
   const handleSubmit = (values: CardFormValues, event?: unknown) => {
-    onSubmit(
-      {
-        ...values,
-        accountId: values.accountId ? values.accountId : undefined,
-      },
-      event,
-    );
+    onSubmit(values, event);
   };
 
   return (
@@ -126,7 +118,7 @@ export function CardForm({
           name="accountId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Account</FormLabel>
+              <FormLabel required>Account</FormLabel>
               <FormControl>
                 <Combobox
                   options={accountOptions}
@@ -136,6 +128,7 @@ export function CardForm({
                   searchPlaceholder="Search accounts..."
                   emptyMessage="No active accounts."
                   aria-label="Account"
+                  aria-required="true"
                 />
               </FormControl>
               <FormMessage />

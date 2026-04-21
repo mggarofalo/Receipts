@@ -61,7 +61,7 @@ public class PushYnabTransactionsCommandHandlerTests
 		_adjustmentServiceMock.Setup(s => s.GetByReceiptIdAsync(_receiptId, 0, 10000, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Domain.Core.Adjustment>([], 0, 0, 10000));
 
-		Domain.Core.Transaction tx = new(_transactionId, new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+		Domain.Core.Transaction tx = new(_transactionId, Guid.NewGuid(), new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 		tx.AccountId = _accountId;
 		tx.ReceiptId = _receiptId;
 
@@ -180,7 +180,7 @@ public class PushYnabTransactionsCommandHandlerTests
 		_adjustmentServiceMock.Setup(s => s.GetByReceiptIdAsync(_receiptId, 0, 10000, It.IsAny<SortParams>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new PagedResult<Domain.Core.Adjustment>([], 0, 0, 10000));
 
-		Domain.Core.Transaction tx = new(Guid.NewGuid(), new Money(8m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+		Domain.Core.Transaction tx = new(Guid.NewGuid(), Guid.NewGuid(), new Money(8m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 		tx.AccountId = _accountId;
 		_transactionServiceMock.Setup(s => s.GetTransactionAccountsByReceiptIdAsync(_receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync([new TransactionAccount { Transaction = tx, Account = new Domain.Core.Account(_accountId, "Checking", true) }]);
@@ -222,10 +222,10 @@ public class PushYnabTransactionsCommandHandlerTests
 
 		// Set up two transactions: TX1 already synced, TX2 not synced
 		Guid transactionId2 = Guid.NewGuid();
-		Domain.Core.Transaction tx1 = new(_transactionId, new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+		Domain.Core.Transaction tx1 = new(_transactionId, Guid.NewGuid(), new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 		tx1.AccountId = _accountId;
 		tx1.ReceiptId = _receiptId;
-		Domain.Core.Transaction tx2 = new(transactionId2, new Money(5.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+		Domain.Core.Transaction tx2 = new(transactionId2, Guid.NewGuid(), new Money(5.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 		tx2.AccountId = _accountId;
 		tx2.ReceiptId = _receiptId;
 
@@ -395,14 +395,14 @@ public class PushYnabTransactionsCommandHandlerTests
 
 		// Override split result to return two splits with the same milliunits
 		Guid transactionId2 = Guid.NewGuid();
-		Domain.Core.Transaction tx2 = new(transactionId2, new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+		Domain.Core.Transaction tx2 = new(transactionId2, Guid.NewGuid(), new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 		tx2.AccountId = _accountId;
 		tx2.ReceiptId = _receiptId;
 
 		Domain.Core.Account account = new(_accountId, "Checking", true);
 		List<TransactionAccount> txAccounts =
 		[
-			new() { Transaction = new Domain.Core.Transaction(_transactionId, new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1))) { AccountId = _accountId, ReceiptId = _receiptId }, Account = account },
+			new() { Transaction = new Domain.Core.Transaction(_transactionId, Guid.NewGuid(), new Money(11.00m), DateOnly.FromDateTime(DateTime.Today.AddDays(-1))) { AccountId = _accountId, ReceiptId = _receiptId }, Account = account },
 			new() { Transaction = tx2, Account = account },
 		];
 		_transactionServiceMock.Setup(s => s.GetTransactionAccountsByReceiptIdAsync(_receiptId, It.IsAny<CancellationToken>()))

@@ -180,6 +180,7 @@ function ReceiptDetail() {
               category: i.category,
               subcategory: i.subcategory,
               pricingMode: i.pricingMode,
+              normalizedDescriptionName: i.normalizedDescriptionName,
             }))}
             subtotal={subtotal}
             location={trip.receipt.receipt.location}
@@ -253,6 +254,7 @@ function ReceiptDetail() {
                 id: ta.transaction.id,
                 amount: Number(ta.transaction.amount ?? 0),
                 date: ta.transaction.date,
+                cardId: ta.transaction.cardId ?? null,
               },
               account: {
                 id: ta.account.id,

@@ -15,6 +15,16 @@ vi.mock("@/hooks/useAccounts", () => ({
   })),
 }));
 
+vi.mock("@/hooks/useCards", () => ({
+  useCards: vi.fn(() => ({
+    data: [
+      { id: "card-1", name: "Visa 4321", cardCode: "V4321", isActive: true, accountId: "acc-1" },
+      { id: "card-2", name: "Amex 7777", cardCode: "A7777", isActive: true, accountId: null },
+    ],
+    isLoading: false,
+  })),
+}));
+
 vi.mock("@/hooks/useTransactions", () => ({
   useCreateTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateTransaction: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -23,7 +33,7 @@ vi.mock("@/hooks/useTransactions", () => ({
 
 const mockTransactions = [
   {
-    transaction: { id: "txn-1", amount: 50.0, date: "2024-01-15" },
+    transaction: { id: "txn-1", amount: 50.0, date: "2024-01-15", cardId: "card-1" },
     account: {
       id: "acc-1",
       name: "Checking",
@@ -31,7 +41,7 @@ const mockTransactions = [
     },
   },
   {
-    transaction: { id: "txn-2", amount: 25.5, date: "2024-01-16" },
+    transaction: { id: "txn-2", amount: 25.5, date: "2024-01-16", cardId: null },
     account: {
       id: "acc-2",
       name: "Savings",
@@ -80,9 +90,24 @@ describe("ReceiptTransactionsCard", () => {
     );
     expect(screen.getByText("Amount")).toBeInTheDocument();
     expect(screen.getByText("Date")).toBeInTheDocument();
+    expect(screen.getByText("Card")).toBeInTheDocument();
     expect(screen.getByText("Account")).toBeInTheDocument();
     expect(screen.getByText("Status")).toBeInTheDocument();
     expect(screen.getByText("Actions")).toBeInTheDocument();
+  });
+
+  it("renders the Card column value and an empty cell for rows with null cardId", () => {
+    renderWithQueryClient(
+      <ReceiptTransactionsCard
+        receiptId="receipt-1"
+        transactions={mockTransactions}
+        transactionsTotal={75.5}
+      />,
+    );
+    // card-1 row shows the card name
+    expect(screen.getByText("Visa 4321")).toBeInTheDocument();
+    // card-2 row (null cardId) renders empty — we can't directly query the cell, but there should be no "Amex 7777"
+    expect(screen.queryByText("Amex 7777")).not.toBeInTheDocument();
   });
 
   it("renders the transaction total in the footer", () => {

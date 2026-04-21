@@ -169,14 +169,14 @@ public class CardsController(IMediator mediator, CardMapper mapper, ILogger<Card
 		return TypedResults.NoContent();
 	}
 
-	private async Task<bool> MissingAccountIdAsync(Guid? accountId, CancellationToken cancellationToken)
+	private async Task<bool> MissingAccountIdAsync(Guid accountId, CancellationToken cancellationToken)
 	{
-		return accountId.HasValue && !await accountService.ExistsAsync(accountId.Value, cancellationToken);
+		return !await accountService.ExistsAsync(accountId, cancellationToken);
 	}
 
-	private async Task<Guid?> FirstMissingAccountIdAsync(IEnumerable<Guid?> accountIds, CancellationToken cancellationToken)
+	private async Task<Guid?> FirstMissingAccountIdAsync(IEnumerable<Guid> accountIds, CancellationToken cancellationToken)
 	{
-		foreach (Guid accountId in accountIds.Where(id => id.HasValue).Select(id => id!.Value).Distinct())
+		foreach (Guid accountId in accountIds.Distinct())
 		{
 			if (!await accountService.ExistsAsync(accountId, cancellationToken))
 			{

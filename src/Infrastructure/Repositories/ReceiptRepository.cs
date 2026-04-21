@@ -57,25 +57,22 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 	}
 
 	// Filter receipts down to those with at least one transaction matching the supplied
-	// accountId / cardId. Account filter matches transactions through Card.AccountId OR the
-	// legacy Transaction.AccountId (kept additively in RECEIPTS-553 until a follow-up drop).
+	// accountId / cardId. Account filter matches transactions through Card.AccountId.
+	// Transaction.AccountId is still carried additively (drop is a separate later phase).
 	private static IQueryable<ReceiptEntity> ApplyTransactionFilters(ApplicationDbContext context, IQueryable<ReceiptEntity> query, Guid? accountId, Guid? cardId)
 	{
 		if (cardId.HasValue)
 		{
 			Guid id = cardId.Value;
 			query = query.Where(r => context.Transactions.Any(t =>
-				t.ReceiptId == r.Id
-				&& (t.CardId == id || (t.CardId == null && t.AccountId == id))));
+				t.ReceiptId == r.Id && t.CardId == id));
 		}
 
 		if (accountId.HasValue)
 		{
 			Guid id = accountId.Value;
 			query = query.Where(r => context.Transactions.Any(t =>
-				t.ReceiptId == r.Id
-				&& ((t.Card != null && t.Card.AccountId == id)
-					|| (t.CardId == null && t.AccountId == id))));
+				t.ReceiptId == r.Id && t.Card != null && t.Card.AccountId == id));
 		}
 
 		return query;

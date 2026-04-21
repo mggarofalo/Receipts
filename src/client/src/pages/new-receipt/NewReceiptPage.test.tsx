@@ -52,7 +52,7 @@ vi.mock("./TransactionsSection", () => ({
       <button
         onClick={() =>
           onChange([
-            { id: "t1", accountId: "acct-1", amount: 55, date: "2024-01-15" },
+            { id: "t1", cardId: "card-1", accountId: "acct-1", amount: 55, date: "2024-01-15" },
           ])
         }
       >
@@ -289,6 +289,7 @@ describe("NewReceiptPage", () => {
           }),
           transactions: [
             expect.objectContaining({
+              cardId: "card-1",
               accountId: "acct-1",
               amount: 55,
             }),

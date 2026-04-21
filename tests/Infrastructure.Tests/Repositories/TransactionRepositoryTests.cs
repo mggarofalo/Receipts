@@ -22,6 +22,7 @@ public class TransactionRepositoryTests
 
 		CardEntity card = CardEntityGenerator.Generate();
 		card.AccountId = account.Id;
+		card.Id = account.Id;
 		await context.Cards.AddAsync(card);
 
 		await context.SaveChangesAsync(CancellationToken.None);
@@ -46,7 +47,7 @@ public class TransactionRepositoryTests
 
 		// Assert
 		Assert.NotNull(actual);
-		actual.Should().BeEquivalentTo(entity, opt => opt.Excluding(member => member.Name == nameof(TransactionEntity.Receipt) || member.Name == nameof(TransactionEntity.Account)));
+		actual.Should().BeEquivalentTo(entity, opt => opt.Excluding(member => member.Name == nameof(TransactionEntity.Receipt) || member.Name == nameof(TransactionEntity.Account) || member.Name == nameof(TransactionEntity.Card)));
 
 		_contextFactory.ResetDatabase();
 	}
@@ -168,7 +169,7 @@ public class TransactionRepositoryTests
 		List<TransactionEntity> updatedEntities = await verifyContext.Transactions.ToListAsync();
 
 		// Assert
-		updatedEntities.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(TransactionEntity.Receipt) || member.Name == nameof(TransactionEntity.Account)));
+		updatedEntities.Should().BeEquivalentTo(entities, opt => opt.Excluding(member => member.Name == nameof(TransactionEntity.Receipt) || member.Name == nameof(TransactionEntity.Account) || member.Name == nameof(TransactionEntity.Card)));
 
 		_contextFactory.ResetDatabase();
 	}

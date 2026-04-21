@@ -12,17 +12,11 @@ public partial class CardMapper
 
 	public Card ToDomain(CreateCardRequest source)
 	{
-		return new Card(Guid.Empty, source.CardCode, source.Name, source.IsActive)
-		{
-			AccountId = source.AccountId,
-		};
+		return new Card(Guid.Empty, source.CardCode, source.Name, source.AccountId, source.IsActive);
 	}
 
 	public Card ToDomain(UpdateCardRequest source)
 	{
-		return new Card(source.Id, source.CardCode, source.Name, source.IsActive)
-		{
-			AccountId = source.AccountId,
-		};
+		return new Card(source.Id, source.CardCode, source.Name, source.AccountId, source.IsActive);
 	}
 }

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useCreateTransaction,
   useUpdateTransaction,
   useDeleteTransactions,
 } from "@/hooks/useTransactions";
+import { useCards } from "@/hooks/useCards";
 import {
   ReceiptTransactionForm,
   type ReceiptTransactionFormValues,
@@ -44,6 +45,7 @@ interface TransactionRow {
     id: string;
     amount: number;
     date: string;
+    cardId: string | null;
   };
   account: {
     id: string;
@@ -69,6 +71,14 @@ export function ReceiptTransactionsCard({
   const updateTransaction = useUpdateTransaction();
   const deleteTransactions = useDeleteTransactions();
 
+  const { data: cards } = useCards(0, 500, undefined, undefined, null);
+
+  const cardNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of cards ?? []) map.set(c.id, c.name);
+    return map;
+  }, [cards]);
+
   const [createOpen, setCreateOpen] = useState(false);
   const [editTxn, setEditTxn] = useState<TransactionRow | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -81,6 +91,7 @@ export function ReceiptTransactionsCard({
       {
         receiptId,
         body: {
+          cardId: values.cardId,
           accountId: values.accountId,
           amount: values.amount,
           date: values.date,
@@ -103,6 +114,7 @@ export function ReceiptTransactionsCard({
       {
         body: {
           id: editTxn.transaction.id,
+          cardId: values.cardId,
           accountId: values.accountId,
           amount: values.amount,
           date: values.date,
@@ -181,6 +193,7 @@ export function ReceiptTransactionsCard({
                     </TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Card</TableHead>
                     <TableHead>Account</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-24">Actions</TableHead>
@@ -202,6 +215,11 @@ export function ReceiptTransactionsCard({
                         {formatCurrency(ta.transaction.amount)}
                       </TableCell>
                       <TableCell>{ta.transaction.date}</TableCell>
+                      <TableCell>
+                        {ta.transaction.cardId
+                          ? (cardNameMap.get(ta.transaction.cardId) ?? "")
+                          : ""}
+                      </TableCell>
                       <TableCell>{ta.account.name}</TableCell>
                       <TableCell>
                         <Badge
@@ -236,7 +254,7 @@ export function ReceiptTransactionsCard({
                     <TableCell className="text-right font-bold">
                       {formatCurrency(transactionsTotal)}
                     </TableCell>
-                    <TableCell colSpan={5} />
+                    <TableCell colSpan={6} />
                   </TableRow>
                 </TableFooter>
               </Table>
@@ -275,6 +293,7 @@ export function ReceiptTransactionsCard({
             <ReceiptTransactionForm
               mode="edit"
               defaultValues={{
+                cardId: editTxn.transaction.cardId ?? "",
                 accountId: editTxn.account.id,
                 amount: editTxn.transaction.amount,
                 date: editTxn.transaction.date,

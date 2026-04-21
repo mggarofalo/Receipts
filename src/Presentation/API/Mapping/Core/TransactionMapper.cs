@@ -17,12 +17,12 @@ public partial class TransactionMapper
 	{
 		return new Transaction(
 			Guid.Empty,
+			source.CardId,
 			new Money((decimal)source.Amount, Currency.USD),
 			source.Date
 		)
 		{
 			AccountId = source.AccountId,
-			CardId = source.CardId,
 		};
 	}
 
@@ -30,12 +30,12 @@ public partial class TransactionMapper
 	{
 		return new Transaction(
 			source.Id,
+			source.CardId,
 			new Money((decimal)source.Amount, Currency.USD),
 			source.Date
 		)
 		{
 			AccountId = source.AccountId,
-			CardId = source.CardId,
 		};
 	}
 

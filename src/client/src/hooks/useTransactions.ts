@@ -54,7 +54,7 @@ export function useCreateTransaction() {
       body,
     }: {
       receiptId: string;
-      body: { amount: number; date: string; accountId: string };
+      body: { amount: number; date: string; accountId: string; cardId: string };
     }) => {
       const { data, error } = await client.POST(
         "/api/receipts/{receiptId}/transactions",
@@ -82,7 +82,7 @@ export function useCreateTransactionsBatch() {
       body,
     }: {
       receiptId: string;
-      body: { amount: number; date: string; accountId: string }[];
+      body: { amount: number; date: string; accountId: string; cardId: string }[];
     }) => {
       const { data, error } = await client.POST(
         "/api/receipts/{receiptId}/transactions/batch",
@@ -106,7 +106,7 @@ export function useUpdateTransaction() {
     mutationFn: async ({
       body,
     }: {
-      body: { id: string; amount: number; date: string; accountId: string };
+      body: { id: string; amount: number; date: string; accountId: string; cardId: string };
     }) => {
       const { error } = await client.PUT("/api/transactions/{id}", {
         params: { path: { id: body.id } },

@@ -14,8 +14,12 @@ public partial class ReceiptItemMapper
 	[MapProperty(nameof(ReceiptItem.TotalAmount.Amount), nameof(ReceiptItemEntity.TotalAmount))]
 	[MapProperty(nameof(ReceiptItem.TotalAmount.Currency), nameof(ReceiptItemEntity.TotalAmountCurrency))]
 	[MapperIgnoreSource(nameof(ReceiptItem.ReceiptId))]
+	[MapperIgnoreSource(nameof(ReceiptItem.NormalizedDescriptionId))]
+	[MapperIgnoreSource(nameof(ReceiptItem.NormalizedDescriptionName))]
 	[MapperIgnoreTarget(nameof(ReceiptItemEntity.Receipt))]
 	[MapperIgnoreTarget(nameof(ReceiptItemEntity.ReceiptId))]
+	[MapperIgnoreTarget(nameof(ReceiptItemEntity.NormalizedDescription))]
+	[MapperIgnoreTarget(nameof(ReceiptItemEntity.NormalizedDescriptionId))]
 	[MapperIgnoreTarget(nameof(ReceiptItemEntity.DeletedAt))]
 	[MapperIgnoreTarget(nameof(ReceiptItemEntity.DeletedByUserId))]
 	[MapperIgnoreTarget(nameof(ReceiptItemEntity.DeletedByApiKeyId))]
@@ -28,9 +32,21 @@ public partial class ReceiptItemMapper
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.Receipt))]
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.UnitPriceCurrency))]
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.TotalAmountCurrency))]
+	[MapperIgnoreSource(nameof(ReceiptItemEntity.NormalizedDescription))]
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.DeletedAt))]
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.DeletedByUserId))]
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.DeletedByApiKeyId))]
 	[MapperIgnoreSource(nameof(ReceiptItemEntity.CascadeDeletedByParentId))]
-	public partial ReceiptItem ToDomain(ReceiptItemEntity source);
+	[MapperIgnoreTarget(nameof(ReceiptItem.NormalizedDescriptionName))]
+	private partial ReceiptItem ToDomainPartial(ReceiptItemEntity source);
+
+	public ReceiptItem ToDomain(ReceiptItemEntity source)
+	{
+		ReceiptItem domain = ToDomainPartial(source);
+		// Denormalize CanonicalName from the nav property for read paths. Mapperly can emit
+		// the direct FK via the partial method above, but the nested path through the
+		// navigation requires a custom projection.
+		domain.NormalizedDescriptionName = source.NormalizedDescription?.CanonicalName;
+		return domain;
+	}
 }

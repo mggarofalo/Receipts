@@ -425,4 +425,60 @@ public class ReceiptItemMapperTests
 		// Assert
 		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
 	}
+
+	[Fact]
+	public void ToResponse_MapsNormalizedDescriptionFields_WhenPopulated()
+	{
+		// Arrange
+		Guid expectedId = Guid.NewGuid();
+		Guid expectedNormalizedId = Guid.NewGuid();
+		ReceiptItem item = new(
+			expectedId,
+			"ITEM-NORM-001",
+			"Red Seedless Grapes 2LB",
+			1.0m,
+			new Money(5.99m, Currency.USD),
+			new Money(5.99m, Currency.USD),
+			"Groceries",
+			"Produce"
+		)
+		{
+			NormalizedDescriptionId = expectedNormalizedId,
+			NormalizedDescriptionName = "Grapes",
+			NormalizedDescriptionMatchScore = 0.92
+		};
+
+		// Act
+		ReceiptItemResponse actual = _mapper.ToResponse(item);
+
+		// Assert
+		Assert.Equal(expectedNormalizedId, actual.NormalizedDescriptionId);
+		Assert.Equal("Grapes", actual.NormalizedDescriptionName);
+		Assert.Equal(0.92, actual.NormalizedDescriptionMatchScore);
+	}
+
+	[Fact]
+	public void ToResponse_MapsNullNormalizedDescriptionFields_WhenUnresolved()
+	{
+		// Arrange
+		Guid expectedId = Guid.NewGuid();
+		ReceiptItem item = new(
+			expectedId,
+			"ITEM-NORM-002",
+			"Unresolved Item",
+			1.0m,
+			new Money(1.00m, Currency.USD),
+			new Money(1.00m, Currency.USD),
+			"Test",
+			"Unresolved"
+		);
+
+		// Act
+		ReceiptItemResponse actual = _mapper.ToResponse(item);
+
+		// Assert
+		Assert.Null(actual.NormalizedDescriptionId);
+		Assert.Null(actual.NormalizedDescriptionName);
+		Assert.Null(actual.NormalizedDescriptionMatchScore);
+	}
 }

@@ -19,7 +19,7 @@ Data access and external service implementations. Depends on Domain and Applicat
 - **Mapperly mappers** convert between Domain entities and EF Core entities at compile time (zero reflection).
 - **`ApplicationDbContext`** is configured via `IDbContextFactory` for proper scoped lifetime management.
 - **Repositories** use `IDbContextFactory<ApplicationDbContext>` to create short-lived contexts per operation.
-- **Vector similarity search** uses pgvector with ONNX Runtime (`all-MiniLM-L6-v2` model, 384-dim embeddings).
+- **Vector similarity search** uses pgvector with ONNX Runtime (`bge-large-en-v1.5` model, 1024-dim embeddings, CLS pooling).
 - **ASP.NET Identity** is configured here for user/role management with PostgreSQL storage.
 
 ## Database

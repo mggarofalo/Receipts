@@ -14,10 +14,12 @@ public class TransactionMapperTests
 	public void ToDomain_FromCreateRequest_MapsAllPropertiesWithEmptyId()
 	{
 		// Arrange
+		Guid expectedCardId = Guid.NewGuid();
 		CreateTransactionRequest request = new()
 		{
 			Amount = 150.75,
-			Date = new DateOnly(2025, 3, 20)
+			Date = new DateOnly(2025, 3, 20),
+			CardId = expectedCardId
 		};
 
 		// Act
@@ -25,6 +27,7 @@ public class TransactionMapperTests
 
 		// Assert
 		Assert.Equal(Guid.Empty, actual.Id);
+		Assert.Equal(expectedCardId, actual.CardId);
 		Assert.Equal(150.75m, actual.Amount.Amount);
 		Assert.Equal(Currency.USD, actual.Amount.Currency);
 		Assert.Equal(new DateOnly(2025, 3, 20), actual.Date);
@@ -37,7 +40,8 @@ public class TransactionMapperTests
 		CreateTransactionRequest request = new()
 		{
 			Amount = -42.50,
-			Date = new DateOnly(2025, 2, 14)
+			Date = new DateOnly(2025, 2, 14),
+			CardId = Guid.NewGuid()
 		};
 
 		// Act
@@ -54,11 +58,13 @@ public class TransactionMapperTests
 	{
 		// Arrange
 		Guid expectedId = Guid.NewGuid();
+		Guid expectedCardId = Guid.NewGuid();
 		UpdateTransactionRequest request = new()
 		{
 			Id = expectedId,
 			Amount = 275.00,
-			Date = new DateOnly(2025, 7, 4)
+			Date = new DateOnly(2025, 7, 4),
+			CardId = expectedCardId
 		};
 
 		// Act
@@ -66,6 +72,7 @@ public class TransactionMapperTests
 
 		// Assert
 		Assert.Equal(expectedId, actual.Id);
+		Assert.Equal(expectedCardId, actual.CardId);
 		Assert.Equal(275.00m, actual.Amount.Amount);
 		Assert.Equal(Currency.USD, actual.Amount.Currency);
 		Assert.Equal(new DateOnly(2025, 7, 4), actual.Date);
@@ -78,6 +85,7 @@ public class TransactionMapperTests
 		Guid expectedId = Guid.NewGuid();
 		Transaction transaction = new(
 			expectedId,
+			Guid.NewGuid(),
 			new Money(99.95m, Currency.USD),
 			new DateOnly(2025, 5, 15)
 		);
@@ -98,6 +106,7 @@ public class TransactionMapperTests
 		Guid expectedId = Guid.NewGuid();
 		Transaction transaction = new(
 			expectedId,
+			Guid.NewGuid(),
 			new Money(123.4567m, Currency.USD),
 			new DateOnly(2025, 1, 1)
 		);
@@ -117,6 +126,7 @@ public class TransactionMapperTests
 		DateOnly expectedDate = new(2025, 12, 31);
 		Transaction transaction = new(
 			expectedId,
+			Guid.NewGuid(),
 			new Money(50.00m, Currency.USD),
 			expectedDate
 		);

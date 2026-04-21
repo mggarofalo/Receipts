@@ -11,7 +11,8 @@ public static class CardEntityGenerator
 			Id = Guid.NewGuid(),
 			CardCode = "TestCardCode",
 			Name = "Test Card",
-			IsActive = true
+			IsActive = true,
+			AccountId = Guid.NewGuid()
 		};
 	}
 

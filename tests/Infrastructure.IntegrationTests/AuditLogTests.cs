@@ -14,9 +14,12 @@ public class AuditLogTests(PostgresFixture fixture)
 	[Fact]
 	public async Task Create_Entity_GeneratesAuditLog()
 	{
-		// Arrange
+		// Arrange — Cards now require a valid parent Account (RECEIPTS-575).
 		await using ApplicationDbContext context = fixture.CreateDbContext();
+		AccountEntity parent = AccountEntityGenerator.Generate();
 		CardEntity account = CardEntityGenerator.Generate();
+		account.AccountId = parent.Id;
+		context.Accounts.Add(parent);
 
 		// Act
 		context.Cards.Add(account);
@@ -27,7 +30,7 @@ public class AuditLogTests(PostgresFixture fixture)
 		AuditLogEntity? auditLog = await readContext.AuditLogs
 			.OrderByDescending(a => a.ChangedAt)
 			.FirstOrDefaultAsync(a => a.EntityId == account.Id.ToString()
-				&& a.EntityType == "Account");
+				&& a.EntityType == "Card");
 
 		auditLog.Should().NotBeNull();
 		auditLog!.Action.Should().Be(AuditAction.Create);
@@ -41,9 +44,12 @@ public class AuditLogTests(PostgresFixture fixture)
 	[Fact]
 	public async Task Update_Entity_GeneratesAuditLogWithFieldChanges()
 	{
-		// Arrange
+		// Arrange — Cards now require a valid parent Account (RECEIPTS-575).
 		await using ApplicationDbContext context = fixture.CreateDbContext();
+		AccountEntity parent = AccountEntityGenerator.Generate();
 		CardEntity account = CardEntityGenerator.Generate();
+		account.AccountId = parent.Id;
+		context.Accounts.Add(parent);
 		context.Cards.Add(account);
 		await context.SaveChangesAsync();
 
@@ -56,7 +62,7 @@ public class AuditLogTests(PostgresFixture fixture)
 		AuditLogEntity? auditLog = await readContext.AuditLogs
 			.OrderByDescending(a => a.ChangedAt)
 			.FirstOrDefaultAsync(a => a.EntityId == account.Id.ToString()
-				&& a.EntityType == "Account"
+				&& a.EntityType == "Card"
 				&& a.Action == AuditAction.Update);
 
 		auditLog.Should().NotBeNull();
@@ -92,9 +98,13 @@ public class AuditLogTests(PostgresFixture fixture)
 	[Fact]
 	public async Task AuditLog_Excludes_AuditLogEntities()
 	{
-		// Arrange — the audit system should not audit itself
+		// Arrange — the audit system should not audit itself.
+		// Cards now require a valid parent Account (RECEIPTS-575).
 		await using ApplicationDbContext context = fixture.CreateDbContext();
+		AccountEntity parent = AccountEntityGenerator.Generate();
 		CardEntity account = CardEntityGenerator.Generate();
+		account.AccountId = parent.Id;
+		context.Accounts.Add(parent);
 
 		// Act — create an entity (which triggers audit log creation)
 		context.Cards.Add(account);

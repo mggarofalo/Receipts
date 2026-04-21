@@ -180,6 +180,7 @@ public class RestoreTests
 			await context.Accounts.AddAsync(account);
 			CardEntity card = CardEntityGenerator.Generate();
 			card.AccountId = account.Id;
+			card.Id = account.Id;
 			await context.Cards.AddAsync(card);
 			await context.Receipts.AddAsync(receipt);
 			TransactionEntity transaction1 = TransactionEntityGenerator.Generate(receiptId: receipt.Id, accountId: account.Id);

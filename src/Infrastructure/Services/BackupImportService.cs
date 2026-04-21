@@ -67,6 +67,8 @@ public class BackupImportService(
 			int exportVersion = ReadExportVersion(sqlite);
 
 			// Import in dependency order: independent entities first, then dependent ones.
+			// Accounts must come before Cards (FK constraint on Cards.AccountId → Accounts.Id).
+			(int accountsCreated, int accountsUpdated) = await UpsertAccountsAsync(context, sqlite, exportVersion, cancellationToken);
 			(int cardsCreated, int cardsUpdated) = await UpsertCardsAsync(context, sqlite, exportVersion, cancellationToken);
 			(int categoriesCreated, int categoriesUpdated) = await UpsertCategoriesAsync(context, sqlite, cancellationToken);
 			(int subcategoriesCreated, int subcategoriesUpdated) = await UpsertSubcategoriesAsync(context, sqlite, cancellationToken);
@@ -79,6 +81,7 @@ public class BackupImportService(
 			await transaction.CommitAsync(cancellationToken);
 
 			BackupImportResult result = new(
+				accountsCreated, accountsUpdated,
 				cardsCreated, cardsUpdated,
 				categoriesCreated, categoriesUpdated,
 				subcategoriesCreated, subcategoriesUpdated,
@@ -158,11 +161,108 @@ public class BackupImportService(
 		return int.TryParse(result.ToString(), out int version) ? version : 1;
 	}
 
+	// Import Accounts before Cards so the FK Cards.AccountId → Accounts.Id resolves.
+	// v3+ backups include a dedicated `accounts` table. Legacy (<v3) backups have
+	// no such table — we infer one Account per Card using 1:1 mapping, matching the
+	// IntroduceAccountAggregate migration that introduced the aggregate in prod.
+	private static async Task<(int Created, int Updated)> UpsertAccountsAsync(
+		ApplicationDbContext context, SqliteConnection sqlite, int exportVersion, CancellationToken cancellationToken)
+	{
+		if (exportVersion >= 3)
+		{
+			if (!TableExists(sqlite, "accounts"))
+			{
+				throw new InvalidOperationException($"Backup export_version={exportVersion} is missing required 'accounts' table.");
+			}
+
+			int created = 0, updated = 0;
+			await using SqliteCommand cmd = sqlite.CreateCommand();
+			cmd.CommandText = "SELECT id, name, is_active FROM accounts";
+			await using SqliteDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
+
+			while (await reader.ReadAsync(cancellationToken))
+			{
+				Guid id = Guid.Parse(reader.GetString(0));
+				string name = reader.GetString(1);
+				bool isActive = reader.GetBoolean(2);
+
+				AccountEntity? existing = await context.Accounts.FindAsync([id], cancellationToken);
+				if (existing is not null)
+				{
+					existing.Name = name;
+					existing.IsActive = isActive;
+					updated++;
+				}
+				else
+				{
+					context.Accounts.Add(new AccountEntity
+					{
+						Id = id,
+						Name = name,
+						IsActive = isActive,
+					});
+					created++;
+				}
+			}
+
+			await context.SaveChangesAsync(cancellationToken);
+			return (created, updated);
+		}
+
+		// Legacy fallback: derive one Account per Card (same Id + name), matching
+		// the 1:1 mapping from the IntroduceAccountAggregate migration.
+		bool isLegacy = exportVersion < 2;
+		string cardsTableName = isLegacy ? "accounts" : "cards";
+		string codeColumn = isLegacy ? "account_code" : "card_code";
+
+		if (!TableExists(sqlite, cardsTableName))
+		{
+			return (0, 0);
+		}
+
+		int legacyCreated = 0, legacyUpdated = 0;
+		await using SqliteCommand legacyCmd = sqlite.CreateCommand();
+		legacyCmd.CommandText = $"SELECT id, {codeColumn}, name, is_active FROM {cardsTableName}";
+		await using SqliteDataReader legacyReader = await legacyCmd.ExecuteReaderAsync(cancellationToken);
+
+		while (await legacyReader.ReadAsync(cancellationToken))
+		{
+			Guid id = Guid.Parse(legacyReader.GetString(0));
+			string name = legacyReader.GetString(2);
+			bool isActive = legacyReader.GetBoolean(3);
+
+			AccountEntity? existing = await context.Accounts.FindAsync([id], cancellationToken);
+			if (existing is not null)
+			{
+				existing.Name = name;
+				existing.IsActive = isActive;
+				legacyUpdated++;
+			}
+			else
+			{
+				context.Accounts.Add(new AccountEntity
+				{
+					Id = id,
+					Name = name,
+					IsActive = isActive,
+				});
+				legacyCreated++;
+			}
+		}
+
+		await context.SaveChangesAsync(cancellationToken);
+		return (legacyCreated, legacyUpdated);
+	}
+
 	private static async Task<(int Created, int Updated)> UpsertCardsAsync(
 		ApplicationDbContext context, SqliteConnection sqlite, int exportVersion, CancellationToken cancellationToken)
 	{
 		// v2+ writes to `cards`/`card_code`; v1 wrote to `accounts`/`account_code`.
+		// v3+ adds `account_id`. For legacy (<3) backups we infer AccountId = Card.Id,
+		// matching the 1:1 Account-per-Card seeding from the IntroduceAccountAggregate
+		// migration. UpsertAccountsAsync has already ensured the parent exists.
 		bool isLegacy = exportVersion < 2;
+		bool hasAccountIdColumn = exportVersion >= 3;
 		string tableName = isLegacy ? "accounts" : "cards";
 		string codeColumn = isLegacy ? "account_code" : "card_code";
 
@@ -172,8 +272,11 @@ public class BackupImportService(
 		}
 
 		int created = 0, updated = 0;
+		string selectColumns = hasAccountIdColumn
+			? $"id, {codeColumn}, name, is_active, account_id"
+			: $"id, {codeColumn}, name, is_active";
 		await using SqliteCommand cmd = sqlite.CreateCommand();
-		cmd.CommandText = $"SELECT id, {codeColumn}, name, is_active FROM {tableName}";
+		cmd.CommandText = $"SELECT {selectColumns} FROM {tableName}";
 		await using SqliteDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
 		while (await reader.ReadAsync(cancellationToken))
@@ -183,12 +286,28 @@ public class BackupImportService(
 			string name = reader.GetString(2);
 			bool isActive = reader.GetBoolean(3);
 
+			Guid accountId;
+			if (hasAccountIdColumn)
+			{
+				if (reader.IsDBNull(4))
+				{
+					throw new InvalidOperationException($"Backup card {id} is missing account_id (export_version={exportVersion} requires it).");
+				}
+				accountId = Guid.Parse(reader.GetString(4));
+			}
+			else
+			{
+				// Legacy fallback: AccountId = Card.Id (1:1 with Account).
+				accountId = id;
+			}
+
 			CardEntity? existing = await context.Cards.FindAsync([id], cancellationToken);
 			if (existing is not null)
 			{
 				existing.CardCode = cardCode;
 				existing.Name = name;
 				existing.IsActive = isActive;
+				existing.AccountId = accountId;
 				updated++;
 			}
 			else
@@ -199,6 +318,7 @@ public class BackupImportService(
 					CardCode = cardCode,
 					Name = name,
 					IsActive = isActive,
+					AccountId = accountId,
 				});
 				created++;
 			}
@@ -501,9 +621,18 @@ public class BackupImportService(
 			return (0, 0);
 		}
 
-		// v2+ uses `card_id`; v1 used `account_id`. The TransactionEntity.AccountId column
-		// name is preserved on the receipts side — only the imported backup's column differs.
+		// v2+ exports carry `card_id`; v1 only had `account_id` (which was effectively the
+		// card id — Account.Id == Card.Id in the pre-aggregate schema). In both cases the
+		// column value is the originating Card's Id.
 		string cardColumn = exportVersion < 2 ? "account_id" : "card_id";
+
+		// Resolve Transaction.AccountId by joining the Card's parent Account at import time.
+		// The backup transactions table does not carry a separate account_id column (v3
+		// introduced accounts as a distinct table but did not denormalize onto transactions).
+		// Cards have already been upserted above; Card.AccountId is non-nullable post-575.
+		Dictionary<Guid, Guid> cardAccountIdByCardId = await context.Cards
+			.AsNoTracking()
+			.ToDictionaryAsync(c => c.Id, c => c.AccountId, cancellationToken);
 
 		int created = 0, updated = 0;
 		await using SqliteCommand cmd = sqlite.CreateCommand();
@@ -514,10 +643,16 @@ public class BackupImportService(
 		{
 			Guid id = Guid.Parse(reader.GetString(0));
 			Guid receiptId = Guid.Parse(reader.GetString(1));
-			Guid accountId = Guid.Parse(reader.GetString(2));
+			Guid cardId = Guid.Parse(reader.GetString(2));
 			decimal amount = reader.GetDecimal(3);
 			Currency amountCurrency = Enum.Parse<Currency>(reader.GetString(4));
 			DateOnly date = DateOnly.Parse(reader.GetString(5));
+
+			// Fall back to cardId when the Card is missing from the lookup (shouldn't happen
+			// in practice — Cards are upserted before Transactions — but defensive).
+			Guid accountId = cardAccountIdByCardId.TryGetValue(cardId, out Guid parent)
+				? parent
+				: cardId;
 
 			TransactionEntity? existing = await context.Transactions
 				.IgnoreQueryFilters()
@@ -526,6 +661,7 @@ public class BackupImportService(
 			{
 				existing.ReceiptId = receiptId;
 				existing.AccountId = accountId;
+				existing.CardId = cardId;
 				existing.Amount = amount;
 				existing.AmountCurrency = amountCurrency;
 				existing.Date = date;
@@ -539,6 +675,7 @@ public class BackupImportService(
 					Id = id,
 					ReceiptId = receiptId,
 					AccountId = accountId,
+					CardId = cardId,
 					Amount = amount,
 					AmountCurrency = amountCurrency,
 					Date = date,

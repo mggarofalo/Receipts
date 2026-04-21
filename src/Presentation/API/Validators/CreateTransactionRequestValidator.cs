@@ -9,6 +9,7 @@ public class CreateTransactionRequestValidator : AbstractValidator<CreateTransac
 	public const string DateMustBePriorToCurrentDate = "Date must be prior to the current date";
 
 	public const string AccountIdMustNotBeEmpty = "Account ID must not be empty.";
+	public const string CardIdMustNotBeEmpty = "Card ID must not be empty.";
 
 	public CreateTransactionRequestValidator()
 	{
@@ -23,5 +24,9 @@ public class CreateTransactionRequestValidator : AbstractValidator<CreateTransac
 		RuleFor(x => x.AccountId)
 			.NotEqual(Guid.Empty)
 			.WithMessage(AccountIdMustNotBeEmpty);
+
+		RuleFor(x => x.CardId)
+			.NotEqual(Guid.Empty)
+			.WithMessage(CardIdMustNotBeEmpty);
 	}
 }

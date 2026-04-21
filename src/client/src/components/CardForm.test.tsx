@@ -45,7 +45,7 @@ describe("CardForm", () => {
       <CardForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: false }}
+        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: false, accountId: "acct-1" }}
       />,
     );
 
@@ -61,28 +61,30 @@ describe("CardForm", () => {
 
     await user.type(screen.getByLabelText(/^Card Code/), "CARD-002");
     await user.type(screen.getByLabelText(/^Name/), "Savings");
+    await user.click(screen.getByRole("combobox", { name: /^account/i }));
+    await user.click(await screen.findByText("Checking"));
     await user.click(screen.getByRole("button", { name: /create card/i }));
 
     await waitFor(() => {
       expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-        { cardCode: "CARD-002", name: "Savings", isActive: true, accountId: undefined },
+        { cardCode: "CARD-002", name: "Savings", isActive: true, accountId: "acct-1" },
         expect.anything(),
       );
     });
   });
 
-  it("renders parent Account dropdown with active accounts and '— None —'", async () => {
+  it("renders parent Account dropdown with active accounts only (no '— None —')", async () => {
     const user = userEvent.setup();
     render(<CardForm {...defaultProps} />);
 
     const accountTrigger = screen.getByRole("combobox", { name: /^account/i });
-    expect(accountTrigger).toHaveTextContent("— None —");
 
     await user.click(accountTrigger);
     await waitFor(() => {
       expect(screen.getByText("Checking")).toBeInTheDocument();
       expect(screen.getByText("Savings")).toBeInTheDocument();
     });
+    expect(screen.queryByText("— None —")).not.toBeInTheDocument();
   });
 
   it("pre-populates the parent Account in edit mode", () => {
@@ -122,31 +124,18 @@ describe("CardForm", () => {
     });
   });
 
-  it("submits accountId as undefined when '— None —' is selected", async () => {
+  it("blocks submit without selecting an Account", async () => {
     const user = userEvent.setup();
-    render(
-      <CardForm
-        {...defaultProps}
-        mode="edit"
-        defaultValues={{
-          cardCode: "CARD-004",
-          name: "Orphan",
-          isActive: true,
-          accountId: "acct-1",
-        }}
-      />,
-    );
+    render(<CardForm {...defaultProps} />);
 
-    await user.click(screen.getByRole("combobox", { name: /^account/i }));
-    await user.click(await screen.findByText("— None —"));
-    await user.click(screen.getByRole("button", { name: /update card/i }));
+    await user.type(screen.getByLabelText(/^Card Code/), "CARD-004");
+    await user.type(screen.getByLabelText(/^Name/), "Orphan");
+    await user.click(screen.getByRole("button", { name: /create card/i }));
 
     await waitFor(() => {
-      expect(defaultProps.onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ accountId: undefined }),
-        expect.anything(),
-      );
+      expect(screen.getByText("Account is required")).toBeInTheDocument();
     });
+    expect(defaultProps.onSubmit).not.toHaveBeenCalled();
   });
 
   it("shows validation errors when required fields are empty", async () => {
@@ -158,6 +147,7 @@ describe("CardForm", () => {
     await waitFor(() => {
       expect(screen.getByText("Card code is required")).toBeInTheDocument();
       expect(screen.getByText("Name is required")).toBeInTheDocument();
+      expect(screen.getByText("Account is required")).toBeInTheDocument();
     });
     expect(defaultProps.onSubmit).not.toHaveBeenCalled();
   });
@@ -201,7 +191,7 @@ describe("CardForm", () => {
       <CardForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true }}
+        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true, accountId: "acct-1" }}
         isAdmin={false}
         onDelete={vi.fn()}
       />,
@@ -215,7 +205,7 @@ describe("CardForm", () => {
       <CardForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true }}
+        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true, accountId: "acct-1" }}
         isAdmin={true}
         onDelete={vi.fn()}
       />,
@@ -230,7 +220,7 @@ describe("CardForm", () => {
       <CardForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true }}
+        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true, accountId: "acct-1" }}
         isAdmin={true}
         onDelete={vi.fn()}
       />,
@@ -251,7 +241,7 @@ describe("CardForm", () => {
       <CardForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true }}
+        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true, accountId: "acct-1" }}
         isAdmin={true}
         onDelete={onDelete}
       />,
@@ -276,7 +266,7 @@ describe("CardForm", () => {
       <CardForm
         {...defaultProps}
         mode="edit"
-        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true }}
+        defaultValues={{ cardCode: "CARD-001", name: "Checking", isActive: true, accountId: "acct-1" }}
         isAdmin={true}
       />,
     );

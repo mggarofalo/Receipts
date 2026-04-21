@@ -29,7 +29,7 @@ public class CreateCompleteReceiptCommandHandlerTests
 
 		List<Domain.Core.Transaction> transactions =
 		[
-			new Domain.Core.Transaction(Guid.NewGuid(), new Money(expectedTotal), DateOnly.FromDateTime(DateTime.Now))
+			new Domain.Core.Transaction(Guid.NewGuid(), Guid.NewGuid(), new Money(expectedTotal), DateOnly.FromDateTime(DateTime.Now))
 		];
 
 		CreateCompleteReceiptResult expectedResult = new(receipt, transactions, items);
@@ -62,7 +62,7 @@ public class CreateCompleteReceiptCommandHandlerTests
 		List<Domain.Core.ReceiptItem> items = ReceiptItemGenerator.GenerateList(2); // 2 x $5 = $10 subtotal
 		List<Domain.Core.Transaction> transactions =
 		[
-			new Domain.Core.Transaction(Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now))
+			new Domain.Core.Transaction(Guid.NewGuid(), Guid.NewGuid(), new Money(15), DateOnly.FromDateTime(DateTime.Now))
 		];
 
 		CreateCompleteReceiptCommand command = new(receipt, transactions, items);
@@ -133,7 +133,7 @@ public class CreateCompleteReceiptCommandHandlerTests
 		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(10));
 		List<Domain.Core.Transaction> transactions =
 		[
-			new Domain.Core.Transaction(Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now))
+			new Domain.Core.Transaction(Guid.NewGuid(), Guid.NewGuid(), new Money(10), DateOnly.FromDateTime(DateTime.Now))
 		];
 		CreateCompleteReceiptResult expectedResult = new(receipt, transactions, []);
 
@@ -173,7 +173,7 @@ public class CreateCompleteReceiptCommandHandlerTests
 		decimal transactionAmount = 3.02m + taxAmount; // $3.27 — 1 cent over expectedTotal of $3.26
 		List<Domain.Core.Transaction> transactions =
 		[
-			new Domain.Core.Transaction(Guid.NewGuid(), new Money(transactionAmount), DateOnly.FromDateTime(DateTime.Now))
+			new Domain.Core.Transaction(Guid.NewGuid(), Guid.NewGuid(), new Money(transactionAmount), DateOnly.FromDateTime(DateTime.Now))
 		];
 
 		CreateCompleteReceiptResult expectedResult = new(receipt, transactions, items);
@@ -206,7 +206,7 @@ public class CreateCompleteReceiptCommandHandlerTests
 		List<Domain.Core.ReceiptItem> items = ReceiptItemGenerator.GenerateList(2); // 2 x $5 = $10 subtotal
 		List<Domain.Core.Transaction> transactions =
 		[
-			new Domain.Core.Transaction(Guid.NewGuid(), new Money(22), DateOnly.FromDateTime(DateTime.Now))
+			new Domain.Core.Transaction(Guid.NewGuid(), Guid.NewGuid(), new Money(22), DateOnly.FromDateTime(DateTime.Now))
 		];
 
 		CreateCompleteReceiptCommand command = new(receipt, transactions, items);

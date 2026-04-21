@@ -59,18 +59,23 @@ public class BackupServiceTests : IDisposable
 		await using SqliteCommand versionCmd = conn.CreateCommand();
 		versionCmd.CommandText = "SELECT value FROM backup_metadata WHERE key='export_version'";
 		string? version = (string?)await versionCmd.ExecuteScalarAsync();
-		version.Should().Be("2");
+		version.Should().Be("3");
 	}
 
 	[Fact]
 	public async Task ExportToSqliteAsync_WithAccounts_ExportsAllAccounts()
 	{
 		// Arrange
+		Guid account1Id = Guid.NewGuid();
+		Guid account2Id = Guid.NewGuid();
 		await using (ApplicationDbContext ctx = await _dbContextFactory.CreateDbContextAsync())
 		{
+			ctx.Accounts.AddRange(
+				new AccountEntity { Id = account1Id, Name = "Checking", IsActive = true },
+				new AccountEntity { Id = account2Id, Name = "Savings", IsActive = false });
 			ctx.Cards.AddRange(
-				new CardEntity { Id = Guid.NewGuid(), CardCode = "1000", Name = "Checking", IsActive = true },
-				new CardEntity { Id = Guid.NewGuid(), CardCode = "2000", Name = "Savings", IsActive = false });
+				new CardEntity { Id = Guid.NewGuid(), CardCode = "1000", Name = "Checking", IsActive = true, AccountId = account1Id },
+				new CardEntity { Id = Guid.NewGuid(), CardCode = "2000", Name = "Savings", IsActive = false, AccountId = account2Id });
 			await ctx.SaveChangesAsync();
 		}
 
@@ -94,6 +99,10 @@ public class BackupServiceTests : IDisposable
 		cmd.CommandText = "SELECT is_active FROM cards WHERE card_code='2000'";
 		long isActive = (long)(await cmd.ExecuteScalarAsync())!;
 		isActive.Should().Be(0);
+
+		cmd.CommandText = "SELECT COUNT(*) FROM accounts";
+		long accountCount = (long)(await cmd.ExecuteScalarAsync())!;
+		accountCount.Should().Be(2);
 	}
 
 	[Fact]
@@ -166,6 +175,7 @@ public class BackupServiceTests : IDisposable
 				Id = Guid.NewGuid(),
 				ReceiptId = receiptId,
 				AccountId = accountId,
+				CardId = accountId,
 				Amount = 25.50m,
 				AmountCurrency = Currency.USD,
 				Date = new DateOnly(2024, 1, 15),

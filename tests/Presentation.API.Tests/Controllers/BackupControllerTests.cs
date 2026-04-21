@@ -146,7 +146,7 @@ public class BackupControllerTests : IDisposable
 	public async Task ImportBackup_ValidExtensions_CallsImportService(string extension)
 	{
 		// Arrange
-		BackupImportResult importResult = new(1, 0, 2, 0, 3, 0, 0, 0, 5, 0, 10, 0, 5, 0, 2, 0);
+		BackupImportResult importResult = new(1, 0, 1, 0, 2, 0, 3, 0, 0, 0, 5, 0, 10, 0, 5, 0, 2, 0);
 		_importServiceMock
 			.Setup(s => s.ImportFromSqliteAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(importResult);
@@ -162,6 +162,7 @@ public class BackupControllerTests : IDisposable
 		// Assert
 		Ok<BackupImportResponse> okResult = Assert.IsType<Ok<BackupImportResponse>>(result.Result);
 		BackupImportResponse response = okResult.Value!;
+		response.AccountsCreated.Should().Be(1);
 		response.CardsCreated.Should().Be(1);
 		response.CategoriesCreated.Should().Be(2);
 		response.SubcategoriesCreated.Should().Be(3);
@@ -169,7 +170,7 @@ public class BackupControllerTests : IDisposable
 		response.ReceiptItemsCreated.Should().Be(10);
 		response.TransactionsCreated.Should().Be(5);
 		response.AdjustmentsCreated.Should().Be(2);
-		response.TotalCreated.Should().Be(28);
+		response.TotalCreated.Should().Be(29);
 		response.TotalUpdated.Should().Be(0);
 	}
 
@@ -241,6 +242,7 @@ public class BackupControllerTests : IDisposable
 	{
 		// Arrange
 		BackupImportResult importResult = new(
+			AccountsCreated: 2, AccountsUpdated: 1,
 			CardsCreated: 2, CardsUpdated: 1,
 			CategoriesCreated: 3, CategoriesUpdated: 2,
 			SubcategoriesCreated: 5, SubcategoriesUpdated: 3,
@@ -265,6 +267,8 @@ public class BackupControllerTests : IDisposable
 		// Assert
 		Ok<BackupImportResponse> okResult = Assert.IsType<Ok<BackupImportResponse>>(result.Result);
 		BackupImportResponse response = okResult.Value!;
+		response.AccountsCreated.Should().Be(2);
+		response.AccountsUpdated.Should().Be(1);
 		response.CardsCreated.Should().Be(2);
 		response.CardsUpdated.Should().Be(1);
 		response.CategoriesCreated.Should().Be(3);
@@ -281,8 +285,8 @@ public class BackupControllerTests : IDisposable
 		response.TransactionsUpdated.Should().Be(5);
 		response.AdjustmentsCreated.Should().Be(3);
 		response.AdjustmentsUpdated.Should().Be(2);
-		response.TotalCreated.Should().Be(67);
-		response.TotalUpdated.Should().Be(29);
+		response.TotalCreated.Should().Be(69);
+		response.TotalUpdated.Should().Be(30);
 	}
 
 	public void Dispose()

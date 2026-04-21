@@ -38,6 +38,7 @@ public class TripValidationTests
 	{
 		Transaction transaction = new(
 			Guid.NewGuid(),
+			Guid.NewGuid(),
 			new Money(amount),
 			date ?? DateOnly.FromDateTime(DateTime.Now));
 

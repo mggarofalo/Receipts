@@ -464,4 +464,36 @@ public class ReportsController(IMediator mediator) : ControllerBase
 			}).ToList()
 		});
 	}
+
+	[HttpGet("spending-by-normalized-description")]
+	[EndpointSummary("Get spending by normalized description report")]
+	[EndpointDescription("Aggregates receipt item spending grouped by normalized description canonical name. Items without a normalized description bucket into a synthetic \"(Not Normalized)\" group.")]
+	public async Task<Results<Ok<SpendingByNormalizedDescriptionResponse>, BadRequest<string>>> GetSpendingByNormalizedDescription(
+		[FromQuery] DateTimeOffset? from,
+		[FromQuery] DateTimeOffset? to,
+		CancellationToken cancellationToken)
+	{
+		if (from.HasValue && to.HasValue && from.Value > to.Value)
+		{
+			return TypedResults.BadRequest("from must be before or equal to to");
+		}
+
+		GetSpendingByNormalizedDescriptionQuery query = new(from, to);
+		AppReports.SpendingByNormalizedDescriptionResult result = await mediator.Send(query, cancellationToken);
+
+		return TypedResults.Ok(new SpendingByNormalizedDescriptionResponse
+		{
+			FromDate = result.FromDate,
+			ToDate = result.ToDate,
+			Items = result.Items.Select(i => new SpendingByNormalizedDescriptionItem
+			{
+				CanonicalName = i.CanonicalName,
+				TotalAmount = (double)i.TotalAmount,
+				Currency = i.Currency,
+				ItemCount = i.ItemCount,
+				FirstSeen = i.FirstSeen,
+				LastSeen = i.LastSeen
+			}).ToList()
+		});
+	}
 }
