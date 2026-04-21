@@ -40,18 +40,22 @@ public class SoftDeleteTests(PostgresFixture fixture)
 	[Fact]
 	public async Task SoftDelete_Receipt_CascadesToTransactions()
 	{
-		// Arrange — receipt with a child transaction, saved on one context
+		// Arrange — receipt with a child transaction, saved on one context.
+		// Transaction now requires both AccountId and CardId FKs (RECEIPTS-574/575).
 		Guid receiptId;
 		Guid transactionId;
 		{
 			await using ApplicationDbContext setupContext = fixture.CreateDbContext();
 			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-			CardEntity account = CardEntityGenerator.Generate();
+			AccountEntity account = AccountEntityGenerator.Generate();
+			CardEntity card = CardEntityGenerator.Generate();
+			card.AccountId = account.Id;
 			setupContext.Receipts.Add(receipt);
-			setupContext.Cards.Add(account);
+			setupContext.Accounts.Add(account);
+			setupContext.Cards.Add(card);
 			await setupContext.SaveChangesAsync();
 
-			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id, card.Id);
 			setupContext.Transactions.Add(transaction);
 			await setupContext.SaveChangesAsync();
 
@@ -59,10 +63,13 @@ public class SoftDeleteTests(PostgresFixture fixture)
 			transactionId = transaction.Id;
 		}
 
-		// Act — soft-delete the receipt on a fresh context (children not in ChangeTracker)
+		// Act — soft-delete the receipt after loading owned children so the
+		// cascade in HandleSoftDelete can see them (matches ReceiptRepository.DeleteAsync).
 		{
 			await using ApplicationDbContext deleteContext = fixture.CreateDbContext();
 			ReceiptEntity receiptToDelete = await deleteContext.Receipts.FirstAsync(r => r.Id == receiptId);
+			await deleteContext.Transactions.IgnoreAutoIncludes()
+				.Where(t => t.ReceiptId == receiptId).LoadAsync();
 			deleteContext.Receipts.Remove(receiptToDelete);
 			await deleteContext.SaveChangesAsync();
 		}
@@ -101,10 +108,13 @@ public class SoftDeleteTests(PostgresFixture fixture)
 			itemId = item.Id;
 		}
 
-		// Act — soft-delete the receipt on a fresh context (children not in ChangeTracker)
+		// Act — soft-delete the receipt after loading owned children so the
+		// cascade in HandleSoftDelete can see them (matches ReceiptRepository.DeleteAsync).
 		{
 			await using ApplicationDbContext deleteContext = fixture.CreateDbContext();
 			ReceiptEntity receiptToDelete = await deleteContext.Receipts.FirstAsync(r => r.Id == receiptId);
+			await deleteContext.ReceiptItems.IgnoreAutoIncludes()
+				.Where(i => i.ReceiptId == receiptId).LoadAsync();
 			deleteContext.Receipts.Remove(receiptToDelete);
 			await deleteContext.SaveChangesAsync();
 		}
@@ -144,10 +154,13 @@ public class SoftDeleteTests(PostgresFixture fixture)
 			adjustmentId = adjustment.Id;
 		}
 
-		// Act — soft-delete the receipt on a fresh context (children not in ChangeTracker)
+		// Act — soft-delete the receipt after loading owned children so the
+		// cascade in HandleSoftDelete can see them (matches ReceiptRepository.DeleteAsync).
 		{
 			await using ApplicationDbContext deleteContext = fixture.CreateDbContext();
 			ReceiptEntity receiptToDelete = await deleteContext.Receipts.FirstAsync(r => r.Id == receiptId);
+			await deleteContext.Adjustments.IgnoreAutoIncludes()
+				.Where(a => a.ReceiptId == receiptId).LoadAsync();
 			deleteContext.Receipts.Remove(receiptToDelete);
 			await deleteContext.SaveChangesAsync();
 		}
@@ -217,18 +230,22 @@ public class SoftDeleteTests(PostgresFixture fixture)
 	[Fact]
 	public async Task SoftDelete_Transaction_CascadesToYnabSyncRecords()
 	{
-		// Arrange — transaction with a child YnabSyncRecord
+		// Arrange — transaction with a child YnabSyncRecord.
+		// Transaction now requires both AccountId and CardId FKs (RECEIPTS-574/575).
 		Guid transactionId;
 		Guid syncRecordId;
 		{
 			await using ApplicationDbContext setupContext = fixture.CreateDbContext();
 			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-			CardEntity account = CardEntityGenerator.Generate();
+			AccountEntity account = AccountEntityGenerator.Generate();
+			CardEntity card = CardEntityGenerator.Generate();
+			card.AccountId = account.Id;
 			setupContext.Receipts.Add(receipt);
-			setupContext.Cards.Add(account);
+			setupContext.Accounts.Add(account);
+			setupContext.Cards.Add(card);
 			await setupContext.SaveChangesAsync();
 
-			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id, card.Id);
 			setupContext.Transactions.Add(transaction);
 			await setupContext.SaveChangesAsync();
 
@@ -240,10 +257,13 @@ public class SoftDeleteTests(PostgresFixture fixture)
 			syncRecordId = syncRecord.Id;
 		}
 
-		// Act — soft-delete the transaction on a fresh context
+		// Act — soft-delete the transaction after loading owned children so the
+		// cascade in HandleSoftDelete can see them.
 		{
 			await using ApplicationDbContext deleteContext = fixture.CreateDbContext();
 			TransactionEntity txToDelete = await deleteContext.Transactions.FirstAsync(t => t.Id == transactionId);
+			await deleteContext.YnabSyncRecords.IgnoreAutoIncludes()
+				.Where(s => s.LocalTransactionId == transactionId).LoadAsync();
 			deleteContext.Transactions.Remove(txToDelete);
 			await deleteContext.SaveChangesAsync();
 		}
@@ -267,17 +287,21 @@ public class SoftDeleteTests(PostgresFixture fixture)
 	public async Task SoftDelete_YnabSyncRecord_AllowsReCreationAfterSoftDelete()
 	{
 		// Arrange — this test validates the filtered unique index on (LocalTransactionId, SyncType)
-		// against a real PostgreSQL instance where unique indexes are enforced
+		// against a real PostgreSQL instance where unique indexes are enforced.
+		// Transaction now requires both AccountId and CardId FKs (RECEIPTS-574/575).
 		Guid transactionId;
 		{
 			await using ApplicationDbContext setupContext = fixture.CreateDbContext();
 			ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
-			CardEntity account = CardEntityGenerator.Generate();
+			AccountEntity account = AccountEntityGenerator.Generate();
+			CardEntity card = CardEntityGenerator.Generate();
+			card.AccountId = account.Id;
 			setupContext.Receipts.Add(receipt);
-			setupContext.Cards.Add(account);
+			setupContext.Accounts.Add(account);
+			setupContext.Cards.Add(card);
 			await setupContext.SaveChangesAsync();
 
-			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id);
+			TransactionEntity transaction = TransactionEntityGenerator.Generate(receipt.Id, account.Id, card.Id);
 			setupContext.Transactions.Add(transaction);
 			await setupContext.SaveChangesAsync();
 
