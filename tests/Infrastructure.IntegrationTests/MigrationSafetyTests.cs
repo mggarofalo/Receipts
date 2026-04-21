@@ -66,4 +66,51 @@ public class MigrationSafetyTests(PostgresFixture fixture)
 		await context.Database.ExecuteSqlRawAsync("""DELETE FROM "Accounts" WHERE "Id" = {0};""", accountId);
 		await migrator.MigrateAsync();
 	}
+
+	// RECEIPTS-604: RequireAccountIdOnCards self-heals orphan Cards (AccountId IS
+	// NULL) by creating a 1:1 Account with the same Id — mirroring
+	// IntroduceAccountAggregate's original backfill. This covers Cards that
+	// slipped in between the two migrations (e.g., via backup restore or other
+	// paths that bypassed the application-layer validators).
+	[Fact]
+	public async Task RequireAccountIdOnCards_WithOrphanCard_BackfillsMatchingAccount()
+	{
+		const string priorMigration = "20260419022200_AddCardIdToTransactions";
+
+		await using ApplicationDbContext context = fixture.CreateDbContext();
+		IMigrator migrator = context.GetInfrastructure().GetRequiredService<IMigrator>();
+
+		// Roll back to a state where Cards.AccountId is nullable.
+		await migrator.MigrateAsync(priorMigration);
+
+		// Insert an orphan Card directly — no matching Account, AccountId NULL.
+		Guid cardId = Guid.NewGuid();
+		await context.Database.ExecuteSqlRawAsync(
+			"""
+			INSERT INTO "Cards" ("Id", "CardCode", "Name", "IsActive", "AccountId")
+				VALUES ({0}, 'ORPHAN', 'Orphan Card', true, NULL);
+			""",
+			cardId);
+
+		// Re-apply all migrations. The self-heal should run before the NOT NULL
+		// alter, so the alter sees no NULLs and succeeds.
+		await migrator.MigrateAsync();
+
+		// Orphan Card should now point at a matching Account with its own Id.
+		Guid? backfilledAccountId = await context.Cards
+			.IgnoreQueryFilters()
+			.Where(c => c.Id == cardId)
+			.Select(c => (Guid?)c.AccountId)
+			.FirstOrDefaultAsync();
+		backfilledAccountId.Should().Be(cardId);
+
+		bool accountExists = await context.Accounts
+			.IgnoreQueryFilters()
+			.AnyAsync(a => a.Id == cardId);
+		accountExists.Should().BeTrue();
+
+		// Clean up: Card first (FK Restrict on AccountId), then the paired Account.
+		await context.Database.ExecuteSqlRawAsync("""DELETE FROM "Cards" WHERE "Id" = {0};""", cardId);
+		await context.Database.ExecuteSqlRawAsync("""DELETE FROM "Accounts" WHERE "Id" = {0};""", cardId);
+	}
 }
