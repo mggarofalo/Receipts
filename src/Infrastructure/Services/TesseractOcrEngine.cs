@@ -74,10 +74,12 @@ public sealed class TesseractOcrEngine : IOcrEngine, IDisposable
 			linked.ThrowIfCancellationRequested();
 
 			using Pix pix = Pix.LoadFromMemory(imageBytes);
-			// SingleColumn (PSM 4) preserves vertical line breaks in column-structured
-			// text like receipts. SingleBlock (PSM 6) collapses rows and breaks all
-			// downstream line-based parsers in Application.Services.Parsing.
-			using Page page = _engine.Process(pix, PageSegMode.SingleColumn);
+			// Auto (PSM 3) runs full automatic page segmentation without OSD. On real
+			// receipt photos this preserves vertical line breaks more reliably than
+			// SingleColumn (PSM 4) or SingleBlock (PSM 6), both of which can collapse
+			// rows on photos with tight line spacing and break line-based parsers in
+			// Application.Services.Parsing.
+			using Page page = _engine.Process(pix, PageSegMode.Auto);
 
 			// Check timeout/cancellation after native call returns
 			if (linked.IsCancellationRequested)
