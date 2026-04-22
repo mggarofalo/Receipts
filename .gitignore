@@ -327,7 +327,7 @@ src/client/coverage/
 # SDLC pipeline state files
 .sdlc/
 
-# ONNX model binary (~1.34 GB, downloaded via scripts/download-onnx-model.cs).
-# vocab.txt (232KB) is committed intentionally — it's small, required at runtime,
-# and keeping it in-tree avoids network dependencies for CI and local builds.
+# ONNX model files — downloaded via scripts/download-onnx-model.cs
+# (also fetched in Dockerfile during image build).
 src/Infrastructure/Models/BgeLargeEnV15/model.onnx
+src/Infrastructure/Models/BgeLargeEnV15/vocab.txt
