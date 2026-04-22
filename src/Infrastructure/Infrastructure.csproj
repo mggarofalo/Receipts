@@ -37,6 +37,10 @@
     <PackageReference Include="Pgvector.EntityFrameworkCore" />
     <PackageReference Include="Riok.Mapperly" />
     <PackageReference Include="Sdcb.PaddleInference" />
+    <PackageReference Include="Sdcb.PaddleInference.runtime.linux-x64.openblas"
+                      Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or ('$(RuntimeIdentifier)' == '' And '$([MSBuild]::IsOSPlatform(`Linux`))' == 'true')" />
+    <PackageReference Include="Sdcb.PaddleInference.runtime.win64.mkl"
+                      Condition="'$(RuntimeIdentifier)' == 'win-x64' Or ('$(RuntimeIdentifier)' == '' And '$([MSBuild]::IsOSPlatform(`Windows`))' == 'true')" />
     <PackageReference Include="Sdcb.PaddleOCR" />
     <PackageReference Include="Sdcb.PaddleOCR.Models.Local" />
     <PackageReference Include="SixLabors.ImageSharp" />
