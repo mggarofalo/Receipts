@@ -173,4 +173,50 @@ public class WalmartReceiptParserTests
 			item.TotalPrice.Confidence.Should().Be(ConfidenceLevel.High);
 		});
 	}
+
+	// Regression test for RECEIPTS-607: when Tesseract uses PageSegMode.SingleColumn,
+	// real-world Walmart receipts produce multi-line OCR output with 12-digit UPCs and
+	// inline tax-flag letters. Verify the parser extracts items/subtotal/total/tax/date/
+	// payment from this shape — the failure mode before the PSM fix was a single run-on
+	// line producing zero extraction.
+	[Fact]
+	public void Parse_RealisticWalmartOcrOutput_ExtractsFields()
+	{
+		const string ocrText = """
+            WALMART SUPERCENTER
+            864-834-7179
+            Mgr. TERRY
+            ST# 05487 OP# 002216 TE# 04 TR# 01841
+            # ITEMS SOLD 23
+            TC# 7418 8473 9791 0634 4294
+            GRANULATED 078742228030 F 3.07
+            NCY CRY JA CH 028400589880 F 3.97
+            PEANUT BUTTR 051500720020 F 6.97
+            SCUR CREAM 073420000110 F 2.64
+            FIRE TACO SC 021000046900 F 1.98
+            SCRUB SPONGE 051131936820 8.72
+            BREAD 072250049190 F 3.76
+            BELL PEPPER 881979000870 F 0.82
+            BANANAS 000000040110 1.23
+            SUBTOTAL 69.68
+            TAX 1 6.0000 % 0.75
+            TOTAL 70.43
+            MASTERCARD TEND 70.43
+            CHANGE DUE 0.00
+            01/14/26 17:57:23
+            """;
+
+		// Act
+		ParsedReceipt actual = _parser.Parse(ocrText);
+
+		// Assert — all the things that were zero before the PSM fix
+		actual.StoreName.Value.Should().Be("Walmart");
+		actual.Date.Value.Should().Be(new DateOnly(2026, 1, 14));
+		actual.Items.Should().HaveCountGreaterThanOrEqualTo(5);
+		actual.Subtotal.Value.Should().Be(69.68m);
+		actual.Total.Value.Should().Be(70.43m);
+		actual.TaxLines.Should().HaveCount(1);
+		actual.TaxLines[0].Amount.Value.Should().Be(0.75m);
+		actual.PaymentMethod.Value.Should().Be("MASTERCARD");
+	}
 }
