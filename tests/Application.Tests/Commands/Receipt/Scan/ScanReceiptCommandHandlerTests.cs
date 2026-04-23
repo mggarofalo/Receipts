@@ -3,6 +3,7 @@ using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ocr;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Application.Tests.Commands.Receipt.Scan;
@@ -62,451 +63,302 @@ public class ScanReceiptCommandTests
 
 public class ScanReceiptCommandHandlerTests
 {
-	private readonly Mock<IImageProcessingService> _mockImageProcessingService;
-	private readonly Mock<IOcrEngine> _mockOcrEngine;
-	private readonly Mock<IReceiptParsingService> _mockReceiptParsingService;
+	private readonly Mock<IReceiptExtractionService> _mockExtractionService;
 	private readonly Mock<IPdfConversionService> _mockPdfConversionService;
+	private readonly Mock<ILogger<ScanReceiptCommandHandler>> _mockLogger;
 	private readonly ScanReceiptCommandHandler _handler;
 
 	public ScanReceiptCommandHandlerTests()
 	{
-		_mockImageProcessingService = new Mock<IImageProcessingService>();
-		_mockOcrEngine = new Mock<IOcrEngine>();
-		_mockReceiptParsingService = new Mock<IReceiptParsingService>();
+		_mockExtractionService = new Mock<IReceiptExtractionService>();
 		_mockPdfConversionService = new Mock<IPdfConversionService>();
+		_mockLogger = new Mock<ILogger<ScanReceiptCommandHandler>>();
 		_handler = new ScanReceiptCommandHandler(
-			_mockImageProcessingService.Object,
-			_mockOcrEngine.Object,
-			_mockReceiptParsingService.Object,
-			_mockPdfConversionService.Object);
+			_mockExtractionService.Object,
+			_mockPdfConversionService.Object,
+			_mockLogger.Object);
+	}
+
+	private static ParsedReceipt BuildPopulatedReceipt(string storeName = "WALMART", decimal total = 3.74m)
+	{
+		return new ParsedReceipt(
+			FieldConfidence<string>.High(storeName),
+			FieldConfidence<DateOnly>.Medium(DateOnly.FromDateTime(DateTime.Today)),
+			[
+				new ParsedReceiptItem(
+					FieldConfidence<string?>.None(),
+					FieldConfidence<string>.High("MILK 2%"),
+					FieldConfidence<decimal>.High(1m),
+					FieldConfidence<decimal>.High(3.49m),
+					FieldConfidence<decimal>.High(3.49m))
+			],
+			FieldConfidence<decimal>.High(3.49m),
+			[],
+			FieldConfidence<decimal>.High(total),
+			FieldConfidence<string?>.None()
+		);
+	}
+
+	private static ParsedReceipt BuildEmptyReceipt()
+	{
+		return new ParsedReceipt(
+			FieldConfidence<string>.None(),
+			FieldConfidence<DateOnly>.None(),
+			[],
+			FieldConfidence<decimal>.None(),
+			[],
+			FieldConfidence<decimal>.None(),
+			FieldConfidence<string?>.None()
+		);
 	}
 
 	[Fact]
-	public async Task Handle_SuccessfulScan_ReturnsResultWithParsedReceipt()
+	public async Task Handle_Image_CallsExtractionServiceWithBytesAndContentType()
 	{
 		// Arrange
 		byte[] imageBytes = [0xFF, 0xD8, 0xFF, 0xE0];
 		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
 
-		byte[] processedBytes = [0x89, 0x50, 0x4E, 0x47];
-		ImageProcessingResult processingResult = new(processedBytes, 100, 200);
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(processingResult);
-
-		OcrResult ocrResult = new("STORE NAME\nItem 1  $5.00\nTOTAL $5.00", 0.85f);
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(processedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(ocrResult);
-
-		ParsedReceipt parsedReceipt = new(
-			FieldConfidence<string>.High("STORE NAME"),
-			FieldConfidence<DateOnly>.Low(DateOnly.FromDateTime(DateTime.Today)),
-			[
-				new ParsedReceiptItem(
-					FieldConfidence<string?>.None(),
-					FieldConfidence<string>.High("Item 1"),
-					FieldConfidence<decimal>.Medium(1m),
-					FieldConfidence<decimal>.Medium(5.00m),
-					FieldConfidence<decimal>.High(5.00m))
-			],
-			FieldConfidence<decimal>.Low(0m),
-			[],
-			FieldConfidence<decimal>.High(5.00m),
-			FieldConfidence<string?>.None()
-		);
-		_mockReceiptParsingService
-			.Setup(s => s.Parse(ocrResult.Text))
-			.Returns(parsedReceipt);
-
-		// Act
-		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		actual.ParsedReceipt.Should().Be(parsedReceipt);
-		actual.RawOcrText.Should().Be(ocrResult.Text);
-		actual.OcrConfidence.Should().Be(0.85f);
-	}
-
-	[Fact]
-	public async Task Handle_SuccessfulScan_CallsServicesInOrder()
-	{
-		// Arrange
-		byte[] imageBytes = [0xFF, 0xD8];
-		ScanReceiptCommand command = new(imageBytes, "image/png");
-
-		byte[] processedBytes = [0x01, 0x02];
-		ImageProcessingResult processingResult = new(processedBytes, 50, 50);
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/png", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(processingResult);
-
-		OcrResult ocrResult = new("Some OCR text", 0.9f);
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(processedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(ocrResult);
-
-		ParsedReceipt parsedReceipt = new(
-			FieldConfidence<string>.Medium("Store"),
-			FieldConfidence<DateOnly>.Low(DateOnly.FromDateTime(DateTime.Today)),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			FieldConfidence<string?>.None()
-		);
-		_mockReceiptParsingService
-			.Setup(s => s.Parse(ocrResult.Text))
-			.Returns(parsedReceipt);
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
 		await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		_mockImageProcessingService.Verify(
-			s => s.PreprocessAsync(imageBytes, "image/png", It.IsAny<CancellationToken>()),
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()),
 			Times.Once);
-		_mockOcrEngine.Verify(
-			s => s.ExtractTextAsync(processedBytes, It.IsAny<CancellationToken>()),
-			Times.Once);
-		_mockReceiptParsingService.Verify(
-			s => s.Parse(ocrResult.Text),
-			Times.Once);
-	}
-
-	[Fact]
-	public async Task Handle_OcrReturnsEmptyText_ThrowsOcrNoTextException()
-	{
-		// Arrange
-		byte[] imageBytes = [0xFF, 0xD8];
-		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
-
-		ImageProcessingResult processingResult = new([0x01], 50, 50);
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(processingResult);
-
-		OcrResult ocrResult = new("", 0.0f);
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(processingResult.ProcessedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(ocrResult);
-
-		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		await act.Should().ThrowAsync<OcrNoTextException>()
-			.WithMessage("*OCR returned no readable text*");
-
-		_mockReceiptParsingService.Verify(
-			s => s.Parse(It.IsAny<string>()),
+		_mockPdfConversionService.Verify(
+			s => s.ConvertAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
 			Times.Never);
 	}
 
 	[Fact]
-	public async Task Handle_OcrReturnsWhitespaceText_ThrowsOcrNoTextException()
+	public async Task Handle_Image_ReturnsResultWithParsedReceipt()
 	{
 		// Arrange
 		byte[] imageBytes = [0xFF, 0xD8];
-		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
+		ScanReceiptCommand command = new(imageBytes, "image/png");
+		ParsedReceipt parsed = BuildPopulatedReceipt("COSTCO", 42.99m);
 
-		ImageProcessingResult processingResult = new([0x01], 50, 50);
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(processingResult);
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/png", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(parsed);
 
-		OcrResult ocrResult = new("   \n  \t  ", 0.0f);
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(processingResult.ProcessedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(ocrResult);
+		// Act
+		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		actual.ParsedReceipt.Should().BeSameAs(parsed);
+	}
+
+	[Fact]
+	public async Task Handle_Pdf_ConvertsAndExtractsFromFirstPageImage()
+	{
+		// Arrange
+		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
+		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
+
+		byte[] firstPageImage = [0x89, 0x50, 0x4E, 0x47];
+		PdfConversionResult conversion = new([firstPageImage], null, null);
+
+		_mockPdfConversionService
+			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(conversion);
+
+		ParsedReceipt parsed = BuildPopulatedReceipt();
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(parsed);
+
+		// Act
+		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		actual.ParsedReceipt.Should().BeSameAs(parsed);
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_Pdf_IgnoresExtractedTextField()
+	{
+		// Arrange — even when the PDF has a text layer, the handler must still call
+		// the VLM on the page image. The embedded-text shortcut was removed per
+		// RECEIPTS-619 (Paperless OCR is mediocre, prefer re-OCR).
+		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
+		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
+
+		byte[] firstPageImage = [0x89, 0x50, 0x4E, 0x47];
+		PdfConversionResult conversion = new(
+			[firstPageImage],
+			"WALMART\nMILK 2%  $3.49\nTOTAL  $3.74",
+			new PdfMetadata("Receipt", null));
+
+		_mockPdfConversionService
+			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(conversion);
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(BuildPopulatedReceipt());
+
+		// Act
+		await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_PdfWithMultiplePages_UsesFirstPageOnly()
+	{
+		// Arrange
+		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
+		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
+
+		byte[] page1 = [0x89, 0x50, 0x4E, 0x47];
+		byte[] page2 = [0x89, 0x50, 0x4E, 0x48];
+		byte[] page3 = [0x89, 0x50, 0x4E, 0x49];
+		PdfConversionResult conversion = new([page1, page2, page3], null, null);
+
+		_mockPdfConversionService
+			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(conversion);
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(BuildPopulatedReceipt());
+
+		// Act
+		await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(page1, "image/png", It.IsAny<CancellationToken>()),
+			Times.Once);
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(page2, It.IsAny<string>(), It.IsAny<CancellationToken>()),
+			Times.Never);
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(page3, It.IsAny<string>(), It.IsAny<CancellationToken>()),
+			Times.Never);
+	}
+
+	[Fact]
+	public async Task Handle_PdfWithNoImages_ThrowsOcrNoTextException()
+	{
+		// Arrange
+		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
+		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
+
+		PdfConversionResult conversion = new(
+			Array.Empty<byte[]>(),
+			"some text layer content",
+			null);
+
+		_mockPdfConversionService
+			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(conversion);
 
 		// Act
 		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<OcrNoTextException>()
-			.WithMessage("*OCR returned no readable text*");
+			.WithMessage("*no extractable images*");
+
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+			Times.Never);
 	}
 
 	[Fact]
-	public async Task Handle_PreprocessingThrows_PropagatesException()
+	public async Task Handle_ExtractionReturnsEmptyReceipt_ThrowsOcrNoTextException()
 	{
 		// Arrange
 		byte[] imageBytes = [0xFF, 0xD8];
 		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
 
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new InvalidOperationException("The uploaded file is not a supported image format."));
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(BuildEmptyReceipt());
+
+		// Act
+		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<OcrNoTextException>()
+			.WithMessage("*could not be extracted*");
+	}
+
+	[Fact]
+	public async Task Handle_ExtractionServiceThrows_PropagatesException()
+	{
+		// Arrange
+		byte[] imageBytes = [0xFF, 0xD8];
+		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("VLM returned unparseable JSON."));
 
 		// Act
 		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
-			.WithMessage("*not a supported image format*");
-
-		_mockOcrEngine.Verify(
-			s => s.ExtractTextAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
-			Times.Never);
-		_mockReceiptParsingService.Verify(
-			s => s.Parse(It.IsAny<string>()),
-			Times.Never);
+			.WithMessage("*VLM returned unparseable JSON*");
 	}
 
 	[Fact]
-	public async Task Handle_OcrTextExceedsMaxLength_TruncatesBeforeParsing()
-	{
-		// Arrange
-		byte[] imageBytes = [0xFF, 0xD8];
-		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
-
-		ImageProcessingResult processingResult = new([0x01], 50, 50);
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(processingResult);
-
-		string longText = new('A', ScanReceiptCommandHandler.MaxOcrTextLength + 1000);
-		OcrResult ocrResult = new(longText, 0.7f);
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(processingResult.ProcessedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(ocrResult);
-
-		ParsedReceipt parsedReceipt = new(
-			FieldConfidence<string>.Low("Unknown"),
-			FieldConfidence<DateOnly>.Low(DateOnly.FromDateTime(DateTime.Today)),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			FieldConfidence<string?>.None()
-		);
-		_mockReceiptParsingService
-			.Setup(s => s.Parse(It.Is<string>(t => t.Length == ScanReceiptCommandHandler.MaxOcrTextLength)))
-			.Returns(parsedReceipt);
-
-		// Act
-		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		actual.RawOcrText.Should().Be(longText);
-		actual.ParsedReceipt.Should().Be(parsedReceipt);
-
-		_mockReceiptParsingService.Verify(
-			s => s.Parse(It.Is<string>(t => t.Length == ScanReceiptCommandHandler.MaxOcrTextLength)),
-			Times.Once);
-	}
-
-	[Fact]
-	public async Task Handle_OcrTextWithinMaxLength_PassesFullTextToParsing()
-	{
-		// Arrange
-		byte[] imageBytes = [0xFF, 0xD8];
-		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
-
-		ImageProcessingResult processingResult = new([0x01], 50, 50);
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(processingResult);
-
-		string normalText = "WALMART\nItem 1  $3.99\nTOTAL  $3.99";
-		OcrResult ocrResult = new(normalText, 0.9f);
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(processingResult.ProcessedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(ocrResult);
-
-		ParsedReceipt parsedReceipt = new(
-			FieldConfidence<string>.High("WALMART"),
-			FieldConfidence<DateOnly>.Low(DateOnly.FromDateTime(DateTime.Today)),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			[],
-			FieldConfidence<decimal>.High(3.99m),
-			FieldConfidence<string?>.None()
-		);
-		_mockReceiptParsingService
-			.Setup(s => s.Parse(normalText))
-			.Returns(parsedReceipt);
-
-		// Act
-		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		_mockReceiptParsingService.Verify(
-			s => s.Parse(normalText),
-			Times.Once);
-	}
-
-	[Fact]
-	public async Task Handle_PdfWithTextLayer_UsesExtractedTextDirectly()
-	{
-		// Arrange
-		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46]; // %PDF
-		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
-
-		string extractedText = "WALMART\nMILK 2%  $3.49\nTOTAL  $3.74";
-		PdfConversionResult conversionResult = new(
-			Array.Empty<byte[]>(), extractedText, new PdfMetadata("Receipt", null));
-
-		_mockPdfConversionService
-			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(conversionResult);
-
-		ParsedReceipt parsedReceipt = new(
-			FieldConfidence<string>.High("WALMART"),
-			FieldConfidence<DateOnly>.Low(DateOnly.FromDateTime(DateTime.Today)),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			[],
-			FieldConfidence<decimal>.High(3.74m),
-			FieldConfidence<string?>.None()
-		);
-		_mockReceiptParsingService
-			.Setup(s => s.Parse(extractedText))
-			.Returns(parsedReceipt);
-
-		// Act
-		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		actual.ParsedReceipt.Should().Be(parsedReceipt);
-		actual.RawOcrText.Should().Be(extractedText);
-		actual.OcrConfidence.Should().Be(0.95f);
-
-		// Should NOT call image processing or OCR engine for text-layer PDFs
-		_mockImageProcessingService.Verify(
-			s => s.PreprocessAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-			Times.Never);
-		_mockOcrEngine.Verify(
-			s => s.ExtractTextAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
-			Times.Never);
-	}
-
-	[Fact]
-	public async Task Handle_PdfWithImages_RunsOcrOnExtractedImages()
-	{
-		// Arrange
-		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46]; // %PDF
-		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
-
-		byte[] pageImage1 = [0x89, 0x50, 0x4E, 0x47];
-		byte[] pageImage2 = [0x89, 0x50, 0x4E, 0x48];
-		PdfConversionResult conversionResult = new(
-			[pageImage1, pageImage2], null, null);
-
-		_mockPdfConversionService
-			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(conversionResult);
-
-		byte[] processedBytes1 = [0x01];
-		byte[] processedBytes2 = [0x02];
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(pageImage1, "image/png", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new ImageProcessingResult(processedBytes1, 100, 100));
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(pageImage2, "image/png", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new ImageProcessingResult(processedBytes2, 100, 100));
-
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(processedBytes1, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new OcrResult("WALMART", 0.9f));
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(processedBytes2, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new OcrResult("TOTAL $3.74", 0.8f));
-
-		ParsedReceipt parsedReceipt = new(
-			FieldConfidence<string>.High("WALMART"),
-			FieldConfidence<DateOnly>.Low(DateOnly.FromDateTime(DateTime.Today)),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			[],
-			FieldConfidence<decimal>.High(3.74m),
-			FieldConfidence<string?>.None()
-		);
-		_mockReceiptParsingService
-			.Setup(s => s.Parse(It.Is<string>(t => t.Contains("WALMART") && t.Contains("TOTAL"))))
-			.Returns(parsedReceipt);
-
-		// Act
-		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		actual.ParsedReceipt.Should().Be(parsedReceipt);
-		actual.RawOcrText.Should().Contain("WALMART");
-		actual.RawOcrText.Should().Contain("TOTAL");
-		actual.OcrConfidence.Should().BeApproximately(0.85f, 0.01f); // average of 0.9 and 0.8
-
-		_mockImageProcessingService.Verify(
-			s => s.PreprocessAsync(It.IsAny<byte[]>(), "image/png", It.IsAny<CancellationToken>()),
-			Times.Exactly(2));
-		_mockOcrEngine.Verify(
-			s => s.ExtractTextAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
-			Times.Exactly(2));
-	}
-
-	[Fact]
-	public async Task Handle_PdfWithImagesButNoOcrText_ThrowsOcrNoTextException()
+	public async Task Handle_PdfConversionThrows_PropagatesException()
 	{
 		// Arrange
 		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
 		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
 
-		byte[] pageImage = [0x89, 0x50];
-		PdfConversionResult conversionResult = new([pageImage], null, null);
-
 		_mockPdfConversionService
 			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(conversionResult);
-
-		_mockImageProcessingService
-			.Setup(s => s.PreprocessAsync(pageImage, "image/png", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new ImageProcessingResult([0x01], 50, 50));
-
-		_mockOcrEngine
-			.Setup(s => s.ExtractTextAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new OcrResult("", 0f));
+			.ThrowsAsync(new InvalidOperationException("The uploaded file is not a valid PDF."));
 
 		// Act
 		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		await act.Should().ThrowAsync<OcrNoTextException>()
-			.WithMessage("*OCR returned no readable text*");
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*not a valid PDF*");
+
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+			Times.Never);
 	}
 
-	[Fact]
-	public async Task Handle_PdfContentType_DelegatesToPdfConversionService()
+	[Theory]
+	[InlineData("image/jpeg")]
+	[InlineData("image/png")]
+	[InlineData("IMAGE/JPEG")]
+	public async Task Handle_NonPdfContentType_SkipsPdfConversion(string contentType)
 	{
 		// Arrange
-		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
-		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
+		byte[] imageBytes = [0xFF, 0xD8];
+		ScanReceiptCommand command = new(imageBytes, contentType);
 
-		PdfConversionResult conversionResult = new(
-			Array.Empty<byte[]>(), "Some receipt text here", null);
-
-		_mockPdfConversionService
-			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(conversionResult);
-
-		ParsedReceipt parsedReceipt = new(
-			FieldConfidence<string>.Low("Unknown"),
-			FieldConfidence<DateOnly>.Low(DateOnly.FromDateTime(DateTime.Today)),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			[],
-			FieldConfidence<decimal>.Low(0m),
-			FieldConfidence<string?>.None()
-		);
-		_mockReceiptParsingService
-			.Setup(s => s.Parse(It.IsAny<string>()))
-			.Returns(parsedReceipt);
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, contentType, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
 		await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		_mockPdfConversionService.Verify(
-			s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()),
-			Times.Once);
+			s => s.ConvertAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
+			Times.Never);
 	}
 }

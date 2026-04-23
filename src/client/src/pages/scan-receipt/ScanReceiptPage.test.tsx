@@ -118,8 +118,6 @@ describe("ScanReceiptPage", () => {
           totalConfidence: "high",
           paymentMethod: null,
           paymentMethodConfidence: "high",
-          rawOcrText: "TEST STORE\nTotal: 0.00",
-          ocrConfidence: 0.9,
         });
       },
     );
@@ -198,8 +196,6 @@ describe("ScanReceiptPage", () => {
           totalConfidence: "high",
           paymentMethod: null,
           paymentMethodConfidence: "high",
-          rawOcrText: "LOW CONFIDENCE STORE",
-          ocrConfidence: 0.5,
         });
       },
     );

@@ -3,7 +3,6 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useReceiptScan } from "@/hooks/useReceiptScan";
 import { isTimeoutError } from "@/lib/api-client";
 import { ReceiptImageUpload } from "./ReceiptImageUpload";
-import { OcrTextPanel } from "./OcrTextPanel";
 import NewReceiptPage from "@/pages/new-receipt/NewReceiptPage";
 import type { components } from "@/generated/api";
 import type { ScanInitialValues, ReceiptConfidenceMap } from "./types";
@@ -119,17 +118,11 @@ export default function ScanReceiptPage() {
     const confidenceMap = mapProposalToConfidenceMap(proposal);
 
     return (
-      <div className="space-y-6">
-        <OcrTextPanel
-          rawText={proposal.rawOcrText}
-          ocrConfidence={Number(proposal.ocrConfidence ?? 0)}
-        />
-        <NewReceiptPage
-          initialValues={initialValues}
-          confidenceMap={confidenceMap}
-          pageTitle="Scan Receipt"
-        />
-      </div>
+      <NewReceiptPage
+        initialValues={initialValues}
+        confidenceMap={confidenceMap}
+        pageTitle="Scan Receipt"
+      />
     );
   }
 
