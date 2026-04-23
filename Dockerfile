@@ -95,7 +95,8 @@ LABEL org.opencontainers.image.title="Receipts" \
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gosu curl \
-      libtesseract5 liblept5 && \
+      libtesseract5 liblept5 \
+      libgomp1 libgdiplus && \
     rm -rf /var/lib/apt/lists/*
 
 ARG SENTRY_BACKEND_DSN=

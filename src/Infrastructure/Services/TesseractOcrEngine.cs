@@ -74,7 +74,7 @@ public sealed class TesseractOcrEngine : IOcrEngine, IDisposable
 			linked.ThrowIfCancellationRequested();
 
 			using Pix pix = Pix.LoadFromMemory(imageBytes);
-			using Page page = _engine.Process(pix, PageSegMode.SingleBlock);
+			using Page page = _engine.Process(pix, PageSegMode.Auto);
 
 			// Check timeout/cancellation after native call returns
 			if (linked.IsCancellationRequested)
