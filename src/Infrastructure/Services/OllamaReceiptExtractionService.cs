@@ -49,26 +49,20 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 		using CancellationTokenSource timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 		timeoutSource.CancelAfter(TimeSpan.FromSeconds(_options.TimeoutSeconds));
 
-		HttpResponseMessage httpResponse;
+		OllamaGenerateResponse? generateResponse;
 		try
 		{
-			httpResponse = await _httpClient.PostAsJsonAsync("api/generate", request, JsonOptions, timeoutSource.Token);
+			using HttpResponseMessage httpResponse = await _httpClient.PostAsJsonAsync(
+				"api/generate", request, JsonOptions, timeoutSource.Token);
+
+			httpResponse.EnsureSuccessStatusCode();
+
+			generateResponse = await httpResponse.Content.ReadFromJsonAsync<OllamaGenerateResponse>(
+				JsonOptions, timeoutSource.Token);
 		}
 		catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
 		{
 			throw new TimeoutException($"Ollama VLM call timed out after {_options.TimeoutSeconds}s.");
-		}
-
-		httpResponse.EnsureSuccessStatusCode();
-
-		OllamaGenerateResponse? generateResponse;
-		try
-		{
-			generateResponse = await httpResponse.Content.ReadFromJsonAsync<OllamaGenerateResponse>(JsonOptions, timeoutSource.Token);
-		}
-		catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-		{
-			throw new TimeoutException($"Ollama VLM response read timed out after {_options.TimeoutSeconds}s.");
 		}
 
 		if (generateResponse is null || string.IsNullOrWhiteSpace(generateResponse.Response))
