@@ -3129,9 +3129,6 @@ export interface components {
             totalConfidence: components["schemas"]["ConfidenceLevel"];
             paymentMethod?: string | null;
             paymentMethodConfidence: components["schemas"]["ConfidenceLevel"];
-            rawOcrText: string;
-            /** Format: float */
-            ocrConfidence: number;
         };
         ProposedReceiptItemResponse: {
             code?: string | null;

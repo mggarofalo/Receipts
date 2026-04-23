@@ -1,95 +1,68 @@
 using Application.Exceptions;
 using Application.Interfaces.Services;
+using Application.Models.Ocr;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Commands.Receipt.Scan;
 
 public class ScanReceiptCommandHandler(
-	IImageProcessingService imageProcessingService,
-	IOcrEngine ocrEngine,
-	IReceiptParsingService receiptParsingService,
-	IPdfConversionService pdfConversionService) : IRequestHandler<ScanReceiptCommand, ScanReceiptResult>
+	IReceiptExtractionService extractionService,
+	IPdfConversionService pdfConversionService,
+	ILogger<ScanReceiptCommandHandler> logger) : IRequestHandler<ScanReceiptCommand, ScanReceiptResult>
 {
-	/// <summary>
-	/// Maximum OCR text length (100 KB) to prevent excessive memory usage during parsing.
-	/// </summary>
-	public const int MaxOcrTextLength = 100 * 1024;
-
 	internal const string PdfContentType = "application/pdf";
+	internal const string PdfPageImageContentType = "image/png";
 
 	public async Task<ScanReceiptResult> Handle(ScanReceiptCommand request, CancellationToken cancellationToken)
 	{
-		if (string.Equals(request.ContentType, PdfContentType, StringComparison.OrdinalIgnoreCase))
+		(byte[] imageBytes, string contentType) = await ResolveImageAsync(request, cancellationToken);
+
+		ParsedReceipt parsed = await extractionService.ExtractAsync(imageBytes, contentType, cancellationToken);
+
+		if (IsEmpty(parsed))
 		{
-			return await HandlePdfAsync(request, cancellationToken);
+			throw new OcrNoTextException("The receipt could not be extracted from the provided file.");
 		}
 
-		return await HandleImageAsync(request, cancellationToken);
+		return new ScanReceiptResult(parsed);
 	}
 
-	private async Task<ScanReceiptResult> HandleImageAsync(ScanReceiptCommand request, CancellationToken cancellationToken)
+	private async Task<(byte[] ImageBytes, string ContentType)> ResolveImageAsync(
+		ScanReceiptCommand request, CancellationToken cancellationToken)
 	{
-		ImageProcessingResult processed = await imageProcessingService.PreprocessAsync(
-			request.ImageBytes, request.ContentType, cancellationToken);
+		if (!string.Equals(request.ContentType, PdfContentType, StringComparison.OrdinalIgnoreCase))
+		{
+			return (request.ImageBytes, request.ContentType);
+		}
 
-		OcrResult ocrResult = await ocrEngine.ExtractTextAsync(
-			processed.ProcessedBytes, cancellationToken);
-
-		return BuildResult(ocrResult.Text, ocrResult.Confidence);
-	}
-
-	private async Task<ScanReceiptResult> HandlePdfAsync(ScanReceiptCommand request, CancellationToken cancellationToken)
-	{
 		PdfConversionResult conversion = await pdfConversionService.ConvertAsync(
 			request.ImageBytes, cancellationToken);
 
-		// If the PDF had a text layer, use the extracted text directly
-		if (!string.IsNullOrWhiteSpace(conversion.ExtractedText))
+		if (conversion.PageImages.Count == 0)
 		{
-			// Use a high confidence score since text was extracted directly, not via OCR
-			return BuildResult(conversion.ExtractedText, 0.95f);
+			throw new OcrNoTextException(
+				"The PDF document contains no extractable images for receipt scanning.");
 		}
 
-		// Otherwise, run OCR on extracted page images
-		List<string> pageTexts = [];
-		float totalConfidence = 0;
-
-		foreach (byte[] pageImage in conversion.PageImages)
+		if (conversion.PageImages.Count > 1)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
-
-			ImageProcessingResult processed = await imageProcessingService.PreprocessAsync(
-				pageImage, "image/png", cancellationToken);
-
-			OcrResult ocrResult = await ocrEngine.ExtractTextAsync(
-				processed.ProcessedBytes, cancellationToken);
-
-			if (!string.IsNullOrWhiteSpace(ocrResult.Text))
-			{
-				pageTexts.Add(ocrResult.Text);
-				totalConfidence += ocrResult.Confidence;
-			}
+			logger.LogInformation(
+				"PDF contains {PageCount} page images; extracting receipt from the first page only",
+				conversion.PageImages.Count);
 		}
 
-		string combinedText = string.Join("\n\n", pageTexts);
-		float averageConfidence = pageTexts.Count > 0 ? totalConfidence / pageTexts.Count : 0f;
-
-		return BuildResult(combinedText, averageConfidence);
+		return (conversion.PageImages[0], PdfPageImageContentType);
 	}
 
-	private ScanReceiptResult BuildResult(string ocrText, float confidence)
+	private static bool IsEmpty(ParsedReceipt parsed)
 	{
-		if (string.IsNullOrWhiteSpace(ocrText))
-		{
-			throw new OcrNoTextException("OCR returned no readable text from the image.");
-		}
-
-		string truncatedText = ocrText.Length > MaxOcrTextLength
-			? ocrText[..MaxOcrTextLength]
-			: ocrText;
-
-		Models.Ocr.ParsedReceipt parsed = receiptParsingService.Parse(truncatedText);
-
-		return new ScanReceiptResult(parsed, ocrText, confidence);
+		return parsed.StoreName.Confidence == ConfidenceLevel.Low
+			&& parsed.Date.Confidence == ConfidenceLevel.Low
+			&& parsed.Subtotal.Confidence == ConfidenceLevel.Low
+			&& parsed.Total.Confidence == ConfidenceLevel.Low
+			&& parsed.PaymentMethod.Confidence == ConfidenceLevel.Low
+			&& parsed.Items.Count == 0
+			&& parsed.TaxLines.Count == 0;
 	}
 }

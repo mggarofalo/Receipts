@@ -32,7 +32,7 @@ public class ReceiptScanController(
 	[HttpPost("scan")]
 	[RequestSizeLimit(20 * 1024 * 1024)]
 	[EndpointSummary("Scan a receipt image or PDF and return a proposed receipt")]
-	[EndpointDescription("Accepts a JPEG or PNG image, or a PDF document. For images, runs preprocessing, OCR, and parsing. For PDFs, extracts text from the text layer or renders pages for OCR. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted.")]
+	[EndpointDescription("Accepts a JPEG or PNG image, or a PDF document. Images are sent directly to the receipt extraction service (a local vision-language model). PDFs are rasterized page-by-page and the first page image is extracted. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted.")]
 	[ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
 	public async Task<Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>>> ScanReceipt(
 		IFormFile? file,
@@ -107,8 +107,6 @@ public class ReceiptScanController(
 			TotalConfidence = MapConfidence(parsed.Total.Confidence),
 			PaymentMethod = parsed.PaymentMethod.Value,
 			PaymentMethodConfidence = MapConfidence(parsed.PaymentMethod.Confidence),
-			RawOcrText = result.RawOcrText,
-			OcrConfidence = result.OcrConfidence,
 		};
 	}
 

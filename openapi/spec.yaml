@@ -6290,8 +6290,6 @@ components:
         - taxLines
         - totalConfidence
         - paymentMethodConfidence
-        - rawOcrText
-        - ocrConfidence
       properties:
         storeName:
           type:
@@ -6334,13 +6332,6 @@ components:
             - "null"
         paymentMethodConfidence:
           $ref: "#/components/schemas/ConfidenceLevel"
-        rawOcrText:
-          type: string
-        ocrConfidence:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
 
     ProposedReceiptItemResponse:
       type: object

@@ -25,6 +25,14 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 	private const int MaxImageDimension = 10_000;
 
 	/// <summary>
+	/// Minimum pixel dimension (width and height) for an embedded image to be considered
+	/// a candidate receipt scan. Decorative images on text-layer pages (logos, icons,
+	/// background marks) are typically well under this threshold; Paperless-style scans
+	/// and phone-camera photos are always far above it.
+	/// </summary>
+	internal const int MinReceiptImageDimension = 400;
+
+	/// <summary>
 	/// Maximum total accumulated image bytes (100 MB) before we stop extracting images.
 	/// </summary>
 	private const long MaxTotalImageBytes = 100 * 1024 * 1024;
@@ -99,7 +107,9 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 
 		PdfMetadata? metadata = ExtractMetadata(document);
 
-		// Try to extract text from all pages; collect images from pages without text
+		// Always collect both text and images from every page. Consumers (the scan command
+		// handler) use the images for VLM-based extraction; the text layer is kept as an
+		// optional informational field that is no longer consumed on the scan path.
 		List<string> pageTexts = [];
 		List<byte[]> pageImages = [];
 		long totalImageBytes = 0;
@@ -110,79 +120,76 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 			ct.ThrowIfCancellationRequested();
 
 			string pageText = page.Text ?? string.Empty;
-
 			if (pageText.Trim().Length >= MinTextLengthPerPage)
 			{
 				pageTexts.Add(pageText);
 			}
-			else
+
+			if (imageBytesCapReached)
 			{
+				continue;
+			}
+
+			foreach (IPdfImage image in page.GetImages())
+			{
+				ct.ThrowIfCancellationRequested();
+
 				if (imageBytesCapReached)
+				{
+					break;
+				}
+
+				// Skip decorative images (logos, icons) on text-layer pages. A real
+				// receipt scan is always at least ~400px on a side; logos rarely exceed
+				// a couple hundred pixels.
+				if (image.WidthInSamples < MinReceiptImageDimension
+					|| image.HeightInSamples < MinReceiptImageDimension)
 				{
 					continue;
 				}
 
-				// Page lacks a text layer — try to extract embedded images for OCR
-				IEnumerable<IPdfImage> images = page.GetImages();
-				foreach (IPdfImage image in images)
+				byte[]? imageBytes = TryExtractImageBytes(image);
+				if (imageBytes is null)
 				{
-					ct.ThrowIfCancellationRequested();
-
-					if (imageBytesCapReached)
-					{
-						break;
-					}
-
-					byte[]? imageBytes = TryExtractImageBytes(image);
-					if (imageBytes is not null)
-					{
-						totalImageBytes += imageBytes.Length;
-						if (totalImageBytes > MaxTotalImageBytes)
-						{
-							logger.LogWarning(
-								"Accumulated image bytes ({TotalBytes}) exceeded cap of {MaxBytes}; stopping image extraction",
-								totalImageBytes, MaxTotalImageBytes);
-							imageBytesCapReached = true;
-							break;
-						}
-
-						pageImages.Add(imageBytes);
-					}
+					continue;
 				}
+
+				totalImageBytes += imageBytes.Length;
+				if (totalImageBytes > MaxTotalImageBytes)
+				{
+					logger.LogWarning(
+						"Accumulated image bytes ({TotalBytes}) exceeded cap of {MaxBytes}; stopping image extraction",
+						totalImageBytes, MaxTotalImageBytes);
+					imageBytesCapReached = true;
+					break;
+				}
+
+				pageImages.Add(imageBytes);
 			}
 		}
 
-		// Prefer text extracted directly from the PDF text layer
-		if (pageTexts.Count > 0)
+		if (pageImages.Count == 0 && pageTexts.Count == 0)
 		{
-			if (pageImages.Count > 0)
-			{
-				logger.LogWarning(
-					"PDF contains both text ({TextPageCount} pages) and images ({ImageCount} images); using text layer and discarding images",
-					pageTexts.Count, pageImages.Count);
-			}
-
-			string combinedText = string.Join("\n\n", pageTexts);
-			logger.LogInformation(
-				"Extracted text from {PageCount} PDF pages ({TextLength} chars)",
-				pageTexts.Count, combinedText.Length);
-
-			return Task.FromResult(new PdfConversionResult(
-				Array.Empty<byte[]>(), combinedText, metadata));
+			throw new InvalidOperationException(
+				"The PDF document contains no readable text and no extractable images.");
 		}
+
+		string? combinedText = pageTexts.Count > 0 ? string.Join("\n\n", pageTexts) : null;
 
 		if (pageImages.Count > 0)
 		{
 			logger.LogInformation(
 				"Extracted {ImageCount} images from PDF for OCR processing",
 				pageImages.Count);
-
-			return Task.FromResult(new PdfConversionResult(
-				pageImages, null, metadata));
+		}
+		if (combinedText is not null)
+		{
+			logger.LogInformation(
+				"Extracted text from {PageCount} PDF pages ({TextLength} chars)",
+				pageTexts.Count, combinedText.Length);
 		}
 
-		throw new InvalidOperationException(
-			"The PDF document contains no readable text and no extractable images.");
+		return Task.FromResult(new PdfConversionResult(pageImages, combinedText, metadata));
 	}
 
 	private PdfMetadata? ExtractMetadata(PdfDocument document)

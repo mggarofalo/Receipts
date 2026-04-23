@@ -83,7 +83,7 @@ public class ReceiptScanControllerTests
 			FieldConfidence<string?>.None()
 		);
 
-		ScanReceiptResult scanResult = new(parsedReceipt, "COSTCO\nTOTAL $42.99", 0.95f);
+		ScanReceiptResult scanResult = new(parsedReceipt);
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
@@ -114,7 +114,7 @@ public class ReceiptScanControllerTests
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new ScanReceiptResult(parsedReceipt, "text", 0.5f));
+			.ReturnsAsync(new ScanReceiptResult(parsedReceipt));
 
 		// Act
 		await _controller.ScanReceipt(file);
@@ -213,7 +213,7 @@ public class ReceiptScanControllerTests
 			FieldConfidence<string?>.Low("VISA")
 		);
 
-		ScanReceiptResult scanResult = new(parsedReceipt, "WALMART\nMILK 2%  $3.49\nTAX  $0.25\nTOTAL  $3.74", 0.92f);
+		ScanReceiptResult scanResult = new(parsedReceipt);
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
@@ -240,8 +240,6 @@ public class ReceiptScanControllerTests
 		response.Total.Should().Be(3.74d);
 		response.TotalConfidence.Should().Be(DtoConfidenceLevel.High);
 		response.PaymentMethod.Should().Be("VISA");
-		response.RawOcrText.Should().Contain("WALMART");
-		response.OcrConfidence.Should().Be(0.92f);
 	}
 
 	[Fact]
@@ -260,7 +258,7 @@ public class ReceiptScanControllerTests
 			FieldConfidence<string?>.None()
 		);
 
-		ScanReceiptResult scanResult = new(parsedReceipt, "STORE\nsome text", 0.5f);
+		ScanReceiptResult scanResult = new(parsedReceipt);
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
@@ -292,7 +290,7 @@ public class ReceiptScanControllerTests
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new ScanReceiptResult(parsedReceipt, "text", 0.1f));
+			.ReturnsAsync(new ScanReceiptResult(parsedReceipt));
 
 		// Act
 		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
@@ -319,7 +317,7 @@ public class ReceiptScanControllerTests
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new ScanReceiptResult(parsedReceipt, "text", 0.5f));
+			.ReturnsAsync(new ScanReceiptResult(parsedReceipt));
 
 		// Act
 		await _controller.ScanReceipt(file);

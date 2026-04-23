@@ -9,12 +9,16 @@ public record PdfMetadata(string? Title, DateOnly? CreationDate);
 /// Result of converting a PDF document for OCR processing.
 /// </summary>
 /// <param name="PageImages">
-/// Images extracted from each page (for OCR when no text layer exists).
-/// Empty if text was extracted directly.
+/// Embedded page images extracted from the PDF, independent of whether a text layer
+/// exists. Small decorative images (logos, icons) are filtered out so that only
+/// receipt-sized scans are returned. Empty when the PDF has no embedded bitmaps large
+/// enough to be a receipt scan.
 /// </param>
 /// <param name="ExtractedText">
 /// Text extracted directly from the PDF text layer, if available.
-/// Null when the PDF contains only images (scanned document).
+/// Null when the PDF contains no text layer (pure scanned document).
+/// No longer consumed by the scan command path — retained for informational purposes
+/// and may be removed in a future cleanup.
 /// </param>
 /// <param name="Metadata">Optional PDF document metadata.</param>
 public record PdfConversionResult(

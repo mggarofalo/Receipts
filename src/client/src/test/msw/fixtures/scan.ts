@@ -43,7 +43,4 @@ export const scanProposal = {
   totalConfidence: "high",
   paymentMethod: "VISA",
   paymentMethodConfidence: "medium",
-  rawOcrText:
-    "WALMART SUPERCENTER\n123 MAIN ST\n\nGREAT VALUE MILK  2 @ 3.99  7.98\nBANANAS                     1.29\n\nSUBTOTAL                    9.27\nTAX                         0.74\nTOTAL                      10.01\n\nVISA ****1234",
-  ocrConfidence: 0.87,
 };

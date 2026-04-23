@@ -3,7 +3,11 @@ using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Fonts.Standard14Fonts;
 using UglyToad.PdfPig.Writer;
 
@@ -188,6 +192,44 @@ public class PdfConversionServiceTests
 		result.PageImages.Should().BeEmpty();
 	}
 
+	[Fact]
+	public async Task ConvertAsync_PdfWithTextLayerAndLargeImage_ExtractsImage()
+	{
+		// Arrange — a Paperless-style PDF: text layer (OCR) + large embedded scan image.
+		byte[] pdfBytes = CreateTextPdfWithPng(
+			text: "WALMART SUPERCENTER TOTAL $3.74",
+			imageWidth: 600,
+			imageHeight: 800);
+
+		// Act
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert — text layer is still extracted (informational), but the embedded image
+		// is what the scan handler will use.
+		result.PageImages.Should().NotBeEmpty();
+		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
+		result.ExtractedText.Should().Contain("WALMART");
+	}
+
+	[Fact]
+	public async Task ConvertAsync_PdfWithTextLayerAndSmallLogo_FiltersOutDecorativeImage()
+	{
+		// Arrange — a digital receipt PDF: text layer + tiny decorative logo. The logo
+		// must NOT be returned because the scan handler would feed it to the VLM and get
+		// nothing back, surfacing as an "extraction failed" error to the user.
+		byte[] pdfBytes = CreateTextPdfWithPng(
+			text: "WALMART SUPERCENTER TOTAL $3.74",
+			imageWidth: 64,
+			imageHeight: 64);
+
+		// Act
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert
+		result.PageImages.Should().BeEmpty();
+		result.ExtractedText.Should().Contain("WALMART");
+	}
+
 	private static byte[] CreateTextPdf(string text)
 	{
 		PdfDocumentBuilder builder = new();
@@ -195,6 +237,27 @@ public class PdfConversionServiceTests
 		PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
 		page.AddText(text, 12, new UglyToad.PdfPig.Core.PdfPoint(72, 720), font);
 		return builder.Build();
+	}
+
+	private static byte[] CreateTextPdfWithPng(string text, int imageWidth, int imageHeight)
+	{
+		PdfDocumentBuilder builder = new();
+		PdfPageBuilder page = builder.AddPage(PageSize.Letter);
+		PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
+		page.AddText(text, 12, new UglyToad.PdfPig.Core.PdfPoint(72, 720), font);
+
+		byte[] pngBytes = CreateSolidPng(imageWidth, imageHeight);
+		page.AddPng(pngBytes, new PdfRectangle(72, 200, 72 + imageWidth, 200 + imageHeight));
+
+		return builder.Build();
+	}
+
+	private static byte[] CreateSolidPng(int width, int height)
+	{
+		using Image<Rgb24> image = new(width, height, new Rgb24(200, 200, 200));
+		using MemoryStream ms = new();
+		image.Save(ms, new PngEncoder());
+		return ms.ToArray();
 	}
 
 	private static byte[] CreateTextPdfWithMetadata(string title, string text)
