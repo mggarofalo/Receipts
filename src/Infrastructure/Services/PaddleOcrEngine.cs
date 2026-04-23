@@ -113,7 +113,8 @@ public sealed class PaddleOcrEngine : IOcrEngine, IDisposable
 			string correctedText = OcrCorrectionHelper.ApplyOcrCorrections(rawText);
 
 			_logger.LogDebug(
-				"PaddleOCR completed: {CharCount} chars, confidence {Confidence:P1}",
+				"PaddleOCR completed: {RegionCount} regions, {CharCount} chars, confidence {Confidence:P1}",
+				result.Regions.Length,
 				correctedText.Length,
 				confidence);
 
