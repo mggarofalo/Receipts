@@ -25,7 +25,7 @@ public class ImageValidationService(ILogger<ImageValidationService> logger) : II
 		typeof(PngFormat),
 	];
 
-	public Task ValidateAsync(byte[] imageBytes, CancellationToken ct)
+	public async Task ValidateAsync(byte[] imageBytes, CancellationToken ct)
 	{
 		ct.ThrowIfCancellationRequested();
 
@@ -71,6 +71,9 @@ public class ImageValidationService(ILogger<ImageValidationService> logger) : II
 				$"Image dimensions ({info.Width}x{info.Height}) exceed the maximum allowed ({MaxPixelWidth}x{MaxPixelHeight}).");
 		}
 
-		return Task.CompletedTask;
+		// Method is async so all exception paths surface as a faulted Task per TAP conventions,
+		// not thrown synchronously at the call site. Today's body is entirely CPU-bound; the
+		// no-op await keeps the signature honest without introducing a thread-pool hop.
+		await Task.CompletedTask.ConfigureAwait(false);
 	}
 }
