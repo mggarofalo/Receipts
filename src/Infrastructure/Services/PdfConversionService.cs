@@ -25,6 +25,14 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 	private const int MaxImageDimension = 10_000;
 
 	/// <summary>
+	/// Minimum pixel dimension (width and height) for an embedded image to be considered
+	/// a candidate receipt scan. Decorative images on text-layer pages (logos, icons,
+	/// background marks) are typically well under this threshold; Paperless-style scans
+	/// and phone-camera photos are always far above it.
+	/// </summary>
+	internal const int MinReceiptImageDimension = 400;
+
+	/// <summary>
 	/// Maximum total accumulated image bytes (100 MB) before we stop extracting images.
 	/// </summary>
 	private const long MaxTotalImageBytes = 100 * 1024 * 1024;
@@ -129,6 +137,15 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 				if (imageBytesCapReached)
 				{
 					break;
+				}
+
+				// Skip decorative images (logos, icons) on text-layer pages. A real
+				// receipt scan is always at least ~400px on a side; logos rarely exceed
+				// a couple hundred pixels.
+				if (image.WidthInSamples < MinReceiptImageDimension
+					|| image.HeightInSamples < MinReceiptImageDimension)
+				{
+					continue;
 				}
 
 				byte[]? imageBytes = TryExtractImageBytes(image);
