@@ -26,9 +26,12 @@ IResourceBuilder<ProjectResource> seeder = builder.AddProject<Projects.DbSeeder>
 
 // VLM OCR: Ollama container serving glm-ocr:q8_0 for receipt extraction (RECEIPTS-616 epic).
 // Named volume persists the model cache across restarts so the first-run ~1 GB pull happens once.
+// Host port is left unset so Aspire picks a free one — Ollama's default 11434 is frequently
+// already bound on developer machines running the native Ollama daemon, which would wedge Aspire
+// startup since the API below does .WaitFor(vlmOcr).
 IResourceBuilder<ContainerResource> vlmOcr = builder.AddContainer("vlm-ocr", "ollama/ollama", "latest")
 	.WithVolume("vlm-ocr-models", "/root/.ollama")
-	.WithHttpEndpoint(port: 11434, targetPort: 11434, name: "http");
+	.WithHttpEndpoint(targetPort: 11434, name: "http");
 
 // One-shot sidecar that pulls glm-ocr:q8_0 if it is not already cached in the shared volume,
 // then exits. Idempotent — subsequent runs find the model present and skip the download.

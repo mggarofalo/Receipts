@@ -105,7 +105,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 // VLM OCR startup smoke test (RECEIPTS-616 epic): log-only, does not block startup.
-// Runs once after the host is ready; swallows failures and warns.
+// Runs once after the host is ready. The outer try/catch guards against exceptions that
+// escape VlmOcrSmokeTest.RunAsync (e.g. UriFormatException from a malformed URL, or
+// InvalidOperationException from a scheme-less one) which would otherwise become silent
+// unobserved task exceptions.
 string? ollamaBaseUrl = builder.Configuration[Common.ConfigurationVariables.OllamaBaseUrl];
 if (!string.IsNullOrWhiteSpace(ollamaBaseUrl))
 {
@@ -114,12 +117,19 @@ if (!string.IsNullOrWhiteSpace(ollamaBaseUrl))
 		_ = Task.Run(async () =>
 		{
 			ILogger<Program> smokeLogger = app.Services.GetRequiredService<ILogger<Program>>();
-			using HttpClient http = new()
+			try
 			{
-				BaseAddress = new Uri(ollamaBaseUrl),
-				Timeout = TimeSpan.FromSeconds(10),
-			};
-			await API.Services.VlmOcrSmokeTest.RunAsync(http, smokeLogger, CancellationToken.None);
+				using HttpClient http = new()
+				{
+					BaseAddress = new Uri(ollamaBaseUrl),
+					Timeout = TimeSpan.FromSeconds(10),
+				};
+				await API.Services.VlmOcrSmokeTest.RunAsync(http, smokeLogger, CancellationToken.None);
+			}
+			catch (Exception ex)
+			{
+				smokeLogger.LogWarning(ex, "VLM OCR: unexpected error during smoke test for {Url}", ollamaBaseUrl);
+			}
 		});
 	});
 }
