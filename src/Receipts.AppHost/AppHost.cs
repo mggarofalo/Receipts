@@ -24,10 +24,29 @@ IResourceBuilder<ProjectResource> seeder = builder.AddProject<Projects.DbSeeder>
 	.WithEnvironment("AdminSeed__FirstName", "Admin")
 	.WithEnvironment("AdminSeed__LastName", "User");
 
-// API: starts after seeder completes
+// VLM OCR: Ollama container serving glm-ocr:q8_0 for receipt extraction (RECEIPTS-616 epic).
+// Named volume persists the model cache across restarts so the first-run ~1 GB pull happens once.
+// Host port is left unset so Aspire picks a free one — Ollama's default 11434 is frequently
+// already bound on developer machines running the native Ollama daemon, which would wedge Aspire
+// startup since the API below does .WaitFor(vlmOcr).
+IResourceBuilder<ContainerResource> vlmOcr = builder.AddContainer("vlm-ocr", "ollama/ollama", "latest")
+	.WithVolume("vlm-ocr-models", "/root/.ollama")
+	.WithHttpEndpoint(targetPort: 11434, name: "http");
+
+// One-shot sidecar that pulls glm-ocr:q8_0 if it is not already cached in the shared volume,
+// then exits. Idempotent — subsequent runs find the model present and skip the download.
+builder.AddContainer("vlm-ocr-pull", "ollama/ollama", "latest")
+	.WithEntrypoint("/bin/sh")
+	.WithArgs("-c", "ollama list | grep -q 'glm-ocr:q8_0' || ollama pull glm-ocr:q8_0")
+	.WithEnvironment("OLLAMA_HOST", "http://vlm-ocr:11434")
+	.WaitFor(vlmOcr);
+
+// API: starts after seeder completes; Ollama URL injected for the smoke test and future extraction service
 IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")
 	.WithReference(db)
-	.WaitForCompletion(seeder);
+	.WithEnvironment("Ollama__BaseUrl", vlmOcr.GetEndpoint("http"))
+	.WaitForCompletion(seeder)
+	.WaitFor(vlmOcr);
 
 builder.AddViteApp("frontend", "../client")
 	.WithReference(api)

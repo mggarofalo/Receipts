@@ -27,6 +27,9 @@ public static class ConfigurationVariables
 	public const string OcrTimeoutSeconds = "Ocr:TimeoutSeconds";
 	public const string OcrMaxImageBytes = "Ocr:MaxImageBytes";
 
+	// Ollama host for the VLM-based receipt extraction pipeline (RECEIPTS-616 epic).
+	public const string OllamaBaseUrl = "Ollama:BaseUrl";
+
 	public const string YnabPat = "YNAB_PAT";
 }
 

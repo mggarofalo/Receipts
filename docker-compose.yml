@@ -85,6 +85,54 @@ services:
         max-size: "50m"
         max-file: "3"
 
+  # VLM OCR: Ollama container serving glm-ocr:q8_0 for receipt extraction (RECEIPTS-616 epic).
+  # Named volume persists the model cache so the first-run ~1 GB pull only happens once.
+  vlm-ocr:
+    image: ollama/ollama:latest
+    container_name: receipts-vlm-ocr
+    restart: unless-stopped
+    volumes:
+      - vlm-ocr-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2"
+    networks:
+      - receipts-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # One-shot sidecar: pulls glm-ocr:q8_0 if it is not already cached, then exits.
+  # Idempotent — subsequent runs find the model present and skip the download.
+  vlm-ocr-pull:
+    image: ollama/ollama:latest
+    container_name: receipts-vlm-ocr-pull
+    restart: "no"
+    depends_on:
+      vlm-ocr:
+        condition: service_healthy
+    entrypoint: ["/bin/sh"]
+    command: ["-c", "ollama list | grep -q 'glm-ocr:q8_0' || ollama pull glm-ocr:q8_0"]
+    environment:
+      - OLLAMA_HOST=http://vlm-ocr:11434
+    networks:
+      - receipts-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
+
   app:
     image: ghcr.io/mggarofalo/receipts:${IMAGE_TAG:-latest}
     container_name: receipts-app
@@ -105,12 +153,15 @@ services:
       - AdminSeed__Email=admin@example.com
       - AdminSeed__FirstName=Admin
       - AdminSeed__LastName=User
+      - Ollama__BaseUrl=http://vlm-ocr:11434
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - OTEL_SERVICE_NAME=receipts-api
       - SENTRY_DSN=${SENTRY_DSN:-}
       - SENTRY_BACKEND_DSN=${SENTRY_BACKEND_DSN:-}
     depends_on:
       db:
+        condition: service_healthy
+      vlm-ocr:
         condition: service_healthy
       otel-collector:
         condition: service_started
@@ -280,6 +331,7 @@ volumes:
   secrets:
   db-data:
   app-data:
+  vlm-ocr-models:
   tempo-data:
   loki-data:
   prometheus-data:

@@ -85,6 +85,16 @@ The system uses pgvector for semantic similarity search on item names and descri
 - **`EmbeddingGenerationService`** — Background service that polls every 30s, generates embeddings for new/changed ItemTemplates and ReceiptItems in batches of 50
 - **`ItemTemplateSimilarityService`** — Hybrid search combining trigram similarity (0.4 weight) and cosine vector similarity (0.6 weight) with HNSW indexing
 
+## VLM OCR (GLM-OCR via Ollama)
+
+Receipt OCR + JSON extraction runs against a local vision-language model hosted in an Ollama container (epic **RECEIPTS-616**). This issue (**RECEIPTS-617**) wires the container into Aspire and docker-compose and adds a startup smoke test; the extraction service itself lands in RECEIPTS-618.
+
+- **Container** — `ollama/ollama:latest`, named `vlm-ocr` in both Aspire (`src/Receipts.AppHost/AppHost.cs`) and docker-compose (`docker-compose.yml`), exposing port 11434.
+- **Model** — `glm-ocr:q8_0` (~1 GB). Pulled on first run by the one-shot `vlm-ocr-pull` sidecar; skipped on subsequent runs.
+- **Model cache** — persistent named volume `vlm-ocr-models` mounted at `/root/.ollama`. Survives container restarts so the pull is a one-time cost.
+- **Configuration** — the API reads `Ollama:BaseUrl` (env var `Ollama__BaseUrl`). Aspire injects this automatically; docker-compose sets it to `http://vlm-ocr:11434`.
+- **Smoke test** — `src/Presentation/API/Services/VlmOcrSmokeTest.cs` runs once on `ApplicationStarted`: hits `GET /api/tags`, logs Information if `glm-ocr` is present, Warning otherwise. Log-only — never blocks startup or fails the process.
+
 ## Test Project Structure
 
 Tests mirror src structure. `SampleData` project provides shared test fixtures across test projects.
