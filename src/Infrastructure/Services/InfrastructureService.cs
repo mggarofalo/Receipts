@@ -209,6 +209,8 @@ public static class InfrastructureService
 			});
 		});
 
+		RegisterReceiptExtractionService(services, configuration);
+
 		// Singleton AI/ML services (local models — always available)
 		services.AddSingleton<IEmbeddingService, OnnxEmbeddingService>();
 		RegisterOcrEngine(services, configuration);
@@ -269,5 +271,67 @@ public static class InfrastructureService
 		{
 			services.AddSingleton<IOcrEngine, TesseractOcrEngine>();
 		}
+	}
+
+	/// <summary>
+	/// Registers the Ollama-backed <see cref="IReceiptExtractionService"/> with resilience
+	/// (retry + circuit breaker) matching the YNAB client pattern. URL resolves from
+	/// <c>Ocr:Vlm:OllamaUrl</c>, then <c>Ollama:BaseUrl</c> (Aspire-injected), then localhost default.
+	/// </summary>
+	internal static void RegisterReceiptExtractionService(IServiceCollection services, IConfiguration configuration)
+	{
+		VlmOcrOptions options = new();
+		configuration.GetSection(ConfigurationVariables.OcrVlmSection).Bind(options);
+
+		if (string.IsNullOrWhiteSpace(options.OllamaUrl))
+		{
+			options.OllamaUrl = configuration[ConfigurationVariables.OllamaBaseUrl]
+				?? "http://localhost:11434";
+		}
+
+		services.AddSingleton(options);
+
+		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
+		{
+			client.BaseAddress = new Uri(options.OllamaUrl!.TrimEnd('/') + "/");
+			// The per-call CancellationTokenSource inside the service owns the timeout.
+			client.Timeout = Timeout.InfiniteTimeSpan;
+		})
+		.AddResilienceHandler("vlm-ocr", ConfigureVlmOcrResilience);
+	}
+
+	/// <summary>
+	/// Resilience policy for VLM OCR HTTP calls: 3 retries with exponential backoff + jitter,
+	/// circuit breaker on sustained failure. Matches the YNAB client pattern.
+	/// </summary>
+	internal static void ConfigureVlmOcrResilience(ResiliencePipelineBuilder<HttpResponseMessage> builder)
+	{
+		builder.AddRetry(new HttpRetryStrategyOptions
+		{
+			MaxRetryAttempts = 3,
+			BackoffType = DelayBackoffType.Exponential,
+			UseJitter = true,
+			ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+				.Handle<HttpRequestException>()
+				.HandleResult(r => r.StatusCode is System.Net.HttpStatusCode.TooManyRequests
+					or System.Net.HttpStatusCode.ServiceUnavailable
+					or System.Net.HttpStatusCode.GatewayTimeout),
+			DelayGenerator = args =>
+			{
+				if (args.Outcome.Result?.Headers.RetryAfter?.Delta is TimeSpan delta)
+				{
+					return ValueTask.FromResult<TimeSpan?>(delta);
+				}
+
+				return ValueTask.FromResult<TimeSpan?>(null);
+			},
+		});
+		builder.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+		{
+			SamplingDuration = TimeSpan.FromSeconds(30),
+			FailureRatio = 0.5,
+			MinimumThroughput = 5,
+			BreakDuration = TimeSpan.FromSeconds(60),
+		});
 	}
 }
