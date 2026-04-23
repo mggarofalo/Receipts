@@ -30,6 +30,13 @@ public static class ConfigurationVariables
 	// Ollama host for the VLM-based receipt extraction pipeline (RECEIPTS-616 epic).
 	public const string OllamaBaseUrl = "Ollama:BaseUrl";
 
+	// VLM-based receipt extraction (RECEIPTS-618). Explicit override of the Ollama base URL,
+	// the model tag, and the per-call timeout.
+	public const string OcrVlmOllamaUrl = "Ocr:Vlm:OllamaUrl";
+	public const string OcrVlmModel = "Ocr:Vlm:Model";
+	public const string OcrVlmTimeoutSeconds = "Ocr:Vlm:TimeoutSeconds";
+	public const string OcrVlmSection = "Ocr:Vlm";
+
 	public const string YnabPat = "YNAB_PAT";
 }
 
