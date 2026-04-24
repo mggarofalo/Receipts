@@ -6,7 +6,7 @@ namespace Application.Commands.Receipt.UploadImage;
 public class UploadReceiptImageCommandHandler(
 	IReceiptService receiptService,
 	IImageStorageService imageStorageService,
-	IImageProcessingService imageProcessingService) : IRequestHandler<UploadReceiptImageCommand, UploadReceiptImageResult>
+	IImageValidationService imageValidationService) : IRequestHandler<UploadReceiptImageCommand, UploadReceiptImageResult>
 {
 	public async Task<UploadReceiptImageResult> Handle(UploadReceiptImageCommand request, CancellationToken cancellationToken)
 	{
@@ -16,21 +16,22 @@ public class UploadReceiptImageCommandHandler(
 			throw new KeyNotFoundException($"Receipt {request.ReceiptId} not found.");
 		}
 
+		// Validate magic-byte format + dimensions before committing anything to disk.
+		await imageValidationService.ValidateAsync(request.ImageBytes, cancellationToken);
+
 		string originalPath = await imageStorageService.SaveOriginalAsync(
 			request.ReceiptId, request.ImageBytes, request.FileExtension, cancellationToken);
 
 		try
 		{
-			ImageProcessingResult processed = await imageProcessingService.PreprocessAsync(
-				request.ImageBytes, request.ContentType, cancellationToken);
-
-			string processedPath = await imageStorageService.SaveProcessedAsync(
-				request.ReceiptId, processed.ProcessedBytes, cancellationToken);
-
+			// The VLM-based receipt extraction pipeline ingests the original bytes directly,
+			// so there is no separate "processed" image to persist. Mirror the original path
+			// onto ProcessedImagePath to keep the DB schema populated; dropping the column is
+			// tracked separately.
 			await receiptService.UpdateImagePathsAsync(
-				request.ReceiptId, originalPath, processedPath, cancellationToken);
+				request.ReceiptId, originalPath, originalPath, cancellationToken);
 
-			return new UploadReceiptImageResult(originalPath, processedPath);
+			return new UploadReceiptImageResult(originalPath, originalPath);
 		}
 		catch
 		{

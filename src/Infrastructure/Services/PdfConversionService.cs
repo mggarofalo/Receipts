@@ -20,7 +20,7 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 
 	/// <summary>
 	/// Maximum pixel dimension (width or height) for images created from raw pixel data.
-	/// Matches the cap in <see cref="ImageProcessingService"/>.
+	/// Matches the cap in <see cref="ImageValidationService"/>.
 	/// </summary>
 	private const int MaxImageDimension = 10_000;
 

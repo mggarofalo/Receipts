@@ -79,27 +79,29 @@ public class UploadReceiptImageCommandHandlerTests
 {
 	private readonly Mock<IReceiptService> _mockReceiptService;
 	private readonly Mock<IImageStorageService> _mockStorageService;
-	private readonly Mock<IImageProcessingService> _mockProcessingService;
+	private readonly Mock<IImageValidationService> _mockValidationService;
 	private readonly UploadReceiptImageCommandHandler _handler;
 
 	public UploadReceiptImageCommandHandlerTests()
 	{
 		_mockReceiptService = new Mock<IReceiptService>();
 		_mockStorageService = new Mock<IImageStorageService>();
-		_mockProcessingService = new Mock<IImageProcessingService>();
+		_mockValidationService = new Mock<IImageValidationService>();
 		_handler = new UploadReceiptImageCommandHandler(
 			_mockReceiptService.Object,
 			_mockStorageService.Object,
-			_mockProcessingService.Object);
+			_mockValidationService.Object);
 	}
 
 	[Fact]
-	public async Task Handle_ValidCommand_ReturnsPaths()
+	public async Task Handle_ValidCommand_ReturnsOriginalPathAsBothPaths()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
 		byte[] imageBytes = [0xFF, 0xD8, 0xFF, 0xE0]; // JPEG magic bytes
 		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
+
+		string expectedPath = $"{receiptId}/original.jpg";
 
 		_mockReceiptService
 			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
@@ -107,26 +109,19 @@ public class UploadReceiptImageCommandHandlerTests
 
 		_mockStorageService
 			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync($"{receiptId}/original.jpg");
-
-		ImageProcessingResult processingResult = new([0x89, 0x50, 0x4E, 0x47], 100, 200);
-		_mockProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(processingResult);
-
-		_mockStorageService
-			.Setup(s => s.SaveProcessedAsync(receiptId, processingResult.ProcessedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync($"{receiptId}/processed.png");
+			.ReturnsAsync(expectedPath);
 
 		// Act
 		UploadReceiptImageResult result = await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		result.OriginalImagePath.Should().Be($"{receiptId}/original.jpg");
-		result.ProcessedImagePath.Should().Be($"{receiptId}/processed.png");
+		// With the VLM-based scan pipeline, there is no separate "processed" image —
+		// both paths point to the original bytes.
+		result.OriginalImagePath.Should().Be(expectedPath);
+		result.ProcessedImagePath.Should().Be(expectedPath);
 
 		_mockReceiptService.Verify(
-			s => s.UpdateImagePathsAsync(receiptId, $"{receiptId}/original.jpg", $"{receiptId}/processed.png", It.IsAny<CancellationToken>()),
+			s => s.UpdateImagePathsAsync(receiptId, expectedPath, expectedPath, It.IsAny<CancellationToken>()),
 			Times.Once);
 	}
 
@@ -147,6 +142,14 @@ public class UploadReceiptImageCommandHandlerTests
 
 		// Assert
 		await act.Should().ThrowAsync<KeyNotFoundException>();
+
+		// Nothing should have been validated or saved when the receipt is missing.
+		_mockValidationService.Verify(
+			s => s.ValidateAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
+			Times.Never);
+		_mockStorageService.Verify(
+			s => s.SaveOriginalAsync(It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+			Times.Never);
 	}
 
 	[Fact]
@@ -157,55 +160,48 @@ public class UploadReceiptImageCommandHandlerTests
 		byte[] imageBytes = [0xFF, 0xD8];
 		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/png", ".png");
 
+		string expectedPath = $"{receiptId}/original.png";
+
 		_mockReceiptService
 			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
 		_mockStorageService
 			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".png", It.IsAny<CancellationToken>()))
-			.ReturnsAsync($"{receiptId}/original.png");
-
-		ImageProcessingResult processingResult = new([0x01], 50, 50);
-		_mockProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/png", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(processingResult);
-
-		_mockStorageService
-			.Setup(s => s.SaveProcessedAsync(receiptId, processingResult.ProcessedBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync($"{receiptId}/processed.png");
+			.ReturnsAsync(expectedPath);
 
 		// Act
 		await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		_mockReceiptService.Verify(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()), Times.Once);
+		_mockValidationService.Verify(s => s.ValidateAsync(imageBytes, It.IsAny<CancellationToken>()), Times.Once);
 		_mockStorageService.Verify(s => s.SaveOriginalAsync(receiptId, imageBytes, ".png", It.IsAny<CancellationToken>()), Times.Once);
-		_mockProcessingService.Verify(s => s.PreprocessAsync(imageBytes, "image/png", It.IsAny<CancellationToken>()), Times.Once);
-		_mockStorageService.Verify(s => s.SaveProcessedAsync(receiptId, processingResult.ProcessedBytes, It.IsAny<CancellationToken>()), Times.Once);
 		_mockReceiptService.Verify(
-			s => s.UpdateImagePathsAsync(receiptId, $"{receiptId}/original.png", $"{receiptId}/processed.png", It.IsAny<CancellationToken>()),
+			s => s.UpdateImagePathsAsync(receiptId, expectedPath, expectedPath, It.IsAny<CancellationToken>()),
 			Times.Once);
+
+		// SaveProcessedAsync is never called — preprocessing was removed with the legacy OCR pipeline.
+		_mockStorageService.Verify(
+			s => s.SaveProcessedAsync(It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
+			Times.Never);
 	}
 
 	[Fact]
-	public async Task Handle_ProcessingServiceThrows_PropagatesInvalidOperationException()
+	public async Task Handle_ValidationServiceThrows_DoesNotSaveOrCleanUp()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
-		byte[] imageBytes = [0xFF, 0xD8];
+		byte[] imageBytes = [0x47, 0x49, 0x46]; // GIF magic bytes — unsupported
 		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
 
 		_mockReceiptService
 			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(true);
 
-		_mockStorageService
-			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
-			.ReturnsAsync($"{receiptId}/original.jpg");
-
-		_mockProcessingService
-			.Setup(s => s.PreprocessAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
-			.ThrowsAsync(new InvalidOperationException("The uploaded file is not a supported image format."));
+		_mockValidationService
+			.Setup(s => s.ValidateAsync(imageBytes, It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("The uploaded file is not a supported image format. Only JPEG and PNG are accepted."));
 
 		// Act
 		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
@@ -214,12 +210,45 @@ public class UploadReceiptImageCommandHandlerTests
 		await act.Should().ThrowAsync<InvalidOperationException>()
 			.WithMessage("*not a supported image format*");
 
-		// Verify SaveProcessedAsync was never called after processing failure
+		// Nothing should hit disk when validation fails up front.
 		_mockStorageService.Verify(
-			s => s.SaveProcessedAsync(It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
+			s => s.SaveOriginalAsync(It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
 			Times.Never);
+		_mockStorageService.Verify(
+			s => s.DeleteReceiptImagesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+			Times.Never);
+	}
 
-		// Verify orphaned files are cleaned up
+	[Fact]
+	public async Task Handle_UpdateImagePathsThrows_CleansUpOrphanedFiles()
+	{
+		// Arrange
+		Guid receiptId = Guid.NewGuid();
+		byte[] imageBytes = [0xFF, 0xD8];
+		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
+
+		string savedPath = $"{receiptId}/original.jpg";
+
+		_mockReceiptService
+			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+
+		_mockStorageService
+			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(savedPath);
+
+		_mockReceiptService
+			.Setup(s => s.UpdateImagePathsAsync(receiptId, savedPath, savedPath, It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("DB offline"));
+
+		// Act
+		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("DB offline");
+
+		// The catch block must clean up the already-saved original.
 		_mockStorageService.Verify(
 			s => s.DeleteReceiptImagesAsync(receiptId, It.IsAny<CancellationToken>()),
 			Times.Once);
@@ -248,9 +277,13 @@ public class UploadReceiptImageCommandHandlerTests
 		await act.Should().ThrowAsync<IOException>()
 			.WithMessage("Disk full");
 
-		// Verify preprocessing was never called
-		_mockProcessingService.Verify(
-			s => s.PreprocessAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+		// Validation ran before SaveOriginal, but no cleanup is needed because the save never
+		// produced a file.
+		_mockValidationService.Verify(
+			s => s.ValidateAsync(imageBytes, It.IsAny<CancellationToken>()),
+			Times.Once);
+		_mockStorageService.Verify(
+			s => s.DeleteReceiptImagesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
 			Times.Never);
 	}
 }

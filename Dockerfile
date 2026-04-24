@@ -95,7 +95,6 @@ LABEL org.opencontainers.image.title="Receipts" \
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gosu curl \
-      libtesseract5 liblept5 \
       libgomp1 libgdiplus && \
     rm -rf /var/lib/apt/lists/*
 
@@ -108,25 +107,6 @@ WORKDIR /app
 
 # Copy published API
 COPY --from=api-build /app/publish .
-
-# Create arch-aware symlinks for Tesseract/Leptonica native libraries.
-# The Tesseract NuGet package probes for libraries in a platform-specific
-# subdirectory (e.g. x64/libleptonica-1.82.0.so). Ubuntu Noble ships the
-# shared objects under /usr/lib/<triple>, so we symlink them into place.
-#
-# Ubuntu Noble (glibc 2.39) ships only libdl.so.2 — the standalone libdl.so
-# was absorbed into libc in glibc 2.34. Tesseract's InteropDotNet loader
-# calls dlopen("libdl"), so we also symlink libdl.so → libdl.so.2.
-ARG TARGETARCH
-RUN case ${TARGETARCH} in \
-      amd64) ARCH_DIR=x64   ; TRIPLE=x86_64-linux-gnu ;; \
-      arm64) ARCH_DIR=arm64 ; TRIPLE=aarch64-linux-gnu ;; \
-      *)     echo "Unsupported architecture for Tesseract: ${TARGETARCH}" >&2; exit 1 ;; \
-    esac && \
-    mkdir -p ${ARCH_DIR} && \
-    ln -sf /usr/lib/${TRIPLE}/liblept.so.5   ${ARCH_DIR}/libleptonica-1.82.0.so && \
-    ln -sf /usr/lib/${TRIPLE}/libtesseract.so.5 ${ARCH_DIR}/libtesseract50.so && \
-    ln -sf /usr/lib/${TRIPLE}/libdl.so.2 /usr/lib/${TRIPLE}/libdl.so
 
 # Copy CLI tools
 COPY --from=api-build /app/tools ./tools/

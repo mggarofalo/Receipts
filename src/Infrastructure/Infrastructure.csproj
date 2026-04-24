@@ -15,7 +15,6 @@
   <ItemGroup>
     <Content Include="Models\BgeLargeEnV15\model.onnx" Condition="Exists('Models\BgeLargeEnV15\model.onnx')" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Models\BgeLargeEnV15\vocab.txt" Condition="Exists('Models\BgeLargeEnV15\vocab.txt')" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Models\Tessdata\eng.traineddata" Condition="Exists('Models\Tessdata\eng.traineddata')" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,19 +35,7 @@
     <PackageReference Include="Pgvector" />
     <PackageReference Include="Pgvector.EntityFrameworkCore" />
     <PackageReference Include="Riok.Mapperly" />
-    <PackageReference Include="OpenCvSharp4.Official.runtime.linux-x64"
-                      Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or ('$(RuntimeIdentifier)' == '' And '$([MSBuild]::IsOSPlatform(`Linux`))' == 'true')" />
-    <PackageReference Include="OpenCvSharp4.runtime.win"
-                      Condition="'$(RuntimeIdentifier)' == 'win-x64' Or ('$(RuntimeIdentifier)' == '' And '$([MSBuild]::IsOSPlatform(`Windows`))' == 'true')" />
-    <PackageReference Include="Sdcb.PaddleInference" />
-    <PackageReference Include="Sdcb.PaddleInference.runtime.linux-x64.openblas"
-                      Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or ('$(RuntimeIdentifier)' == '' And '$([MSBuild]::IsOSPlatform(`Linux`))' == 'true')" />
-    <PackageReference Include="Sdcb.PaddleInference.runtime.win64.mkl"
-                      Condition="'$(RuntimeIdentifier)' == 'win-x64' Or ('$(RuntimeIdentifier)' == '' And '$([MSBuild]::IsOSPlatform(`Windows`))' == 'true')" />
-    <PackageReference Include="Sdcb.PaddleOCR" />
-    <PackageReference Include="Sdcb.PaddleOCR.Models.Local" />
     <PackageReference Include="SixLabors.ImageSharp" />
-    <PackageReference Include="Tesseract" />
     <PackageReference Include="PdfPig" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <PrivateAssets>all</PrivateAssets>
