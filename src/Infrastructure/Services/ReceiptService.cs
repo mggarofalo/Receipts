@@ -64,9 +64,9 @@ public class ReceiptService(IReceiptRepository repository, ReceiptMapper mapper)
 		await repository.UpdateAsync(receiptEntities, cancellationToken);
 	}
 
-	public async Task UpdateImagePathsAsync(Guid receiptId, string originalImagePath, string processedImagePath, CancellationToken cancellationToken)
+	public async Task UpdateOriginalImagePathAsync(Guid receiptId, string originalImagePath, CancellationToken cancellationToken)
 	{
-		await repository.UpdateImagePathsAsync(receiptId, originalImagePath, processedImagePath, cancellationToken);
+		await repository.UpdateOriginalImagePathAsync(receiptId, originalImagePath, cancellationToken);
 	}
 
 	public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken)

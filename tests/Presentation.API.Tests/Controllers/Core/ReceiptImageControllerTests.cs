@@ -146,7 +146,7 @@ public class ReceiptImageControllerTests
 	}
 
 	[Fact]
-	public async Task UploadImage_ValidJpeg_ReturnsOkWithPaths()
+	public async Task UploadImage_ValidJpeg_ReturnsOkWithPath()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -154,7 +154,7 @@ public class ReceiptImageControllerTests
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<UploadReceiptImageCommand>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.jpg", $"{receiptId}/processed.png"));
+			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.jpg"));
 
 		// Act
 		var result = await _controller.UploadImage(receiptId, file);
@@ -162,11 +162,10 @@ public class ReceiptImageControllerTests
 		// Assert
 		Ok<UploadReceiptImageResponse> okResult = result.Result.Should().BeOfType<Ok<UploadReceiptImageResponse>>().Subject;
 		okResult.Value!.OriginalImagePath.Should().Be($"{receiptId}/original.jpg");
-		okResult.Value.ProcessedImagePath.Should().Be($"{receiptId}/processed.png");
 	}
 
 	[Fact]
-	public async Task UploadImage_ValidPng_ReturnsOkWithPaths()
+	public async Task UploadImage_ValidPng_ReturnsOkWithPath()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -174,7 +173,7 @@ public class ReceiptImageControllerTests
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<UploadReceiptImageCommand>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.png", $"{receiptId}/processed.png"));
+			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.png"));
 
 		// Act
 		var result = await _controller.UploadImage(receiptId, file);
@@ -182,7 +181,6 @@ public class ReceiptImageControllerTests
 		// Assert
 		Ok<UploadReceiptImageResponse> okResult = result.Result.Should().BeOfType<Ok<UploadReceiptImageResponse>>().Subject;
 		okResult.Value!.OriginalImagePath.Should().Be($"{receiptId}/original.png");
-		okResult.Value.ProcessedImagePath.Should().Be($"{receiptId}/processed.png");
 	}
 
 	[Fact]
@@ -203,7 +201,7 @@ public class ReceiptImageControllerTests
 			.Setup(m => m.Send(
 				It.Is<UploadReceiptImageCommand>(c => c.FileExtension == ".png"),
 				It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.png", $"{receiptId}/processed.png"));
+			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.png"));
 
 		// Act
 		var result = await _controller.UploadImage(receiptId, fileMock.Object);
@@ -235,7 +233,7 @@ public class ReceiptImageControllerTests
 			.Setup(m => m.Send(
 				It.Is<UploadReceiptImageCommand>(c => c.FileExtension == ".jpg"),
 				It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.jpg", $"{receiptId}/processed.png"));
+			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.jpg"));
 
 		// Act
 		var result = await _controller.UploadImage(receiptId, fileMock.Object);
@@ -256,7 +254,7 @@ public class ReceiptImageControllerTests
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<UploadReceiptImageCommand>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.jpg", $"{receiptId}/processed.png"));
+			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.jpg"));
 
 		// Act
 		var result = await _controller.UploadImage(receiptId, file);
@@ -274,7 +272,7 @@ public class ReceiptImageControllerTests
 
 		_mediatorMock
 			.Setup(m => m.Send(It.IsAny<UploadReceiptImageCommand>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.jpg", $"{receiptId}/processed.png"));
+			.ReturnsAsync(new UploadReceiptImageResult($"{receiptId}/original.jpg"));
 
 		// Act
 		await _controller.UploadImage(receiptId, file);

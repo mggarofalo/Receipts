@@ -6269,11 +6269,9 @@ components:
 
     UploadReceiptImageResponse:
       type: object
-      required: [originalImagePath, processedImagePath]
+      required: [originalImagePath]
       properties:
         originalImagePath:
-          type: string
-        processedImagePath:
           type: string
 
     ConfidenceLevel:

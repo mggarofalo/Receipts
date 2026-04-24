@@ -132,14 +132,13 @@ public class ReceiptRepository(IDbContextFactory<ApplicationDbContext> contextFa
 		await context.SaveChangesAsync(cancellationToken);
 	}
 
-	public async Task UpdateImagePathsAsync(Guid id, string originalImagePath, string processedImagePath, CancellationToken cancellationToken)
+	public async Task UpdateOriginalImagePathAsync(Guid id, string originalImagePath, CancellationToken cancellationToken)
 	{
 		using ApplicationDbContext context = contextFactory.CreateDbContext();
 		ReceiptEntity entity = await context.Receipts.FindAsync([id], cancellationToken)
 			?? throw new KeyNotFoundException($"Receipt {id} not found.");
 
 		entity.OriginalImagePath = originalImagePath;
-		entity.ProcessedImagePath = processedImagePath;
 
 		await context.SaveChangesAsync(cancellationToken);
 	}
