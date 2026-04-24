@@ -83,8 +83,7 @@ public sealed class FixtureEvaluator(
 			return new FieldDiff("date", DiffStatus.NotDeclared, null, actual.Value.ToString(), null);
 		}
 
-		bool hasActual = actual.Confidence != ConfidenceLevel.Low || actual.Value != default;
-		if (!hasActual)
+		if (actual.Confidence == ConfidenceLevel.Low)
 		{
 			return new FieldDiff("date", DiffStatus.Fail, expected.Value.ToString("yyyy-MM-dd"), null, "VLM did not extract date");
 		}

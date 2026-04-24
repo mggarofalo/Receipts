@@ -53,7 +53,8 @@ try
 	await host.StartAsync();
 
 	EvalRunner runner = host.Services.GetRequiredService<EvalRunner>();
-	int exitCode = await runner.RunAsync(fixturesPath, CancellationToken.None);
+	IHostApplicationLifetime lifetime = host.Services.GetRequiredService<IHostApplicationLifetime>();
+	int exitCode = await runner.RunAsync(fixturesPath, lifetime.ApplicationStopping);
 
 	await host.StopAsync();
 	return exitCode;
