@@ -114,16 +114,24 @@ public class OllamaReceiptExtractionServiceTests
 		receipt.Date.Value.Should().Be(new DateOnly(2026, 1, 14));
 		receipt.Date.Confidence.Should().Be(ConfidenceLevel.High);
 
+		receipt.StoreAddress.Value.Should().Be("9 BENTON RD, TRAVELERS REST SC 29690");
+		receipt.StoreAddress.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.StorePhone.Value.Should().Be("864-834-7179");
+		receipt.StorePhone.Confidence.Should().Be(ConfidenceLevel.High);
+
 		receipt.Items.Should().HaveCount(2);
 		receipt.Items[0].Code.Value.Should().Be("078742228030");
 		receipt.Items[0].Description.Value.Should().Be("GRANULATED");
 		receipt.Items[0].Quantity.Confidence.Should().Be(ConfidenceLevel.Low);
 		receipt.Items[0].UnitPrice.Confidence.Should().Be(ConfidenceLevel.Low);
 		receipt.Items[0].TotalPrice.Value.Should().Be(3.07m);
+		receipt.Items[0].TaxCode.Value.Should().Be("F");
+		receipt.Items[0].TaxCode.Confidence.Should().Be(ConfidenceLevel.High);
 
 		receipt.Items[1].Quantity.Value.Should().Be(2.46m);
 		receipt.Items[1].UnitPrice.Value.Should().Be(0.50m);
 		receipt.Items[1].TotalPrice.Value.Should().Be(1.23m);
+		receipt.Items[1].TaxCode.Value.Should().Be("N");
 
 		receipt.Subtotal.Value.Should().Be(69.68m);
 		receipt.TaxLines.Should().HaveCount(1);
@@ -132,6 +140,19 @@ public class OllamaReceiptExtractionServiceTests
 		receipt.Total.Value.Should().Be(70.43m);
 		receipt.PaymentMethod.Value.Should().Be("MASTERCARD");
 		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.High);
+
+		receipt.Payments.Should().HaveCount(1);
+		receipt.Payments[0].Method.Value.Should().Be("MASTERCARD");
+		receipt.Payments[0].Amount.Value.Should().Be(70.43m);
+		receipt.Payments[0].LastFour.Value.Should().Be("3409");
+		receipt.Payments[0].LastFour.Confidence.Should().Be(ConfidenceLevel.High);
+
+		receipt.ReceiptId.Value.Should().Be("7QKKG1XDWPD");
+		receipt.ReceiptId.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.StoreNumber.Value.Should().Be("05487");
+		receipt.StoreNumber.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.TerminalId.Value.Should().Be("54731105");
+		receipt.TerminalId.Confidence.Should().Be(ConfidenceLevel.High);
 	}
 
 	[Theory]
@@ -325,10 +346,11 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
-	public async Task ExtractAsync_MultiPayment_TakesFirstMethod()
+	public async Task ExtractAsync_MultiPayment_PreservesAllPayments()
 	{
-		// Arrange — split tender (gift card + card). V1 ParsedReceipt can only carry one method;
-		// we pick the first that has a non-empty method string.
+		// Arrange — split tender (gift card + card). The legacy PaymentMethod field picks
+		// the first non-empty method for backward compatibility, but the Payments list must
+		// carry every tender with its amount and last-four for downstream reconciliation.
 		string innerJson = """
 			{
 			  "store": { "name": "Walmart" },
@@ -344,9 +366,21 @@ public class OllamaReceiptExtractionServiceTests
 		// Act
 		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
 
-		// Assert
+		// Assert — legacy field keeps the first method
 		receipt.PaymentMethod.Value.Should().Be("GIFT CARD");
 		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.High);
+
+		// Assert — full Payments list is preserved in order
+		receipt.Payments.Should().HaveCount(2);
+		receipt.Payments[0].Method.Value.Should().Be("GIFT CARD");
+		receipt.Payments[0].Amount.Value.Should().Be(10.00m);
+		receipt.Payments[0].Amount.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.Payments[0].LastFour.Value.Should().BeNull();
+		receipt.Payments[0].LastFour.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Payments[1].Method.Value.Should().Be("VISA");
+		receipt.Payments[1].Amount.Value.Should().Be(30.00m);
+		receipt.Payments[1].LastFour.Value.Should().Be("1234");
+		receipt.Payments[1].LastFour.Confidence.Should().Be(ConfidenceLevel.High);
 	}
 
 	[Fact]
@@ -366,8 +400,72 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.StoreAddress.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.StoreAddress.Value.Should().BeNull();
+		receipt.StorePhone.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.StorePhone.Value.Should().BeNull();
 		receipt.Date.Value.Should().Be(new DateOnly(2026, 4, 1));
 		receipt.Total.Value.Should().Be(10.00m);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_MissingIdentifiersAndPayments_YieldNoneConfidenceAndEmptyList()
+	{
+		// Arrange — receiptId/storeNumber/terminalId are all commonly missing on smaller
+		// independent-store receipts, and a receipt with no payments block should yield an
+		// empty Payments list rather than throwing.
+		string innerJson = """
+			{
+			  "store": { "name": "Corner Market" },
+			  "datetime": "2026-04-01",
+			  "total": 3.99
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.ReceiptId.Value.Should().BeNull();
+		receipt.ReceiptId.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.StoreNumber.Value.Should().BeNull();
+		receipt.StoreNumber.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.TerminalId.Value.Should().BeNull();
+		receipt.TerminalId.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Payments.Should().BeEmpty();
+	}
+
+	[Fact]
+	public async Task ExtractAsync_PaymentWithMissingMethod_YieldsNoneConfidenceOnThatPaymentMethod()
+	{
+		// Arrange — defensive: if a payment record omits the method but has an amount, we
+		// still include the payment in the list but mark the method as None-confidence so
+		// downstream code can distinguish "truly unknown tender" from legacy-mapper behavior.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "total": 15.00,
+			  "payments": [
+			    { "method": null, "amount": 15.00, "lastFour": null }
+			  ]
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — the payment is preserved with correct confidence
+		receipt.Payments.Should().HaveCount(1);
+		receipt.Payments[0].Method.Value.Should().BeNull();
+		receipt.Payments[0].Method.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Payments[0].Amount.Value.Should().Be(15.00m);
+		receipt.Payments[0].Amount.Confidence.Should().Be(ConfidenceLevel.High);
+
+		// Assert — legacy PaymentMethod falls back to None since no method string was found
+		receipt.PaymentMethod.Value.Should().BeNull();
+		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.Low);
 	}
 
 	[Fact]

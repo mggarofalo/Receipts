@@ -94,6 +94,14 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 			? FieldConfidence<string>.High(payload.Store.Name)
 			: FieldConfidence<string>.None();
 
+		FieldConfidence<string?> storeAddress = !string.IsNullOrWhiteSpace(payload.Store?.Address)
+			? FieldConfidence<string?>.High(payload.Store.Address)
+			: FieldConfidence<string?>.None();
+
+		FieldConfidence<string?> storePhone = !string.IsNullOrWhiteSpace(payload.Store?.Phone)
+			? FieldConfidence<string?>.High(payload.Store.Phone)
+			: FieldConfidence<string?>.None();
+
 		FieldConfidence<DateOnly> date = TryParseDate(payload.Datetime) is { } d
 			? FieldConfidence<DateOnly>.High(d)
 			: FieldConfidence<DateOnly>.None();
@@ -110,15 +118,38 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 			? FieldConfidence<decimal>.High(t)
 			: FieldConfidence<decimal>.None();
 
-		// Collapse first payment's method into the single-string PaymentMethod on ParsedReceipt.
-		// Multi-tender receipts lose detail here; see RECEIPTS-626 for the domain-model extension.
+		// Preserve every payment tender from the VLM payload. The legacy PaymentMethod field
+		// is kept populated with the first non-empty method string for backward compatibility;
+		// new consumers should read the Payments list instead.
+		List<ParsedPayment> payments = (payload.Payments ?? []).Select(MapPayment).ToList();
+
 		string? primaryMethod = payload.Payments?
 			.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p.Method))?.Method;
 		FieldConfidence<string?> paymentMethod = !string.IsNullOrWhiteSpace(primaryMethod)
 			? FieldConfidence<string?>.High(primaryMethod)
 			: FieldConfidence<string?>.None();
 
-		return new ParsedReceipt(storeName, date, items, subtotal, taxLines, total, paymentMethod);
+		FieldConfidence<string?> receiptId = !string.IsNullOrWhiteSpace(payload.ReceiptId)
+			? FieldConfidence<string?>.High(payload.ReceiptId)
+			: FieldConfidence<string?>.None();
+
+		FieldConfidence<string?> storeNumber = !string.IsNullOrWhiteSpace(payload.StoreNumber)
+			? FieldConfidence<string?>.High(payload.StoreNumber)
+			: FieldConfidence<string?>.None();
+
+		FieldConfidence<string?> terminalId = !string.IsNullOrWhiteSpace(payload.TerminalId)
+			? FieldConfidence<string?>.High(payload.TerminalId)
+			: FieldConfidence<string?>.None();
+
+		return new ParsedReceipt(storeName, date, items, subtotal, taxLines, total, paymentMethod)
+		{
+			StoreAddress = storeAddress,
+			StorePhone = storePhone,
+			Payments = payments,
+			ReceiptId = receiptId,
+			StoreNumber = storeNumber,
+			TerminalId = terminalId,
+		};
 	}
 
 	/// <summary>
@@ -181,7 +212,31 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 			? FieldConfidence<decimal>.High(t)
 			: FieldConfidence<decimal>.None();
 
-		return new ParsedReceiptItem(code, description, quantity, unitPrice, totalPrice);
+		FieldConfidence<string?> taxCode = !string.IsNullOrWhiteSpace(item.TaxCode)
+			? FieldConfidence<string?>.High(item.TaxCode)
+			: FieldConfidence<string?>.None();
+
+		return new ParsedReceiptItem(code, description, quantity, unitPrice, totalPrice)
+		{
+			TaxCode = taxCode,
+		};
+	}
+
+	private static ParsedPayment MapPayment(VlmPayment payment)
+	{
+		FieldConfidence<string?> method = !string.IsNullOrWhiteSpace(payment.Method)
+			? FieldConfidence<string?>.High(payment.Method)
+			: FieldConfidence<string?>.None();
+
+		FieldConfidence<decimal?> amount = payment.Amount is { } a
+			? FieldConfidence<decimal?>.High(a)
+			: FieldConfidence<decimal?>.None();
+
+		FieldConfidence<string?> lastFour = !string.IsNullOrWhiteSpace(payment.LastFour)
+			? FieldConfidence<string?>.High(payment.LastFour)
+			: FieldConfidence<string?>.None();
+
+		return new ParsedPayment(method, amount, lastFour);
 	}
 
 	private static readonly string[] DateFormats =

@@ -202,6 +202,9 @@ public class ReceiptScanControllerTests
 					FieldConfidence<decimal>.High(1m),
 					FieldConfidence<decimal>.High(3.49m),
 					FieldConfidence<decimal>.High(3.49m))
+				{
+					TaxCode = FieldConfidence<string?>.High("N"),
+				}
 			],
 			FieldConfidence<decimal>.Medium(3.49m),
 			[
@@ -211,7 +214,21 @@ public class ReceiptScanControllerTests
 			],
 			FieldConfidence<decimal>.High(3.74m),
 			FieldConfidence<string?>.Low("VISA")
-		);
+		)
+		{
+			StoreAddress = FieldConfidence<string?>.High("9 BENTON RD, TRAVELERS REST SC 29690"),
+			StorePhone = FieldConfidence<string?>.High("864-834-7179"),
+			Payments =
+			[
+				new ParsedPayment(
+					FieldConfidence<string?>.High("VISA"),
+					FieldConfidence<decimal?>.High(3.74m),
+					FieldConfidence<string?>.High("1234")),
+			],
+			ReceiptId = FieldConfidence<string?>.High("7QKKG1XDWPD"),
+			StoreNumber = FieldConfidence<string?>.High("05487"),
+			TerminalId = FieldConfidence<string?>.High("54731105"),
+		};
 
 		ScanReceiptResult scanResult = new(parsedReceipt);
 
@@ -228,11 +245,17 @@ public class ReceiptScanControllerTests
 
 		response.StoreName.Should().Be("WALMART");
 		response.StoreNameConfidence.Should().Be(DtoConfidenceLevel.High);
+		response.StoreAddress.Should().Be("9 BENTON RD, TRAVELERS REST SC 29690");
+		response.StoreAddressConfidence.Should().Be(DtoConfidenceLevel.High);
+		response.StorePhone.Should().Be("864-834-7179");
+		response.StorePhoneConfidence.Should().Be(DtoConfidenceLevel.High);
 		response.Date.Should().Be(new DateOnly(2026, 3, 15));
 		response.DateConfidence.Should().Be(DtoConfidenceLevel.Medium);
 		response.Items.Should().HaveCount(1);
 		response.Items.First().Description.Should().Be("MILK 2%");
 		response.Items.First().TotalPrice.Should().Be(3.49d);
+		response.Items.First().TaxCode.Should().Be("N");
+		response.Items.First().TaxCodeConfidence.Should().Be(DtoConfidenceLevel.High);
 		response.Subtotal.Should().Be(3.49d);
 		response.TaxLines.Should().HaveCount(1);
 		response.TaxLines.First().Label.Should().Be("TAX");
@@ -240,6 +263,66 @@ public class ReceiptScanControllerTests
 		response.Total.Should().Be(3.74d);
 		response.TotalConfidence.Should().Be(DtoConfidenceLevel.High);
 		response.PaymentMethod.Should().Be("VISA");
+		response.Payments.Should().HaveCount(1);
+		response.Payments.First().Method.Should().Be("VISA");
+		response.Payments.First().Amount.Should().Be(3.74d);
+		response.Payments.First().LastFour.Should().Be("1234");
+		response.Payments.First().LastFourConfidence.Should().Be(DtoConfidenceLevel.High);
+		response.ReceiptId.Should().Be("7QKKG1XDWPD");
+		response.ReceiptIdConfidence.Should().Be(DtoConfidenceLevel.High);
+		response.StoreNumber.Should().Be("05487");
+		response.StoreNumberConfidence.Should().Be(DtoConfidenceLevel.High);
+		response.TerminalId.Should().Be("54731105");
+		response.TerminalIdConfidence.Should().Be(DtoConfidenceLevel.High);
+	}
+
+	[Fact]
+	public async Task ScanReceipt_MultiPayment_ReturnsAllPaymentsInResponse()
+	{
+		// Arrange — split-tender receipt (gift card + card). The response must carry both
+		// payments so downstream code can reconcile per-tender amounts.
+		IFormFile file = CreateMockFormFile("receipt.jpg", "image/jpeg", 2048);
+
+		ParsedReceipt parsedReceipt = new(
+			FieldConfidence<string>.High("WALMART"),
+			FieldConfidence<DateOnly>.High(new DateOnly(2026, 3, 15)),
+			[],
+			FieldConfidence<decimal>.High(40m),
+			[],
+			FieldConfidence<decimal>.High(40m),
+			FieldConfidence<string?>.High("GIFT CARD")
+		)
+		{
+			Payments =
+			[
+				new ParsedPayment(
+					FieldConfidence<string?>.High("GIFT CARD"),
+					FieldConfidence<decimal?>.High(10m),
+					FieldConfidence<string?>.None()),
+				new ParsedPayment(
+					FieldConfidence<string?>.High("VISA"),
+					FieldConfidence<decimal?>.High(30m),
+					FieldConfidence<string?>.High("1234")),
+			],
+		};
+
+		_mediatorMock
+			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new ScanReceiptResult(parsedReceipt));
+
+		// Act
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
+
+		// Assert
+		ProposedReceiptResponse response = actual.Result.Should().BeOfType<Ok<ProposedReceiptResponse>>().Subject.Value!;
+		response.Payments.Should().HaveCount(2);
+		response.Payments.ElementAt(0).Method.Should().Be("GIFT CARD");
+		response.Payments.ElementAt(0).Amount.Should().Be(10d);
+		response.Payments.ElementAt(0).LastFour.Should().BeNull();
+		response.Payments.ElementAt(0).LastFourConfidence.Should().Be(DtoConfidenceLevel.Low);
+		response.Payments.ElementAt(1).Method.Should().Be("VISA");
+		response.Payments.ElementAt(1).Amount.Should().Be(30d);
+		response.Payments.ElementAt(1).LastFour.Should().Be("1234");
 	}
 
 	[Fact]

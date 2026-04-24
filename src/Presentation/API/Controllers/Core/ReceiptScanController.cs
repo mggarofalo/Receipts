@@ -97,6 +97,10 @@ public class ReceiptScanController(
 		{
 			StoreName = parsed.StoreName.Value,
 			StoreNameConfidence = MapConfidence(parsed.StoreName.Confidence),
+			StoreAddress = parsed.StoreAddress.Value,
+			StoreAddressConfidence = MapConfidence(parsed.StoreAddress.Confidence),
+			StorePhone = parsed.StorePhone.Value,
+			StorePhoneConfidence = MapConfidence(parsed.StorePhone.Confidence),
 			Date = parsed.Date.Value,
 			DateConfidence = MapConfidence(parsed.Date.Confidence),
 			Items = parsed.Items.Select(MapItem).ToList(),
@@ -107,6 +111,13 @@ public class ReceiptScanController(
 			TotalConfidence = MapConfidence(parsed.Total.Confidence),
 			PaymentMethod = parsed.PaymentMethod.Value,
 			PaymentMethodConfidence = MapConfidence(parsed.PaymentMethod.Confidence),
+			Payments = parsed.Payments.Select(MapPayment).ToList(),
+			ReceiptId = parsed.ReceiptId.Value,
+			ReceiptIdConfidence = MapConfidence(parsed.ReceiptId.Confidence),
+			StoreNumber = parsed.StoreNumber.Value,
+			StoreNumberConfidence = MapConfidence(parsed.StoreNumber.Confidence),
+			TerminalId = parsed.TerminalId.Value,
+			TerminalIdConfidence = MapConfidence(parsed.TerminalId.Confidence),
 		};
 	}
 
@@ -124,6 +135,8 @@ public class ReceiptScanController(
 			UnitPriceConfidence = MapConfidence(item.UnitPrice.Confidence),
 			TotalPrice = ToNullableDouble(item.TotalPrice.Value),
 			TotalPriceConfidence = MapConfidence(item.TotalPrice.Confidence),
+			TaxCode = item.TaxCode.Value,
+			TaxCodeConfidence = MapConfidence(item.TaxCode.Confidence),
 		};
 	}
 
@@ -135,6 +148,19 @@ public class ReceiptScanController(
 			LabelConfidence = MapConfidence(taxLine.Label.Confidence),
 			Amount = ToNullableDouble(taxLine.Amount.Value),
 			AmountConfidence = MapConfidence(taxLine.Amount.Confidence),
+		};
+	}
+
+	private static ProposedPaymentResponse MapPayment(ParsedPayment payment)
+	{
+		return new ProposedPaymentResponse
+		{
+			Method = payment.Method.Value,
+			MethodConfidence = MapConfidence(payment.Method.Confidence),
+			Amount = ToNullableDouble(payment.Amount.Value),
+			AmountConfidence = MapConfidence(payment.Amount.Confidence),
+			LastFour = payment.LastFour.Value,
+			LastFourConfidence = MapConfidence(payment.LastFour.Confidence),
 		};
 	}
 
