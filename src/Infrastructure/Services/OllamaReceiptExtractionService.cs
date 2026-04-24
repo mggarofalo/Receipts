@@ -173,6 +173,14 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 				{
 					parent.Quantity = item.Quantity;
 					parent.UnitPrice = item.UnitPrice;
+					// If the V3 prompt echoes taxCode on the sub-line but not on the parent,
+					// absorb it so the merged item doesn't drop the code entirely. The parent's
+					// taxCode wins when both are present (the printed marker sits next to the
+					// parent line on the physical receipt).
+					if (string.IsNullOrWhiteSpace(parent.TaxCode) && !string.IsNullOrWhiteSpace(item.TaxCode))
+					{
+						parent.TaxCode = item.TaxCode;
+					}
 					continue;
 				}
 			}

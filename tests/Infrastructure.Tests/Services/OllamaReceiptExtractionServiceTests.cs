@@ -314,9 +314,50 @@ public class OllamaReceiptExtractionServiceTests
 		merged[0].Description.Should().Be("BANANAS");
 		merged[0].Quantity.Should().Be(2.460m);
 		merged[0].UnitPrice.Should().Be(0.50m);
+		merged[0].TaxCode.Should().Be("N");
 		merged[1].Description.Should().Be("BANANAS");
 		merged[1].Quantity.Should().Be(2.720m);
 		merged[1].UnitPrice.Should().Be(0.50m);
+		merged[1].TaxCode.Should().Be("N");
+	}
+
+	[Fact]
+	public void MergeWeightSublines_ParentMissingTaxCode_AbsorbsFromSubline()
+	{
+		// Arrange — defensive: if the VLM echoes taxCode on the sub-line but not on the
+		// parent, the merge must preserve it. Without this, the merged item drops the code
+		// entirely now that MapItem reads ParsedReceiptItem.TaxCode.
+		List<VlmReceiptItem> items =
+		[
+			new() { Description = "BANANAS", Code = "000000004011", LineTotal = 1.23m, Quantity = null, UnitPrice = null, TaxCode = null },
+			new() { Description = "2.460 lb. @ 1 lb. /0.50", Code = null, LineTotal = 1.23m, Quantity = 2.460m, UnitPrice = 0.50m, TaxCode = "N" },
+		];
+
+		// Act
+		List<VlmReceiptItem> merged = OllamaReceiptExtractionService.MergeWeightSublines(items);
+
+		// Assert — sub-line is absorbed; parent inherits the tax code
+		merged.Should().HaveCount(1);
+		merged[0].TaxCode.Should().Be("N");
+	}
+
+	[Fact]
+	public void MergeWeightSublines_ParentHasTaxCode_WinsOverSubline()
+	{
+		// Arrange — parent populated, sub-line disagrees. Parent wins because the tax-code
+		// marker sits next to the parent line on the physical receipt.
+		List<VlmReceiptItem> items =
+		[
+			new() { Description = "BANANAS", Code = "000000004011", LineTotal = 1.23m, Quantity = null, UnitPrice = null, TaxCode = "N" },
+			new() { Description = "2.460 lb. @ 1 lb. /0.50", Code = null, LineTotal = 1.23m, Quantity = 2.460m, UnitPrice = 0.50m, TaxCode = "T" },
+		];
+
+		// Act
+		List<VlmReceiptItem> merged = OllamaReceiptExtractionService.MergeWeightSublines(items);
+
+		// Assert — parent's taxCode is preserved
+		merged.Should().HaveCount(1);
+		merged[0].TaxCode.Should().Be("N");
 	}
 
 	[Fact]
