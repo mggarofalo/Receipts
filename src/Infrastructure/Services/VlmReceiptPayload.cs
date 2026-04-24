@@ -5,10 +5,10 @@ namespace Infrastructure.Services;
 internal sealed class VlmReceiptPayload
 {
 	[JsonPropertyName("store")]
-	public string? Store { get; set; }
+	public VlmStore? Store { get; set; }
 
-	[JsonPropertyName("date")]
-	public DateOnly? Date { get; set; }
+	[JsonPropertyName("datetime")]
+	public string? Datetime { get; set; }
 
 	[JsonPropertyName("items")]
 	public List<VlmReceiptItem>? Items { get; set; }
@@ -22,17 +22,41 @@ internal sealed class VlmReceiptPayload
 	[JsonPropertyName("total")]
 	public decimal? Total { get; set; }
 
-	[JsonPropertyName("paymentMethod")]
-	public string? PaymentMethod { get; set; }
+	[JsonPropertyName("payments")]
+	public List<VlmPayment>? Payments { get; set; }
+
+	[JsonPropertyName("receiptId")]
+	public string? ReceiptId { get; set; }
+
+	[JsonPropertyName("storeNumber")]
+	public string? StoreNumber { get; set; }
+
+	[JsonPropertyName("terminalId")]
+	public string? TerminalId { get; set; }
+}
+
+internal sealed class VlmStore
+{
+	[JsonPropertyName("name")]
+	public string? Name { get; set; }
+
+	[JsonPropertyName("address")]
+	public string? Address { get; set; }
+
+	[JsonPropertyName("phone")]
+	public string? Phone { get; set; }
 }
 
 internal sealed class VlmReceiptItem
 {
+	[JsonPropertyName("description")]
+	public string? Description { get; set; }
+
 	[JsonPropertyName("code")]
 	public string? Code { get; set; }
 
-	[JsonPropertyName("description")]
-	public string? Description { get; set; }
+	[JsonPropertyName("lineTotal")]
+	public decimal? LineTotal { get; set; }
 
 	[JsonPropertyName("quantity")]
 	public decimal? Quantity { get; set; }
@@ -40,8 +64,8 @@ internal sealed class VlmReceiptItem
 	[JsonPropertyName("unitPrice")]
 	public decimal? UnitPrice { get; set; }
 
-	[JsonPropertyName("totalPrice")]
-	public decimal? TotalPrice { get; set; }
+	[JsonPropertyName("taxCode")]
+	public string? TaxCode { get; set; }
 }
 
 internal sealed class VlmTaxLine
@@ -51,4 +75,16 @@ internal sealed class VlmTaxLine
 
 	[JsonPropertyName("amount")]
 	public decimal? Amount { get; set; }
+}
+
+internal sealed class VlmPayment
+{
+	[JsonPropertyName("method")]
+	public string? Method { get; set; }
+
+	[JsonPropertyName("amount")]
+	public decimal? Amount { get; set; }
+
+	[JsonPropertyName("lastFour")]
+	public string? LastFour { get; set; }
 }
