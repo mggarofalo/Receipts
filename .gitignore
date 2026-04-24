@@ -329,8 +329,8 @@ src/client/coverage/
 
 # ONNX model files — downloaded via scripts/download-onnx-model.cs
 # (also fetched in Dockerfile during image build).
-src/Infrastructure/Models/BgeLargeEnV15/model.onnx
-src/Infrastructure/Models/BgeLargeEnV15/vocab.txt
+src/Infrastructure/Models/**/model.onnx
+src/Infrastructure/Models/**/vocab.txt
 
 # VlmEval private fixture receipts (real images / PDFs, never committed).
 # See src/Tools/VlmEval/README.md.
