@@ -9,10 +9,11 @@ public record PdfMetadata(string? Title, DateOnly? CreationDate);
 /// Result of converting a PDF document for OCR processing.
 /// </summary>
 /// <param name="PageImages">
-/// Embedded page images extracted from the PDF, independent of whether a text layer
-/// exists. Small decorative images (logos, icons) are filtered out so that only
-/// receipt-sized scans are returned. Empty when the PDF has no embedded bitmaps large
-/// enough to be a receipt scan.
+/// The rasterized first page of the PDF as a PNG byte array. Always contains exactly one
+/// entry when <see cref="IPdfConversionService.ConvertAsync"/> returns successfully —
+/// the first page is rendered regardless of whether the PDF contains embedded raster
+/// images, vector graphics, or only a text layer. The scan command handler consumes
+/// only this first image.
 /// </param>
 /// <param name="ExtractedText">
 /// Text extracted directly from the PDF text layer, if available.
@@ -37,9 +38,9 @@ public interface IPdfConversionService
 	const int MaxPages = 50;
 
 	/// <summary>
-	/// Converts a PDF to images and/or extracts text.
-	/// If the PDF has a text layer, returns extracted text directly.
-	/// If the PDF contains only images, extracts them for OCR processing.
+	/// Rasterizes the first page of the PDF to a PNG and optionally extracts the text
+	/// layer. The PNG is always produced (even for vector-only or text-only PDFs) so
+	/// that downstream VLM/OCR processing always has a usable image.
 	/// </summary>
 	Task<PdfConversionResult> ConvertAsync(byte[] pdfBytes, CancellationToken ct);
 }

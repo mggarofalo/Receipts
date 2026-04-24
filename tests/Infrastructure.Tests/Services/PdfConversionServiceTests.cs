@@ -24,10 +24,13 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
-	public async Task ConvertAsync_PdfWithTextLayer_ReturnsExtractedText()
+	public async Task ConvertAsync_PdfWithTextLayer_RasterizesFirstPageAndExtractsText()
 	{
 		// Arrange — PdfDocumentBuilder doesn't support newlines in AddText,
-		// so we use a single line of sufficient length
+		// so we use a single line of sufficient length. This is the vector-only case:
+		// no embedded raster images, only text glyphs as vector outlines. Before
+		// RECEIPTS-624 this produced an empty PageImages list and /api/receipts/scan
+		// returned 422. Now the first page is always rasterized to a PNG.
 		byte[] pdfBytes = CreateTextPdf("WALMART MILK 2% $3.49 TOTAL $3.74");
 
 		// Act
@@ -36,7 +39,26 @@ public class PdfConversionServiceTests
 		// Assert
 		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
 		result.ExtractedText.Should().Contain("WALMART");
-		result.PageImages.Should().BeEmpty();
+		AssertContainsValidPng(result.PageImages);
+	}
+
+	[Fact]
+	public async Task ConvertAsync_VectorOnlyPdf_ProducesRasterizedFirstPageImage()
+	{
+		// Arrange — acceptance criterion for RECEIPTS-624: vector-only PDFs (emailed POS
+		// receipts, scanner-app exports) must succeed. We build a text-only PDF because
+		// PdfDocumentBuilder cannot emit arbitrary vector paths, but the rasterization
+		// code path is the same: PDFium renders glyph outlines to pixels regardless of
+		// whether the page contains raster images.
+		byte[] pdfBytes = CreateTextPdf("Vector PDF receipt content with more than ten characters of text");
+
+		// Act
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert
+		result.PageImages.Should().ContainSingle(
+			"rasterization always produces exactly one first-page image");
+		AssertPngHasDimensions(result.PageImages[0], minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -54,9 +76,12 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
-	public async Task ConvertAsync_MultiPagePdf_ConcatenatesText()
+	public async Task ConvertAsync_MultiPagePdf_RasterizesFirstPageOnly()
 	{
-		// Arrange — each page must have text >= MinTextLengthPerPage
+		// Arrange — each page must have text >= MinTextLengthPerPage. The scan command
+		// handler only consumes the first page image, so the converter only rasterizes
+		// page 0 even when the PDF has multiple pages. Text from all pages is still
+		// concatenated and returned as an informational text layer.
 		byte[] pdfBytes = CreateMultiPageTextPdf(
 		[
 			"Page one content from WALMART store",
@@ -67,8 +92,11 @@ public class PdfConversionServiceTests
 		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
+		result.PageImages.Should().ContainSingle(
+			"only the first page is rasterized regardless of total page count");
 		result.ExtractedText.Should().Contain("WALMART");
 		result.ExtractedText.Should().Contain("MILK");
+		AssertPngHasDimensions(result.PageImages[0], minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -131,7 +159,7 @@ public class PdfConversionServiceTests
 	public async Task ConvertAsync_CancellationRequested_ThrowsOperationCanceledException()
 	{
 		// Arrange
-		byte[] pdfBytes = CreateTextPdf("Some text");
+		byte[] pdfBytes = CreateTextPdf("Some text that is sufficiently long to be indexed");
 		CancellationTokenSource cts = new();
 		await cts.CancelAsync();
 
@@ -143,42 +171,27 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
-	public async Task ConvertAsync_PdfWithNoTextAndNoImages_ThrowsInvalidOperationException()
+	public async Task ConvertAsync_PdfWithBelowThresholdText_StillRasterizes()
 	{
-		// Arrange — create a PDF with a page that has very little text (below threshold)
+		// Arrange — a PDF whose text layer is below MinTextLengthPerPage. Before
+		// rasterization, this threw "no readable text" because the text was too short
+		// and no embedded raster images existed. Now the rasterized first page is the
+		// usable output regardless of the text layer length — the VLM will read pixels
+		// directly.
 		byte[] pdfBytes = CreateTextPdf("Hi");
-
-		// Act
-		Func<Task> act = () => _service.ConvertAsync(pdfBytes, CancellationToken.None);
-
-		// Assert — "Hi" is only 2 chars, below MinTextLengthPerPage threshold
-		await act.Should().ThrowAsync<InvalidOperationException>()
-			.WithMessage("*no readable text*");
-	}
-
-	[Fact]
-	public async Task ConvertAsync_MixedContentPdf_ReturnsTextFromTextPages()
-	{
-		// Arrange — page 1 has sufficient text, page 2 has very little (below threshold)
-		// This tests the fix for BUG-001: text from text-layer pages should not be
-		// discarded just because other pages lack a text layer.
-		byte[] pdfBytes = CreateMultiPageTextPdf(
-		[
-			"Page one has a valid receipt text WALMART MILK $3.49 TOTAL $3.74",
-			"x" // Below MinTextLengthPerPage threshold
-		]);
 
 		// Act
 		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
-		// Assert — should return the text from page 1, not throw or return images
-		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
-		result.ExtractedText.Should().Contain("WALMART");
-		result.PageImages.Should().BeEmpty();
+		// Assert
+		result.PageImages.Should().ContainSingle();
+		result.ExtractedText.Should().BeNull(
+			"\"Hi\" is below the MinTextLengthPerPage threshold so the text layer is discarded");
+		AssertPngHasDimensions(result.PageImages[0], minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
-	public async Task ConvertAsync_PdfWithSufficientText_ReturnsTextDirectly()
+	public async Task ConvertAsync_PdfWithSufficientText_RasterizesAndReturnsText()
 	{
 		// Arrange — text must be >= MinTextLengthPerPage chars
 		string text = new('A', PdfConversionService.MinTextLengthPerPage + 10);
@@ -189,13 +202,18 @@ public class PdfConversionServiceTests
 
 		// Assert
 		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
-		result.PageImages.Should().BeEmpty();
+		result.PageImages.Should().ContainSingle();
 	}
 
 	[Fact]
-	public async Task ConvertAsync_PdfWithTextLayerAndLargeImage_ExtractsImage()
+	public async Task ConvertAsync_PdfWithTextLayerAndLargeImage_RasterizesFirstPage()
 	{
 		// Arrange — a Paperless-style PDF: text layer (OCR) + large embedded scan image.
+		// Previously the embedded image was extracted directly; now the full rasterized
+		// first page (which includes the embedded image as rendered on the page) is used.
+		// The scan handler gets a PNG with at least the raster image's content plus any
+		// surrounding text. This keeps Paperless-style flows working while unifying the
+		// code path.
 		byte[] pdfBytes = CreateTextPdfWithPng(
 			text: "WALMART SUPERCENTER TOTAL $3.74",
 			imageWidth: 600,
@@ -204,19 +222,22 @@ public class PdfConversionServiceTests
 		// Act
 		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
-		// Assert — text layer is still extracted (informational), but the embedded image
-		// is what the scan handler will use.
-		result.PageImages.Should().NotBeEmpty();
+		// Assert — text layer is still extracted (informational), and the rasterized
+		// first page is what the scan handler will use.
+		result.PageImages.Should().ContainSingle();
 		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
 		result.ExtractedText.Should().Contain("WALMART");
+		AssertPngHasDimensions(result.PageImages[0], minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
-	public async Task ConvertAsync_PdfWithTextLayerAndSmallLogo_FiltersOutDecorativeImage()
+	public async Task ConvertAsync_PdfWithSmallLogoAndText_StillRasterizes()
 	{
-		// Arrange — a digital receipt PDF: text layer + tiny decorative logo. The logo
-		// must NOT be returned because the scan handler would feed it to the VLM and get
-		// nothing back, surfacing as an "extraction failed" error to the user.
+		// Arrange — previously a text+small-logo PDF produced empty PageImages because
+		// the logo was below the 400x400 embedded-image size filter. That caused the scan
+		// handler to throw OcrNoTextException for emailed POS receipts with a tiny store
+		// logo. Now the rasterized first page carries the whole document including the
+		// logo and surrounding text, so the VLM can extract the receipt.
 		byte[] pdfBytes = CreateTextPdfWithPng(
 			text: "WALMART SUPERCENTER TOTAL $3.74",
 			imageWidth: 64,
@@ -226,8 +247,45 @@ public class PdfConversionServiceTests
 		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		result.PageImages.Should().BeEmpty();
+		result.PageImages.Should().ContainSingle();
 		result.ExtractedText.Should().Contain("WALMART");
+	}
+
+	[Fact]
+	public async Task ConvertAsync_OversizedPdf_ThrowsBeforeRasterization()
+	{
+		// Arrange — build a PDF with one more page than IPdfConversionService.MaxPages
+		// allows. The converter must reject these cleanly before invoking PDFtoImage,
+		// otherwise a hostile or accidental upload could spend rasterization budget on
+		// work we reject anyway.
+		string[] pages = Enumerable
+			.Range(1, IPdfConversionService.MaxPages + 1)
+			.Select(i => $"Page {i} content with enough text to satisfy the threshold")
+			.ToArray();
+		byte[] pdfBytes = CreateMultiPageTextPdf(pages);
+
+		// Act
+		Func<Task> act = () => _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*exceeds the maximum*");
+	}
+
+	[Fact]
+	public async Task ConvertAsync_PasswordProtectedPdf_ThrowsInvalidOperationException()
+	{
+		// Arrange — PdfPig can write password-protected PDFs via EncryptionInformation.
+		// PdfDocument.Open will detect the encryption and throw; the service should
+		// translate that into a clean "password-protected PDFs are not supported" error.
+		byte[] pdfBytes = CreatePasswordProtectedPdf("Some encrypted receipt content here");
+
+		// Act
+		Func<Task> act = () => _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*Password-protected*");
 	}
 
 	private static byte[] CreateTextPdf(string text)
@@ -235,7 +293,7 @@ public class PdfConversionServiceTests
 		PdfDocumentBuilder builder = new();
 		PdfPageBuilder page = builder.AddPage(PageSize.Letter);
 		PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
-		page.AddText(text, 12, new UglyToad.PdfPig.Core.PdfPoint(72, 720), font);
+		page.AddText(text, 12, new PdfPoint(72, 720), font);
 		return builder.Build();
 	}
 
@@ -244,7 +302,7 @@ public class PdfConversionServiceTests
 		PdfDocumentBuilder builder = new();
 		PdfPageBuilder page = builder.AddPage(PageSize.Letter);
 		PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
-		page.AddText(text, 12, new UglyToad.PdfPig.Core.PdfPoint(72, 720), font);
+		page.AddText(text, 12, new PdfPoint(72, 720), font);
 
 		byte[] pngBytes = CreateSolidPng(imageWidth, imageHeight);
 		page.AddPng(pngBytes, new PdfRectangle(72, 200, 72 + imageWidth, 200 + imageHeight));
@@ -266,7 +324,7 @@ public class PdfConversionServiceTests
 		builder.DocumentInformation.Title = title;
 		PdfPageBuilder page = builder.AddPage(PageSize.Letter);
 		PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
-		page.AddText(text, 12, new UglyToad.PdfPig.Core.PdfPoint(72, 720), font);
+		page.AddText(text, 12, new PdfPoint(72, 720), font);
 		return builder.Build();
 	}
 
@@ -277,7 +335,7 @@ public class PdfConversionServiceTests
 		foreach (string text in pageTexts)
 		{
 			PdfPageBuilder page = builder.AddPage(PageSize.Letter);
-			page.AddText(text, 12, new UglyToad.PdfPig.Core.PdfPoint(72, 720), font);
+			page.AddText(text, 12, new PdfPoint(72, 720), font);
 		}
 		return builder.Build();
 	}
@@ -286,5 +344,58 @@ public class PdfConversionServiceTests
 	{
 		PdfDocumentBuilder builder = new();
 		return builder.Build();
+	}
+
+	private static byte[] CreatePasswordProtectedPdf(string text)
+	{
+		// PdfPig 0.1.x does not expose a write-side encryption API, so we build an
+		// unencrypted PDF and splice an /Encrypt reference into the trailer dictionary.
+		// PdfDocument.Open then reports the document as encrypted — an exception whose
+		// message contains "encryption", which PdfConversionService routes through
+		// IsPasswordProtectedException into the user-facing "Password-protected PDFs are
+		// not supported" error. This exercises the branch without shipping a real
+		// encrypted PDF fixture in the repo.
+		PdfDocumentBuilder builder = new();
+		PdfPageBuilder page = builder.AddPage(PageSize.Letter);
+		PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
+		page.AddText(text, 12, new PdfPoint(72, 720), font);
+		byte[] built = builder.Build();
+
+		string pdf = System.Text.Encoding.Latin1.GetString(built);
+		const string trailerMarker = "trailer\n<<";
+		int trailerIdx = pdf.IndexOf(trailerMarker, StringComparison.Ordinal);
+		if (trailerIdx < 0)
+		{
+			throw new InvalidOperationException(
+				"PdfPig 0.1.x emits 'trailer\\n<<' — if this fixture generator breaks " +
+				"because the trailer format changed, update the splice below.");
+		}
+
+		string patched = pdf.Insert(
+			trailerIdx + trailerMarker.Length,
+			" /Encrypt 99 0 R");
+		return System.Text.Encoding.Latin1.GetBytes(patched);
+	}
+
+	private static void AssertContainsValidPng(IReadOnlyList<byte[]> images)
+	{
+		images.Should().NotBeEmpty();
+		foreach (byte[] png in images)
+		{
+			png.Should().NotBeEmpty();
+			png.Length.Should().BeGreaterThan(8);
+			// PNG magic: 89 50 4E 47 0D 0A 1A 0A
+			png[0].Should().Be(0x89);
+			png[1].Should().Be(0x50);
+			png[2].Should().Be(0x4E);
+			png[3].Should().Be(0x47);
+		}
+	}
+
+	private static void AssertPngHasDimensions(byte[] png, int minWidth, int minHeight)
+	{
+		using Image<Rgba32> img = Image.Load<Rgba32>(png);
+		img.Width.Should().BeGreaterThanOrEqualTo(minWidth);
+		img.Height.Should().BeGreaterThanOrEqualTo(minHeight);
 	}
 }
