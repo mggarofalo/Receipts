@@ -14,6 +14,7 @@
     <Project Path="src/Tools/DbMigrator/DbMigrator.csproj" />
     <Project Path="src/Tools/DbExporter/DbExporter.csproj" />
     <Project Path="src/Tools/DbSeeder/DbSeeder.csproj" />
+    <Project Path="src/Tools/VlmEval/VlmEval.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Application.Tests/Application.Tests.csproj" />

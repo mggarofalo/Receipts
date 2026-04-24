@@ -331,3 +331,7 @@ src/client/coverage/
 # (also fetched in Dockerfile during image build).
 src/Infrastructure/Models/BgeLargeEnV15/model.onnx
 src/Infrastructure/Models/BgeLargeEnV15/vocab.txt
+
+# VlmEval private fixture receipts (real images / PDFs, never committed).
+# See src/Tools/VlmEval/README.md.
+/fixtures/vlm-eval/
