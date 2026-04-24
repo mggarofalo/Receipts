@@ -24,14 +24,10 @@ public class UploadReceiptImageCommandHandler(
 
 		try
 		{
-			// The VLM-based receipt extraction pipeline ingests the original bytes directly,
-			// so there is no separate "processed" image to persist. Mirror the original path
-			// onto ProcessedImagePath to keep the DB schema populated; dropping the column is
-			// tracked separately.
-			await receiptService.UpdateImagePathsAsync(
-				request.ReceiptId, originalPath, originalPath, cancellationToken);
+			await receiptService.UpdateOriginalImagePathAsync(
+				request.ReceiptId, originalPath, cancellationToken);
 
-			return new UploadReceiptImageResult(originalPath, originalPath);
+			return new UploadReceiptImageResult(originalPath);
 		}
 		catch
 		{

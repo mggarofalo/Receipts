@@ -1,3 +1,3 @@
 namespace Application.Commands.Receipt.UploadImage;
 
-public record UploadReceiptImageResult(string OriginalImagePath, string ProcessedImagePath);
+public record UploadReceiptImageResult(string OriginalImagePath);

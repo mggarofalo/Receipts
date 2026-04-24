@@ -3109,7 +3109,6 @@ export interface components {
         };
         UploadReceiptImageResponse: {
             originalImagePath: string;
-            processedImagePath: string;
         };
         /** @enum {string} */
         ConfidenceLevel: "low" | "medium" | "high";

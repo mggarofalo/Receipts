@@ -94,7 +94,7 @@ public class UploadReceiptImageCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_ValidCommand_ReturnsOriginalPathAsBothPaths()
+	public async Task Handle_ValidCommand_ReturnsOriginalPath()
 	{
 		// Arrange
 		Guid receiptId = Guid.NewGuid();
@@ -115,13 +115,10 @@ public class UploadReceiptImageCommandHandlerTests
 		UploadReceiptImageResult result = await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
-		// With the VLM-based scan pipeline, there is no separate "processed" image —
-		// both paths point to the original bytes.
 		result.OriginalImagePath.Should().Be(expectedPath);
-		result.ProcessedImagePath.Should().Be(expectedPath);
 
 		_mockReceiptService.Verify(
-			s => s.UpdateImagePathsAsync(receiptId, expectedPath, expectedPath, It.IsAny<CancellationToken>()),
+			s => s.UpdateOriginalImagePathAsync(receiptId, expectedPath, It.IsAny<CancellationToken>()),
 			Times.Once);
 	}
 
@@ -178,13 +175,8 @@ public class UploadReceiptImageCommandHandlerTests
 		_mockValidationService.Verify(s => s.ValidateAsync(imageBytes, It.IsAny<CancellationToken>()), Times.Once);
 		_mockStorageService.Verify(s => s.SaveOriginalAsync(receiptId, imageBytes, ".png", It.IsAny<CancellationToken>()), Times.Once);
 		_mockReceiptService.Verify(
-			s => s.UpdateImagePathsAsync(receiptId, expectedPath, expectedPath, It.IsAny<CancellationToken>()),
+			s => s.UpdateOriginalImagePathAsync(receiptId, expectedPath, It.IsAny<CancellationToken>()),
 			Times.Once);
-
-		// SaveProcessedAsync is never called — preprocessing was removed with the legacy OCR pipeline.
-		_mockStorageService.Verify(
-			s => s.SaveProcessedAsync(It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
-			Times.Never);
 	}
 
 	[Fact]
@@ -238,7 +230,7 @@ public class UploadReceiptImageCommandHandlerTests
 			.ReturnsAsync(savedPath);
 
 		_mockReceiptService
-			.Setup(s => s.UpdateImagePathsAsync(receiptId, savedPath, savedPath, It.IsAny<CancellationToken>()))
+			.Setup(s => s.UpdateOriginalImagePathAsync(receiptId, savedPath, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new InvalidOperationException("DB offline"));
 
 		// Act

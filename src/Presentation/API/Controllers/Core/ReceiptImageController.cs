@@ -27,7 +27,7 @@ public class ReceiptImageController(
 	[HttpPost("{receiptId}/image")]
 	[RequestSizeLimit(20 * 1024 * 1024)]
 	[EndpointSummary("Upload an image for a receipt")]
-	[EndpointDescription("Accepts a JPEG or PNG image, saves the original, runs preprocessing (grayscale, adaptive threshold, deskew), and returns both image paths.")]
+	[EndpointDescription("Accepts a JPEG or PNG image, saves the original, and returns the stored image path.")]
 	public async Task<Results<Ok<UploadReceiptImageResponse>, NotFound, BadRequest<string>, StatusCodeHttpResult>> UploadImage(
 		[FromRoute] Guid receiptId,
 		IFormFile? file,
@@ -90,7 +90,6 @@ public class ReceiptImageController(
 		return TypedResults.Ok(new UploadReceiptImageResponse
 		{
 			OriginalImagePath = result.OriginalImagePath,
-			ProcessedImagePath = result.ProcessedImagePath,
 		});
 	}
 }
