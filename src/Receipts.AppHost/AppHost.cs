@@ -48,6 +48,18 @@ IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")
 	.WaitForCompletion(seeder)
 	.WaitFor(vlmOcr);
 
+// VlmEval: dev-only sidecar that runs the local VLM receipt-extraction pipeline against a
+// gitignored directory of real receipt fixtures and logs a scorecard. Parked on startup —
+// trigger from the Aspire dashboard. See src/Tools/VlmEval/README.md.
+string repoRoot = Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", ".."));
+string vlmEvalFixturesPath = Path.Combine(repoRoot, "fixtures", "vlm-eval");
+
+builder.AddProject<Projects.VlmEval>("vlm-eval")
+	.WithEnvironment("Ollama__BaseUrl", vlmOcr.GetEndpoint("http"))
+	.WithEnvironment("VlmEval__FixturesPath", vlmEvalFixturesPath)
+	.WaitFor(vlmOcr)
+	.WithExplicitStart();
+
 builder.AddViteApp("frontend", "../client")
 	.WithReference(api)
 	.WithHttpEndpoint(port: 5173, name: "vite", env: "PORT")
