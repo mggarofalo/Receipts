@@ -1,12 +1,8 @@
 using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.PixelFormats;
+using PDFtoImage;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Graphics.Colors;
 
 namespace Infrastructure.Services;
 
@@ -19,23 +15,18 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 	internal const int MinTextLengthPerPage = 10;
 
 	/// <summary>
-	/// Maximum pixel dimension (width or height) for images created from raw pixel data.
-	/// Matches the cap in <see cref="ImageValidationService"/>.
+	/// DPI used when rasterizing the first PDF page for VLM/OCR consumption. 200 DPI is the
+	/// baseline recommended by the rasterization issue (RECEIPTS-624) — high enough for
+	/// legible receipt text, low enough to keep memory/bandwidth reasonable. Tune via
+	/// fixture set if extraction quality regresses.
 	/// </summary>
-	private const int MaxImageDimension = 10_000;
+	internal const int RasterizationDpi = 200;
 
 	/// <summary>
-	/// Minimum pixel dimension (width and height) for an embedded image to be considered
-	/// a candidate receipt scan. Decorative images on text-layer pages (logos, icons,
-	/// background marks) are typically well under this threshold; Paperless-style scans
-	/// and phone-camera photos are always far above it.
+	/// Zero-based index of the PDF page to rasterize for receipt extraction. The scan
+	/// command handler only consumes the first page image, so only page 0 is rendered.
 	/// </summary>
-	internal const int MinReceiptImageDimension = 400;
-
-	/// <summary>
-	/// Maximum total accumulated image bytes (100 MB) before we stop extracting images.
-	/// </summary>
-	private const long MaxTotalImageBytes = 100 * 1024 * 1024;
+	private const int RasterizePageIndex = 0;
 
 	/// <summary>
 	/// PDF magic bytes: <c>%PDF</c> (0x25 0x50 0x44 0x46).
@@ -70,11 +61,14 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 				"The uploaded file is not a valid PDF or is corrupted.", ex);
 		}
 
+		int pageCount;
+		PdfMetadata? metadata;
+		string? extractedText;
 		using (document)
 		{
 			try
 			{
-				return ProcessDocument(document, ct);
+				(pageCount, metadata, extractedText) = ProcessDocumentMetadataAndText(document, ct);
 			}
 			catch (InvalidOperationException)
 			{
@@ -90,9 +84,32 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 					"An error occurred while processing the PDF document.", ex);
 			}
 		}
+
+		ct.ThrowIfCancellationRequested();
+
+		// Always rasterize the first page so the VLM always gets a usable image, even for
+		// vector-only or text-only PDFs (emailed POS receipts, scanner-app exports,
+		// invoicing-tool PDFs) that have no embedded raster images. This replaces the old
+		// embedded-image extraction path, which failed for vector PDFs with
+		// "no extractable images" and produced a 422 at the scan endpoint.
+		byte[] firstPagePng = RasterizeFirstPage(pdfBytes);
+
+		logger.LogInformation(
+			"Rasterized first PDF page at {Dpi} DPI ({PngSize} bytes) for VLM extraction (document has {PageCount} page(s))",
+			RasterizationDpi, firstPagePng.Length, pageCount);
+
+		if (extractedText is not null)
+		{
+			logger.LogDebug(
+				"Extracted text layer from PDF ({TextLength} chars); retained as informational only",
+				extractedText.Length);
+		}
+
+		return Task.FromResult(new PdfConversionResult([firstPagePng], extractedText, metadata));
 	}
 
-	private Task<PdfConversionResult> ProcessDocument(PdfDocument document, CancellationToken ct)
+	private (int PageCount, PdfMetadata? Metadata, string? ExtractedText) ProcessDocumentMetadataAndText(
+		PdfDocument document, CancellationToken ct)
 	{
 		if (document.NumberOfPages == 0)
 		{
@@ -107,14 +124,10 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 
 		PdfMetadata? metadata = ExtractMetadata(document);
 
-		// Always collect both text and images from every page. Consumers (the scan command
-		// handler) use the images for VLM-based extraction; the text layer is kept as an
-		// optional informational field that is no longer consumed on the scan path.
+		// Collect text from every page for informational purposes. The scan command path
+		// no longer consumes this — rasterized pixels are the source of truth — but the
+		// text layer is retained for logging and potential future use.
 		List<string> pageTexts = [];
-		List<byte[]> pageImages = [];
-		long totalImageBytes = 0;
-		bool imageBytesCapReached = false;
-
 		foreach (Page page in document.GetPages())
 		{
 			ct.ThrowIfCancellationRequested();
@@ -124,72 +137,46 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 			{
 				pageTexts.Add(pageText);
 			}
-
-			if (imageBytesCapReached)
-			{
-				continue;
-			}
-
-			foreach (IPdfImage image in page.GetImages())
-			{
-				ct.ThrowIfCancellationRequested();
-
-				if (imageBytesCapReached)
-				{
-					break;
-				}
-
-				// Skip decorative images (logos, icons) on text-layer pages. A real
-				// receipt scan is always at least ~400px on a side; logos rarely exceed
-				// a couple hundred pixels.
-				if (image.WidthInSamples < MinReceiptImageDimension
-					|| image.HeightInSamples < MinReceiptImageDimension)
-				{
-					continue;
-				}
-
-				byte[]? imageBytes = TryExtractImageBytes(image);
-				if (imageBytes is null)
-				{
-					continue;
-				}
-
-				totalImageBytes += imageBytes.Length;
-				if (totalImageBytes > MaxTotalImageBytes)
-				{
-					logger.LogWarning(
-						"Accumulated image bytes ({TotalBytes}) exceeded cap of {MaxBytes}; stopping image extraction",
-						totalImageBytes, MaxTotalImageBytes);
-					imageBytesCapReached = true;
-					break;
-				}
-
-				pageImages.Add(imageBytes);
-			}
-		}
-
-		if (pageImages.Count == 0 && pageTexts.Count == 0)
-		{
-			throw new InvalidOperationException(
-				"The PDF document contains no readable text and no extractable images.");
 		}
 
 		string? combinedText = pageTexts.Count > 0 ? string.Join("\n\n", pageTexts) : null;
+		return (document.NumberOfPages, metadata, combinedText);
+	}
 
-		if (pageImages.Count > 0)
+	// PDFtoImage targets Android/iOS/Linux/macCatalyst/macOS/Windows — all platforms we
+	// deploy to (Docker/Linux, macOS/Windows dev) or target on mobile. The CA1416
+	// analyzer can't prove at the call site that we'll only run on these platforms, so
+	// suppress the warning for this helper.
+	[System.Diagnostics.CodeAnalysis.SuppressMessage(
+		"Interoperability",
+		"CA1416:Validate platform compatibility",
+		Justification = "PDFtoImage supports all platforms this application runs on (Linux, macOS, Windows).")]
+	private byte[] RasterizeFirstPage(byte[] pdfBytes)
+	{
+		try
 		{
-			logger.LogInformation(
-				"Extracted {ImageCount} images from PDF for OCR processing",
-				pageImages.Count);
+			using MemoryStream ms = new();
+			Conversion.SavePng(
+				ms,
+				pdfBytes,
+				page: RasterizePageIndex,
+				password: null,
+				options: new RenderOptions(Dpi: RasterizationDpi));
+			return ms.ToArray();
 		}
-		if (combinedText is not null)
+		catch (Exception ex) when (IsPasswordProtectedException(ex))
 		{
-			logger.LogInformation(
-				"Extracted text from {PageCount} PDF pages ({TextLength} chars)",
-				pageTexts.Count, combinedText.Length);
+			// PdfPig usually catches password-protected PDFs earlier, but PDFium may detect
+			// it here for files that opened cleanly in PdfPig but encrypt their content
+			// streams. Surface the same error either way.
+			throw new InvalidOperationException(
+				"Password-protected PDFs are not supported.", ex);
 		}
-
-		return Task.FromResult(new PdfConversionResult(pageImages, combinedText, metadata));
+		catch (Exception ex)
+		{
+			throw new InvalidOperationException(
+				"Failed to rasterize the first page of the PDF document.", ex);
+		}
 	}
 
 	private PdfMetadata? ExtractMetadata(PdfDocument document)
@@ -216,94 +203,6 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 		catch (Exception ex)
 		{
 			logger.LogDebug(ex, "Failed to extract PDF metadata");
-			return null;
-		}
-	}
-
-	private byte[]? TryExtractImageBytes(IPdfImage image)
-	{
-		try
-		{
-			// Try to get the raw image bytes
-			if (!image.TryGetPng(out byte[]? pngBytes) || pngBytes is null)
-			{
-				// Fall back to raw bytes and try to interpret them
-				byte[] rawBytes = image.RawBytes.ToArray();
-				if (rawBytes.Length == 0)
-				{
-					return null;
-				}
-
-				// Try to load as an image to validate
-				try
-				{
-					IImageFormat? format = Image.DetectFormat(rawBytes);
-					if (format is not null)
-					{
-						return rawBytes;
-					}
-				}
-				catch
-				{
-					// Not a valid image format
-				}
-
-				// For non-standard color spaces, try to create an image from raw pixel data
-				if (image.WidthInSamples > 0 && image.HeightInSamples > 0 &&
-					image.ColorSpaceDetails?.BaseType == ColorSpace.DeviceRGB)
-				{
-					return TryCreatePngFromRawPixels(
-						rawBytes, (int)image.WidthInSamples, (int)image.HeightInSamples);
-				}
-
-				return null;
-			}
-
-			return pngBytes;
-		}
-		catch (Exception ex)
-		{
-			logger.LogDebug(ex, "Failed to extract image from PDF page");
-			return null;
-		}
-	}
-
-	private static byte[]? TryCreatePngFromRawPixels(byte[] rawBytes, int width, int height)
-	{
-		// Reject dimensions that would cause excessive memory allocation
-		if (width > MaxImageDimension || height > MaxImageDimension)
-		{
-			return null;
-		}
-
-		int expectedLength = width * height * 3; // RGB
-		if (rawBytes.Length < expectedLength)
-		{
-			return null;
-		}
-
-		try
-		{
-			using Image<Rgb24> image = new(width, height);
-			image.ProcessPixelRows(accessor =>
-			{
-				for (int y = 0; y < height; y++)
-				{
-					Span<Rgb24> row = accessor.GetRowSpan(y);
-					for (int x = 0; x < width; x++)
-					{
-						int offset = (y * width + x) * 3;
-						row[x] = new Rgb24(rawBytes[offset], rawBytes[offset + 1], rawBytes[offset + 2]);
-					}
-				}
-			});
-
-			using MemoryStream ms = new();
-			image.Save(ms, new PngEncoder());
-			return ms.ToArray();
-		}
-		catch
-		{
 			return null;
 		}
 	}
