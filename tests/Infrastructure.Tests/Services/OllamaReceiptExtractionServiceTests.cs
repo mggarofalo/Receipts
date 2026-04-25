@@ -478,6 +478,129 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
+	public async Task ExtractAsync_HallucinatedLastFour_RejectedWithLowConfidence()
+	{
+		// Arrange — RECEIPTS-627: qwen2.5vl:3b sometimes lifts the APPR# (a 6+ digit reference
+		// number printed elsewhere on the receipt) into lastFour instead of the true 4-digit
+		// card tail. Post-processing rejects anything that does not match ^\d{4}$ so the UI
+		// never surfaces a hallucinated value with high confidence.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "total": 70.43,
+			  "payments": [
+			    { "method": "MCARD", "amount": 70.43, "lastFour": "014042" }
+			  ]
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — value is nulled, confidence drops to Low. Other payment fields untouched.
+		receipt.Payments.Should().HaveCount(1);
+		receipt.Payments[0].LastFour.Value.Should().BeNull();
+		receipt.Payments[0].LastFour.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Payments[0].Method.Value.Should().Be("MCARD");
+		receipt.Payments[0].Method.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.Payments[0].Amount.Value.Should().Be(70.43m);
+	}
+
+	[Theory]
+	// Hallucinated 6-digit value (the original RECEIPTS-627 repro)
+	[InlineData("014042")]
+	// Five digits — partial trim of an APPR#
+	[InlineData("12345")]
+	// Three digits — too short, not a valid full card tail
+	[InlineData("340")]
+	// Letters mixed in — OCR substituted alphanumerics
+	[InlineData("34O9")]
+	// Masked formats — strict pattern rejects, even though the trailing 4 digits are present
+	[InlineData("****3409")]
+	[InlineData("XX3409")]
+	// Whitespace and separators
+	[InlineData("3 409")]
+	[InlineData("3-409")]
+	// Empty string variants
+	[InlineData("")]
+	[InlineData("   ")]
+	// Non-ASCII Unicode digit sequences. .NET's default \d regex expands to the full
+	// Unicode Decimal_Number category, so the pattern must use [0-9] explicitly to enforce
+	// the documented "ASCII digits" contract. Without that, Arabic-Indic (٣٤٠٩) and
+	// Devanagari (३४०९) digits would slip through with High confidence.
+	[InlineData("\u0663\u0664\u0660\u0669")]
+	[InlineData("\u096B\u096C\u0966\u0966")]
+	public void ValidateLastFour_InvalidPatterns_YieldNullWithLowConfidence(string raw)
+	{
+		// Act
+		FieldConfidence<string?> result = OllamaReceiptExtractionService.ValidateLastFour(raw);
+
+		// Assert
+		result.Value.Should().BeNull();
+		result.Confidence.Should().Be(ConfidenceLevel.Low);
+	}
+
+	[Fact]
+	public void ValidateLastFour_NullInput_YieldsNullWithLowConfidence()
+	{
+		// Act
+		FieldConfidence<string?> result = OllamaReceiptExtractionService.ValidateLastFour(null);
+
+		// Assert
+		result.Value.Should().BeNull();
+		result.Confidence.Should().Be(ConfidenceLevel.Low);
+	}
+
+	[Theory]
+	[InlineData("3409")]
+	[InlineData("0000")]
+	[InlineData("1234")]
+	public void ValidateLastFour_ExactlyFourDigits_PreservedWithHighConfidence(string raw)
+	{
+		// Act
+		FieldConfidence<string?> result = OllamaReceiptExtractionService.ValidateLastFour(raw);
+
+		// Assert
+		result.Value.Should().Be(raw);
+		result.Confidence.Should().Be(ConfidenceLevel.High);
+	}
+
+	[Fact]
+	public void ValidateLastFour_FourDigitsWithSurroundingWhitespace_TrimmedAndAccepted()
+	{
+		// Act — defensive: VLMs sometimes emit "3409 " with a trailing space
+		FieldConfidence<string?> result = OllamaReceiptExtractionService.ValidateLastFour(" 3409 ");
+
+		// Assert
+		result.Value.Should().Be("3409");
+		result.Confidence.Should().Be(ConfidenceLevel.High);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_ValidLastFour_PreservedWithHighConfidence()
+	{
+		// Arrange — sanity check that the post-processing does not regress the happy path.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "total": 70.43,
+			  "payments": [
+			    { "method": "MCARD", "amount": 70.43, "lastFour": "3409" }
+			  ]
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.Payments[0].LastFour.Value.Should().Be("3409");
+		receipt.Payments[0].LastFour.Confidence.Should().Be(ConfidenceLevel.High);
+	}
+
+	[Fact]
 	public async Task ExtractAsync_PaymentWithMissingMethod_YieldsNoneConfidenceOnThatPaymentMethod()
 	{
 		// Arrange — defensive: if a payment record omits the method but has an amount, we
