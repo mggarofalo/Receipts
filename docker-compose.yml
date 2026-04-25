@@ -85,8 +85,8 @@ services:
         max-size: "50m"
         max-file: "3"
 
-  # VLM OCR: Ollama container serving glm-ocr:q8_0 for receipt extraction (RECEIPTS-616 epic).
-  # Named volume persists the model cache so the first-run ~1 GB pull only happens once.
+  # VLM OCR: Ollama container serving qwen2.5vl:3b for receipt extraction (RECEIPTS-616 epic).
+  # Named volume persists the model cache so the first-run ~3 GB pull only happens once.
   vlm-ocr:
     image: ollama/ollama:latest
     container_name: receipts-vlm-ocr
@@ -102,8 +102,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
-          cpus: "2"
+          # qwen2.5vl:3b Q4 is ~3.2 GB; runtime needs headroom for the weights + KV cache +
+          # compute graph (observed ~2-3 GB with 4k context). Bump to 6 GB to avoid OOM kills.
+          memory: 6G
+          cpus: "4"
     networks:
       - receipts-net
     logging:
@@ -112,7 +114,7 @@ services:
         max-size: "50m"
         max-file: "3"
 
-  # One-shot sidecar: pulls glm-ocr:q8_0 if it is not already cached, then exits.
+  # One-shot sidecar: pulls qwen2.5vl:3b if it is not already cached, then exits.
   # Idempotent — subsequent runs find the model present and skip the download.
   vlm-ocr-pull:
     image: ollama/ollama:latest
@@ -122,7 +124,7 @@ services:
       vlm-ocr:
         condition: service_healthy
     entrypoint: ["/bin/sh"]
-    command: ["-c", "ollama list | grep -q 'glm-ocr:q8_0' || ollama pull glm-ocr:q8_0"]
+    command: ["-c", "ollama list | grep -q 'qwen2.5vl:3b' || ollama pull qwen2.5vl:3b"]
     environment:
       - OLLAMA_HOST=http://vlm-ocr:11434
     networks:

@@ -63,19 +63,44 @@ public class OllamaReceiptExtractionServiceTests
 	[Fact]
 	public async Task ExtractAsync_HappyPath_ReturnsAllFieldsWithHighConfidence()
 	{
-		// Arrange
+		// Arrange — exercises the full V2 shape: nested store, datetime, lineTotal,
+		// nullable quantity/unitPrice (GRANULATED has neither printed), taxCode,
+		// payments array, receipt/store/terminal identifiers.
 		string innerJson = """
 			{
-			  "store": "Walmart",
-			  "date": "2026-04-01",
+			  "store": {
+			    "name": "Walmart Supercenter",
+			    "address": "9 BENTON RD, TRAVELERS REST SC 29690",
+			    "phone": "864-834-7179"
+			  },
+			  "datetime": "2026-01-14T17:57:20",
 			  "items": [
-			    { "code": "UPC-001", "description": "Milk", "quantity": 1, "unitPrice": 3.99, "totalPrice": 3.99 },
-			    { "code": "UPC-002", "description": "Bread", "quantity": 2, "unitPrice": 2.50, "totalPrice": 5.00 }
+			    {
+			      "description": "GRANULATED",
+			      "code": "078742228030",
+			      "lineTotal": 3.07,
+			      "quantity": null,
+			      "unitPrice": null,
+			      "taxCode": "F"
+			    },
+			    {
+			      "description": "BANANAS",
+			      "code": "000000004011",
+			      "lineTotal": 1.23,
+			      "quantity": 2.46,
+			      "unitPrice": 0.50,
+			      "taxCode": "N"
+			    }
 			  ],
-			  "subtotal": 8.99,
-			  "taxLines": [{ "label": "Sales Tax", "amount": 0.72 }],
-			  "total": 9.71,
-			  "paymentMethod": "MASTERCARD"
+			  "subtotal": 69.68,
+			  "taxLines": [{ "label": "TAX1 6.0000%", "amount": 0.75 }],
+			  "total": 70.43,
+			  "payments": [
+			    { "method": "MASTERCARD", "amount": 70.43, "lastFour": "3409" }
+			  ],
+			  "receiptId": "7QKKG1XDWPD",
+			  "storeNumber": "05487",
+			  "terminalId": "54731105"
 			}
 			""";
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
@@ -84,37 +109,203 @@ public class OllamaReceiptExtractionServiceTests
 		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
 
 		// Assert
-		receipt.StoreName.Value.Should().Be("Walmart");
+		receipt.StoreName.Value.Should().Be("Walmart Supercenter");
 		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.High);
-		receipt.Date.Value.Should().Be(new DateOnly(2026, 4, 1));
+		receipt.Date.Value.Should().Be(new DateOnly(2026, 1, 14));
 		receipt.Date.Confidence.Should().Be(ConfidenceLevel.High);
 
 		receipt.Items.Should().HaveCount(2);
-		receipt.Items[0].Code.Value.Should().Be("UPC-001");
-		receipt.Items[0].Description.Value.Should().Be("Milk");
-		receipt.Items[0].Quantity.Value.Should().Be(1m);
-		receipt.Items[0].UnitPrice.Value.Should().Be(3.99m);
-		receipt.Items[0].TotalPrice.Value.Should().Be(3.99m);
-		receipt.Items[1].Quantity.Value.Should().Be(2m);
-		receipt.Items[1].TotalPrice.Value.Should().Be(5.00m);
+		receipt.Items[0].Code.Value.Should().Be("078742228030");
+		receipt.Items[0].Description.Value.Should().Be("GRANULATED");
+		receipt.Items[0].Quantity.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Items[0].UnitPrice.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Items[0].TotalPrice.Value.Should().Be(3.07m);
 
-		receipt.Subtotal.Value.Should().Be(8.99m);
+		receipt.Items[1].Quantity.Value.Should().Be(2.46m);
+		receipt.Items[1].UnitPrice.Value.Should().Be(0.50m);
+		receipt.Items[1].TotalPrice.Value.Should().Be(1.23m);
+
+		receipt.Subtotal.Value.Should().Be(69.68m);
 		receipt.TaxLines.Should().HaveCount(1);
-		receipt.TaxLines[0].Label.Value.Should().Be("Sales Tax");
-		receipt.TaxLines[0].Amount.Value.Should().Be(0.72m);
-		receipt.Total.Value.Should().Be(9.71m);
+		receipt.TaxLines[0].Label.Value.Should().Be("TAX1 6.0000%");
+		receipt.TaxLines[0].Amount.Value.Should().Be(0.75m);
+		receipt.Total.Value.Should().Be(70.43m);
 		receipt.PaymentMethod.Value.Should().Be("MASTERCARD");
 		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.High);
+	}
+
+	[Theory]
+	[InlineData("2026-04-01", 2026, 4, 1)]
+	[InlineData("2026-01-14T17:57:20", 2026, 1, 14)]
+	[InlineData("01/14/26 17:57:20", 2026, 1, 14)]
+	[InlineData("01/14/26", 2026, 1, 14)]
+	[InlineData("1/14/2026", 2026, 1, 14)]
+	[InlineData("01/14/2026", 2026, 1, 14)]
+	[InlineData("2026/04/01", 2026, 4, 1)]
+	public async Task ExtractAsync_NonIsoDateFormats_ParsedWithHighConfidence(
+		string dateString, int expectedYear, int expectedMonth, int expectedDay)
+	{
+		// Arrange — the VLM often returns dates in the format printed on the receipt
+		// (e.g. "01/14/26") despite being asked for ISO-8601. We parse leniently.
+		string innerJson = $$"""
+			{
+			  "store": { "name": "Walmart" },
+			  "datetime": "{{dateString}}",
+			  "total": 10.00
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.Date.Value.Should().Be(new DateOnly(expectedYear, expectedMonth, expectedDay));
+		receipt.Date.Confidence.Should().Be(ConfidenceLevel.High);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_UnparseableDate_YieldsNoneConfidenceWithoutThrowing()
+	{
+		// Arrange — a bad date string should not tank the entire extraction
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "datetime": "sometime last week",
+			  "total": 10.00
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.Date.Value.Should().Be(default(DateOnly));
+		receipt.Date.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.StoreName.Value.Should().Be("Walmart");
+		receipt.Total.Value.Should().Be(10.00m);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_WeightSubline_MergesIntoParent()
+	{
+		// Arrange — reproduces the VLM's output shape for a weighted item: parent row with
+		// null quantity + null unitPrice, followed by a separate row whose description holds
+		// the "X lb. @ $Y" pattern and carries the actual quantity/unitPrice.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "items": [
+			    { "description": "BANANAS", "code": "000000004011", "lineTotal": 1.23,
+			      "quantity": null, "unitPrice": null, "taxCode": "N" },
+			    { "description": "2.460 lb. @ 1 lb. /0.50", "code": null, "lineTotal": 1.23,
+			      "quantity": 2.460, "unitPrice": 0.50, "taxCode": "N" }
+			  ],
+			  "total": 1.23
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — sub-line is absorbed; only the parent remains with the weight data
+		receipt.Items.Should().HaveCount(1);
+		receipt.Items[0].Description.Value.Should().Be("BANANAS");
+		receipt.Items[0].Code.Value.Should().Be("000000004011");
+		receipt.Items[0].TotalPrice.Value.Should().Be(1.23m);
+		receipt.Items[0].Quantity.Value.Should().Be(2.460m);
+		receipt.Items[0].UnitPrice.Value.Should().Be(0.50m);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_WeightSublineWithoutMatchingParent_PreservedAsItem()
+	{
+		// Arrange — defensive: if the parent's lineTotal doesn't match, we don't merge.
+		// This keeps us from accidentally corrupting an unrelated prior item.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "items": [
+			    { "description": "BREAD", "code": "072250049190", "lineTotal": 3.76,
+			      "quantity": null, "unitPrice": null, "taxCode": "N" },
+			    { "description": "2.460 lb. @ 1 lb. /0.50", "code": null, "lineTotal": 1.23,
+			      "quantity": 2.460, "unitPrice": 0.50, "taxCode": "N" }
+			  ]
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — both rows kept; BREAD is untouched
+		receipt.Items.Should().HaveCount(2);
+		receipt.Items[0].Description.Value.Should().Be("BREAD");
+		receipt.Items[0].Quantity.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Items[1].Description.Value.Should().Be("2.460 lb. @ 1 lb. /0.50");
+		receipt.Items[1].Quantity.Value.Should().Be(2.460m);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_ParentAlreadyHasQuantity_DoesNotOverride()
+	{
+		// Arrange — if the VLM (or a future model) already populated the parent correctly,
+		// the "sub-line" shouldn't clobber it. Treat it as a distinct item instead.
+		string innerJson = """
+			{
+			  "items": [
+			    { "description": "BANANAS", "code": "000000004011", "lineTotal": 1.23,
+			      "quantity": 2.460, "unitPrice": 0.50, "taxCode": "N" },
+			    { "description": "2.460 lb. @ 1 lb. /0.50", "code": null, "lineTotal": 1.23,
+			      "quantity": 2.460, "unitPrice": 0.50, "taxCode": "N" }
+			  ]
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — parent is preserved; second "item" is kept as a distinct row
+		receipt.Items.Should().HaveCount(2);
+		receipt.Items[0].Quantity.Value.Should().Be(2.460m);
+	}
+
+	[Fact]
+	public void MergeWeightSublines_MultipleWeightedItems_MergesEach()
+	{
+		// Arrange — real Walmart case: two bananas weighed at different prices
+		List<VlmReceiptItem> items =
+		[
+			new() { Description = "BANANAS", Code = "000000004011", LineTotal = 1.23m, Quantity = null, UnitPrice = null, TaxCode = "N" },
+			new() { Description = "2.460 lb. @ 1 lb. /0.50", Code = null, LineTotal = 1.23m, Quantity = 2.460m, UnitPrice = 0.50m, TaxCode = "N" },
+			new() { Description = "BANANAS", Code = "000000004011", LineTotal = 1.36m, Quantity = null, UnitPrice = null, TaxCode = "N" },
+			new() { Description = "2.720 lb. @ 1 lb. /0.50", Code = null, LineTotal = 1.36m, Quantity = 2.720m, UnitPrice = 0.50m, TaxCode = "N" },
+		];
+
+		// Act
+		List<VlmReceiptItem> merged = OllamaReceiptExtractionService.MergeWeightSublines(items);
+
+		// Assert
+		merged.Should().HaveCount(2);
+		merged[0].Description.Should().Be("BANANAS");
+		merged[0].Quantity.Should().Be(2.460m);
+		merged[0].UnitPrice.Should().Be(0.50m);
+		merged[1].Description.Should().Be("BANANAS");
+		merged[1].Quantity.Should().Be(2.720m);
+		merged[1].UnitPrice.Should().Be(0.50m);
 	}
 
 	[Fact]
 	public async Task ExtractAsync_MissingOptionalFields_ReturnsNoneConfidence()
 	{
-		// Arrange — no paymentMethod, no taxLines
+		// Arrange — no payments, no taxLines, items with unitPrice/quantity omitted (preferred per V2 prompt)
 		string innerJson = """
 			{
-			  "store": "Walmart",
-			  "date": "2026-04-01",
+			  "store": { "name": "Walmart" },
+			  "datetime": "2026-04-01",
 			  "items": [],
 			  "subtotal": 3.99,
 			  "total": 4.29
@@ -131,6 +322,52 @@ public class OllamaReceiptExtractionServiceTests
 		receipt.TaxLines.Should().BeEmpty();
 		receipt.Items.Should().BeEmpty();
 		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.High);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_MultiPayment_TakesFirstMethod()
+	{
+		// Arrange — split tender (gift card + card). V1 ParsedReceipt can only carry one method;
+		// we pick the first that has a non-empty method string.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "total": 40.00,
+			  "payments": [
+			    { "method": "GIFT CARD", "amount": 10.00, "lastFour": null },
+			    { "method": "VISA", "amount": 30.00, "lastFour": "1234" }
+			  ]
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.PaymentMethod.Value.Should().Be("GIFT CARD");
+		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.High);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_MissingStoreObject_YieldsNoneConfidenceStoreName()
+	{
+		// Arrange — the entire store object may be omitted on a hard-to-read receipt
+		string innerJson = """
+			{
+			  "datetime": "2026-04-01",
+			  "total": 10.00
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Date.Value.Should().Be(new DateOnly(2026, 4, 1));
+		receipt.Total.Value.Should().Be(10.00m);
 	}
 
 	[Fact]
@@ -263,7 +500,7 @@ public class OllamaReceiptExtractionServiceTests
 	{
 		// Arrange — build a DI pipeline with retry. Fail twice with 503, then succeed.
 		int callCount = 0;
-		string successBody = WrapInOllamaEnvelope("""{ "store": "Walmart", "total": 10.00 }""");
+		string successBody = WrapInOllamaEnvelope("""{ "store": { "name": "Walmart" }, "total": 10.00 }""");
 
 		Mock<HttpMessageHandler> handlerMock = new();
 		handlerMock.Protected()

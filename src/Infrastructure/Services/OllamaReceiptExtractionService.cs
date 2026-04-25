@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -89,15 +90,15 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 
 	private static ParsedReceipt MapToParsedReceipt(VlmReceiptPayload payload)
 	{
-		FieldConfidence<string> storeName = !string.IsNullOrWhiteSpace(payload.Store)
-			? FieldConfidence<string>.High(payload.Store)
+		FieldConfidence<string> storeName = !string.IsNullOrWhiteSpace(payload.Store?.Name)
+			? FieldConfidence<string>.High(payload.Store.Name)
 			: FieldConfidence<string>.None();
 
-		FieldConfidence<DateOnly> date = payload.Date is { } d
+		FieldConfidence<DateOnly> date = TryParseDate(payload.Datetime) is { } d
 			? FieldConfidence<DateOnly>.High(d)
 			: FieldConfidence<DateOnly>.None();
 
-		List<ParsedReceiptItem> items = (payload.Items ?? []).Select(MapItem).ToList();
+		List<ParsedReceiptItem> items = MergeWeightSublines(payload.Items ?? []).Select(MapItem).ToList();
 
 		FieldConfidence<decimal> subtotal = payload.Subtotal is { } s
 			? FieldConfidence<decimal>.High(s)
@@ -109,11 +110,53 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 			? FieldConfidence<decimal>.High(t)
 			: FieldConfidence<decimal>.None();
 
-		FieldConfidence<string?> paymentMethod = !string.IsNullOrWhiteSpace(payload.PaymentMethod)
-			? FieldConfidence<string?>.High(payload.PaymentMethod)
+		// Collapse first payment's method into the single-string PaymentMethod on ParsedReceipt.
+		// Multi-tender receipts lose detail here; see RECEIPTS-626 for the domain-model extension.
+		string? primaryMethod = payload.Payments?
+			.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p.Method))?.Method;
+		FieldConfidence<string?> paymentMethod = !string.IsNullOrWhiteSpace(primaryMethod)
+			? FieldConfidence<string?>.High(primaryMethod)
 			: FieldConfidence<string?>.None();
 
 		return new ParsedReceipt(storeName, date, items, subtotal, taxLines, total, paymentMethod);
+	}
+
+	/// <summary>
+	/// Merges weighted-item sub-lines into their parent item. VLMs (both qwen2.5vl:3b and :7b)
+	/// emit "2.460 lb. @ 1 lb. /0.50" as its own item row when prompted via few-shot examples
+	/// (they reliably extract the quantity/unitPrice but not the parent-merging structure).
+	/// We detect these sub-lines deterministically: null <c>code</c> + description containing
+	/// <c>" @ "</c> + non-null <c>quantity</c> and <c>unitPrice</c>. When the preceding item
+	/// shares the same <c>lineTotal</c> and has null <c>quantity</c>, we absorb the sub-line's
+	/// quantity/unitPrice into the parent and drop the sub-line.
+	/// </summary>
+	internal static List<VlmReceiptItem> MergeWeightSublines(List<VlmReceiptItem> items)
+	{
+		List<VlmReceiptItem> merged = [];
+		foreach (VlmReceiptItem item in items)
+		{
+			if (IsWeightSubline(item) && merged.Count > 0)
+			{
+				VlmReceiptItem parent = merged[^1];
+				if (parent.LineTotal == item.LineTotal && parent.Quantity is null)
+				{
+					parent.Quantity = item.Quantity;
+					parent.UnitPrice = item.UnitPrice;
+					continue;
+				}
+			}
+			merged.Add(item);
+		}
+		return merged;
+	}
+
+	private static bool IsWeightSubline(VlmReceiptItem item)
+	{
+		return string.IsNullOrWhiteSpace(item.Code)
+			&& !string.IsNullOrWhiteSpace(item.Description)
+			&& item.Description.Contains(" @ ", StringComparison.Ordinal)
+			&& item.Quantity is not null
+			&& item.UnitPrice is not null;
 	}
 
 	private static ParsedReceiptItem MapItem(VlmReceiptItem item)
@@ -134,11 +177,56 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 			? FieldConfidence<decimal>.High(u)
 			: FieldConfidence<decimal>.None();
 
-		FieldConfidence<decimal> totalPrice = item.TotalPrice is { } t
+		FieldConfidence<decimal> totalPrice = item.LineTotal is { } t
 			? FieldConfidence<decimal>.High(t)
 			: FieldConfidence<decimal>.None();
 
 		return new ParsedReceiptItem(code, description, quantity, unitPrice, totalPrice);
+	}
+
+	private static readonly string[] DateFormats =
+	[
+		"yyyy-MM-dd",
+		"yyyy/MM/dd",
+		"MM/dd/yyyy",
+		"M/d/yyyy",
+		"MM/dd/yy",
+		"M/d/yy",
+		"dd/MM/yyyy",
+		"d/M/yyyy",
+		"dd-MM-yyyy",
+		"dd.MM.yyyy",
+	];
+
+	private static DateOnly? TryParseDate(string? raw)
+	{
+		if (string.IsNullOrWhiteSpace(raw))
+		{
+			return null;
+		}
+
+		string trimmed = raw.Trim();
+
+		// VLM may return date + time separated by 'T' (ISO-8601) or ' '
+		// (e.g. "2026-01-14T17:57:20" or "01/14/26 17:57:20"). Keep the date part only.
+		int splitIndex = trimmed.IndexOfAny(['T', ' ']);
+		if (splitIndex > 0)
+		{
+			trimmed = trimmed[..splitIndex];
+		}
+
+		if (DateOnly.TryParseExact(
+			trimmed, DateFormats, CultureInfo.InvariantCulture,
+			DateTimeStyles.None, out DateOnly exact))
+		{
+			return exact;
+		}
+
+		return DateOnly.TryParse(
+			trimmed, CultureInfo.InvariantCulture,
+			DateTimeStyles.None, out DateOnly invariant)
+			? invariant
+			: null;
 	}
 
 	private static ParsedTaxLine MapTaxLine(VlmTaxLine tax)
