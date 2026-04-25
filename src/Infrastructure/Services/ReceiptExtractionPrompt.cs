@@ -116,5 +116,76 @@ public static class ReceiptExtractionPrompt
 		When unsure, prefer null over guessing.
 		""";
 
-	public const string Current = V3;
+	public const string V4 = """
+		Extract receipt data from the image as a single JSON object.
+
+		Rules:
+		- If a field is not printed on the receipt, use null. NEVER compute, estimate, or guess.
+		- code is the long digit string (UPC/SKU/PLU) printed on the item line. If none, null.
+		- Copy numbers exactly as printed. Do not sum, multiply, or divide.
+		- For digit sequences (UPC/SKU/PLU codes, last-four card digits), copy each digit one
+		  by one. Do not drop, add, transpose, or substitute digits. If a digit is illegible,
+		  prefer the entire field as null over a partially guessed sequence.
+		- Output ONLY the JSON object. No markdown fences, no prose.
+
+		Examples of item parsing:
+
+		UNWEIGHTED item — receipt shows one line:
+		  GRANULATED  078742228030  3.07 N
+		Output:
+		  { "description": "GRANULATED", "code": "078742228030", "lineTotal": 3.07, "quantity": null, "unitPrice": null, "taxCode": "N" }
+
+		WEIGHTED item — receipt shows TWO lines (item line + "X lb. @ $Y" sub-line). Emit each line as its own item; host code merges them post-hoc:
+		  BANANAS            000000004011   1.23 N
+		  2.460 lb. @ 1 lb. /0.50
+		Output:
+		  { "description": "BANANAS", "code": "000000004011", "lineTotal": 1.23, "quantity": null, "unitPrice": null, "taxCode": "N" }
+		  { "description": "2.460 lb. @ 1 lb. /0.50", "code": null, "lineTotal": 1.23, "quantity": 2.460, "unitPrice": 0.50, "taxCode": "N" }
+
+		MULTI-QUANTITY item — receipt shows "N @ $Price":
+		  CAN SOUP  012345678901  3 @ 1.99  5.97 N
+		Output:
+		  { "description": "CAN SOUP", "code": "012345678901", "lineTotal": 5.97, "quantity": 3, "unitPrice": 1.99, "taxCode": "N" }
+
+		CRITICAL: For unweighted items, quantity is null, NOT 1. unitPrice is null, NOT equal to lineTotal.
+
+		Examples of payment parsing:
+
+		PAYMENT WITH CARD TENDER — `lastFour` is the EXACTLY 4 digits printed adjacent to the
+		tender method (often after "TEND", "ACCT", or just trailing the method name). It is NOT
+		the approval code, reference number, transaction id, or any other digit run on the
+		receipt. If you cannot identify a 4-digit tail tied to the tender, set lastFour to null.
+		  MCARD TEND  3409
+		  APPR# 014042
+		  REF# 100428000049
+		Output:
+		  { "method": "MCARD", "amount": null, "lastFour": "3409" }
+
+		PAYMENT WITH NO VISIBLE CARD DIGITS — set lastFour to null. Never substitute APPR#,
+		REF#, AID, or auth-code digits for lastFour:
+		  CASH                10.00
+		Output:
+		  { "method": "CASH", "amount": 10.00, "lastFour": null }
+
+		Schema (all fields optional; use null when not printed):
+		{
+		  "store": { "name": string, "address": string|null, "phone": string|null },
+		  "datetime": string|null,
+		  "items": [
+		    { "description": string, "code": string|null, "lineTotal": number,
+		      "quantity": number|null, "unitPrice": number|null, "taxCode": string|null }
+		  ],
+		  "subtotal": number|null,
+		  "taxLines": [ { "label": string, "amount": number } ],
+		  "total": number|null,
+		  "payments": [ { "method": string, "amount": number|null, "lastFour": string|null } ],
+		  "receiptId": string|null,
+		  "storeNumber": string|null,
+		  "terminalId": string|null
+		}
+
+		When unsure, prefer null over guessing.
+		""";
+
+	public const string Current = V4;
 }

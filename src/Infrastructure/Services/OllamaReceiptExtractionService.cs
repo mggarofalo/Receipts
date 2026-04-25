@@ -2,18 +2,28 @@ using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Application.Interfaces.Services;
 using Application.Models.Ocr;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 
-public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
+public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionService
 {
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
 	{
 		NumberHandling = JsonNumberHandling.AllowReadingFromString,
 	};
+
+	/// <summary>
+	/// A valid card last-four is exactly four ASCII digits. Anything else (longer auth-code
+	/// runs the VLM hallucinated, masked sequences like <c>****3409</c>, or empty strings) is
+	/// rejected post-extraction so the downstream UI never displays a wrong value with high
+	/// confidence. See RECEIPTS-627.
+	/// </summary>
+	[GeneratedRegex(@"^\d{4}$")]
+	private static partial Regex LastFourRegex();
 
 	private readonly HttpClient _httpClient;
 	private readonly VlmOcrOptions _options;
@@ -240,11 +250,30 @@ public sealed class OllamaReceiptExtractionService : IReceiptExtractionService
 			? FieldConfidence<decimal?>.High(a)
 			: FieldConfidence<decimal?>.None();
 
-		FieldConfidence<string?> lastFour = !string.IsNullOrWhiteSpace(payment.LastFour)
-			? FieldConfidence<string?>.High(payment.LastFour)
-			: FieldConfidence<string?>.None();
+		FieldConfidence<string?> lastFour = ValidateLastFour(payment.LastFour);
 
 		return new ParsedPayment(method, amount, lastFour);
+	}
+
+	/// <summary>
+	/// Reject any <c>lastFour</c> value that is not exactly four ASCII digits. qwen2.5vl:3b
+	/// has been observed to hallucinate longer digit runs (e.g. lifting the APPR# reference
+	/// number from elsewhere on the receipt) when the printed card-tail is illegible. Setting
+	/// the value to <c>null</c> with <c>Low</c> confidence is safer than surfacing a wrong
+	/// value at <c>High</c> confidence — the UI already prompts the user to confirm low-confidence
+	/// fields, so we degrade gracefully rather than corrupt downstream records.
+	/// </summary>
+	internal static FieldConfidence<string?> ValidateLastFour(string? raw)
+	{
+		if (string.IsNullOrWhiteSpace(raw))
+		{
+			return FieldConfidence<string?>.None();
+		}
+
+		string trimmed = raw.Trim();
+		return LastFourRegex().IsMatch(trimmed)
+			? FieldConfidence<string?>.High(trimmed)
+			: FieldConfidence<string?>.Low(null);
 	}
 
 	private static readonly string[] DateFormats =
