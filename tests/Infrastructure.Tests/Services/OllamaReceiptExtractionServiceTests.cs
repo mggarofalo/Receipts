@@ -525,6 +525,12 @@ public class OllamaReceiptExtractionServiceTests
 	// Empty string variants
 	[InlineData("")]
 	[InlineData("   ")]
+	// Non-ASCII Unicode digit sequences. .NET's default \d regex expands to the full
+	// Unicode Decimal_Number category, so the pattern must use [0-9] explicitly to enforce
+	// the documented "ASCII digits" contract. Without that, Arabic-Indic (٣٤٠٩) and
+	// Devanagari (३४०९) digits would slip through with High confidence.
+	[InlineData("\u0663\u0664\u0660\u0669")]
+	[InlineData("\u096B\u096C\u0966\u0966")]
 	public void ValidateLastFour_InvalidPatterns_YieldNullWithLowConfidence(string raw)
 	{
 		// Act

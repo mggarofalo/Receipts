@@ -21,8 +21,13 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 	/// runs the VLM hallucinated, masked sequences like <c>****3409</c>, or empty strings) is
 	/// rejected post-extraction so the downstream UI never displays a wrong value with high
 	/// confidence. See RECEIPTS-627.
+	/// <para>
+	/// Pattern uses <c>[0-9]</c> rather than <c>\d</c> because .NET's default regex engine
+	/// expands <c>\d</c> to the full Unicode Decimal_Number category (Arabic-Indic, Devanagari,
+	/// etc.) — we want strictly ASCII 0-9 to match the documented contract.
+	/// </para>
 	/// </summary>
-	[GeneratedRegex(@"^\d{4}$")]
+	[GeneratedRegex(@"^[0-9]{4}$")]
 	private static partial Regex LastFourRegex();
 
 	private readonly HttpClient _httpClient;
