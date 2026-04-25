@@ -3115,6 +3115,10 @@ export interface components {
         ProposedReceiptResponse: {
             storeName?: string | null;
             storeNameConfidence: components["schemas"]["ConfidenceLevel"];
+            storeAddress?: string | null;
+            storeAddressConfidence: components["schemas"]["ConfidenceLevel"];
+            storePhone?: string | null;
+            storePhoneConfidence: components["schemas"]["ConfidenceLevel"];
             /** Format: date */
             date?: string | null;
             dateConfidence: components["schemas"]["ConfidenceLevel"];
@@ -3128,6 +3132,13 @@ export interface components {
             totalConfidence: components["schemas"]["ConfidenceLevel"];
             paymentMethod?: string | null;
             paymentMethodConfidence: components["schemas"]["ConfidenceLevel"];
+            payments: components["schemas"]["ProposedPaymentResponse"][];
+            receiptId?: string | null;
+            receiptIdConfidence: components["schemas"]["ConfidenceLevel"];
+            storeNumber?: string | null;
+            storeNumberConfidence: components["schemas"]["ConfidenceLevel"];
+            terminalId?: string | null;
+            terminalIdConfidence: components["schemas"]["ConfidenceLevel"];
         };
         ProposedReceiptItemResponse: {
             code?: string | null;
@@ -3143,6 +3154,8 @@ export interface components {
             /** Format: double */
             totalPrice?: number | null;
             totalPriceConfidence: components["schemas"]["ConfidenceLevel"];
+            taxCode?: string | null;
+            taxCodeConfidence: components["schemas"]["ConfidenceLevel"];
         };
         ProposedTaxLineResponse: {
             label?: string | null;
@@ -3150,6 +3163,15 @@ export interface components {
             /** Format: double */
             amount?: number | null;
             amountConfidence: components["schemas"]["ConfidenceLevel"];
+        };
+        ProposedPaymentResponse: {
+            method?: string | null;
+            methodConfidence: components["schemas"]["ConfidenceLevel"];
+            /** Format: double */
+            amount?: number | null;
+            amountConfidence: components["schemas"]["ConfidenceLevel"];
+            lastFour?: string | null;
+            lastFourConfidence: components["schemas"]["ConfidenceLevel"];
         };
         CreateCompleteReceiptRequest: {
             receipt: components["schemas"]["CreateReceiptRequest"];

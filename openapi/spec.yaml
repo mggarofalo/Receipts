@@ -6282,18 +6282,36 @@ components:
       type: object
       required:
         - storeNameConfidence
+        - storeAddressConfidence
+        - storePhoneConfidence
         - dateConfidence
         - items
         - subtotalConfidence
         - taxLines
         - totalConfidence
         - paymentMethodConfidence
+        - payments
+        - receiptIdConfidence
+        - storeNumberConfidence
+        - terminalIdConfidence
       properties:
         storeName:
           type:
             - string
             - "null"
         storeNameConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        storeAddress:
+          type:
+            - string
+            - "null"
+        storeAddressConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        storePhone:
+          type:
+            - string
+            - "null"
+        storePhoneConfidence:
           $ref: "#/components/schemas/ConfidenceLevel"
         date:
           type:
@@ -6330,6 +6348,28 @@ components:
             - "null"
         paymentMethodConfidence:
           $ref: "#/components/schemas/ConfidenceLevel"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProposedPaymentResponse"
+        receiptId:
+          type:
+            - string
+            - "null"
+        receiptIdConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        storeNumber:
+          type:
+            - string
+            - "null"
+        storeNumberConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        terminalId:
+          type:
+            - string
+            - "null"
+        terminalIdConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
 
     ProposedReceiptItemResponse:
       type: object
@@ -6339,6 +6379,7 @@ components:
         - quantityConfidence
         - unitPriceConfidence
         - totalPriceConfidence
+        - taxCodeConfidence
       properties:
         code:
           type:
@@ -6373,6 +6414,12 @@ components:
           format: double
         totalPriceConfidence:
           $ref: "#/components/schemas/ConfidenceLevel"
+        taxCode:
+          type:
+            - string
+            - "null"
+        taxCodeConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
 
     ProposedTaxLineResponse:
       type: object
@@ -6392,6 +6439,33 @@ components:
             - "null"
           format: double
         amountConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+
+    ProposedPaymentResponse:
+      type: object
+      required:
+        - methodConfidence
+        - amountConfidence
+        - lastFourConfidence
+      properties:
+        method:
+          type:
+            - string
+            - "null"
+        methodConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        amount:
+          type:
+            - number
+            - "null"
+          format: double
+        amountConfidence:
+          $ref: "#/components/schemas/ConfidenceLevel"
+        lastFour:
+          type:
+            - string
+            - "null"
+        lastFourConfidence:
           $ref: "#/components/schemas/ConfidenceLevel"
 
     CreateCompleteReceiptRequest:
