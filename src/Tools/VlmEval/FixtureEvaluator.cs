@@ -80,7 +80,7 @@ public sealed class FixtureEvaluator(
 	{
 		if (expected is null)
 		{
-			return new FieldDiff("date", DiffStatus.NotDeclared, null, actual.Value.ToString(), null);
+			return new FieldDiff("date", DiffStatus.NotDeclared, null, actual.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), null);
 		}
 
 		if (actual.Confidence == ConfidenceLevel.Low)
