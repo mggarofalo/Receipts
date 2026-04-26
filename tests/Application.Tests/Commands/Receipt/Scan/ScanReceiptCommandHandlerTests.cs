@@ -3,7 +3,6 @@ using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ocr;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Application.Tests.Commands.Receipt.Scan;
@@ -65,18 +64,15 @@ public class ScanReceiptCommandHandlerTests
 {
 	private readonly Mock<IReceiptExtractionService> _mockExtractionService;
 	private readonly Mock<IPdfConversionService> _mockPdfConversionService;
-	private readonly Mock<ILogger<ScanReceiptCommandHandler>> _mockLogger;
 	private readonly ScanReceiptCommandHandler _handler;
 
 	public ScanReceiptCommandHandlerTests()
 	{
 		_mockExtractionService = new Mock<IReceiptExtractionService>();
 		_mockPdfConversionService = new Mock<IPdfConversionService>();
-		_mockLogger = new Mock<ILogger<ScanReceiptCommandHandler>>();
 		_handler = new ScanReceiptCommandHandler(
 			_mockExtractionService.Object,
-			_mockPdfConversionService.Object,
-			_mockLogger.Object);
+			_mockPdfConversionService.Object);
 	}
 
 	private static ParsedReceipt BuildPopulatedReceipt(string storeName = "WALMART", decimal total = 3.74m)
@@ -162,11 +158,10 @@ public class ScanReceiptCommandHandlerTests
 		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
 
 		byte[] firstPageImage = [0x89, 0x50, 0x4E, 0x47];
-		IReadOnlyList<byte[]> conversion = [firstPageImage];
 
 		_mockPdfConversionService
 			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(conversion);
+			.ReturnsAsync(firstPageImage);
 
 		ParsedReceipt parsed = BuildPopulatedReceipt();
 		_mockExtractionService
@@ -181,66 +176,6 @@ public class ScanReceiptCommandHandlerTests
 		_mockExtractionService.Verify(
 			s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()),
 			Times.Once);
-	}
-
-	[Fact]
-	public async Task Handle_PdfWithMultiplePages_UsesFirstPageOnly()
-	{
-		// Arrange
-		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
-		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
-
-		byte[] page1 = [0x89, 0x50, 0x4E, 0x47];
-		byte[] page2 = [0x89, 0x50, 0x4E, 0x48];
-		byte[] page3 = [0x89, 0x50, 0x4E, 0x49];
-		IReadOnlyList<byte[]> conversion = [page1, page2, page3];
-
-		_mockPdfConversionService
-			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(conversion);
-
-		_mockExtractionService
-			.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-			.ReturnsAsync(BuildPopulatedReceipt());
-
-		// Act
-		await _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		_mockExtractionService.Verify(
-			s => s.ExtractAsync(page1, "image/png", It.IsAny<CancellationToken>()),
-			Times.Once);
-		_mockExtractionService.Verify(
-			s => s.ExtractAsync(page2, It.IsAny<string>(), It.IsAny<CancellationToken>()),
-			Times.Never);
-		_mockExtractionService.Verify(
-			s => s.ExtractAsync(page3, It.IsAny<string>(), It.IsAny<CancellationToken>()),
-			Times.Never);
-	}
-
-	[Fact]
-	public async Task Handle_PdfWithNoImages_ThrowsOcrNoTextException()
-	{
-		// Arrange
-		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
-		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
-
-		IReadOnlyList<byte[]> conversion = Array.Empty<byte[]>();
-
-		_mockPdfConversionService
-			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(conversion);
-
-		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		await act.Should().ThrowAsync<OcrNoTextException>()
-			.WithMessage("*no extractable images*");
-
-		_mockExtractionService.Verify(
-			s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-			Times.Never);
 	}
 
 	[Fact]

@@ -13,13 +13,10 @@ public interface IPdfConversionService
 	/// <summary>
 	/// Rasterizes the first page of the PDF to a PNG. The PNG is always produced
 	/// (even for vector-only or text-only PDFs) so that downstream VLM/OCR processing
-	/// always has a usable image.
+	/// always has a usable image. Multi-page PDFs are validated against
+	/// <see cref="MaxPages"/> but only the first page is rendered. Failures (invalid
+	/// bytes, password-protected, oversized, rasterization error) surface as
+	/// <see cref="InvalidOperationException"/>.
 	/// </summary>
-	/// <returns>
-	/// A list containing exactly one entry — the rasterized first page as a PNG byte
-	/// array — when the conversion succeeds. The scan command handler consumes only
-	/// the first image; multi-page PDFs are still validated against
-	/// <see cref="MaxPages"/> but only the first page is rendered.
-	/// </returns>
-	Task<IReadOnlyList<byte[]>> ConvertAsync(byte[] pdfBytes, CancellationToken ct);
+	Task<byte[]> ConvertAsync(byte[] pdfBytes, CancellationToken ct);
 }

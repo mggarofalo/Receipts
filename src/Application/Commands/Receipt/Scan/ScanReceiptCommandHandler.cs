@@ -2,14 +2,12 @@ using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ocr;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace Application.Commands.Receipt.Scan;
 
 public class ScanReceiptCommandHandler(
 	IReceiptExtractionService extractionService,
-	IPdfConversionService pdfConversionService,
-	ILogger<ScanReceiptCommandHandler> logger) : IRequestHandler<ScanReceiptCommand, ScanReceiptResult>
+	IPdfConversionService pdfConversionService) : IRequestHandler<ScanReceiptCommand, ScanReceiptResult>
 {
 	internal const string PdfContentType = "application/pdf";
 	internal const string PdfPageImageContentType = "image/png";
@@ -36,23 +34,10 @@ public class ScanReceiptCommandHandler(
 			return (request.ImageBytes, request.ContentType);
 		}
 
-		IReadOnlyList<byte[]> pageImages = await pdfConversionService.ConvertAsync(
+		byte[] firstPageImage = await pdfConversionService.ConvertAsync(
 			request.ImageBytes, cancellationToken);
 
-		if (pageImages.Count == 0)
-		{
-			throw new OcrNoTextException(
-				"The PDF document contains no extractable images for receipt scanning.");
-		}
-
-		if (pageImages.Count > 1)
-		{
-			logger.LogInformation(
-				"PDF contains {PageCount} page images; extracting receipt from the first page only",
-				pageImages.Count);
-		}
-
-		return (pageImages[0], PdfPageImageContentType);
+		return (firstPageImage, PdfPageImageContentType);
 	}
 
 	/// <summary>
