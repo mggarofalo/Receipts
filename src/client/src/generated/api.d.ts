@@ -796,7 +796,7 @@ export interface paths {
         put?: never;
         /**
          * Scan a receipt image or PDF and return a proposed receipt
-         * @description Accepts a JPEG image, PNG image, or PDF document. Images are sent directly to the receipt extraction service (a local vision-language model). For PDFs, the first page is rasterized to a PNG at 200 DPI and sent to the VLM. PDFs are accepted up to 50 pages, but only the first page is currently used for extraction. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted — it is a transient suggestion for review.
+         * @description Accepts a JPEG image, PNG image, or PDF document. Images are sent directly to the receipt extraction service (a local vision-language model). For PDFs, the first page is rasterized to a PNG at 200 DPI and sent to the VLM. Additional pages are silently ignored: when a PDF has more than one page, the response carries `droppedPageCount` set to the number of skipped pages so clients can warn the user that the proposal represents only the first page. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted — it is a transient suggestion for review.
          */
         post: operations["ScanReceipt"];
         delete?: never;
@@ -3144,6 +3144,11 @@ export interface components {
             storeNumberConfidence: components["schemas"]["ConfidenceLevel"];
             terminalId?: string | null;
             terminalIdConfidence: components["schemas"]["ConfidenceLevel"];
+            /**
+             * Format: int32
+             * @description Number of source pages that were silently dropped during extraction. For multi-page PDFs only the first page is rasterized and sent to the VLM; this count reports the number of additional pages that were ignored (e.g., a 3-page PDF yields `droppedPageCount = 2`). Always 0 for single-page sources (images or single-page PDFs). Clients should surface a warning to the user when this value is greater than 0.
+             */
+            droppedPageCount: number;
         };
         ProposedReceiptItemResponse: {
             code?: string | null;

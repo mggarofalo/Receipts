@@ -277,6 +277,64 @@ public class ReceiptScanControllerTests
 	}
 
 	[Fact]
+	public async Task ScanReceipt_DroppedPageCount_PropagatesToResponse()
+	{
+		// Arrange — RECEIPTS-637: when the handler reports dropped pages, the
+		// controller must surface the count on ProposedReceiptResponse so the
+		// client can render a warning banner.
+		IFormFile file = CreateMockFormFile("multi.pdf", "application/pdf", 4096);
+
+		ParsedReceipt parsedReceipt = new(
+			FieldConfidence<string>.High("WALMART"),
+			FieldConfidence<DateOnly>.High(new DateOnly(2026, 3, 15)),
+			[],
+			FieldConfidence<decimal>.High(40m),
+			[],
+			FieldConfidence<decimal>.High(40m),
+			FieldConfidence<string?>.None()
+		);
+
+		_mediatorMock
+			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new ScanReceiptResult(parsedReceipt, DroppedPageCount: 2));
+
+		// Act
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
+
+		// Assert
+		ProposedReceiptResponse response = actual.Result.Should().BeOfType<Ok<ProposedReceiptResponse>>().Subject.Value!;
+		response.DroppedPageCount.Should().Be(2);
+	}
+
+	[Fact]
+	public async Task ScanReceipt_NoDroppedPages_ResponseDroppedPageCountIsZero()
+	{
+		// Arrange — image scan: no pages dropped, count must be 0.
+		IFormFile file = CreateMockFormFile("receipt.jpg", "image/jpeg", 1024);
+
+		ParsedReceipt parsedReceipt = new(
+			FieldConfidence<string>.High("WALMART"),
+			FieldConfidence<DateOnly>.High(new DateOnly(2026, 3, 15)),
+			[],
+			FieldConfidence<decimal>.High(10m),
+			[],
+			FieldConfidence<decimal>.High(10m),
+			FieldConfidence<string?>.None()
+		);
+
+		_mediatorMock
+			.Setup(m => m.Send(It.IsAny<ScanReceiptCommand>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new ScanReceiptResult(parsedReceipt));
+
+		// Act
+		Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>> actual = await _controller.ScanReceipt(file);
+
+		// Assert
+		ProposedReceiptResponse response = actual.Result.Should().BeOfType<Ok<ProposedReceiptResponse>>().Subject.Value!;
+		response.DroppedPageCount.Should().Be(0);
+	}
+
+	[Fact]
 	public async Task ScanReceipt_MultiPayment_ReturnsAllPaymentsInResponse()
 	{
 		// Arrange — split-tender receipt (gift card + card). The response must carry both

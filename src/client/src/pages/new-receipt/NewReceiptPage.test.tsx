@@ -606,6 +606,44 @@ describe("NewReceiptPage", () => {
     );
   });
 
+  // --- Dropped-page warning (RECEIPTS-637) ---
+
+  it("does not render dropped-pages warning when droppedPageCount is 0", () => {
+    renderWithProviders(<NewReceiptPage droppedPageCount={0} />);
+    expect(
+      screen.queryByTestId("dropped-pages-warning"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render dropped-pages warning when droppedPageCount is undefined", () => {
+    renderWithProviders(<NewReceiptPage />);
+    expect(
+      screen.queryByTestId("dropped-pages-warning"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders dropped-pages warning with singular phrasing for one dropped page", () => {
+    renderWithProviders(<NewReceiptPage droppedPageCount={1} />);
+    expect(screen.getByTestId("dropped-pages-warning")).toBeInTheDocument();
+    expect(
+      screen.getByText(/this pdf had 2 pages.*only page 1 was extracted/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/missing details from page 2 manually/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders dropped-pages warning with plural phrasing for multiple dropped pages", () => {
+    renderWithProviders(<NewReceiptPage droppedPageCount={4} />);
+    expect(screen.getByTestId("dropped-pages-warning")).toBeInTheDocument();
+    expect(
+      screen.getByText(/this pdf had 5 pages.*only page 1 was extracted/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/missing details from pages 2-5 manually/i),
+    ).toBeInTheDocument();
+  });
+
   it("validates the store phone format on submit", async () => {
     const user = userEvent.setup();
     renderWithProviders(<NewReceiptPage />);

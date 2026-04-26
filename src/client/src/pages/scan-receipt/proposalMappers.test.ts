@@ -37,6 +37,7 @@ function makeProposal(
     storeNumberConfidence: "high",
     terminalId: null,
     terminalIdConfidence: "high",
+    droppedPageCount: 0,
     ...overrides,
   };
 }
