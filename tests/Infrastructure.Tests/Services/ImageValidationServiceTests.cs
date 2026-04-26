@@ -103,6 +103,44 @@ public class ImageValidationServiceTests
 		await act.Should().ThrowAsync<OperationCanceledException>();
 	}
 
+	[Fact]
+	public async Task ValidateAsync_CancellationRequested_DoesNotWrapAsInvalidOperationException()
+	{
+		// Arrange — RECEIPTS-645: the previous catch (Exception ex) around Image.Identify
+		// rewrapped OperationCanceledException as "the file is not a valid image or is
+		// corrupted". The narrowed catch filter must let cancellation propagate intact so
+		// callers can distinguish user cancellation from corrupt image content.
+		byte[] imageBytes = CreateTestJpeg(10, 10);
+		using CancellationTokenSource cts = new();
+		cts.Cancel();
+
+		// Act
+		Func<Task> act = () => _service.ValidateAsync(imageBytes, cts.Token);
+
+		// Assert
+		(await act.Should().ThrowAsync<OperationCanceledException>())
+			.Which.Should().NotBeOfType<InvalidOperationException>(
+				"OperationCanceledException must propagate raw, not be wrapped as a corrupt-image error");
+	}
+
+	[Fact]
+	public async Task ValidateAsync_TruncatedJpegContent_ThrowsInvalidOperationException()
+	{
+		// Arrange — RECEIPTS-645: format-error wrapping must still work with the narrower
+		// catch filter. A valid JPEG SOI marker (FFD8FF) followed by garbage tricks
+		// DetectFormat into returning JpegFormat, then Image.Identify fails with
+		// InvalidImageContentException. The service must still translate that into the
+		// public "not a valid image or is corrupted" InvalidOperationException.
+		byte[] truncatedJpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00];
+
+		// Act
+		Func<Task> act = () => _service.ValidateAsync(truncatedJpeg, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*not a valid image or is corrupted*");
+	}
+
 	private static byte[] CreateTestJpeg(int width, int height)
 	{
 		using Image<Rgba32> image = new(width, height);

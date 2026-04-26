@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using PDFtoImage;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Exceptions;
 
 namespace Infrastructure.Services;
 
@@ -207,10 +208,23 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 		}
 	}
 
-	private static bool IsPasswordProtectedException(Exception ex)
+	internal static bool IsPasswordProtectedException(Exception ex)
 	{
-		string message = ex.Message;
-		return message.Contains("encrypt", StringComparison.OrdinalIgnoreCase) ||
-			   message.Contains("password", StringComparison.OrdinalIgnoreCase);
+		// Primary check: PdfPig surfaces encrypted documents with a typed exception that
+		// can also appear as the InnerException when wrapped by higher-level errors.
+		// Substring matching on `Message` is fragile — localized .NET runtime strings,
+		// future PdfPig message changes, and unrelated errors mentioning "encrypt"
+		// (e.g., TLS) all misclassify.
+		if (ex is PdfDocumentEncryptedException ||
+			ex.InnerException is PdfDocumentEncryptedException)
+		{
+			return true;
+		}
+
+		// Fallback for the PDFium (PDFtoImage) rasterization path: PDFium has no typed
+		// equivalent and surfaces password failures only via the message string. Match
+		// "password" specifically — narrower than the prior "encrypt" check which would
+		// match unrelated runtime/TLS errors.
+		return ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase);
 	}
 }
