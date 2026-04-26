@@ -36,23 +36,23 @@ public class ScanReceiptCommandHandler(
 			return (request.ImageBytes, request.ContentType);
 		}
 
-		PdfConversionResult conversion = await pdfConversionService.ConvertAsync(
+		IReadOnlyList<byte[]> pageImages = await pdfConversionService.ConvertAsync(
 			request.ImageBytes, cancellationToken);
 
-		if (conversion.PageImages.Count == 0)
+		if (pageImages.Count == 0)
 		{
 			throw new OcrNoTextException(
 				"The PDF document contains no extractable images for receipt scanning.");
 		}
 
-		if (conversion.PageImages.Count > 1)
+		if (pageImages.Count > 1)
 		{
 			logger.LogInformation(
 				"PDF contains {PageCount} page images; extracting receipt from the first page only",
-				conversion.PageImages.Count);
+				pageImages.Count);
 		}
 
-		return (conversion.PageImages[0], PdfPageImageContentType);
+		return (pageImages[0], PdfPageImageContentType);
 	}
 
 	/// <summary>

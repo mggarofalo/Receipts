@@ -162,7 +162,7 @@ public class ScanReceiptCommandHandlerTests
 		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
 
 		byte[] firstPageImage = [0x89, 0x50, 0x4E, 0x47];
-		PdfConversionResult conversion = new([firstPageImage], null, null);
+		IReadOnlyList<byte[]> conversion = [firstPageImage];
 
 		_mockPdfConversionService
 			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
@@ -184,38 +184,6 @@ public class ScanReceiptCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_Pdf_IgnoresExtractedTextField()
-	{
-		// Arrange — even when the PDF has a text layer, the handler must still call
-		// the VLM on the page image. The embedded-text shortcut was removed per
-		// RECEIPTS-619 (Paperless OCR is mediocre, prefer re-OCR).
-		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
-		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
-
-		byte[] firstPageImage = [0x89, 0x50, 0x4E, 0x47];
-		PdfConversionResult conversion = new(
-			[firstPageImage],
-			"WALMART\nMILK 2%  $3.49\nTOTAL  $3.74",
-			new PdfMetadata("Receipt", null));
-
-		_mockPdfConversionService
-			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(conversion);
-
-		_mockExtractionService
-			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()))
-			.ReturnsAsync(BuildPopulatedReceipt());
-
-		// Act
-		await _handler.Handle(command, CancellationToken.None);
-
-		// Assert
-		_mockExtractionService.Verify(
-			s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()),
-			Times.Once);
-	}
-
-	[Fact]
 	public async Task Handle_PdfWithMultiplePages_UsesFirstPageOnly()
 	{
 		// Arrange
@@ -225,7 +193,7 @@ public class ScanReceiptCommandHandlerTests
 		byte[] page1 = [0x89, 0x50, 0x4E, 0x47];
 		byte[] page2 = [0x89, 0x50, 0x4E, 0x48];
 		byte[] page3 = [0x89, 0x50, 0x4E, 0x49];
-		PdfConversionResult conversion = new([page1, page2, page3], null, null);
+		IReadOnlyList<byte[]> conversion = [page1, page2, page3];
 
 		_mockPdfConversionService
 			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
@@ -257,10 +225,7 @@ public class ScanReceiptCommandHandlerTests
 		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
 		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
 
-		PdfConversionResult conversion = new(
-			Array.Empty<byte[]>(),
-			"some text layer content",
-			null);
+		IReadOnlyList<byte[]> conversion = Array.Empty<byte[]>();
 
 		_mockPdfConversionService
 			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
