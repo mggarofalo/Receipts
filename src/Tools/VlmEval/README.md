@@ -26,11 +26,23 @@ You can also run it outside Aspire:
 ```bash
 # requires a reachable Ollama with glm-ocr:q8_0 (or whatever model is configured)
 dotnet run --project src/Tools/VlmEval
+
+# write a structured artifact alongside the console log
+dotnet run --project src/Tools/VlmEval -- --output json --report-path eval-report.json
 ```
 
-Exit code `0` means every fixture passed its declared assertions; `1` means
-at least one failed or Ollama was unreachable. Set
-`VlmEval__FailOnAnyFixtureFailure=false` to always exit `0`.
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All declared fixtures passed (or `VlmEval__FailOnAnyFixtureFailure=false` and no hard error). |
+| `1` | At least one fixture failed, Ollama was unreachable, the fixtures directory was missing, or no valid fixtures were found while `FailOnAnyFixtureFailure=true`. |
+| `130` | Cancelled mid-run (Ctrl+C / SIGINT). The structured report still flushes with the partial results. |
+
+`FailOnAnyFixtureFailure=true` (the default) is strict: missing/empty fixtures
+exit `1` so a typo'd `VlmEval__FixturesPath` cannot pass green. Set
+`VlmEval__FailOnAnyFixtureFailure=false` to relax this and exit `0` whenever
+the run completes without an infrastructure error.
 
 ## Fixtures
 
@@ -72,15 +84,42 @@ expected values.
 |-------|------|
 | `store` | case-insensitive substring match |
 | `date` | exact match |
-| `subtotal`, `total` | within $0.01 of expected |
-| `taxLines[].amount` | each expected amount must match some actual amount within $0.01; actual may contain more lines |
+| `subtotal`, `total` | inclusive within `MoneyTolerance` of expected (default $0.01: a delta of exactly $0.01 passes) |
+| `taxLines[].amount` | each expected amount must match some actual amount within `MoneyTolerance`; actual may contain more lines |
 | `taxLines[].label` | case-insensitive substring when declared |
 | `paymentMethod` | case-insensitive substring (`"MASTERCARD"` matches `"MasterCard ****1234"`) |
 | `minItemCount` | `actual items count >= expected` |
-| `items[].description` | case-insensitive substring, matched against the line with the closest `totalPrice` if declared, else by index |
-| `items[].totalPrice` | within $0.01 |
+| `items[].description` | case-insensitive substring; matched against the line with the closest `totalPrice` if declared, else first-substring-hit fallback |
+| `items[].totalPrice` | inclusive within `MoneyTolerance` |
 
 Undeclared fields are ignored (reported as `NotDeclared`), never failed.
+
+#### Tolerance overrides
+
+`MoneyTolerance` defaults to `$0.01` and can be overridden per run via
+`VlmEval__MoneyTolerance` or per fixture by adding `"moneyTolerance": 0.05` to
+the sidecar JSON. Per-fixture overrides take precedence and apply to
+`subtotal`, `total`, `taxLines[].amount`, and `items[].totalPrice` for that
+single fixture only.
+
+#### Matching algorithm
+
+The tax-line and item matchers are **greedy and input-order-stable**:
+
+- Expected entries are processed in declaration order.
+- For each expected entry, the matcher picks the still-unmatched actual entry
+  with the smallest delta within `MoneyTolerance`. On ties, the earlier index
+  wins.
+- The matched actual entry is consumed and cannot be reused.
+- For `items[]`, if no price-based match exists (or no price was declared),
+  the matcher falls back to the **first** unmatched actual line whose
+  description contains the expected description (case-insensitive substring).
+  This is deterministic but not optimal — when multiple actual lines share a
+  description, the earlier one wins.
+
+This is not a globally optimal assignment (no Hungarian algorithm) — it is
+deliberately predictable so failures point at a specific actual line rather
+than shuffling on every run.
 
 ### Naming convention
 
@@ -126,6 +165,9 @@ If the suite passes on those values, RECEIPTS-611 is closed end-to-end.
 | `VlmEval:FixturesPath` | `fixtures/vlm-eval` | `appsettings.json`, env (`VlmEval__FixturesPath`), Aspire injects an absolute path |
 | `VlmEval:OllamaTimeoutSeconds` | `180` | `appsettings.json`, env (`VlmEval__OllamaTimeoutSeconds`) |
 | `VlmEval:FailOnAnyFixtureFailure` | `true` | `appsettings.json`, env (`VlmEval__FailOnAnyFixtureFailure`) |
+| `VlmEval:MoneyTolerance` | `0.01` | `appsettings.json`, env (`VlmEval__MoneyTolerance`); per-fixture override via sidecar `"moneyTolerance"` |
+| `VlmEval:OutputFormat` | `Console` | `appsettings.json`, env (`VlmEval__OutputFormat`), CLI `--output console\|json\|markdown` |
+| `VlmEval:ReportPath` | *(unset)* | `appsettings.json`, env (`VlmEval__ReportPath`), CLI `--report-path <path>` |
 | `Ocr:Vlm:OllamaUrl` | *(unset)* | env (`Ocr__Vlm__OllamaUrl`), takes precedence over `Ollama:BaseUrl` |
 | `Ollama:BaseUrl` | *(Aspire-injected)* | env; falls back to `http://localhost:11434` |
 | `Ocr:Vlm:Model` | `glm-ocr:q8_0` | env (`Ocr__Vlm__Model`) |

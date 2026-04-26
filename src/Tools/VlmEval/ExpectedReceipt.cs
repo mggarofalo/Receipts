@@ -30,6 +30,14 @@ public sealed class ExpectedReceipt
 
 	[JsonPropertyName("notes")]
 	public string? Notes { get; set; }
+
+	/// <summary>
+	/// Optional per-fixture override for money comparison tolerance. When unset, falls back to
+	/// <see cref="VlmEvalOptions.MoneyTolerance"/> (default $0.01). Useful for receipts where the
+	/// VLM is known to round to a different precision (e.g. $0.05 for some POS systems).
+	/// </summary>
+	[JsonPropertyName("moneyTolerance")]
+	public decimal? MoneyTolerance { get; set; }
 }
 
 public sealed class ExpectedTaxLine
