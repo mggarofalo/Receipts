@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,25 +45,22 @@ export default function NewReceiptPage({
 
   // Items, payments, and their confidence-by-id maps are initialised together
   // from the scan proposal so confidence stays correctly paired with rows
-  // after additions or deletions. Building the bundle inside `useMemo` with
-  // an empty dep array constructs the Map exactly once on mount; the items
-  // setter then drives the editable list while the confidence map stays
-  // immutable (a stale entry for a deleted row is harmless because no row
-  // will ever look it up again).
-  const initialItemsBundle = useMemo(
-    () => initialItemsAndConfidence(initialValues, confidenceMap),
-    // Build once on mount — initial scan data is captured at construction time.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+  // after additions or deletions. The bundles are stored in `useState` with
+  // a lazy initializer — React contractually guarantees this runs exactly
+  // once per mount and the result is then immutably retained in component
+  // state. (`useMemo` is documented as a performance optimization that *may*
+  // re-run, which would re-generate row ids and silently break the id ->
+  // confidence mapping.) The items setter then drives the editable list
+  // while the confidence map stays immutable: a stale entry for a deleted
+  // row is harmless because no row will ever look it up again.
+  const [initialItemsBundle] = useState(() =>
+    initialItemsAndConfidence(initialValues, confidenceMap),
   );
   const [items, setItems] = useState(initialItemsBundle.items);
   const itemConfidenceById = initialItemsBundle.itemConfidenceById;
 
-  const initialPaymentsBundle = useMemo(
-    () => initialPaymentsAndConfidence(initialValues, confidenceMap),
-    // Build once on mount — initial scan data is captured at construction time.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+  const [initialPaymentsBundle] = useState(() =>
+    initialPaymentsAndConfidence(initialValues, confidenceMap),
   );
   const [payments, setPayments] = useState(initialPaymentsBundle.payments);
   const paymentConfidenceById = initialPaymentsBundle.paymentConfidenceById;
