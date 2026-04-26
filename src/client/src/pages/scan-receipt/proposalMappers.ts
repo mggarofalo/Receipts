@@ -106,8 +106,15 @@ export function mapProposalToConfidenceMap(
   }
 
   // Use the first tax line's confidence, or the subtotal confidence as fallback.
+  // `??` is not enough: under RECEIPTS-631, an absent tax-line amount comes back as
+  // "none" — a non-nullish string — which would block the fallback and leave the
+  // taxAmount badge silently unset even when the subtotal came in at low confidence.
+  // Treat "none" the same way as `undefined` for the purpose of falling back.
+  const firstTaxAmountConfidence = taxLines[0]?.amountConfidence;
   const taxConfidence =
-    taxLines[0]?.amountConfidence ?? proposal.subtotalConfidence;
+    firstTaxAmountConfidence && firstTaxAmountConfidence !== "none"
+      ? firstTaxAmountConfidence
+      : proposal.subtotalConfidence;
   if (needsReview(taxConfidence)) {
     map.taxAmount = taxConfidence;
   }
