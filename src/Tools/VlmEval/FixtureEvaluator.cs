@@ -55,7 +55,7 @@ public sealed class FixtureEvaluator(
 		return new FixtureResult(fixture.Name, allDeclaredPassed, stopwatch.Elapsed, diffs, Error: null);
 	}
 
-	private static FieldDiff DiffStore(string? expected, FieldConfidence<string> actual)
+	internal static FieldDiff DiffStore(string? expected, FieldConfidence<string> actual)
 	{
 		if (expected is null)
 		{
@@ -76,7 +76,7 @@ public sealed class FixtureEvaluator(
 			match ? null : "store name does not contain expected substring");
 	}
 
-	private static FieldDiff DiffDate(DateOnly? expected, FieldConfidence<DateOnly> actual)
+	internal static FieldDiff DiffDate(DateOnly? expected, FieldConfidence<DateOnly> actual)
 	{
 		if (expected is null)
 		{
@@ -97,7 +97,7 @@ public sealed class FixtureEvaluator(
 			null);
 	}
 
-	private static FieldDiff DiffMoney(string field, decimal? expected, FieldConfidence<decimal> actual)
+	internal static FieldDiff DiffMoney(string field, decimal? expected, FieldConfidence<decimal> actual)
 	{
 		if (expected is null)
 		{
@@ -122,7 +122,7 @@ public sealed class FixtureEvaluator(
 			f.Confidence == ConfidenceLevel.Low ? null : f.Value.ToString("0.00", CultureInfo.InvariantCulture);
 	}
 
-	private static FieldDiff DiffTaxLines(List<ExpectedTaxLine>? expected, List<ParsedTaxLine> actual)
+	internal static FieldDiff DiffTaxLines(List<ExpectedTaxLine>? expected, List<ParsedTaxLine> actual)
 	{
 		if (expected is null || expected.Count == 0)
 		{
@@ -179,7 +179,7 @@ public sealed class FixtureEvaluator(
 		return bestIndex;
 	}
 
-	private static FieldDiff DiffPaymentMethod(string? expected, FieldConfidence<string?> actual)
+	internal static FieldDiff DiffPaymentMethod(string? expected, FieldConfidence<string?> actual)
 	{
 		if (expected is null)
 		{
@@ -200,7 +200,7 @@ public sealed class FixtureEvaluator(
 			match ? null : "payment method does not contain expected substring");
 	}
 
-	private static FieldDiff DiffMinItemCount(int? expected, List<ParsedReceiptItem> actual)
+	internal static FieldDiff DiffMinItemCount(int? expected, List<ParsedReceiptItem> actual)
 	{
 		if (expected is null)
 		{
@@ -216,7 +216,7 @@ public sealed class FixtureEvaluator(
 			match ? null : $"expected at least {expected.Value} items, got {actual.Count}");
 	}
 
-	private static List<FieldDiff> DiffItems(List<ExpectedItem>? expected, List<ParsedReceiptItem> actual)
+	internal static List<FieldDiff> DiffItems(List<ExpectedItem>? expected, List<ParsedReceiptItem> actual)
 	{
 		if (expected is null || expected.Count == 0)
 		{
