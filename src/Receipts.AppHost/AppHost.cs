@@ -29,24 +29,34 @@ IResourceBuilder<ProjectResource> seeder = builder.AddProject<Projects.DbSeeder>
 // Host port is left unset so Aspire picks a free one — Ollama's default 11434 is frequently
 // already bound on developer machines running the native Ollama daemon, which would wedge Aspire
 // startup since the API below does .WaitFor(vlmOcr).
+//
+// .WithHttpHealthCheck("/api/tags") gates WaitFor() on Ollama actually responding rather than
+// just the container being up — without this, dependents (the pull sidecar, the API smoke test)
+// would race the Ollama startup. /api/tags is the lightest Ollama endpoint that returns 200
+// once the server is ready (RECEIPTS-636).
 IResourceBuilder<ContainerResource> vlmOcr = builder.AddContainer("vlm-ocr", "ollama/ollama", "latest")
 	.WithVolume("vlm-ocr-models", "/root/.ollama")
-	.WithHttpEndpoint(targetPort: 11434, name: "http");
+	.WithHttpEndpoint(targetPort: 11434, name: "http")
+	.WithHttpHealthCheck("/api/tags");
 
 // One-shot sidecar that pulls qwen2.5vl:3b if it is not already cached in the shared volume,
 // then exits. Idempotent — subsequent runs find the model present and skip the download.
-builder.AddContainer("vlm-ocr-pull", "ollama/ollama", "latest")
+IResourceBuilder<ContainerResource> vlmOcrPull = builder.AddContainer("vlm-ocr-pull", "ollama/ollama", "latest")
 	.WithEntrypoint("/bin/sh")
 	.WithArgs("-c", "ollama list | grep -q 'qwen2.5vl:3b' || ollama pull qwen2.5vl:3b")
 	.WithEnvironment("OLLAMA_HOST", "http://vlm-ocr:11434")
 	.WaitFor(vlmOcr);
 
-// API: starts after seeder completes; Ollama URL injected for the smoke test and future extraction service
+// API: starts after seeder completes; Ollama URL injected for the smoke test and future extraction service.
+// .WaitForCompletion(vlmOcrPull) ensures the model is fully pulled (cold first-run can be ~3 GB)
+// before the API boots so the smoke test in InfrastructureService never catches Ollama mid-pull
+// (RECEIPTS-636).
 IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")
 	.WithReference(db)
 	.WithEnvironment("Ollama__BaseUrl", vlmOcr.GetEndpoint("http"))
 	.WaitForCompletion(seeder)
-	.WaitFor(vlmOcr);
+	.WaitFor(vlmOcr)
+	.WaitForCompletion(vlmOcrPull);
 
 // VlmEval: dev-only sidecar that runs the local VLM receipt-extraction pipeline against a
 // gitignored directory of real receipt fixtures and logs a scorecard. Parked on startup —

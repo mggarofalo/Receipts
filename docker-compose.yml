@@ -87,6 +87,11 @@ services:
 
   # VLM OCR: Ollama container serving qwen2.5vl:3b for receipt extraction (RECEIPTS-616 epic).
   # Named volume persists the model cache so the first-run ~3 GB pull only happens once.
+  #
+  # The `ollama list` healthcheck validates the Ollama daemon is responsive (it queries the
+  # Ollama HTTP API under the hood and fails if the server is not yet listening). It does NOT
+  # validate that the configured model is pulled — model presence is enforced on the `app`
+  # service via depends_on vlm-ocr-pull: service_completed_successfully (RECEIPTS-636).
   vlm-ocr:
     image: ollama/ollama:latest
     container_name: receipts-vlm-ocr
@@ -163,8 +168,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      vlm-ocr:
-        condition: service_healthy
+      # Gate API startup on the pull sidecar exiting successfully — that proves both
+      # (1) Ollama is healthy (the sidecar's own depends_on requires service_healthy on vlm-ocr)
+      # and (2) qwen2.5vl:3b is pulled into the shared volume. This prevents the API smoke
+      # test from racing the model pull on first cold start (RECEIPTS-636). Mirrors the
+      # AppHost.cs pattern that uses .WaitForCompletion(vlmOcrPull) on the API resource.
+      vlm-ocr-pull:
+        condition: service_completed_successfully
       otel-collector:
         condition: service_started
     volumes:
