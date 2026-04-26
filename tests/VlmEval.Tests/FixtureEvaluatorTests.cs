@@ -124,21 +124,37 @@ public class FixtureEvaluatorTests
 	[Fact]
 	public void DiffDate_ExpectedNull_ReturnsNotDeclared()
 	{
-		// NOTE: When `expected` is null the production code formats `Actual` via the parameterless
-		// `DateOnly.ToString()` overload, which is culture-sensitive (en-US -> "1/14/2026",
-		// de-DE -> "14.01.2026", fr-FR -> "14/01/2026"). Every other branch of `DiffDate` uses
-		// the invariant "yyyy-MM-dd" format. This inconsistency is a separate production-code
-		// defect tracked under RECEIPTS-649; this test pins current behavior by computing the
-		// expected string the same way (so it stays green on any CI culture) until the prod fix
-		// flips the format string and this assertion can be tightened to "2026-01-14".
 		DateOnly actual = new(2026, 1, 14);
-		string cultureSensitiveExpectedActual = actual.ToString();
 
 		FieldDiff diff = FixtureEvaluator.DiffDate(null, FieldConfidence<DateOnly>.High(actual));
 
 		diff.Status.Should().Be(DiffStatus.NotDeclared);
 		diff.Expected.Should().BeNull();
-		diff.Actual.Should().Be(cultureSensitiveExpectedActual);
+		diff.Actual.Should().Be("2026-01-14");
+	}
+
+	[Theory]
+	[InlineData("de-DE")]
+	[InlineData("fr-FR")]
+	[InlineData("ja-JP")]
+	public void DiffDate_FormatsAsInvariantYyyyMmDd_AcrossCultures(string cultureName)
+	{
+		// Guards against regression of RECEIPTS-649: the NotDeclared branch must use
+		// invariant `yyyy-MM-dd` formatting like every other branch, regardless of host culture.
+		System.Globalization.CultureInfo originalCulture = System.Globalization.CultureInfo.CurrentCulture;
+		try
+		{
+			System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo(cultureName);
+			DateOnly actual = new(2026, 1, 14);
+
+			FieldDiff diff = FixtureEvaluator.DiffDate(null, FieldConfidence<DateOnly>.High(actual));
+
+			diff.Actual.Should().Be("2026-01-14");
+		}
+		finally
+		{
+			System.Globalization.CultureInfo.CurrentCulture = originalCulture;
+		}
 	}
 
 	#endregion
