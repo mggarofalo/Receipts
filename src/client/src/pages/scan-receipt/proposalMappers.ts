@@ -10,7 +10,15 @@ type ProposedReceiptResponse = components["schemas"]["ProposedReceiptResponse"];
 export function mapProposalToInitialValues(
   proposal: ProposedReceiptResponse,
 ): ScanInitialValues {
-  const taxAmount = Number(proposal.taxLines[0]?.amount ?? 0);
+  // Defensive guards: the OpenAPI contract declares these arrays as required
+  // (non-optional), but a stale fixture or partially-stubbed test handler can
+  // omit them. Coalescing to [] prevents a hard `TypeError: Cannot read
+  // properties of undefined` and keeps the wizard usable. See RECEIPTS-632.
+  const taxLines = proposal.taxLines ?? [];
+  const payments = proposal.payments ?? [];
+  const items = proposal.items ?? [];
+
+  const taxAmount = Number(taxLines[0]?.amount ?? 0);
 
   let date = "";
   if (proposal.date) {
@@ -31,12 +39,12 @@ export function mapProposalToInitialValues(
       storeNumber: proposal.storeNumber ?? "",
       terminalId: proposal.terminalId ?? "",
     },
-    payments: proposal.payments.map((p) => ({
+    payments: payments.map((p) => ({
       method: p.method ?? "",
       amount: Number(p.amount ?? 0),
       lastFour: p.lastFour ?? "",
     })),
-    items: proposal.items.map((item) => ({
+    items: items.map((item) => ({
       receiptItemCode: item.code ?? "",
       description: item.description ?? "",
       pricingMode: "quantity" as const,
@@ -59,6 +67,11 @@ export function mapProposalToInitialValues(
 export function mapProposalToConfidenceMap(
   proposal: ProposedReceiptResponse,
 ): ReceiptConfidenceMap {
+  // See note in mapProposalToInitialValues — same defensive guards.
+  const taxLines = proposal.taxLines ?? [];
+  const payments = proposal.payments ?? [];
+  const items = proposal.items ?? [];
+
   const map: ReceiptConfidenceMap = {};
 
   if (proposal.storeNameConfidence !== "high") {
@@ -70,7 +83,7 @@ export function mapProposalToConfidenceMap(
 
   // Use the first tax line's confidence, or the subtotal confidence as fallback.
   const taxConfidence =
-    proposal.taxLines[0]?.amountConfidence ?? proposal.subtotalConfidence;
+    taxLines[0]?.amountConfidence ?? proposal.subtotalConfidence;
   if (taxConfidence !== "high") {
     map.taxAmount = taxConfidence;
   }
@@ -93,19 +106,20 @@ export function mapProposalToConfidenceMap(
 
   // Per-payment confidences. Always emit an entry per payment so indices align,
   // omitting fields whose confidence is "high".
-  if (proposal.payments.length > 0) {
-    map.payments = proposal.payments.map((p) => {
+  if (payments.length > 0) {
+    map.payments = payments.map((p) => {
       const entry: NonNullable<ReceiptConfidenceMap["payments"]>[number] = {};
       if (p.methodConfidence !== "high") entry.method = p.methodConfidence;
       if (p.amountConfidence !== "high") entry.amount = p.amountConfidence;
-      if (p.lastFourConfidence !== "high") entry.lastFour = p.lastFourConfidence;
+      if (p.lastFourConfidence !== "high")
+        entry.lastFour = p.lastFourConfidence;
       return entry;
     });
   }
 
   // Per-item taxCode confidences.
-  if (proposal.items.length > 0) {
-    const itemEntries = proposal.items.map((item) => {
+  if (items.length > 0) {
+    const itemEntries = items.map((item) => {
       const entry: NonNullable<ReceiptConfidenceMap["items"]>[number] = {};
       if (item.taxCodeConfidence !== "high") {
         entry.taxCode = item.taxCodeConfidence;
