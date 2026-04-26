@@ -440,18 +440,61 @@ describe("LineItemsSection", () => {
     expect(taxInput.value).toBe("F");
   });
 
-  it("shows confidence indicator when itemConfidence flags low taxCode", () => {
+  it("shows confidence indicator when itemConfidenceById flags low taxCode", () => {
     const items: ReceiptLineItem[] = [
-      makeItem({ id: "1", description: "Milk", taxCode: "F" }),
+      makeItem({ id: "item-1", description: "Milk", taxCode: "F" }),
     ];
+    const itemConfidenceById = new Map([
+      ["item-1", { taxCode: "low" as const }],
+    ]);
     renderWithProviders(
       <LineItemsSection
         {...defaultProps}
         items={items}
-        itemConfidence={[{ taxCode: "low" }]}
+        itemConfidenceById={itemConfidenceById}
       />,
     );
     expect(screen.getByText(/low confidence/i)).toBeInTheDocument();
+  });
+
+  it("keeps the confidence indicator paired with the surviving item after a removal", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const items: ReceiptLineItem[] = [
+      makeItem({ id: "item-1", description: "Milk", taxCode: "F" }),
+      makeItem({ id: "item-2", description: "Bread", taxCode: "N" }),
+    ];
+    // Only item-2 has low confidence on taxCode.
+    const itemConfidenceById = new Map([
+      ["item-2", { taxCode: "low" as const }],
+    ]);
+
+    const { rerender } = renderWithProviders(
+      <LineItemsSection
+        items={items}
+        onChange={onChange}
+        itemConfidenceById={itemConfidenceById}
+      />,
+    );
+
+    // Remove item-1 (Milk). The remaining item is Bread, which is the one
+    // that had low confidence — the badge should still appear.
+    const removeButtons = screen.getAllByRole("button", { name: /remove/i });
+    await user.click(removeButtons[0]);
+    expect(onChange).toHaveBeenCalledWith([items[1]]);
+
+    // Simulate the parent removing item-1 from state.
+    rerender(
+      <LineItemsSection
+        items={[items[1]]}
+        onChange={onChange}
+        itemConfidenceById={itemConfidenceById}
+      />,
+    );
+
+    expect(screen.getByText(/low confidence/i)).toBeInTheDocument();
+    // Bread (item-2) is the only row left; the indicator still belongs to it.
+    expect(screen.getByText("Bread")).toBeInTheDocument();
   });
 
   it("preserves the existing tax code when an item is edited and saved without changing it", async () => {

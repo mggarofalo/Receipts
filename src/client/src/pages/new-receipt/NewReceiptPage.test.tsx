@@ -65,16 +65,16 @@ vi.mock("./TransactionsSection", () => ({
 vi.mock("./LineItemsSection", () => ({
   LineItemsSection: ({
     onChange,
-    itemConfidence,
+    itemConfidenceById,
   }: {
     items: unknown[];
     onChange: (data: unknown[]) => void;
-    itemConfidence?: Array<{ taxCode?: string }>;
+    itemConfidenceById?: Map<string, { taxCode?: string }>;
   }) => (
     <div data-testid="line-items-section">
-      {itemConfidence && (
-        <span data-testid="line-items-confidence">
-          {JSON.stringify(itemConfidence)}
+      {itemConfidenceById && (
+        <span data-testid="line-items-confidence-size">
+          {itemConfidenceById.size}
         </span>
       )}
       <button
@@ -478,15 +478,75 @@ describe("NewReceiptPage", () => {
     );
   });
 
-  it("forwards item confidence to the line items section", () => {
+  it("builds an item-confidence Map keyed by item id when scan items are present", () => {
     renderWithProviders(
       <NewReceiptPage
+        initialValues={{
+          header: {
+            location: "Walmart",
+            date: "2024-06-15",
+            taxAmount: 0,
+            storeAddress: "",
+            storePhone: "",
+          },
+          metadata: { receiptId: "", storeNumber: "", terminalId: "" },
+          payments: [],
+          items: [
+            {
+              receiptItemCode: "MILK",
+              description: "Milk",
+              pricingMode: "quantity",
+              quantity: 1,
+              unitPrice: 3.5,
+              category: "",
+              subcategory: "",
+              taxCode: "F",
+            },
+          ],
+        }}
         confidenceMap={{ items: [{ taxCode: "low" }] }}
       />,
     );
 
-    expect(screen.getByTestId("line-items-confidence")).toHaveTextContent(
-      JSON.stringify([{ taxCode: "low" }]),
+    // The Map should contain exactly one entry (one scan item with low taxCode confidence).
+    expect(screen.getByTestId("line-items-confidence-size")).toHaveTextContent(
+      "1",
+    );
+  });
+
+  it("does not include confidence entries for items lacking a confidence record", () => {
+    renderWithProviders(
+      <NewReceiptPage
+        initialValues={{
+          header: {
+            location: "Walmart",
+            date: "2024-06-15",
+            taxAmount: 0,
+            storeAddress: "",
+            storePhone: "",
+          },
+          metadata: { receiptId: "", storeNumber: "", terminalId: "" },
+          payments: [],
+          items: [
+            {
+              receiptItemCode: "MILK",
+              description: "Milk",
+              pricingMode: "quantity",
+              quantity: 1,
+              unitPrice: 3.5,
+              category: "",
+              subcategory: "",
+              taxCode: "",
+            },
+          ],
+        }}
+        // No items entry in confidence map → empty Map.
+        confidenceMap={{}}
+      />,
+    );
+
+    expect(screen.getByTestId("line-items-confidence-size")).toHaveTextContent(
+      "0",
     );
   });
 

@@ -29,10 +29,15 @@ interface PaymentsSectionProps {
   payments: ReceiptPayment[];
   onChange: (payments: ReceiptPayment[]) => void;
   /**
-   * Per-payment confidence levels keyed by index. Used to surface
-   * low-confidence highlights when the receipt was populated from a scan.
+   * Per-payment confidence levels keyed by stable payment id (not index).
+   * Keying by id preserves correctness after rows are added or removed —
+   * an index-based lookup would misalign confidence with the wrong row
+   * after a deletion.
    */
-  confidence?: ReceiptConfidenceMap["payments"];
+  confidenceById?: Map<
+    string,
+    NonNullable<ReceiptConfidenceMap["payments"]>[number]
+  >;
 }
 
 const LAST_FOUR_PATTERN = /^\d{0,4}$/;
@@ -40,7 +45,7 @@ const LAST_FOUR_PATTERN = /^\d{0,4}$/;
 export function PaymentsSection({
   payments,
   onChange,
-  confidence,
+  confidenceById,
 }: PaymentsSectionProps) {
   const handleAdd = useCallback(() => {
     onChange([
@@ -99,8 +104,8 @@ export function PaymentsSection({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments.map((payment, index) => {
-                const fieldConfidence = confidence?.[index];
+              {payments.map((payment) => {
+                const fieldConfidence = confidenceById?.get(payment.id);
                 const methodId = `payment-${payment.id}-method`;
                 const amountId = `payment-${payment.id}-amount`;
                 const lastFourId = `payment-${payment.id}-lastFour`;

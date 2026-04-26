@@ -94,20 +94,28 @@ export default function NewReceiptPage({
   const { options: locationOptions, add: addLocation } = useLocationHistory();
 
   const [transactions, setTransactions] = useState<ReceiptTransaction[]>([]);
-  const [items, setItems] = useState<ReceiptLineItem[]>(() =>
-    initialValues?.items.map((item) => ({
-      id: generateId(),
-      ...item,
-    })) ?? [],
+
+  // Items, payments, and their confidence-by-id maps are initialised together
+  // from the scan proposal so confidence stays correctly paired with rows after
+  // additions or deletions. The maps are write-once: a stale entry for a
+  // deleted row is harmless because no row will ever look it up again.
+  const [
+    { items: initialItems, itemConfidenceById: initialItemConfidence },
+  ] = useState(() =>
+    initialItemsAndConfidence(initialValues, confidenceMap),
   );
-  const [payments, setPayments] = useState<ReceiptPayment[]>(() =>
-    initialValues?.payments.map((p) => ({
-      id: generateId(),
-      method: p.method,
-      amount: p.amount,
-      lastFour: p.lastFour,
-    })) ?? [],
+  const [items, setItems] = useState<ReceiptLineItem[]>(initialItems);
+  const [itemConfidenceById] = useState(initialItemConfidence);
+
+  const [
+    { payments: initialPayments, paymentConfidenceById: initialPaymentConfidence },
+  ] = useState(() =>
+    initialPaymentsAndConfidence(initialValues, confidenceMap),
   );
+  const [payments, setPayments] =
+    useState<ReceiptPayment[]>(initialPayments);
+  const [paymentConfidenceById] = useState(initialPaymentConfidence);
+
   const [showDiscard, setShowDiscard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -397,7 +405,7 @@ export default function NewReceiptPage({
             <PaymentsSection
               payments={payments}
               onChange={setPayments}
-              confidence={confidenceMap?.payments}
+              confidenceById={paymentConfidenceById}
             />
           )}
 
@@ -413,7 +421,7 @@ export default function NewReceiptPage({
             items={items}
             onChange={setItems}
             location={location}
-            itemConfidence={confidenceMap?.items}
+            itemConfidenceById={itemConfidenceById}
           />
         </div>
 
@@ -555,4 +563,57 @@ function ReceiptDetailsPanel({
       </Collapsible>
     </Card>
   );
+}
+
+type ItemConfidenceEntry = NonNullable<ReceiptConfidenceMap["items"]>[number];
+type PaymentConfidenceEntry = NonNullable<ReceiptConfidenceMap["payments"]>[number];
+
+function initialItemsAndConfidence(
+  initialValues: ScanInitialValues | undefined,
+  confidenceMap: ReceiptConfidenceMap | undefined,
+): {
+  items: ReceiptLineItem[];
+  itemConfidenceById: Map<string, ItemConfidenceEntry>;
+} {
+  const sourceItems = initialValues?.items ?? [];
+  const sourceConfidence = confidenceMap?.items ?? [];
+
+  const items: ReceiptLineItem[] = sourceItems.map((item) => ({
+    id: generateId(),
+    ...item,
+  }));
+  const itemConfidenceById = new Map<string, ItemConfidenceEntry>();
+  for (let i = 0; i < items.length; i++) {
+    const entry = sourceConfidence[i];
+    if (entry) {
+      itemConfidenceById.set(items[i].id, entry);
+    }
+  }
+  return { items, itemConfidenceById };
+}
+
+function initialPaymentsAndConfidence(
+  initialValues: ScanInitialValues | undefined,
+  confidenceMap: ReceiptConfidenceMap | undefined,
+): {
+  payments: ReceiptPayment[];
+  paymentConfidenceById: Map<string, PaymentConfidenceEntry>;
+} {
+  const sourcePayments = initialValues?.payments ?? [];
+  const sourceConfidence = confidenceMap?.payments ?? [];
+
+  const payments: ReceiptPayment[] = sourcePayments.map((p) => ({
+    id: generateId(),
+    method: p.method,
+    amount: p.amount,
+    lastFour: p.lastFour,
+  }));
+  const paymentConfidenceById = new Map<string, PaymentConfidenceEntry>();
+  for (let i = 0; i < payments.length; i++) {
+    const entry = sourceConfidence[i];
+    if (entry) {
+      paymentConfidenceById.set(payments[i].id, entry);
+    }
+  }
+  return { payments, paymentConfidenceById };
 }

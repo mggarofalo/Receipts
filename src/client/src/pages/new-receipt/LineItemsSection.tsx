@@ -88,17 +88,19 @@ interface LineItemsSectionProps {
   onChange: (items: ReceiptLineItem[]) => void;
   location?: string | null;
   /**
-   * Per-item confidence levels (matched by index). Used to surface
-   * low-confidence indicators next to fields populated from a scan proposal.
+   * Per-item confidence levels keyed by stable item id (not index). Keying
+   * by id preserves correctness after rows are added or removed — an
+   * index-based lookup would misalign confidence with the wrong row after
+   * a deletion.
    */
-  itemConfidence?: Array<{ taxCode?: ConfidenceLevel }>;
+  itemConfidenceById?: Map<string, { taxCode?: ConfidenceLevel }>;
 }
 
 export function LineItemsSection({
   items,
   onChange,
   location,
-  itemConfidence,
+  itemConfidenceById,
 }: LineItemsSectionProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsListId = "new-receipt-suggestions-list";
@@ -744,8 +746,8 @@ export function LineItemsSection({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item, index) => {
-                const taxCodeConfidence = itemConfidence?.[index]?.taxCode;
+              {items.map((item) => {
+                const taxCodeConfidence = itemConfidenceById?.get(item.id)?.taxCode;
                 return editingItemId === item.id ? (
                   <TableRow key={item.id}>
                     <TableCell>

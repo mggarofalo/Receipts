@@ -118,21 +118,58 @@ describe("PaymentsSection", () => {
 
   it("renders a low-confidence indicator on the matching field", () => {
     const payments: ReceiptPayment[] = [
-      { id: "1", method: "MASTERCARD", amount: 54.32, lastFour: "4538" },
+      { id: "p-1", method: "MASTERCARD", amount: 54.32, lastFour: "4538" },
     ];
+    const confidenceById = new Map([["p-1", { method: "low" as const }]]);
 
     renderWithProviders(
       <PaymentsSection
         payments={payments}
         onChange={vi.fn()}
-        confidence={[
-          { method: "low" },
-        ]}
+        confidenceById={confidenceById}
       />,
     );
 
     // ConfidenceIndicator renders "Low confidence" badge text for low.
     expect(screen.getByText(/low confidence/i)).toBeInTheDocument();
+  });
+
+  it("keeps the confidence indicator paired with the surviving payment after a removal", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const payments: ReceiptPayment[] = [
+      { id: "p-1", method: "MASTERCARD", amount: 10, lastFour: "1234" },
+      { id: "p-2", method: "VISA", amount: 5, lastFour: "5678" },
+    ];
+    // Only p-2 has low confidence.
+    const confidenceById = new Map([["p-2", { method: "low" as const }]]);
+
+    const { rerender } = renderWithProviders(
+      <PaymentsSection
+        payments={payments}
+        onChange={onChange}
+        confidenceById={confidenceById}
+      />,
+    );
+
+    // Remove p-1.
+    const removeButtons = screen.getAllByRole("button", {
+      name: /remove payment/i,
+    });
+    await user.click(removeButtons[0]);
+    expect(onChange).toHaveBeenCalledWith([payments[1]]);
+
+    // Simulate parent updating the array.
+    rerender(
+      <PaymentsSection
+        payments={[payments[1]]}
+        onChange={onChange}
+        confidenceById={confidenceById}
+      />,
+    );
+
+    expect(screen.getByText(/low confidence/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue("VISA")).toBeInTheDocument();
   });
 
   it("displays the running total of payment amounts", () => {
