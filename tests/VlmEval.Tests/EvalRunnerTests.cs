@@ -150,6 +150,42 @@ public class EvalRunnerTests : IDisposable
 	}
 
 	[Fact]
+	public async Task RunAsync_CancellationDuringLastFixture_ReturnsExitCode130()
+	{
+		// RECEIPTS-634 (find-bugs follow-up): EvaluateAsync's broad catch blocks swallow
+		// OperationCanceledException from File.ReadAllBytesAsync / ExtractAsync and return a
+		// normal failure result. If cancellation fires during the LAST fixture, the foreach
+		// loop exits without the top-of-iteration guard tripping, and (without the post-Add
+		// cancellation check) we'd return 0 or 1 instead of 130. Pin the corrected behavior.
+		WriteFixture("only.jpg", new ExpectedReceipt { Store = "Walmart" });
+
+		using CancellationTokenSource cts = new();
+
+		Mock<IReceiptExtractionService> service = new();
+		service
+			.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+			.Returns<byte[], string, CancellationToken>((_, _, _) =>
+			{
+				// Cancel during the call so the OCE inside EvaluateAsync is swallowed by its
+				// catch (Exception) and turned into a normal failure result. The runner must
+				// still detect cancellation post-iteration on what is the final fixture.
+				cts.Cancel();
+				throw new OperationCanceledException(cts.Token);
+			});
+
+		EvalRunner runner = BuildRunner(
+			fixturesDir: _tempDir,
+			ollamaReachable: true,
+			extractionResult: null,
+			options: new VlmEvalOptions { FailOnAnyFixtureFailure = true },
+			extractionServiceOverride: service.Object);
+
+		int exit = await runner.RunAsync(_tempDir, cts.Token);
+
+		exit.Should().Be(130, because: "cancellation absorbed by EvaluateAsync's catch on the last fixture must still surface as SIGINT");
+	}
+
+	[Fact]
 	public async Task RunAsync_AllFixturesPass_ReturnsZero()
 	{
 		WriteFixture("ok.jpg", new ExpectedReceipt { Store = "Walmart" });

@@ -90,6 +90,17 @@ public sealed class EvalRunner(
 			FixtureResult result = await fixtureEvaluator.EvaluateAsync(fixture, cancellationToken);
 			reporter.PrintFixtureResult(result);
 			results.Add(result);
+
+			// EvaluateAsync's broad catch blocks (file IO, VLM call) swallow
+			// OperationCanceledException and return a normal failure result. Without this
+			// post-iteration check, cancellation that fires during the LAST fixture would not
+			// be detected — the loop would exit naturally and we'd return 0 or 1 instead of 130
+			// (and the structured report's `cancelled` field would lie). RECEIPTS-634 follow-up.
+			if (cancellationToken.IsCancellationRequested)
+			{
+				cancelled = true;
+				break;
+			}
 		}
 		total.Stop();
 
