@@ -184,6 +184,88 @@ describe("mapProposalToConfidenceMap", () => {
     expect(result).toEqual({});
   });
 
+  it("omits 'none' confidence fields (RECEIPTS-631: absent fields need no badge)", () => {
+    // 'none' means the source receipt did not contain that field at all — the user
+    // has nothing to review, so no badge should appear in the confidence map.
+    const proposal = makeProposal({
+      storeAddress: null,
+      storeAddressConfidence: "none",
+      storePhone: null,
+      storePhoneConfidence: "none",
+      receiptId: null,
+      receiptIdConfidence: "none",
+      storeNumber: null,
+      storeNumberConfidence: "none",
+      terminalId: null,
+      terminalIdConfidence: "none",
+    });
+
+    const result = mapProposalToConfidenceMap(proposal);
+
+    expect(result).toEqual({});
+  });
+
+  it("falls back to subtotalConfidence when first tax line's amount is 'none'", () => {
+    // Regression for the bug-finder review of RECEIPTS-631: the `??` operator
+    // does NOT fall through for the non-nullish string "none". Without an
+    // explicit check, a tax line whose amount is absent would silently drop
+    // the subtotal-based review badge — the user would never be prompted to
+    // verify a low-confidence subtotal.
+    const proposal = makeProposal({
+      taxLines: [
+        {
+          label: "Tax",
+          labelConfidence: "high",
+          amount: null,
+          amountConfidence: "none",
+        },
+      ],
+      subtotalConfidence: "low",
+    });
+
+    const result = mapProposalToConfidenceMap(proposal);
+
+    expect(result.taxAmount).toBe("low");
+  });
+
+  it("uses first tax line's amountConfidence when present and not 'none'", () => {
+    const proposal = makeProposal({
+      taxLines: [
+        {
+          label: "Tax",
+          labelConfidence: "high",
+          amount: 1.25,
+          amountConfidence: "low",
+        },
+      ],
+      subtotalConfidence: "high",
+    });
+
+    const result = mapProposalToConfidenceMap(proposal);
+
+    expect(result.taxAmount).toBe("low");
+  });
+
+  it("flags low/medium confidence but never 'none' on per-payment fields", () => {
+    const proposal = makeProposal({
+      payments: [
+        {
+          method: "VISA",
+          methodConfidence: "low",
+          amount: 5,
+          amountConfidence: "high",
+          lastFour: null,
+          lastFourConfidence: "none",
+        },
+      ],
+    });
+
+    const result = mapProposalToConfidenceMap(proposal);
+
+    // method: "low" surfaces; amount/lastFour are dropped (high + none).
+    expect(result.payments).toEqual([{ method: "low" }]);
+  });
+
   it("flags low/medium confidence on the new fields", () => {
     const proposal = makeProposal({
       storeAddress: "123 Main St",

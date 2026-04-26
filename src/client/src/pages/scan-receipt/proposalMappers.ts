@@ -2,7 +2,11 @@ import type { components } from "@/generated/api";
 import { generateId } from "@/lib/id";
 import type { ReceiptLineItem } from "@/pages/new-receipt/LineItemsSection";
 import type { ReceiptPayment } from "@/pages/new-receipt/PaymentsSection";
-import type { ScanInitialValues, ReceiptConfidenceMap } from "./types";
+import type {
+  ConfidenceLevel,
+  ScanInitialValues,
+  ReceiptConfidenceMap,
+} from "./types";
 
 type ProposedReceiptResponse = components["schemas"]["ProposedReceiptResponse"];
 
@@ -10,6 +14,16 @@ type ItemConfidenceEntry = NonNullable<ReceiptConfidenceMap["items"]>[number];
 type PaymentConfidenceEntry = NonNullable<
   ReceiptConfidenceMap["payments"]
 >[number];
+
+/**
+ * True when a confidence value indicates the user needs to review the field.
+ * "high" — extracted with high confidence; no review needed.
+ * "none" — the source receipt did not contain this field; there is nothing to review.
+ * "low" / "medium" — extracted with reduced confidence; surface to the user.
+ */
+function needsReview(confidence: ConfidenceLevel): boolean {
+  return confidence !== "high" && confidence !== "none";
+}
 
 /**
  * Map a {@link ProposedReceiptResponse} (returned by the VLM scan endpoint)
@@ -69,8 +83,10 @@ export function mapProposalToInitialValues(
  * Build a confidence map from the proposal that highlights low/medium fields
  * (so the new-receipt wizard can render review badges).
  *
- * Fields whose confidence is "high" are intentionally omitted — the absence
- * of a key signals "no badge needed".
+ * Fields whose confidence is "high" or "none" are intentionally omitted — the
+ * absence of a key signals "no badge needed". "high" means we are confident in
+ * the extracted value; "none" means the source receipt did not contain that
+ * field at all (so there is nothing for the user to review).
  */
 export function mapProposalToConfidenceMap(
   proposal: ProposedReceiptResponse,
@@ -82,44 +98,51 @@ export function mapProposalToConfidenceMap(
 
   const map: ReceiptConfidenceMap = {};
 
-  if (proposal.storeNameConfidence !== "high") {
+  if (needsReview(proposal.storeNameConfidence)) {
     map.location = proposal.storeNameConfidence;
   }
-  if (proposal.dateConfidence !== "high") {
+  if (needsReview(proposal.dateConfidence)) {
     map.date = proposal.dateConfidence;
   }
 
   // Use the first tax line's confidence, or the subtotal confidence as fallback.
+  // `??` is not enough: under RECEIPTS-631, an absent tax-line amount comes back as
+  // "none" — a non-nullish string — which would block the fallback and leave the
+  // taxAmount badge silently unset even when the subtotal came in at low confidence.
+  // Treat "none" the same way as `undefined` for the purpose of falling back.
+  const firstTaxAmountConfidence = taxLines[0]?.amountConfidence;
   const taxConfidence =
-    taxLines[0]?.amountConfidence ?? proposal.subtotalConfidence;
-  if (taxConfidence !== "high") {
+    firstTaxAmountConfidence && firstTaxAmountConfidence !== "none"
+      ? firstTaxAmountConfidence
+      : proposal.subtotalConfidence;
+  if (needsReview(taxConfidence)) {
     map.taxAmount = taxConfidence;
   }
 
-  if (proposal.storeAddressConfidence !== "high") {
+  if (needsReview(proposal.storeAddressConfidence)) {
     map.storeAddress = proposal.storeAddressConfidence;
   }
-  if (proposal.storePhoneConfidence !== "high") {
+  if (needsReview(proposal.storePhoneConfidence)) {
     map.storePhone = proposal.storePhoneConfidence;
   }
-  if (proposal.receiptIdConfidence !== "high") {
+  if (needsReview(proposal.receiptIdConfidence)) {
     map.receiptId = proposal.receiptIdConfidence;
   }
-  if (proposal.storeNumberConfidence !== "high") {
+  if (needsReview(proposal.storeNumberConfidence)) {
     map.storeNumber = proposal.storeNumberConfidence;
   }
-  if (proposal.terminalIdConfidence !== "high") {
+  if (needsReview(proposal.terminalIdConfidence)) {
     map.terminalId = proposal.terminalIdConfidence;
   }
 
   // Per-payment confidences. Always emit an entry per payment so indices align,
-  // omitting fields whose confidence is "high".
+  // omitting fields whose confidence is "high" or "none".
   if (payments.length > 0) {
     map.payments = payments.map((p) => {
-      const entry: NonNullable<ReceiptConfidenceMap["payments"]>[number] = {};
-      if (p.methodConfidence !== "high") entry.method = p.methodConfidence;
-      if (p.amountConfidence !== "high") entry.amount = p.amountConfidence;
-      if (p.lastFourConfidence !== "high")
+      const entry: PaymentConfidenceEntry = {};
+      if (needsReview(p.methodConfidence)) entry.method = p.methodConfidence;
+      if (needsReview(p.amountConfidence)) entry.amount = p.amountConfidence;
+      if (needsReview(p.lastFourConfidence))
         entry.lastFour = p.lastFourConfidence;
       return entry;
     });
@@ -128,13 +151,13 @@ export function mapProposalToConfidenceMap(
   // Per-item taxCode confidences.
   if (items.length > 0) {
     const itemEntries = items.map((item) => {
-      const entry: NonNullable<ReceiptConfidenceMap["items"]>[number] = {};
-      if (item.taxCodeConfidence !== "high") {
+      const entry: ItemConfidenceEntry = {};
+      if (needsReview(item.taxCodeConfidence)) {
         entry.taxCode = item.taxCodeConfidence;
       }
       return entry;
     });
-    // Only include if any entry has at least one non-high confidence
+    // Only include if any entry has at least one non-high/non-none confidence
     if (itemEntries.some((e) => Object.keys(e).length > 0)) {
       map.items = itemEntries;
     }

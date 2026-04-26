@@ -298,6 +298,109 @@ public class ScanReceiptCommandHandlerTests
 	}
 
 	[Fact]
+	public async Task Handle_ExtractionReturnsLowConfidenceStoreNameOnly_ReturnsResult()
+	{
+		// Arrange — RECEIPTS-631: a receipt where every field except StoreName is None must
+		// NOT be treated as empty. A low-confidence extracted value (even one as minimal as
+		// the store name) is still a real reading the user can review and edit. The previous
+		// IsEmpty check rejected this case as "empty" because Low and None were conflated.
+		byte[] imageBytes = [0xFF, 0xD8];
+		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
+
+		ParsedReceipt parsed = new(
+			FieldConfidence<string>.Low("Walmart"),
+			FieldConfidence<DateOnly>.None(),
+			[],
+			FieldConfidence<decimal>.None(),
+			[],
+			FieldConfidence<decimal>.None(),
+			FieldConfidence<string?>.None()
+		);
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(parsed);
+
+		// Act
+		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		actual.ParsedReceipt.Should().BeSameAs(parsed);
+		actual.ParsedReceipt.StoreName.Value.Should().Be("Walmart");
+		actual.ParsedReceipt.StoreName.Confidence.Should().Be(ConfidenceLevel.Low);
+	}
+
+	[Fact]
+	public async Task Handle_ExtractionReturnsLowConfidenceZeroTotalOnly_ReturnsResult()
+	{
+		// Arrange — RECEIPTS-631 specifically: distinguishes Low(0m) from None() for value
+		// types. A receipt where the VLM extracted "$0.00" with low confidence (e.g. an
+		// illegible total) is still a present field and must not trigger the empty-receipt
+		// short-circuit.
+		byte[] imageBytes = [0xFF, 0xD8];
+		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
+
+		ParsedReceipt parsed = new(
+			FieldConfidence<string>.None(),
+			FieldConfidence<DateOnly>.None(),
+			[],
+			FieldConfidence<decimal>.None(),
+			[],
+			FieldConfidence<decimal>.Low(0m),
+			FieldConfidence<string?>.None()
+		);
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(parsed);
+
+		// Act
+		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		actual.ParsedReceipt.Should().BeSameAs(parsed);
+		actual.ParsedReceipt.Total.Value.Should().Be(0m);
+		actual.ParsedReceipt.Total.Confidence.Should().Be(ConfidenceLevel.Low);
+	}
+
+	[Fact]
+	public async Task Handle_ExtractionReturnsItemsButNoScalarFields_ReturnsResult()
+	{
+		// Arrange — a receipt that yielded zero header/total fields but at least one line
+		// item is still useful data. The handler must not reject it as empty.
+		byte[] imageBytes = [0xFF, 0xD8];
+		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
+
+		ParsedReceipt parsed = new(
+			FieldConfidence<string>.None(),
+			FieldConfidence<DateOnly>.None(),
+			[
+				new ParsedReceiptItem(
+					FieldConfidence<string?>.None(),
+					FieldConfidence<string>.High("MILK"),
+					FieldConfidence<decimal>.None(),
+					FieldConfidence<decimal>.None(),
+					FieldConfidence<decimal>.High(3.49m))
+			],
+			FieldConfidence<decimal>.None(),
+			[],
+			FieldConfidence<decimal>.None(),
+			FieldConfidence<string?>.None()
+		);
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(parsed);
+
+		// Act
+		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		actual.ParsedReceipt.Should().BeSameAs(parsed);
+		actual.ParsedReceipt.Items.Should().HaveCount(1);
+	}
+
+	[Fact]
 	public async Task Handle_ExtractionServiceThrows_PropagatesException()
 	{
 		// Arrange

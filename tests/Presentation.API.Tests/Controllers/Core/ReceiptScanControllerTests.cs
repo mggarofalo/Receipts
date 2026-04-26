@@ -319,7 +319,7 @@ public class ReceiptScanControllerTests
 		response.Payments.ElementAt(0).Method.Should().Be("GIFT CARD");
 		response.Payments.ElementAt(0).Amount.Should().Be(10d);
 		response.Payments.ElementAt(0).LastFour.Should().BeNull();
-		response.Payments.ElementAt(0).LastFourConfidence.Should().Be(DtoConfidenceLevel.Low);
+		response.Payments.ElementAt(0).LastFourConfidence.Should().Be(DtoConfidenceLevel.None);
 		response.Payments.ElementAt(1).Method.Should().Be("VISA");
 		response.Payments.ElementAt(1).Amount.Should().Be(30d);
 		response.Payments.ElementAt(1).LastFour.Should().Be("1234");

@@ -171,10 +171,11 @@ public class ReceiptScanController(
 	{
 		return level switch
 		{
+			OcrConfidenceLevel.None => DtoConfidenceLevel.None,
 			OcrConfidenceLevel.Low => DtoConfidenceLevel.Low,
 			OcrConfidenceLevel.Medium => DtoConfidenceLevel.Medium,
 			OcrConfidenceLevel.High => DtoConfidenceLevel.High,
-			_ => DtoConfidenceLevel.Low,
+			_ => DtoConfidenceLevel.None,
 		};
 	}
 }
