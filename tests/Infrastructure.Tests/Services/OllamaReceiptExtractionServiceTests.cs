@@ -2,9 +2,11 @@ using System.Net;
 using System.Text.Json;
 using Application.Interfaces.Services;
 using Application.Models.Ocr;
+using Common;
 using FluentAssertions;
 using FluentAssertions.Specialized;
 using Infrastructure.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -58,6 +60,39 @@ public class OllamaReceiptExtractionServiceTests
 			response = innerJson,
 			done = true,
 		});
+	}
+
+	/// <summary>
+	/// Runs <paramref name="action"/> against an <see cref="IReceiptExtractionService"/>
+	/// resolved from a DI container configured exactly as the production code does
+	/// (<see cref="InfrastructureService.RegisterReceiptExtractionService"/>), including
+	/// the per-attempt Polly Timeout strategy. The container is disposed after the action
+	/// completes so the underlying <see cref="IHttpClientFactory"/> and any other
+	/// <see cref="IDisposable"/> singletons do not leak across tests.
+	/// </summary>
+	private static async Task RunWithPipelineServiceAsync(
+		HttpMessageHandler primaryHandler,
+		VlmOcrOptions options,
+		Func<IReceiptExtractionService, Task> action)
+	{
+		ServiceCollection services = new();
+		services.AddLogging();
+		services.AddSingleton(options);
+#pragma warning disable EXTEXP0001
+		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
+		{
+			client.BaseAddress = new Uri(options.OllamaUrl!.TrimEnd('/') + "/");
+			client.Timeout = Timeout.InfiniteTimeSpan;
+		})
+		.ConfigurePrimaryHttpMessageHandler(() => primaryHandler)
+		.RemoveAllResilienceHandlers()
+		.AddResilienceHandler("vlm-ocr-test", builder =>
+			InfrastructureService.ConfigureVlmOcrResilience(builder, options));
+#pragma warning restore EXTEXP0001
+
+		await using ServiceProvider sp = services.BuildServiceProvider();
+		IReceiptExtractionService service = sp.GetRequiredService<IReceiptExtractionService>();
+		await action(service);
 	}
 
 	[Fact]
@@ -704,7 +739,9 @@ public class OllamaReceiptExtractionServiceTests
 	[Fact]
 	public async Task ExtractAsync_Timeout_ThrowsTimeoutException()
 	{
-		// Arrange — handler delays longer than TimeoutSeconds
+		// Arrange — handler delays longer than the per-attempt timeout. The Polly Timeout
+		// strategy registered by RegisterReceiptExtractionService aborts the attempt and
+		// surfaces TimeoutRejectedException, which the service translates to TimeoutException.
 		Mock<HttpMessageHandler> handlerMock = new();
 		handlerMock.Protected()
 			.Setup<Task<HttpResponseMessage>>("SendAsync",
@@ -721,14 +758,16 @@ public class OllamaReceiptExtractionServiceTests
 			Model = "glm-ocr:q8_0",
 			TimeoutSeconds = 1,
 		};
-		OllamaReceiptExtractionService service = CreateService(handlerMock.Object, options);
 
-		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		await RunWithPipelineServiceAsync(handlerMock.Object, options, async service =>
+		{
+			// Act
+			Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
 
-		// Assert
-		await act.Should().ThrowAsync<TimeoutException>()
-			.WithMessage("*timed out after 1s*");
+			// Assert
+			await act.Should().ThrowAsync<TimeoutException>()
+				.WithMessage("*timed out after 1s*");
+		});
 	}
 
 	[Fact]
@@ -769,6 +808,86 @@ public class OllamaReceiptExtractionServiceTests
 		doc.RootElement.GetProperty("stream").GetBoolean().Should().BeFalse();
 		doc.RootElement.GetProperty("images")[0].GetString().Should().Be(Convert.ToBase64String(FakeImage));
 		doc.RootElement.GetProperty("prompt").GetString().Should().Contain("receipt");
+	}
+
+	[Fact]
+	public async Task RegisterReceiptExtractionService_SlowResponse_NotCancelledByServiceDefaultsStandardHandler()
+	{
+		// Regression for RECEIPTS-630. The Receipts.ServiceDefaults registration applies
+		// AddStandardResilienceHandler globally via ConfigureHttpClientDefaults (30s per
+		// attempt / 90s total). Real glm-ocr inferences routinely exceed 30s, so the
+		// vlm-ocr typed client MUST opt out of that handler — otherwise every slow VLM
+		// call surfaces as a Polly TimeoutRejectedException long before the documented
+		// VlmOcrOptions.TimeoutSeconds (120s) budget applies.
+		//
+		// This test simulates the production composition: ServiceDefaults registers the
+		// standard handler with an aggressive 200ms attempt timeout, THEN the application
+		// calls RegisterReceiptExtractionService. A handler that delays 1s — well past the
+		// 200ms standard-handler ceiling but well under the test's per-attempt VLM timeout
+		// (5s) — must complete successfully. If the standard handler were not removed by
+		// our registration, the call would die at ~200ms with a TimeoutRejectedException.
+		Mock<HttpMessageHandler> handlerMock = new();
+		string successBody = WrapInOllamaEnvelope("""{ "store": { "name": "Walmart" }, "total": 10.00 }""");
+		handlerMock.Protected()
+			.Setup<Task<HttpResponseMessage>>("SendAsync",
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>())
+			.Returns(async (HttpRequestMessage _, CancellationToken ct) =>
+			{
+				await Task.Delay(TimeSpan.FromSeconds(1), ct);
+				return new HttpResponseMessage(HttpStatusCode.OK)
+				{
+					Content = new StringContent(successBody, System.Text.Encoding.UTF8, "application/json"),
+				};
+			});
+
+		ServiceCollection services = new();
+		services.AddLogging();
+
+		// Replicate Receipts.ServiceDefaults: register an aggressive standard handler
+		// for every HttpClient via ConfigureHttpClientDefaults. If RegisterReceiptExtractionService
+		// fails to remove this handler, the 200ms attempt timeout will cancel any call
+		// that takes longer than 200ms.
+		services.ConfigureHttpClientDefaults(http =>
+		{
+			http.AddStandardResilienceHandler(opts =>
+			{
+				opts.AttemptTimeout.Timeout = TimeSpan.FromMilliseconds(200);
+				opts.TotalRequestTimeout.Timeout = TimeSpan.FromMilliseconds(600);
+				opts.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(2);
+				opts.Retry.ShouldHandle = _ => ValueTask.FromResult(false);
+			});
+		});
+
+		// Configuration mirrors the production VLM section: a real OllamaUrl plus a
+		// TimeoutSeconds well above the 1s simulated work — so success depends solely
+		// on whether the global standard handler was successfully removed.
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.OllamaUrl)}"] = "http://test-ollama",
+				[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.Model)}"] = "glm-ocr:q8_0",
+				[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.TimeoutSeconds)}"] = "5",
+			})
+			.Build();
+
+		InfrastructureService.RegisterReceiptExtractionService(services, configuration);
+
+		// Override the primary handler so we don't actually hit Ollama. ConfigurePrimaryHttpMessageHandler
+		// is a separate registration that targets the same named client.
+		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>()
+			.ConfigurePrimaryHttpMessageHandler(() => handlerMock.Object);
+
+		using ServiceProvider sp = services.BuildServiceProvider();
+		IReceiptExtractionService service = sp.GetRequiredService<IReceiptExtractionService>();
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — call completed without being cancelled by ServiceDefaults' 200ms standard
+		// handler. With the bug present, this throws TimeoutRejectedException at ~200ms.
+		receipt.StoreName.Value.Should().Be("Walmart");
+		receipt.Total.Value.Should().Be(10.00m);
 	}
 
 	[Fact]

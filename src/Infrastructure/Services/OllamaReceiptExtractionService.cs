@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Application.Interfaces.Services;
 using Application.Models.Ocr;
 using Microsoft.Extensions.Logging;
+using Polly.Timeout;
 
 namespace Infrastructure.Services;
 
@@ -62,21 +63,21 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 			Prompt: ReceiptExtractionPrompt.Current,
 			Images: [base64]);
 
-		using CancellationTokenSource timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-		timeoutSource.CancelAfter(TimeSpan.FromSeconds(_options.TimeoutSeconds));
-
+		// The per-attempt timeout is enforced by the resilience pipeline (Polly Timeout
+		// strategy registered in InfrastructureService). Each retry receives a fresh
+		// VlmOcrOptions.TimeoutSeconds budget — see RECEIPTS-630.
 		OllamaGenerateResponse? generateResponse;
 		try
 		{
 			using HttpResponseMessage httpResponse = await _httpClient.PostAsJsonAsync(
-				"api/generate", request, JsonOptions, timeoutSource.Token);
+				"api/generate", request, JsonOptions, cancellationToken);
 
 			httpResponse.EnsureSuccessStatusCode();
 
 			generateResponse = await httpResponse.Content.ReadFromJsonAsync<OllamaGenerateResponse>(
-				JsonOptions, timeoutSource.Token);
+				JsonOptions, cancellationToken);
 		}
-		catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+		catch (TimeoutRejectedException)
 		{
 			throw new TimeoutException($"Ollama VLM call timed out after {_options.TimeoutSeconds}s.");
 		}
