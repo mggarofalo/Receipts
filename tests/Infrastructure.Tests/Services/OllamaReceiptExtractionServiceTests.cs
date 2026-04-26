@@ -63,15 +63,17 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	/// <summary>
-	/// Builds an <see cref="IReceiptExtractionService"/> through DI exactly as the
-	/// production code does (<see cref="InfrastructureService.RegisterReceiptExtractionService"/>),
-	/// including the per-attempt Polly Timeout strategy. Used to exercise pipeline behavior
-	/// (timeout, retry-with-fresh-budget) that is not visible when constructing the service
-	/// in isolation.
+	/// Runs <paramref name="action"/> against an <see cref="IReceiptExtractionService"/>
+	/// resolved from a DI container configured exactly as the production code does
+	/// (<see cref="InfrastructureService.RegisterReceiptExtractionService"/>), including
+	/// the per-attempt Polly Timeout strategy. The container is disposed after the action
+	/// completes so the underlying <see cref="IHttpClientFactory"/> and any other
+	/// <see cref="IDisposable"/> singletons do not leak across tests.
 	/// </summary>
-	private static IReceiptExtractionService BuildPipelineService(
+	private static async Task RunWithPipelineServiceAsync(
 		HttpMessageHandler primaryHandler,
-		VlmOcrOptions options)
+		VlmOcrOptions options,
+		Func<IReceiptExtractionService, Task> action)
 	{
 		ServiceCollection services = new();
 		services.AddLogging();
@@ -88,8 +90,9 @@ public class OllamaReceiptExtractionServiceTests
 			InfrastructureService.ConfigureVlmOcrResilience(builder, options));
 #pragma warning restore EXTEXP0001
 
-		ServiceProvider sp = services.BuildServiceProvider();
-		return sp.GetRequiredService<IReceiptExtractionService>();
+		await using ServiceProvider sp = services.BuildServiceProvider();
+		IReceiptExtractionService service = sp.GetRequiredService<IReceiptExtractionService>();
+		await action(service);
 	}
 
 	[Fact]
@@ -755,14 +758,16 @@ public class OllamaReceiptExtractionServiceTests
 			Model = "glm-ocr:q8_0",
 			TimeoutSeconds = 1,
 		};
-		IReceiptExtractionService service = BuildPipelineService(handlerMock.Object, options);
 
-		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		await RunWithPipelineServiceAsync(handlerMock.Object, options, async service =>
+		{
+			// Act
+			Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
 
-		// Assert
-		await act.Should().ThrowAsync<TimeoutException>()
-			.WithMessage("*timed out after 1s*");
+			// Assert
+			await act.Should().ThrowAsync<TimeoutException>()
+				.WithMessage("*timed out after 1s*");
+		});
 	}
 
 	[Fact]
