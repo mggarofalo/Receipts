@@ -10,10 +10,7 @@ namespace VlmEval.Tests;
 /// Tests for <see cref="FixtureEvaluator"/> scoring helpers and the end-to-end
 /// <see cref="FixtureEvaluator.EvaluateAsync(Fixture, CancellationToken)"/> flow.
 ///
-/// These tests document <em>current</em> behavior. Where current behavior is known to be
-/// buggy (e.g., money tolerance off-by-one — RECEIPTS-634), the test pins the existing
-/// behavior with a TODO comment so the fix in the follow-up issue will turn red and
-/// force the test to be flipped at the same time.
+/// Money tolerance is inclusive: <c>|delta| &lt;= MoneyTolerance</c> passes (RECEIPTS-634).
 /// </summary>
 public class FixtureEvaluatorTests
 {
@@ -213,27 +210,51 @@ public class FixtureEvaluatorTests
 	}
 
 	[Fact]
-	public void DiffMoney_DeltaExactlyOneCent_ReturnsFail_BugDocumentedRECEIPTS634()
+	public void DiffMoney_DeltaExactlyOneCent_ReturnsPass()
 	{
-		// TODO RECEIPTS-634: This test pins the off-by-one bug — line 113 of FixtureEvaluator
-		// uses `<` instead of `<=`, so a delta of EXACTLY $0.01 fails even though the README
-		// says "within $0.01 of expected". When RECEIPTS-634 fixes the comparison to `<=`,
-		// flip this assertion to `DiffStatus.Pass` and remove this comment.
+		// RECEIPTS-634: tolerance is inclusive — a delta of EXACTLY $0.01 must pass per the
+		// README's "within $0.01 of expected" contract.
 		FieldDiff diff = FixtureEvaluator.DiffMoney("total", 1.00m, FieldConfidence<decimal>.High(1.01m));
 
-		diff.Status.Should().Be(DiffStatus.Fail);
-		diff.Detail.Should().Contain("delta=$0.01");
+		diff.Status.Should().Be(DiffStatus.Pass);
+	}
+
+	[Fact]
+	public void DiffMoney_NegativeDeltaExactlyOneCent_ReturnsPass()
+	{
+		// RECEIPTS-634: |actual - expected| = $0.01 with actual below expected must also pass.
+		FieldDiff diff = FixtureEvaluator.DiffMoney("subtotal", 1.00m, FieldConfidence<decimal>.High(0.99m));
+
+		diff.Status.Should().Be(DiffStatus.Pass);
 	}
 
 	[Fact]
 	public void DiffMoney_DeltaOverTolerance_ReturnsFail()
 	{
-		// delta = 0.011 > tolerance (0.01) → fail (this fails today AND after the fix)
+		// delta = 0.011 > tolerance (0.01) → fail
 		FieldDiff diff = FixtureEvaluator.DiffMoney("total", 1.000m, FieldConfidence<decimal>.High(1.011m));
 
 		diff.Status.Should().Be(DiffStatus.Fail);
 		diff.Expected.Should().Be("1.00");
 		diff.Actual.Should().Be("1.01");
+	}
+
+	[Fact]
+	public void DiffMoney_HonorsCustomTolerance_DeltaUnderCustomBound_ReturnsPass()
+	{
+		// With a $0.05 tolerance, a $0.04 delta passes (where it would fail at default).
+		FieldDiff diff = FixtureEvaluator.DiffMoney("total", 10.00m, FieldConfidence<decimal>.High(10.04m), tolerance: 0.05m);
+
+		diff.Status.Should().Be(DiffStatus.Pass);
+	}
+
+	[Fact]
+	public void DiffMoney_HonorsCustomTolerance_DeltaOverCustomBound_ReturnsFail()
+	{
+		// With a $0.05 tolerance, a $0.06 delta fails.
+		FieldDiff diff = FixtureEvaluator.DiffMoney("total", 10.00m, FieldConfidence<decimal>.High(10.06m), tolerance: 0.05m);
+
+		diff.Status.Should().Be(DiffStatus.Fail);
 	}
 
 	[Fact]
@@ -460,6 +481,61 @@ public class FixtureEvaluatorTests
 		diff.Status.Should().Be(DiffStatus.Pass);
 	}
 
+	[Fact]
+	public void DiffTaxLines_DeltaExactlyOneCent_ReturnsPass()
+	{
+		// RECEIPTS-634: tax-line tolerance is inclusive too — $0.01 delta must pass.
+		List<ExpectedTaxLine> expected = [new ExpectedTaxLine { Amount = 0.75m }];
+		List<ParsedTaxLine> actual =
+		[
+			new ParsedTaxLine(FieldConfidence<string>.High("Tax"), FieldConfidence<decimal>.High(0.76m)),
+		];
+
+		FieldDiff diff = FixtureEvaluator.DiffTaxLines(expected, actual);
+
+		diff.Status.Should().Be(DiffStatus.Pass);
+	}
+
+	[Fact]
+	public void DiffTaxLines_DuplicatePrices_GreedyByInputOrder_StableOnTies()
+	{
+		// Pin documented greedy-by-input-order behavior: when expected has two identical
+		// amounts and pool has multiple matching candidates, FindClosest picks the earlier
+		// index on tied deltas. The first expected consumes pool[0]; the second consumes pool[0]
+		// after removal (i.e. the originally-at-index-1 entry).
+		List<ExpectedTaxLine> expected =
+		[
+			new ExpectedTaxLine { Amount = 1.00m },
+			new ExpectedTaxLine { Amount = 1.00m },
+		];
+		List<ParsedTaxLine> actual =
+		[
+			new ParsedTaxLine(FieldConfidence<string>.High("A"), FieldConfidence<decimal>.High(1.00m)),
+			new ParsedTaxLine(FieldConfidence<string>.High("B"), FieldConfidence<decimal>.High(1.00m)),
+			new ParsedTaxLine(FieldConfidence<string>.High("C"), FieldConfidence<decimal>.High(1.00m)),
+		];
+
+		FieldDiff diff = FixtureEvaluator.DiffTaxLines(expected, actual);
+
+		// Both expected lines must find a match; behavior is deterministic.
+		diff.Status.Should().Be(DiffStatus.Pass);
+	}
+
+	[Fact]
+	public void DiffTaxLines_HonorsCustomTolerance_MultiplePassUnderCustomBound()
+	{
+		// With a $0.05 tolerance, a $0.04 delta passes.
+		List<ExpectedTaxLine> expected = [new ExpectedTaxLine { Amount = 0.75m }];
+		List<ParsedTaxLine> actual =
+		[
+			new ParsedTaxLine(FieldConfidence<string>.High("Tax"), FieldConfidence<decimal>.High(0.79m)),
+		];
+
+		FieldDiff diff = FixtureEvaluator.DiffTaxLines(expected, actual, tolerance: 0.05m);
+
+		diff.Status.Should().Be(DiffStatus.Pass);
+	}
+
 	#endregion
 
 	#region DiffPaymentMethod
@@ -605,9 +681,9 @@ public class FixtureEvaluatorTests
 	[Fact]
 	public void DiffItems_PriceMatchPicksClosestPrice()
 	{
-		// Two candidate prices: 0.99 and 1.05. With expected=1.00, neither is within $0.01
-		// (1.05 delta = 0.05; 0.99 delta = 0.01 — the boundary value, currently rejected).
-		// Bring 0.99 within tolerance (delta=0.005) and confirm it wins over 1.05.
+		// Two candidate prices: 1.05 (delta 0.05) and 0.995 (delta 0.005). Both 0.995 and 1.005
+		// would tie within tolerance now that the bound is inclusive (RECEIPTS-634), but 0.995 is
+		// closer than 1.05 and should win.
 		List<ExpectedItem> expected = [new ExpectedItem { Description = "Apple", TotalPrice = 1.000m }];
 		List<ParsedReceiptItem> actual =
 		[
@@ -619,6 +695,81 @@ public class FixtureEvaluatorTests
 
 		diffs[0].Status.Should().Be(DiffStatus.Pass);
 		diffs[0].Actual.Should().Contain("Apple");
+	}
+
+	[Fact]
+	public void DiffItems_PriceExactlyOneCentDelta_ReturnsPass()
+	{
+		// RECEIPTS-634: a $0.01 item-price delta must pass (the items-side off-by-one was line 252).
+		List<ExpectedItem> expected = [new ExpectedItem { Description = "Apple", TotalPrice = 1.000m }];
+		List<ParsedReceiptItem> actual = [MakeItem("Apple", 1.010m)];
+
+		List<FieldDiff> diffs = FixtureEvaluator.DiffItems(expected, actual);
+
+		diffs[0].Status.Should().Be(DiffStatus.Pass);
+	}
+
+	[Fact]
+	public void DiffItems_PriceMatchedThenSecondaryValidationOneCent_ReturnsPass()
+	{
+		// RECEIPTS-634: when the price-match step finds a candidate, the subsequent in-line
+		// totalPrice validation (formerly `>= MoneyTolerance` on line 301) must also use the
+		// inclusive bound. Description fallback locks an item with a $0.01 delta — the secondary
+		// check should not flag that as a mismatch.
+		List<ExpectedItem> expected = [new ExpectedItem { Description = "milk", TotalPrice = 4.99m }];
+		List<ParsedReceiptItem> actual = [MakeItem("Whole Milk Gallon", 5.00m)];
+
+		List<FieldDiff> diffs = FixtureEvaluator.DiffItems(expected, actual);
+
+		diffs[0].Status.Should().Be(DiffStatus.Pass);
+		diffs[0].Detail.Should().BeNull();
+	}
+
+	[Fact]
+	public void DiffItems_DescriptionFallback_FirstSubstringHitWins_DeterministicOrder()
+	{
+		// Pin the documented description-only fallback behavior: when no price is declared (or
+		// no price within tolerance), the matcher takes the FIRST pool entry whose description
+		// contains the expected substring. README's "Diff rules" calls this out explicitly.
+		List<ExpectedItem> expected = [new ExpectedItem { Description = "milk" }];
+		List<ParsedReceiptItem> actual =
+		[
+			MakeItem("Skim Milk Quart", 2.99m),
+			MakeItem("Whole Milk Gallon", 4.99m),
+		];
+
+		List<FieldDiff> diffs = FixtureEvaluator.DiffItems(expected, actual);
+
+		diffs[0].Status.Should().Be(DiffStatus.Pass);
+		// First pool entry wins — Skim Milk Quart, NOT the longer/closer-overlap Whole Milk Gallon.
+		diffs[0].Actual.Should().Contain("Skim Milk Quart");
+	}
+
+	[Fact]
+	public void DiffItems_DuplicatePrices_GreedyByInputOrder_FirstExpectedConsumesFirstActual()
+	{
+		// Pin the greedy, input-order-stable matching for items with duplicate prices: the first
+		// expected entry consumes the first matching pool entry (closest delta, earlier index on
+		// ties). README "Matching algorithm" subsection documents this.
+		List<ExpectedItem> expected =
+		[
+			new ExpectedItem { Description = "X", TotalPrice = 1.00m },
+			new ExpectedItem { Description = "Y", TotalPrice = 1.00m },
+		];
+		List<ParsedReceiptItem> actual =
+		[
+			MakeItem("X", 1.00m),
+			MakeItem("Y", 1.00m),
+		];
+
+		List<FieldDiff> diffs = FixtureEvaluator.DiffItems(expected, actual);
+
+		diffs.Should().HaveCount(2);
+		// X went to actual[0], Y went to actual[1]; both pass.
+		diffs[0].Status.Should().Be(DiffStatus.Pass);
+		diffs[0].Actual.Should().Contain("X");
+		diffs[1].Status.Should().Be(DiffStatus.Pass);
+		diffs[1].Actual.Should().Contain("Y");
 	}
 
 	[Fact]
@@ -774,7 +925,7 @@ public class FixtureEvaluatorTests
 	public async Task EvaluateAsync_FileMissing_ReturnsFailWithReadError()
 	{
 		Mock<IReceiptExtractionService> service = new();
-		FixtureEvaluator evaluator = new(service.Object, NullLogger<FixtureEvaluator>.Instance);
+		FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
 
 		Fixture fixture = new(
 			Name: "missing.jpg",
@@ -801,7 +952,7 @@ public class FixtureEvaluatorTests
 				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
 				.ThrowsAsync(new InvalidOperationException("VLM down"));
 
-			FixtureEvaluator evaluator = new(service.Object, NullLogger<FixtureEvaluator>.Instance);
+			FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
 
 			Fixture fixture = new("test.jpg", tempFile, "image/jpeg", new ExpectedReceipt());
 
@@ -838,7 +989,7 @@ public class FixtureEvaluatorTests
 				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(parsed);
 
-			FixtureEvaluator evaluator = new(service.Object, NullLogger<FixtureEvaluator>.Instance);
+			FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
 
 			Fixture fixture = new(
 				Name: "test.jpg",
@@ -891,7 +1042,7 @@ public class FixtureEvaluatorTests
 				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(parsed);
 
-			FixtureEvaluator evaluator = new(service.Object, NullLogger<FixtureEvaluator>.Instance);
+			FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
 
 			Fixture fixture = new("test.jpg", tempFile, "image/jpeg", new ExpectedReceipt());
 
@@ -927,7 +1078,7 @@ public class FixtureEvaluatorTests
 				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(parsed);
 
-			FixtureEvaluator evaluator = new(service.Object, NullLogger<FixtureEvaluator>.Instance);
+			FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
 
 			Fixture fixture = new(
 				"test.jpg",
@@ -939,6 +1090,101 @@ public class FixtureEvaluatorTests
 
 			result.Passed.Should().BeFalse();
 			result.FieldDiffs.Should().Contain(d => d.Field == "store" && d.Status == DiffStatus.Fail);
+		}
+		finally
+		{
+			File.Delete(tempFile);
+		}
+	}
+
+	[Fact]
+	public async Task EvaluateAsync_OptionsTolerance_AppliedToMoneyDiffs()
+	{
+		// VlmEvalOptions.MoneyTolerance widens the bound for an entire run. With a $0.05 default,
+		// a $0.04 subtotal delta must pass.
+		string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".jpg");
+		await File.WriteAllBytesAsync(tempFile, [0x01, 0x02, 0x03]);
+		try
+		{
+			ParsedReceipt parsed = new(
+				StoreName: FieldConfidence<string>.High("Walmart"),
+				Date: FieldConfidence<DateOnly>.None(),
+				Items: [],
+				Subtotal: FieldConfidence<decimal>.High(10.04m),
+				TaxLines: [],
+				Total: FieldConfidence<decimal>.None(),
+				PaymentMethod: FieldConfidence<string?>.None());
+
+			Mock<IReceiptExtractionService> service = new();
+			service
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.ReturnsAsync(parsed);
+
+			FixtureEvaluator evaluator = new(
+				service.Object,
+				new VlmEvalOptions { MoneyTolerance = 0.05m },
+				NullLogger<FixtureEvaluator>.Instance);
+
+			Fixture fixture = new(
+				"test.jpg",
+				tempFile,
+				"image/jpeg",
+				new ExpectedReceipt { Store = "Walmart", Subtotal = 10.00m });
+
+			FixtureResult result = await evaluator.EvaluateAsync(fixture, CancellationToken.None);
+
+			result.Passed.Should().BeTrue();
+			result.FieldDiffs.Should().Contain(d => d.Field == "subtotal" && d.Status == DiffStatus.Pass);
+		}
+		finally
+		{
+			File.Delete(tempFile);
+		}
+	}
+
+	[Fact]
+	public async Task EvaluateAsync_SidecarToleranceOverride_TakesPrecedenceOverOptions()
+	{
+		// The sidecar's MoneyTolerance overrides the run-wide default for that single fixture.
+		// Run-wide is $0.01 (would fail $0.04); sidecar pushes it to $0.05 → pass.
+		string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".jpg");
+		await File.WriteAllBytesAsync(tempFile, [0x01, 0x02, 0x03]);
+		try
+		{
+			ParsedReceipt parsed = new(
+				StoreName: FieldConfidence<string>.High("Walmart"),
+				Date: FieldConfidence<DateOnly>.None(),
+				Items: [],
+				Subtotal: FieldConfidence<decimal>.High(10.04m),
+				TaxLines: [],
+				Total: FieldConfidence<decimal>.None(),
+				PaymentMethod: FieldConfidence<string?>.None());
+
+			Mock<IReceiptExtractionService> service = new();
+			service
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.ReturnsAsync(parsed);
+
+			FixtureEvaluator evaluator = new(
+				service.Object,
+				new VlmEvalOptions { MoneyTolerance = 0.01m },
+				NullLogger<FixtureEvaluator>.Instance);
+
+			Fixture fixture = new(
+				"test.jpg",
+				tempFile,
+				"image/jpeg",
+				new ExpectedReceipt
+				{
+					Store = "Walmart",
+					Subtotal = 10.00m,
+					MoneyTolerance = 0.05m,
+				});
+
+			FixtureResult result = await evaluator.EvaluateAsync(fixture, CancellationToken.None);
+
+			result.Passed.Should().BeTrue();
+			result.FieldDiffs.Should().Contain(d => d.Field == "subtotal" && d.Status == DiffStatus.Pass);
 		}
 		finally
 		{

@@ -13,27 +13,37 @@ public sealed class EvalRunner(
 	VlmEvalOptions options,
 	ILogger<EvalRunner> logger)
 {
+	/// <summary>POSIX exit code for SIGINT (cancellation).</summary>
+	private const int ExitCodeCancelled = 130;
+
 	public async Task<int> RunAsync(string fixturesDirectory, CancellationToken cancellationToken)
 	{
 		string ollamaUrl = vlmOptions.OllamaUrl ?? "(unset)";
+		DateTimeOffset startedAt = DateTimeOffset.UtcNow;
 		reporter.PrintHeader(ollamaUrl, fixturesDirectory);
 
+		// Missing fixtures dir is a configuration error: a typo'd FixturesPath looks identical
+		// to "no fixtures yet" if we silently mkdir. Treat it as failure when the strict flag
+		// is set; otherwise warn and exit 0 to preserve the "always green when flag off" contract.
 		if (!Directory.Exists(fixturesDirectory))
 		{
-			try
-			{
-				Directory.CreateDirectory(fixturesDirectory);
-			}
-			catch (Exception ex)
-			{
-				logger.LogError(ex, "Failed to create fixtures directory at {Path}", fixturesDirectory);
-				return 1;
-			}
+			reporter.PrintMissingFixturesDirectory(fixturesDirectory);
+			reporter.WriteReport(
+				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
+				results: [],
+				totalElapsed: TimeSpan.Zero,
+				cancelled: false);
+			return options.FailOnAnyFixtureFailure ? 1 : 0;
 		}
 
 		if (!await IsOllamaReachableAsync(cancellationToken))
 		{
 			reporter.PrintOllamaUnreachable(ollamaUrl);
+			reporter.WriteReport(
+				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
+				results: [],
+				totalElapsed: TimeSpan.Zero,
+				cancelled: false);
 			return 1;
 		}
 
@@ -42,7 +52,12 @@ public sealed class EvalRunner(
 		if (loaded.Fixtures.Count == 0 && loaded.OrphanFiles.Count == 0)
 		{
 			reporter.PrintEmptyFixturesDirectory(fixturesDirectory);
-			return 0;
+			reporter.WriteReport(
+				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
+				results: [],
+				totalElapsed: TimeSpan.Zero,
+				cancelled: false);
+			return options.FailOnAnyFixtureFailure ? 1 : 0;
 		}
 
 		foreach (string orphan in loaded.OrphanFiles)
@@ -53,15 +68,22 @@ public sealed class EvalRunner(
 		if (loaded.Fixtures.Count == 0)
 		{
 			reporter.PrintNoValidFixtures();
-			return 0;
+			reporter.WriteReport(
+				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
+				results: [],
+				totalElapsed: TimeSpan.Zero,
+				cancelled: false);
+			return options.FailOnAnyFixtureFailure ? 1 : 0;
 		}
 
 		Stopwatch total = Stopwatch.StartNew();
 		List<FixtureResult> results = [];
+		bool cancelled = false;
 		foreach (Fixture fixture in loaded.Fixtures)
 		{
 			if (cancellationToken.IsCancellationRequested)
 			{
+				cancelled = true;
 				break;
 			}
 
@@ -71,7 +93,23 @@ public sealed class EvalRunner(
 		}
 		total.Stop();
 
+		if (cancelled)
+		{
+			reporter.PrintCancelled(results.Count, loaded.Fixtures.Count);
+			reporter.WriteReport(
+				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
+				results,
+				total.Elapsed,
+				cancelled: true);
+			return ExitCodeCancelled;
+		}
+
 		reporter.PrintSummary(results, total.Elapsed);
+		reporter.WriteReport(
+			new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
+			results,
+			total.Elapsed,
+			cancelled: false);
 
 		if (!options.FailOnAnyFixtureFailure)
 		{

@@ -26,6 +26,14 @@ if (evalOptions.OllamaTimeoutSeconds > 0)
 	vlmOptions.TimeoutSeconds = evalOptions.OllamaTimeoutSeconds;
 }
 
+// CLI args take precedence over env/appsettings — typical for tools where you want to override
+// just one knob (--report-path) without unsetting it from your shell. Supported:
+//   --output console|json|markdown   (sets VlmEval:OutputFormat)
+//   --report-path <path>             (sets VlmEval:ReportPath)
+// Unknown flags are ignored to remain compatible with future hosts (e.g. Aspire) that may pass
+// extra args.
+ParseCliArgs(args, evalOptions);
+
 string fixturesPath = Path.GetFullPath(evalOptions.FixturesPath);
 
 builder.Services.AddSingleton(evalOptions);
@@ -64,4 +72,24 @@ catch (Exception ex)
 	ILogger logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("VlmEval");
 	logger.LogCritical(ex, "VlmEval terminated with an unhandled exception.");
 	return 1;
+}
+
+static void ParseCliArgs(string[] args, VlmEvalOptions options)
+{
+	for (int i = 0; i < args.Length; i++)
+	{
+		string arg = args[i];
+		if (string.Equals(arg, "--output", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+		{
+			string value = args[++i];
+			if (Enum.TryParse(value, ignoreCase: true, out ReportOutputFormat format))
+			{
+				options.OutputFormat = format;
+			}
+		}
+		else if (string.Equals(arg, "--report-path", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+		{
+			options.ReportPath = args[++i];
+		}
+	}
 }
