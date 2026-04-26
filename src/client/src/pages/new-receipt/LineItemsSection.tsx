@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -360,12 +360,12 @@ export function LineItemsSection({
     setEditingItemId(null);
   }, [editingItemId, editDraft, items, onChange]);
 
-  // Clear stale editing state when the edited item is removed externally
-  useEffect(() => {
-    if (editingItemId && !items.some((i) => i.id === editingItemId)) {
-      setEditingItemId(null);
-    }
-  }, [items, editingItemId]);
+  // Derived during render: stale `editingItemId` (e.g. parent removed the
+  // edited item) becomes harmless because no row matches and no edit UI shows.
+  // See docs/react/effects.md rule 4 — replaces a "form field cascade via
+  // Effects" anti-pattern that caused a double render on external removal.
+  const isEditing =
+    editingItemId !== null && items.some((i) => i.id === editingItemId);
 
   return (
     <Card>
@@ -748,7 +748,7 @@ export function LineItemsSection({
             <TableBody>
               {items.map((item) => {
                 const taxCodeConfidence = itemConfidenceById?.get(item.id)?.taxCode;
-                return editingItemId === item.id ? (
+                return isEditing && editingItemId === item.id ? (
                   <TableRow key={item.id}>
                     <TableCell>
                       <Input

@@ -371,6 +371,38 @@ describe("LineItemsSection", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it("hides the edit form when the item being edited is removed externally", async () => {
+    // Regression test for RECEIPTS-642: replaced a useEffect-based
+    // editingItemId cleanup with a derived `isEditing` value computed during
+    // render. When the parent removes the item, no row matches editingItemId,
+    // so the edit UI no longer renders — without a double render.
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const items: ReceiptLineItem[] = [
+      makeItem({ id: "item-1", description: "Milk" }),
+      makeItem({ id: "item-2", description: "Bread" }),
+    ];
+
+    const { rerender } = renderWithProviders(
+      <LineItemsSection items={items} onChange={onChange} />,
+    );
+
+    // Enter edit mode on Milk (item-1).
+    const editButtons = screen.getAllByRole("button", { name: /edit/i });
+    await user.click(editButtons[0]);
+    expect(screen.getByLabelText("Edit description")).toBeInTheDocument();
+
+    // Parent removes item-1 from state externally.
+    rerender(
+      <LineItemsSection items={[items[1]]} onChange={onChange} />,
+    );
+
+    // Edit form should no longer be visible because no row matches the stale
+    // editingItemId. Bread (item-2) renders in display mode, not edit mode.
+    expect(screen.queryByLabelText("Edit description")).not.toBeInTheDocument();
+    expect(screen.getByText("Bread")).toBeInTheDocument();
+  });
+
   it("disables quantity input in edit mode for flat pricing items", async () => {
     const user = userEvent.setup();
     const items: ReceiptLineItem[] = [
