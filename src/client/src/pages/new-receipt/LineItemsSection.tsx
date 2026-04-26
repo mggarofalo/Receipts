@@ -48,6 +48,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash2, Loader2, Sparkles, Pencil, Check, X } from "lucide-react";
+import { ConfidenceIndicator } from "@/pages/scan-receipt/ConfidenceIndicator";
+import type { ConfidenceLevel } from "@/pages/scan-receipt/types";
+
+const TAX_CODE_PATTERN = /^[A-Za-z]?$/;
 
 const itemSchema = z.object({
   receiptItemCode: z.string().optional().default(""),
@@ -56,6 +60,13 @@ const itemSchema = z.object({
   unitPrice: z.number().min(0, "Unit price must be non-negative"),
   category: z.string().min(1, "Category is required"),
   subcategory: z.string().optional().default(""),
+  taxCode: z
+    .string()
+    .optional()
+    .default("")
+    .refine((v) => !v || TAX_CODE_PATTERN.test(v), {
+      message: "Tax code must be a single letter",
+    }),
 });
 
 type ItemFormValues = z.output<typeof itemSchema>;
@@ -69,15 +80,28 @@ export interface ReceiptLineItem {
   unitPrice: number;
   category: string;
   subcategory: string;
+  taxCode: string;
 }
 
 interface LineItemsSectionProps {
   items: ReceiptLineItem[];
   onChange: (items: ReceiptLineItem[]) => void;
   location?: string | null;
+  /**
+   * Per-item confidence levels keyed by stable item id (not index). Keying
+   * by id preserves correctness after rows are added or removed — an
+   * index-based lookup would misalign confidence with the wrong row after
+   * a deletion.
+   */
+  itemConfidenceById?: Map<string, { taxCode?: ConfidenceLevel }>;
 }
 
-export function LineItemsSection({ items, onChange, location }: LineItemsSectionProps) {
+export function LineItemsSection({
+  items,
+  onChange,
+  location,
+  itemConfidenceById,
+}: LineItemsSectionProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsListId = "new-receipt-suggestions-list";
   const { data: categories } = useCategories(0, 50, undefined, undefined, true);
@@ -100,6 +124,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
       unitPrice: 0,
       category: "",
       subcategory: "",
+      taxCode: "",
     },
   });
 
@@ -266,6 +291,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
         unitPrice: values.unitPrice,
         category: values.category,
         subcategory: values.subcategory ?? "",
+        taxCode: (values.taxCode ?? "").toUpperCase(),
       };
       onChange([...items, newItem]);
       form.reset({
@@ -275,6 +301,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
         unitPrice: 0,
         category: values.category,
         subcategory: "",
+        taxCode: "",
       });
       setShowSuggestions(false);
     },
@@ -293,7 +320,8 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     description: string;
     quantity: number;
     unitPrice: number;
-  }>({ description: "", quantity: 1, unitPrice: 0 });
+    taxCode: string;
+  }>({ description: "", quantity: 1, unitPrice: 0, taxCode: "" });
 
   const startEditing = useCallback((item: ReceiptLineItem) => {
     setEditingItemId(item.id);
@@ -301,6 +329,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
+      taxCode: item.taxCode ?? "",
     });
   }, []);
 
@@ -313,6 +342,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     if (!editDraft.description.trim()) return;
     if (!Number.isFinite(editDraft.quantity) || editDraft.quantity <= 0) return;
     if (!Number.isFinite(editDraft.unitPrice) || editDraft.unitPrice < 0) return;
+    if (editDraft.taxCode && !TAX_CODE_PATTERN.test(editDraft.taxCode)) return;
 
     onChange(
       items.map((item) =>
@@ -322,6 +352,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
               description: editDraft.description.trim(),
               quantity: editDraft.quantity,
               unitPrice: editDraft.unitPrice,
+              taxCode: editDraft.taxCode.toUpperCase(),
             }
           : item,
       ),
@@ -572,8 +603,8 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
 
             </div>
 
-            {/* Row 2: Subcategory, Quantity, Unit Price, Add Item */}
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
+            {/* Row 2: Subcategory, Tax Code, Quantity, Unit Price, Add Item */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-[1fr_auto_auto_auto_auto] sm:items-end">
               <FormField
                 control={form.control}
                 name="subcategory"
@@ -618,6 +649,35 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                         emptyMessage="No subcategories found."
                         allowCustom
                         disabled={!selectedCategory}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="taxCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        maxLength={1}
+                        className="w-12 text-center font-mono uppercase"
+                        placeholder="—"
+                        aria-label="Tax code"
+                        autoComplete="off"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const next = e.target.value.toUpperCase();
+                          if (TAX_CODE_PATTERN.test(next)) {
+                            field.onChange(next);
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -679,14 +739,16 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                 <TableHead>Unit Price</TableHead>
                 <TableHead>Line Total</TableHead>
                 <TableHead>Category</TableHead>
+                <TableHead>Tax</TableHead>
                 <TableHead className="w-12">
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) =>
-                editingItemId === item.id ? (
+              {items.map((item) => {
+                const taxCodeConfidence = itemConfidenceById?.get(item.id)?.taxCode;
+                return editingItemId === item.id ? (
                   <TableRow key={item.id}>
                     <TableCell>
                       <Input
@@ -736,6 +798,24 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                       {item.subcategory ? ` / ${item.subcategory}` : ""}
                     </TableCell>
                     <TableCell>
+                      <Input
+                        type="text"
+                        maxLength={1}
+                        value={editDraft.taxCode}
+                        onChange={(e) => {
+                          const next = e.target.value.toUpperCase();
+                          if (TAX_CODE_PATTERN.test(next)) {
+                            setEditDraft((d) => ({
+                              ...d,
+                              taxCode: next,
+                            }));
+                          }
+                        }}
+                        aria-label="Edit tax code"
+                        className="h-8 w-10 text-center font-mono uppercase"
+                      />
+                    </TableCell>
+                    <TableCell>
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"
@@ -769,6 +849,23 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                       {item.subcategory ? ` / ${item.subcategory}` : ""}
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-1">
+                        {item.taxCode ? (
+                          <Badge variant="outline" className="font-mono">
+                            {item.taxCode}
+                          </Badge>
+                        ) : (
+                          <span
+                            className="text-xs text-muted-foreground"
+                            aria-label="No tax code"
+                          >
+                            —
+                          </span>
+                        )}
+                        <ConfidenceIndicator confidence={taxCodeConfidence} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"
@@ -789,8 +886,8 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                       </div>
                     </TableCell>
                   </TableRow>
-                ),
-              )}
+                );
+              })}
             </TableBody>
           </Table>
         )}
