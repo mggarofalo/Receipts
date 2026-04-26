@@ -34,4 +34,14 @@
     <ProjectReference Include="..\SampleData\SampleData.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!--
+      RECEIPTS-651: Real binary PDF fixtures for color-space and filter coverage.
+      Embedded as resources so PdfConversionServiceFixtureTests can load them via
+      Assembly.GetManifestResourceStream regardless of the test runner's working
+      directory.
+    -->
+    <EmbeddedResource Include="Fixtures\Pdf\*.pdf" />
+  </ItemGroup>
+
 </Project>

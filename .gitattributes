@@ -14,6 +14,7 @@
 *.md text eol=lf
 *.sh text eol=lf
 *.traineddata binary
+*.pdf binary
 
 # Generated OpenAPI TypeScript types — always regenerate rather than hand-merge.
 # The post-merge hook regenerates from openapi/spec.yaml when the spec changes.
