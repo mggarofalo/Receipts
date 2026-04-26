@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using PDFtoImage;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Exceptions;
 
 namespace Infrastructure.Services;
 
@@ -164,11 +165,15 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 				options: new RenderOptions(Dpi: RasterizationDpi));
 			return ms.ToArray();
 		}
-		catch (Exception ex) when (IsPasswordProtectedException(ex))
+		catch (Exception ex) when (IsPdfiumEncryptionException(ex))
 		{
 			// PdfPig usually catches password-protected PDFs earlier, but PDFium may detect
 			// it here for files that opened cleanly in PdfPig but encrypt their content
-			// streams. Surface the same error either way.
+			// streams. PDFium has no typed equivalent of PdfDocumentEncryptedException —
+			// detection is by message string. Match both "password" and "encrypt" here
+			// because PDFium error messages for encrypted-content-stream rasterization
+			// failures may use either keyword. The broader "encrypt" match is safe in this
+			// scope: TLS / runtime crypto errors don't surface from `Conversion.SavePng`.
 			throw new InvalidOperationException(
 				"Password-protected PDFs are not supported.", ex);
 		}
@@ -207,10 +212,40 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 		}
 	}
 
-	private static bool IsPasswordProtectedException(Exception ex)
+	/// <summary>
+	/// Recognizes a PdfPig-thrown encrypted-document exception. Used for the
+	/// <c>PdfDocument.Open</c> path where PdfPig has a dedicated typed exception.
+	/// Pure type check — no message-substring matching, so unrelated runtime errors
+	/// that happen to mention "encrypt" (TLS, crypto subsystem) are not misclassified.
+	/// Walks <see cref="Exception.InnerException"/> defensively in case a higher-level
+	/// layer wraps the typed exception.
+	/// </summary>
+	internal static bool IsPasswordProtectedException(Exception ex)
 	{
+		return ex is PdfDocumentEncryptedException ||
+			   ex.InnerException is PdfDocumentEncryptedException;
+	}
+
+	/// <summary>
+	/// Recognizes a PDFium / PDFtoImage-thrown exception that signals an encryption
+	/// or password-required failure. Used for the <c>Conversion.SavePng</c>
+	/// rasterization path. PDFium exposes no typed equivalent of
+	/// <see cref="PdfDocumentEncryptedException"/>, so detection is by message
+	/// substring. Match both "encrypt" and "password" — PDFium's messages for
+	/// content-stream encryption failures use either keyword. The broader match is
+	/// safe in this scope because <c>Conversion.SavePng</c> does not surface unrelated
+	/// runtime/TLS errors that the prior unscoped substring check could misclassify.
+	/// Also covers the typed PdfPig case so callers can use either path uniformly.
+	/// </summary>
+	internal static bool IsPdfiumEncryptionException(Exception ex)
+	{
+		if (IsPasswordProtectedException(ex))
+		{
+			return true;
+		}
+
 		string message = ex.Message;
-		return message.Contains("encrypt", StringComparison.OrdinalIgnoreCase) ||
-			   message.Contains("password", StringComparison.OrdinalIgnoreCase);
+		return message.Contains("password", StringComparison.OrdinalIgnoreCase) ||
+			   message.Contains("encrypt", StringComparison.OrdinalIgnoreCase);
 	}
 }

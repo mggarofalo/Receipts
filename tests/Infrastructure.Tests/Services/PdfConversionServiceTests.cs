@@ -8,6 +8,7 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Core;
+using UglyToad.PdfPig.Exceptions;
 using UglyToad.PdfPig.Fonts.Standard14Fonts;
 using UglyToad.PdfPig.Writer;
 
@@ -273,19 +274,143 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
-	public async Task ConvertAsync_PasswordProtectedPdf_ThrowsInvalidOperationException()
+	public void IsPasswordProtectedException_PdfDocumentEncryptedException_ReturnsTrue()
 	{
-		// Arrange — PdfPig can write password-protected PDFs via EncryptionInformation.
-		// PdfDocument.Open will detect the encryption and throw; the service should
-		// translate that into a clean "password-protected PDFs are not supported" error.
-		byte[] pdfBytes = CreatePasswordProtectedPdf("Some encrypted receipt content here");
+		// Arrange — the typed exception PdfPig raises when PdfDocument.Open hits an
+		// encrypted document. The service helper should recognize it directly without
+		// resorting to message-substring matching.
+		PdfDocumentEncryptedException ex = new("Cannot read encrypted document");
 
 		// Act
-		Func<Task> act = () => _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		bool result = PdfConversionService.IsPasswordProtectedException(ex);
 
 		// Assert
-		await act.Should().ThrowAsync<InvalidOperationException>()
-			.WithMessage("*Password-protected*");
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsPasswordProtectedException_WrappedPdfDocumentEncryptedException_ReturnsTrue()
+	{
+		// Arrange — defensive: if a higher-level layer wraps the typed exception, the
+		// helper should still classify it as password-protected via InnerException.
+		PdfDocumentEncryptedException inner = new("PDF is encrypted");
+		InvalidOperationException wrapper = new("Wrapped failure", inner);
+
+		// Act
+		bool result = PdfConversionService.IsPasswordProtectedException(wrapper);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsPasswordProtectedException_AnyPasswordMessageWithoutTypedException_ReturnsFalse()
+	{
+		// Arrange — the PdfPig path uses the typed check ONLY. A non-typed exception
+		// whose message merely mentions "password" must not be classified at this site;
+		// the rasterization path has its own broader predicate.
+		Exception pdfiumException = new("This PDF requires a password to open.");
+
+		// Act
+		bool result = PdfConversionService.IsPasswordProtectedException(pdfiumException);
+
+		// Assert
+		result.Should().BeFalse(
+			"the PdfPig-path predicate must rely solely on the typed exception");
+	}
+
+	[Fact]
+	public void IsPasswordProtectedException_UnrelatedEncryptionError_ReturnsFalse()
+	{
+		// Arrange — the previous implementation used `message.Contains("encrypt")`,
+		// which classified unrelated runtime errors (TLS, crypto subsystem) as
+		// password-protected and produced a misleading user-facing error. The new
+		// helper must NOT match these.
+		Exception tlsException = new("Authentication failed: TLS handshake encryption error.");
+
+		// Act
+		bool result = PdfConversionService.IsPasswordProtectedException(tlsException);
+
+		// Assert
+		result.Should().BeFalse(
+			"the new typed-exception check must not regress to substring matching on \"encrypt\"");
+	}
+
+	[Fact]
+	public void IsPasswordProtectedException_GenericException_ReturnsFalse()
+	{
+		// Arrange — a plain exception with no encryption-related signal must not be
+		// classified as password-protected.
+		Exception genericException = new("Something else went wrong");
+
+		// Act
+		bool result = PdfConversionService.IsPasswordProtectedException(genericException);
+
+		// Assert
+		result.Should().BeFalse();
+	}
+
+	[Fact]
+	public void IsPdfiumEncryptionException_PasswordInMessage_ReturnsTrue()
+	{
+		// Arrange — PDFium (used by PDFtoImage during rasterization) has no typed
+		// equivalent and surfaces password failures only via the message string.
+		// The rasterization-path predicate must classify these correctly.
+		Exception pdfiumException = new("This PDF requires a password to open.");
+
+		// Act
+		bool result = PdfConversionService.IsPdfiumEncryptionException(pdfiumException);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsPdfiumEncryptionException_EncryptInMessage_ReturnsTrue()
+	{
+		// Arrange — RECEIPTS-645 bug-finder follow-up: PDFium errors for content-stream
+		// encryption failures may contain "encrypt" without the word "password" (e.g.,
+		// "Cannot decode encrypted content stream"). The rasterization predicate must
+		// catch this so users see the actionable "Password-protected PDFs are not
+		// supported" message rather than a generic rasterization failure.
+		Exception pdfiumException = new("Cannot decode encrypted content stream.");
+
+		// Act
+		bool result = PdfConversionService.IsPdfiumEncryptionException(pdfiumException);
+
+		// Assert
+		result.Should().BeTrue(
+			"rasterization-path encryption errors without \"password\" must still classify as password-protected");
+	}
+
+	[Fact]
+	public void IsPdfiumEncryptionException_TypedPdfPigException_ReturnsTrue()
+	{
+		// Arrange — the rasterization-path predicate is a superset of the PdfPig-path
+		// predicate; the typed exception must still classify even if the surrounding
+		// catch is the PDFium one (defensive for ordering or library changes).
+		PdfDocumentEncryptedException ex = new("Cannot read encrypted document");
+
+		// Act
+		bool result = PdfConversionService.IsPdfiumEncryptionException(ex);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsPdfiumEncryptionException_GenericRasterizationError_ReturnsFalse()
+	{
+		// Arrange — non-encryption rasterization failures must NOT be misclassified as
+		// password-protected. The user should see the generic "Failed to rasterize"
+		// error in those cases.
+		Exception genericException = new("Failed to render page: invalid graphics state.");
+
+		// Act
+		bool result = PdfConversionService.IsPdfiumEncryptionException(genericException);
+
+		// Assert
+		result.Should().BeFalse();
 	}
 
 	private static byte[] CreateTextPdf(string text)
@@ -344,37 +469,6 @@ public class PdfConversionServiceTests
 	{
 		PdfDocumentBuilder builder = new();
 		return builder.Build();
-	}
-
-	private static byte[] CreatePasswordProtectedPdf(string text)
-	{
-		// PdfPig 0.1.x does not expose a write-side encryption API, so we build an
-		// unencrypted PDF and splice an /Encrypt reference into the trailer dictionary.
-		// PdfDocument.Open then reports the document as encrypted — an exception whose
-		// message contains "encryption", which PdfConversionService routes through
-		// IsPasswordProtectedException into the user-facing "Password-protected PDFs are
-		// not supported" error. This exercises the branch without shipping a real
-		// encrypted PDF fixture in the repo.
-		PdfDocumentBuilder builder = new();
-		PdfPageBuilder page = builder.AddPage(PageSize.Letter);
-		PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
-		page.AddText(text, 12, new PdfPoint(72, 720), font);
-		byte[] built = builder.Build();
-
-		string pdf = System.Text.Encoding.Latin1.GetString(built);
-		const string trailerMarker = "trailer\n<<";
-		int trailerIdx = pdf.IndexOf(trailerMarker, StringComparison.Ordinal);
-		if (trailerIdx < 0)
-		{
-			throw new InvalidOperationException(
-				"PdfPig 0.1.x emits 'trailer\\n<<' — if this fixture generator breaks " +
-				"because the trailer format changed, update the splice below.");
-		}
-
-		string patched = pdf.Insert(
-			trailerIdx + trailerMarker.Length,
-			" /Encrypt 99 0 R");
-		return System.Text.Encoding.Latin1.GetBytes(patched);
 	}
 
 	private static void AssertContainsValidPng(IReadOnlyList<byte[]> images)

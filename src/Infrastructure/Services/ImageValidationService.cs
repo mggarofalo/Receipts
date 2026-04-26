@@ -25,7 +25,7 @@ public class ImageValidationService(ILogger<ImageValidationService> logger) : II
 		typeof(PngFormat),
 	];
 
-	public async Task ValidateAsync(byte[] imageBytes, CancellationToken ct)
+	public Task ValidateAsync(byte[] imageBytes, CancellationToken ct)
 	{
 		ct.ThrowIfCancellationRequested();
 
@@ -53,13 +53,16 @@ public class ImageValidationService(ILogger<ImageValidationService> logger) : II
 				"The uploaded file is not a supported image format. Only JPEG and PNG are accepted.");
 		}
 
-		// Check image dimensions before full decode to reject oversized images cheaply
+		// Check image dimensions before full decode to reject oversized images cheaply.
+		// Filter the catch to image-format problems only — `OperationCanceledException`,
+		// `OutOfMemoryException`, and `StackOverflowException` must propagate so callers
+		// can react appropriately (cancellation, process recycling, fatal error).
 		ImageInfo info;
 		try
 		{
 			info = Image.Identify(imageBytes);
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (ex is UnknownImageFormatException or InvalidImageContentException or ArgumentException)
 		{
 			logger.LogError(ex, "Failed to identify image metadata during validation");
 			throw new InvalidOperationException("The uploaded file is not a valid image or is corrupted.", ex);
@@ -71,9 +74,17 @@ public class ImageValidationService(ILogger<ImageValidationService> logger) : II
 				$"Image dimensions ({info.Width}x{info.Height}) exceed the maximum allowed ({MaxPixelWidth}x{MaxPixelHeight}).");
 		}
 
-		// Method is async so all exception paths surface as a faulted Task per TAP conventions,
-		// not thrown synchronously at the call site. Today's body is entirely CPU-bound; the
-		// no-op await keeps the signature honest without introducing a thread-pool hop.
-		await Task.CompletedTask.ConfigureAwait(false);
+		// The body is fully synchronous and the method is intentionally non-async — the
+		// previous `async` + no-op `await Task.CompletedTask` was cargo-culted overhead.
+		// IMPORTANT: because the method is no longer `async`, the validation throws above
+		// (`ct.ThrowIfCancellationRequested()`, the format/dimension `InvalidOperationException`s)
+		// propagate **synchronously** at the call site rather than via a faulted Task.
+		// All current callers `await` the result inside their own async methods, so their
+		// state machines capture the synchronous throw and the observable behaviour is the
+		// same. Any future caller that captures the Task before awaiting it (e.g.
+		// `Task t = service.ValidateAsync(...); /* work */; await t;`) will see exceptions
+		// at the call site, not on the stored Task — adjust the call site or the
+		// implementation accordingly.
+		return Task.CompletedTask;
 	}
 }
