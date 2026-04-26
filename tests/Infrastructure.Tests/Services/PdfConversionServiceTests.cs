@@ -274,6 +274,30 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
+	public async Task ConvertAsync_EncryptedPdf_ThrowsPasswordProtectedInvalidOperationException()
+	{
+		// Arrange — RECEIPTS-629 acceptance: encrypted PDFs must be rejected with a
+		// clear "Password-protected" error before the rasterizer is invoked. PdfPig's
+		// PdfDocument.Open detects the trailer's /Encrypt entry and raises
+		// PdfDocumentEncryptedException; the service translates that to the user-facing
+		// InvalidOperationException via the typed predicate (no message-substring match).
+		// The fixture is a hand-crafted minimal PDF whose trailer references a Standard
+		// encryption dictionary (V=1, R=2). It opens enough to detect encryption but
+		// exposes no real password — exactly the typed-exception path we need to verify.
+		byte[] pdfBytes = CreateEncryptedPdf();
+
+		// Act
+		Func<Task> act = () => _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert
+		FluentAssertions.Specialized.ExceptionAssertions<InvalidOperationException> thrown =
+			await act.Should().ThrowAsync<InvalidOperationException>()
+				.WithMessage("*Password-protected*");
+		thrown.Which.InnerException.Should().BeOfType<PdfDocumentEncryptedException>(
+			"the typed PdfPig encryption exception is the trigger that the service translates");
+	}
+
+	[Fact]
 	public void IsPasswordProtectedException_PdfDocumentEncryptedException_ReturnsTrue()
 	{
 		// Arrange — the typed exception PdfPig raises when PdfDocument.Open hits an
@@ -469,6 +493,50 @@ public class PdfConversionServiceTests
 	{
 		PdfDocumentBuilder builder = new();
 		return builder.Build();
+	}
+
+	/// <summary>
+	/// Builds a minimal encrypted PDF byte stream by hand. PdfPig's writer
+	/// (<see cref="PdfDocumentBuilder"/>) does not support emitting encrypted PDFs, so
+	/// the only way to exercise the encrypted-document path end-to-end without shipping
+	/// a binary fixture is to hand-craft the bytes.
+	/// <para>
+	/// The PDF below contains a Standard encryption dictionary (V=1, R=2, 40-bit RC4)
+	/// referenced from the trailer's <c>/Encrypt</c> key. PdfPig's <c>PdfDocument.Open</c>
+	/// detects the trailer entry and immediately raises
+	/// <see cref="PdfDocumentEncryptedException"/> when no password is supplied — exactly
+	/// the path the service-level translation must catch via the typed predicate.
+	/// </para>
+	/// </summary>
+	private static byte[] CreateEncryptedPdf()
+	{
+		const string Pdf =
+			"%PDF-1.4\n" +
+			"%\u00e2\u00e3\u00cf\u00d3\n" +
+			"1 0 obj\n<</Type /Catalog /Pages 2 0 R>>\nendobj\n" +
+			"2 0 obj\n<</Type /Pages /Kids [3 0 R] /Count 1>>\nendobj\n" +
+			"3 0 obj\n<</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R>>\nendobj\n" +
+			"4 0 obj\n<</Length 0>>\nstream\nendstream\nendobj\n" +
+			"5 0 obj\n<</Filter /Standard /V 1 /R 2 /P -4 /Length 40 " +
+			"/O <0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF> " +
+			"/U <FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210>>>\nendobj\n" +
+			"xref\n" +
+			"0 6\n" +
+			"0000000000 65535 f \n" +
+			"0000000015 00000 n \n" +
+			"0000000059 00000 n \n" +
+			"0000000105 00000 n \n" +
+			"0000000169 00000 n \n" +
+			"0000000209 00000 n \n" +
+			"trailer\n" +
+			"<</Size 6 /Root 1 0 R /Encrypt 5 0 R " +
+			"/ID [<00000000000000000000000000000000> <00000000000000000000000000000000>]>>\n" +
+			"startxref\n" +
+			"388\n" +
+			"%%EOF\n";
+		// ASCII-safe encoding — PDF's binary marker comment uses Latin-1 high bytes,
+		// but the rest is plain ASCII. Use Latin-1 to preserve the marker bytes faithfully.
+		return System.Text.Encoding.Latin1.GetBytes(Pdf);
 	}
 
 	private static void AssertContainsValidPng(IReadOnlyList<byte[]> images)
