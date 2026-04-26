@@ -65,9 +65,11 @@ describe("scanProposal fixture", () => {
     expect(scanProposal).toHaveProperty("terminalIdConfidence");
   });
 
-  it("exercises a representative mix of confidence levels", () => {
-    // The fixture exists to drive UI badge rendering; keeping a mix of
-    // high/medium/low ensures the wizard's confidence visuals stay covered.
+  it("exercises every confidence level (high, medium, low) across its fields", () => {
+    // The fixture exists to drive UI badge rendering; require all three
+    // confidence levels to appear so the wizard's high/medium/low badge
+    // paths stay covered. A weaker `size > 1` check would silently let
+    // a future fixture edit drop one level entirely.
     const allConfidences = new Set<string>();
     allConfidences.add(scanProposal.storeNameConfidence);
     allConfidences.add(scanProposal.storeAddressConfidence);
@@ -75,6 +77,8 @@ describe("scanProposal fixture", () => {
     allConfidences.add(scanProposal.dateConfidence);
     allConfidences.add(scanProposal.terminalIdConfidence);
     allConfidences.add(scanProposal.storeNumberConfidence);
-    expect(allConfidences.size).toBeGreaterThan(1);
+    expect(allConfidences).toContain("high");
+    expect(allConfidences).toContain("medium");
+    expect(allConfidences).toContain("low");
   });
 });
