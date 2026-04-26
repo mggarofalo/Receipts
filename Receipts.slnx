@@ -24,5 +24,6 @@
     <Project Path="tests/Infrastructure.Tests/Infrastructure.Tests.csproj" />
     <Project Path="tests/Presentation.API.Tests/Presentation.API.Tests.csproj" />
     <Project Path="tests/SampleData/SampleData.csproj" />
+    <Project Path="tests/VlmEval.Tests/VlmEval.Tests.csproj" />
   </Folder>
 </Solution>
