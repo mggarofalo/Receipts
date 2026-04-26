@@ -64,6 +64,11 @@ export default function NewReceiptPage({
   );
   const [payments, setPayments] = useState(initialPaymentsBundle.payments);
   const paymentConfidenceById = initialPaymentsBundle.paymentConfidenceById;
+  // Section visibility is gated on initial-presence (captured once at mount), not
+  // current-array-length. Otherwise removing every detected payment would hide the
+  // entire section — including the "Add Payment" button — leaving the user no path
+  // back. See RECEIPTS-644.
+  const hasInitialPayments = initialPaymentsBundle.payments.length > 0;
 
   const [showDiscard, setShowDiscard] = useState(false);
 
@@ -118,7 +123,7 @@ export default function NewReceiptPage({
     (metadata.receiptId !== "" ||
       metadata.storeNumber !== "" ||
       metadata.terminalId !== "");
-  const showPaymentsSection = payments.length > 0;
+  const showPaymentsSection = hasInitialPayments;
 
   const hasData =
     location !== "" ||
@@ -145,7 +150,9 @@ export default function NewReceiptPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">New Receipt</h1>
+      <h1 className="text-3xl font-bold tracking-tight">
+        {pageTitle ?? "New Receipt"}
+      </h1>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
         {/* Left column — form sections */}

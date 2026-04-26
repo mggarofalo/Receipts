@@ -315,6 +315,11 @@ describe("mapProposalToConfidenceMap", () => {
 
     const result = mapProposalToConfidenceMap(proposal);
 
+    // The empty object `{}` for the all-high-confidence "Cash" payment is
+    // intentional: the array is positional (entry N corresponds to payment N),
+    // so we cannot omit "high"-only payments without misaligning indices.
+    // Each high-confidence field is dropped from its entry, leaving an empty
+    // object that contributes nothing to the UI but preserves position.
     expect(result.payments).toEqual([
       { amount: "low", lastFour: "medium" },
       {},
