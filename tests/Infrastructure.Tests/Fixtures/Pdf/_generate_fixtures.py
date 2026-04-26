@@ -54,9 +54,12 @@ def write_cmyk_pdf() -> None:
     jpeg_path = HERE / "_tmp-cmyk.jpg"
     cmyk.save(jpeg_path, format="JPEG", quality=70)
     c.drawImage(str(jpeg_path), 72, 540, width=60, height=60)
-    jpeg_path.unlink()
 
+    # Save first, then unlink — matches the pattern used in write_indexed_pdf
+    # below. If a future reportlab version defers any image I/O to save() time,
+    # unlinking before save() would raise FileNotFoundError.
     c.save()
+    jpeg_path.unlink()
     _assert_size_under(out, 100_000)
 
 
@@ -125,7 +128,8 @@ def write_calrgb_pdf() -> None:
     catalog_idx = add_obj(b"<</Type /Catalog /Pages 2 0 R>>")
     # 2: Pages
     pages_idx = add_obj(b"<</Type /Pages /Kids [3 0 R] /Count 1>>")
-    # 3: Page (forward refs to 4=Contents, 5=Font, 6=ColorSpace dict)
+    # 3: Page (forward refs to 4=Contents, 5=Font; the CalRGB color space is
+    #         embedded inline in /Resources /ColorSpace, not a separate object).
     page_body = (
         b"<</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
         b"/Contents 4 0 R /Resources <</Font <</F1 5 0 R>> "
@@ -171,11 +175,15 @@ def write_calrgb_pdf() -> None:
     _assert_size_under(out, 100_000)
 
 
-def write_devicen_pdf() -> None:
-    """Hand-crafted PDF with a Lab (CIE-based) non-DeviceRGB color space.
+def write_lab_pdf() -> None:
+    """Hand-crafted PDF with a /Lab CIE-based color space.
 
-    Complements CalRGB with a different non-RGB color space PDFium must handle.
-    Uses /Lab — another CIE-based color space referenced by the page.
+    Complements CalRGB with a different non-RGB CIE-based color space PDFium
+    must handle. /Lab and /CalRGB together cover the two main calibrated-color
+    paths in PDFium.
+
+    NOTE: Despite the file's earlier history this function is /Lab, not /DeviceN.
+    DeviceN coverage is intentionally absent — see the gap note printed by main().
     """
     out = HERE / "lab-receipt.pdf"
 
@@ -254,7 +262,7 @@ def main() -> int:
     write_cmyk_pdf()
     write_indexed_pdf()
     write_calrgb_pdf()
-    write_devicen_pdf()
+    write_lab_pdf()
     print("Done.")
     print()
     print("JBIG2 fixture intentionally NOT generated:")
@@ -262,6 +270,15 @@ def main() -> int:
     print("  not available on most developer machines. The corresponding test")
     print("  is marked with [Fact(Skip = ...)] in PdfConversionServiceFixtureTests.cs.")
     print("  See RECEIPTS-651 for tracking.")
+    print()
+    print("DeviceN fixture intentionally NOT generated:")
+    print("  DeviceN is used for spot/specialty inks (e.g., a Pantone process).")
+    print("  Hand-crafting a valid /DeviceN color space requires emitting a tint")
+    print("  transform function (PostScript or sampled), and PDFium's behavior")
+    print("  for DeviceN with synthetic tint functions is fragile. The current")
+    print("  fixture set covers DeviceCMYK, /Indexed, /CalRGB, and /Lab — the")
+    print("  high-impact non-DeviceRGB paths. DeviceN can be added later if a")
+    print("  real-world receipt PDF surfaces a regression. See RECEIPTS-651.")
     return 0
 
 
