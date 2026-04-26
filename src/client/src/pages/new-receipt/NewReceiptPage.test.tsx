@@ -65,11 +65,18 @@ vi.mock("./TransactionsSection", () => ({
 vi.mock("./LineItemsSection", () => ({
   LineItemsSection: ({
     onChange,
+    itemConfidence,
   }: {
     items: unknown[];
     onChange: (data: unknown[]) => void;
+    itemConfidence?: Array<{ taxCode?: string }>;
   }) => (
     <div data-testid="line-items-section">
+      {itemConfidence && (
+        <span data-testid="line-items-confidence">
+          {JSON.stringify(itemConfidence)}
+        </span>
+      )}
       <button
         onClick={() =>
           onChange([
@@ -82,12 +89,33 @@ vi.mock("./LineItemsSection", () => ({
               unitPrice: 50,
               category: "Food",
               subcategory: "",
+              taxCode: "",
             },
           ])
         }
       >
         Add Item
       </button>
+    </div>
+  ),
+}));
+
+vi.mock("./PaymentsSection", () => ({
+  PaymentsSection: ({
+    payments,
+    onChange,
+  }: {
+    payments: Array<{ id: string; method: string; amount: number; lastFour: string }>;
+    onChange: (data: unknown[]) => void;
+  }) => (
+    <div data-testid="payments-section">
+      <span data-testid="payments-count">{payments.length}</span>
+      {payments.map((p) => (
+        <span key={p.id} data-testid={`payment-${p.method}`}>
+          {p.method}:{p.amount}:{p.lastFour}
+        </span>
+      ))}
+      <button onClick={() => onChange([])}>Clear Payments</button>
     </div>
   ),
 }));
@@ -339,5 +367,158 @@ describe("NewReceiptPage", () => {
     await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to create receipt.");
     });
+  });
+
+  // --- Rich-fields tests (RECEIPTS-628) ---
+
+  it("renders Store Address and Store Phone inputs", () => {
+    renderWithProviders(<NewReceiptPage />);
+    expect(screen.getByLabelText(/store address/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/store phone/i)).toBeInTheDocument();
+  });
+
+  it("pre-populates store address and phone from initial values", () => {
+    renderWithProviders(
+      <NewReceiptPage
+        initialValues={{
+          header: {
+            location: "Walmart",
+            date: "2024-06-15",
+            taxAmount: 0,
+            storeAddress: "123 Main St",
+            storePhone: "(555) 123-4567",
+          },
+          metadata: { receiptId: "", storeNumber: "", terminalId: "" },
+          payments: [],
+          items: [],
+        }}
+      />,
+    );
+    expect(
+      (screen.getByLabelText(/store address/i) as HTMLInputElement).value,
+    ).toBe("123 Main St");
+    expect(
+      (screen.getByLabelText(/store phone/i) as HTMLInputElement).value,
+    ).toBe("(555) 123-4567");
+  });
+
+  it("does not render the receipt details panel when metadata is empty", () => {
+    renderWithProviders(<NewReceiptPage />);
+    expect(
+      screen.queryByText(/receipt details/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders the receipt details panel when metadata is populated", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <NewReceiptPage
+        initialValues={{
+          header: {
+            location: "Walmart",
+            date: "2024-06-15",
+            taxAmount: 0,
+            storeAddress: "",
+            storePhone: "",
+          },
+          metadata: {
+            receiptId: "TX-987654",
+            storeNumber: "0042",
+            terminalId: "T01",
+          },
+          payments: [],
+          items: [],
+        }}
+      />,
+    );
+
+    // The panel is collapsed by default, so the heading is rendered but values
+    // are inside the collapsible content.
+    expect(screen.getByText(/receipt details/i)).toBeInTheDocument();
+
+    // Expand the panel to reveal values
+    await user.click(
+      screen.getByRole("button", { name: /expand receipt details/i }),
+    );
+
+    expect(screen.getByText("TX-987654")).toBeInTheDocument();
+    expect(screen.getByText("0042")).toBeInTheDocument();
+    expect(screen.getByText("T01")).toBeInTheDocument();
+  });
+
+  it("does not render the payments section when no payments are present", () => {
+    renderWithProviders(<NewReceiptPage />);
+    expect(screen.queryByTestId("payments-section")).not.toBeInTheDocument();
+  });
+
+  it("renders the payments section when initial payments are populated", () => {
+    renderWithProviders(
+      <NewReceiptPage
+        initialValues={{
+          header: {
+            location: "Walmart",
+            date: "2024-06-15",
+            taxAmount: 0,
+            storeAddress: "",
+            storePhone: "",
+          },
+          metadata: { receiptId: "", storeNumber: "", terminalId: "" },
+          payments: [
+            { method: "MASTERCARD", amount: 54.32, lastFour: "4538" },
+          ],
+          items: [],
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("payments-section")).toBeInTheDocument();
+    expect(screen.getByTestId("payments-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("payment-MASTERCARD")).toHaveTextContent(
+      "MASTERCARD:54.32:4538",
+    );
+  });
+
+  it("forwards item confidence to the line items section", () => {
+    renderWithProviders(
+      <NewReceiptPage
+        confidenceMap={{ items: [{ taxCode: "low" }] }}
+      />,
+    );
+
+    expect(screen.getByTestId("line-items-confidence")).toHaveTextContent(
+      JSON.stringify([{ taxCode: "low" }]),
+    );
+  });
+
+  it("validates the store phone format on submit", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<NewReceiptPage />);
+
+    // Enter an invalid phone — alpha characters not allowed
+    const phoneInput = screen.getByLabelText(/store phone/i);
+    await user.type(phoneInput, "not-a-phone");
+
+    // Fill rest of header so we get past required fields
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    const walmart = await screen.findByText("Walmart");
+    await user.click(walmart);
+
+    const dateInput = screen.getByPlaceholderText("MM/DD/YYYY");
+    await user.click(dateInput);
+    await user.type(dateInput, "01/15/2024");
+
+    // Add transaction + item so that we don't bail on those checks first
+    await user.click(screen.getAllByText("Add Transaction")[0]);
+    await user.click(screen.getAllByText("Add Item")[0]);
+
+    // Submit triggers form validation
+    const submitButtons = screen.getAllByText("Submit Receipt");
+    await user.click(submitButtons[0]);
+
+    expect(
+      await screen.findByText(/store phone is not in a recognised format/i),
+    ).toBeInTheDocument();
+    expect(mockCreateCompleteReceiptAsync).not.toHaveBeenCalled();
   });
 });

@@ -5,66 +5,14 @@ import { isTimeoutError } from "@/lib/api-client";
 import { ReceiptImageUpload } from "./ReceiptImageUpload";
 import NewReceiptPage from "@/pages/new-receipt/NewReceiptPage";
 import type { components } from "@/generated/api";
-import type { ScanInitialValues, ReceiptConfidenceMap } from "./types";
+import {
+  mapProposalToInitialValues,
+  mapProposalToConfidenceMap,
+} from "./proposalMappers";
 
 type ProposedReceiptResponse = components["schemas"]["ProposedReceiptResponse"];
-type ConfidenceLevel = components["schemas"]["ConfidenceLevel"];
 
 type Status = "idle" | "uploading" | "success" | "error";
-
-function mapProposalToInitialValues(
-  proposal: ProposedReceiptResponse,
-): ScanInitialValues {
-  const taxAmount = Number(proposal.taxLines[0]?.amount ?? 0);
-
-  let date = "";
-  if (proposal.date) {
-    // The API returns a DateOnly (YYYY-MM-DD). If it comes as ISO datetime, extract the date part.
-    date = proposal.date.split("T")[0];
-  }
-
-  return {
-    header: {
-      location: proposal.storeName ?? "",
-      date,
-      taxAmount,
-    },
-    items: proposal.items.map((item) => ({
-      receiptItemCode: item.code ?? "",
-      description: item.description ?? "",
-      pricingMode: "quantity" as const,
-      quantity: Number(item.quantity ?? 1),
-      unitPrice: Number(item.unitPrice ?? 0),
-      category: "",
-      subcategory: "",
-    })),
-  };
-}
-
-function mapProposalToConfidenceMap(
-  proposal: ProposedReceiptResponse,
-): ReceiptConfidenceMap {
-  const map: ReceiptConfidenceMap = {};
-
-  const addIfNotHigh = (
-    key: keyof ReceiptConfidenceMap,
-    confidence: ConfidenceLevel,
-  ) => {
-    if (confidence !== "high") {
-      map[key] = confidence;
-    }
-  };
-
-  addIfNotHigh("location", proposal.storeNameConfidence);
-  addIfNotHigh("date", proposal.dateConfidence);
-
-  // Use the first tax line's confidence, or the subtotal confidence as fallback
-  const taxConfidence =
-    proposal.taxLines[0]?.amountConfidence ?? proposal.subtotalConfidence;
-  addIfNotHigh("taxAmount", taxConfidence);
-
-  return map;
-}
 
 function getErrorMessage(error: unknown): string {
   if (isTimeoutError(error)) {

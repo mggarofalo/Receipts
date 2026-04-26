@@ -3,6 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/test-utils";
 import { mockMutationResult } from "@/test/mock-hooks";
 import ScanReceiptPage from "./ScanReceiptPage";
+import type { components } from "@/generated/api";
+
+type ProposedReceiptResponse = components["schemas"]["ProposedReceiptResponse"];
 
 vi.mock("@/hooks/usePageTitle", () => ({
   usePageTitle: vi.fn(),
@@ -11,9 +14,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 const mockMutate = vi.fn();
 
 vi.mock("@/hooks/useReceiptScan", () => ({
-  useReceiptScan: vi.fn(() =>
-    mockMutationResult({ mutate: mockMutate }),
-  ),
+  useReceiptScan: vi.fn(() => mockMutationResult({ mutate: mockMutate })),
 }));
 
 // Mock NewReceiptPage to isolate ScanReceiptPage logic
@@ -22,13 +23,37 @@ vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
     initialValues,
     confidenceMap,
   }: {
-    initialValues?: { header: { location: string } };
-    confidenceMap?: Record<string, string>;
+    initialValues?: {
+      header: { location: string; storeAddress: string; storePhone: string };
+      metadata: { receiptId: string; storeNumber: string; terminalId: string };
+      payments: Array<{ method: string; amount: number; lastFour: string }>;
+    };
+    confidenceMap?: Record<string, unknown>;
   }) => (
     <div data-testid="new-receipt-page">
       {initialValues?.header.location && (
         <span data-testid="prepopulated-location">
           {initialValues.header.location}
+        </span>
+      )}
+      {initialValues?.header.storeAddress && (
+        <span data-testid="prepopulated-address">
+          {initialValues.header.storeAddress}
+        </span>
+      )}
+      {initialValues?.header.storePhone && (
+        <span data-testid="prepopulated-phone">
+          {initialValues.header.storePhone}
+        </span>
+      )}
+      {initialValues?.metadata?.receiptId && (
+        <span data-testid="prepopulated-receipt-id">
+          {initialValues.metadata.receiptId}
+        </span>
+      )}
+      {initialValues?.payments && initialValues.payments.length > 0 && (
+        <span data-testid="prepopulated-payments">
+          {JSON.stringify(initialValues.payments)}
         </span>
       )}
       {confidenceMap && (
@@ -37,6 +62,44 @@ vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
     </div>
   ),
 }));
+
+function makeProposal(
+  overrides: Partial<ProposedReceiptResponse> = {},
+): ProposedReceiptResponse {
+  return {
+    storeName: "Test Store",
+    storeNameConfidence: "high",
+    storeAddress: null,
+    storeAddressConfidence: "high",
+    storePhone: null,
+    storePhoneConfidence: "high",
+    date: "2024-06-15",
+    dateConfidence: "high",
+    items: [],
+    subtotal: 0,
+    subtotalConfidence: "high",
+    taxLines: [
+      {
+        label: "Tax",
+        labelConfidence: "high",
+        amount: 0,
+        amountConfidence: "high",
+      },
+    ],
+    total: 0,
+    totalConfidence: "high",
+    paymentMethod: null,
+    paymentMethodConfidence: "high",
+    payments: [],
+    receiptId: null,
+    receiptIdConfidence: "high",
+    storeNumber: null,
+    storeNumberConfidence: "high",
+    terminalId: null,
+    terminalIdConfidence: "high",
+    ...overrides,
+  };
+}
 
 function createTestFile(
   name = "receipt.jpg",
@@ -98,27 +161,7 @@ describe("ScanReceiptPage", () => {
         _file: File,
         options: { onSuccess: (data: unknown) => void },
       ) => {
-        options.onSuccess({
-          storeName: "Test Store",
-          storeNameConfidence: "high",
-          date: "2024-06-15",
-          dateConfidence: "high",
-          items: [],
-          subtotal: 0,
-          subtotalConfidence: "high",
-          taxLines: [
-            {
-              label: "Tax",
-              labelConfidence: "high",
-              amount: 0,
-              amountConfidence: "high",
-            },
-          ],
-          total: 0,
-          totalConfidence: "high",
-          paymentMethod: null,
-          paymentMethodConfidence: "high",
-        });
+        options.onSuccess(makeProposal({ storeName: "Test Store" }));
       },
     );
 
@@ -176,27 +219,12 @@ describe("ScanReceiptPage", () => {
         _file: File,
         options: { onSuccess: (data: unknown) => void },
       ) => {
-        options.onSuccess({
-          storeName: "Low Confidence Store",
-          storeNameConfidence: "low",
-          date: "2024-06-15",
-          dateConfidence: "high",
-          items: [],
-          subtotal: 10,
-          subtotalConfidence: "high",
-          taxLines: [
-            {
-              label: "Tax",
-              labelConfidence: "high",
-              amount: 1,
-              amountConfidence: "high",
-            },
-          ],
-          total: 11,
-          totalConfidence: "high",
-          paymentMethod: null,
-          paymentMethodConfidence: "high",
-        });
+        options.onSuccess(
+          makeProposal({
+            storeName: "Low Confidence Store",
+            storeNameConfidence: "low",
+          }),
+        );
       },
     );
 
@@ -216,5 +244,62 @@ describe("ScanReceiptPage", () => {
       screen.getByTestId("confidence-map").textContent!,
     );
     expect(confidenceMap).toEqual({ location: "low" });
+  });
+
+  it("forwards new fields (address, phone, metadata, payments) to the wizard", async () => {
+    mockMutate.mockImplementation(
+      (
+        _file: File,
+        options: { onSuccess: (data: unknown) => void },
+      ) => {
+        options.onSuccess(
+          makeProposal({
+            storeAddress: "123 Main St",
+            storePhone: "(555) 123-4567",
+            receiptId: "TX-987654",
+            storeNumber: "0042",
+            terminalId: "T01",
+            payments: [
+              {
+                method: "MASTERCARD",
+                methodConfidence: "high",
+                amount: 54.32,
+                amountConfidence: "high",
+                lastFour: "4538",
+                lastFourConfidence: "high",
+              },
+            ],
+          }),
+        );
+      },
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<ScanReceiptPage />);
+
+    const fileInput = screen.getByTestId("file-input");
+    const file = createTestFile();
+    await user.upload(fileInput, file);
+    await user.click(screen.getByRole("button", { name: /scan receipt/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("new-receipt-page")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("prepopulated-address")).toHaveTextContent(
+      "123 Main St",
+    );
+    expect(screen.getByTestId("prepopulated-phone")).toHaveTextContent(
+      "(555) 123-4567",
+    );
+    expect(screen.getByTestId("prepopulated-receipt-id")).toHaveTextContent(
+      "TX-987654",
+    );
+    const payments = JSON.parse(
+      screen.getByTestId("prepopulated-payments").textContent!,
+    );
+    expect(payments).toEqual([
+      { method: "MASTERCARD", amount: 54.32, lastFour: "4538" },
+    ]);
   });
 });
