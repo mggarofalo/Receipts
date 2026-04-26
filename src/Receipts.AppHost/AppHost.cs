@@ -41,9 +41,30 @@ IResourceBuilder<ContainerResource> vlmOcr = builder.AddContainer("vlm-ocr", "ol
 
 // One-shot sidecar that pulls qwen2.5vl:3b if it is not already cached in the shared volume,
 // then exits. Idempotent — subsequent runs find the model present and skip the download.
+//
+// The API and VlmEval gate on this sidecar via .WaitForCompletion (RECEIPTS-636), so a
+// non-zero exit here permanently blocks dependents. Retry up to 5 times with backoff
+// to tolerate transient network failures during the ~3 GB cold-start pull. Mirrors the
+// docker-compose vlm-ocr-pull retry pattern.
+const string vlmOcrPullCommand = """
+	for i in 1 2 3 4 5; do
+	  if ollama list | grep -q 'qwen2.5vl:3b'; then
+	    echo "qwen2.5vl:3b already present; skipping pull"
+	    exit 0
+	  fi
+	  echo "Pulling qwen2.5vl:3b (attempt $i/5)..."
+	  if ollama pull qwen2.5vl:3b; then
+	    exit 0
+	  fi
+	  echo "Pull failed; sleeping before retry"
+	  sleep 10
+	done
+	echo "All pull attempts failed" >&2
+	exit 1
+	""";
 IResourceBuilder<ContainerResource> vlmOcrPull = builder.AddContainer("vlm-ocr-pull", "ollama/ollama", "latest")
 	.WithEntrypoint("/bin/sh")
-	.WithArgs("-c", "ollama list | grep -q 'qwen2.5vl:3b' || ollama pull qwen2.5vl:3b")
+	.WithArgs("-c", vlmOcrPullCommand)
 	.WithEnvironment("OLLAMA_HOST", "http://vlm-ocr:11434")
 	.WaitFor(vlmOcr);
 
@@ -68,6 +89,7 @@ builder.AddProject<Projects.VlmEval>("vlm-eval")
 	.WithEnvironment("Ollama__BaseUrl", vlmOcr.GetEndpoint("http"))
 	.WithEnvironment("VlmEval__FixturesPath", vlmEvalFixturesPath)
 	.WaitFor(vlmOcr)
+	.WaitForCompletion(vlmOcrPull)
 	.WithExplicitStart();
 
 builder.AddViteApp("frontend", "../client")

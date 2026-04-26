@@ -121,6 +121,11 @@ services:
 
   # One-shot sidecar: pulls qwen2.5vl:3b if it is not already cached, then exits.
   # Idempotent — subsequent runs find the model present and skip the download.
+  #
+  # `app` now gates startup on this sidecar exiting successfully (RECEIPTS-636), so a
+  # non-zero exit here permanently blocks the API. To avoid that on transient network
+  # errors during the ~3 GB cold-start pull, the command retries up to 5 times with
+  # backoff before giving up.
   vlm-ocr-pull:
     image: ollama/ollama:latest
     container_name: receipts-vlm-ocr-pull
@@ -129,7 +134,23 @@ services:
       vlm-ocr:
         condition: service_healthy
     entrypoint: ["/bin/sh"]
-    command: ["-c", "ollama list | grep -q 'qwen2.5vl:3b' || ollama pull qwen2.5vl:3b"]
+    command:
+      - -c
+      - |
+        for i in 1 2 3 4 5; do
+          if ollama list | grep -q 'qwen2.5vl:3b'; then
+            echo "qwen2.5vl:3b already present; skipping pull"
+            exit 0
+          fi
+          echo "Pulling qwen2.5vl:3b (attempt $$i/5)..."
+          if ollama pull qwen2.5vl:3b; then
+            exit 0
+          fi
+          echo "Pull failed; sleeping before retry"
+          sleep 10
+        done
+        echo "All pull attempts failed" >&2
+        exit 1
     environment:
       - OLLAMA_HOST=http://vlm-ocr:11434
     networks:
