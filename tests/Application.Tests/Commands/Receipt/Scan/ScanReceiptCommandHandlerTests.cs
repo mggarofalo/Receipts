@@ -161,7 +161,7 @@ public class ScanReceiptCommandHandlerTests
 
 		_mockPdfConversionService
 			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
-			.ReturnsAsync(firstPageImage);
+			.ReturnsAsync(new PdfConversionResult(firstPageImage, TotalPageCount: 1));
 
 		ParsedReceipt parsed = BuildPopulatedReceipt();
 		_mockExtractionService
@@ -176,6 +176,73 @@ public class ScanReceiptCommandHandlerTests
 		_mockExtractionService.Verify(
 			s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()),
 			Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_PdfWithMultiplePages_ReportsDroppedPageCount()
+	{
+		// Arrange — RECEIPTS-637: a 3-page PDF must surface DroppedPageCount = 2 so
+		// the caller can warn the user that pages 2..N were silently ignored.
+		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
+		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
+
+		byte[] firstPageImage = [0x89, 0x50, 0x4E, 0x47];
+
+		_mockPdfConversionService
+			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PdfConversionResult(firstPageImage, TotalPageCount: 3));
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(BuildPopulatedReceipt());
+
+		// Act
+		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		actual.DroppedPageCount.Should().Be(2);
+	}
+
+	[Fact]
+	public async Task Handle_PdfWithSinglePage_ReportsZeroDroppedPages()
+	{
+		// Arrange — single-page PDF: the count must be 0 (nothing was dropped).
+		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
+		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
+
+		byte[] firstPageImage = [0x89, 0x50, 0x4E, 0x47];
+
+		_mockPdfConversionService
+			.Setup(s => s.ConvertAsync(pdfBytes, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(new PdfConversionResult(firstPageImage, TotalPageCount: 1));
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(BuildPopulatedReceipt());
+
+		// Act
+		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		actual.DroppedPageCount.Should().Be(0);
+	}
+
+	[Fact]
+	public async Task Handle_Image_ReportsZeroDroppedPages()
+	{
+		// Arrange — image input: nothing to drop, count must be 0.
+		byte[] imageBytes = [0xFF, 0xD8];
+		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(BuildPopulatedReceipt());
+
+		// Act
+		ScanReceiptResult actual = await _handler.Handle(command, CancellationToken.None);
+
+		// Assert
+		actual.DroppedPageCount.Should().Be(0);
 	}
 
 	[Fact]

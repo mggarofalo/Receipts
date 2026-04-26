@@ -32,7 +32,7 @@ public class ReceiptScanController(
 	[HttpPost("scan")]
 	[RequestSizeLimit(20 * 1024 * 1024)]
 	[EndpointSummary("Scan a receipt image or PDF and return a proposed receipt")]
-	[EndpointDescription("Accepts a JPEG or PNG image, or a PDF document. Images are sent directly to the receipt extraction service (a local vision-language model). PDFs have their first page rasterized to a PNG at 200 DPI; the rendered image is then sent to the VLM. Additional pages are ignored. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted.")]
+	[EndpointDescription("Accepts a JPEG or PNG image, or a PDF document. Images are sent directly to the receipt extraction service (a local vision-language model). PDFs have their first page rasterized to a PNG at 200 DPI; the rendered image is then sent to the VLM. Additional pages are silently ignored — when a PDF has more than one page, the response carries droppedPageCount set to the number of skipped pages so clients can warn the user that the proposal represents only the first page. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted.")]
 	[ProducesResponseType(StatusCodes.Status415UnsupportedMediaType)]
 	public async Task<Results<Ok<ProposedReceiptResponse>, BadRequest<string>, StatusCodeHttpResult, UnprocessableEntity<string>>> ScanReceipt(
 		IFormFile? file,
@@ -118,6 +118,7 @@ public class ReceiptScanController(
 			StoreNumberConfidence = MapConfidence(parsed.StoreNumber.Confidence),
 			TerminalId = parsed.TerminalId.Value,
 			TerminalIdConfidence = MapConfidence(parsed.TerminalId.Confidence),
+			DroppedPageCount = result.DroppedPageCount,
 		};
 	}
 

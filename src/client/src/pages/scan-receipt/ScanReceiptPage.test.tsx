@@ -22,6 +22,7 @@ vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
   default: ({
     initialValues,
     confidenceMap,
+    droppedPageCount,
   }: {
     initialValues?: {
       header: { location: string; storeAddress: string; storePhone: string };
@@ -29,6 +30,7 @@ vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
       payments: Array<{ method: string; amount: number; lastFour: string }>;
     };
     confidenceMap?: Record<string, unknown>;
+    droppedPageCount?: number;
   }) => (
     <div data-testid="new-receipt-page">
       {initialValues?.header.location && (
@@ -58,6 +60,9 @@ vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
       )}
       {confidenceMap && (
         <span data-testid="confidence-map">{JSON.stringify(confidenceMap)}</span>
+      )}
+      {droppedPageCount !== undefined && (
+        <span data-testid="dropped-page-count">{droppedPageCount}</span>
       )}
     </div>
   ),
@@ -97,6 +102,7 @@ function makeProposal(
     storeNumberConfidence: "high",
     terminalId: null,
     terminalIdConfidence: "high",
+    droppedPageCount: 0,
     ...overrides,
   };
 }
@@ -244,6 +250,56 @@ describe("ScanReceiptPage", () => {
       screen.getByTestId("confidence-map").textContent!,
     );
     expect(confidenceMap).toEqual({ location: "low" });
+  });
+
+  it("forwards droppedPageCount to the wizard so the warning banner can render", async () => {
+    mockMutate.mockImplementation(
+      (
+        _file: File,
+        options: { onSuccess: (data: unknown) => void },
+      ) => {
+        options.onSuccess(makeProposal({ droppedPageCount: 2 }));
+      },
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<ScanReceiptPage />);
+
+    const fileInput = screen.getByTestId("file-input");
+    const file = createTestFile("multi-page.pdf", "application/pdf", 4096);
+    await user.upload(fileInput, file);
+    await user.click(screen.getByRole("button", { name: /scan receipt/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dropped-page-count")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("dropped-page-count")).toHaveTextContent("2");
+  });
+
+  it("forwards droppedPageCount of 0 for single-page sources", async () => {
+    mockMutate.mockImplementation(
+      (
+        _file: File,
+        options: { onSuccess: (data: unknown) => void },
+      ) => {
+        options.onSuccess(makeProposal({ droppedPageCount: 0 }));
+      },
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<ScanReceiptPage />);
+
+    const fileInput = screen.getByTestId("file-input");
+    const file = createTestFile();
+    await user.upload(fileInput, file);
+    await user.click(screen.getByRole("button", { name: /scan receipt/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dropped-page-count")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("dropped-page-count")).toHaveTextContent("0");
   });
 
   it("forwards new fields (address, phone, metadata, payments) to the wizard", async () => {

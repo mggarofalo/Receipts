@@ -27,7 +27,7 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 	/// </summary>
 	private static readonly byte[] PdfMagicBytes = [0x25, 0x50, 0x44, 0x46];
 
-	public Task<byte[]> ConvertAsync(byte[] pdfBytes, CancellationToken ct)
+	public Task<PdfConversionResult> ConvertAsync(byte[] pdfBytes, CancellationToken ct)
 	{
 		ct.ThrowIfCancellationRequested();
 
@@ -90,7 +90,7 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 			"Rasterized first PDF page at {Dpi} DPI ({PngSize} bytes) for VLM extraction (document has {PageCount} page(s))",
 			RasterizationDpi, firstPagePng.Length, pageCount);
 
-		return Task.FromResult(firstPagePng);
+		return Task.FromResult(new PdfConversionResult(firstPagePng, pageCount));
 	}
 
 	private static int ValidateDocument(PdfDocument document)

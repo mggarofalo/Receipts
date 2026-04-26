@@ -35,10 +35,10 @@ public class PdfConversionServiceTests
 		byte[] pdfBytes = CreateTextPdf("WALMART MILK 2% $3.49 TOTAL $3.74");
 
 		// Act
-		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertValidPng(result);
+		AssertValidPng(result.FirstPagePng);
 	}
 
 	[Fact]
@@ -52,10 +52,10 @@ public class PdfConversionServiceTests
 		byte[] pdfBytes = CreateTextPdf("Vector PDF receipt content with more than ten characters of text");
 
 		// Act
-		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertPngHasDimensions(result, minWidth: 100, minHeight: 100);
+		AssertPngHasDimensions(result.FirstPagePng, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -71,10 +71,43 @@ public class PdfConversionServiceTests
 		]);
 
 		// Act
-		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertPngHasDimensions(result, minWidth: 100, minHeight: 100);
+		AssertPngHasDimensions(result.FirstPagePng, minWidth: 100, minHeight: 100);
+	}
+
+	[Fact]
+	public async Task ConvertAsync_MultiPagePdf_ReportsTotalPageCount()
+	{
+		// Arrange — RECEIPTS-637: the converter must report the total page count so the
+		// scan handler can compute DroppedPageCount = TotalPageCount - 1 and the client
+		// can warn the user about silently dropped pages.
+		byte[] pdfBytes = CreateMultiPageTextPdf(
+		[
+			"Page one content from WALMART store",
+			"Page two content with MILK for $3.49",
+			"Page three content with the receipt total"
+		]);
+
+		// Act
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert
+		result.TotalPageCount.Should().Be(3);
+	}
+
+	[Fact]
+	public async Task ConvertAsync_SinglePagePdf_ReportsTotalPageCountOfOne()
+	{
+		// Arrange — single-page PDF: TotalPageCount must be 1 (no pages dropped).
+		byte[] pdfBytes = CreateTextPdf("WALMART MILK 2% $3.49 TOTAL $3.74");
+
+		// Act
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert
+		result.TotalPageCount.Should().Be(1);
 	}
 
 	[Fact]
@@ -158,10 +191,10 @@ public class PdfConversionServiceTests
 		byte[] pdfBytes = CreateTextPdf("Hi");
 
 		// Act
-		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertPngHasDimensions(result, minWidth: 100, minHeight: 100);
+		AssertPngHasDimensions(result.FirstPagePng, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -179,10 +212,10 @@ public class PdfConversionServiceTests
 			imageHeight: 800);
 
 		// Act
-		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert — the rasterized first page is what the scan handler will use.
-		AssertPngHasDimensions(result, minWidth: 100, minHeight: 100);
+		AssertPngHasDimensions(result.FirstPagePng, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -199,10 +232,10 @@ public class PdfConversionServiceTests
 			imageHeight: 64);
 
 		// Act
-		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertValidPng(result);
+		AssertValidPng(result.FirstPagePng);
 	}
 
 	[Fact]

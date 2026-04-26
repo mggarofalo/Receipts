@@ -63,6 +63,7 @@ describe("scanProposal fixture", () => {
     expect(scanProposal).toHaveProperty("storeNumberConfidence");
     expect(scanProposal).toHaveProperty("terminalId");
     expect(scanProposal).toHaveProperty("terminalIdConfidence");
+    expect(scanProposal).toHaveProperty("droppedPageCount");
   });
 
   it("exercises every confidence level (high, medium, low) across its fields", () => {

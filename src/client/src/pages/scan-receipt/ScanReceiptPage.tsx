@@ -87,6 +87,7 @@ export default function ScanReceiptPage() {
         initialValues={initialValues}
         confidenceMap={confidenceMap}
         pageTitle="Scan Receipt"
+        droppedPageCount={proposal.droppedPageCount}
       />
     );
   }

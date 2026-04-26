@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useLocationHistory } from "@/hooks/useLocationHistory";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   TransactionsSection,
   type ReceiptTransaction,
@@ -29,12 +30,20 @@ interface NewReceiptPageProps {
   initialValues?: ScanInitialValues;
   confidenceMap?: ReceiptConfidenceMap;
   pageTitle?: string;
+  /**
+   * Number of source pages silently dropped during scan. For multi-page PDFs
+   * the VLM only sees page 1; this prop surfaces a banner so the user is not
+   * left with the false impression that the proposal covers the whole document.
+   * 0 (or undefined) means no banner. Always 0 for single-page sources.
+   */
+  droppedPageCount?: number;
 }
 
 export default function NewReceiptPage({
   initialValues,
   confidenceMap,
   pageTitle,
+  droppedPageCount,
 }: NewReceiptPageProps = {}) {
   usePageTitle(pageTitle ?? "New Receipt");
   const navigate = useNavigate();
@@ -148,11 +157,24 @@ export default function NewReceiptPage({
     navigate("/receipts");
   }, [navigate]);
 
+  const droppedPages = droppedPageCount ?? 0;
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">
         {pageTitle ?? "New Receipt"}
       </h1>
+
+      {droppedPages > 0 && (
+        <Alert data-testid="dropped-pages-warning">
+          <AlertTitle>Multi-page PDF: only page 1 was scanned</AlertTitle>
+          <AlertDescription>
+            {droppedPages === 1
+              ? "This PDF had 2 pages, but only page 1 was extracted. Review the proposal and add any missing details from page 2 manually."
+              : `This PDF had ${droppedPages + 1} pages, but only page 1 was extracted. Review the proposal and add any missing details from pages 2-${droppedPages + 1} manually.`}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
         {/* Left column — form sections */}

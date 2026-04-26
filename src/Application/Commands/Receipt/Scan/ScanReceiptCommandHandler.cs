@@ -14,7 +14,8 @@ public class ScanReceiptCommandHandler(
 
 	public async Task<ScanReceiptResult> Handle(ScanReceiptCommand request, CancellationToken cancellationToken)
 	{
-		(byte[] imageBytes, string contentType) = await ResolveImageAsync(request, cancellationToken);
+		(byte[] imageBytes, string contentType, int droppedPageCount) =
+			await ResolveImageAsync(request, cancellationToken);
 
 		ParsedReceipt parsed = await extractionService.ExtractAsync(imageBytes, contentType, cancellationToken);
 
@@ -23,21 +24,25 @@ public class ScanReceiptCommandHandler(
 			throw new OcrNoTextException("The receipt could not be extracted from the provided file.");
 		}
 
-		return new ScanReceiptResult(parsed);
+		return new ScanReceiptResult(parsed, droppedPageCount);
 	}
 
-	private async Task<(byte[] ImageBytes, string ContentType)> ResolveImageAsync(
+	private async Task<(byte[] ImageBytes, string ContentType, int DroppedPageCount)> ResolveImageAsync(
 		ScanReceiptCommand request, CancellationToken cancellationToken)
 	{
 		if (!string.Equals(request.ContentType, PdfContentType, StringComparison.OrdinalIgnoreCase))
 		{
-			return (request.ImageBytes, request.ContentType);
+			return (request.ImageBytes, request.ContentType, 0);
 		}
 
-		byte[] firstPageImage = await pdfConversionService.ConvertAsync(
+		PdfConversionResult conversion = await pdfConversionService.ConvertAsync(
 			request.ImageBytes, cancellationToken);
 
-		return (firstPageImage, PdfPageImageContentType);
+		// PdfConversionService guarantees TotalPageCount >= 1 (it rejects empty PDFs
+		// with InvalidOperationException), so this subtraction is always >= 0.
+		int droppedPageCount = conversion.TotalPageCount - 1;
+
+		return (conversion.FirstPagePng, PdfPageImageContentType, droppedPageCount);
 	}
 
 	/// <summary>

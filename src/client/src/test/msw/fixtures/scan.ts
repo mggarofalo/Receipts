@@ -82,4 +82,5 @@ export const scanProposal: ProposedReceiptResponse = {
   storeNumberConfidence: "medium",
   terminalId: "T01",
   terminalIdConfidence: "low",
+  droppedPageCount: 0,
 };
