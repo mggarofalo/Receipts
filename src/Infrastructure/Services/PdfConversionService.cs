@@ -2,19 +2,12 @@ using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using PDFtoImage;
 using UglyToad.PdfPig;
-using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Exceptions;
 
 namespace Infrastructure.Services;
 
 public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfConversionService
 {
-	/// <summary>
-	/// Minimum text length per page to consider the page as having a usable text layer.
-	/// Pages with fewer characters are treated as image-only.
-	/// </summary>
-	internal const int MinTextLengthPerPage = 10;
-
 	/// <summary>
 	/// DPI used when rasterizing the first PDF page for VLM/OCR consumption. 200 DPI is the
 	/// baseline recommended by the rasterization issue (RECEIPTS-624) — high enough for
@@ -34,7 +27,7 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 	/// </summary>
 	private static readonly byte[] PdfMagicBytes = [0x25, 0x50, 0x44, 0x46];
 
-	public Task<PdfConversionResult> ConvertAsync(byte[] pdfBytes, CancellationToken ct)
+	public Task<byte[]> ConvertAsync(byte[] pdfBytes, CancellationToken ct)
 	{
 		ct.ThrowIfCancellationRequested();
 
@@ -63,13 +56,11 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 		}
 
 		int pageCount;
-		PdfMetadata? metadata;
-		string? extractedText;
 		using (document)
 		{
 			try
 			{
-				(pageCount, metadata, extractedText) = ProcessDocumentMetadataAndText(document, ct);
+				pageCount = ValidateDocument(document);
 			}
 			catch (InvalidOperationException)
 			{
@@ -99,18 +90,10 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 			"Rasterized first PDF page at {Dpi} DPI ({PngSize} bytes) for VLM extraction (document has {PageCount} page(s))",
 			RasterizationDpi, firstPagePng.Length, pageCount);
 
-		if (extractedText is not null)
-		{
-			logger.LogDebug(
-				"Extracted text layer from PDF ({TextLength} chars); retained as informational only",
-				extractedText.Length);
-		}
-
-		return Task.FromResult(new PdfConversionResult([firstPagePng], extractedText, metadata));
+		return Task.FromResult(firstPagePng);
 	}
 
-	private (int PageCount, PdfMetadata? Metadata, string? ExtractedText) ProcessDocumentMetadataAndText(
-		PdfDocument document, CancellationToken ct)
+	private static int ValidateDocument(PdfDocument document)
 	{
 		if (document.NumberOfPages == 0)
 		{
@@ -123,25 +106,7 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 				$"The PDF document has {document.NumberOfPages} pages, which exceeds the maximum of {IPdfConversionService.MaxPages}.");
 		}
 
-		PdfMetadata? metadata = ExtractMetadata(document);
-
-		// Collect text from every page for informational purposes. The scan command path
-		// no longer consumes this — rasterized pixels are the source of truth — but the
-		// text layer is retained for logging and potential future use.
-		List<string> pageTexts = [];
-		foreach (Page page in document.GetPages())
-		{
-			ct.ThrowIfCancellationRequested();
-
-			string pageText = page.Text ?? string.Empty;
-			if (pageText.Trim().Length >= MinTextLengthPerPage)
-			{
-				pageTexts.Add(pageText);
-			}
-		}
-
-		string? combinedText = pageTexts.Count > 0 ? string.Join("\n\n", pageTexts) : null;
-		return (document.NumberOfPages, metadata, combinedText);
+		return document.NumberOfPages;
 	}
 
 	// PDFtoImage targets Android/iOS/Linux/macCatalyst/macOS/Windows — all platforms we
@@ -181,34 +146,6 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 		{
 			throw new InvalidOperationException(
 				"Failed to rasterize the first page of the PDF document.", ex);
-		}
-	}
-
-	private PdfMetadata? ExtractMetadata(PdfDocument document)
-	{
-		try
-		{
-			DocumentInformation info = document.Information;
-			string? title = string.IsNullOrWhiteSpace(info.Title) ? null : info.Title;
-
-			DateOnly? creationDate = null;
-			DateTimeOffset? createdDateTimeOffset = info.GetCreatedDateTimeOffset();
-			if (createdDateTimeOffset.HasValue)
-			{
-				creationDate = DateOnly.FromDateTime(createdDateTimeOffset.Value.DateTime);
-			}
-
-			if (title is null && creationDate is null)
-			{
-				return null;
-			}
-
-			return new PdfMetadata(title, creationDate);
-		}
-		catch (Exception ex)
-		{
-			logger.LogDebug(ex, "Failed to extract PDF metadata");
-			return null;
 		}
 	}
 

@@ -25,22 +25,20 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
-	public async Task ConvertAsync_PdfWithTextLayer_RasterizesFirstPageAndExtractsText()
+	public async Task ConvertAsync_PdfWithTextLayer_RasterizesFirstPage()
 	{
 		// Arrange — PdfDocumentBuilder doesn't support newlines in AddText,
 		// so we use a single line of sufficient length. This is the vector-only case:
 		// no embedded raster images, only text glyphs as vector outlines. Before
-		// RECEIPTS-624 this produced an empty PageImages list and /api/receipts/scan
+		// RECEIPTS-624 this produced no rasterized image and /api/receipts/scan
 		// returned 422. Now the first page is always rasterized to a PNG.
 		byte[] pdfBytes = CreateTextPdf("WALMART MILK 2% $3.49 TOTAL $3.74");
 
 		// Act
-		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
-		result.ExtractedText.Should().Contain("WALMART");
-		AssertContainsValidPng(result.PageImages);
+		AssertValidPng(result);
 	}
 
 	[Fact]
@@ -54,35 +52,18 @@ public class PdfConversionServiceTests
 		byte[] pdfBytes = CreateTextPdf("Vector PDF receipt content with more than ten characters of text");
 
 		// Act
-		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		result.PageImages.Should().ContainSingle(
-			"rasterization always produces exactly one first-page image");
-		AssertPngHasDimensions(result.PageImages[0], minWidth: 100, minHeight: 100);
-	}
-
-	[Fact]
-	public async Task ConvertAsync_PdfWithTextLayer_ReturnsMetadata()
-	{
-		// Arrange
-		byte[] pdfBytes = CreateTextPdfWithMetadata("Test Receipt", "Some text content here");
-
-		// Act
-		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
-
-		// Assert
-		result.Metadata.Should().NotBeNull();
-		result.Metadata!.Title.Should().Be("Test Receipt");
+		AssertPngHasDimensions(result, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
 	public async Task ConvertAsync_MultiPagePdf_RasterizesFirstPageOnly()
 	{
-		// Arrange — each page must have text >= MinTextLengthPerPage. The scan command
+		// Arrange — each page contributes to the page count check. The scan command
 		// handler only consumes the first page image, so the converter only rasterizes
-		// page 0 even when the PDF has multiple pages. Text from all pages is still
-		// concatenated and returned as an informational text layer.
+		// page 0 even when the PDF has multiple pages.
 		byte[] pdfBytes = CreateMultiPageTextPdf(
 		[
 			"Page one content from WALMART store",
@@ -90,14 +71,10 @@ public class PdfConversionServiceTests
 		]);
 
 		// Act
-		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		result.PageImages.Should().ContainSingle(
-			"only the first page is rasterized regardless of total page count");
-		result.ExtractedText.Should().Contain("WALMART");
-		result.ExtractedText.Should().Contain("MILK");
-		AssertPngHasDimensions(result.PageImages[0], minWidth: 100, minHeight: 100);
+		AssertPngHasDimensions(result, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -172,38 +149,19 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
-	public async Task ConvertAsync_PdfWithBelowThresholdText_StillRasterizes()
+	public async Task ConvertAsync_PdfWithShortText_StillRasterizes()
 	{
-		// Arrange — a PDF whose text layer is below MinTextLengthPerPage. Before
-		// rasterization, this threw "no readable text" because the text was too short
-		// and no embedded raster images existed. Now the rasterized first page is the
-		// usable output regardless of the text layer length — the VLM will read pixels
-		// directly.
+		// Arrange — a PDF whose text layer is very short. Before rasterization, this
+		// threw "no readable text" because no embedded raster images existed. Now the
+		// rasterized first page is the usable output regardless of the text layer
+		// length — the VLM reads pixels directly.
 		byte[] pdfBytes = CreateTextPdf("Hi");
 
 		// Act
-		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		result.PageImages.Should().ContainSingle();
-		result.ExtractedText.Should().BeNull(
-			"\"Hi\" is below the MinTextLengthPerPage threshold so the text layer is discarded");
-		AssertPngHasDimensions(result.PageImages[0], minWidth: 100, minHeight: 100);
-	}
-
-	[Fact]
-	public async Task ConvertAsync_PdfWithSufficientText_RasterizesAndReturnsText()
-	{
-		// Arrange — text must be >= MinTextLengthPerPage chars
-		string text = new('A', PdfConversionService.MinTextLengthPerPage + 10);
-		byte[] pdfBytes = CreateTextPdf(text);
-
-		// Act
-		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
-
-		// Assert
-		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
-		result.PageImages.Should().ContainSingle();
+		AssertPngHasDimensions(result, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -221,35 +179,30 @@ public class PdfConversionServiceTests
 			imageHeight: 800);
 
 		// Act
-		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
-		// Assert — text layer is still extracted (informational), and the rasterized
-		// first page is what the scan handler will use.
-		result.PageImages.Should().ContainSingle();
-		result.ExtractedText.Should().NotBeNullOrWhiteSpace();
-		result.ExtractedText.Should().Contain("WALMART");
-		AssertPngHasDimensions(result.PageImages[0], minWidth: 100, minHeight: 100);
+		// Assert — the rasterized first page is what the scan handler will use.
+		AssertPngHasDimensions(result, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
 	public async Task ConvertAsync_PdfWithSmallLogoAndText_StillRasterizes()
 	{
-		// Arrange — previously a text+small-logo PDF produced empty PageImages because
-		// the logo was below the 400x400 embedded-image size filter. That caused the scan
-		// handler to throw OcrNoTextException for emailed POS receipts with a tiny store
-		// logo. Now the rasterized first page carries the whole document including the
-		// logo and surrounding text, so the VLM can extract the receipt.
+		// Arrange — previously a text+small-logo PDF produced no extractable image
+		// because the logo was below the 400x400 embedded-image size filter. That caused
+		// the scan handler to throw OcrNoTextException for emailed POS receipts with a
+		// tiny store logo. Now the rasterized first page carries the whole document
+		// including the logo and surrounding text, so the VLM can extract the receipt.
 		byte[] pdfBytes = CreateTextPdfWithPng(
 			text: "WALMART SUPERCENTER TOTAL $3.74",
 			imageWidth: 64,
 			imageHeight: 64);
 
 		// Act
-		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		result.PageImages.Should().ContainSingle();
-		result.ExtractedText.Should().Contain("WALMART");
+		AssertValidPng(result);
 	}
 
 	[Fact]
@@ -467,16 +420,6 @@ public class PdfConversionServiceTests
 		return ms.ToArray();
 	}
 
-	private static byte[] CreateTextPdfWithMetadata(string title, string text)
-	{
-		PdfDocumentBuilder builder = new();
-		builder.DocumentInformation.Title = title;
-		PdfPageBuilder page = builder.AddPage(PageSize.Letter);
-		PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
-		page.AddText(text, 12, new PdfPoint(72, 720), font);
-		return builder.Build();
-	}
-
 	private static byte[] CreateMultiPageTextPdf(string[] pageTexts)
 	{
 		PdfDocumentBuilder builder = new();
@@ -549,19 +492,15 @@ public class PdfConversionServiceTests
 		return System.Text.Encoding.Latin1.GetBytes(Pdf);
 	}
 
-	private static void AssertContainsValidPng(IReadOnlyList<byte[]> images)
+	private static void AssertValidPng(byte[] png)
 	{
-		images.Should().NotBeEmpty();
-		foreach (byte[] png in images)
-		{
-			png.Should().NotBeEmpty();
-			png.Length.Should().BeGreaterThan(8);
-			// PNG magic: 89 50 4E 47 0D 0A 1A 0A
-			png[0].Should().Be(0x89);
-			png[1].Should().Be(0x50);
-			png[2].Should().Be(0x4E);
-			png[3].Should().Be(0x47);
-		}
+		png.Should().NotBeEmpty();
+		png.Length.Should().BeGreaterThan(8);
+		// PNG magic: 89 50 4E 47 0D 0A 1A 0A
+		png[0].Should().Be(0x89);
+		png[1].Should().Be(0x50);
+		png[2].Should().Be(0x4E);
+		png[3].Should().Be(0x47);
 	}
 
 	private static void AssertPngHasDimensions(byte[] png, int minWidth, int minHeight)
