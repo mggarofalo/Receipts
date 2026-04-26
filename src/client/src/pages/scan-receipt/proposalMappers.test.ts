@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  initialItemsAndConfidence,
+  initialPaymentsAndConfidence,
   mapProposalToInitialValues,
   mapProposalToConfidenceMap,
 } from "./proposalMappers";
+import type { ScanInitialValues, ReceiptConfidenceMap } from "./types";
 import type { components } from "@/generated/api";
 
 type ProposedReceiptResponse = components["schemas"]["ProposedReceiptResponse"];
@@ -270,5 +273,194 @@ describe("mapProposalToConfidenceMap", () => {
       makeProposal({ items: [highItem, lowItem] }),
     );
     expect(someLow.items).toEqual([{}, { taxCode: "low" }]);
+  });
+});
+
+describe("initialItemsAndConfidence", () => {
+  function makeInitial(
+    items: ScanInitialValues["items"],
+  ): ScanInitialValues {
+    return {
+      header: {
+        location: "",
+        date: "",
+        taxAmount: 0,
+        storeAddress: "",
+        storePhone: "",
+      },
+      metadata: { receiptId: "", storeNumber: "", terminalId: "" },
+      payments: [],
+      items,
+    };
+  }
+
+  it("returns empty items + empty Map when initialValues is undefined", () => {
+    const result = initialItemsAndConfidence(undefined, undefined);
+    expect(result.items).toEqual([]);
+    expect(result.itemConfidenceById.size).toBe(0);
+  });
+
+  it("returns empty items + empty Map when initialValues has no items", () => {
+    const result = initialItemsAndConfidence(makeInitial([]), undefined);
+    expect(result.items).toEqual([]);
+    expect(result.itemConfidenceById.size).toBe(0);
+  });
+
+  it("assigns a unique generated id to each item", () => {
+    const result = initialItemsAndConfidence(
+      makeInitial([
+        {
+          receiptItemCode: "MILK",
+          description: "Milk",
+          pricingMode: "quantity",
+          quantity: 1,
+          unitPrice: 3.5,
+          category: "",
+          subcategory: "",
+          taxCode: "",
+        },
+        {
+          receiptItemCode: "BREAD",
+          description: "Bread",
+          pricingMode: "quantity",
+          quantity: 2,
+          unitPrice: 2.5,
+          category: "",
+          subcategory: "",
+          taxCode: "",
+        },
+      ]),
+      undefined,
+    );
+
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].id).toBeTruthy();
+    expect(result.items[1].id).toBeTruthy();
+    expect(result.items[0].id).not.toBe(result.items[1].id);
+  });
+
+  it("pairs each item id with its corresponding confidence entry", () => {
+    const result = initialItemsAndConfidence(
+      makeInitial([
+        {
+          receiptItemCode: "MILK",
+          description: "Milk",
+          pricingMode: "quantity",
+          quantity: 1,
+          unitPrice: 3.5,
+          category: "",
+          subcategory: "",
+          taxCode: "F",
+        },
+        {
+          receiptItemCode: "BREAD",
+          description: "Bread",
+          pricingMode: "quantity",
+          quantity: 1,
+          unitPrice: 2,
+          category: "",
+          subcategory: "",
+          taxCode: "",
+        },
+      ]),
+      { items: [{ taxCode: "low" }, { taxCode: "medium" }] },
+    );
+
+    expect(result.itemConfidenceById.size).toBe(2);
+    expect(result.itemConfidenceById.get(result.items[0].id)).toEqual({
+      taxCode: "low",
+    });
+    expect(result.itemConfidenceById.get(result.items[1].id)).toEqual({
+      taxCode: "medium",
+    });
+  });
+
+  it("omits Map entries for items lacking a confidence record", () => {
+    const result = initialItemsAndConfidence(
+      makeInitial([
+        {
+          receiptItemCode: "MILK",
+          description: "Milk",
+          pricingMode: "quantity",
+          quantity: 1,
+          unitPrice: 3.5,
+          category: "",
+          subcategory: "",
+          taxCode: "",
+        },
+      ]),
+      {} as ReceiptConfidenceMap,
+    );
+
+    expect(result.items).toHaveLength(1);
+    expect(result.itemConfidenceById.size).toBe(0);
+  });
+});
+
+describe("initialPaymentsAndConfidence", () => {
+  function makeInitial(
+    payments: ScanInitialValues["payments"],
+  ): ScanInitialValues {
+    return {
+      header: {
+        location: "",
+        date: "",
+        taxAmount: 0,
+        storeAddress: "",
+        storePhone: "",
+      },
+      metadata: { receiptId: "", storeNumber: "", terminalId: "" },
+      payments,
+      items: [],
+    };
+  }
+
+  it("returns empty payments + empty Map when initialValues is undefined", () => {
+    const result = initialPaymentsAndConfidence(undefined, undefined);
+    expect(result.payments).toEqual([]);
+    expect(result.paymentConfidenceById.size).toBe(0);
+  });
+
+  it("preserves method/amount/lastFour fields and assigns ids", () => {
+    const result = initialPaymentsAndConfidence(
+      makeInitial([
+        { method: "MASTERCARD", amount: 54.32, lastFour: "4538" },
+        { method: "Cash", amount: 5, lastFour: "" },
+      ]),
+      undefined,
+    );
+
+    expect(result.payments).toHaveLength(2);
+    expect(result.payments[0]).toMatchObject({
+      method: "MASTERCARD",
+      amount: 54.32,
+      lastFour: "4538",
+    });
+    expect(result.payments[1]).toMatchObject({
+      method: "Cash",
+      amount: 5,
+      lastFour: "",
+    });
+    expect(result.payments[0].id).toBeTruthy();
+    expect(result.payments[0].id).not.toBe(result.payments[1].id);
+  });
+
+  it("pairs each payment id with its confidence entry", () => {
+    const result = initialPaymentsAndConfidence(
+      makeInitial([
+        { method: "MASTERCARD", amount: 54.32, lastFour: "4538" },
+        { method: "Cash", amount: 5, lastFour: "" },
+      ]),
+      {
+        payments: [{ method: "low" }, { amount: "medium" }],
+      },
+    );
+
+    expect(result.paymentConfidenceById.get(result.payments[0].id)).toEqual({
+      method: "low",
+    });
+    expect(result.paymentConfidenceById.get(result.payments[1].id)).toEqual({
+      amount: "medium",
+    });
   });
 });

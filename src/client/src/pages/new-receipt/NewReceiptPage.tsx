@@ -1,81 +1,29 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
-import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { useCreateCompleteReceipt } from "@/hooks/useReceipts";
 import { useLocationHistory } from "@/hooks/useLocationHistory";
-import { generateId } from "@/lib/id";
 import {
   TransactionsSection,
   type ReceiptTransaction,
 } from "./TransactionsSection";
-import { LineItemsSection, type ReceiptLineItem } from "./LineItemsSection";
-import { PaymentsSection, type ReceiptPayment } from "./PaymentsSection";
+import { LineItemsSection } from "./LineItemsSection";
+import { PaymentsSection } from "./PaymentsSection";
 import { BalanceSidebar } from "./BalanceSidebar";
-import { ConfidenceIndicator } from "@/pages/scan-receipt/ConfidenceIndicator";
+import { HeaderSection } from "./HeaderSection";
+import { headerSchema, type HeaderFormValues } from "./headerSchema";
+import { ReceiptDetailsPanel } from "./ReceiptDetailsPanel";
+import { DiscardReceiptDialog } from "./DiscardReceiptDialog";
+import { useReceiptSubmit } from "./useReceiptSubmit";
 import type {
   ScanInitialValues,
   ReceiptConfidenceMap,
 } from "@/pages/scan-receipt/types";
-import { Combobox } from "@/components/ui/combobox";
-import { DateInput } from "@/components/ui/date-input";
-import { CurrencyInput } from "@/components/ui/currency-input";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-
-// US phone format: 7 to 15 digits (lenient — covers international too).
-const PHONE_PATTERN = /^[\d\s+()\-.]{7,20}$/;
-
-const headerSchema = z.object({
-  location: z
-    .string()
-    .min(1, "Location is required")
-    .max(200, "Location must be 200 characters or fewer"),
-  date: z.string().min(1, "Date is required"),
-  taxAmount: z.number().min(0, "Tax amount must be non-negative"),
-  storeAddress: z
-    .string()
-    .max(500, "Store address must be 500 characters or fewer")
-    .optional()
-    .default(""),
-  storePhone: z
-    .string()
-    .optional()
-    .default("")
-    .refine((v) => !v || PHONE_PATTERN.test(v), {
-      message: "Store phone is not in a recognised format",
-    }),
-});
-
-type HeaderFormValues = z.output<typeof headerSchema>;
+  initialItemsAndConfidence,
+  initialPaymentsAndConfidence,
+} from "@/pages/scan-receipt/proposalMappers";
 
 interface NewReceiptPageProps {
   initialValues?: ScanInitialValues;
@@ -91,36 +39,36 @@ export default function NewReceiptPage({
   usePageTitle(pageTitle ?? "New Receipt");
   const navigate = useNavigate();
   const locationRef = useRef<HTMLButtonElement>(null);
-  const { options: locationOptions, add: addLocation } = useLocationHistory();
+  const { options: locationOptions } = useLocationHistory();
 
   const [transactions, setTransactions] = useState<ReceiptTransaction[]>([]);
 
   // Items, payments, and their confidence-by-id maps are initialised together
-  // from the scan proposal so confidence stays correctly paired with rows after
-  // additions or deletions. The maps are write-once: a stale entry for a
-  // deleted row is harmless because no row will ever look it up again.
-  const [
-    { items: initialItems, itemConfidenceById: initialItemConfidence },
-  ] = useState(() =>
-    initialItemsAndConfidence(initialValues, confidenceMap),
+  // from the scan proposal so confidence stays correctly paired with rows
+  // after additions or deletions. Building the bundle inside `useMemo` with
+  // an empty dep array constructs the Map exactly once on mount; the items
+  // setter then drives the editable list while the confidence map stays
+  // immutable (a stale entry for a deleted row is harmless because no row
+  // will ever look it up again).
+  const initialItemsBundle = useMemo(
+    () => initialItemsAndConfidence(initialValues, confidenceMap),
+    // Build once on mount — initial scan data is captured at construction time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
-  const [items, setItems] = useState<ReceiptLineItem[]>(initialItems);
-  const [itemConfidenceById] = useState(initialItemConfidence);
+  const [items, setItems] = useState(initialItemsBundle.items);
+  const itemConfidenceById = initialItemsBundle.itemConfidenceById;
 
-  const [
-    { payments: initialPayments, paymentConfidenceById: initialPaymentConfidence },
-  ] = useState(() =>
-    initialPaymentsAndConfidence(initialValues, confidenceMap),
+  const initialPaymentsBundle = useMemo(
+    () => initialPaymentsAndConfidence(initialValues, confidenceMap),
+    // Build once on mount — initial scan data is captured at construction time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
-  const [payments, setPayments] =
-    useState<ReceiptPayment[]>(initialPayments);
-  const [paymentConfidenceById] = useState(initialPaymentConfidence);
+  const [payments, setPayments] = useState(initialPaymentsBundle.payments);
+  const paymentConfidenceById = initialPaymentsBundle.paymentConfidenceById;
 
   const [showDiscard, setShowDiscard] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { mutateAsync: createCompleteReceiptAsync } =
-    useCreateCompleteReceipt();
 
   const form = useForm<HeaderFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,6 +108,12 @@ export default function NewReceiptPage({
     [transactions],
   );
 
+  const { isSubmitting, submit: handleSubmit } = useReceiptSubmit({
+    form,
+    transactions,
+    items,
+  });
+
   // Derived: should we show the optional sections?
   const metadata = initialValues?.metadata;
   const hasMetadata =
@@ -192,72 +146,6 @@ export default function NewReceiptPage({
     navigate("/receipts");
   }, [navigate]);
 
-  const handleSubmit = useCallback(async () => {
-    // Validate header form first
-    const valid = await form.trigger();
-    if (!valid) return;
-
-    const headerValues = form.getValues();
-
-    if (transactions.length === 0) {
-      toast.error("Add at least one transaction.");
-      return;
-    }
-
-    if (items.length === 0) {
-      toast.error("Add at least one line item.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      addLocation(headerValues.location);
-
-      // NOTE: storeAddress/storePhone/payments/metadata/taxCode are accepted
-      // and reviewable in the UI but not yet persisted by the
-      // CreateCompleteReceipt API. They will round-trip once the backend is
-      // extended (tracked by separate issues under the VLM epic).
-      const result = await createCompleteReceiptAsync({
-        receipt: {
-          location: headerValues.location,
-          date: headerValues.date,
-          taxAmount: headerValues.taxAmount,
-        },
-        transactions: transactions.map((txn) => ({
-          cardId: txn.cardId,
-          accountId: txn.accountId,
-          amount: txn.amount,
-          date: txn.date,
-        })),
-        items: items.map((item) => ({
-          receiptItemCode: item.receiptItemCode,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          category: item.category,
-          subcategory: item.subcategory,
-          pricingMode: item.pricingMode,
-        })),
-      });
-
-      const receiptId = (result as { receipt: { id: string } }).receipt.id;
-
-      toast.success("Receipt created successfully!");
-      navigate(`/receipts/${receiptId}`);
-    } catch {
-      toast.error("Failed to create receipt.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [
-    form,
-    transactions,
-    items,
-    createCompleteReceiptAsync,
-    addLocation,
-    navigate,
-  ]);
-
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">New Receipt</h1>
@@ -265,132 +153,12 @@ export default function NewReceiptPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
         {/* Left column — form sections */}
         <div className="space-y-6">
-          {/* Receipt Header */}
-          <Form {...form}>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel required className="flex items-center gap-2">
-                        Location
-                        <ConfidenceIndicator confidence={confidenceMap?.location} />
-                      </FormLabel>
-                      <FormControl>
-                        <Combobox
-                          ref={locationRef}
-                          options={locationOptions}
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          placeholder="e.g. Walmart, Target, Costco"
-                          searchPlaceholder="Search locations..."
-                          emptyMessage="No saved locations."
-                          allowCustom
-                          aria-required="true"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel required className="flex items-center gap-2">
-                        Date
-                        <ConfidenceIndicator confidence={confidenceMap?.date} />
-                      </FormLabel>
-                      <FormControl>
-                        <DateInput
-                          aria-required="true"
-                          max={new Date().toISOString().split("T")[0]}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="taxAmount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Tax Amount
-                        <ConfidenceIndicator
-                          confidence={confidenceMap?.taxAmount}
-                        />
-                      </FormLabel>
-                      <FormControl>
-                        <CurrencyInput {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Optional store contact details */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="storeAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Store Address
-                        <ConfidenceIndicator
-                          confidence={confidenceMap?.storeAddress}
-                        />
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="123 Main St, Springfield, IL 62701"
-                          autoComplete="street-address"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="storePhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Store Phone
-                        <ConfidenceIndicator
-                          confidence={confidenceMap?.storePhone}
-                        />
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="tel"
-                          inputMode="tel"
-                          placeholder="(555) 123-4567"
-                          autoComplete="tel"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          </Form>
+          <HeaderSection
+            form={form}
+            locationOptions={locationOptions}
+            locationRef={locationRef}
+            confidenceMap={confidenceMap}
+          />
 
           {/* Receipt Details — read-only metadata, only shown when populated */}
           {hasMetadata && (
@@ -450,170 +218,11 @@ export default function NewReceiptPage({
         />
       </div>
 
-      <AlertDialog open={showDiscard} onOpenChange={setShowDiscard}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard receipt?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved receipt data. Are you sure you want to discard it?
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Continue editing</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDiscard}>
-              Discard
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DiscardReceiptDialog
+        open={showDiscard}
+        onOpenChange={setShowDiscard}
+        onDiscard={handleDiscard}
+      />
     </div>
   );
-}
-
-interface ReceiptDetailsPanelProps {
-  metadata: { receiptId: string; storeNumber: string; terminalId: string };
-  confidenceMap?: ReceiptConfidenceMap;
-}
-
-function ReceiptDetailsPanel({
-  metadata,
-  confidenceMap,
-}: ReceiptDetailsPanelProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const rows: Array<{
-    label: string;
-    value: string;
-    confidence?: ReceiptConfidenceMap[keyof ReceiptConfidenceMap];
-  }> = [];
-
-  if (metadata.receiptId) {
-    rows.push({
-      label: "Receipt ID",
-      value: metadata.receiptId,
-      confidence: confidenceMap?.receiptId,
-    });
-  }
-  if (metadata.storeNumber) {
-    rows.push({
-      label: "Store Number",
-      value: metadata.storeNumber,
-      confidence: confidenceMap?.storeNumber,
-    });
-  }
-  if (metadata.terminalId) {
-    rows.push({
-      label: "Terminal ID",
-      value: metadata.terminalId,
-      confidence: confidenceMap?.terminalId,
-    });
-  }
-
-  return (
-    <Card>
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Receipt Details</CardTitle>
-            <CollapsibleTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-expanded={isOpen}
-                aria-controls="receipt-details-content"
-                aria-label={
-                  isOpen ? "Collapse receipt details" : "Expand receipt details"
-                }
-              >
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${
-                    isOpen ? "rotate-180" : ""
-                  }`}
-                  aria-hidden="true"
-                />
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-        </CardHeader>
-        <CollapsibleContent id="receipt-details-content">
-          <CardContent>
-            <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
-              {rows.map((row) => (
-                <div key={row.label} className="contents">
-                  <dt className="text-muted-foreground">{row.label}</dt>
-                  <dd className="flex items-center gap-2 font-mono">
-                    <span>{row.value}</span>
-                    <ConfidenceIndicator
-                      confidence={
-                        row.confidence as
-                          | ReceiptConfidenceMap[
-                              | "receiptId"
-                              | "storeNumber"
-                              | "terminalId"]
-                          | undefined
-                      }
-                    />
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
-  );
-}
-
-type ItemConfidenceEntry = NonNullable<ReceiptConfidenceMap["items"]>[number];
-type PaymentConfidenceEntry = NonNullable<ReceiptConfidenceMap["payments"]>[number];
-
-function initialItemsAndConfidence(
-  initialValues: ScanInitialValues | undefined,
-  confidenceMap: ReceiptConfidenceMap | undefined,
-): {
-  items: ReceiptLineItem[];
-  itemConfidenceById: Map<string, ItemConfidenceEntry>;
-} {
-  const sourceItems = initialValues?.items ?? [];
-  const sourceConfidence = confidenceMap?.items ?? [];
-
-  const items: ReceiptLineItem[] = sourceItems.map((item) => ({
-    id: generateId(),
-    ...item,
-  }));
-  const itemConfidenceById = new Map<string, ItemConfidenceEntry>();
-  for (let i = 0; i < items.length; i++) {
-    const entry = sourceConfidence[i];
-    if (entry) {
-      itemConfidenceById.set(items[i].id, entry);
-    }
-  }
-  return { items, itemConfidenceById };
-}
-
-function initialPaymentsAndConfidence(
-  initialValues: ScanInitialValues | undefined,
-  confidenceMap: ReceiptConfidenceMap | undefined,
-): {
-  payments: ReceiptPayment[];
-  paymentConfidenceById: Map<string, PaymentConfidenceEntry>;
-} {
-  const sourcePayments = initialValues?.payments ?? [];
-  const sourceConfidence = confidenceMap?.payments ?? [];
-
-  const payments: ReceiptPayment[] = sourcePayments.map((p) => ({
-    id: generateId(),
-    method: p.method,
-    amount: p.amount,
-    lastFour: p.lastFour,
-  }));
-  const paymentConfidenceById = new Map<string, PaymentConfidenceEntry>();
-  for (let i = 0; i < payments.length; i++) {
-    const entry = sourceConfidence[i];
-    if (entry) {
-      paymentConfidenceById.set(payments[i].id, entry);
-    }
-  }
-  return { payments, paymentConfidenceById };
 }
