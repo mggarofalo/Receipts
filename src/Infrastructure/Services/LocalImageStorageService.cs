@@ -85,7 +85,15 @@ public class LocalImageStorageService(IConfiguration configuration) : IImageStor
 			throw new ArgumentException(InvalidFileNameMessage, nameof(fileName));
 		}
 
-		if (ContainsUnsafeCharacter(fileName) || fileName.Contains(".."))
+		// Reject parent ("..") and current-directory (".") references explicitly. Both
+		// would otherwise pass the unsafe-character and basename checks below and resolve
+		// to a directory path under the storage root, not a file.
+		if (fileName == "." || fileName.Contains(".."))
+		{
+			throw new ArgumentException(InvalidFileNameMessage, nameof(fileName));
+		}
+
+		if (ContainsUnsafeCharacter(fileName))
 		{
 			throw new ArgumentException(InvalidFileNameMessage, nameof(fileName));
 		}

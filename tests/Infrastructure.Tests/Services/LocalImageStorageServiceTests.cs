@@ -104,13 +104,12 @@ public sealed class LocalImageStorageServiceTests : IDisposable
 		await act.Should().ThrowAsync<ArgumentException>()
 			.WithMessage($"*{LocalImageStorageService.InvalidExtensionMessage}*");
 
-		// Side-effect check: nothing should land on disk for the rejected receipt
+		// Side-effect check: validation must short-circuit before the receipt directory is
+		// even created. Asserting non-existence (rather than emptiness) catches a regression
+		// where someone reorders Directory.CreateDirectory above the ValidateExtension call.
 		string receiptDir = Path.Combine(_tempRoot, receiptId.ToString());
-		if (Directory.Exists(receiptDir))
-		{
-			Directory.GetFileSystemEntries(receiptDir).Should().BeEmpty(
-				"validation must reject before any directory or file is created");
-		}
+		Directory.Exists(receiptDir).Should().BeFalse(
+			"validation must reject before any directory is created");
 	}
 
 	[Theory]
@@ -177,6 +176,7 @@ public sealed class LocalImageStorageServiceTests : IDisposable
 	[InlineData("foo/bar.jpg")]
 	[InlineData("foo\\bar.jpg")]
 	[InlineData("..")]
+	[InlineData(".")]
 	[InlineData("a/../b.jpg")]
 	// NTFS alternate streams / drive letters
 	[InlineData("original.jpg:malicious")]
