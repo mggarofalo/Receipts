@@ -507,32 +507,42 @@ public class PdfConversionServiceTests
 	/// <see cref="PdfDocumentEncryptedException"/> when no password is supplied — exactly
 	/// the path the service-level translation must catch via the typed predicate.
 	/// </para>
+	/// <para>
+	/// The xref byte offsets and <c>startxref</c> value below match the exact Latin-1
+	/// byte positions of each object in the produced file. Hand-counted offsets are
+	/// fragile, so future edits to the object literals must update these values too —
+	/// otherwise PdfPig falls back to scanning recovery and the test passes for the
+	/// wrong reason (or breaks on a PdfPig upgrade).
+	/// </para>
 	/// </summary>
 	private static byte[] CreateEncryptedPdf()
 	{
+		// Byte offsets are exact Latin-1 positions of each object marker in the
+		// concatenated string. Verified by counting the bytes — see RECEIPTS-629
+		// PR #496 review trail for the calculation.
 		const string Pdf =
-			"%PDF-1.4\n" +
-			"%\u00e2\u00e3\u00cf\u00d3\n" +
-			"1 0 obj\n<</Type /Catalog /Pages 2 0 R>>\nendobj\n" +
-			"2 0 obj\n<</Type /Pages /Kids [3 0 R] /Count 1>>\nendobj\n" +
-			"3 0 obj\n<</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R>>\nendobj\n" +
-			"4 0 obj\n<</Length 0>>\nstream\nendstream\nendobj\n" +
+			"%PDF-1.4\n" +                                                                            //   0..  8 (9 bytes)
+			"%\u00e2\u00e3\u00cf\u00d3\n" +                                                           //   9.. 14 (6 bytes)
+			"1 0 obj\n<</Type /Catalog /Pages 2 0 R>>\nendobj\n" +                                    //  15.. 61 (47 bytes)
+			"2 0 obj\n<</Type /Pages /Kids [3 0 R] /Count 1>>\nendobj\n" +                            //  62..116 (55 bytes)
+			"3 0 obj\n<</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R>>\nendobj\n" + // 117..201 (85 bytes)
+			"4 0 obj\n<</Length 0>>\nstream\nendstream\nendobj\n" +                                   // 202..247 (46 bytes)
 			"5 0 obj\n<</Filter /Standard /V 1 /R 2 /P -4 /Length 40 " +
 			"/O <0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF> " +
-			"/U <FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210>>>\nendobj\n" +
-			"xref\n" +
+			"/U <FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210FEDCBA9876543210>>>\nendobj\n" +     // 248..451 (204 bytes)
+			"xref\n" +                                                                                // 452 — startxref target
 			"0 6\n" +
 			"0000000000 65535 f \n" +
 			"0000000015 00000 n \n" +
-			"0000000059 00000 n \n" +
-			"0000000105 00000 n \n" +
-			"0000000169 00000 n \n" +
-			"0000000209 00000 n \n" +
+			"0000000062 00000 n \n" +
+			"0000000117 00000 n \n" +
+			"0000000202 00000 n \n" +
+			"0000000248 00000 n \n" +
 			"trailer\n" +
 			"<</Size 6 /Root 1 0 R /Encrypt 5 0 R " +
 			"/ID [<00000000000000000000000000000000> <00000000000000000000000000000000>]>>\n" +
 			"startxref\n" +
-			"388\n" +
+			"452\n" +
 			"%%EOF\n";
 		// ASCII-safe encoding — PDF's binary marker comment uses Latin-1 high bytes,
 		// but the rest is plain ASCII. Use Latin-1 to preserve the marker bytes faithfully.
