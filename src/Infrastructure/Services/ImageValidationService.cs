@@ -74,9 +74,17 @@ public class ImageValidationService(ILogger<ImageValidationService> logger) : II
 				$"Image dimensions ({info.Width}x{info.Height}) exceed the maximum allowed ({MaxPixelWidth}x{MaxPixelHeight}).");
 		}
 
-		// Body is fully synchronous; return a completed Task so callers still observe
-		// thrown exceptions as faulted Tasks per TAP conventions when invoking via the
-		// interface, without the no-op `await Task.CompletedTask` thread-pool sham.
+		// The body is fully synchronous and the method is intentionally non-async — the
+		// previous `async` + no-op `await Task.CompletedTask` was cargo-culted overhead.
+		// IMPORTANT: because the method is no longer `async`, the validation throws above
+		// (`ct.ThrowIfCancellationRequested()`, the format/dimension `InvalidOperationException`s)
+		// propagate **synchronously** at the call site rather than via a faulted Task.
+		// All current callers `await` the result inside their own async methods, so their
+		// state machines capture the synchronous throw and the observable behaviour is the
+		// same. Any future caller that captures the Task before awaiting it (e.g.
+		// `Task t = service.ValidateAsync(...); /* work */; await t;`) will see exceptions
+		// at the call site, not on the stored Task — adjust the call site or the
+		// implementation accordingly.
 		return Task.CompletedTask;
 	}
 }

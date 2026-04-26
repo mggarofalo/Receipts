@@ -304,18 +304,19 @@ public class PdfConversionServiceTests
 	}
 
 	[Fact]
-	public void IsPasswordProtectedException_PdfiumPasswordMessage_ReturnsTrue()
+	public void IsPasswordProtectedException_AnyPasswordMessageWithoutTypedException_ReturnsFalse()
 	{
-		// Arrange — PDFium (used by PDFtoImage during rasterization) has no typed
-		// equivalent and surfaces password failures only via the message string.
-		// A message containing "password" must still be classified correctly.
+		// Arrange — the PdfPig path uses the typed check ONLY. A non-typed exception
+		// whose message merely mentions "password" must not be classified at this site;
+		// the rasterization path has its own broader predicate.
 		Exception pdfiumException = new("This PDF requires a password to open.");
 
 		// Act
 		bool result = PdfConversionService.IsPasswordProtectedException(pdfiumException);
 
 		// Assert
-		result.Should().BeTrue();
+		result.Should().BeFalse(
+			"the PdfPig-path predicate must rely solely on the typed exception");
 	}
 
 	[Fact]
@@ -344,6 +345,69 @@ public class PdfConversionServiceTests
 
 		// Act
 		bool result = PdfConversionService.IsPasswordProtectedException(genericException);
+
+		// Assert
+		result.Should().BeFalse();
+	}
+
+	[Fact]
+	public void IsPdfiumEncryptionException_PasswordInMessage_ReturnsTrue()
+	{
+		// Arrange — PDFium (used by PDFtoImage during rasterization) has no typed
+		// equivalent and surfaces password failures only via the message string.
+		// The rasterization-path predicate must classify these correctly.
+		Exception pdfiumException = new("This PDF requires a password to open.");
+
+		// Act
+		bool result = PdfConversionService.IsPdfiumEncryptionException(pdfiumException);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsPdfiumEncryptionException_EncryptInMessage_ReturnsTrue()
+	{
+		// Arrange — RECEIPTS-645 bug-finder follow-up: PDFium errors for content-stream
+		// encryption failures may contain "encrypt" without the word "password" (e.g.,
+		// "Cannot decode encrypted content stream"). The rasterization predicate must
+		// catch this so users see the actionable "Password-protected PDFs are not
+		// supported" message rather than a generic rasterization failure.
+		Exception pdfiumException = new("Cannot decode encrypted content stream.");
+
+		// Act
+		bool result = PdfConversionService.IsPdfiumEncryptionException(pdfiumException);
+
+		// Assert
+		result.Should().BeTrue(
+			"rasterization-path encryption errors without \"password\" must still classify as password-protected");
+	}
+
+	[Fact]
+	public void IsPdfiumEncryptionException_TypedPdfPigException_ReturnsTrue()
+	{
+		// Arrange — the rasterization-path predicate is a superset of the PdfPig-path
+		// predicate; the typed exception must still classify even if the surrounding
+		// catch is the PDFium one (defensive for ordering or library changes).
+		PdfDocumentEncryptedException ex = new("Cannot read encrypted document");
+
+		// Act
+		bool result = PdfConversionService.IsPdfiumEncryptionException(ex);
+
+		// Assert
+		result.Should().BeTrue();
+	}
+
+	[Fact]
+	public void IsPdfiumEncryptionException_GenericRasterizationError_ReturnsFalse()
+	{
+		// Arrange — non-encryption rasterization failures must NOT be misclassified as
+		// password-protected. The user should see the generic "Failed to rasterize"
+		// error in those cases.
+		Exception genericException = new("Failed to render page: invalid graphics state.");
+
+		// Act
+		bool result = PdfConversionService.IsPdfiumEncryptionException(genericException);
 
 		// Assert
 		result.Should().BeFalse();
