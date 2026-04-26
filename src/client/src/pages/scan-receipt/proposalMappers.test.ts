@@ -184,6 +184,47 @@ describe("mapProposalToConfidenceMap", () => {
     expect(result).toEqual({});
   });
 
+  it("omits 'none' confidence fields (RECEIPTS-631: absent fields need no badge)", () => {
+    // 'none' means the source receipt did not contain that field at all — the user
+    // has nothing to review, so no badge should appear in the confidence map.
+    const proposal = makeProposal({
+      storeAddress: null,
+      storeAddressConfidence: "none",
+      storePhone: null,
+      storePhoneConfidence: "none",
+      receiptId: null,
+      receiptIdConfidence: "none",
+      storeNumber: null,
+      storeNumberConfidence: "none",
+      terminalId: null,
+      terminalIdConfidence: "none",
+    });
+
+    const result = mapProposalToConfidenceMap(proposal);
+
+    expect(result).toEqual({});
+  });
+
+  it("flags low/medium confidence but never 'none' on per-payment fields", () => {
+    const proposal = makeProposal({
+      payments: [
+        {
+          method: "VISA",
+          methodConfidence: "low",
+          amount: 5,
+          amountConfidence: "high",
+          lastFour: null,
+          lastFourConfidence: "none",
+        },
+      ],
+    });
+
+    const result = mapProposalToConfidenceMap(proposal);
+
+    // method: "low" surfaces; amount/lastFour are dropped (high + none).
+    expect(result.payments).toEqual([{ method: "low" }]);
+  });
+
   it("flags low/medium confidence on the new fields", () => {
     const proposal = makeProposal({
       storeAddress: "123 Main St",

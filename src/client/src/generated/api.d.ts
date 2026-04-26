@@ -3110,8 +3110,13 @@ export interface components {
         UploadReceiptImageResponse: {
             originalImagePath: string;
         };
-        /** @enum {string} */
-        ConfidenceLevel: "low" | "medium" | "high";
+        /**
+         * @description Per-field confidence reported by the receipt extraction pipeline.
+         *     `none` means the field was absent from the source receipt; values `low`/`medium`/`high`
+         *     all carry a real extracted value at the corresponding confidence level.
+         * @enum {string}
+         */
+        ConfidenceLevel: "none" | "low" | "medium" | "high";
         ProposedReceiptResponse: {
             storeName?: string | null;
             storeNameConfidence: components["schemas"]["ConfidenceLevel"];

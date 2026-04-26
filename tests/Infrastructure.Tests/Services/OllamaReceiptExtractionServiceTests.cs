@@ -122,8 +122,8 @@ public class OllamaReceiptExtractionServiceTests
 		receipt.Items.Should().HaveCount(2);
 		receipt.Items[0].Code.Value.Should().Be("078742228030");
 		receipt.Items[0].Description.Value.Should().Be("GRANULATED");
-		receipt.Items[0].Quantity.Confidence.Should().Be(ConfidenceLevel.Low);
-		receipt.Items[0].UnitPrice.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Items[0].Quantity.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.Items[0].UnitPrice.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.Items[0].TotalPrice.Value.Should().Be(3.07m);
 		receipt.Items[0].TaxCode.Value.Should().Be("F");
 		receipt.Items[0].TaxCode.Confidence.Should().Be(ConfidenceLevel.High);
@@ -203,7 +203,7 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		receipt.Date.Value.Should().Be(default(DateOnly));
-		receipt.Date.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Date.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.StoreName.Value.Should().Be("Walmart");
 		receipt.Total.Value.Should().Be(10.00m);
 	}
@@ -264,7 +264,7 @@ public class OllamaReceiptExtractionServiceTests
 		// Assert — both rows kept; BREAD is untouched
 		receipt.Items.Should().HaveCount(2);
 		receipt.Items[0].Description.Value.Should().Be("BREAD");
-		receipt.Items[0].Quantity.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Items[0].Quantity.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.Items[1].Description.Value.Should().Be("2.460 lb. @ 1 lb. /0.50");
 		receipt.Items[1].Quantity.Value.Should().Be(2.460m);
 	}
@@ -380,7 +380,7 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		receipt.PaymentMethod.Value.Should().BeNull();
-		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.TaxLines.Should().BeEmpty();
 		receipt.Items.Should().BeEmpty();
 		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.High);
@@ -417,7 +417,7 @@ public class OllamaReceiptExtractionServiceTests
 		receipt.Payments[0].Amount.Value.Should().Be(10.00m);
 		receipt.Payments[0].Amount.Confidence.Should().Be(ConfidenceLevel.High);
 		receipt.Payments[0].LastFour.Value.Should().BeNull();
-		receipt.Payments[0].LastFour.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Payments[0].LastFour.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.Payments[1].Method.Value.Should().Be("VISA");
 		receipt.Payments[1].Amount.Value.Should().Be(30.00m);
 		receipt.Payments[1].LastFour.Value.Should().Be("1234");
@@ -440,10 +440,10 @@ public class OllamaReceiptExtractionServiceTests
 		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
 
 		// Assert
-		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.Low);
-		receipt.StoreAddress.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.StoreAddress.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.StoreAddress.Value.Should().BeNull();
-		receipt.StorePhone.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.StorePhone.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.StorePhone.Value.Should().BeNull();
 		receipt.Date.Value.Should().Be(new DateOnly(2026, 4, 1));
 		receipt.Total.Value.Should().Be(10.00m);
@@ -469,11 +469,11 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		receipt.ReceiptId.Value.Should().BeNull();
-		receipt.ReceiptId.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.ReceiptId.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.StoreNumber.Value.Should().BeNull();
-		receipt.StoreNumber.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.StoreNumber.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.TerminalId.Value.Should().BeNull();
-		receipt.TerminalId.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.TerminalId.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.Payments.Should().BeEmpty();
 	}
 
@@ -522,18 +522,17 @@ public class OllamaReceiptExtractionServiceTests
 	// Whitespace and separators
 	[InlineData("3 409")]
 	[InlineData("3-409")]
-	// Empty string variants
-	[InlineData("")]
-	[InlineData("   ")]
 	// Non-ASCII Unicode digit sequences. .NET's default \d regex expands to the full
 	// Unicode Decimal_Number category, so the pattern must use [0-9] explicitly to enforce
 	// the documented "ASCII digits" contract. Without that, Arabic-Indic (٣٤٠٩) and
 	// Devanagari (३४०९) digits would slip through with High confidence.
 	[InlineData("\u0663\u0664\u0660\u0669")]
 	[InlineData("\u096B\u096C\u0966\u0966")]
-	public void ValidateLastFour_InvalidPatterns_YieldNullWithLowConfidence(string raw)
+	public void ValidateLastFour_InvalidNonEmptyPatterns_YieldNullWithLowConfidence(string raw)
 	{
-		// Act
+		// Act — non-empty/non-whitespace input that fails the regex represents a hallucinated
+		// or malformed value the VLM emitted. We retain Low confidence to signal "the model
+		// said something but we rejected it" — distinct from None ("the model said nothing").
 		FieldConfidence<string?> result = OllamaReceiptExtractionService.ValidateLastFour(raw);
 
 		// Assert
@@ -541,15 +540,30 @@ public class OllamaReceiptExtractionServiceTests
 		result.Confidence.Should().Be(ConfidenceLevel.Low);
 	}
 
-	[Fact]
-	public void ValidateLastFour_NullInput_YieldsNullWithLowConfidence()
+	[Theory]
+	[InlineData("")]
+	[InlineData("   ")]
+	[InlineData("\t")]
+	public void ValidateLastFour_EmptyOrWhitespace_YieldsNullWithNoneConfidence(string raw)
 	{
-		// Act
+		// Act — an empty/whitespace lastFour is functionally equivalent to "the field was
+		// absent", which we represent with ConfidenceLevel.None.
+		FieldConfidence<string?> result = OllamaReceiptExtractionService.ValidateLastFour(raw);
+
+		// Assert
+		result.Value.Should().BeNull();
+		result.Confidence.Should().Be(ConfidenceLevel.None);
+	}
+
+	[Fact]
+	public void ValidateLastFour_NullInput_YieldsNullWithNoneConfidence()
+	{
+		// Act — null is treated identically to an empty/absent value.
 		FieldConfidence<string?> result = OllamaReceiptExtractionService.ValidateLastFour(null);
 
 		// Assert
 		result.Value.Should().BeNull();
-		result.Confidence.Should().Be(ConfidenceLevel.Low);
+		result.Confidence.Should().Be(ConfidenceLevel.None);
 	}
 
 	[Theory]
@@ -623,13 +637,13 @@ public class OllamaReceiptExtractionServiceTests
 		// Assert — the payment is preserved with correct confidence
 		receipt.Payments.Should().HaveCount(1);
 		receipt.Payments[0].Method.Value.Should().BeNull();
-		receipt.Payments[0].Method.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.Payments[0].Method.Confidence.Should().Be(ConfidenceLevel.None);
 		receipt.Payments[0].Amount.Value.Should().Be(15.00m);
 		receipt.Payments[0].Amount.Confidence.Should().Be(ConfidenceLevel.High);
 
 		// Assert — legacy PaymentMethod falls back to None since no method string was found
 		receipt.PaymentMethod.Value.Should().BeNull();
-		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.Low);
+		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.None);
 	}
 
 	[Fact]

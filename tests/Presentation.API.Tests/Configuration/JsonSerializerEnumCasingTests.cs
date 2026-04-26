@@ -35,10 +35,12 @@ public class JsonSerializerEnumCasingTests
 		string highJson = JsonSerializer.Serialize(ConfidenceLevel.High, options);
 		string mediumJson = JsonSerializer.Serialize(ConfidenceLevel.Medium, options);
 		string lowJson = JsonSerializer.Serialize(ConfidenceLevel.Low, options);
+		string noneJson = JsonSerializer.Serialize(ConfidenceLevel.None, options);
 
 		highJson.Should().Be("\"high\"");
 		mediumJson.Should().Be("\"medium\"");
 		lowJson.Should().Be("\"low\"");
+		noneJson.Should().Be("\"none\"");
 	}
 
 	[Fact]
@@ -49,9 +51,11 @@ public class JsonSerializerEnumCasingTests
 		ConfidenceLevel high = JsonSerializer.Deserialize<ConfidenceLevel>("\"high\"", options);
 		ConfidenceLevel medium = JsonSerializer.Deserialize<ConfidenceLevel>("\"medium\"", options);
 		ConfidenceLevel low = JsonSerializer.Deserialize<ConfidenceLevel>("\"low\"", options);
+		ConfidenceLevel none = JsonSerializer.Deserialize<ConfidenceLevel>("\"none\"", options);
 
 		high.Should().Be(ConfidenceLevel.High);
 		medium.Should().Be(ConfidenceLevel.Medium);
 		low.Should().Be(ConfidenceLevel.Low);
+		none.Should().Be(ConfidenceLevel.None);
 	}
 }

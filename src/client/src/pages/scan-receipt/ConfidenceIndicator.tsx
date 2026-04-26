@@ -10,7 +10,9 @@ export function ConfidenceIndicator({
   confidence,
   className,
 }: ConfidenceIndicatorProps) {
-  if (!confidence || confidence === "high") {
+  // "none" means the source receipt did not contain this field at all — there is no
+  // value to indicate confidence in. Treat the same as "high" / undefined: render nothing.
+  if (!confidence || confidence === "high" || confidence === "none") {
     return null;
   }
 

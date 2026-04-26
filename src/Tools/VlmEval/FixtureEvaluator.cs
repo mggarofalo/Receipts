@@ -62,7 +62,7 @@ public sealed class FixtureEvaluator(
 			return new FieldDiff("store", DiffStatus.NotDeclared, null, actual.Value, null);
 		}
 
-		if (string.IsNullOrWhiteSpace(actual.Value))
+		if (!actual.IsPresent || string.IsNullOrWhiteSpace(actual.Value))
 		{
 			return new FieldDiff("store", DiffStatus.Fail, expected, null, "VLM did not extract store name");
 		}
@@ -83,7 +83,7 @@ public sealed class FixtureEvaluator(
 			return new FieldDiff("date", DiffStatus.NotDeclared, null, actual.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), null);
 		}
 
-		if (actual.Confidence == ConfidenceLevel.Low)
+		if (!actual.IsPresent)
 		{
 			return new FieldDiff("date", DiffStatus.Fail, expected.Value.ToString("yyyy-MM-dd"), null, "VLM did not extract date");
 		}
@@ -104,7 +104,7 @@ public sealed class FixtureEvaluator(
 			return new FieldDiff(field, DiffStatus.NotDeclared, null, Format(actual), null);
 		}
 
-		if (actual.Confidence == ConfidenceLevel.Low)
+		if (!actual.IsPresent)
 		{
 			return new FieldDiff(field, DiffStatus.Fail, expected.Value.ToString("0.00", CultureInfo.InvariantCulture), null, $"VLM did not extract {field}");
 		}
@@ -119,7 +119,7 @@ public sealed class FixtureEvaluator(
 			match ? null : $"delta=${delta.ToString("0.00", CultureInfo.InvariantCulture)}");
 
 		static string? Format(FieldConfidence<decimal> f) =>
-			f.Confidence == ConfidenceLevel.Low ? null : f.Value.ToString("0.00", CultureInfo.InvariantCulture);
+			f.IsPresent ? f.Value.ToString("0.00", CultureInfo.InvariantCulture) : null;
 	}
 
 	internal static FieldDiff DiffTaxLines(List<ExpectedTaxLine>? expected, List<ParsedTaxLine> actual)
@@ -130,7 +130,7 @@ public sealed class FixtureEvaluator(
 		}
 
 		List<decimal> actualAmounts = [.. actual
-			.Where(t => t.Amount.Confidence != ConfidenceLevel.Low)
+			.Where(t => t.Amount.IsPresent)
 			.Select(t => t.Amount.Value)];
 
 		List<string> failures = [];
@@ -159,7 +159,7 @@ public sealed class FixtureEvaluator(
 			"taxLines",
 			pass ? DiffStatus.Pass : DiffStatus.Fail,
 			string.Join(", ", expected.Where(t => t.Amount is not null).Select(t => t.Amount!.Value.ToString("0.00", CultureInfo.InvariantCulture))),
-			string.Join(", ", actual.Where(t => t.Amount.Confidence != ConfidenceLevel.Low).Select(t => t.Amount.Value.ToString("0.00", CultureInfo.InvariantCulture))),
+			string.Join(", ", actual.Where(t => t.Amount.IsPresent).Select(t => t.Amount.Value.ToString("0.00", CultureInfo.InvariantCulture))),
 			pass ? null : string.Join("; ", failures));
 	}
 
@@ -186,7 +186,7 @@ public sealed class FixtureEvaluator(
 			return new FieldDiff("paymentMethod", DiffStatus.NotDeclared, null, actual.Value, null);
 		}
 
-		if (string.IsNullOrWhiteSpace(actual.Value))
+		if (!actual.IsPresent || string.IsNullOrWhiteSpace(actual.Value))
 		{
 			return new FieldDiff("paymentMethod", DiffStatus.Fail, expected, null, "VLM did not extract paymentMethod");
 		}
@@ -244,7 +244,7 @@ public sealed class FixtureEvaluator(
 				decimal best = decimal.MaxValue;
 				for (int p = 0; p < pool.Count; p++)
 				{
-					if (pool[p].TotalPrice.Confidence == ConfidenceLevel.Low)
+					if (!pool[p].TotalPrice.IsPresent)
 					{
 						continue;
 					}
@@ -294,7 +294,7 @@ public sealed class FixtureEvaluator(
 
 			if (item.TotalPrice is not null)
 			{
-				if (matched.TotalPrice.Confidence == ConfidenceLevel.Low)
+				if (!matched.TotalPrice.IsPresent)
 				{
 					issues.Add("missing totalPrice");
 				}
@@ -325,9 +325,9 @@ public sealed class FixtureEvaluator(
 	private static string FormatActualItem(ParsedReceiptItem item)
 	{
 		string desc = item.Description.Value ?? "?";
-		string price = item.TotalPrice.Confidence == ConfidenceLevel.Low
-			? "?"
-			: item.TotalPrice.Value.ToString("0.00", CultureInfo.InvariantCulture);
+		string price = item.TotalPrice.IsPresent
+			? item.TotalPrice.Value.ToString("0.00", CultureInfo.InvariantCulture)
+			: "?";
 		return $"{desc} @ {price}";
 	}
 }

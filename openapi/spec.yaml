@@ -6276,7 +6276,11 @@ components:
 
     ConfidenceLevel:
       type: string
-      enum: [low, medium, high]
+      description: |
+        Per-field confidence reported by the receipt extraction pipeline.
+        `none` means the field was absent from the source receipt; values `low`/`medium`/`high`
+        all carry a real extracted value at the corresponding confidence level.
+      enum: [none, low, medium, high]
 
     ProposedReceiptResponse:
       type: object

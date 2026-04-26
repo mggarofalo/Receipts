@@ -55,13 +55,20 @@ public class ScanReceiptCommandHandler(
 		return (conversion.PageImages[0], PdfPageImageContentType);
 	}
 
+	/// <summary>
+	/// True when the extraction yielded no usable signal at all — every scalar field is
+	/// <see cref="FieldConfidence{T}.None"/> and there are no items or tax lines. Note this
+	/// must check for <see cref="ConfidenceLevel.None"/>, not <see cref="ConfidenceLevel.Low"/>:
+	/// a low-confidence extracted value is still a real reading the user can review and edit,
+	/// and rejecting it as "empty" would discard valid (if uncertain) data.
+	/// </summary>
 	private static bool IsEmpty(ParsedReceipt parsed)
 	{
-		return parsed.StoreName.Confidence == ConfidenceLevel.Low
-			&& parsed.Date.Confidence == ConfidenceLevel.Low
-			&& parsed.Subtotal.Confidence == ConfidenceLevel.Low
-			&& parsed.Total.Confidence == ConfidenceLevel.Low
-			&& parsed.PaymentMethod.Confidence == ConfidenceLevel.Low
+		return !parsed.StoreName.IsPresent
+			&& !parsed.Date.IsPresent
+			&& !parsed.Subtotal.IsPresent
+			&& !parsed.Total.IsPresent
+			&& !parsed.PaymentMethod.IsPresent
 			&& parsed.Items.Count == 0
 			&& parsed.TaxLines.Count == 0;
 	}

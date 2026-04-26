@@ -109,7 +109,7 @@ public class FixtureEvaluatorTests
 	}
 
 	[Fact]
-	public void DiffDate_LowConfidenceActual_ReturnsFail()
+	public void DiffDate_NoneConfidenceActual_ReturnsFail()
 	{
 		DateOnly expected = new(2026, 1, 14);
 
@@ -119,6 +119,19 @@ public class FixtureEvaluatorTests
 		diff.Expected.Should().Be("2026-01-14");
 		diff.Actual.Should().BeNull();
 		diff.Detail.Should().Be("VLM did not extract date");
+	}
+
+	[Fact]
+	public void DiffDate_LowConfidenceMatch_ReturnsPass()
+	{
+		// RECEIPTS-631: Low(date) is a real (uncertain) extracted date and should be
+		// compared against expected. Only None() should short-circuit as "did not extract".
+		DateOnly expected = new(2026, 1, 14);
+
+		FieldDiff diff = FixtureEvaluator.DiffDate(expected, FieldConfidence<DateOnly>.Low(expected));
+
+		diff.Status.Should().Be(DiffStatus.Pass);
+		diff.Actual.Should().Be("2026-01-14");
 	}
 
 	[Fact]
@@ -233,7 +246,7 @@ public class FixtureEvaluatorTests
 	}
 
 	[Fact]
-	public void DiffMoney_LowConfidenceActual_ReturnsFail()
+	public void DiffMoney_NoneConfidenceActual_ReturnsFail()
 	{
 		FieldDiff diff = FixtureEvaluator.DiffMoney("total", 70.43m, FieldConfidence<decimal>.None());
 
@@ -241,6 +254,18 @@ public class FixtureEvaluatorTests
 		diff.Expected.Should().Be("70.43");
 		diff.Actual.Should().BeNull();
 		diff.Detail.Should().Be("VLM did not extract total");
+	}
+
+	[Fact]
+	public void DiffMoney_LowConfidenceActualMatchingExpected_ReturnsPass()
+	{
+		// RECEIPTS-631: a low-confidence extracted value (e.g. illegible total the VLM
+		// transcribed uncertainly) must still be compared against the expected value.
+		// Only None() should short-circuit to "did not extract".
+		FieldDiff diff = FixtureEvaluator.DiffMoney("total", 70.43m, FieldConfidence<decimal>.Low(70.43m));
+
+		diff.Status.Should().Be(DiffStatus.Pass);
+		diff.Actual.Should().Be("70.43");
 	}
 
 	[Fact]
@@ -254,7 +279,7 @@ public class FixtureEvaluatorTests
 	}
 
 	[Fact]
-	public void DiffMoney_ExpectedNull_LowConfidenceActual_FormatsActualAsNull()
+	public void DiffMoney_ExpectedNull_NoneConfidenceActual_FormatsActualAsNull()
 	{
 		FieldDiff diff = FixtureEvaluator.DiffMoney("total", null, FieldConfidence<decimal>.None());
 
@@ -370,9 +395,9 @@ public class FixtureEvaluatorTests
 	}
 
 	[Fact]
-	public void DiffTaxLines_LowConfidenceActualAmounts_AreIgnored()
+	public void DiffTaxLines_NoneConfidenceActualAmounts_AreIgnored()
 	{
-		// A low-confidence actual amount should not be available to match against.
+		// A None-confidence (absent) actual amount should not be available to match against.
 		List<ExpectedTaxLine> expected = [new ExpectedTaxLine { Amount = 0.75m }];
 		List<ParsedTaxLine> actual =
 		[
@@ -382,6 +407,23 @@ public class FixtureEvaluatorTests
 		FieldDiff diff = FixtureEvaluator.DiffTaxLines(expected, actual);
 
 		diff.Status.Should().Be(DiffStatus.Fail);
+	}
+
+	[Fact]
+	public void DiffTaxLines_LowConfidenceActualAmount_IsStillMatched()
+	{
+		// RECEIPTS-631: Low(value) carries a real (if uncertain) amount and must be
+		// considered when matching against expected tax lines. Only None() amounts
+		// should be excluded from the matching pool.
+		List<ExpectedTaxLine> expected = [new ExpectedTaxLine { Amount = 0.75m }];
+		List<ParsedTaxLine> actual =
+		[
+			new ParsedTaxLine(FieldConfidence<string>.High("Tax"), FieldConfidence<decimal>.Low(0.75m)),
+		];
+
+		FieldDiff diff = FixtureEvaluator.DiffTaxLines(expected, actual);
+
+		diff.Status.Should().Be(DiffStatus.Pass);
 	}
 
 	[Fact]
@@ -638,9 +680,9 @@ public class FixtureEvaluatorTests
 	}
 
 	[Fact]
-	public void DiffItems_LowConfidenceTotalPrice_NotMatchedByPrice()
+	public void DiffItems_NoneConfidenceTotalPrice_NotMatchedByPrice()
 	{
-		// Items with low-confidence prices are skipped by the price matcher.
+		// Items with absent (None) prices are skipped by the price matcher.
 		// The fallback description matcher then finds them by description.
 		List<ExpectedItem> expected = [new ExpectedItem { Description = "Apple", TotalPrice = 1.000m }];
 		List<ParsedReceiptItem> actual =
@@ -656,9 +698,30 @@ public class FixtureEvaluatorTests
 		List<FieldDiff> diffs = FixtureEvaluator.DiffItems(expected, actual);
 
 		// Price matcher skips the item, description fallback finds it, but then the
-		// "is the matched item's totalPrice low confidence?" check reports a missing price.
+		// "is the matched item's totalPrice present?" check reports a missing price.
 		diffs[0].Status.Should().Be(DiffStatus.Fail);
 		diffs[0].Detail.Should().Contain("missing totalPrice");
+	}
+
+	[Fact]
+	public void DiffItems_LowConfidenceTotalPriceMatchingExpected_ReturnsPass()
+	{
+		// RECEIPTS-631: a low-confidence extracted item price is real data and must be
+		// matched. The previous behavior incorrectly skipped such items.
+		List<ExpectedItem> expected = [new ExpectedItem { Description = "Apple", TotalPrice = 1.000m }];
+		List<ParsedReceiptItem> actual =
+		[
+			new ParsedReceiptItem(
+				Code: FieldConfidence<string?>.None(),
+				Description: FieldConfidence<string>.High("Apple"),
+				Quantity: FieldConfidence<decimal>.High(1m),
+				UnitPrice: FieldConfidence<decimal>.High(1m),
+				TotalPrice: FieldConfidence<decimal>.Low(1.000m)),
+		];
+
+		List<FieldDiff> diffs = FixtureEvaluator.DiffItems(expected, actual);
+
+		diffs[0].Status.Should().Be(DiffStatus.Pass);
 	}
 
 	[Fact]
