@@ -796,7 +796,7 @@ export interface paths {
         put?: never;
         /**
          * Scan a receipt image or PDF and return a proposed receipt
-         * @description Accepts a JPEG image, PNG image, or PDF document. For images, runs preprocessing, OCR, and parsing. For PDFs, extracts text from the text layer or renders pages for OCR. Multi-page PDFs are supported (up to 50 pages). Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted — it is a transient suggestion for review.
+         * @description Accepts a JPEG image, PNG image, or PDF document. Images are sent directly to the receipt extraction service (a local vision-language model). For PDFs, the first page is rasterized to a PNG at 200 DPI and sent to the VLM. PDFs are accepted up to 50 pages, but only the first page is currently used for extraction. Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted — it is a transient suggestion for review.
          */
         post: operations["ScanReceipt"];
         delete?: never;
