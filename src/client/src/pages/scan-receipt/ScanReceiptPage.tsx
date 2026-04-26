@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useReceiptScan } from "@/hooks/useReceiptScan";
 import { isTimeoutError } from "@/lib/api-client";
@@ -39,6 +39,12 @@ export default function ScanReceiptPage() {
   const [proposal, setProposal] = useState<ProposedReceiptResponse | null>(
     null,
   );
+  // Monotonic counter incremented on every successful scan. Used as a
+  // remount key on <NewReceiptPage> so a future "rescan" flow that updates
+  // `proposal` after the first scan would correctly reset the wizard's
+  // lazy initialisers (items/payments bundles, react-hook-form defaults).
+  // Without this key, a second scan would keep the original initial state.
+  const [scanVersion, setScanVersion] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleScan = useCallback(
@@ -48,6 +54,7 @@ export default function ScanReceiptPage() {
       scanMutation.mutate(file, {
         onSuccess: (data) => {
           setProposal(data ?? null);
+          setScanVersion((v) => v + 1);
           setStatus("success");
         },
         onError: (error) => {
@@ -61,12 +68,22 @@ export default function ScanReceiptPage() {
     [],
   );
 
-  if (status === "success" && proposal) {
-    const initialValues = mapProposalToInitialValues(proposal);
-    const confidenceMap = mapProposalToConfidenceMap(proposal);
+  // Memoise: both mappers are pure but allocate fresh objects/maps each call,
+  // so wrapping them keeps prop identities stable across re-renders that do
+  // not change `proposal` (e.g. status flicker on retry). Cheap, but cleaner.
+  const initialValues = useMemo(
+    () => (proposal ? mapProposalToInitialValues(proposal) : null),
+    [proposal],
+  );
+  const confidenceMap = useMemo(
+    () => (proposal ? mapProposalToConfidenceMap(proposal) : null),
+    [proposal],
+  );
 
+  if (status === "success" && proposal && initialValues && confidenceMap) {
     return (
       <NewReceiptPage
+        key={scanVersion}
         initialValues={initialValues}
         confidenceMap={confidenceMap}
         pageTitle="Scan Receipt"

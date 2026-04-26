@@ -478,6 +478,62 @@ describe("NewReceiptPage", () => {
     );
   });
 
+  it("keeps the payments section visible after the user removes every detected payment", async () => {
+    // Regression for RECEIPTS-644: gating visibility on the live `payments`
+    // array length trapped users — emptying the list hid the entire section
+    // (including the Add Payment button) with no path to recover. The fix
+    // pins visibility to initial presence captured at mount.
+    const user = userEvent.setup();
+    renderWithProviders(
+      <NewReceiptPage
+        initialValues={{
+          header: {
+            location: "Walmart",
+            date: "2024-06-15",
+            taxAmount: 0,
+            storeAddress: "",
+            storePhone: "",
+          },
+          metadata: { receiptId: "", storeNumber: "", terminalId: "" },
+          payments: [
+            { method: "MASTERCARD", amount: 54.32, lastFour: "4538" },
+          ],
+          items: [],
+        }}
+      />,
+    );
+
+    // Initially shown with one payment.
+    expect(screen.getByTestId("payments-section")).toBeInTheDocument();
+    expect(screen.getByTestId("payments-count")).toHaveTextContent("1");
+
+    // The mocked PaymentsSection exposes a "Clear Payments" button that
+    // sends an empty array to onChange — equivalent to the user removing
+    // every payment row.
+    await user.click(screen.getByText("Clear Payments"));
+
+    // Section still rendered — only the count drops to zero.
+    expect(screen.getByTestId("payments-section")).toBeInTheDocument();
+    expect(screen.getByTestId("payments-count")).toHaveTextContent("0");
+  });
+
+  it("uses the pageTitle prop for the visible heading", () => {
+    renderWithProviders(<NewReceiptPage pageTitle="Scan Receipt" />);
+    expect(
+      screen.getByRole("heading", { name: /scan receipt/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /^new receipt$/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("falls back to 'New Receipt' for the heading when pageTitle is omitted", () => {
+    renderWithProviders(<NewReceiptPage />);
+    expect(
+      screen.getByRole("heading", { name: /new receipt/i }),
+    ).toBeInTheDocument();
+  });
+
   it("builds an item-confidence Map keyed by item id when scan items are present", () => {
     renderWithProviders(
       <NewReceiptPage

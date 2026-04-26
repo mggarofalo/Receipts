@@ -8,7 +8,10 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ConfidenceIndicator } from "@/pages/scan-receipt/ConfidenceIndicator";
-import type { ReceiptConfidenceMap } from "@/pages/scan-receipt/types";
+import type {
+  ConfidenceLevel,
+  ReceiptConfidenceMap,
+} from "@/pages/scan-receipt/types";
 
 interface ReceiptDetailsPanelProps {
   metadata: { receiptId: string; storeNumber: string; terminalId: string };
@@ -20,10 +23,15 @@ export function ReceiptDetailsPanel({
   confidenceMap,
 }: ReceiptDetailsPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  // The three metadata fields all have scalar `ConfidenceLevel | undefined`
+  // shapes on `ReceiptConfidenceMap`. Typing the row directly as
+  // `ConfidenceLevel | undefined` avoids the indexed-access widening
+  // (which would let in the array shapes for `payments`/`items`) and
+  // removes the downstream cast where we forward to `ConfidenceIndicator`.
   const rows: Array<{
     label: string;
     value: string;
-    confidence?: ReceiptConfidenceMap[keyof ReceiptConfidenceMap];
+    confidence?: ConfidenceLevel;
   }> = [];
 
   if (metadata.receiptId) {
@@ -83,16 +91,7 @@ export function ReceiptDetailsPanel({
                   <dt className="text-muted-foreground">{row.label}</dt>
                   <dd className="flex items-center gap-2 font-mono">
                     <span>{row.value}</span>
-                    <ConfidenceIndicator
-                      confidence={
-                        row.confidence as
-                          | ReceiptConfidenceMap[
-                              | "receiptId"
-                              | "storeNumber"
-                              | "terminalId"]
-                          | undefined
-                      }
-                    />
+                    <ConfidenceIndicator confidence={row.confidence} />
                   </dd>
                 </div>
               ))}

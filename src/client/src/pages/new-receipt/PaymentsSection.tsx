@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { generateId } from "@/lib/id";
 import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -47,32 +46,28 @@ export function PaymentsSection({
   onChange,
   confidenceById,
 }: PaymentsSectionProps) {
-  const handleAdd = useCallback(() => {
+  // Plain functions (not useCallback): the JSX below uses inline arrow handlers
+  // that allocate every render anyway, so memoising these would not stabilise
+  // any prop. Memoise only when a stable identity is actually consumed (e.g.
+  // when passing a handler to a memoised child or as a hook dependency).
+  const handleAdd = () => {
     onChange([
       ...payments,
       { id: generateId(), method: "", amount: 0, lastFour: "" },
     ]);
-  }, [payments, onChange]);
+  };
 
-  const handleRemove = useCallback(
-    (id: string) => {
-      onChange(payments.filter((p) => p.id !== id));
-    },
-    [payments, onChange],
-  );
+  const handleRemove = (id: string) => {
+    onChange(payments.filter((p) => p.id !== id));
+  };
 
-  const handleField = useCallback(
-    <K extends keyof Omit<ReceiptPayment, "id">>(
-      id: string,
-      field: K,
-      value: ReceiptPayment[K],
-    ) => {
-      onChange(
-        payments.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
-      );
-    },
-    [payments, onChange],
-  );
+  const handleField = <K extends keyof Omit<ReceiptPayment, "id">>(
+    id: string,
+    field: K,
+    value: ReceiptPayment[K],
+  ) => {
+    onChange(payments.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
+  };
 
   const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
