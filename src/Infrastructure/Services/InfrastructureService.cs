@@ -178,36 +178,7 @@ public static class InfrastructureService
 		{
 			client.BaseAddress = new Uri(ynabOptions.BaseUrl.TrimEnd('/') + "/");
 		})
-		.AddResilienceHandler("ynab", builder =>
-		{
-			builder.AddRetry(new HttpRetryStrategyOptions
-			{
-				MaxRetryAttempts = 3,
-				BackoffType = DelayBackoffType.Exponential,
-				UseJitter = true,
-				ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
-					.Handle<HttpRequestException>()
-					.HandleResult(r => r.StatusCode is System.Net.HttpStatusCode.TooManyRequests
-						or System.Net.HttpStatusCode.ServiceUnavailable
-						or System.Net.HttpStatusCode.GatewayTimeout),
-				DelayGenerator = args =>
-				{
-					if (args.Outcome.Result?.Headers.RetryAfter?.Delta is TimeSpan delta)
-					{
-						return ValueTask.FromResult<TimeSpan?>(delta);
-					}
-
-					return ValueTask.FromResult<TimeSpan?>(null); // fall back to exponential backoff
-				},
-			});
-			builder.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
-			{
-				SamplingDuration = TimeSpan.FromSeconds(30),
-				FailureRatio = 0.5,
-				MinimumThroughput = 5,
-				BreakDuration = TimeSpan.FromSeconds(60),
-			});
-		});
+		.AddResilienceHandler("ynab", AddRetryAndCircuitBreaker);
 
 		RegisterReceiptExtractionService(services, configuration);
 
@@ -255,9 +226,16 @@ public static class InfrastructureService
 	}
 
 	/// <summary>
-	/// Registers the Ollama-backed <see cref="IReceiptExtractionService"/> with resilience
-	/// (retry + circuit breaker) matching the YNAB client pattern. URL resolves from
+	/// Registers the Ollama-backed <see cref="IReceiptExtractionService"/> with a single
+	/// resilience pipeline tailored to long-running VLM inferences. URL resolves from
 	/// <c>Ocr:Vlm:OllamaUrl</c>, then <c>Ollama:BaseUrl</c> (Aspire-injected), then localhost default.
+	/// <para>
+	/// We explicitly <see cref="ResilienceHttpClientBuilderExtensions.RemoveAllResilienceHandlers"/>
+	/// so the standard handler injected by <c>Receipts.ServiceDefaults</c> (30s per attempt /
+	/// 90s total) does NOT stack on top of our pipeline. Real glm-ocr inferences routinely
+	/// exceed 30s; without removal the documented <see cref="VlmOcrOptions.TimeoutSeconds"/>
+	/// budget would never apply. See RECEIPTS-630.
+	/// </para>
 	/// </summary>
 	internal static void RegisterReceiptExtractionService(IServiceCollection services, IConfiguration configuration)
 	{
@@ -272,20 +250,39 @@ public static class InfrastructureService
 
 		services.AddSingleton(options);
 
+#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is in evaluation; required to opt out of the standard handler injected by ServiceDefaults.
 		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
 		{
 			client.BaseAddress = new Uri(options.OllamaUrl!.TrimEnd('/') + "/");
-			// The per-call CancellationTokenSource inside the service owns the timeout.
+			// The resilience pipeline (per-attempt Timeout strategy) owns request budgeting.
+			// HttpClient.Timeout must be Infinite so it doesn't fight the pipeline.
 			client.Timeout = Timeout.InfiniteTimeSpan;
 		})
-		.AddResilienceHandler("vlm-ocr", ConfigureVlmOcrResilience);
+			.RemoveAllResilienceHandlers()
+			.AddResilienceHandler("vlm-ocr", builder => ConfigureVlmOcrResilience(builder, options));
+#pragma warning restore EXTEXP0001
 	}
 
 	/// <summary>
-	/// Resilience policy for VLM OCR HTTP calls: 3 retries with exponential backoff + jitter,
-	/// circuit breaker on sustained failure. Matches the YNAB client pattern.
+	/// Resilience pipeline for VLM OCR HTTP calls. Order matters: retry wraps the
+	/// per-attempt timeout so each retry receives a fresh <see cref="VlmOcrOptions.TimeoutSeconds"/>
+	/// budget (Polly executes strategies in registration order — first added is outermost).
 	/// </summary>
-	internal static void ConfigureVlmOcrResilience(ResiliencePipelineBuilder<HttpResponseMessage> builder)
+	internal static void ConfigureVlmOcrResilience(
+		ResiliencePipelineBuilder<HttpResponseMessage> builder,
+		VlmOcrOptions options)
+	{
+		AddRetryAndCircuitBreaker(builder);
+		// Per-attempt timeout sits INSIDE the retry — each retry resets the clock.
+		builder.AddTimeout(TimeSpan.FromSeconds(options.TimeoutSeconds));
+	}
+
+	/// <summary>
+	/// Shared retry + circuit-breaker policy used by the YNAB and VLM-OCR HTTP clients:
+	/// 3 retries with exponential backoff + jitter (honoring <c>Retry-After</c> when the
+	/// server provides it), and a circuit breaker on sustained failure.
+	/// </summary>
+	private static void AddRetryAndCircuitBreaker(ResiliencePipelineBuilder<HttpResponseMessage> builder)
 	{
 		builder.AddRetry(new HttpRetryStrategyOptions
 		{
@@ -304,7 +301,7 @@ public static class InfrastructureService
 					return ValueTask.FromResult<TimeSpan?>(delta);
 				}
 
-				return ValueTask.FromResult<TimeSpan?>(null);
+				return ValueTask.FromResult<TimeSpan?>(null); // fall back to exponential backoff
 			},
 		});
 		builder.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
