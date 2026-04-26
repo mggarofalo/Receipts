@@ -1,7 +1,15 @@
 import type { components } from "@/generated/api";
+import { generateId } from "@/lib/id";
+import type { ReceiptLineItem } from "@/pages/new-receipt/LineItemsSection";
+import type { ReceiptPayment } from "@/pages/new-receipt/PaymentsSection";
 import type { ScanInitialValues, ReceiptConfidenceMap } from "./types";
 
 type ProposedReceiptResponse = components["schemas"]["ProposedReceiptResponse"];
+
+type ItemConfidenceEntry = NonNullable<ReceiptConfidenceMap["items"]>[number];
+type PaymentConfidenceEntry = NonNullable<
+  ReceiptConfidenceMap["payments"]
+>[number];
 
 /**
  * Map a {@link ProposedReceiptResponse} (returned by the VLM scan endpoint)
@@ -133,4 +141,66 @@ export function mapProposalToConfidenceMap(
   }
 
   return map;
+}
+
+/**
+ * Build the new-receipt wizard's initial line items along with a confidence
+ * map keyed by the freshly-generated row id. Pairing confidence with id
+ * (rather than index) keeps confidence correctly attached to a row after
+ * additions or deletions. The map is write-once: stale entries for deleted
+ * rows are harmless because the row will never be looked up again.
+ */
+export function initialItemsAndConfidence(
+  initialValues: ScanInitialValues | undefined,
+  confidenceMap: ReceiptConfidenceMap | undefined,
+): {
+  items: ReceiptLineItem[];
+  itemConfidenceById: Map<string, ItemConfidenceEntry>;
+} {
+  const sourceItems = initialValues?.items ?? [];
+  const sourceConfidence = confidenceMap?.items ?? [];
+
+  const items: ReceiptLineItem[] = sourceItems.map((item) => ({
+    id: generateId(),
+    ...item,
+  }));
+  const itemConfidenceById = new Map<string, ItemConfidenceEntry>();
+  for (let i = 0; i < items.length; i++) {
+    const entry = sourceConfidence[i];
+    if (entry) {
+      itemConfidenceById.set(items[i].id, entry);
+    }
+  }
+  return { items, itemConfidenceById };
+}
+
+/**
+ * Build the new-receipt wizard's initial payments along with a confidence
+ * map keyed by the freshly-generated row id. See {@link initialItemsAndConfidence}
+ * for rationale.
+ */
+export function initialPaymentsAndConfidence(
+  initialValues: ScanInitialValues | undefined,
+  confidenceMap: ReceiptConfidenceMap | undefined,
+): {
+  payments: ReceiptPayment[];
+  paymentConfidenceById: Map<string, PaymentConfidenceEntry>;
+} {
+  const sourcePayments = initialValues?.payments ?? [];
+  const sourceConfidence = confidenceMap?.payments ?? [];
+
+  const payments: ReceiptPayment[] = sourcePayments.map((p) => ({
+    id: generateId(),
+    method: p.method,
+    amount: p.amount,
+    lastFour: p.lastFour,
+  }));
+  const paymentConfidenceById = new Map<string, PaymentConfidenceEntry>();
+  for (let i = 0; i < payments.length; i++) {
+    const entry = sourceConfidence[i];
+    if (entry) {
+      paymentConfidenceById.set(payments[i].id, entry);
+    }
+  }
+  return { payments, paymentConfidenceById };
 }
