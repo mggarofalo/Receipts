@@ -1699,7 +1699,7 @@ public class OllamaReceiptExtractionServiceTests
 		// Assert — the registered VlmOcrOptions points at the Aspire-injected URL, not the
 		// localhost default that would otherwise leak through.
 		using ServiceProvider sp = services.BuildServiceProvider();
-		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		VlmOcrOptions registered = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
 		registered.OllamaUrl.Should().Be("http://aspire-injected:11434");
 	}
 
@@ -1724,7 +1724,7 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		using ServiceProvider sp = services.BuildServiceProvider();
-		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		VlmOcrOptions registered = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
 		registered.OllamaUrl.Should().Be("http://override:11434");
 	}
 
@@ -1743,7 +1743,7 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		using ServiceProvider sp = services.BuildServiceProvider();
-		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		VlmOcrOptions registered = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
 		registered.OllamaUrl.Should().Be(VlmOcrOptions.DefaultOllamaUrl);
 	}
 
