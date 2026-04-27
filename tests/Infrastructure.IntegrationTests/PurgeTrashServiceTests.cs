@@ -23,6 +23,10 @@ public class PurgeTrashServiceTests(PostgresFixture fixture)
 
 		// Parents (needed for FK-valid child inserts)
 		AccountEntity account = AccountEntityGenerator.Generate();
+		// Card must reference the seeded Account (RECEIPTS-575: Card.AccountId NOT NULL).
+		// Transactions reference this Card (RECEIPTS-574: Transaction.CardId NOT NULL).
+		CardEntity card = CardEntityGenerator.Generate();
+		card.AccountId = account.Id;
 		ReceiptEntity activeReceipt = ReceiptEntityGenerator.Generate();
 		ReceiptEntity deletedReceipt = ReceiptEntityGenerator.Generate();
 		deletedReceipt.DeletedAt = deletedAt;
@@ -48,8 +52,8 @@ public class PurgeTrashServiceTests(PostgresFixture fixture)
 		ReceiptItemEntity deletedReceiptItem = ReceiptItemEntityGenerator.Generate(activeReceipt.Id);
 		deletedReceiptItem.DeletedAt = deletedAt;
 
-		TransactionEntity activeTransaction = TransactionEntityGenerator.Generate(activeReceipt.Id, account.Id);
-		TransactionEntity deletedTransaction = TransactionEntityGenerator.Generate(activeReceipt.Id, account.Id);
+		TransactionEntity activeTransaction = TransactionEntityGenerator.Generate(activeReceipt.Id, account.Id, card.Id);
+		TransactionEntity deletedTransaction = TransactionEntityGenerator.Generate(activeReceipt.Id, account.Id, card.Id);
 		deletedTransaction.DeletedAt = deletedAt;
 
 		AdjustmentEntity activeAdjustment = AdjustmentEntityGenerator.Generate();
@@ -69,6 +73,7 @@ public class PurgeTrashServiceTests(PostgresFixture fixture)
 		await using (ApplicationDbContext setup = fixture.CreateDbContext())
 		{
 			setup.Accounts.Add(account);
+			setup.Cards.Add(card);
 			setup.Receipts.AddRange(activeReceipt, deletedReceipt);
 			setup.Categories.AddRange(activeCategory, deletedCategory);
 			await setup.SaveChangesAsync();
