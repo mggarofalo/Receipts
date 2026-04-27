@@ -165,7 +165,7 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 		return string.Concat(value.AsSpan(0, safeMax), "... [truncated]");
 	}
 
-	private static ParsedReceipt MapToParsedReceipt(VlmReceiptPayload payload)
+	internal static ParsedReceipt MapToParsedReceipt(VlmReceiptPayload payload)
 	{
 		FieldConfidence<string> storeName = !string.IsNullOrWhiteSpace(payload.Store?.Name)
 			? FieldConfidence<string>.High(payload.Store.Name)

@@ -431,4 +431,62 @@ public class ScanReceiptCommandHandlerTests
 			s => s.ConvertAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
 			Times.Never);
 	}
+
+	[Fact]
+	public async Task Handle_Image_PropagatesCallerCancellationTokenToExtractionService()
+	{
+		// Arrange — RECEIPTS-647: a refactor that accidentally substitutes
+		// CancellationToken.None for the caller-provided cancellationToken would
+		// silently break /scan request cancellation. This test asserts the
+		// EXACT token instance reaches the extraction service so any drop-the-
+		// token regression fails loudly.
+		byte[] imageBytes = [0xFF, 0xD8];
+		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
+		using CancellationTokenSource cts = new();
+		CancellationToken expected = cts.Token;
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.Is<CancellationToken>(t => t == expected)))
+			.ReturnsAsync(BuildPopulatedReceipt());
+
+		// Act
+		await _handler.Handle(command, expected);
+
+		// Assert
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(imageBytes, "image/jpeg", It.Is<CancellationToken>(t => t == expected)),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_Pdf_PropagatesCallerCancellationTokenToBothServices()
+	{
+		// Arrange — RECEIPTS-647: the PDF path fans out across two service calls
+		// (PdfConversionService.ConvertAsync, then IReceiptExtractionService
+		// .ExtractAsync). Both must receive the caller's exact token.
+		byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
+		ScanReceiptCommand command = new(pdfBytes, "application/pdf");
+		byte[] firstPageImage = [0x89, 0x50, 0x4E, 0x47];
+		using CancellationTokenSource cts = new();
+		CancellationToken expected = cts.Token;
+
+		_mockPdfConversionService
+			.Setup(s => s.ConvertAsync(pdfBytes, It.Is<CancellationToken>(t => t == expected)))
+			.ReturnsAsync(new PdfConversionResult(firstPageImage, TotalPageCount: 1));
+
+		_mockExtractionService
+			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.Is<CancellationToken>(t => t == expected)))
+			.ReturnsAsync(BuildPopulatedReceipt());
+
+		// Act
+		await _handler.Handle(command, expected);
+
+		// Assert — both services received the exact caller token
+		_mockPdfConversionService.Verify(
+			s => s.ConvertAsync(pdfBytes, It.Is<CancellationToken>(t => t == expected)),
+			Times.Once);
+		_mockExtractionService.Verify(
+			s => s.ExtractAsync(firstPageImage, "image/png", It.Is<CancellationToken>(t => t == expected)),
+			Times.Once);
+	}
 }

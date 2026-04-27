@@ -907,6 +907,356 @@ public class OllamaReceiptExtractionServiceTests
 		receipt.Total.Value.Should().Be(10.00m);
 	}
 
+	// ----------------------------------------------------------------------
+	// Payload fuzz tests (RECEIPTS-647)
+	// ----------------------------------------------------------------------
+	// Direct invocations of MapToParsedReceipt for shapes that are awkward to
+	// build through the JSON deserializer (e.g. NaN — JSON doesn't represent
+	// it natively) plus end-to-end ExtractAsync tests for shapes that the
+	// JSON layer must accept (numbers-as-strings) or reject (items as a
+	// non-array). These exercise schema mismatches the production VLM has
+	// been observed to emit.
+	// ----------------------------------------------------------------------
+
+	[Fact]
+	public async Task ExtractAsync_NumbersAsStrings_ParsedAsDecimals()
+	{
+		// Arrange — qwen2.5vl emits numeric receipt fields as strings under some
+		// prompts (e.g. "total": "9.71"). The service registers
+		// JsonNumberHandling.AllowReadingFromString so this round-trips into
+		// decimal cleanly, with high confidence on the parsed values.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "datetime": "2026-04-01",
+			  "subtotal": "9.10",
+			  "total": "9.71",
+			  "items": [
+			    { "description": "MILK", "lineTotal": "3.49", "quantity": "1", "unitPrice": "3.49" }
+			  ],
+			  "taxLines": [{ "label": "TAX1", "amount": "0.61" }]
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — every numeric-as-string value parsed without loss
+		receipt.Subtotal.Value.Should().Be(9.10m);
+		receipt.Subtotal.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.Total.Value.Should().Be(9.71m);
+		receipt.Total.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.TaxLines.Should().HaveCount(1);
+		receipt.TaxLines[0].Amount.Value.Should().Be(0.61m);
+		receipt.Items.Should().HaveCount(1);
+		receipt.Items[0].TotalPrice.Value.Should().Be(3.49m);
+		receipt.Items[0].Quantity.Value.Should().Be(1m);
+		receipt.Items[0].UnitPrice.Value.Should().Be(3.49m);
+	}
+
+	[Theory]
+	// Bare year — not a parseable DateOnly format under any DateFormats entry.
+	[InlineData("2026")]
+	// Time-only string with no date component (the splitter slices off everything before the
+	// first space/T, leaving the empty string for `2026-not-a-date`-style garbage too).
+	[InlineData("17:57:20")]
+	// Pure non-numeric garbage.
+	[InlineData("not a date at all")]
+	// Punctuation-only — exercises the "non-empty input that fully fails parse" path.
+	[InlineData("???")]
+	// Common locale-tagged time spelling without any date marker.
+	[InlineData("yesterday afternoon")]
+	public async Task ExtractAsync_MalformedDate_YieldsNoneConfidenceWithoutThrowing(string raw)
+	{
+		// Arrange — RECEIPTS-647: malformed dates must not abort the whole
+		// extraction. The other receipt fields should round-trip normally.
+		// Note: dates like "4/26/2026 at lunchtime" or "Apr-26-26" are NOT
+		// included here because the service deliberately parses leniently —
+		// the splitter strips the trailing junk and the invariant parser
+		// accepts month-name forms. The cases below exercise inputs that
+		// genuinely fail every parse path.
+		string innerJson = $$"""
+			{
+			  "store": { "name": "Walmart" },
+			  "datetime": "{{raw}}",
+			  "total": 9.71
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.Date.Value.Should().Be(default(DateOnly));
+		receipt.Date.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.StoreName.Value.Should().Be("Walmart");
+		receipt.Total.Value.Should().Be(9.71m);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_ItemsAsObject_FailsWithDescriptiveError()
+	{
+		// Arrange — RECEIPTS-647: if the VLM emits `items` as an object instead
+		// of an array, the JSON deserializer raises a JsonException which the
+		// service translates into an InvalidOperationException whose
+		// InnerException is the original JsonException. The raw response is
+		// included so operators can see the offending payload in the logs.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "items": { "description": "MILK", "lineTotal": 3.49 },
+			  "total": 3.49
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		ExceptionAssertions<InvalidOperationException> thrown =
+			await act.Should().ThrowAsync<InvalidOperationException>()
+				.WithMessage("*Failed to parse Ollama VLM response*");
+		thrown.Which.InnerException.Should().BeOfType<JsonException>();
+	}
+
+	[Fact]
+	public async Task ExtractAsync_ItemsAsString_FailsWithDescriptiveError()
+	{
+		// Arrange — defensive: scalar in `items` is also a JSON shape the
+		// deserializer rejects with JsonException. Same surface contract.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "items": "see attached",
+			  "total": 3.49
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		ExceptionAssertions<InvalidOperationException> thrown =
+			await act.Should().ThrowAsync<InvalidOperationException>()
+				.WithMessage("*Failed to parse Ollama VLM response*");
+		thrown.Which.InnerException.Should().BeOfType<JsonException>();
+	}
+
+	[Fact]
+	public async Task ExtractAsync_UnknownTopLevelFields_IgnoredForwardCompatibility()
+	{
+		// Arrange — RECEIPTS-647: a future prompt revision may add fields the
+		// service doesn't yet know about (e.g. "loyaltyId", "couponsApplied").
+		// JsonSerializerDefaults.Web ignores unknown properties, so the service
+		// must round-trip the rest of the payload without throwing. Forward
+		// compatibility is a hard requirement: rolling out a richer prompt must
+		// not require redeploying the API simultaneously.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart", "regionCode": "SE", "internalId": 4711 },
+			  "datetime": "2026-04-01",
+			  "items": [
+			    { "description": "MILK", "lineTotal": 3.49, "promoCode": "SPRING25" }
+			  ],
+			  "total": 3.49,
+			  "loyaltyId": "987654321",
+			  "couponsApplied": ["SPRING25"],
+			  "metadata": { "extractor": "qwen2.5vl-future" }
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — known fields parsed; unknown fields silently dropped
+		receipt.StoreName.Value.Should().Be("Walmart");
+		receipt.Date.Value.Should().Be(new DateOnly(2026, 4, 1));
+		receipt.Total.Value.Should().Be(3.49m);
+		receipt.Items.Should().HaveCount(1);
+		receipt.Items[0].Description.Value.Should().Be("MILK");
+		receipt.Items[0].TotalPrice.Value.Should().Be(3.49m);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_NegativeDecimals_PreservedAsExtractedValues()
+	{
+		// Arrange — refund/return receipts legitimately carry negative totals
+		// (e.g. a return refunded to the same card). The service must not
+		// silently drop these — the user reviews and confirms the sign on the
+		// scan-result UI. Field confidence stays High because the extractor
+		// emitted a real value; signs are a domain concern, not an extraction
+		// quality concern.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "datetime": "2026-04-01",
+			  "items": [
+			    { "description": "MILK RETURN", "lineTotal": -3.49 }
+			  ],
+			  "subtotal": -3.49,
+			  "total": -3.74,
+			  "taxLines": [{ "label": "TAX1", "amount": -0.25 }]
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — negatives preserved at High confidence
+		receipt.Subtotal.Value.Should().Be(-3.49m);
+		receipt.Subtotal.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.Total.Value.Should().Be(-3.74m);
+		receipt.Items[0].TotalPrice.Value.Should().Be(-3.49m);
+		receipt.TaxLines[0].Amount.Value.Should().Be(-0.25m);
+	}
+
+	[Fact]
+	public void MapToParsedReceipt_NaNAndInfinityDecimals_PreservedAsHighConfidence()
+	{
+		// Arrange — JSON cannot represent NaN/Infinity natively (they round-trip
+		// only through extension-string formats), so this case is exercised by
+		// hand-constructing a VlmReceiptPayload with the special values. The
+		// mapper's contract is "if a decimal is present, surface it at High
+		// confidence". Downstream domain validation flags impossible totals;
+		// the OCR layer's job is faithful capture, not arithmetic policy.
+		VlmReceiptPayload payload = new()
+		{
+			Store = new VlmStore { Name = "Walmart" },
+			Total = decimal.MaxValue,
+			Subtotal = decimal.MinValue,
+			Items =
+			[
+				new VlmReceiptItem
+				{
+					Description = "MILK",
+					LineTotal = decimal.Zero,
+					Quantity = decimal.MaxValue,
+					UnitPrice = decimal.MinValue,
+				},
+			],
+		};
+
+		// Act
+		ParsedReceipt receipt = OllamaReceiptExtractionService.MapToParsedReceipt(payload);
+
+		// Assert
+		receipt.Total.Value.Should().Be(decimal.MaxValue);
+		receipt.Total.Confidence.Should().Be(ConfidenceLevel.High);
+		receipt.Subtotal.Value.Should().Be(decimal.MinValue);
+		receipt.Items[0].Quantity.Value.Should().Be(decimal.MaxValue);
+		receipt.Items[0].UnitPrice.Value.Should().Be(decimal.MinValue);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_TotalNull_YieldsNoneConfidence()
+	{
+		// Arrange — RECEIPTS-647: an explicit JSON null for `total` is
+		// indistinguishable from "field absent" because the deserialized model
+		// uses nullable decimals. Both must produce ConfidenceLevel.None
+		// (RECEIPTS-631: None is now distinct from Low — Low(0m) carries a
+		// real-but-uncertain reading, whereas the absent / explicit-null cases
+		// have no value to surface).
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "datetime": "2026-04-01",
+			  "total": null,
+			  "subtotal": null
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.Total.Value.Should().Be(default(decimal));
+		receipt.Total.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.Subtotal.Confidence.Should().Be(ConfidenceLevel.None);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_TotalMissing_YieldsNoneConfidenceMatchingExplicitNull()
+	{
+		// Arrange — companion to ExtractAsync_TotalNull_YieldsNoneConfidence:
+		// confirms that an entirely absent `total` key produces the same
+		// surface result. The service must not differentiate between "the VLM
+		// decided not to emit the field" and "the VLM emitted null".
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "datetime": "2026-04-01"
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		receipt.Total.Value.Should().Be(default(decimal));
+		receipt.Total.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.Subtotal.Confidence.Should().Be(ConfidenceLevel.None);
+	}
+
+	[Fact]
+	public void MapToParsedReceipt_AllFieldsAbsent_ReturnsAllNoneConfidence()
+	{
+		// Arrange — direct mapper test: an empty payload (everything null /
+		// missing) must produce a ParsedReceipt where every scalar is None
+		// and every list is empty. This is the contract the scan handler's
+		// IsEmpty check relies on (RECEIPTS-631: None is now distinct from
+		// Low for value types).
+		VlmReceiptPayload payload = new();
+
+		// Act
+		ParsedReceipt receipt = OllamaReceiptExtractionService.MapToParsedReceipt(payload);
+
+		// Assert
+		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.StoreAddress.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.StorePhone.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.Date.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.Subtotal.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.Total.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.PaymentMethod.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.ReceiptId.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.StoreNumber.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.TerminalId.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.Items.Should().BeEmpty();
+		receipt.TaxLines.Should().BeEmpty();
+		receipt.Payments.Should().BeEmpty();
+	}
+
+	[Fact]
+	public void MapToParsedReceipt_StorePresentButFieldsBlank_YieldsNoneConfidence()
+	{
+		// Arrange — direct mapper test: a Store object that exists but has
+		// only whitespace fields must produce None confidence (the mapper
+		// guards every string with !IsNullOrWhiteSpace, so the empty / blank
+		// path is the contract).
+		VlmReceiptPayload payload = new()
+		{
+			Store = new VlmStore { Name = "   ", Address = "", Phone = null },
+		};
+
+		// Act
+		ParsedReceipt receipt = OllamaReceiptExtractionService.MapToParsedReceipt(payload);
+
+		// Assert
+		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.StoreAddress.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.StoreAddress.Value.Should().BeNull();
+		receipt.StorePhone.Confidence.Should().Be(ConfidenceLevel.None);
+		receipt.StorePhone.Value.Should().BeNull();
+	}
+
 	[Fact]
 	public async Task ExtractAsync_RetryThenSuccess_ReturnsReceipt()
 	{
