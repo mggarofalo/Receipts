@@ -927,6 +927,7 @@ public class OllamaReceiptExtractionServiceTests
 		// decimal cleanly, with high confidence on the parsed values.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "datetime": "2026-04-01",
 			  "subtotal": "9.10",
@@ -978,6 +979,7 @@ public class OllamaReceiptExtractionServiceTests
 		// genuinely fail every parse path.
 		string innerJson = $$"""
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "datetime": "{{raw}}",
 			  "total": 9.71
@@ -1005,6 +1007,7 @@ public class OllamaReceiptExtractionServiceTests
 		// included so operators can see the offending payload in the logs.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "items": { "description": "MILK", "lineTotal": 3.49 },
 			  "total": 3.49
@@ -1029,6 +1032,7 @@ public class OllamaReceiptExtractionServiceTests
 		// deserializer rejects with JsonException. Same surface contract.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "items": "see attached",
 			  "total": 3.49
@@ -1057,6 +1061,7 @@ public class OllamaReceiptExtractionServiceTests
 		// not require redeploying the API simultaneously.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart", "regionCode": "SE", "internalId": 4711 },
 			  "datetime": "2026-04-01",
 			  "items": [
@@ -1093,6 +1098,7 @@ public class OllamaReceiptExtractionServiceTests
 		// quality concern.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "datetime": "2026-04-01",
 			  "items": [
@@ -1164,6 +1170,7 @@ public class OllamaReceiptExtractionServiceTests
 		// have no value to surface).
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "datetime": "2026-04-01",
 			  "total": null,
@@ -1190,6 +1197,7 @@ public class OllamaReceiptExtractionServiceTests
 		// decided not to emit the field" and "the VLM emitted null".
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "datetime": "2026-04-01"
 			}
