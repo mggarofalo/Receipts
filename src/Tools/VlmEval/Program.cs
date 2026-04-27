@@ -37,15 +37,12 @@ ParseCliArgs(args, evalOptions);
 string fixturesPath = Path.GetFullPath(evalOptions.FixturesPath);
 
 builder.Services.AddSingleton(evalOptions);
-builder.Services.AddSingleton(vlmOptions);
 
-builder.Services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
-{
-	client.BaseAddress = new Uri(vlmOptions.OllamaUrl!.TrimEnd('/') + "/");
-	// Per-call timeout is enforced inside OllamaReceiptExtractionService via its own token source.
-	// Leave HttpClient.Timeout unbounded so resilience handlers don't cancel the long VLM call.
-	client.Timeout = Timeout.InfiniteTimeSpan;
-});
+// Share the production VLM client registration so eval results reflect production behavior
+// (retry + circuit breaker + per-attempt timeout, with the standard ServiceDefaults handler
+// removed). Without this, a flaky local Ollama would inflate the model's apparent failure
+// rate during evaluation. See RECEIPTS-639.
+builder.Services.AddVlmOcrClient(vlmOptions);
 
 builder.Services.AddHttpClient("ollama-probe");
 

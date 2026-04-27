@@ -9,6 +9,7 @@ using Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Moq.Protected;
@@ -103,6 +104,7 @@ public class OllamaReceiptExtractionServiceTests
 		// payments array, receipt/store/terminal identifiers.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": {
 			    "name": "Walmart Supercenter",
 			    "address": "9 BENTON RD, TRAVELERS REST SC 29690",
@@ -205,6 +207,7 @@ public class OllamaReceiptExtractionServiceTests
 		// (e.g. "01/14/26") despite being asked for ISO-8601. We parse leniently.
 		string innerJson = $$"""
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "datetime": "{{dateString}}",
 			  "total": 10.00
@@ -226,6 +229,7 @@ public class OllamaReceiptExtractionServiceTests
 		// Arrange — a bad date string should not tank the entire extraction
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "datetime": "sometime last week",
 			  "total": 10.00
@@ -251,6 +255,7 @@ public class OllamaReceiptExtractionServiceTests
 		// the "X lb. @ $Y" pattern and carries the actual quantity/unitPrice.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "items": [
 			    { "description": "BANANAS", "code": "000000004011", "lineTotal": 1.23,
@@ -282,6 +287,7 @@ public class OllamaReceiptExtractionServiceTests
 		// This keeps us from accidentally corrupting an unrelated prior item.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "items": [
 			    { "description": "BREAD", "code": "072250049190", "lineTotal": 3.76,
@@ -311,6 +317,7 @@ public class OllamaReceiptExtractionServiceTests
 		// the "sub-line" shouldn't clobber it. Treat it as a distinct item instead.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "items": [
 			    { "description": "BANANAS", "code": "000000004011", "lineTotal": 1.23,
 			      "quantity": 2.460, "unitPrice": 0.50, "taxCode": "N" },
@@ -401,6 +408,7 @@ public class OllamaReceiptExtractionServiceTests
 		// Arrange — no payments, no taxLines, items with unitPrice/quantity omitted (preferred per V2 prompt)
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "datetime": "2026-04-01",
 			  "items": [],
@@ -429,6 +437,7 @@ public class OllamaReceiptExtractionServiceTests
 		// carry every tender with its amount and last-four for downstream reconciliation.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "total": 40.00,
 			  "payments": [
@@ -465,6 +474,7 @@ public class OllamaReceiptExtractionServiceTests
 		// Arrange — the entire store object may be omitted on a hard-to-read receipt
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "datetime": "2026-04-01",
 			  "total": 10.00
 			}
@@ -492,6 +502,7 @@ public class OllamaReceiptExtractionServiceTests
 		// empty Payments list rather than throwing.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Corner Market" },
 			  "datetime": "2026-04-01",
 			  "total": 3.99
@@ -521,6 +532,7 @@ public class OllamaReceiptExtractionServiceTests
 		// never surfaces a hallucinated value with high confidence.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "total": 70.43,
 			  "payments": [
@@ -632,6 +644,7 @@ public class OllamaReceiptExtractionServiceTests
 		// Arrange — sanity check that the post-processing does not regress the happy path.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "total": 70.43,
 			  "payments": [
@@ -657,6 +670,7 @@ public class OllamaReceiptExtractionServiceTests
 		// downstream code can distinguish "truly unknown tender" from legacy-mapper behavior.
 		string innerJson = """
 			{
+			  "schema_version": 1,
 			  "store": { "name": "Walmart" },
 			  "total": 15.00,
 			  "payments": [
@@ -788,7 +802,10 @@ public class OllamaReceiptExtractionServiceTests
 				return new HttpResponseMessage
 				{
 					StatusCode = HttpStatusCode.OK,
-					Content = new StringContent(WrapInOllamaEnvelope("{}"), System.Text.Encoding.UTF8, "application/json"),
+					Content = new StringContent(
+						WrapInOllamaEnvelope("""{ "schema_version": 1 }"""),
+						System.Text.Encoding.UTF8,
+						"application/json"),
 				};
 			});
 		OllamaReceiptExtractionService service = CreateService(handlerMock.Object);
@@ -827,7 +844,7 @@ public class OllamaReceiptExtractionServiceTests
 		// (5s) — must complete successfully. If the standard handler were not removed by
 		// our registration, the call would die at ~200ms with a TimeoutRejectedException.
 		Mock<HttpMessageHandler> handlerMock = new();
-		string successBody = WrapInOllamaEnvelope("""{ "store": { "name": "Walmart" }, "total": 10.00 }""");
+		string successBody = WrapInOllamaEnvelope("""{ "schema_version": 1, "store": { "name": "Walmart" }, "total": 10.00 }""");
 		handlerMock.Protected()
 			.Setup<Task<HttpResponseMessage>>("SendAsync",
 				ItExpr.IsAny<HttpRequestMessage>(),
@@ -895,7 +912,7 @@ public class OllamaReceiptExtractionServiceTests
 	{
 		// Arrange — build a DI pipeline with retry. Fail twice with 503, then succeed.
 		int callCount = 0;
-		string successBody = WrapInOllamaEnvelope("""{ "store": { "name": "Walmart" }, "total": 10.00 }""");
+		string successBody = WrapInOllamaEnvelope("""{ "schema_version": 1, "store": { "name": "Walmart" }, "total": 10.00 }""");
 
 		Mock<HttpMessageHandler> handlerMock = new();
 		handlerMock.Protected()
@@ -956,5 +973,310 @@ public class OllamaReceiptExtractionServiceTests
 		receipt.StoreName.Value.Should().Be("Walmart");
 		receipt.Total.Value.Should().Be(10.00m);
 		callCount.Should().Be(3); // 2 transient failures + 1 success
+	}
+
+	// -------------------------------------------------------------------------
+	// RECEIPTS-639: schema_version, prompt observability, raw-response gating,
+	// exception-message truncation, and shared client registration helper.
+	// -------------------------------------------------------------------------
+
+	[Fact]
+	public async Task ExtractAsync_SchemaVersionMissing_ThrowsInvalidOperationException()
+	{
+		// Arrange — a payload without schema_version represents either an old VLM model that
+		// pre-dates the schema bump or a corrupted/wrong-shape response. Either way, we MUST
+		// fail loudly rather than silently degrade fields.
+		string innerJson = """
+			{
+			  "store": { "name": "Walmart" },
+			  "total": 10.00
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — the exception message must NOT contain the raw payload (PII gate) but MUST
+		// describe the version mismatch clearly enough to debug from telemetry.
+		ExceptionAssertions<InvalidOperationException> thrown = await act.Should().ThrowAsync<InvalidOperationException>();
+		thrown.Which.Message.Should().Contain("schema_version mismatch");
+		thrown.Which.Message.Should().Contain("expected=1");
+		thrown.Which.Message.Should().Contain("actual=null");
+		thrown.Which.Message.Should().Contain("promptVersion=V4");
+		thrown.Which.Message.Should().NotContain("Walmart");
+	}
+
+	[Fact]
+	public async Task ExtractAsync_SchemaVersionMismatch_ThrowsInvalidOperationException()
+	{
+		// Arrange — a payload claiming schema_version: 2 from a model trained against a newer
+		// schema. Same fail-fast contract — we don't try to interpret a future shape.
+		string innerJson = """
+			{
+			  "schema_version": 2,
+			  "store": { "name": "Walmart" },
+			  "total": 10.00
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		ExceptionAssertions<InvalidOperationException> thrown = await act.Should().ThrowAsync<InvalidOperationException>();
+		thrown.Which.Message.Should().Contain("schema_version mismatch");
+		thrown.Which.Message.Should().Contain("expected=1");
+		thrown.Which.Message.Should().Contain("actual=2");
+		thrown.Which.Message.Should().NotContain("Walmart");
+	}
+
+	[Fact]
+	public async Task ExtractAsync_LogRawResponses_DefaultFalse_DoesNotLogRawBody()
+	{
+		// Arrange — the raw response carries receipt PII. With LogRawResponses unset (default
+		// false) the body MUST NOT appear in any log message.
+		string innerJson = """
+			{
+			  "schema_version": 1,
+			  "store": { "name": "Walmart Supercenter" },
+			  "total": 70.43,
+			  "payments": [
+			    { "method": "MCARD", "amount": 70.43, "lastFour": "3409" }
+			  ]
+			}
+			""";
+		CapturingLogger<OllamaReceiptExtractionService> logger = new();
+		HttpClient httpClient = new(CreateHandler(WrapInOllamaEnvelope(innerJson)))
+		{
+			BaseAddress = new Uri("http://test-ollama/"),
+		};
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "glm-ocr:q8_0",
+			TimeoutSeconds = 30,
+			// Default — LogRawResponses left false.
+		};
+		OllamaReceiptExtractionService service = new(httpClient, options, logger);
+
+		// Act
+		await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — every captured log message is free of PII fragments from the body.
+		logger.Records.Should().NotBeEmpty();
+		logger.Records.Should().NotContain(record => record.FormattedMessage.Contains("Walmart Supercenter"));
+		logger.Records.Should().NotContain(record => record.FormattedMessage.Contains("3409"));
+		logger.Records.Should().NotContain(record => record.FormattedMessage.Contains("MCARD"));
+		logger.Records.Should().NotContain(record => record.FormattedMessage.Contains("raw response", StringComparison.OrdinalIgnoreCase));
+	}
+
+	[Fact]
+	public async Task ExtractAsync_LogRawResponses_True_DoesLogRawBody()
+	{
+		// Arrange — sanity check: when explicitly enabled (e.g. by VlmEval), the raw body
+		// surfaces in the debug log. This is the only path that should ever expose PII to logs,
+		// and is gated to local diagnostic flows.
+		string innerJson = """
+			{
+			  "schema_version": 1,
+			  "store": { "name": "Walmart Supercenter" },
+			  "total": 70.43
+			}
+			""";
+		CapturingLogger<OllamaReceiptExtractionService> logger = new();
+		HttpClient httpClient = new(CreateHandler(WrapInOllamaEnvelope(innerJson)))
+		{
+			BaseAddress = new Uri("http://test-ollama/"),
+		};
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "glm-ocr:q8_0",
+			TimeoutSeconds = 30,
+			LogRawResponses = true,
+		};
+		OllamaReceiptExtractionService service = new(httpClient, options, logger);
+
+		// Act
+		await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		logger.Records.Should().Contain(record =>
+			record.FormattedMessage.Contains("Walmart Supercenter")
+			&& record.FormattedMessage.Contains("raw response", StringComparison.OrdinalIgnoreCase));
+	}
+
+	[Fact]
+	public async Task ExtractAsync_PromptVersion_FlowsIntoLogScope()
+	{
+		// Arrange — every log emitted during the extraction must inherit a scope containing
+		// the prompt version so a regression can be traced back to the prompt that produced it.
+		string innerJson = """
+			{
+			  "schema_version": 1,
+			  "store": { "name": "Walmart" },
+			  "total": 10.00
+			}
+			""";
+		CapturingLogger<OllamaReceiptExtractionService> logger = new();
+		HttpClient httpClient = new(CreateHandler(WrapInOllamaEnvelope(innerJson)))
+		{
+			BaseAddress = new Uri("http://test-ollama/"),
+		};
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "glm-ocr:q8_0",
+			TimeoutSeconds = 30,
+		};
+		OllamaReceiptExtractionService service = new(httpClient, options, logger);
+
+		// Act
+		await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert — at least one record carries a scope with VlmPromptVersion=V4.
+		logger.Records.Should().NotBeEmpty();
+		bool anyRecordHasVersionScope = logger.Records.Any(record =>
+			record.Scopes.Any(scope =>
+				scope.TryGetValue("VlmPromptVersion", out object? v) && v as string == "V4"));
+		anyRecordHasVersionScope.Should().BeTrue("the prompt version must flow into a structured log scope so logs can be filtered by it");
+	}
+
+	[Fact]
+	public async Task ExtractAsync_MalformedJson_TruncatesRawResponseInExceptionMessage()
+	{
+		// Arrange — a malformed response longer than 500 chars must NOT be copied verbatim into
+		// the exception message (telemetry leak risk). The truncation marker confirms the cap
+		// was applied. The full body still flows through the gated raw-response debug log when
+		// the operator opts in.
+		string oversizedGarbage = "this is not JSON " + new string('x', 1000);
+		string envelope = WrapInOllamaEnvelope(oversizedGarbage);
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(envelope));
+
+		// Act
+		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+
+		// Assert
+		ExceptionAssertions<InvalidOperationException> thrown = await act.Should().ThrowAsync<InvalidOperationException>();
+		thrown.Which.Message.Should().Contain("[truncated]");
+		thrown.Which.Message.Length.Should().BeLessThan(oversizedGarbage.Length);
+		thrown.Which.InnerException.Should().BeOfType<JsonException>();
+	}
+
+	[Theory]
+	[InlineData("short value", 500, "short value")]
+	[InlineData("", 100, "")]
+	public void Truncate_InputShorterThanOrEqualToLimit_ReturnedVerbatim(string input, int max, string expected)
+	{
+		// Act
+		string result = OllamaReceiptExtractionService.Truncate(input, max);
+
+		// Assert
+		result.Should().Be(expected);
+	}
+
+	[Fact]
+	public void Truncate_InputLongerThanLimit_TruncatedAndAppendedWithMarker()
+	{
+		// Act
+		string result = OllamaReceiptExtractionService.Truncate(new string('a', 1000), 500);
+
+		// Assert — first 500 chars preserved, suffix appended so callers can tell.
+		result.Should().StartWith(new string('a', 500));
+		result.Should().EndWith("[truncated]");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_NullOllamaUrl_Throws()
+	{
+		// Arrange
+		ServiceCollection services = new();
+		services.AddLogging();
+		VlmOcrOptions options = new() { Model = "glm-ocr:q8_0" };
+
+		// Act
+		Action act = () => services.AddVlmOcrClient(options);
+
+		// Assert — the helper enforces a non-null OllamaUrl so production and VlmEval cannot
+		// silently register a useless client.
+		act.Should().Throw<ArgumentException>().WithMessage("*OllamaUrl*");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_RegistersServiceAndOptions()
+	{
+		// Arrange — verify the shared helper wires the typed client and exposes the options
+		// as a singleton (so OllamaReceiptExtractionService can resolve them).
+		ServiceCollection services = new();
+		services.AddLogging();
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "glm-ocr:q8_0",
+			TimeoutSeconds = 60,
+		};
+
+		// Act
+		services.AddVlmOcrClient(options);
+
+		// Assert
+		using ServiceProvider sp = services.BuildServiceProvider();
+		sp.GetRequiredService<VlmOcrOptions>().Should().BeSameAs(options);
+		sp.GetRequiredService<IReceiptExtractionService>().Should().BeOfType<OllamaReceiptExtractionService>();
+	}
+
+	/// <summary>
+	/// Captures formatted log messages and the active scope chain at log time, so tests can
+	/// assert both message content (for raw-response PII gating) and ambient scope state
+	/// (for prompt-version observability).
+	/// </summary>
+	private sealed class CapturingLogger<T> : ILogger<T>
+	{
+		private readonly List<IReadOnlyDictionary<string, object?>> _activeScopes = [];
+
+		public List<LogRecord> Records { get; } = [];
+
+		IDisposable? ILogger.BeginScope<TState>(TState state)
+			where TState : default
+		{
+			Dictionary<string, object?> snapshot = state is IEnumerable<KeyValuePair<string, object>> pairs
+				? pairs.ToDictionary(p => p.Key, p => (object?)p.Value)
+				: new Dictionary<string, object?> { ["__state"] = state };
+			_activeScopes.Add(snapshot);
+			return new ScopeReleaser(_activeScopes);
+		}
+
+		public bool IsEnabled(LogLevel logLevel) => true;
+
+		public void Log<TState>(
+			LogLevel logLevel,
+			EventId eventId,
+			TState state,
+			Exception? exception,
+			Func<TState, Exception?, string> formatter)
+		{
+			Records.Add(new LogRecord(
+				logLevel,
+				formatter(state, exception),
+				_activeScopes.Select(s => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>(s)).ToList()));
+		}
+
+		private sealed class ScopeReleaser(List<IReadOnlyDictionary<string, object?>> scopes) : IDisposable
+		{
+			public void Dispose()
+			{
+				if (scopes.Count > 0)
+				{
+					scopes.RemoveAt(scopes.Count - 1);
+				}
+			}
+		}
+
+		public sealed record LogRecord(
+			LogLevel Level,
+			string FormattedMessage,
+			IReadOnlyList<IReadOnlyDictionary<string, object?>> Scopes);
 	}
 }

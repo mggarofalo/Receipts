@@ -248,6 +248,29 @@ public static class InfrastructureService
 				?? "http://localhost:11434";
 		}
 
+		services.AddVlmOcrClient(options);
+	}
+
+	/// <summary>
+	/// Registers the Ollama-backed <see cref="IReceiptExtractionService"/> typed HTTP client
+	/// with the production resilience pipeline (retry + circuit breaker + per-attempt timeout)
+	/// and registers <paramref name="options"/> as a singleton. Both the production
+	/// <c>RegisterReceiptExtractionService</c> path and the <c>VlmEval</c> tool call this
+	/// helper so they share identical retry behavior and the same opt-out from the standard
+	/// handler injected by <c>Receipts.ServiceDefaults</c>. See RECEIPTS-639.
+	/// </summary>
+	public static IServiceCollection AddVlmOcrClient(this IServiceCollection services, VlmOcrOptions options)
+	{
+		ArgumentNullException.ThrowIfNull(services);
+		ArgumentNullException.ThrowIfNull(options);
+
+		if (string.IsNullOrWhiteSpace(options.OllamaUrl))
+		{
+			throw new ArgumentException(
+				$"{nameof(VlmOcrOptions)}.{nameof(VlmOcrOptions.OllamaUrl)} must be set before calling {nameof(AddVlmOcrClient)}.",
+				nameof(options));
+		}
+
 		services.AddSingleton(options);
 
 #pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is in evaluation; required to opt out of the standard handler injected by ServiceDefaults.
@@ -261,6 +284,8 @@ public static class InfrastructureService
 			.RemoveAllResilienceHandlers()
 			.AddResilienceHandler("vlm-ocr", builder => ConfigureVlmOcrResilience(builder, options));
 #pragma warning restore EXTEXP0001
+
+		return services;
 	}
 
 	/// <summary>

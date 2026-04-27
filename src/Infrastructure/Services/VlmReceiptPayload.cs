@@ -4,6 +4,17 @@ namespace Infrastructure.Services;
 
 internal sealed class VlmReceiptPayload
 {
+	/// <summary>
+	/// The schema version the prompt was authored against. The host validates this against
+	/// <see cref="CurrentSchemaVersion"/> after deserialization and throws on mismatch — this
+	/// prevents an old VLM model that emits a stale shape from passing through silently after
+	/// a future schema bump. See RECEIPTS-639.
+	/// </summary>
+	public const int CurrentSchemaVersion = 1;
+
+	[JsonPropertyName("schema_version")]
+	public int? SchemaVersion { get; set; }
+
 	[JsonPropertyName("store")]
 	public VlmStore? Store { get; set; }
 
