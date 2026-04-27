@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Application.Interfaces;
 using Application.Interfaces.Services;
 using Common;
@@ -327,10 +328,21 @@ public static class InfrastructureService
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(options);
 
-		if (string.IsNullOrWhiteSpace(options.OllamaUrl))
+		// The IConfiguration overload runs DataAnnotations via ValidateOnStart, but
+		// OptionsWrapper<T> bypasses that pipeline. Re-enforce the same constraints
+		// here so the two overloads share the contract — otherwise a VlmEval consumer
+		// that hands in a misconfigured instance would surface the failure as an
+		// opaque Ollama 400 instead of a clear startup error.
+		List<ValidationResult> validationResults = [];
+		if (!Validator.TryValidateObject(
+			options,
+			new ValidationContext(options),
+			validationResults,
+			validateAllProperties: true))
 		{
+			string details = string.Join("; ", validationResults.Select(r => r.ErrorMessage));
 			throw new ArgumentException(
-				$"{nameof(VlmOcrOptions)}.{nameof(VlmOcrOptions.OllamaUrl)} must be set before calling {nameof(AddVlmOcrClient)}.",
+				$"{nameof(VlmOcrOptions)} failed DataAnnotations validation: {details}",
 				nameof(options));
 		}
 

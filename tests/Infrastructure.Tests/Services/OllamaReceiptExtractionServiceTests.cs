@@ -1586,10 +1586,12 @@ public class OllamaReceiptExtractionServiceTests
 	[Fact]
 	public void AddVlmOcrClient_BlankOllamaUrl_Throws()
 	{
-		// Arrange — RECEIPTS-640: VlmOcrOptions.OllamaUrl is now non-nullable with a localhost
+		// Arrange — RECEIPTS-640: VlmOcrOptions.OllamaUrl is non-nullable with a localhost
 		// default, so to exercise the helper's guard we explicitly clear the URL to whitespace.
-		// The helper still enforces a non-blank URL so production and VlmEval cannot silently
-		// register a useless client.
+		// RECEIPTS-638: VlmOcrOptions.OllamaUrl is decorated with [Required(AllowEmptyStrings =
+		// false)] and the instance overload runs full DataAnnotations validation so the error
+		// message surfaces the constraint that failed (consistent with the IConfiguration
+		// overload's ValidateOnStart pipeline).
 		ServiceCollection services = new();
 		services.AddLogging();
 		VlmOcrOptions options = new() { Model = "glm-ocr:q8_0", OllamaUrl = "   " };
@@ -1599,6 +1601,50 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		act.Should().Throw<ArgumentException>().WithMessage("*OllamaUrl*");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_Instance_EmptyModel_Throws()
+	{
+		// Arrange — the instance overload must enforce the same DataAnnotations contract as
+		// the IConfiguration overload. Without this, a VlmEval consumer that misconfigures
+		// Ocr:Vlm:Model="" would surface the failure as an opaque Ollama 400 instead of a
+		// clear startup error. RECEIPTS-638 follow-up bug fix.
+		ServiceCollection services = new();
+		services.AddLogging();
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "",
+		};
+
+		// Act
+		Action act = () => services.AddVlmOcrClient(options);
+
+		// Assert
+		act.Should().Throw<ArgumentException>().WithMessage("*Model*");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_Instance_OutOfRangeTimeout_Throws()
+	{
+		// Arrange — TimeoutSeconds=0 is outside [Range(1, 3600)]. The instance overload must
+		// catch this at registration so VlmEval doesn't silently register a client whose every
+		// retry expires immediately.
+		ServiceCollection services = new();
+		services.AddLogging();
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "glm-ocr:q8_0",
+			TimeoutSeconds = 0,
+		};
+
+		// Act
+		Action act = () => services.AddVlmOcrClient(options);
+
+		// Assert
+		act.Should().Throw<ArgumentException>().WithMessage("*TimeoutSeconds*");
 	}
 
 	[Fact]
