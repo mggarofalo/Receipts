@@ -1,12 +1,20 @@
 namespace Infrastructure.Services;
 
+/// <summary>
+/// A receipt-extraction prompt and its version tag. The version flows through the
+/// <see cref="OllamaReceiptExtractionService"/> log scope so any extraction can be traced
+/// back to the prompt that produced it. See RECEIPTS-639.
+/// </summary>
+public sealed record ReceiptExtractionPromptValue(string Version, string Text);
+
 public static class ReceiptExtractionPrompt
 {
 	public const string V1 = """
 		You are a receipt data extraction assistant. Read the receipt image carefully and return a single JSON object with the purchase details.
 
-		Output schema (all fields are optional — omit any field you cannot read from the receipt):
+		Output schema (all fields are optional except `schema_version` — omit any field you cannot read from the receipt):
 		{
+		  "schema_version": 1,           // REQUIRED: integer literal 1
 		  "store": string,              // Merchant name
 		  "date": string,               // Purchase date, ISO-8601 YYYY-MM-DD
 		  "items": [
@@ -31,23 +39,26 @@ public static class ReceiptExtractionPrompt
 
 		Rules:
 		- Output ONLY the JSON object. No markdown fences, no prose, no "```json" markers.
+		- ALWAYS include `"schema_version": 1` as the first field of the object.
 		- Use `.` as the decimal separator.
 		- Emit numbers as JSON numbers, not strings.
-		- Do not invent data. If a field is not visible on the receipt, omit it entirely.
+		- Do not invent data. If a field is not visible on the receipt, omit it entirely (except `schema_version`).
 		""";
 
 	public const string V2 = """
 		Extract receipt data from the image as a single JSON object.
 
 		Rules:
+		- ALWAYS include `"schema_version": 1` as the first field of the object.
 		- If a field is not printed on the receipt, use null. NEVER compute, estimate, or guess.
 		- quantity and unitPrice are null unless the line explicitly shows a weight or multi-quantity (e.g. "2.460 lb. @ /0.50" or "3 @ $1.99"). Never default them to 1 or to the line total.
 		- code is the long digit string (UPC/SKU/PLU) printed on the item line. If none, null.
 		- Copy numbers exactly as printed. Do not sum, multiply, or divide.
 		- Output ONLY the JSON object. No markdown fences, no prose.
 
-		Schema (all fields optional):
+		Schema (all fields optional except `schema_version`):
 		{
+		  "schema_version": 1,
 		  "store": { "name": string, "address": string|null, "phone": string|null },
 		  "datetime": string|null,
 		  "items": [
@@ -70,6 +81,7 @@ public static class ReceiptExtractionPrompt
 		Extract receipt data from the image as a single JSON object.
 
 		Rules:
+		- ALWAYS include `"schema_version": 1` as the first field of the object.
 		- If a field is not printed on the receipt, use null. NEVER compute, estimate, or guess.
 		- code is the long digit string (UPC/SKU/PLU) printed on the item line. If none, null.
 		- Copy numbers exactly as printed. Do not sum, multiply, or divide.
@@ -96,8 +108,9 @@ public static class ReceiptExtractionPrompt
 
 		CRITICAL: For unweighted items, quantity is null, NOT 1. unitPrice is null, NOT equal to lineTotal.
 
-		Schema (all fields optional; use null when not printed):
+		Schema (all fields optional except `schema_version`; use null when not printed):
 		{
+		  "schema_version": 1,
 		  "store": { "name": string, "address": string|null, "phone": string|null },
 		  "datetime": string|null,
 		  "items": [
@@ -120,6 +133,7 @@ public static class ReceiptExtractionPrompt
 		Extract receipt data from the image as a single JSON object.
 
 		Rules:
+		- ALWAYS include `"schema_version": 1` as the first field of the object.
 		- If a field is not printed on the receipt, use null. NEVER compute, estimate, or guess.
 		- code is the long digit string (UPC/SKU/PLU) printed on the item line. If none, null.
 		- Copy numbers exactly as printed. Do not sum, multiply, or divide.
@@ -167,8 +181,9 @@ public static class ReceiptExtractionPrompt
 		Output:
 		  { "method": "CASH", "amount": 10.00, "lastFour": null }
 
-		Schema (all fields optional; use null when not printed):
+		Schema (all fields optional except `schema_version`; use null when not printed):
 		{
+		  "schema_version": 1,
 		  "store": { "name": string, "address": string|null, "phone": string|null },
 		  "datetime": string|null,
 		  "items": [
@@ -187,5 +202,9 @@ public static class ReceiptExtractionPrompt
 		When unsure, prefer null over guessing.
 		""";
 
-	public const string Current = V4;
+	/// <summary>
+	/// The active prompt used by the production extraction service. Returns the version tag
+	/// alongside the prompt text so the version can be attached to the request log scope.
+	/// </summary>
+	public static ReceiptExtractionPromptValue Current { get; } = new("V4", V4);
 }

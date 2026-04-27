@@ -45,6 +45,15 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 		_logger = logger;
 	}
 
+	/// <summary>
+	/// Maximum number of characters from the raw VLM response copied into exception messages.
+	/// The raw body contains receipt PII (store, items, payment method, last-four card digits)
+	/// and tends to propagate through telemetry channels — exception messages are not the right
+	/// place for that. The full body is still available via the gated raw-response debug log
+	/// when <see cref="VlmOcrOptions.LogRawResponses"/> is enabled. See RECEIPTS-639.
+	/// </summary>
+	internal const int ExceptionMessageMaxChars = 500;
+
 	public async Task<ParsedReceipt> ExtractAsync(byte[] imageBytes, string contentType, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(imageBytes);
@@ -53,14 +62,25 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 			throw new ArgumentException("Image bytes cannot be empty.", nameof(imageBytes));
 		}
 
+		ReceiptExtractionPromptValue prompt = ReceiptExtractionPrompt.Current;
+
+		// All logs in this request — including those raised from inner helpers and the resilience
+		// pipeline — get the prompt version stamped on them so a regression can be traced back to
+		// the prompt that produced it. See RECEIPTS-639.
+		using IDisposable? promptScope = _logger.BeginScope(new Dictionary<string, object>
+		{
+			["VlmPromptVersion"] = prompt.Version,
+			["VlmModel"] = _options.Model,
+		});
+
 		_logger.LogDebug(
-			"Extracting receipt via Ollama VLM (model={Model}, bytes={Bytes}, contentType={ContentType})",
-			_options.Model, imageBytes.Length, contentType);
+			"Extracting receipt via Ollama VLM (model={Model}, promptVersion={PromptVersion}, bytes={Bytes}, contentType={ContentType})",
+			_options.Model, prompt.Version, imageBytes.Length, contentType);
 
 		string base64 = Convert.ToBase64String(imageBytes);
 		OllamaGenerateRequest request = new(
 			Model: _options.Model,
-			Prompt: ReceiptExtractionPrompt.Current,
+			Prompt: prompt.Text,
 			Images: [base64]);
 
 		// The per-attempt timeout is enforced by the resilience pipeline (Polly Timeout
@@ -87,7 +107,12 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 			throw new InvalidOperationException("Ollama VLM returned an empty response.");
 		}
 
-		_logger.LogDebug("Ollama VLM raw response: {Response}", generateResponse.Response);
+		// The raw response carries PII (store, items, payment method, last-four). Logging is gated
+		// behind VlmOcrOptions.LogRawResponses (default off in production) — see RECEIPTS-639.
+		if (_options.LogRawResponses)
+		{
+			_logger.LogDebug("Ollama VLM raw response: {Response}", generateResponse.Response);
+		}
 
 		VlmReceiptPayload payload;
 		try
@@ -98,10 +123,46 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 		catch (JsonException ex)
 		{
 			throw new InvalidOperationException(
-				$"Failed to parse Ollama VLM response as JSON. Raw response: {generateResponse.Response}", ex);
+				$"Failed to parse Ollama VLM response as JSON. Raw response (truncated): {Truncate(generateResponse.Response, ExceptionMessageMaxChars)}", ex);
+		}
+
+		if (payload.SchemaVersion != VlmReceiptPayload.CurrentSchemaVersion)
+		{
+			// Don't include the raw payload in this message — it is PII-bearing and exception
+			// messages routinely propagate through telemetry. The version mismatch alone is
+			// enough to identify the root cause; full bodies are available via the LogRawResponses
+			// flag for local diagnostics.
+			throw new InvalidOperationException(
+				$"Ollama VLM payload schema_version mismatch (expected={VlmReceiptPayload.CurrentSchemaVersion}, actual={payload.SchemaVersion?.ToString(CultureInfo.InvariantCulture) ?? "null"}, promptVersion={prompt.Version}).");
 		}
 
 		return MapToParsedReceipt(payload);
+	}
+
+	/// <summary>
+	/// Truncates <paramref name="value"/> to at most <paramref name="maxChars"/> UTF-16 code
+	/// units, appending an ellipsis suffix when the string is cut. Used to keep exception
+	/// messages from leaking the entire VLM payload (PII) into telemetry. See RECEIPTS-639.
+	/// <para>
+	/// If the cut boundary lands between the two halves of a UTF-16 surrogate pair, the high
+	/// surrogate is dropped rather than orphaned. An unpaired high surrogate would produce an
+	/// ill-formed string that <see cref="System.Text.Json"/> (the default formatter for many
+	/// structured log sinks) rejects with an <see cref="InvalidOperationException"/> in strict
+	/// mode, masking the original exception in telemetry.
+	/// </para>
+	/// </summary>
+	internal static string Truncate(string value, int maxChars)
+	{
+		if (value.Length <= maxChars)
+		{
+			return value;
+		}
+
+		int safeMax = maxChars > 0 && char.IsHighSurrogate(value[maxChars - 1])
+			? maxChars - 1
+			: maxChars;
+
+		return string.Concat(value.AsSpan(0, safeMax), "... [truncated]");
 	}
 
 	private static ParsedReceipt MapToParsedReceipt(VlmReceiptPayload payload)
