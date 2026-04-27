@@ -53,7 +53,7 @@ public class PdfConversionServiceFixtureTests
 		byte[] pdfBytes = LoadFixture("cmyk-receipt.pdf");
 
 		// Act
-		byte[] firstPagePng = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] firstPagePng = (await _service.ConvertAsync(pdfBytes, CancellationToken.None)).FirstPagePng;
 
 		// Assert
 		AssertValidPng(firstPagePng, minWidth: 100, minHeight: 100);
@@ -68,7 +68,7 @@ public class PdfConversionServiceFixtureTests
 		byte[] pdfBytes = LoadFixture("indexed-receipt.pdf");
 
 		// Act
-		byte[] firstPagePng = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] firstPagePng = (await _service.ConvertAsync(pdfBytes, CancellationToken.None)).FirstPagePng;
 
 		// Assert
 		AssertValidPng(firstPagePng, minWidth: 100, minHeight: 100);
@@ -83,7 +83,7 @@ public class PdfConversionServiceFixtureTests
 		byte[] pdfBytes = LoadFixture("calrgb-receipt.pdf");
 
 		// Act
-		byte[] firstPagePng = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] firstPagePng = (await _service.ConvertAsync(pdfBytes, CancellationToken.None)).FirstPagePng;
 
 		// Assert
 		AssertValidPng(firstPagePng, minWidth: 100, minHeight: 100);
@@ -97,7 +97,7 @@ public class PdfConversionServiceFixtureTests
 		byte[] pdfBytes = LoadFixture("lab-receipt.pdf");
 
 		// Act
-		byte[] firstPagePng = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
+		byte[] firstPagePng = (await _service.ConvertAsync(pdfBytes, CancellationToken.None)).FirstPagePng;
 
 		// Assert
 		AssertValidPng(firstPagePng, minWidth: 100, minHeight: 100);

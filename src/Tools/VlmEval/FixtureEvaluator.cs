@@ -88,7 +88,13 @@ public sealed class FixtureEvaluator(
 	{
 		if (expected is null)
 		{
-			return new FieldDiff("date", DiffStatus.NotDeclared, null, actual.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), null);
+			// Confidence guard mirrors DiffMoney's Format() helper (RECEIPTS-650): when the VLM
+			// did not extract a date, FieldConfidence<DateOnly>.None() carries default(DateOnly),
+			// so unconditionally formatting it would emit "0001-01-01" — emit null instead.
+			string? actualStr = actual.IsPresent
+				? actual.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+				: null;
+			return new FieldDiff("date", DiffStatus.NotDeclared, null, actualStr, null);
 		}
 
 		if (!actual.IsPresent)

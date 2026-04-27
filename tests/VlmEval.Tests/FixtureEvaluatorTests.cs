@@ -143,6 +143,20 @@ public class FixtureEvaluatorTests
 		diff.Actual.Should().Be("2026-01-14");
 	}
 
+	[Fact]
+	public void DiffDate_ExpectedNull_NoneConfidenceActual_FormatsActualAsNull()
+	{
+		// RECEIPTS-650: when the VLM did not extract a date, FieldConfidence<DateOnly>.None()
+		// carries default(DateOnly). The NotDeclared branch must guard on IsPresent and emit
+		// null for Actual, not the bogus "0001-01-01" placeholder.
+		FieldDiff diff = FixtureEvaluator.DiffDate(null, FieldConfidence<DateOnly>.None());
+
+		diff.Status.Should().Be(DiffStatus.NotDeclared);
+		diff.Expected.Should().BeNull();
+		diff.Actual.Should().BeNull();
+		diff.Detail.Should().BeNull();
+	}
+
 	[Theory]
 	[InlineData("de-DE")]
 	[InlineData("fr-FR")]
