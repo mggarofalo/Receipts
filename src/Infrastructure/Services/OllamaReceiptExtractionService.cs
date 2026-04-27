@@ -140,9 +140,16 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 	}
 
 	/// <summary>
-	/// Truncates <paramref name="value"/> to at most <paramref name="maxChars"/> characters,
-	/// appending an ellipsis suffix when the string is cut. Used to keep exception messages
-	/// from leaking the entire VLM payload (PII) into telemetry. See RECEIPTS-639.
+	/// Truncates <paramref name="value"/> to at most <paramref name="maxChars"/> UTF-16 code
+	/// units, appending an ellipsis suffix when the string is cut. Used to keep exception
+	/// messages from leaking the entire VLM payload (PII) into telemetry. See RECEIPTS-639.
+	/// <para>
+	/// If the cut boundary lands between the two halves of a UTF-16 surrogate pair, the high
+	/// surrogate is dropped rather than orphaned. An unpaired high surrogate would produce an
+	/// ill-formed string that <see cref="System.Text.Json"/> (the default formatter for many
+	/// structured log sinks) rejects with an <see cref="InvalidOperationException"/> in strict
+	/// mode, masking the original exception in telemetry.
+	/// </para>
 	/// </summary>
 	internal static string Truncate(string value, int maxChars)
 	{
@@ -151,7 +158,11 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 			return value;
 		}
 
-		return string.Concat(value.AsSpan(0, maxChars), "... [truncated]");
+		int safeMax = maxChars > 0 && char.IsHighSurrogate(value[maxChars - 1])
+			? maxChars - 1
+			: maxChars;
+
+		return string.Concat(value.AsSpan(0, safeMax), "... [truncated]");
 	}
 
 	private static ParsedReceipt MapToParsedReceipt(VlmReceiptPayload payload)

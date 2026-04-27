@@ -1189,6 +1189,42 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
+	public void Truncate_CutBoundaryInsideSurrogatePair_DoesNotOrphanHighSurrogate()
+	{
+		// Arrange — RECEIPTS-639 bug-finder follow-up. A supplementary Unicode character (here
+		// U+1F4A9 PILE OF POO, encoded as the surrogate pair D83D DCA9) costs two UTF-16 code
+		// units. If the cut boundary lands precisely between them, a naive slice would produce
+		// a string ending in a lone high surrogate D83D, which System.Text.Json (the default
+		// formatter for many structured log sinks) rejects in strict mode — masking the
+		// original exception in telemetry. Build a string whose code unit at index
+		// `maxChars - 1` is a high surrogate to force the boundary case.
+		const int maxChars = 10;
+		string padding = new('a', maxChars - 1);              // 9 'a' chars
+		string supplementary = "\uD83D\uDCA9";                // single emoji = 2 code units
+		string input = padding + supplementary + new string('b', 100);
+		// input[maxChars - 1] = input[9] = D83D (high surrogate).
+
+		// Act
+		string result = OllamaReceiptExtractionService.Truncate(input, maxChars);
+
+		// Assert — every high surrogate in the result must be followed by a low surrogate.
+		for (int i = 0; i < result.Length; i++)
+		{
+			if (char.IsHighSurrogate(result[i]))
+			{
+				bool hasPair = i + 1 < result.Length && char.IsLowSurrogate(result[i + 1]);
+				hasPair.Should().BeTrue(
+					$"position {i} of the truncated result must not be a lone high surrogate (result={result})");
+			}
+		}
+
+		// Round-trip the result through System.Text.Json — this is what would happen when the
+		// exception message is serialized into a log sink. With the bug present, this throws.
+		Action serialize = () => System.Text.Json.JsonSerializer.Serialize(result);
+		serialize.Should().NotThrow();
+	}
+
+	[Fact]
 	public void AddVlmOcrClient_NullOllamaUrl_Throws()
 	{
 		// Arrange
