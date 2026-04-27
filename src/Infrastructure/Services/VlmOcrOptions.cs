@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Infrastructure.Services;
 
 public sealed class VlmOcrOptions
@@ -28,10 +30,33 @@ public sealed class VlmOcrOptions
 	/// </summary>
 	public const int DefaultMaxImageBytes = 15 * 1024 * 1024;
 
+	/// <summary>
+	/// Base URL of the Ollama instance hosting the VLM. Bound from <c>Ocr:Vlm:OllamaUrl</c>
+	/// with a <c>PostConfigure</c> fallback to <c>Ollama:BaseUrl</c> (Aspire-injected) when
+	/// the explicit override is absent. <see cref="DefaultOllamaUrl"/> keeps non-Aspire
+	/// <c>dotnet run</c> sessions working out of the box; the property is non-nullable so
+	/// downstream code can dereference it without null checks. The DataAnnotations
+	/// <see cref="RequiredAttribute"/> guards against a future refactor that erases the
+	/// default and lets an empty string slip through binding.
+	/// </summary>
+	[Required(AllowEmptyStrings = false)]
 	public string OllamaUrl { get; set; } = DefaultOllamaUrl;
 
+	/// <summary>
+	/// Model tag passed to Ollama's <c>/api/generate</c> endpoint. Defaults to
+	/// <see cref="DefaultModel"/>; override via <c>Ocr:Vlm:Model</c> when running tests
+	/// against alternative models (e.g. qwen2.5vl).
+	/// </summary>
+	[Required(AllowEmptyStrings = false)]
 	public string Model { get; set; } = DefaultModel;
 
+	/// <summary>
+	/// Per-attempt timeout for the VLM call in seconds. Each retry receives a fresh budget
+	/// (the resilience pipeline composes Retry around Timeout — see RECEIPTS-630). Range
+	/// is 1..3600 to keep operators from accidentally configuring an infinite or zero
+	/// timeout via mis-typed config.
+	/// </summary>
+	[Range(1, 3600)]
 	public int TimeoutSeconds { get; set; } = 120;
 
 	/// <summary>
@@ -40,6 +65,7 @@ public sealed class VlmOcrOptions
 	/// happens, protecting both the client (memory) and the Ollama server (request body limit).
 	/// See RECEIPTS-640.
 	/// </summary>
+	[Range(1, int.MaxValue)]
 	public int MaxImageBytes { get; set; } = DefaultMaxImageBytes;
 
 	/// <summary>

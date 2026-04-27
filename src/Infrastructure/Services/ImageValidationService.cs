@@ -1,5 +1,6 @@
 using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -14,16 +15,26 @@ namespace Infrastructure.Services;
 /// extraction service ingests the original image bytes directly, so no pixel mutation
 /// is needed here.
 /// </summary>
-public class ImageValidationService(ILogger<ImageValidationService> logger) : IImageValidationService
+public class ImageValidationService : IImageValidationService
 {
-	private const int MaxPixelWidth = 10_000;
-	private const int MaxPixelHeight = 10_000;
-
 	private static readonly HashSet<Type> AllowedFormatTypes =
 	[
 		typeof(JpegFormat),
 		typeof(PngFormat),
 	];
+
+	private readonly ILogger<ImageValidationService> _logger;
+	private readonly ImageValidationOptions _options;
+
+	public ImageValidationService(
+		ILogger<ImageValidationService> logger,
+		IOptions<ImageValidationOptions> options)
+	{
+		ArgumentNullException.ThrowIfNull(logger);
+		ArgumentNullException.ThrowIfNull(options);
+		_logger = logger;
+		_options = options.Value;
+	}
 
 	public Task ValidateAsync(byte[] imageBytes, CancellationToken ct)
 	{
@@ -64,14 +75,14 @@ public class ImageValidationService(ILogger<ImageValidationService> logger) : II
 		}
 		catch (Exception ex) when (ex is UnknownImageFormatException or InvalidImageContentException or ArgumentException)
 		{
-			logger.LogError(ex, "Failed to identify image metadata during validation");
+			_logger.LogError(ex, "Failed to identify image metadata during validation");
 			throw new InvalidOperationException("The uploaded file is not a valid image or is corrupted.", ex);
 		}
 
-		if (info.Width > MaxPixelWidth || info.Height > MaxPixelHeight)
+		if (info.Width > _options.MaxPixelWidth || info.Height > _options.MaxPixelHeight)
 		{
 			throw new InvalidOperationException(
-				$"Image dimensions ({info.Width}x{info.Height}) exceed the maximum allowed ({MaxPixelWidth}x{MaxPixelHeight}).");
+				$"Image dimensions ({info.Width}x{info.Height}) exceed the maximum allowed ({_options.MaxPixelWidth}x{_options.MaxPixelHeight}).");
 		}
 
 		// The body is fully synchronous and the method is intentionally non-async — the

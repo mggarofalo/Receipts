@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -16,7 +17,8 @@ public class ImageValidationServiceTests
 	public ImageValidationServiceTests()
 	{
 		Mock<ILogger<ImageValidationService>> mockLogger = new();
-		_service = new ImageValidationService(mockLogger.Object);
+		IOptions<ImageValidationOptions> options = Options.Create(new ImageValidationOptions());
+		_service = new ImageValidationService(mockLogger.Object, options);
 	}
 
 	[Fact]
@@ -139,6 +141,32 @@ public class ImageValidationServiceTests
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
 			.WithMessage("*not a valid image or is corrupted*");
+	}
+
+	[Fact]
+	public async Task ValidateAsync_ConfiguredMaxPixelDimensionsOverride_RejectsOversizedImages()
+	{
+		// Arrange — RECEIPTS-638: ImageValidationService takes its dimension thresholds from
+		// IOptions<ImageValidationOptions> rather than hardcoded constants. A test-time override
+		// of MaxPixelWidth/Height=50 must reject a 100x100 image, proving the option is wired
+		// through to the validation path.
+		Mock<ILogger<ImageValidationService>> mockLogger = new();
+		IOptions<ImageValidationOptions> options = Options.Create(new ImageValidationOptions
+		{
+			MaxPixelWidth = 50,
+			MaxPixelHeight = 50,
+		});
+		ImageValidationService overrideService = new(mockLogger.Object, options);
+
+		byte[] imageBytes = CreateTestJpeg(100, 100);
+
+		// Act
+		Func<Task> act = () => overrideService.ValidateAsync(imageBytes, CancellationToken.None);
+
+		// Assert — error message must reflect the configured limit so operators can debug
+		// from the rejection alone.
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*100x100*50x50*");
 	}
 
 	private static byte[] CreateTestJpeg(int width, int height)

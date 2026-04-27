@@ -1,12 +1,13 @@
 using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using PDFtoImage;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Exceptions;
 
 namespace Infrastructure.Services;
 
-public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfConversionService
+public class PdfConversionService : IPdfConversionService
 {
 	/// <summary>
 	/// DPI used when rasterizing the first PDF page for VLM/OCR consumption. 200 DPI is the
@@ -26,6 +27,19 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 	/// PDF magic bytes: <c>%PDF</c> (0x25 0x50 0x44 0x46).
 	/// </summary>
 	private static readonly byte[] PdfMagicBytes = [0x25, 0x50, 0x44, 0x46];
+
+	private readonly ILogger<PdfConversionService> _logger;
+	private readonly PdfConversionOptions _options;
+
+	public PdfConversionService(
+		ILogger<PdfConversionService> logger,
+		IOptions<PdfConversionOptions> options)
+	{
+		ArgumentNullException.ThrowIfNull(logger);
+		ArgumentNullException.ThrowIfNull(options);
+		_logger = logger;
+		_options = options.Value;
+	}
 
 	public Task<PdfConversionResult> ConvertAsync(byte[] pdfBytes, CancellationToken ct)
 	{
@@ -86,24 +100,24 @@ public class PdfConversionService(ILogger<PdfConversionService> logger) : IPdfCo
 		// "no extractable images" and produced a 422 at the scan endpoint.
 		byte[] firstPagePng = RasterizeFirstPage(pdfBytes);
 
-		logger.LogInformation(
+		_logger.LogInformation(
 			"Rasterized first PDF page at {Dpi} DPI ({PngSize} bytes) for VLM extraction (document has {PageCount} page(s))",
 			RasterizationDpi, firstPagePng.Length, pageCount);
 
 		return Task.FromResult(new PdfConversionResult(firstPagePng, pageCount));
 	}
 
-	private static int ValidateDocument(PdfDocument document)
+	private int ValidateDocument(PdfDocument document)
 	{
 		if (document.NumberOfPages == 0)
 		{
 			throw new InvalidOperationException("The PDF document contains no pages.");
 		}
 
-		if (document.NumberOfPages > IPdfConversionService.MaxPages)
+		if (document.NumberOfPages > _options.MaxPages)
 		{
 			throw new InvalidOperationException(
-				$"The PDF document has {document.NumberOfPages} pages, which exceeds the maximum of {IPdfConversionService.MaxPages}.");
+				$"The PDF document has {document.NumberOfPages} pages, which exceeds the maximum of {_options.MaxPages}.");
 		}
 
 		return document.NumberOfPages;

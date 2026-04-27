@@ -169,6 +169,20 @@ public static class InfrastructureService
 
 		services.AddMemoryCache();
 
+		// PDF and image-validation thresholds (RECEIPTS-638). Bound from `PdfConversion` and
+		// `ImageValidation` configuration sections with DataAnnotations validation. Misconfigured
+		// values fail fast at startup via ValidateOnStart so a typo'd appsettings entry can't
+		// produce a runtime InvalidOperationException on first user upload.
+		services.AddOptions<PdfConversionOptions>()
+			.BindConfiguration(ConfigurationVariables.PdfConversionSection)
+			.ValidateDataAnnotations()
+			.ValidateOnStart();
+
+		services.AddOptions<ImageValidationOptions>()
+			.BindConfiguration(ConfigurationVariables.ImageValidationSection)
+			.ValidateDataAnnotations()
+			.ValidateOnStart();
+
 		YnabClientOptions ynabOptions = new();
 		services.AddSingleton(ynabOptions);
 		services.AddSingleton<IYnabRateLimitTracker>(sp =>
@@ -260,31 +274,53 @@ public static class InfrastructureService
 	/// </summary>
 	internal static void RegisterReceiptExtractionService(IServiceCollection services, IConfiguration configuration)
 	{
-		VlmOcrOptions options = new();
-		configuration.GetSection(ConfigurationVariables.OcrVlmSection).Bind(options);
+		services.AddVlmOcrClient(configuration);
+	}
 
-		// RECEIPTS-640: VlmOcrOptions.OllamaUrl is now a non-nullable string with a localhost
-		// default, so the previous IsNullOrWhiteSpace gate would short-circuit when neither
-		// Ocr:Vlm:OllamaUrl nor a configured override is set — silently bypassing the
-		// Aspire-injected Ollama:BaseUrl that ResolveOllamaUrl picks up. Always run the
-		// resolver: it already enforces the priority chain (Ocr:Vlm:OllamaUrl →
-		// Ollama:BaseUrl → null), so the bound default only wins when neither is configured.
-		string? resolved = ResolveOllamaUrl(configuration);
-		if (!string.IsNullOrWhiteSpace(resolved))
-		{
-			options.OllamaUrl = resolved;
-		}
+	/// <summary>
+	/// Binds <see cref="VlmOcrOptions"/> from the <c>Ocr:Vlm</c> configuration section using
+	/// the standard options pattern (<see cref="OptionsBuilderExtensions.ValidateDataAnnotations{TOptions}"/>
+	/// + <see cref="OptionsBuilderExtensions.ValidateOnStart{TOptions}"/>) and registers the
+	/// Ollama-backed <see cref="IReceiptExtractionService"/> typed HTTP client with the
+	/// production resilience pipeline. Misconfigured options (e.g. <c>TimeoutSeconds=0</c>)
+	/// fail loudly at startup rather than producing a confusing runtime error on the first
+	/// upload. The Ollama URL fallback chain runs in <see cref="OptionsBuilderExtensions.PostConfigure{TOptions}"/>
+	/// so the chain stays observable through <see cref="IOptions{TOptions}"/> rather than
+	/// hidden inside an ad-hoc registration helper. See RECEIPTS-638.
+	/// </summary>
+	public static IServiceCollection AddVlmOcrClient(this IServiceCollection services, IConfiguration configuration)
+	{
+		ArgumentNullException.ThrowIfNull(services);
+		ArgumentNullException.ThrowIfNull(configuration);
 
-		services.AddVlmOcrClient(options);
+		services.AddOptions<VlmOcrOptions>()
+			.Bind(configuration.GetSection(ConfigurationVariables.OcrVlmSection))
+			.PostConfigure(options =>
+			{
+				// RECEIPTS-640 + RECEIPTS-638: VlmOcrOptions.OllamaUrl is a non-nullable string
+				// with a localhost default, so an IsNullOrWhiteSpace gate would short-circuit
+				// when neither Ocr:Vlm:OllamaUrl nor a configured override is set — silently
+				// bypassing the Aspire-injected Ollama:BaseUrl. Always run the resolver: it
+				// enforces the priority chain (Ocr:Vlm:OllamaUrl → Ollama:BaseUrl → null), so
+				// the bound DefaultOllamaUrl only wins when neither override is configured.
+				string? resolved = ResolveOllamaUrl(configuration);
+				if (!string.IsNullOrWhiteSpace(resolved))
+				{
+					options.OllamaUrl = resolved;
+				}
+			})
+			.ValidateDataAnnotations()
+			.ValidateOnStart();
+
+		return AddVlmOcrHttpClient(services);
 	}
 
 	/// <summary>
 	/// Registers the Ollama-backed <see cref="IReceiptExtractionService"/> typed HTTP client
-	/// with the production resilience pipeline (retry + circuit breaker + per-attempt timeout)
-	/// and registers <paramref name="options"/> as a singleton. Both the production
-	/// <c>RegisterReceiptExtractionService</c> path and the <c>VlmEval</c> tool call this
-	/// helper so they share identical retry behavior and the same opt-out from the standard
-	/// handler injected by <c>Receipts.ServiceDefaults</c>. See RECEIPTS-639.
+	/// using a pre-bound <see cref="VlmOcrOptions"/> instance. Used by the <c>VlmEval</c> tool
+	/// where CLI arguments mutate the bound options before registration; production code
+	/// should use the <see cref="AddVlmOcrClient(IServiceCollection, IConfiguration)"/>
+	/// overload instead so DataAnnotations validation runs at startup. See RECEIPTS-638.
 	/// </summary>
 	public static IServiceCollection AddVlmOcrClient(this IServiceCollection services, VlmOcrOptions options)
 	{
@@ -298,23 +334,30 @@ public static class InfrastructureService
 				nameof(options));
 		}
 
-		// Bare instance for direct injection (OllamaReceiptExtractionService takes VlmOcrOptions).
-		services.AddSingleton(options);
-		// IOptions<VlmOcrOptions> wrapper so consumers like the smoke test can use the standard
-		// options pattern. Backed by the same instance bound above so Model / OllamaUrl / Timeout
-		// stay in sync.
+		// Register the instance as IOptions<VlmOcrOptions> so consumers (OllamaReceiptExtractionService,
+		// the smoke test, VlmEval's EvalRunner) all use the standard options pattern.
 		services.AddSingleton<IOptions<VlmOcrOptions>>(new OptionsWrapper<VlmOcrOptions>(options));
 
+		return AddVlmOcrHttpClient(services);
+	}
+
+	private static IServiceCollection AddVlmOcrHttpClient(IServiceCollection services)
+	{
 #pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is in evaluation; required to opt out of the standard handler injected by ServiceDefaults.
-		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
+		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>((sp, client) =>
 		{
-			client.BaseAddress = new Uri(options.OllamaUrl!.TrimEnd('/') + "/");
+			VlmOcrOptions options = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
+			client.BaseAddress = new Uri(options.OllamaUrl.TrimEnd('/') + "/");
 			// The resilience pipeline (per-attempt Timeout strategy) owns request budgeting.
 			// HttpClient.Timeout must be Infinite so it doesn't fight the pipeline.
 			client.Timeout = Timeout.InfiniteTimeSpan;
 		})
 			.RemoveAllResilienceHandlers()
-			.AddResilienceHandler("vlm-ocr", builder => ConfigureVlmOcrResilience(builder, options));
+			.AddResilienceHandler("vlm-ocr", (builder, context) =>
+			{
+				VlmOcrOptions options = context.ServiceProvider.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
+				ConfigureVlmOcrResilience(builder, options);
+			});
 #pragma warning restore EXTEXP0001
 
 		return services;

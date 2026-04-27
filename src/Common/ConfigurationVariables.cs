@@ -32,6 +32,15 @@ public static class ConfigurationVariables
 	public const string OcrVlmTimeoutSeconds = "Ocr:Vlm:TimeoutSeconds";
 	public const string OcrVlmSection = "Ocr:Vlm";
 
+	// PDF conversion thresholds (RECEIPTS-638). Per-environment tuning of the PDF page-count
+	// budget, etc. Bound via IOptions<PdfConversionOptions> with DataAnnotations validation.
+	public const string PdfConversionSection = "PdfConversion";
+
+	// Image validation thresholds (RECEIPTS-638). Per-environment tuning of the maximum
+	// pixel dimensions accepted for receipt-image uploads. Bound via
+	// IOptions<ImageValidationOptions> with DataAnnotations validation.
+	public const string ImageValidationSection = "ImageValidation";
+
 	public const string YnabPat = "YNAB_PAT";
 }
 

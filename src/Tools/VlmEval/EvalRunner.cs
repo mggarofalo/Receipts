@@ -1,45 +1,73 @@
 using System.Diagnostics;
 using Infrastructure.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace VlmEval;
 
-public sealed class EvalRunner(
-	IHttpClientFactory httpClientFactory,
-	VlmOcrOptions vlmOptions,
-	FixtureLoader fixtureLoader,
-	FixtureEvaluator fixtureEvaluator,
-	Reporter reporter,
-	VlmEvalOptions options,
-	ILogger<EvalRunner> logger)
+public sealed class EvalRunner
 {
 	/// <summary>POSIX exit code for SIGINT (cancellation).</summary>
 	private const int ExitCodeCancelled = 130;
 
+	private readonly IHttpClientFactory _httpClientFactory;
+	private readonly VlmOcrOptions _vlmOptions;
+	private readonly FixtureLoader _fixtureLoader;
+	private readonly FixtureEvaluator _fixtureEvaluator;
+	private readonly Reporter _reporter;
+	private readonly VlmEvalOptions _options;
+	private readonly ILogger<EvalRunner> _logger;
+
+	public EvalRunner(
+		IHttpClientFactory httpClientFactory,
+		IOptions<VlmOcrOptions> vlmOptions,
+		FixtureLoader fixtureLoader,
+		FixtureEvaluator fixtureEvaluator,
+		Reporter reporter,
+		VlmEvalOptions options,
+		ILogger<EvalRunner> logger)
+	{
+		ArgumentNullException.ThrowIfNull(httpClientFactory);
+		ArgumentNullException.ThrowIfNull(vlmOptions);
+		ArgumentNullException.ThrowIfNull(fixtureLoader);
+		ArgumentNullException.ThrowIfNull(fixtureEvaluator);
+		ArgumentNullException.ThrowIfNull(reporter);
+		ArgumentNullException.ThrowIfNull(options);
+		ArgumentNullException.ThrowIfNull(logger);
+
+		_httpClientFactory = httpClientFactory;
+		_vlmOptions = vlmOptions.Value;
+		_fixtureLoader = fixtureLoader;
+		_fixtureEvaluator = fixtureEvaluator;
+		_reporter = reporter;
+		_options = options;
+		_logger = logger;
+	}
+
 	public async Task<int> RunAsync(string fixturesDirectory, CancellationToken cancellationToken)
 	{
-		string ollamaUrl = vlmOptions.OllamaUrl ?? "(unset)";
+		string ollamaUrl = _vlmOptions.OllamaUrl ?? "(unset)";
 		DateTimeOffset startedAt = DateTimeOffset.UtcNow;
-		reporter.PrintHeader(ollamaUrl, fixturesDirectory);
+		_reporter.PrintHeader(ollamaUrl, fixturesDirectory);
 
 		// Missing fixtures dir is a configuration error: a typo'd FixturesPath looks identical
 		// to "no fixtures yet" if we silently mkdir. Treat it as failure when the strict flag
 		// is set; otherwise warn and exit 0 to preserve the "always green when flag off" contract.
 		if (!Directory.Exists(fixturesDirectory))
 		{
-			reporter.PrintMissingFixturesDirectory(fixturesDirectory);
-			reporter.WriteReport(
+			_reporter.PrintMissingFixturesDirectory(fixturesDirectory);
+			_reporter.WriteReport(
 				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
 				results: [],
 				totalElapsed: TimeSpan.Zero,
 				cancelled: false);
-			return options.FailOnAnyFixtureFailure ? 1 : 0;
+			return _options.FailOnAnyFixtureFailure ? 1 : 0;
 		}
 
 		if (!await IsOllamaReachableAsync(cancellationToken))
 		{
-			reporter.PrintOllamaUnreachable(ollamaUrl);
-			reporter.WriteReport(
+			_reporter.PrintOllamaUnreachable(ollamaUrl);
+			_reporter.WriteReport(
 				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
 				results: [],
 				totalElapsed: TimeSpan.Zero,
@@ -47,33 +75,33 @@ public sealed class EvalRunner(
 			return 1;
 		}
 
-		LoadedFixtures loaded = fixtureLoader.LoadFrom(fixturesDirectory);
+		LoadedFixtures loaded = _fixtureLoader.LoadFrom(fixturesDirectory);
 
 		if (loaded.Fixtures.Count == 0 && loaded.OrphanFiles.Count == 0)
 		{
-			reporter.PrintEmptyFixturesDirectory(fixturesDirectory);
-			reporter.WriteReport(
+			_reporter.PrintEmptyFixturesDirectory(fixturesDirectory);
+			_reporter.WriteReport(
 				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
 				results: [],
 				totalElapsed: TimeSpan.Zero,
 				cancelled: false);
-			return options.FailOnAnyFixtureFailure ? 1 : 0;
+			return _options.FailOnAnyFixtureFailure ? 1 : 0;
 		}
 
 		foreach (string orphan in loaded.OrphanFiles)
 		{
-			reporter.PrintOrphan(orphan);
+			_reporter.PrintOrphan(orphan);
 		}
 
 		if (loaded.Fixtures.Count == 0)
 		{
-			reporter.PrintNoValidFixtures();
-			reporter.WriteReport(
+			_reporter.PrintNoValidFixtures();
+			_reporter.WriteReport(
 				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
 				results: [],
 				totalElapsed: TimeSpan.Zero,
 				cancelled: false);
-			return options.FailOnAnyFixtureFailure ? 1 : 0;
+			return _options.FailOnAnyFixtureFailure ? 1 : 0;
 		}
 
 		Stopwatch total = Stopwatch.StartNew();
@@ -87,8 +115,8 @@ public sealed class EvalRunner(
 				break;
 			}
 
-			FixtureResult result = await fixtureEvaluator.EvaluateAsync(fixture, cancellationToken);
-			reporter.PrintFixtureResult(result);
+			FixtureResult result = await _fixtureEvaluator.EvaluateAsync(fixture, cancellationToken);
+			_reporter.PrintFixtureResult(result);
 			results.Add(result);
 
 			// EvaluateAsync's broad catch blocks (file IO, VLM call) swallow
@@ -106,8 +134,8 @@ public sealed class EvalRunner(
 
 		if (cancelled)
 		{
-			reporter.PrintCancelled(results.Count, loaded.Fixtures.Count);
-			reporter.WriteReport(
+			_reporter.PrintCancelled(results.Count, loaded.Fixtures.Count);
+			_reporter.WriteReport(
 				new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
 				results,
 				total.Elapsed,
@@ -115,14 +143,14 @@ public sealed class EvalRunner(
 			return ExitCodeCancelled;
 		}
 
-		reporter.PrintSummary(results, total.Elapsed);
-		reporter.WriteReport(
+		_reporter.PrintSummary(results, total.Elapsed);
+		_reporter.WriteReport(
 			new RunInfo(startedAt, ollamaUrl, fixturesDirectory),
 			results,
 			total.Elapsed,
 			cancelled: false);
 
-		if (!options.FailOnAnyFixtureFailure)
+		if (!_options.FailOnAnyFixtureFailure)
 		{
 			return 0;
 		}
@@ -132,13 +160,13 @@ public sealed class EvalRunner(
 
 	private async Task<bool> IsOllamaReachableAsync(CancellationToken cancellationToken)
 	{
-		if (string.IsNullOrWhiteSpace(vlmOptions.OllamaUrl))
+		if (string.IsNullOrWhiteSpace(_vlmOptions.OllamaUrl))
 		{
 			return false;
 		}
 
-		using HttpClient probe = httpClientFactory.CreateClient("ollama-probe");
-		probe.BaseAddress = new Uri(vlmOptions.OllamaUrl.TrimEnd('/') + "/");
+		using HttpClient probe = _httpClientFactory.CreateClient("ollama-probe");
+		probe.BaseAddress = new Uri(_vlmOptions.OllamaUrl.TrimEnd('/') + "/");
 		probe.Timeout = TimeSpan.FromSeconds(5);
 
 		using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -151,7 +179,7 @@ public sealed class EvalRunner(
 		}
 		catch (Exception ex)
 		{
-			logger.LogDebug(ex, "Ollama availability probe failed");
+			_logger.LogDebug(ex, "Ollama availability probe failed");
 			return false;
 		}
 	}

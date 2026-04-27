@@ -3,6 +3,7 @@ using Application.Interfaces.Services;
 using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -42,7 +43,8 @@ public class PdfConversionServiceFixtureTests
 	public PdfConversionServiceFixtureTests()
 	{
 		Mock<ILogger<PdfConversionService>> mockLogger = new();
-		_service = new PdfConversionService(mockLogger.Object);
+		IOptions<PdfConversionOptions> options = Options.Create(new PdfConversionOptions());
+		_service = new PdfConversionService(mockLogger.Object, options);
 	}
 
 	[Fact]
