@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Application.Interfaces.Services;
 using Application.Models.Ocr;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Polly.Timeout;
 
 namespace Infrastructure.Services;
@@ -16,6 +17,33 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 	{
 		NumberHandling = JsonNumberHandling.AllowReadingFromString,
 	};
+
+	private readonly HttpClient _httpClient;
+	private readonly VlmOcrOptions _options;
+	private readonly ILogger<OllamaReceiptExtractionService> _logger;
+
+	/// <summary>
+	/// Maximum number of characters from the raw VLM response copied into exception messages.
+	/// The raw body contains receipt PII (store, items, payment method, last-four card digits)
+	/// and tends to propagate through telemetry channels — exception messages are not the right
+	/// place for that. The full body is still available via the gated raw-response debug log
+	/// when <see cref="VlmOcrOptions.LogRawResponses"/> is enabled. See RECEIPTS-639.
+	/// </summary>
+	internal const int ExceptionMessageMaxChars = 500;
+
+	private static readonly string[] DateFormats =
+	[
+		"yyyy-MM-dd",
+		"yyyy/MM/dd",
+		"MM/dd/yyyy",
+		"M/d/yyyy",
+		"MM/dd/yy",
+		"M/d/yy",
+		"dd/MM/yyyy",
+		"d/M/yyyy",
+		"dd-MM-yyyy",
+		"dd.MM.yyyy",
+	];
 
 	/// <summary>
 	/// A valid card last-four is exactly four ASCII digits. Anything else (longer auth-code
@@ -31,32 +59,18 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 	[GeneratedRegex(@"^[0-9]{4}$")]
 	private static partial Regex LastFourRegex();
 
-	private readonly HttpClient _httpClient;
-	private readonly VlmOcrOptions _options;
-	private readonly ILogger<OllamaReceiptExtractionService> _logger;
-
 	public OllamaReceiptExtractionService(
 		HttpClient httpClient,
-		VlmOcrOptions options,
+		IOptions<VlmOcrOptions> options,
 		ILogger<OllamaReceiptExtractionService> logger)
 	{
 		ArgumentNullException.ThrowIfNull(httpClient);
 		ArgumentNullException.ThrowIfNull(options);
 		ArgumentNullException.ThrowIfNull(logger);
-
 		_httpClient = httpClient;
-		_options = options;
+		_options = options.Value;
 		_logger = logger;
 	}
-
-	/// <summary>
-	/// Maximum number of characters from the raw VLM response copied into exception messages.
-	/// The raw body contains receipt PII (store, items, payment method, last-four card digits)
-	/// and tends to propagate through telemetry channels — exception messages are not the right
-	/// place for that. The full body is still available via the gated raw-response debug log
-	/// when <see cref="VlmOcrOptions.LogRawResponses"/> is enabled. See RECEIPTS-639.
-	/// </summary>
-	internal const int ExceptionMessageMaxChars = 500;
 
 	public async Task<ParsedReceipt> ExtractAsync(byte[] imageBytes, CancellationToken cancellationToken)
 	{
@@ -368,20 +382,6 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 			? FieldConfidence<string?>.High(trimmed)
 			: FieldConfidence<string?>.Low(null);
 	}
-
-	private static readonly string[] DateFormats =
-	[
-		"yyyy-MM-dd",
-		"yyyy/MM/dd",
-		"MM/dd/yyyy",
-		"M/d/yyyy",
-		"MM/dd/yy",
-		"M/d/yy",
-		"dd/MM/yyyy",
-		"d/M/yyyy",
-		"dd-MM-yyyy",
-		"dd.MM.yyyy",
-	];
 
 	private static DateOnly? TryParseDate(string? raw)
 	{

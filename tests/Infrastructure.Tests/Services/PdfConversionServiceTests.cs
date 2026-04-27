@@ -2,6 +2,7 @@ using Application.Interfaces.Services;
 using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
@@ -16,12 +17,15 @@ namespace Infrastructure.Tests.Services;
 
 public class PdfConversionServiceTests
 {
+	private const int DefaultMaxPages = 50;
+
 	private readonly PdfConversionService _service;
 
 	public PdfConversionServiceTests()
 	{
 		Mock<ILogger<PdfConversionService>> mockLogger = new();
-		_service = new PdfConversionService(mockLogger.Object);
+		IOptions<PdfConversionOptions> options = Options.Create(new PdfConversionOptions());
+		_service = new PdfConversionService(mockLogger.Object, options);
 	}
 
 	[Fact]
@@ -241,12 +245,12 @@ public class PdfConversionServiceTests
 	[Fact]
 	public async Task ConvertAsync_OversizedPdf_ThrowsBeforeRasterization()
 	{
-		// Arrange — build a PDF with one more page than IPdfConversionService.MaxPages
+		// Arrange — build a PDF with one more page than the default PdfConversionOptions.MaxPages
 		// allows. The converter must reject these cleanly before invoking PDFtoImage,
 		// otherwise a hostile or accidental upload could spend rasterization budget on
 		// work we reject anyway.
 		string[] pages = Enumerable
-			.Range(1, IPdfConversionService.MaxPages + 1)
+			.Range(1, DefaultMaxPages + 1)
 			.Select(i => $"Page {i} content with enough text to satisfy the threshold")
 			.ToArray();
 		byte[] pdfBytes = CreateMultiPageTextPdf(pages);
@@ -257,6 +261,33 @@ public class PdfConversionServiceTests
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
 			.WithMessage("*exceeds the maximum*");
+	}
+
+	[Fact]
+	public async Task ConvertAsync_ConfiguredMaxPagesOverride_RejectsAtConfiguredLimit()
+	{
+		// Arrange — RECEIPTS-638: PdfConversionService takes its limit from
+		// IOptions<PdfConversionOptions> rather than a hardcoded constant. A test-time
+		// override of MaxPages=2 must reject a 3-page PDF, proving the option is wired
+		// through to the validation path (and not just shadowed by a stale const).
+		Mock<ILogger<PdfConversionService>> mockLogger = new();
+		IOptions<PdfConversionOptions> options = Options.Create(new PdfConversionOptions { MaxPages = 2 });
+		PdfConversionService overrideService = new(mockLogger.Object, options);
+
+		byte[] pdfBytes = CreateMultiPageTextPdf(
+		[
+			"Page 1 content with enough text to satisfy the threshold",
+			"Page 2 content with enough text to satisfy the threshold",
+			"Page 3 content with enough text to satisfy the threshold",
+		]);
+
+		// Act
+		Func<Task> act = () => overrideService.ConvertAsync(pdfBytes, CancellationToken.None);
+
+		// Assert — error message must reflect the configured limit so operators can debug
+		// from the rejection log alone.
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*exceeds the maximum of 2*");
 	}
 
 	[Fact]

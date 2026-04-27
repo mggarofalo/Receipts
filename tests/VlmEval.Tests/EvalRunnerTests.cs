@@ -6,6 +6,7 @@ using Application.Models.Ocr;
 using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 
@@ -352,7 +353,7 @@ public class EvalRunnerTests : IDisposable
 
 		return new EvalRunner(
 			httpFactory.Object,
-			vlmOptions,
+			Options.Create(vlmOptions),
 			loader,
 			evaluator,
 			reporter,

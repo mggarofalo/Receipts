@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using Polly;
@@ -34,7 +35,7 @@ public class OllamaReceiptExtractionServiceTests
 		};
 		return new OllamaReceiptExtractionService(
 			httpClient,
-			options,
+			Options.Create(options),
 			NullLogger<OllamaReceiptExtractionService>.Instance);
 	}
 
@@ -78,7 +79,7 @@ public class OllamaReceiptExtractionServiceTests
 	{
 		ServiceCollection services = new();
 		services.AddLogging();
-		services.AddSingleton(options);
+		services.AddSingleton<IOptions<VlmOcrOptions>>(Options.Create(options));
 #pragma warning disable EXTEXP0001
 		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
 		{
@@ -1294,12 +1295,12 @@ public class OllamaReceiptExtractionServiceTests
 
 		ServiceCollection services = new();
 		services.AddLogging();
-		services.AddSingleton(new VlmOcrOptions
+		services.AddSingleton<IOptions<VlmOcrOptions>>(Options.Create(new VlmOcrOptions
 		{
 			OllamaUrl = "http://test-ollama",
 			Model = "glm-ocr:q8_0",
 			TimeoutSeconds = 30,
-		});
+		}));
 		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
 		{
 			client.BaseAddress = new Uri("http://test-ollama/");
@@ -1417,7 +1418,7 @@ public class OllamaReceiptExtractionServiceTests
 			TimeoutSeconds = 30,
 			// Default — LogRawResponses left false.
 		};
-		OllamaReceiptExtractionService service = new(httpClient, options, logger);
+		OllamaReceiptExtractionService service = new(httpClient, Options.Create(options), logger);
 
 		// Act
 		await service.ExtractAsync(FakeImage, CancellationToken.None);
@@ -1455,7 +1456,7 @@ public class OllamaReceiptExtractionServiceTests
 			TimeoutSeconds = 30,
 			LogRawResponses = true,
 		};
-		OllamaReceiptExtractionService service = new(httpClient, options, logger);
+		OllamaReceiptExtractionService service = new(httpClient, Options.Create(options), logger);
 
 		// Act
 		await service.ExtractAsync(FakeImage, CancellationToken.None);
@@ -1489,7 +1490,7 @@ public class OllamaReceiptExtractionServiceTests
 			Model = "glm-ocr:q8_0",
 			TimeoutSeconds = 30,
 		};
-		OllamaReceiptExtractionService service = new(httpClient, options, logger);
+		OllamaReceiptExtractionService service = new(httpClient, Options.Create(options), logger);
 
 		// Act
 		await service.ExtractAsync(FakeImage, CancellationToken.None);
@@ -1585,10 +1586,12 @@ public class OllamaReceiptExtractionServiceTests
 	[Fact]
 	public void AddVlmOcrClient_BlankOllamaUrl_Throws()
 	{
-		// Arrange — RECEIPTS-640: VlmOcrOptions.OllamaUrl is now non-nullable with a localhost
+		// Arrange — RECEIPTS-640: VlmOcrOptions.OllamaUrl is non-nullable with a localhost
 		// default, so to exercise the helper's guard we explicitly clear the URL to whitespace.
-		// The helper still enforces a non-blank URL so production and VlmEval cannot silently
-		// register a useless client.
+		// RECEIPTS-638: VlmOcrOptions.OllamaUrl is decorated with [Required(AllowEmptyStrings =
+		// false)] and the instance overload runs full DataAnnotations validation so the error
+		// message surfaces the constraint that failed (consistent with the IConfiguration
+		// overload's ValidateOnStart pipeline).
 		ServiceCollection services = new();
 		services.AddLogging();
 		VlmOcrOptions options = new() { Model = "glm-ocr:q8_0", OllamaUrl = "   " };
@@ -1601,10 +1604,56 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
-	public void AddVlmOcrClient_RegistersServiceAndOptions()
+	public void AddVlmOcrClient_Instance_EmptyModel_Throws()
 	{
-		// Arrange — verify the shared helper wires the typed client and exposes the options
-		// as a singleton (so OllamaReceiptExtractionService can resolve them).
+		// Arrange — the instance overload must enforce the same DataAnnotations contract as
+		// the IConfiguration overload. Without this, a VlmEval consumer that misconfigures
+		// Ocr:Vlm:Model="" would surface the failure as an opaque Ollama 400 instead of a
+		// clear startup error. RECEIPTS-638 follow-up bug fix.
+		ServiceCollection services = new();
+		services.AddLogging();
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "",
+		};
+
+		// Act
+		Action act = () => services.AddVlmOcrClient(options);
+
+		// Assert
+		act.Should().Throw<ArgumentException>().WithMessage("*Model*");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_Instance_OutOfRangeTimeout_Throws()
+	{
+		// Arrange — TimeoutSeconds=0 is outside [Range(1, 3600)]. The instance overload must
+		// catch this at registration so VlmEval doesn't silently register a client whose every
+		// retry expires immediately.
+		ServiceCollection services = new();
+		services.AddLogging();
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "glm-ocr:q8_0",
+			TimeoutSeconds = 0,
+		};
+
+		// Act
+		Action act = () => services.AddVlmOcrClient(options);
+
+		// Assert
+		act.Should().Throw<ArgumentException>().WithMessage("*TimeoutSeconds*");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_Instance_RegistersServiceAndOptions()
+	{
+		// Arrange — verify the instance overload (used by VlmEval) wires the typed client
+		// and exposes the same VlmOcrOptions instance via IOptions<VlmOcrOptions>. Since
+		// RECEIPTS-638 the helper no longer registers the bare VlmOcrOptions instance —
+		// consumers resolve it through IOptions<VlmOcrOptions>.
 		ServiceCollection services = new();
 		services.AddLogging();
 		VlmOcrOptions options = new()
@@ -1617,9 +1666,10 @@ public class OllamaReceiptExtractionServiceTests
 		// Act
 		services.AddVlmOcrClient(options);
 
-		// Assert
+		// Assert — both the typed client and IOptions<VlmOcrOptions> are wired, with the
+		// IOptions wrapper backed by the same instance the caller passed in.
 		using ServiceProvider sp = services.BuildServiceProvider();
-		sp.GetRequiredService<VlmOcrOptions>().Should().BeSameAs(options);
+		sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value.Should().BeSameAs(options);
 		sp.GetRequiredService<IReceiptExtractionService>().Should().BeOfType<OllamaReceiptExtractionService>();
 	}
 
@@ -1649,7 +1699,7 @@ public class OllamaReceiptExtractionServiceTests
 		// Assert — the registered VlmOcrOptions points at the Aspire-injected URL, not the
 		// localhost default that would otherwise leak through.
 		using ServiceProvider sp = services.BuildServiceProvider();
-		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		VlmOcrOptions registered = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
 		registered.OllamaUrl.Should().Be("http://aspire-injected:11434");
 	}
 
@@ -1674,7 +1724,7 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		using ServiceProvider sp = services.BuildServiceProvider();
-		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		VlmOcrOptions registered = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
 		registered.OllamaUrl.Should().Be("http://override:11434");
 	}
 
@@ -1693,7 +1743,7 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		using ServiceProvider sp = services.BuildServiceProvider();
-		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		VlmOcrOptions registered = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
 		registered.OllamaUrl.Should().Be(VlmOcrOptions.DefaultOllamaUrl);
 	}
 
@@ -1782,7 +1832,7 @@ public class OllamaReceiptExtractionServiceTests
 		// RECEIPTS-640: tighten ctor null-check pattern so all three injected dependencies have
 		// the same guard. Previously only imageBytes had a guard; ctor params were unchecked.
 		Action act = () => new OllamaReceiptExtractionService(
-			null!, new VlmOcrOptions { OllamaUrl = "http://test" }, NullLogger<OllamaReceiptExtractionService>.Instance);
+			null!, Options.Create(new VlmOcrOptions { OllamaUrl = "http://test" }), NullLogger<OllamaReceiptExtractionService>.Instance);
 
 		act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("httpClient");
 	}
@@ -1803,10 +1853,112 @@ public class OllamaReceiptExtractionServiceTests
 	{
 		Action act = () => new OllamaReceiptExtractionService(
 			new HttpClient { BaseAddress = new Uri("http://test/") },
-			new VlmOcrOptions { OllamaUrl = "http://test" },
+			Options.Create(new VlmOcrOptions { OllamaUrl = "http://test" }),
 			null!);
 
 		act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("logger");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_Configuration_ValidatesOnStart()
+	{
+		// Arrange — bind from a configuration source missing TimeoutSeconds (out of [Range(1, 3600)]
+		// only when explicitly 0; default is 120). Use an out-of-range TimeoutSeconds=0 to trigger
+		// validation. ValidateOnStart causes the failure to surface when IOptions<VlmOcrOptions>
+		// is first resolved (or when the host starts) rather than at the first request.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.OllamaUrl)}"] = "http://test-ollama",
+				[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.Model)}"] = "glm-ocr:q8_0",
+				[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.TimeoutSeconds)}"] = "0",
+			})
+			.Build();
+
+		services.AddVlmOcrClient(configuration);
+
+		// Act
+		using ServiceProvider sp = services.BuildServiceProvider();
+		Func<VlmOcrOptions> act = () => sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
+
+		// Assert — DataAnnotations [Range(1, 3600)] rejects TimeoutSeconds=0 with a clear message.
+		act.Should().Throw<OptionsValidationException>()
+			.WithMessage("*TimeoutSeconds*");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_Configuration_AppliesPostConfigureFallback()
+	{
+		// Arrange — when neither Ocr:Vlm:OllamaUrl nor Ollama:BaseUrl is set, PostConfigure
+		// must fall back to localhost so the bound options pass [Required] validation. This
+		// preserves the historical fallback chain RegisterReceiptExtractionService used.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection([])
+			.Build();
+
+		services.AddVlmOcrClient(configuration);
+
+		// Act
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions value = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
+
+		// Assert — fallback applied; defaults preserved for everything else.
+		value.OllamaUrl.Should().Be("http://localhost:11434");
+		value.Model.Should().Be(VlmOcrOptions.DefaultModel);
+		value.TimeoutSeconds.Should().Be(120);
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_Configuration_PrefersExplicitOllamaUrlOverAspireBaseUrl()
+	{
+		// Arrange — when both Ocr:Vlm:OllamaUrl and Ollama:BaseUrl are present, the explicit
+		// Ocr:Vlm:OllamaUrl wins. This guards against the canonical fallback chain regressing.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				[ConfigurationVariables.OcrVlmOllamaUrl] = "http://explicit-ollama:11434",
+				[ConfigurationVariables.OllamaBaseUrl] = "http://aspire-ollama:11434",
+			})
+			.Build();
+
+		services.AddVlmOcrClient(configuration);
+
+		// Act
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions value = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
+
+		// Assert — explicit override beat the Aspire-injected base URL.
+		value.OllamaUrl.Should().Be("http://explicit-ollama:11434");
+	}
+
+	[Fact]
+	public void AddVlmOcrClient_Configuration_FallsBackToAspireBaseUrlWhenExplicitMissing()
+	{
+		// Arrange — Aspire-injected Ollama:BaseUrl wins when the explicit Ocr:Vlm:OllamaUrl
+		// is absent. This is the production-Aspire case (no explicit override).
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				[ConfigurationVariables.OllamaBaseUrl] = "http://aspire-ollama:11434",
+			})
+			.Build();
+
+		services.AddVlmOcrClient(configuration);
+
+		// Act
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions value = sp.GetRequiredService<IOptions<VlmOcrOptions>>().Value;
+
+		// Assert
+		value.OllamaUrl.Should().Be("http://aspire-ollama:11434");
 	}
 
 	/// <summary>
