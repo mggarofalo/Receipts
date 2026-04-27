@@ -53,9 +53,9 @@ VS Code will automatically open the **Aspire Dashboard** in your browser.
 | API (HTTPS) | https://localhost:5001 | REST API (HTTPS) |
 | API Docs (Scalar) | http://localhost:5000/scalar | Interactive API documentation |
 | PgAdmin | auto-assigned | PostgreSQL admin UI |
-| VLM OCR (Ollama) | http://localhost:11434 | `glm-ocr:q8_0` for receipt extraction (RECEIPTS-616 epic) |
+| VLM OCR (Ollama) | http://localhost:11434 | `glm-ocr:q8_0` (default) for receipt extraction (RECEIPTS-616 epic) |
 
-> **First-run download:** The `vlm-ocr-pull` sidecar downloads `glm-ocr:q8_0` (~1 GB) on the first `aspire run`. The model is cached in the `vlm-ocr-models` named volume, so subsequent starts are fast. Watch the `vlm-ocr-pull` resource in the Aspire Dashboard to see progress. The API logs `VLM OCR: glm-ocr model available at ...` once the model is loaded.
+> **First-run download:** The `vlm-ocr-pull` sidecar downloads the configured VLM (~1 GB for the default `glm-ocr:q8_0`) on the first `aspire run`. The model is cached in the `vlm-ocr-models` named volume, so subsequent starts are fast. Watch the `vlm-ocr-pull` resource in the Aspire Dashboard to see progress. The API logs `VLM OCR: <model> available at ...` once the model is loaded. Override the tag by exporting `VLM_MODEL=<tag>` before `aspire run` or `docker compose up` — both honor that env var (RECEIPTS-635).
 
 > **Note:** Aspire assigns dynamic ports and the defaults above may differ. Check the **Aspire Dashboard → Resources** view for the actual URLs assigned to each service in your session.
 
