@@ -1,4 +1,5 @@
 using System.Reflection;
+using Application.Interfaces.Services;
 using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Logging;
@@ -53,10 +54,10 @@ public class PdfConversionServiceFixtureTests
 		byte[] pdfBytes = LoadFixture("cmyk-receipt.pdf");
 
 		// Act
-		byte[] firstPagePng = (await _service.ConvertAsync(pdfBytes, CancellationToken.None)).FirstPagePng;
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertValidPng(firstPagePng, minWidth: 100, minHeight: 100);
+		AssertValidPng(result.FirstPagePng, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -68,10 +69,10 @@ public class PdfConversionServiceFixtureTests
 		byte[] pdfBytes = LoadFixture("indexed-receipt.pdf");
 
 		// Act
-		byte[] firstPagePng = (await _service.ConvertAsync(pdfBytes, CancellationToken.None)).FirstPagePng;
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertValidPng(firstPagePng, minWidth: 100, minHeight: 100);
+		AssertValidPng(result.FirstPagePng, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -83,10 +84,10 @@ public class PdfConversionServiceFixtureTests
 		byte[] pdfBytes = LoadFixture("calrgb-receipt.pdf");
 
 		// Act
-		byte[] firstPagePng = (await _service.ConvertAsync(pdfBytes, CancellationToken.None)).FirstPagePng;
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertValidPng(firstPagePng, minWidth: 100, minHeight: 100);
+		AssertValidPng(result.FirstPagePng, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact]
@@ -97,10 +98,10 @@ public class PdfConversionServiceFixtureTests
 		byte[] pdfBytes = LoadFixture("lab-receipt.pdf");
 
 		// Act
-		byte[] firstPagePng = (await _service.ConvertAsync(pdfBytes, CancellationToken.None)).FirstPagePng;
+		PdfConversionResult result = await _service.ConvertAsync(pdfBytes, CancellationToken.None);
 
 		// Assert
-		AssertValidPng(firstPagePng, minWidth: 100, minHeight: 100);
+		AssertValidPng(result.FirstPagePng, minWidth: 100, minHeight: 100);
 	}
 
 	[Fact(Skip = "JBIG2 fixture requires the external `jbig2enc` binary which is not " +

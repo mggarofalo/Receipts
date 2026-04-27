@@ -278,4 +278,46 @@ public class UploadReceiptImageCommandHandlerTests
 			s => s.DeleteReceiptImagesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
 			Times.Never);
 	}
+
+	[Fact]
+	public async Task Handle_PropagatesCallerCancellationTokenToEverySubservice()
+	{
+		// Arrange — RECEIPTS-647: the upload handler fans out across four
+		// service calls (ExistsAsync, ValidateAsync, SaveOriginalAsync,
+		// UpdateOriginalImagePathAsync). All four must receive the caller's
+		// exact token. Mock setups use It.Is<CancellationToken>(t => t == expected)
+		// so a refactor that accidentally substitutes CancellationToken.None
+		// fails the verify — the cleanup-on-rollback path is excluded here
+		// because it intentionally must run even if the caller cancels.
+		Guid receiptId = Guid.NewGuid();
+		byte[] imageBytes = [0xFF, 0xD8];
+		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
+		string expectedPath = $"{receiptId}/original.jpg";
+		using CancellationTokenSource cts = new();
+		CancellationToken expected = cts.Token;
+
+		_mockReceiptService
+			.Setup(s => s.ExistsAsync(receiptId, It.Is<CancellationToken>(t => t == expected)))
+			.ReturnsAsync(true);
+		_mockStorageService
+			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.Is<CancellationToken>(t => t == expected)))
+			.ReturnsAsync(expectedPath);
+
+		// Act
+		await _handler.Handle(command, expected);
+
+		// Assert — every subservice received the exact caller token
+		_mockReceiptService.Verify(
+			s => s.ExistsAsync(receiptId, It.Is<CancellationToken>(t => t == expected)),
+			Times.Once);
+		_mockValidationService.Verify(
+			s => s.ValidateAsync(imageBytes, It.Is<CancellationToken>(t => t == expected)),
+			Times.Once);
+		_mockStorageService.Verify(
+			s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.Is<CancellationToken>(t => t == expected)),
+			Times.Once);
+		_mockReceiptService.Verify(
+			s => s.UpdateOriginalImagePathAsync(receiptId, expectedPath, It.Is<CancellationToken>(t => t == expected)),
+			Times.Once);
+	}
 }
