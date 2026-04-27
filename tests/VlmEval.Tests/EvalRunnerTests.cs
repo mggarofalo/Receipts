@@ -128,7 +128,7 @@ public class EvalRunnerTests : IDisposable
 
 		Mock<IReceiptExtractionService> service = new();
 		service
-			.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(() =>
 			{
 				// Cancel after the first fixture has been processed so the loop's check at top
@@ -163,8 +163,8 @@ public class EvalRunnerTests : IDisposable
 
 		Mock<IReceiptExtractionService> service = new();
 		service
-			.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-			.Returns<byte[], string, CancellationToken>((_, _, _) =>
+			.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+			.Returns<byte[], CancellationToken>((_, _) =>
 			{
 				// Cancel during the call so the OCE inside EvaluateAsync is swallowed by its
 				// catch (Exception) and turned into a normal failure result. The runner must
@@ -366,7 +366,7 @@ public class EvalRunnerTests : IDisposable
 		if (result is not null)
 		{
 			mock
-				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(result);
 		}
 		return mock.Object;

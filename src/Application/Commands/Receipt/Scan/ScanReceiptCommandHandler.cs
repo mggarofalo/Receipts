@@ -10,14 +10,13 @@ public class ScanReceiptCommandHandler(
 	IPdfConversionService pdfConversionService) : IRequestHandler<ScanReceiptCommand, ScanReceiptResult>
 {
 	internal const string PdfContentType = "application/pdf";
-	internal const string PdfPageImageContentType = "image/png";
 
 	public async Task<ScanReceiptResult> Handle(ScanReceiptCommand request, CancellationToken cancellationToken)
 	{
-		(byte[] imageBytes, string contentType, int droppedPageCount) =
+		(byte[] imageBytes, int droppedPageCount) =
 			await ResolveImageAsync(request, cancellationToken);
 
-		ParsedReceipt parsed = await extractionService.ExtractAsync(imageBytes, contentType, cancellationToken);
+		ParsedReceipt parsed = await extractionService.ExtractAsync(imageBytes, cancellationToken);
 
 		if (IsEmpty(parsed))
 		{
@@ -27,12 +26,12 @@ public class ScanReceiptCommandHandler(
 		return new ScanReceiptResult(parsed, droppedPageCount);
 	}
 
-	private async Task<(byte[] ImageBytes, string ContentType, int DroppedPageCount)> ResolveImageAsync(
+	private async Task<(byte[] ImageBytes, int DroppedPageCount)> ResolveImageAsync(
 		ScanReceiptCommand request, CancellationToken cancellationToken)
 	{
 		if (!string.Equals(request.ContentType, PdfContentType, StringComparison.OrdinalIgnoreCase))
 		{
-			return (request.ImageBytes, request.ContentType, 0);
+			return (request.ImageBytes, 0);
 		}
 
 		PdfConversionResult conversion = await pdfConversionService.ConvertAsync(
@@ -42,7 +41,7 @@ public class ScanReceiptCommandHandler(
 		// with InvalidOperationException), so this subtraction is always >= 0.
 		int droppedPageCount = conversion.TotalPageCount - 1;
 
-		return (conversion.FirstPagePng, PdfPageImageContentType, droppedPageCount);
+		return (conversion.FirstPagePng, droppedPageCount);
 	}
 
 	/// <summary>

@@ -10,11 +10,37 @@ public sealed class VlmOcrOptions
 	/// </summary>
 	public const string DefaultModel = "glm-ocr:q8_0";
 
-	public string? OllamaUrl { get; set; }
+	/// <summary>
+	/// Default Ollama base URL when no other configuration source is wired up. The production
+	/// path overrides this via <c>Ocr:Vlm:OllamaUrl</c> or the Aspire-injected
+	/// <c>Ollama:BaseUrl</c>; see <c>InfrastructureService.ResolveOllamaUrl</c>. The default
+	/// keeps local <c>dotnet run</c> sessions (no Aspire, no env vars) talking to a developer's
+	/// localhost daemon instead of crashing at startup.
+	/// </summary>
+	public const string DefaultOllamaUrl = "http://localhost:11434";
+
+	/// <summary>
+	/// Default upper bound on the raw image byte length accepted by the VLM extraction service.
+	/// Base64 inflates the request body by ~33%, and Ollama's default request body limit is
+	/// well below the kind of camera dumps mobile clients can produce (50 MB+ on modern phones).
+	/// 15 MB is generous for receipt photos at typical rasterization resolutions while keeping
+	/// the post-base64 body comfortably under Ollama's threshold. See RECEIPTS-640.
+	/// </summary>
+	public const int DefaultMaxImageBytes = 15 * 1024 * 1024;
+
+	public string OllamaUrl { get; set; } = DefaultOllamaUrl;
 
 	public string Model { get; set; } = DefaultModel;
 
 	public int TimeoutSeconds { get; set; } = 120;
+
+	/// <summary>
+	/// Maximum image byte length accepted by <c>OllamaReceiptExtractionService.ExtractAsync</c>.
+	/// Inputs larger than this throw <see cref="ArgumentException"/> before any base64 encoding
+	/// happens, protecting both the client (memory) and the Ollama server (request body limit).
+	/// See RECEIPTS-640.
+	/// </summary>
+	public int MaxImageBytes { get; set; } = DefaultMaxImageBytes;
 
 	/// <summary>
 	/// When <c>true</c>, the raw VLM response body is logged at <c>Debug</c> level after each

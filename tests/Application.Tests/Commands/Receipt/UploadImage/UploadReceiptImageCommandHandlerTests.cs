@@ -1,6 +1,8 @@
 using Application.Commands.Receipt.UploadImage;
 using Application.Interfaces.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Application.Tests.Commands.Receipt.UploadImage;
@@ -90,7 +92,8 @@ public class UploadReceiptImageCommandHandlerTests
 		_handler = new UploadReceiptImageCommandHandler(
 			_mockReceiptService.Object,
 			_mockStorageService.Object,
-			_mockValidationService.Object);
+			_mockValidationService.Object,
+			NullLogger<UploadReceiptImageCommandHandler>.Instance);
 	}
 
 	[Fact]
@@ -319,5 +322,133 @@ public class UploadReceiptImageCommandHandlerTests
 		_mockReceiptService.Verify(
 			s => s.UpdateOriginalImagePathAsync(receiptId, expectedPath, It.Is<CancellationToken>(t => t == expected)),
 			Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_UpdateImagePathsThrows_CleanupUsesNoneToken()
+	{
+		// Arrange — RECEIPTS-640: the cleanup path must use CancellationToken.None so a
+		// caller-canceled token does not silently abort the orphan removal. Without this,
+		// an upload that races a user-cancel against a path-update failure would leave
+		// the saved blob orphaned on disk.
+		Guid receiptId = Guid.NewGuid();
+		byte[] imageBytes = [0xFF, 0xD8];
+		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
+		string savedPath = $"{receiptId}/original.jpg";
+		using CancellationTokenSource cts = new();
+		CancellationToken caller = cts.Token;
+
+		_mockReceiptService
+			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+		_mockStorageService
+			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(savedPath);
+		_mockReceiptService
+			.Setup(s => s.UpdateOriginalImagePathAsync(receiptId, savedPath, It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("DB offline"));
+
+		// Act
+		Func<Task> act = () => _handler.Handle(command, caller);
+
+		// Assert — original exception propagates; cleanup ran with CancellationToken.None
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("DB offline");
+
+		_mockStorageService.Verify(
+			s => s.DeleteReceiptImagesAsync(
+				receiptId,
+				It.Is<CancellationToken>(t => t == CancellationToken.None)),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_UpdateImagePathsThrows_CleanupAlsoThrows_PreservesOriginalException()
+	{
+		// Arrange — RECEIPTS-640: when both UpdateOriginalImagePathAsync and the cleanup
+		// DeleteReceiptImagesAsync throw, the original exception (the actual root cause the
+		// operator needs to see) must propagate, not the cleanup failure. The previous catch
+		// block did NOT swallow the cleanup exception, which silently replaced the originating
+		// exception in the operator's logs.
+		Guid receiptId = Guid.NewGuid();
+		byte[] imageBytes = [0xFF, 0xD8];
+		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
+		string savedPath = $"{receiptId}/original.jpg";
+
+		_mockReceiptService
+			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+		_mockStorageService
+			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(savedPath);
+		_mockReceiptService
+			.Setup(s => s.UpdateOriginalImagePathAsync(receiptId, savedPath, It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new InvalidOperationException("DB offline"));
+		_mockStorageService
+			.Setup(s => s.DeleteReceiptImagesAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new IOException("Blob storage offline"));
+
+		// Use a captured logger so we can assert the cleanup-failure log fired.
+		Mock<ILogger<UploadReceiptImageCommandHandler>> logger = new();
+		UploadReceiptImageCommandHandler handler = new(
+			_mockReceiptService.Object,
+			_mockStorageService.Object,
+			_mockValidationService.Object,
+			logger.Object);
+
+		// Act
+		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
+
+		// Assert — the originating exception (DB offline) wins, not the cleanup failure
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("DB offline");
+
+		// Cleanup was attempted (and it threw)
+		_mockStorageService.Verify(
+			s => s.DeleteReceiptImagesAsync(receiptId, It.IsAny<CancellationToken>()),
+			Times.Once);
+
+		// Cleanup failure was logged at Error level so the operator can still see it
+		logger.Verify(
+			x => x.Log(
+				LogLevel.Error,
+				It.IsAny<EventId>(),
+				It.IsAny<It.IsAnyType>(),
+				It.IsAny<Exception?>(),
+				It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+			Times.Once);
+	}
+
+	[Fact]
+	public async Task Handle_CallerCanceled_DoesNotTriggerCleanup()
+	{
+		// Arrange — RECEIPTS-640: a caller cancellation (OperationCanceledException) must NOT
+		// trigger the destructive blob cleanup. Cancellation is a user choice; the saved blob
+		// should remain in place so a retry can re-attach it. Previously the unfiltered
+		// catch-all called DeleteReceiptImagesAsync on every exception including OCE.
+		Guid receiptId = Guid.NewGuid();
+		byte[] imageBytes = [0xFF, 0xD8];
+		UploadReceiptImageCommand command = new(receiptId, imageBytes, "image/jpeg", ".jpg");
+		string savedPath = $"{receiptId}/original.jpg";
+
+		_mockReceiptService
+			.Setup(s => s.ExistsAsync(receiptId, It.IsAny<CancellationToken>()))
+			.ReturnsAsync(true);
+		_mockStorageService
+			.Setup(s => s.SaveOriginalAsync(receiptId, imageBytes, ".jpg", It.IsAny<CancellationToken>()))
+			.ReturnsAsync(savedPath);
+		_mockReceiptService
+			.Setup(s => s.UpdateOriginalImagePathAsync(receiptId, savedPath, It.IsAny<CancellationToken>()))
+			.ThrowsAsync(new OperationCanceledException("Caller canceled"));
+
+		// Act
+		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+
+		// Assert — OCE propagates and no destructive cleanup ran
+		await act.Should().ThrowAsync<OperationCanceledException>();
+
+		_mockStorageService.Verify(
+			s => s.DeleteReceiptImagesAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+			Times.Never);
 	}
 }
