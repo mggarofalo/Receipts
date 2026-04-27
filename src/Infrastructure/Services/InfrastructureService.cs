@@ -298,7 +298,7 @@ public static class InfrastructureService
 		// stay in sync.
 		services.AddSingleton<IOptions<VlmOcrOptions>>(new OptionsWrapper<VlmOcrOptions>(options));
 
-	#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is in evaluation; required to opt out of the standard handler injected by ServiceDefaults.
+#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is in evaluation; required to opt out of the standard handler injected by ServiceDefaults.
 		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
 		{
 			client.BaseAddress = new Uri(options.OllamaUrl!.TrimEnd('/') + "/");
@@ -308,7 +308,7 @@ public static class InfrastructureService
 		})
 			.RemoveAllResilienceHandlers()
 			.AddResilienceHandler("vlm-ocr", builder => ConfigureVlmOcrResilience(builder, options));
-	#pragma warning restore EXTEXP0001
+#pragma warning restore EXTEXP0001
 
 		return services;
 	}
