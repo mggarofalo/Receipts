@@ -40,6 +40,10 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 		VlmOcrOptions options,
 		ILogger<OllamaReceiptExtractionService> logger)
 	{
+		ArgumentNullException.ThrowIfNull(httpClient);
+		ArgumentNullException.ThrowIfNull(options);
+		ArgumentNullException.ThrowIfNull(logger);
+
 		_httpClient = httpClient;
 		_options = options;
 		_logger = logger;
@@ -54,12 +58,23 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 	/// </summary>
 	internal const int ExceptionMessageMaxChars = 500;
 
-	public async Task<ParsedReceipt> ExtractAsync(byte[] imageBytes, string contentType, CancellationToken cancellationToken)
+	public async Task<ParsedReceipt> ExtractAsync(byte[] imageBytes, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(imageBytes);
 		if (imageBytes.Length == 0)
 		{
 			throw new ArgumentException("Image bytes cannot be empty.", nameof(imageBytes));
+		}
+
+		// Reject oversized images before allocating a base64 buffer (~133% of the input). Ollama's
+		// default request body limit is well below 50 MB+ camera dumps mobile clients can produce;
+		// rejecting here gives a clear ArgumentException at the boundary instead of an opaque
+		// HttpRequestException or RequestEntityTooLarge from the daemon. See RECEIPTS-640.
+		if (imageBytes.Length > _options.MaxImageBytes)
+		{
+			throw new ArgumentException(
+				$"Image is {imageBytes.Length} bytes, exceeding the configured maximum of {_options.MaxImageBytes} bytes.",
+				nameof(imageBytes));
 		}
 
 		ReceiptExtractionPromptValue prompt = ReceiptExtractionPrompt.Current;
@@ -74,8 +89,8 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 		});
 
 		_logger.LogDebug(
-			"Extracting receipt via Ollama VLM (model={Model}, promptVersion={PromptVersion}, bytes={Bytes}, contentType={ContentType})",
-			_options.Model, prompt.Version, imageBytes.Length, contentType);
+			"Extracting receipt via Ollama VLM (model={Model}, promptVersion={PromptVersion}, bytes={Bytes})",
+			_options.Model, prompt.Version, imageBytes.Length);
 
 		string base64 = Convert.ToBase64String(imageBytes);
 		OllamaGenerateRequest request = new(
@@ -105,6 +120,17 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 		if (generateResponse is null || string.IsNullOrWhiteSpace(generateResponse.Response))
 		{
 			throw new InvalidOperationException("Ollama VLM returned an empty response.");
+		}
+
+		// done=false signals a partial/streamed response — the body is mid-stream and the JSON
+		// payload is truncated, so any downstream JsonException would be a confusing red herring.
+		// We send stream=false (Ollama's per-request default) so any done=false here means the
+		// daemon is misconfigured (e.g. someone flipped the default at the server). Surface the
+		// real cause early rather than letting a JsonException mask it. See RECEIPTS-640.
+		if (!generateResponse.Done)
+		{
+			throw new InvalidOperationException(
+				"Ollama VLM returned a non-final response (done=false); the request was streamed or truncated. Confirm the daemon is configured for stream=false.");
 		}
 
 		// The raw response carries PII (store, items, payment method, last-four). Logging is gated

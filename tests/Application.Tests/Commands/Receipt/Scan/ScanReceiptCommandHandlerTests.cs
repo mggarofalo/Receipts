@@ -109,14 +109,17 @@ public class ScanReceiptCommandHandlerTests
 	}
 
 	[Fact]
-	public async Task Handle_Image_CallsExtractionServiceWithBytesAndContentType()
+	public async Task Handle_Image_CallsExtractionServiceWithBytes()
 	{
-		// Arrange
+		// Arrange — RECEIPTS-640: the contentType parameter was dropped from
+		// IReceiptExtractionService.ExtractAsync because Ollama auto-detects PNG/JPEG/etc.
+		// from the bytes themselves and the parameter was only being logged. The handler must
+		// pass image bytes through verbatim.
 		byte[] imageBytes = [0xFF, 0xD8, 0xFF, 0xE0];
 		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
@@ -124,7 +127,7 @@ public class ScanReceiptCommandHandlerTests
 
 		// Assert
 		_mockExtractionService.Verify(
-			s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()),
+			s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()),
 			Times.Once);
 		_mockPdfConversionService.Verify(
 			s => s.ConvertAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
@@ -140,7 +143,7 @@ public class ScanReceiptCommandHandlerTests
 		ParsedReceipt parsed = BuildPopulatedReceipt("COSTCO", 42.99m);
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/png", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(parsed);
 
 		// Act
@@ -165,7 +168,7 @@ public class ScanReceiptCommandHandlerTests
 
 		ParsedReceipt parsed = BuildPopulatedReceipt();
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(firstPageImage, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(parsed);
 
 		// Act
@@ -174,7 +177,7 @@ public class ScanReceiptCommandHandlerTests
 		// Assert
 		actual.ParsedReceipt.Should().BeSameAs(parsed);
 		_mockExtractionService.Verify(
-			s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()),
+			s => s.ExtractAsync(firstPageImage, It.IsAny<CancellationToken>()),
 			Times.Once);
 	}
 
@@ -193,7 +196,7 @@ public class ScanReceiptCommandHandlerTests
 			.ReturnsAsync(new PdfConversionResult(firstPageImage, TotalPageCount: 3));
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(firstPageImage, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
@@ -217,7 +220,7 @@ public class ScanReceiptCommandHandlerTests
 			.ReturnsAsync(new PdfConversionResult(firstPageImage, TotalPageCount: 1));
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(firstPageImage, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
@@ -235,7 +238,7 @@ public class ScanReceiptCommandHandlerTests
 		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
@@ -253,7 +256,7 @@ public class ScanReceiptCommandHandlerTests
 		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(BuildEmptyReceipt());
 
 		// Act
@@ -285,7 +288,7 @@ public class ScanReceiptCommandHandlerTests
 		);
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(parsed);
 
 		// Act
@@ -318,7 +321,7 @@ public class ScanReceiptCommandHandlerTests
 		);
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(parsed);
 
 		// Act
@@ -356,7 +359,7 @@ public class ScanReceiptCommandHandlerTests
 		);
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(parsed);
 
 		// Act
@@ -375,7 +378,7 @@ public class ScanReceiptCommandHandlerTests
 		ScanReceiptCommand command = new(imageBytes, "image/jpeg");
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new InvalidOperationException("VLM returned unparseable JSON."));
 
 		// Act
@@ -405,7 +408,7 @@ public class ScanReceiptCommandHandlerTests
 			.WithMessage("*not a valid PDF*");
 
 		_mockExtractionService.Verify(
-			s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+			s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()),
 			Times.Never);
 	}
 
@@ -420,7 +423,7 @@ public class ScanReceiptCommandHandlerTests
 		ScanReceiptCommand command = new(imageBytes, contentType);
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, contentType, It.IsAny<CancellationToken>()))
+			.Setup(s => s.ExtractAsync(imageBytes, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
@@ -446,7 +449,7 @@ public class ScanReceiptCommandHandlerTests
 		CancellationToken expected = cts.Token;
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(imageBytes, "image/jpeg", It.Is<CancellationToken>(t => t == expected)))
+			.Setup(s => s.ExtractAsync(imageBytes, It.Is<CancellationToken>(t => t == expected)))
 			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
@@ -454,7 +457,7 @@ public class ScanReceiptCommandHandlerTests
 
 		// Assert
 		_mockExtractionService.Verify(
-			s => s.ExtractAsync(imageBytes, "image/jpeg", It.Is<CancellationToken>(t => t == expected)),
+			s => s.ExtractAsync(imageBytes, It.Is<CancellationToken>(t => t == expected)),
 			Times.Once);
 	}
 
@@ -475,7 +478,7 @@ public class ScanReceiptCommandHandlerTests
 			.ReturnsAsync(new PdfConversionResult(firstPageImage, TotalPageCount: 1));
 
 		_mockExtractionService
-			.Setup(s => s.ExtractAsync(firstPageImage, "image/png", It.Is<CancellationToken>(t => t == expected)))
+			.Setup(s => s.ExtractAsync(firstPageImage, It.Is<CancellationToken>(t => t == expected)))
 			.ReturnsAsync(BuildPopulatedReceipt());
 
 		// Act
@@ -486,7 +489,7 @@ public class ScanReceiptCommandHandlerTests
 			s => s.ConvertAsync(pdfBytes, It.Is<CancellationToken>(t => t == expected)),
 			Times.Once);
 		_mockExtractionService.Verify(
-			s => s.ExtractAsync(firstPageImage, "image/png", It.Is<CancellationToken>(t => t == expected)),
+			s => s.ExtractAsync(firstPageImage, It.Is<CancellationToken>(t => t == expected)),
 			Times.Once);
 	}
 }

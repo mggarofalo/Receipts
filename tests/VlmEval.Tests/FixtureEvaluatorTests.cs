@@ -963,7 +963,7 @@ public class FixtureEvaluatorTests
 		{
 			Mock<IReceiptExtractionService> service = new();
 			service
-				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
 				.ThrowsAsync(new InvalidOperationException("VLM down"));
 
 			FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
@@ -1000,7 +1000,7 @@ public class FixtureEvaluatorTests
 
 			Mock<IReceiptExtractionService> service = new();
 			service
-				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(parsed);
 
 			FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
@@ -1053,7 +1053,7 @@ public class FixtureEvaluatorTests
 
 			Mock<IReceiptExtractionService> service = new();
 			service
-				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(parsed);
 
 			FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
@@ -1089,7 +1089,7 @@ public class FixtureEvaluatorTests
 
 			Mock<IReceiptExtractionService> service = new();
 			service
-				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(parsed);
 
 			FixtureEvaluator evaluator = new(service.Object, new VlmEvalOptions(), NullLogger<FixtureEvaluator>.Instance);
@@ -1131,7 +1131,7 @@ public class FixtureEvaluatorTests
 
 			Mock<IReceiptExtractionService> service = new();
 			service
-				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(parsed);
 
 			FixtureEvaluator evaluator = new(
@@ -1176,7 +1176,7 @@ public class FixtureEvaluatorTests
 
 			Mock<IReceiptExtractionService> service = new();
 			service
-				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+				.Setup(s => s.ExtractAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
 				.ReturnsAsync(parsed);
 
 			FixtureEvaluator evaluator = new(

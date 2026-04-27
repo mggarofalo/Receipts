@@ -143,7 +143,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.StoreName.Value.Should().Be("Walmart Supercenter");
@@ -216,7 +216,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.Date.Value.Should().Be(new DateOnly(expectedYear, expectedMonth, expectedDay));
@@ -238,7 +238,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.Date.Value.Should().Be(default(DateOnly));
@@ -269,7 +269,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — sub-line is absorbed; only the parent remains with the weight data
 		receipt.Items.Should().HaveCount(1);
@@ -300,7 +300,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — both rows kept; BREAD is untouched
 		receipt.Items.Should().HaveCount(2);
@@ -329,7 +329,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — parent is preserved; second "item" is kept as a distinct row
 		receipt.Items.Should().HaveCount(2);
@@ -419,7 +419,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.PaymentMethod.Value.Should().BeNull();
@@ -449,7 +449,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — legacy field keeps the first method
 		receipt.PaymentMethod.Value.Should().Be("GIFT CARD");
@@ -482,7 +482,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.StoreName.Confidence.Should().Be(ConfidenceLevel.None);
@@ -511,7 +511,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.ReceiptId.Value.Should().BeNull();
@@ -543,7 +543,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — value is nulled, confidence drops to Low. Other payment fields untouched.
 		receipt.Payments.Should().HaveCount(1);
@@ -655,7 +655,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.Payments[0].LastFour.Value.Should().Be("3409");
@@ -681,7 +681,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — the payment is preserved with correct confidence
 		receipt.Payments.Should().HaveCount(1);
@@ -703,7 +703,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(envelope));
 
 		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		ExceptionAssertions<InvalidOperationException> thrown = await act.Should().ThrowAsync<InvalidOperationException>();
@@ -718,7 +718,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(envelope));
 
 		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
@@ -744,7 +744,7 @@ public class OllamaReceiptExtractionServiceTests
 		cts.CancelAfter(TimeSpan.FromMilliseconds(50));
 
 		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", cts.Token);
+		Func<Task> act = () => service.ExtractAsync(FakeImage, cts.Token);
 
 		// Assert — caller-initiated cancellation surfaces as OperationCanceledException
 		await act.Should().ThrowAsync<OperationCanceledException>();
@@ -776,7 +776,7 @@ public class OllamaReceiptExtractionServiceTests
 		await RunWithPipelineServiceAsync(handlerMock.Object, options, async service =>
 		{
 			// Act
-			Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+			Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
 
 			// Assert
 			await act.Should().ThrowAsync<TimeoutException>()
@@ -811,7 +811,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(handlerMock.Object);
 
 		// Act
-		await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		capturedRequest.Should().NotBeNull();
@@ -899,7 +899,7 @@ public class OllamaReceiptExtractionServiceTests
 		IReceiptExtractionService service = sp.GetRequiredService<IReceiptExtractionService>();
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — call completed without being cancelled by ServiceDefaults' 200ms standard
 		// handler. With the bug present, this throws TimeoutRejectedException at ~200ms.
@@ -941,7 +941,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — every numeric-as-string value parsed without loss
 		receipt.Subtotal.Value.Should().Be(9.10m);
@@ -988,7 +988,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.Date.Value.Should().Be(default(DateOnly));
@@ -1016,7 +1016,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		ExceptionAssertions<InvalidOperationException> thrown =
@@ -1041,7 +1041,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		ExceptionAssertions<InvalidOperationException> thrown =
@@ -1076,7 +1076,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — known fields parsed; unknown fields silently dropped
 		receipt.StoreName.Value.Should().Be("Walmart");
@@ -1112,7 +1112,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — negatives preserved at High confidence
 		receipt.Subtotal.Value.Should().Be(-3.49m);
@@ -1180,7 +1180,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.Total.Value.Should().Be(default(decimal));
@@ -1205,7 +1205,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.Total.Value.Should().Be(default(decimal));
@@ -1325,7 +1325,7 @@ public class OllamaReceiptExtractionServiceTests
 		IReceiptExtractionService service = sp.GetRequiredService<IReceiptExtractionService>();
 
 		// Act
-		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		receipt.StoreName.Value.Should().Be("Walmart");
@@ -1353,7 +1353,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — the exception message must NOT contain the raw payload (PII gate) but MUST
 		// describe the version mismatch clearly enough to debug from telemetry.
@@ -1380,7 +1380,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
 
 		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		ExceptionAssertions<InvalidOperationException> thrown = await act.Should().ThrowAsync<InvalidOperationException>();
@@ -1420,7 +1420,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = new(httpClient, options, logger);
 
 		// Act
-		await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — every captured log message is free of PII fragments from the body.
 		logger.Records.Should().NotBeEmpty();
@@ -1458,7 +1458,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = new(httpClient, options, logger);
 
 		// Act
-		await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		logger.Records.Should().Contain(record =>
@@ -1492,7 +1492,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = new(httpClient, options, logger);
 
 		// Act
-		await service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		await service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert — at least one record carries a scope with VlmPromptVersion=V4.
 		logger.Records.Should().NotBeEmpty();
@@ -1514,7 +1514,7 @@ public class OllamaReceiptExtractionServiceTests
 		OllamaReceiptExtractionService service = CreateService(CreateHandler(envelope));
 
 		// Act
-		Func<Task> act = () => service.ExtractAsync(FakeImage, "image/png", CancellationToken.None);
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
 
 		// Assert
 		ExceptionAssertions<InvalidOperationException> thrown = await act.Should().ThrowAsync<InvalidOperationException>();
@@ -1583,18 +1583,20 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
-	public void AddVlmOcrClient_NullOllamaUrl_Throws()
+	public void AddVlmOcrClient_BlankOllamaUrl_Throws()
 	{
-		// Arrange
+		// Arrange — RECEIPTS-640: VlmOcrOptions.OllamaUrl is now non-nullable with a localhost
+		// default, so to exercise the helper's guard we explicitly clear the URL to whitespace.
+		// The helper still enforces a non-blank URL so production and VlmEval cannot silently
+		// register a useless client.
 		ServiceCollection services = new();
 		services.AddLogging();
-		VlmOcrOptions options = new() { Model = "glm-ocr:q8_0" };
+		VlmOcrOptions options = new() { Model = "glm-ocr:q8_0", OllamaUrl = "   " };
 
 		// Act
 		Action act = () => services.AddVlmOcrClient(options);
 
-		// Assert — the helper enforces a non-null OllamaUrl so production and VlmEval cannot
-		// silently register a useless client.
+		// Assert
 		act.Should().Throw<ArgumentException>().WithMessage("*OllamaUrl*");
 	}
 
@@ -1619,6 +1621,192 @@ public class OllamaReceiptExtractionServiceTests
 		using ServiceProvider sp = services.BuildServiceProvider();
 		sp.GetRequiredService<VlmOcrOptions>().Should().BeSameAs(options);
 		sp.GetRequiredService<IReceiptExtractionService>().Should().BeOfType<OllamaReceiptExtractionService>();
+	}
+
+	[Fact]
+	public void RegisterReceiptExtractionService_AspireOnlyConfig_PrefersOllamaBaseUrl()
+	{
+		// Arrange — RECEIPTS-640 regression: when the production Aspire deployment injects
+		// only Ollama:BaseUrl (no Ocr:Vlm:OllamaUrl override), the registration must pick that
+		// URL up. Before the fix, the non-null DefaultOllamaUrl on VlmOcrOptions short-circuited
+		// the IsNullOrWhiteSpace gate, ResolveOllamaUrl was never called, and every production
+		// scan request ended up targeting localhost:11434 inside the API container — silent
+		// connection-refused failures. Pin the corrected behavior.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				// No Ocr:Vlm:OllamaUrl key — only the Aspire-injected Ollama:BaseUrl
+				[ConfigurationVariables.OllamaBaseUrl] = "http://aspire-injected:11434",
+				[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.Model)}"] = "glm-ocr:q8_0",
+			})
+			.Build();
+
+		// Act
+		InfrastructureService.RegisterReceiptExtractionService(services, configuration);
+
+		// Assert — the registered VlmOcrOptions points at the Aspire-injected URL, not the
+		// localhost default that would otherwise leak through.
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		registered.OllamaUrl.Should().Be("http://aspire-injected:11434");
+	}
+
+	[Fact]
+	public void RegisterReceiptExtractionService_OcrVlmOverrideTakesPrecedence()
+	{
+		// Arrange — when both Ocr:Vlm:OllamaUrl and Ollama:BaseUrl are set, the explicit
+		// Ocr:Vlm:OllamaUrl override wins. ResolveOllamaUrl encodes this priority chain;
+		// pin it here so a future refactor can't reverse the precedence silently.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				[ConfigurationVariables.OcrVlmOllamaUrl] = "http://override:11434",
+				[ConfigurationVariables.OllamaBaseUrl] = "http://aspire-injected:11434",
+			})
+			.Build();
+
+		// Act
+		InfrastructureService.RegisterReceiptExtractionService(services, configuration);
+
+		// Assert
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		registered.OllamaUrl.Should().Be("http://override:11434");
+	}
+
+	[Fact]
+	public void RegisterReceiptExtractionService_NoConfig_FallsBackToLocalhostDefault()
+	{
+		// Arrange — when neither key is set (a developer running `dotnet run` without Aspire
+		// and without env vars), the localhost default kicks in so the service still builds.
+		// AddVlmOcrClient enforces non-blank URL — this is the only place the default applies.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder().Build();
+
+		// Act
+		InfrastructureService.RegisterReceiptExtractionService(services, configuration);
+
+		// Assert
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		registered.OllamaUrl.Should().Be(VlmOcrOptions.DefaultOllamaUrl);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_DoneFalse_Throws()
+	{
+		// Arrange — RECEIPTS-640: a done=false response signals a streamed/truncated body. The
+		// payload is mid-stream and the JSON is incomplete, so any downstream JsonException would
+		// be a confusing red herring. We ship stream=false (Ollama's per-request default), so any
+		// done=false here means the daemon was misconfigured to streaming mode. Fail fast and
+		// loudly with a message that points at the actual cause.
+		string envelope = JsonSerializer.Serialize(new
+		{
+			model = "glm-ocr:q8_0",
+			response = "{ \"schema_version\": 1, \"store\": { \"name\": \"Walmart\" }, \"total\": 10.0 }",
+			done = false,
+		});
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(envelope));
+
+		// Act
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
+
+		// Assert
+		await act.Should().ThrowAsync<InvalidOperationException>()
+			.WithMessage("*non-final response*done=false*");
+	}
+
+	[Fact]
+	public async Task ExtractAsync_ImageExceedsMaxBytes_ThrowsArgumentException()
+	{
+		// Arrange — RECEIPTS-640: an image larger than VlmOcrOptions.MaxImageBytes must be
+		// rejected before any base64 encoding (which inflates the byte count by ~33%) and before
+		// any HTTP traffic is generated. Ollama's default request body limit is well below 50 MB+
+		// camera dumps; this guard turns an opaque downstream HttpRequestException into a clear
+		// ArgumentException at the boundary.
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "glm-ocr:q8_0",
+			TimeoutSeconds = 30,
+			MaxImageBytes = 100, // tiny limit so the test image trips it
+		};
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope("{}")), options);
+		byte[] oversized = new byte[101];
+
+		// Act
+		Func<Task> act = () => service.ExtractAsync(oversized, CancellationToken.None);
+
+		// Assert
+		ExceptionAssertions<ArgumentException> thrown = await act.Should().ThrowAsync<ArgumentException>();
+		thrown.Which.ParamName.Should().Be("imageBytes");
+		thrown.Which.Message.Should().Contain("101");
+		thrown.Which.Message.Should().Contain("100");
+	}
+
+	[Fact]
+	public async Task ExtractAsync_ImageAtMaxBytes_DoesNotThrow()
+	{
+		// Arrange — boundary check: an image exactly at MaxImageBytes is allowed (the guard
+		// uses strict `>`, not `>=`). This pins behavior so a future tightening to `>=` would
+		// fail loudly rather than silently rejecting at-size payloads.
+		VlmOcrOptions options = new()
+		{
+			OllamaUrl = "http://test-ollama",
+			Model = "glm-ocr:q8_0",
+			TimeoutSeconds = 30,
+			MaxImageBytes = 100,
+		};
+		string innerJson = """
+			{
+			  "schema_version": 1,
+			  "store": { "name": "Walmart" },
+			  "total": 1.0
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)), options);
+		byte[] atLimit = new byte[100];
+
+		// Act / Assert
+		await service.ExtractAsync(atLimit, CancellationToken.None);
+	}
+
+	[Fact]
+	public void Constructor_NullHttpClient_Throws()
+	{
+		// RECEIPTS-640: tighten ctor null-check pattern so all three injected dependencies have
+		// the same guard. Previously only imageBytes had a guard; ctor params were unchecked.
+		Action act = () => new OllamaReceiptExtractionService(
+			null!, new VlmOcrOptions { OllamaUrl = "http://test" }, NullLogger<OllamaReceiptExtractionService>.Instance);
+
+		act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("httpClient");
+	}
+
+	[Fact]
+	public void Constructor_NullOptions_Throws()
+	{
+		Action act = () => new OllamaReceiptExtractionService(
+			new HttpClient { BaseAddress = new Uri("http://test/") },
+			null!,
+			NullLogger<OllamaReceiptExtractionService>.Instance);
+
+		act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("options");
+	}
+
+	[Fact]
+	public void Constructor_NullLogger_Throws()
+	{
+		Action act = () => new OllamaReceiptExtractionService(
+			new HttpClient { BaseAddress = new Uri("http://test/") },
+			new VlmOcrOptions { OllamaUrl = "http://test" },
+			null!);
+
+		act.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("logger");
 	}
 
 	/// <summary>

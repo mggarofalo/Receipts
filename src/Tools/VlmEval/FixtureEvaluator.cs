@@ -35,7 +35,7 @@ public sealed class FixtureEvaluator(
 		ParsedReceipt parsed;
 		try
 		{
-			parsed = await extractionService.ExtractAsync(bytes, fixture.ContentType, cancellationToken);
+			parsed = await extractionService.ExtractAsync(bytes, cancellationToken);
 		}
 		catch (Exception ex)
 		{
