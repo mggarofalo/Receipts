@@ -3,6 +3,7 @@ using FluentAssertions;
 using Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Tests.Services;
@@ -69,6 +70,38 @@ public class InfrastructureServiceOptionsTests
 		// Assert
 		act.Should().Throw<OptionsValidationException>()
 			.WithMessage("*Model*");
+	}
+
+	[Fact]
+	public async Task AddVlmOcrClient_BadConfiguration_HostStartAsyncFailsAtStartup()
+	{
+		// Arrange — RECEIPTS-638 acceptance: misconfigured options must fail when the host
+		// starts, before any user request reaches the API. ValidateOnStart() registers an
+		// IHostedService that runs validation during IHost.StartAsync(); without that
+		// hosted service, misconfig would only surface on first IOptions<T>.Value access.
+		// This test exercises the full lifecycle (StartAsync) so a future regression that
+		// removes ValidateOnStart() from production registrations would be caught here.
+		HostApplicationBuilder builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
+		builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+		{
+			[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.OllamaUrl)}"] = "http://test-ollama",
+			[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.Model)}"] = "glm-ocr:q8_0",
+			[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.TimeoutSeconds)}"] = "0",
+		});
+		builder.Services.AddLogging();
+		builder.Services.AddVlmOcrClient(builder.Configuration);
+
+		using IHost host = builder.Build();
+
+		// Act
+		Func<Task> act = () => host.StartAsync();
+
+		// Assert — ValidateOnStart triggers via the hosted-service pipeline. The framework
+		// surfaces the validation failure as OptionsValidationException raised inside
+		// StartAsync, signaling that the app would have aborted during boot rather than
+		// limping along until the first scan request.
+		await act.Should().ThrowAsync<OptionsValidationException>()
+			.WithMessage("*TimeoutSeconds*");
 	}
 
 	[Fact]
