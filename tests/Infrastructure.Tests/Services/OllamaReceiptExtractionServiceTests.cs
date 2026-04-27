@@ -1624,6 +1624,80 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
+	public void RegisterReceiptExtractionService_AspireOnlyConfig_PrefersOllamaBaseUrl()
+	{
+		// Arrange — RECEIPTS-640 regression: when the production Aspire deployment injects
+		// only Ollama:BaseUrl (no Ocr:Vlm:OllamaUrl override), the registration must pick that
+		// URL up. Before the fix, the non-null DefaultOllamaUrl on VlmOcrOptions short-circuited
+		// the IsNullOrWhiteSpace gate, ResolveOllamaUrl was never called, and every production
+		// scan request ended up targeting localhost:11434 inside the API container — silent
+		// connection-refused failures. Pin the corrected behavior.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				// No Ocr:Vlm:OllamaUrl key — only the Aspire-injected Ollama:BaseUrl
+				[ConfigurationVariables.OllamaBaseUrl] = "http://aspire-injected:11434",
+				[$"{ConfigurationVariables.OcrVlmSection}:{nameof(VlmOcrOptions.Model)}"] = "glm-ocr:q8_0",
+			})
+			.Build();
+
+		// Act
+		InfrastructureService.RegisterReceiptExtractionService(services, configuration);
+
+		// Assert — the registered VlmOcrOptions points at the Aspire-injected URL, not the
+		// localhost default that would otherwise leak through.
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		registered.OllamaUrl.Should().Be("http://aspire-injected:11434");
+	}
+
+	[Fact]
+	public void RegisterReceiptExtractionService_OcrVlmOverrideTakesPrecedence()
+	{
+		// Arrange — when both Ocr:Vlm:OllamaUrl and Ollama:BaseUrl are set, the explicit
+		// Ocr:Vlm:OllamaUrl override wins. ResolveOllamaUrl encodes this priority chain;
+		// pin it here so a future refactor can't reverse the precedence silently.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string?>
+			{
+				[ConfigurationVariables.OcrVlmOllamaUrl] = "http://override:11434",
+				[ConfigurationVariables.OllamaBaseUrl] = "http://aspire-injected:11434",
+			})
+			.Build();
+
+		// Act
+		InfrastructureService.RegisterReceiptExtractionService(services, configuration);
+
+		// Assert
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		registered.OllamaUrl.Should().Be("http://override:11434");
+	}
+
+	[Fact]
+	public void RegisterReceiptExtractionService_NoConfig_FallsBackToLocalhostDefault()
+	{
+		// Arrange — when neither key is set (a developer running `dotnet run` without Aspire
+		// and without env vars), the localhost default kicks in so the service still builds.
+		// AddVlmOcrClient enforces non-blank URL — this is the only place the default applies.
+		ServiceCollection services = new();
+		services.AddLogging();
+		IConfiguration configuration = new ConfigurationBuilder().Build();
+
+		// Act
+		InfrastructureService.RegisterReceiptExtractionService(services, configuration);
+
+		// Assert
+		using ServiceProvider sp = services.BuildServiceProvider();
+		VlmOcrOptions registered = sp.GetRequiredService<VlmOcrOptions>();
+		registered.OllamaUrl.Should().Be(VlmOcrOptions.DefaultOllamaUrl);
+	}
+
+	[Fact]
 	public async Task ExtractAsync_DoneFalse_Throws()
 	{
 		// Arrange — RECEIPTS-640: a done=false response signals a streamed/truncated body. The

@@ -263,9 +263,16 @@ public static class InfrastructureService
 		VlmOcrOptions options = new();
 		configuration.GetSection(ConfigurationVariables.OcrVlmSection).Bind(options);
 
-		if (string.IsNullOrWhiteSpace(options.OllamaUrl))
+		// RECEIPTS-640: VlmOcrOptions.OllamaUrl is now a non-nullable string with a localhost
+		// default, so the previous IsNullOrWhiteSpace gate would short-circuit when neither
+		// Ocr:Vlm:OllamaUrl nor a configured override is set — silently bypassing the
+		// Aspire-injected Ollama:BaseUrl that ResolveOllamaUrl picks up. Always run the
+		// resolver: it already enforces the priority chain (Ocr:Vlm:OllamaUrl →
+		// Ollama:BaseUrl → null), so the bound default only wins when neither is configured.
+		string? resolved = ResolveOllamaUrl(configuration);
+		if (!string.IsNullOrWhiteSpace(resolved))
 		{
-			options.OllamaUrl = ResolveOllamaUrl(configuration) ?? "http://localhost:11434";
+			options.OllamaUrl = resolved;
 		}
 
 		services.AddVlmOcrClient(options);
