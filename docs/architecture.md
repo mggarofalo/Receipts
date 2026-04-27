@@ -90,10 +90,10 @@ The system uses pgvector for semantic similarity search on item names and descri
 Receipt OCR + JSON extraction runs against a local vision-language model hosted in an Ollama container (epic **RECEIPTS-616**). This issue (**RECEIPTS-617**) wires the container into Aspire and docker-compose and adds a startup smoke test; the extraction service itself lands in RECEIPTS-618.
 
 - **Container** — `ollama/ollama:latest`, named `vlm-ocr` in both Aspire (`src/Receipts.AppHost/AppHost.cs`) and docker-compose (`docker-compose.yml`), exposing port 11434.
-- **Model** — `glm-ocr:q8_0` (~1 GB). Pulled on first run by the one-shot `vlm-ocr-pull` sidecar; skipped on subsequent runs.
+- **Model** — defaults to `glm-ocr:q8_0` (~1 GB). Pulled on first run by the one-shot `vlm-ocr-pull` sidecar; skipped on subsequent runs. The model tag is centralized in `VlmOcrOptions.DefaultModel` (C#) and the `VLM_MODEL` env var (Aspire / docker-compose) — change either one to swap models without editing every file (RECEIPTS-635).
 - **Model cache** — persistent named volume `vlm-ocr-models` mounted at `/root/.ollama`. Survives container restarts so the pull is a one-time cost.
-- **Configuration** — the API reads `Ollama:BaseUrl` (env var `Ollama__BaseUrl`). Aspire injects this automatically; docker-compose sets it to `http://vlm-ocr:11434`.
-- **Smoke test** — `src/Presentation/API/Services/VlmOcrSmokeTest.cs` runs once on `ApplicationStarted`: hits `GET /api/tags`, logs Information if `glm-ocr` is present, Warning otherwise. Log-only — never blocks startup or fails the process.
+- **Configuration** — the API reads `Ollama:BaseUrl` (env var `Ollama__BaseUrl`) for the URL and `Ocr:Vlm:Model` (env var `Ocr__Vlm__Model`) for the tag. Aspire injects both automatically from `VLM_MODEL`; docker-compose sets `Ollama__BaseUrl=http://vlm-ocr:11434` and `Ocr__Vlm__Model=${VLM_MODEL:-glm-ocr:q8_0}`.
+- **Smoke test** — `src/Presentation/API/Services/VlmOcrSmokeTest.cs` runs once on `ApplicationStarted`: hits `GET /api/tags`, parses the response, and matches the configured `Ocr:Vlm:Model` exactly against entries in `models[].name`. Logs Information on match, Warning otherwise. Log-only — never blocks startup or fails the process.
 
 ## Test Project Structure
 

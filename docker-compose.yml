@@ -85,7 +85,7 @@ services:
         max-size: "50m"
         max-file: "3"
 
-  # VLM OCR: Ollama container serving qwen2.5vl:3b for receipt extraction (RECEIPTS-616 epic).
+  # VLM OCR: Ollama container serving the configured VLM (RECEIPTS-616 epic).
   # Named volume persists the model cache so the first-run ~3 GB pull only happens once.
   #
   # The `ollama list` healthcheck validates the Ollama daemon is responsive (it queries the
@@ -107,8 +107,9 @@ services:
     deploy:
       resources:
         limits:
-          # qwen2.5vl:3b Q4 is ~3.2 GB; runtime needs headroom for the weights + KV cache +
-          # compute graph (observed ~2-3 GB with 4k context). Bump to 6 GB to avoid OOM kills.
+          # Default model glm-ocr:q8_0 is ~1 GB; previous qwen2.5vl:3b Q4 is ~3.2 GB. Either runtime
+          # needs headroom for weights + KV cache + compute graph (observed ~2-3 GB with 4k context).
+          # Keep 6 GB ceiling so swapping VLM_MODEL to a heavier tag doesn't OOM.
           memory: 6G
           cpus: "4"
     networks:
@@ -119,13 +120,16 @@ services:
         max-size: "50m"
         max-file: "3"
 
-  # One-shot sidecar: pulls qwen2.5vl:3b if it is not already cached, then exits.
+  # One-shot sidecar: pulls the configured VLM model if it is not already cached, then exits.
   # Idempotent — subsequent runs find the model present and skip the download.
   #
   # `app` now gates startup on this sidecar exiting successfully (RECEIPTS-636), so a
   # non-zero exit here permanently blocks the API. To avoid that on transient network
   # errors during the ~3 GB cold-start pull, the command retries up to 5 times with
   # backoff before giving up.
+  #
+  # The model tag is parameterized via VLM_MODEL (single source of truth — RECEIPTS-635). Override
+  # by exporting VLM_MODEL=<tag> or by setting it in a .env file alongside docker-compose.yml.
   vlm-ocr-pull:
     image: ollama/ollama:latest
     container_name: receipts-vlm-ocr-pull
@@ -138,12 +142,12 @@ services:
       - -c
       - |
         for i in 1 2 3 4 5; do
-          if ollama list | grep -q 'qwen2.5vl:3b'; then
-            echo "qwen2.5vl:3b already present; skipping pull"
+          if ollama list | grep -qF "$$VLM_MODEL"; then
+            echo "$$VLM_MODEL already present; skipping pull"
             exit 0
           fi
-          echo "Pulling qwen2.5vl:3b (attempt $$i/5)..."
-          if ollama pull qwen2.5vl:3b; then
+          echo "Pulling $$VLM_MODEL (attempt $$i/5)..."
+          if ollama pull "$$VLM_MODEL"; then
             exit 0
           fi
           echo "Pull failed; sleeping before retry"
@@ -153,6 +157,7 @@ services:
         exit 1
     environment:
       - OLLAMA_HOST=http://vlm-ocr:11434
+      - VLM_MODEL=${VLM_MODEL:-glm-ocr:q8_0}
     networks:
       - receipts-net
     logging:
@@ -182,6 +187,7 @@ services:
       - AdminSeed__FirstName=Admin
       - AdminSeed__LastName=User
       - Ollama__BaseUrl=http://vlm-ocr:11434
+      - Ocr__Vlm__Model=${VLM_MODEL:-glm-ocr:q8_0}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - OTEL_SERVICE_NAME=receipts-api
       - SENTRY_DSN=${SENTRY_DSN:-}

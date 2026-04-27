@@ -1,18 +1,67 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Infrastructure.Services;
+using Microsoft.Extensions.Options;
+
 namespace API.Services;
 
 /// <summary>
 /// Startup log-only check that the configured Ollama instance is reachable and has
-/// the glm-ocr model loaded. Used by <c>Program.cs</c> to surface VLM provisioning
+/// the configured VLM model loaded. Used by <c>Program.cs</c> to surface VLM provisioning
 /// problems early without blocking API startup (RECEIPTS-616 epic).
+/// <para>
+/// The expected model name is sourced from <see cref="VlmOcrOptions.Model"/> (single source of
+/// truth — RECEIPTS-635). The smoke test parses Ollama's <c>/api/tags</c> response and matches
+/// the configured tag exactly against entries in <c>models[].name</c> — substring matching is
+/// avoided so e.g. <c>glm-ocr-experimental</c> never satisfies a check for <c>glm-ocr:q8_0</c>.
+/// </para>
 /// </summary>
-public static class VlmOcrSmokeTest
+public sealed class VlmOcrSmokeTest
 {
-	private const string ExpectedModel = "glm-ocr";
 	private const string TagsEndpoint = "/api/tags";
+	internal const string HttpClientName = "vlm-smoke";
 
-	public static async Task RunAsync(HttpClient http, ILogger logger, CancellationToken cancellationToken)
+	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+	private readonly IHttpClientFactory _httpClientFactory;
+	private readonly VlmOcrOptions _options;
+	private readonly ILogger<VlmOcrSmokeTest> _logger;
+
+	public VlmOcrSmokeTest(
+		IHttpClientFactory httpClientFactory,
+		IOptions<VlmOcrOptions> options,
+		ILogger<VlmOcrSmokeTest> logger)
+	{
+		ArgumentNullException.ThrowIfNull(httpClientFactory);
+		ArgumentNullException.ThrowIfNull(options);
+		ArgumentNullException.ThrowIfNull(logger);
+
+		_httpClientFactory = httpClientFactory;
+		_options = options.Value;
+		_logger = logger;
+	}
+
+	public Task RunAsync(CancellationToken cancellationToken)
+	{
+		HttpClient http = _httpClientFactory.CreateClient(HttpClientName);
+		return RunAsync(http, _options.Model, _logger, cancellationToken);
+	}
+
+	/// <summary>
+	/// Probes the supplied <paramref name="http"/> client (already configured with a base address
+	/// and timeout) for the configured Ollama tags endpoint and verifies that
+	/// <paramref name="expectedModel"/> appears verbatim in the <c>models[].name</c> list. Logs
+	/// at Information on success and Warning on any reachability/parse/model-missing condition.
+	/// All exceptions are swallowed: the smoke test must never crash startup (RECEIPTS-616).
+	/// </summary>
+	internal static async Task RunAsync(
+		HttpClient http,
+		string expectedModel,
+		ILogger logger,
+		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(http);
+		ArgumentException.ThrowIfNullOrWhiteSpace(expectedModel);
 		ArgumentNullException.ThrowIfNull(logger);
 
 		try
@@ -26,16 +75,42 @@ public static class VlmOcrSmokeTest
 				return;
 			}
 
-			string body = await response.Content.ReadAsStringAsync(cancellationToken);
-			if (body.Contains(ExpectedModel, StringComparison.OrdinalIgnoreCase))
+			TagsResponse? tags;
+			try
 			{
-				logger.LogInformation("VLM OCR: glm-ocr model available at {Url}", http.BaseAddress);
+				tags = await response.Content.ReadFromJsonAsync<TagsResponse>(JsonOptions, cancellationToken);
+			}
+			catch (JsonException ex)
+			{
+				logger.LogWarning(
+					ex,
+					"VLM OCR: failed to parse {Endpoint} JSON from {Url}",
+					TagsEndpoint, http.BaseAddress);
+				return;
+			}
+
+			if (tags?.Models is null || tags.Models.Count == 0)
+			{
+				logger.LogWarning(
+					"VLM OCR: reachable at {Url} but no models reported — run \"ollama pull {Model}\" on the VLM host",
+					http.BaseAddress, expectedModel);
+				return;
+			}
+
+			bool present = tags.Models.Any(m =>
+				string.Equals(m.Name, expectedModel, StringComparison.Ordinal));
+
+			if (present)
+			{
+				logger.LogInformation(
+					"VLM OCR: {Model} available at {Url}",
+					expectedModel, http.BaseAddress);
 			}
 			else
 			{
 				logger.LogWarning(
-					"VLM OCR: reachable at {Url} but glm-ocr not in model list — run \"ollama pull glm-ocr:q8_0\" on the VLM host",
-					http.BaseAddress);
+					"VLM OCR: reachable at {Url} but {Model} not in model list — run \"ollama pull {Model}\" on the VLM host",
+					http.BaseAddress, expectedModel, expectedModel);
 			}
 		}
 		catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
@@ -43,4 +118,10 @@ public static class VlmOcrSmokeTest
 			logger.LogWarning(ex, "VLM OCR: failed to reach {Url}", http.BaseAddress);
 		}
 	}
+
+	private sealed record TagsResponse(
+		[property: JsonPropertyName("models")] IReadOnlyList<TagsModel>? Models);
+
+	private sealed record TagsModel(
+		[property: JsonPropertyName("name")] string? Name);
 }

@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Polly;
 
@@ -226,13 +227,33 @@ public static class InfrastructureService
 	}
 
 	/// <summary>
+	/// Resolves the Ollama base URL using the canonical fallback chain shared between the
+	/// receipt-extraction HTTP client (this class) and the API startup smoke test
+	/// (<c>API.Services.VlmOcrSmokeTest</c>): <c>Ocr:Vlm:OllamaUrl</c> → <c>Ollama:BaseUrl</c>
+	/// (Aspire-injected) → <c>null</c>. The localhost fallback is applied separately by callers
+	/// so e.g. <c>Program.cs</c> can detect the "neither key set" condition and emit a startup
+	/// warning instead of silently smoke-testing the dev daemon (RECEIPTS-635).
+	/// </summary>
+	public static string? ResolveOllamaUrl(IConfiguration configuration)
+	{
+		string? configured = configuration[ConfigurationVariables.OcrVlmOllamaUrl];
+		if (!string.IsNullOrWhiteSpace(configured))
+		{
+			return configured;
+		}
+
+		string? aspireInjected = configuration[ConfigurationVariables.OllamaBaseUrl];
+		return string.IsNullOrWhiteSpace(aspireInjected) ? null : aspireInjected;
+	}
+
+	/// <summary>
 	/// Registers the Ollama-backed <see cref="IReceiptExtractionService"/> with a single
 	/// resilience pipeline tailored to long-running VLM inferences. URL resolves from
 	/// <c>Ocr:Vlm:OllamaUrl</c>, then <c>Ollama:BaseUrl</c> (Aspire-injected), then localhost default.
 	/// <para>
 	/// We explicitly <see cref="ResilienceHttpClientBuilderExtensions.RemoveAllResilienceHandlers"/>
 	/// so the standard handler injected by <c>Receipts.ServiceDefaults</c> (30s per attempt /
-	/// 90s total) does NOT stack on top of our pipeline. Real glm-ocr inferences routinely
+	/// 90s total) does NOT stack on top of our pipeline. Real VLM inferences routinely
 	/// exceed 30s; without removal the documented <see cref="VlmOcrOptions.TimeoutSeconds"/>
 	/// budget would never apply. See RECEIPTS-630.
 	/// </para>
@@ -244,8 +265,7 @@ public static class InfrastructureService
 
 		if (string.IsNullOrWhiteSpace(options.OllamaUrl))
 		{
-			options.OllamaUrl = configuration[ConfigurationVariables.OllamaBaseUrl]
-				?? "http://localhost:11434";
+			options.OllamaUrl = ResolveOllamaUrl(configuration) ?? "http://localhost:11434";
 		}
 
 		services.AddVlmOcrClient(options);
@@ -271,9 +291,14 @@ public static class InfrastructureService
 				nameof(options));
 		}
 
+		// Bare instance for direct injection (OllamaReceiptExtractionService takes VlmOcrOptions).
 		services.AddSingleton(options);
+		// IOptions<VlmOcrOptions> wrapper so consumers like the smoke test can use the standard
+		// options pattern. Backed by the same instance bound above so Model / OllamaUrl / Timeout
+		// stay in sync.
+		services.AddSingleton<IOptions<VlmOcrOptions>>(new OptionsWrapper<VlmOcrOptions>(options));
 
-#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is in evaluation; required to opt out of the standard handler injected by ServiceDefaults.
+	#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is in evaluation; required to opt out of the standard handler injected by ServiceDefaults.
 		services.AddHttpClient<IReceiptExtractionService, OllamaReceiptExtractionService>(client =>
 		{
 			client.BaseAddress = new Uri(options.OllamaUrl!.TrimEnd('/') + "/");
@@ -283,7 +308,7 @@ public static class InfrastructureService
 		})
 			.RemoveAllResilienceHandlers()
 			.AddResilienceHandler("vlm-ocr", builder => ConfigureVlmOcrResilience(builder, options));
-#pragma warning restore EXTEXP0001
+	#pragma warning restore EXTEXP0001
 
 		return services;
 	}

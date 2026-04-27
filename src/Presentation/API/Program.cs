@@ -46,6 +46,27 @@ builder.Services
 	.RegisterApplicationServices(builder.Configuration)
 	.RegisterInfrastructureServices(builder.Configuration);
 
+// Resolve the Ollama URL using the same fallback chain RegisterReceiptExtractionService uses,
+// then register the named HttpClient the smoke test will pull from IHttpClientFactory. This
+// replaces the previous pattern of `using HttpClient http = new()`, which bypassed
+// IHttpClientFactory + OTel HTTP instrumentation + ConfigureHttpClientDefaults (RECEIPTS-635).
+//
+// The smoke-test HttpClient is registered unconditionally so DI is consistent across environments
+// (tests inspect it). When the URL is unavailable, the smoke test simply skips at startup with a
+// log warning — see the lifetime hook below.
+string? smokeOllamaBaseUrl = Infrastructure.Services.InfrastructureService.ResolveOllamaUrl(builder.Configuration);
+
+builder.Services.AddHttpClient(API.Services.VlmOcrSmokeTest.HttpClientName, client =>
+{
+	if (!string.IsNullOrWhiteSpace(smokeOllamaBaseUrl))
+	{
+		client.BaseAddress = new Uri(smokeOllamaBaseUrl.TrimEnd('/') + "/");
+	}
+	client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+builder.Services.AddSingleton<API.Services.VlmOcrSmokeTest>();
+
 // Build application
 WebApplication app = builder.Build();
 
@@ -109,8 +130,11 @@ if (!app.Environment.IsDevelopment())
 // escape VlmOcrSmokeTest.RunAsync (e.g. UriFormatException from a malformed URL, or
 // InvalidOperationException from a scheme-less one) which would otherwise become silent
 // unobserved task exceptions.
-string? ollamaBaseUrl = builder.Configuration[Common.ConfigurationVariables.OllamaBaseUrl];
-if (!string.IsNullOrWhiteSpace(ollamaBaseUrl))
+//
+// URL resolution mirrors RegisterReceiptExtractionService — both check Ocr:Vlm:OllamaUrl, then
+// Ollama:BaseUrl. When neither is configured the smoke test is skipped and a startup warning is
+// emitted so misconfigured deployments are visible in logs (RECEIPTS-635).
+if (!string.IsNullOrWhiteSpace(smokeOllamaBaseUrl))
 {
 	app.Lifetime.ApplicationStarted.Register(() =>
 	{
@@ -119,18 +143,26 @@ if (!string.IsNullOrWhiteSpace(ollamaBaseUrl))
 			ILogger<Program> smokeLogger = app.Services.GetRequiredService<ILogger<Program>>();
 			try
 			{
-				using HttpClient http = new()
-				{
-					BaseAddress = new Uri(ollamaBaseUrl),
-					Timeout = TimeSpan.FromSeconds(10),
-				};
-				await API.Services.VlmOcrSmokeTest.RunAsync(http, smokeLogger, CancellationToken.None);
+				API.Services.VlmOcrSmokeTest smokeTest =
+					app.Services.GetRequiredService<API.Services.VlmOcrSmokeTest>();
+				await smokeTest.RunAsync(CancellationToken.None);
 			}
 			catch (Exception ex)
 			{
-				smokeLogger.LogWarning(ex, "VLM OCR: unexpected error during smoke test for {Url}", ollamaBaseUrl);
+				smokeLogger.LogWarning(ex, "VLM OCR: unexpected error during smoke test for {Url}", smokeOllamaBaseUrl);
 			}
 		});
+	});
+}
+else
+{
+	app.Lifetime.ApplicationStarted.Register(() =>
+	{
+		ILogger<Program> startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+		startupLogger.LogWarning(
+			"VLM OCR: skipping smoke test — neither {OcrVlmKey} nor {OllamaKey} is configured",
+			Common.ConfigurationVariables.OcrVlmOllamaUrl,
+			Common.ConfigurationVariables.OllamaBaseUrl);
 	});
 }
 

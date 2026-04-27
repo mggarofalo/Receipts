@@ -10,6 +10,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Presentation\API\API.csproj" />
+    <!-- IsAspireProjectResource=false so Aspire doesn't try to start Infrastructure as a project
+         resource — we only need it for shared constants (e.g. VlmOcrOptions.DefaultModel,
+         RECEIPTS-635). -->
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\Tools\DbMigrator\DbMigrator.csproj" />
     <ProjectReference Include="..\Tools\DbSeeder\DbSeeder.csproj" />
     <ProjectReference Include="..\Tools\VlmEval\VlmEval.csproj" />

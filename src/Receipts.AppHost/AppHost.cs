@@ -1,3 +1,5 @@
+using Infrastructure.Services;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 IResourceBuilder<PostgresServerResource> postgres = builder.AddPostgres("postgres")
@@ -24,7 +26,13 @@ IResourceBuilder<ProjectResource> seeder = builder.AddProject<Projects.DbSeeder>
 	.WithEnvironment("AdminSeed__FirstName", "Admin")
 	.WithEnvironment("AdminSeed__LastName", "User");
 
-// VLM OCR: Ollama container serving qwen2.5vl:3b for receipt extraction (RECEIPTS-616 epic).
+// VLM model tag — single source of truth across Aspire / docker-compose / appsettings (RECEIPTS-635).
+// Read from the VLM_MODEL env var; fall back to VlmOcrOptions.DefaultModel. The same value flows to
+// the pull sidecar (so it pulls the right tag) and to API + VlmEval as Ocr__Vlm__Model (so they
+// query Ollama for that tag).
+string vlmModel = Environment.GetEnvironmentVariable("VLM_MODEL") ?? VlmOcrOptions.DefaultModel;
+
+// VLM OCR: Ollama container serving the configured VLM (RECEIPTS-616 epic).
 // Named volume persists the model cache across restarts so the first-run ~3 GB pull happens once.
 // Host port is left unset so Aspire picks a free one — Ollama's default 11434 is frequently
 // already bound on developer machines running the native Ollama daemon, which would wedge Aspire
@@ -39,21 +47,24 @@ IResourceBuilder<ContainerResource> vlmOcr = builder.AddContainer("vlm-ocr", "ol
 	.WithHttpEndpoint(targetPort: 11434, name: "http")
 	.WithHttpHealthCheck("/api/tags");
 
-// One-shot sidecar that pulls qwen2.5vl:3b if it is not already cached in the shared volume,
-// then exits. Idempotent — subsequent runs find the model present and skip the download.
+// One-shot sidecar that pulls the configured VLM model if it is not already cached in the shared
+// volume, then exits. Idempotent — subsequent runs find the model present and skip the download.
 //
 // The API and VlmEval gate on this sidecar via .WaitForCompletion (RECEIPTS-636), so a
 // non-zero exit here permanently blocks dependents. Retry up to 5 times with backoff
 // to tolerate transient network failures during the ~3 GB cold-start pull. Mirrors the
 // docker-compose vlm-ocr-pull retry pattern.
+//
+// $VLM_MODEL is sourced from the OS env (set by .WithEnvironment below) so a single edit point
+// (VlmOcrOptions.DefaultModel or the VLM_MODEL env var) controls everything (RECEIPTS-635).
 const string vlmOcrPullCommand = """
 	for i in 1 2 3 4 5; do
-	  if ollama list | grep -q 'qwen2.5vl:3b'; then
-	    echo "qwen2.5vl:3b already present; skipping pull"
+	  if ollama list | grep -qF "$VLM_MODEL"; then
+	    echo "$VLM_MODEL already present; skipping pull"
 	    exit 0
 	  fi
-	  echo "Pulling qwen2.5vl:3b (attempt $i/5)..."
-	  if ollama pull qwen2.5vl:3b; then
+	  echo "Pulling $VLM_MODEL (attempt $i/5)..."
+	  if ollama pull "$VLM_MODEL"; then
 	    exit 0
 	  fi
 	  echo "Pull failed; sleeping before retry"
@@ -66,6 +77,7 @@ IResourceBuilder<ContainerResource> vlmOcrPull = builder.AddContainer("vlm-ocr-p
 	.WithEntrypoint("/bin/sh")
 	.WithArgs("-c", vlmOcrPullCommand)
 	.WithEnvironment("OLLAMA_HOST", "http://vlm-ocr:11434")
+	.WithEnvironment("VLM_MODEL", vlmModel)
 	.WaitFor(vlmOcr);
 
 // API: starts after seeder completes; Ollama URL injected for the smoke test and future extraction service.
@@ -75,6 +87,7 @@ IResourceBuilder<ContainerResource> vlmOcrPull = builder.AddContainer("vlm-ocr-p
 IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")
 	.WithReference(db)
 	.WithEnvironment("Ollama__BaseUrl", vlmOcr.GetEndpoint("http"))
+	.WithEnvironment("Ocr__Vlm__Model", vlmModel)
 	.WaitForCompletion(seeder)
 	.WaitFor(vlmOcr)
 	.WaitForCompletion(vlmOcrPull);
@@ -87,6 +100,7 @@ string vlmEvalFixturesPath = Path.Combine(repoRoot, "fixtures", "vlm-eval");
 
 builder.AddProject<Projects.VlmEval>("vlm-eval")
 	.WithEnvironment("Ollama__BaseUrl", vlmOcr.GetEndpoint("http"))
+	.WithEnvironment("Ocr__Vlm__Model", vlmModel)
 	.WithEnvironment("VlmEval__FixturesPath", vlmEvalFixturesPath)
 	.WaitFor(vlmOcr)
 	.WaitForCompletion(vlmOcrPull)

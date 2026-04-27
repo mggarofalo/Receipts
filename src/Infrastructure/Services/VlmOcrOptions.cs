@@ -2,9 +2,17 @@ namespace Infrastructure.Services;
 
 public sealed class VlmOcrOptions
 {
+	/// <summary>
+	/// Single source of truth for the VLM model tag used by Ollama. Referenced by C# defaults
+	/// (this options class) and Aspire/docker-compose via the <c>VLM_MODEL</c> env var. Changing
+	/// the model name should mean editing this constant or setting <c>VLM_MODEL</c> — never
+	/// touching individual files (RECEIPTS-635).
+	/// </summary>
+	public const string DefaultModel = "glm-ocr:q8_0";
+
 	public string? OllamaUrl { get; set; }
 
-	public string Model { get; set; } = "glm-ocr:q8_0";
+	public string Model { get; set; } = DefaultModel;
 
 	public int TimeoutSeconds { get; set; } = 120;
 
