@@ -73,9 +73,13 @@ const string vlmOcrPullCommand = """
 	echo "All pull attempts failed" >&2
 	exit 1
 	""";
+// Normalize CRLF → LF so the bash heredoc parses correctly on Linux. Without this, a Windows
+// .editorconfig that mandates CRLF for *.cs files causes /bin/sh -c to see `do\r` as a non-keyword
+// and fail with "Syntax error: word unexpected (expecting \"do\")".
+string vlmOcrPullCommandLf = vlmOcrPullCommand.Replace("\r\n", "\n");
 IResourceBuilder<ContainerResource> vlmOcrPull = builder.AddContainer("vlm-ocr-pull", "ollama/ollama", "latest")
 	.WithEntrypoint("/bin/sh")
-	.WithArgs("-c", vlmOcrPullCommand)
+	.WithArgs("-c", vlmOcrPullCommandLf)
 	.WithEnvironment("OLLAMA_HOST", "http://vlm-ocr:11434")
 	.WithEnvironment("VLM_MODEL", vlmModel)
 	.WaitFor(vlmOcr);
