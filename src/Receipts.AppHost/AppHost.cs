@@ -101,11 +101,18 @@ IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")
 // trigger from the Aspire dashboard. See src/Tools/VlmEval/README.md.
 string repoRoot = Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", ".."));
 string vlmEvalFixturesPath = Path.Combine(repoRoot, "fixtures", "vlm-eval");
+// Ensure the (gitignored) fixtures directory exists so a fresh dev box doesn't trip the
+// "missing fixtures dir" hard-error path on the very first start. Idempotent.
+Directory.CreateDirectory(vlmEvalFixturesPath);
 
 builder.AddProject<Projects.VlmEval>("vlm-eval")
 	.WithEnvironment("Ollama__BaseUrl", vlmOcr.GetEndpoint("http"))
 	.WithEnvironment("Ocr__Vlm__Model", vlmModel)
 	.WithEnvironment("VlmEval__FixturesPath", vlmEvalFixturesPath)
+	// Dev convenience: an empty fixtures directory is a warning, not a hard error.
+	// CI sets FailOnAnyFixtureFailure=true via env override to make accuracy regressions
+	// fail the pipeline once real fixtures exist.
+	.WithEnvironment("VlmEval__FailOnAnyFixtureFailure", "false")
 	.WaitFor(vlmOcr)
 	.WaitForCompletion(vlmOcrPull)
 	.WithExplicitStart();
