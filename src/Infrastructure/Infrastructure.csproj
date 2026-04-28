@@ -12,9 +12,56 @@
     <InternalsVisibleTo Include="Infrastructure.IntegrationTests" />
   </ItemGroup>
 
+  <!--
+    BGE-large ONNX model files are pulled at build time on a fresh clone (~1.34 GB on first run,
+    cached thereafter). Without these, OnnxEmbeddingService throws FileNotFoundException at
+    runtime and ~13 OnnxEmbedding* tests fail. The static `Content Include` block below uses
+    `Condition="Exists(...)"` so the build never errors when the files are absent — the download
+    target below populates them, and a separate target adds them as dynamic Content items after
+    the download so the first `dotnet build` after a clone is enough to produce a working bin/.
+    Set `-p:SkipOnnxModelDownload=true` to opt out (e.g., on CI runners that pre-cache the files
+    or in build environments without internet).
+  -->
+  <PropertyGroup>
+    <OnnxModelDir>$(MSBuildProjectDirectory)\Models\BgeLargeEnV15</OnnxModelDir>
+    <OnnxModelPath>$(OnnxModelDir)\model.onnx</OnnxModelPath>
+    <OnnxVocabPath>$(OnnxModelDir)\vocab.txt</OnnxVocabPath>
+  </PropertyGroup>
+
+  <Target Name="EnsureOnnxModelFiles"
+          BeforeTargets="AssignTargetPaths"
+          Condition="'$(SkipOnnxModelDownload)' != 'true'">
+    <MakeDir Directories="$(OnnxModelDir)" Condition="!Exists('$(OnnxModelDir)')" />
+    <Message Importance="high"
+             Text="Downloading bge-large-en-v1.5 ONNX model (~1.34 GB)..."
+             Condition="!Exists('$(OnnxModelPath)')" />
+    <DownloadFile SourceUrl="https://huggingface.co/BAAI/bge-large-en-v1.5/resolve/main/onnx/model.onnx"
+                  DestinationFolder="$(OnnxModelDir)"
+                  Condition="!Exists('$(OnnxModelPath)')" />
+    <Message Importance="high"
+             Text="Downloading bge-large-en-v1.5 vocab.txt..."
+             Condition="!Exists('$(OnnxVocabPath)')" />
+    <DownloadFile SourceUrl="https://huggingface.co/BAAI/bge-large-en-v1.5/resolve/main/vocab.txt"
+                  DestinationFolder="$(OnnxModelDir)"
+                  Condition="!Exists('$(OnnxVocabPath)')" />
+    <ItemGroup>
+      <Content Include="$(OnnxModelPath)"
+               Link="Models\BgeLargeEnV15\model.onnx"
+               CopyToOutputDirectory="PreserveNewest"
+               Condition="Exists('$(OnnxModelPath)')" />
+      <Content Include="$(OnnxVocabPath)"
+               Link="Models\BgeLargeEnV15\vocab.txt"
+               CopyToOutputDirectory="PreserveNewest"
+               Condition="Exists('$(OnnxVocabPath)')" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
-    <Content Include="Models\BgeLargeEnV15\model.onnx" Condition="Exists('Models\BgeLargeEnV15\model.onnx')" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Models\BgeLargeEnV15\vocab.txt" Condition="Exists('Models\BgeLargeEnV15\vocab.txt')" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Fallback Content items for the SkipOnnxModelDownload=true path: if the files happen
+         to be present (CI cache, manual download), include them; otherwise they're absent and
+         the runtime will throw a clear FileNotFoundException pointing the dev at the script. -->
+    <Content Include="Models\BgeLargeEnV15\model.onnx" Condition="'$(SkipOnnxModelDownload)' == 'true' AND Exists('Models\BgeLargeEnV15\model.onnx')" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Models\BgeLargeEnV15\vocab.txt" Condition="'$(SkipOnnxModelDownload)' == 'true' AND Exists('Models\BgeLargeEnV15\vocab.txt')" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

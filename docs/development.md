@@ -30,10 +30,13 @@ dotnet restore Receipts.slnx
 
 # Install Node dependencies (OpenAPI linting tools)
 npm install
-
-# Download the ONNX embedding model (~90MB, required at runtime)
-dotnet run scripts/download-onnx-model.cs
 ```
+
+The ONNX embedding model (~1.34 GB) is downloaded automatically the first time
+you build the `Infrastructure` project (e.g. `dotnet build` or `dotnet test`).
+To opt out (e.g. on a CI runner with a pre-cached model), pass
+`-p:SkipOnnxModelDownload=true`. To download manually, run
+`dotnet run scripts/download-onnx-model.cs`.
 
 ## F5 Debugging (Recommended)
 
