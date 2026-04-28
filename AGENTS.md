@@ -45,7 +45,7 @@ This file is **checked into git** (via Track B of RECEIPTS-534). It is a materia
 ```bash
 dotnet build Receipts.slnx                                    # Build entire solution
 dotnet test Receipts.slnx --filter "Category!=Integration"    # Unit tests only (CI + pre-commit)
-dotnet test Receipts.slnx                                     # All tests (requires ONNX model)
+dotnet test Receipts.slnx                                     # All tests (ONNX model auto-downloaded on first build; opt out with -p:SkipOnnxModelDownload=true)
 ```
 
 The API does not self-migrate or self-seed. See **[docs/development.md](docs/development.md#running-without-aspire)** for full commands including migrations, seeding, and single-project tests.
