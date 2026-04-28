@@ -115,7 +115,7 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 		// The per-attempt timeout is enforced by the resilience pipeline (Polly Timeout
 		// strategy registered in InfrastructureService). Each retry receives a fresh
 		// VlmOcrOptions.TimeoutSeconds budget — see RECEIPTS-630.
-		OllamaGenerateResponse? generateResponse;
+		string responseBody;
 		try
 		{
 			using HttpResponseMessage httpResponse = await _httpClient.PostAsJsonAsync(
@@ -123,28 +123,35 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 
 			httpResponse.EnsureSuccessStatusCode();
 
-			generateResponse = await httpResponse.Content.ReadFromJsonAsync<OllamaGenerateResponse>(
-				JsonOptions, cancellationToken);
+			responseBody = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 		}
 		catch (TimeoutRejectedException)
 		{
 			throw new TimeoutException($"Ollama VLM call timed out after {_options.TimeoutSeconds}s.");
 		}
 
+		// Ollama's /api/generate returns either:
+		//   1. A single JSON object (when stream=false honored by the server — what we ask for)
+		//   2. NDJSON: one JSON object per line, each a partial chunk, the last with done=true
+		//      (some Ollama versions stream image-input responses despite stream=false on the
+		//      request — observed on glm-ocr with rasterized-PDF inputs)
+		// We handle both transparently: parse line-by-line, concatenate the `response` chunks,
+		// take the final object's `done` flag. A single-object body is just a one-line NDJSON.
+		// See RECEIPTS-640 (the original done=false guard) and the hardening that motivated this.
+		OllamaGenerateResponse? generateResponse = ParseOllamaResponse(responseBody);
+
 		if (generateResponse is null || string.IsNullOrWhiteSpace(generateResponse.Response))
 		{
 			throw new InvalidOperationException("Ollama VLM returned an empty response.");
 		}
 
-		// done=false signals a partial/streamed response — the body is mid-stream and the JSON
-		// payload is truncated, so any downstream JsonException would be a confusing red herring.
-		// We send stream=false (Ollama's per-request default) so any done=false here means the
-		// daemon is misconfigured (e.g. someone flipped the default at the server). Surface the
-		// real cause early rather than letting a JsonException mask it. See RECEIPTS-640.
+		// After NDJSON consolidation, done=false means the stream was truncated mid-flight (the
+		// connection closed before the model reached its done=true terminal chunk). The JSON in
+		// `Response` will be partial and any downstream JsonException would mask the real cause.
 		if (!generateResponse.Done)
 		{
 			throw new InvalidOperationException(
-				"Ollama VLM returned a non-final response (done=false); the request was streamed or truncated. Confirm the daemon is configured for stream=false.");
+				"Ollama VLM response was truncated (no done=true chunk received); the upstream connection likely dropped mid-stream. Retry, or confirm the daemon is reachable for the full response.");
 		}
 
 		// The raw response carries PII (store, items, payment method, last-four). Logging is gated
@@ -203,6 +210,61 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 			: maxChars;
 
 		return string.Concat(value.AsSpan(0, safeMax), "... [truncated]");
+	}
+
+	/// <summary>
+	/// Parses an Ollama <c>/api/generate</c> response body, transparently handling both the
+	/// single-JSON-object form (returned when <c>stream=false</c> is honored) and the NDJSON
+	/// streaming form (one JSON object per line, the last carrying <c>done=true</c>).
+	/// Concatenates the per-chunk <c>response</c> strings and returns a synthetic
+	/// <see cref="OllamaGenerateResponse"/> carrying the joined text plus the final
+	/// <c>done</c>/<c>model</c> values. Returns <c>null</c> when the body is empty or only
+	/// whitespace.
+	/// </summary>
+	internal static OllamaGenerateResponse? ParseOllamaResponse(string body)
+	{
+		if (string.IsNullOrWhiteSpace(body))
+		{
+			return null;
+		}
+
+		// Single-line JSON-object body: parse directly. This is the happy path on Ollama
+		// builds that respect stream=false.
+		string trimmed = body.TrimStart();
+		bool looksLikeNdjson = trimmed.IndexOf('\n') >= 0;
+		if (!looksLikeNdjson)
+		{
+			return JsonSerializer.Deserialize<OllamaGenerateResponse>(body, JsonOptions);
+		}
+
+		// NDJSON: parse each non-blank line as an OllamaGenerateResponse, concatenate the
+		// `response` chunks, take the last object's metadata. The final chunk in a healthy
+		// stream has done=true and an empty response; truncated streams have all done=false.
+		System.Text.StringBuilder accumulator = new();
+		string? lastModel = null;
+		bool lastDone = false;
+		foreach (string line in body.Split('\n'))
+		{
+			if (string.IsNullOrWhiteSpace(line))
+			{
+				continue;
+			}
+
+			OllamaGenerateResponse? chunk = JsonSerializer.Deserialize<OllamaGenerateResponse>(line, JsonOptions);
+			if (chunk is null)
+			{
+				continue;
+			}
+
+			if (!string.IsNullOrEmpty(chunk.Response))
+			{
+				accumulator.Append(chunk.Response);
+			}
+			lastModel = chunk.Model;
+			lastDone = chunk.Done;
+		}
+
+		return new OllamaGenerateResponse(lastModel ?? string.Empty, accumulator.ToString(), lastDone);
 	}
 
 	internal static ParsedReceipt MapToParsedReceipt(VlmReceiptPayload payload)
