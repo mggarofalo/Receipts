@@ -1748,13 +1748,14 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
-	public async Task ExtractAsync_DoneFalse_Throws()
+	public async Task ExtractAsync_DoneFalse_SingleObject_ThrowsTruncationError()
 	{
-		// Arrange — RECEIPTS-640: a done=false response signals a streamed/truncated body. The
-		// payload is mid-stream and the JSON is incomplete, so any downstream JsonException would
-		// be a confusing red herring. We ship stream=false (Ollama's per-request default), so any
-		// done=false here means the daemon was misconfigured to streaming mode. Fail fast and
-		// loudly with a message that points at the actual cause.
+		// Arrange — a single-line JSON response with done=false (e.g. an unhealthy daemon
+		// returning the first chunk only, or a truncated response that arrived as a single
+		// non-streaming object). The payload is mid-stream and the JSON is incomplete, so
+		// any downstream JsonException would be a confusing red herring. Surface the real
+		// cause early. See RECEIPTS-640 (original guard) and the NDJSON consolidation that
+		// motivated rephrasing the error around truncation rather than streaming.
 		string envelope = JsonSerializer.Serialize(new
 		{
 			model = "glm-ocr:q8_0",
@@ -1768,7 +1769,7 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
-			.WithMessage("*non-final response*done=false*");
+			.WithMessage("*truncated*done=true*");
 	}
 
 	[Fact]
@@ -1959,6 +1960,85 @@ public class OllamaReceiptExtractionServiceTests
 
 		// Assert
 		value.OllamaUrl.Should().Be("http://aspire-ollama:11434");
+	}
+
+	// ParseOllamaResponse: handles both single-JSON-object and NDJSON streaming responses
+	// transparently. Some Ollama versions stream image-input responses despite stream=false on
+	// the request; the parser folds the chunks back into one synthetic OllamaGenerateResponse
+	// so callers see a single coherent object.
+
+	[Fact]
+	public async Task ExtractAsync_NdjsonStreamedResponse_ReassemblesToFullPayload()
+	{
+		// Arrange — Ollama streamed the response across 3 chunks despite our stream=false
+		// (observed on glm-ocr with rasterized-PDF inputs). Each line is a valid
+		// OllamaGenerateResponse; chunks 1-2 carry partial JSON in `response`, chunk 3 has
+		// done=true and an empty `response`.
+		string ndjsonBody = string.Join('\n',
+			"""{"model":"glm-ocr:q8_0","response":"{ \"schema_version\": 1, \"store\": { \"name\": \"Walmart\" },","done":false}""",
+			"""{"model":"glm-ocr:q8_0","response":" \"datetime\": \"2026-04-01\", \"total\": 9.71 }","done":false}""",
+			"""{"model":"glm-ocr:q8_0","response":"","done":true}""");
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(ndjsonBody));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
+
+		// Assert — the joined chunks reconstruct a valid VLM payload that maps cleanly.
+		receipt.StoreName.Value.Should().Be("Walmart");
+		receipt.Date.Value.Should().Be(new DateOnly(2026, 4, 1));
+		receipt.Total.Value.Should().Be(9.71m);
+	}
+
+	[Fact]
+	public async Task ExtractAsync_NdjsonTruncatedStream_NoDoneTrueChunk_ThrowsTruncationError()
+	{
+		// Arrange — connection dropped before Ollama emitted the final done=true chunk. The
+		// reassembled response is partial JSON, but the truncation detector fires before any
+		// downstream JsonException can mask the cause.
+		string truncatedNdjson = string.Join('\n',
+			"""{"model":"glm-ocr:q8_0","response":"{ \"schema_version\": 1, \"store\":","done":false}""",
+			"""{"model":"glm-ocr:q8_0","response":" { \"name\": \"Walmart\"","done":false}""");
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(truncatedNdjson));
+
+		// Act
+		Func<Task> act = () => service.ExtractAsync(FakeImage, CancellationToken.None);
+
+		// Assert
+		ExceptionAssertions<InvalidOperationException> thrown =
+			await act.Should().ThrowAsync<InvalidOperationException>()
+				.WithMessage("*truncated*");
+		thrown.Which.Message.Should().Contain("done=true");
+	}
+
+	[Fact]
+	public void ParseOllamaResponse_EmptyBody_ReturnsNull()
+	{
+		// Arrange — defensive: a literally empty / whitespace-only body must not throw and
+		// must not produce a synthetic OllamaGenerateResponse with stale defaults.
+		OllamaGenerateResponse? r1 = OllamaReceiptExtractionService.ParseOllamaResponse(string.Empty);
+		OllamaGenerateResponse? r2 = OllamaReceiptExtractionService.ParseOllamaResponse("   \n  \n");
+
+		// Assert
+		r1.Should().BeNull();
+		r2.Should().BeNull();
+	}
+
+	[Fact]
+	public void ParseOllamaResponse_SingleJsonObject_ParsesDirectly()
+	{
+		// Arrange — the happy path: stream=false honored by the daemon, body is a single
+		// JSON object on one line.
+		string singleObject =
+			"""{"model":"glm-ocr:q8_0","response":"{ \"schema_version\": 1 }","done":true}""";
+
+		// Act
+		OllamaGenerateResponse? response = OllamaReceiptExtractionService.ParseOllamaResponse(singleObject);
+
+		// Assert
+		response.Should().NotBeNull();
+		response!.Done.Should().BeTrue();
+		response.Response.Should().Contain("schema_version");
+		response.Model.Should().Be("glm-ocr:q8_0");
 	}
 
 	/// <summary>
