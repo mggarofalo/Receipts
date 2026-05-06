@@ -384,6 +384,30 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 					}
 					continue;
 				}
+
+				// RECEIPTS-668: orphan weight-subline. The VLM sometimes emits the parent
+				// header for the first instance of a weighted product but drops it for
+				// subsequent same-product bunches, leaving a sub-line whose previous merged
+				// neighbour is the *first* bunch (fully populated) rather than a matching
+				// parent. When the prior merged item is itself a weighted product carrying
+				// the same unit price, synthesize a sibling line that inherits the prior's
+				// code/description so the wizard renders "BANANAS" rather than the raw
+				// "2.720 lb. @ 1 lb. /0.50" string.
+				if (CanInheritFromPriorWeighted(parent, item))
+				{
+					merged.Add(new VlmReceiptItem
+					{
+						Description = parent.Description,
+						Code = parent.Code,
+						LineTotal = item.LineTotal,
+						Quantity = item.Quantity,
+						UnitPrice = item.UnitPrice,
+						TaxCode = !string.IsNullOrWhiteSpace(item.TaxCode)
+							? item.TaxCode
+							: parent.TaxCode,
+					});
+					continue;
+				}
 			}
 			merged.Add(item);
 		}
@@ -404,6 +428,22 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 		return item.LineTotal is null or 0m
 			&& item.Quantity is null or 0m
 			&& item.UnitPrice is null or 0m;
+	}
+
+	/// <summary>
+	/// True when an orphan weight sub-line should inherit its product identity from the
+	/// previously merged item. Requires the prior to be a real weighted product (has a
+	/// code, description, positive quantity, positive unit price) and the orphan to carry
+	/// a matching unit price — same product sold by weight at the same price-per-unit.
+	/// See RECEIPTS-668.
+	/// </summary>
+	private static bool CanInheritFromPriorWeighted(VlmReceiptItem prior, VlmReceiptItem subline)
+	{
+		return !string.IsNullOrWhiteSpace(prior.Code)
+			&& !string.IsNullOrWhiteSpace(prior.Description)
+			&& prior.Quantity is > 0
+			&& prior.UnitPrice is > 0
+			&& subline.UnitPrice == prior.UnitPrice;
 	}
 
 	/// <summary>

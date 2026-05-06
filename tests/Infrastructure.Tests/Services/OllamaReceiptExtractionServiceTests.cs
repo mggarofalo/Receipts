@@ -491,6 +491,131 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
+	public void MergeWeightSublines_OrphanSublineInheritsPriorWeightedIdentity()
+	{
+		// Arrange — RECEIPTS-668: real Walmart 2026-01-14 shape. Two BANANAS bunches at
+		// the same $0.50/lb. The VLM merged the first (parent+subline → one row) but
+		// emitted only the sub-line for the second bunch. The orphan sub-line should
+		// inherit "BANANAS" identity from the prior merged item.
+		List<VlmReceiptItem> items =
+		[
+			new() { Description = "BANANAS", Code = "0000000401100", LineTotal = 1.23m, Quantity = 2.46m, UnitPrice = 0.50m, TaxCode = "N" },
+			new() { Description = "2.720 lb. @ 1 lb. /0.50", Code = null, LineTotal = 1.36m, Quantity = 2.72m, UnitPrice = 0.50m, TaxCode = "N" },
+		];
+
+		// Act
+		List<VlmReceiptItem> merged = OllamaReceiptExtractionService.MergeWeightSublines(items);
+
+		// Assert — both rows render as BANANAS with their own weights; first row untouched
+		merged.Should().HaveCount(2);
+		merged[0].Description.Should().Be("BANANAS");
+		merged[0].Code.Should().Be("0000000401100");
+		merged[0].Quantity.Should().Be(2.46m);
+		merged[0].LineTotal.Should().Be(1.23m);
+		merged[1].Description.Should().Be("BANANAS");
+		merged[1].Code.Should().Be("0000000401100");
+		merged[1].Quantity.Should().Be(2.72m);
+		merged[1].UnitPrice.Should().Be(0.50m);
+		merged[1].LineTotal.Should().Be(1.36m);
+		merged[1].TaxCode.Should().Be("N");
+	}
+
+	[Fact]
+	public void MergeWeightSublines_OrphanSublineDifferentUnitPrice_PreservedAsIs()
+	{
+		// Arrange — defensive: if the orphan sub-line's unitPrice differs from the prior
+		// merged item, they're not the same product. Don't inherit identity; preserve
+		// the orphan as a separate item rather than mislabeling it.
+		List<VlmReceiptItem> items =
+		[
+			new() { Description = "BANANAS", Code = "0000000401100", LineTotal = 1.23m, Quantity = 2.46m, UnitPrice = 0.50m, TaxCode = "N" },
+			new() { Description = "1.500 lb. @ 1 lb. /1.99", Code = null, LineTotal = 2.99m, Quantity = 1.50m, UnitPrice = 1.99m, TaxCode = "N" },
+		];
+
+		// Act
+		List<VlmReceiptItem> merged = OllamaReceiptExtractionService.MergeWeightSublines(items);
+
+		// Assert — orphan kept as-is, no identity inherited
+		merged.Should().HaveCount(2);
+		merged[1].Description.Should().Be("1.500 lb. @ 1 lb. /1.99");
+		merged[1].Code.Should().BeNull();
+	}
+
+	[Fact]
+	public void MergeWeightSublines_OrphanSublinePriorNotWeighted_PreservedAsIs()
+	{
+		// Arrange — defensive: prior merged item is a flat-priced item (qty=null,
+		// unitPrice=null, only lineTotal). Don't inherit identity from it; the prior
+		// is not a weighted product so the orphan can't be a sibling bunch.
+		List<VlmReceiptItem> items =
+		[
+			new() { Description = "BREAD", Code = "0072250049190", LineTotal = 3.76m, Quantity = null, UnitPrice = null, TaxCode = "F" },
+			new() { Description = "2.720 lb. @ 1 lb. /0.50", Code = null, LineTotal = 1.36m, Quantity = 2.72m, UnitPrice = 0.50m, TaxCode = "N" },
+		];
+
+		// Act
+		List<VlmReceiptItem> merged = OllamaReceiptExtractionService.MergeWeightSublines(items);
+
+		// Assert — orphan preserved; BREAD untouched
+		merged.Should().HaveCount(2);
+		merged[0].Description.Should().Be("BREAD");
+		merged[1].Description.Should().Be("2.720 lb. @ 1 lb. /0.50");
+		merged[1].Code.Should().BeNull();
+	}
+
+	[Fact]
+	public void MergeWeightSublines_OrphanSublinePriorMissingCode_PreservedAsIs()
+	{
+		// Arrange — defensive: prior weighted item has no code (e.g. unknown PLU). The
+		// inheritance is conservative: without a code we don't propagate identity.
+		List<VlmReceiptItem> items =
+		[
+			new() { Description = "BANANAS", Code = null, LineTotal = 1.23m, Quantity = 2.46m, UnitPrice = 0.50m, TaxCode = "N" },
+			new() { Description = "2.720 lb. @ 1 lb. /0.50", Code = null, LineTotal = 1.36m, Quantity = 2.72m, UnitPrice = 0.50m, TaxCode = "N" },
+		];
+
+		// Act
+		List<VlmReceiptItem> merged = OllamaReceiptExtractionService.MergeWeightSublines(items);
+
+		// Assert — orphan preserved
+		merged.Should().HaveCount(2);
+		merged[1].Description.Should().Be("2.720 lb. @ 1 lb. /0.50");
+	}
+
+	[Fact]
+	public async Task ExtractAsync_OrphanWeightSubline_RendersBothBunchesAsBananas()
+	{
+		// Arrange — full-pipeline reproduction of the Walmart 2026-01-14 shape (RECEIPTS-668).
+		string innerJson = """
+			{
+			  "schema_version": 1,
+			  "store": { "name": "Walmart" },
+			  "items": [
+			    { "description": "BANANAS", "code": "0000000401100", "lineTotal": 1.23,
+			      "quantity": 2.46, "unitPrice": 0.50, "taxCode": "N" },
+			    { "description": "2.720 lb. @ 1 lb. /0.50", "code": null, "lineTotal": 1.36,
+			      "quantity": 2.72, "unitPrice": 0.50, "taxCode": "N" }
+			  ],
+			  "subtotal": 2.59,
+			  "total": 2.59
+			}
+			""";
+		OllamaReceiptExtractionService service = CreateService(CreateHandler(WrapInOllamaEnvelope(innerJson)));
+
+		// Act
+		ParsedReceipt receipt = await service.ExtractAsync(FakeImage, CancellationToken.None);
+
+		// Assert — both bunches render as BANANAS; orphan sub-line description is gone
+		receipt.Items.Should().HaveCount(2);
+		receipt.Items[0].Description.Value.Should().Be("BANANAS");
+		receipt.Items[0].Quantity.Value.Should().Be(2.46m);
+		receipt.Items[1].Description.Value.Should().Be("BANANAS");
+		receipt.Items[1].Code.Value.Should().Be("0000000401100");
+		receipt.Items[1].Quantity.Value.Should().Be(2.72m);
+		receipt.Items[1].TotalPrice.Value.Should().Be(1.36m);
+	}
+
+	[Fact]
 	public void ReconcileSubtotal_NoExtractedValue_ReturnsNoneConfidence()
 	{
 		FieldConfidence<decimal> result = OllamaReceiptExtractionService.ReconcileSubtotal(
