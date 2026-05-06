@@ -761,15 +761,21 @@ export function LineItemsSection({
                   <FormItem>
                     <FormLabel>Mode</FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2 text-sm h-9 px-2 rounded-md border bg-background select-none whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-sm h-9 px-2 rounded-md border bg-background cursor-pointer select-none whitespace-nowrap">
                         <Switch
+                          id="pricing-mode-flat"
                           aria-label="Flat price"
                           checked={field.value === "flat"}
                           onCheckedChange={(checked) =>
                             field.onChange(checked ? "flat" : "quantity")
                           }
                         />
-                        <span>Flat</span>
+                        <label
+                          htmlFor="pricing-mode-flat"
+                          className="cursor-pointer"
+                        >
+                          Flat
+                        </label>
                       </div>
                     </FormControl>
                     <FormMessage />
