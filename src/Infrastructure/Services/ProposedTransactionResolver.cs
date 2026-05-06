@@ -2,6 +2,7 @@ using Application.Interfaces.Services;
 using Application.Models;
 using Application.Models.Ocr;
 using Domain.Core;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services;
 
@@ -14,7 +15,9 @@ namespace Infrastructure.Services;
 /// Users with a different scheme will simply see no auto-match and fall through to the
 /// manual picker, which is the correct degenerate behaviour.
 /// </summary>
-public class ProposedTransactionResolver(ICardService cardService) : IProposedTransactionResolver
+public class ProposedTransactionResolver(
+	ICardService cardService,
+	ILogger<ProposedTransactionResolver> logger) : IProposedTransactionResolver
 {
 	public async Task<List<ProposedTransaction>> ResolveAsync(
 		IReadOnlyList<ParsedPayment> payments,
@@ -51,7 +54,7 @@ public class ProposedTransactionResolver(ICardService cardService) : IProposedTr
 		return result;
 	}
 
-	private static ProposedTransaction ResolveOne(
+	private ProposedTransaction ResolveOne(
 		ParsedPayment payment,
 		IReadOnlyList<Card> activeCards,
 		FieldConfidence<DateOnly?> dateForRow)
@@ -75,11 +78,25 @@ public class ProposedTransactionResolver(ICardService cardService) : IProposedTr
 				MethodSnapshot: methodSnapshot);
 		}
 
-		// Linear scan: cards-per-user is small. Case-insensitive compare so a card stored
-		// as "3409" still matches a VLM-extracted "3409", regardless of how the upstream
-		// canonicalises the string.
+		// Two-pass match (RECEIPTS-667). First try an exact case-insensitive compare so
+		// users with bare last-four CardCodes (e.g. "3409") still get the deterministic
+		// tie-break they used to. Then fall back to a "trailing four digits" comparison
+		// so users whose CardCode embeds the digits in a richer label (e.g. "MC-3409",
+		// "Mastercard ****3409", "Chase Visa 3409") still auto-match. The trailing-four
+		// extraction is also applied to <paramref name="lastFour"/> in case the VLM
+		// emits the four digits with surrounding noise.
 		List<Card> matches = [..
 			activeCards.Where(c => string.Equals(c.CardCode, lastFour, StringComparison.OrdinalIgnoreCase))];
+
+		if (matches.Count == 0)
+		{
+			string? lastFourDigits = ExtractTrailingFourDigits(lastFour);
+			if (!string.IsNullOrEmpty(lastFourDigits))
+			{
+				matches = [..
+					activeCards.Where(c => ExtractTrailingFourDigits(c.CardCode) == lastFourDigits)];
+			}
+		}
 
 		if (matches.Count == 1)
 		{
@@ -108,11 +125,34 @@ public class ProposedTransactionResolver(ICardService cardService) : IProposedTr
 
 		// No matches: this card last-four is new to the user. None confidence means the
 		// chip omits a badge entirely; the wizard simply requires manual selection.
+		// Logged at Information so dropped-prefill regressions are diagnosable without
+		// emitting card PII (only the four digits, which the user already saw on the
+		// receipt photo upload).
+		logger.LogInformation(
+			"No active Card matched VLM lastFour {LastFour} ({ActiveCardCount} active cards scanned)",
+			lastFour, activeCards.Count);
 		return new ProposedTransaction(
 			CardId: FieldConfidence<Guid?>.None(),
 			AccountId: FieldConfidence<Guid?>.None(),
 			Amount: amount,
 			Date: dateForRow,
 			MethodSnapshot: methodSnapshot);
+	}
+
+	/// <summary>
+	/// Extract the last four digits from <paramref name="raw"/>, skipping non-digit
+	/// characters. Returns null when the input has fewer than four digits. Used to
+	/// match a VLM-extracted last-four against a richer Card.CardCode label like
+	/// "MC-3409" or "Mastercard ****3409". See RECEIPTS-667.
+	/// </summary>
+	internal static string? ExtractTrailingFourDigits(string? raw)
+	{
+		if (string.IsNullOrWhiteSpace(raw))
+		{
+			return null;
+		}
+
+		string digits = new([.. raw.Where(char.IsAsciiDigit)]);
+		return digits.Length >= 4 ? digits[^4..] : null;
 	}
 }

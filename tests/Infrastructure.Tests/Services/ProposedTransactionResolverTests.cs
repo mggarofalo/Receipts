@@ -4,6 +4,7 @@ using Application.Models.Ocr;
 using Domain.Core;
 using FluentAssertions;
 using Infrastructure.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Infrastructure.Tests.Services;
@@ -23,7 +24,9 @@ public class ProposedTransactionResolverTests
 
 	public ProposedTransactionResolverTests()
 	{
-		_resolver = new ProposedTransactionResolver(_cardService.Object);
+		_resolver = new ProposedTransactionResolver(
+			_cardService.Object,
+			NullLogger<ProposedTransactionResolver>.Instance);
 	}
 
 	private void StubActiveCards(params Card[] cards)
@@ -356,5 +359,131 @@ public class ProposedTransactionResolverTests
 
 		// Assert
 		await act.Should().ThrowAsync<ArgumentNullException>();
+	}
+
+	[Fact]
+	public async Task ResolveAsync_CardCodeEmbedsLastFour_TrailingDigitFallbackMatches()
+	{
+		// Arrange — RECEIPTS-667: user's CardCode embeds the last four in a richer label
+		// (e.g. "MC-3409" or "Mastercard ****3409"). Exact compare misses; the digit-only
+		// fallback should still find the unambiguous match.
+		Card card = new(VisaCardId, "MC-3409", "MasterCard", VisaAccountId);
+		StubActiveCards(card);
+
+		List<ParsedPayment> payments =
+		[
+			new ParsedPayment(
+				FieldConfidence<string?>.High("MASTERCARD"),
+				FieldConfidence<decimal?>.High(70.43m),
+				FieldConfidence<string?>.High("3409")),
+		];
+
+		// Act
+		List<ProposedTransaction> result = await _resolver.ResolveAsync(
+			payments, ReceiptDateField, CancellationToken.None);
+
+		// Assert
+		result.Should().HaveCount(1);
+		result[0].CardId.Value.Should().Be(VisaCardId);
+		result[0].AccountId.Value.Should().Be(VisaAccountId);
+	}
+
+	[Fact]
+	public async Task ResolveAsync_CardCodeWithSpacesAndAsterisks_TrailingDigitFallbackMatches()
+	{
+		// Arrange — common format: "Mastercard ****3409" with spaces and asterisks
+		// in the user-facing label. Trailing-digit extraction strips them all.
+		Card card = new(VisaCardId, "Mastercard ****3409", "Primary MC", VisaAccountId);
+		StubActiveCards(card);
+
+		List<ParsedPayment> payments =
+		[
+			new ParsedPayment(
+				FieldConfidence<string?>.High("MASTERCARD"),
+				FieldConfidence<decimal?>.High(70.43m),
+				FieldConfidence<string?>.High("3409")),
+		];
+
+		// Act
+		List<ProposedTransaction> result = await _resolver.ResolveAsync(
+			payments, ReceiptDateField, CancellationToken.None);
+
+		// Assert
+		result[0].CardId.Value.Should().Be(VisaCardId);
+	}
+
+	[Fact]
+	public async Task ResolveAsync_ExactMatchWinsOverTrailingDigitMatch()
+	{
+		// Arrange — when both an exact-match Card and a richer-label Card share the
+		// same trailing four digits, the exact-match Card should win (preserving the
+		// pre-RECEIPTS-667 deterministic resolution). The fallback only fires when
+		// the first pass returns zero matches.
+		Card exactCard = new(VisaCardId, "3409", "Bare last-four", VisaAccountId);
+		Card richCard = new(AmexCardId, "MC-3409", "Rich label", AmexAccountId);
+		StubActiveCards(exactCard, richCard);
+
+		List<ParsedPayment> payments =
+		[
+			new ParsedPayment(
+				FieldConfidence<string?>.High("VISA"),
+				FieldConfidence<decimal?>.High(50m),
+				FieldConfidence<string?>.High("3409")),
+		];
+
+		// Act
+		List<ProposedTransaction> result = await _resolver.ResolveAsync(
+			payments, ReceiptDateField, CancellationToken.None);
+
+		// Assert — exact match wins; rich-label card not even considered
+		result[0].CardId.Value.Should().Be(VisaCardId);
+		result[0].AccountId.Value.Should().Be(VisaAccountId);
+	}
+
+	[Fact]
+	public async Task ResolveAsync_TwoCardsBothEmbedSameLastFour_AmbiguousLowConfidence()
+	{
+		// Arrange — two Cards both have the same trailing four digits embedded but
+		// neither matches exactly. The fallback finds two and surfaces ambiguous.
+		Card card1 = new(VisaCardId, "MC-3409", "MasterCard", VisaAccountId);
+		Card card2 = new(AmexCardId, "Visa-3409", "Visa", AmexAccountId);
+		StubActiveCards(card1, card2);
+
+		List<ParsedPayment> payments =
+		[
+			new ParsedPayment(
+				FieldConfidence<string?>.High("CARD"),
+				FieldConfidence<decimal?>.High(50m),
+				FieldConfidence<string?>.High("3409")),
+		];
+
+		// Act
+		List<ProposedTransaction> result = await _resolver.ResolveAsync(
+			payments, ReceiptDateField, CancellationToken.None);
+
+		// Assert — ambiguous: Low confidence on both cardId and accountId
+		result[0].CardId.Confidence.Should().Be(ConfidenceLevel.Low);
+		result[0].CardId.Value.Should().BeNull();
+		result[0].AccountId.Confidence.Should().Be(ConfidenceLevel.Low);
+	}
+
+	[Theory]
+	[InlineData("3409", "3409")]
+	[InlineData("MC-3409", "3409")]
+	[InlineData("Mastercard ****3409", "3409")]
+	[InlineData("Chase Visa 3409", "3409")]
+	[InlineData("12345", "2345")] // takes the trailing four digits, not the leading
+	[InlineData("abc", null)] // fewer than four digits
+	[InlineData("1", null)]
+	[InlineData("", null)]
+	[InlineData(null, null)]
+	[InlineData("   ", null)]
+	public void ExtractTrailingFourDigits_HandlesVariousFormats(string? input, string? expected)
+	{
+		// Arrange/Act
+		string? result = ProposedTransactionResolver.ExtractTrailingFourDigits(input);
+
+		// Assert
+		result.Should().Be(expected);
 	}
 }
