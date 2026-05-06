@@ -433,15 +433,20 @@ public sealed partial class OllamaReceiptExtractionService : IReceiptExtractionS
 	/// <summary>
 	/// True when an orphan weight sub-line should inherit its product identity from the
 	/// previously merged item. Requires the prior to be a real weighted product (has a
-	/// code, description, positive quantity, positive unit price) and the orphan to carry
-	/// a matching unit price — same product sold by weight at the same price-per-unit.
+	/// code, description, fractional positive quantity, positive unit price) and the
+	/// orphan to carry a matching unit price — same product sold by weight at the same
+	/// price-per-unit. The fractional-quantity guard distinguishes weighted produce
+	/// (e.g. 2.46 lb of bananas) from multi-quantity multipack items
+	/// (e.g. 6 cans of soda) whose unit price could coincidentally match the orphan's.
 	/// See RECEIPTS-668.
 	/// </summary>
 	private static bool CanInheritFromPriorWeighted(VlmReceiptItem prior, VlmReceiptItem subline)
 	{
 		return !string.IsNullOrWhiteSpace(prior.Code)
 			&& !string.IsNullOrWhiteSpace(prior.Description)
-			&& prior.Quantity is > 0
+			&& prior.Quantity is { } qty
+			&& qty > 0
+			&& qty != Math.Floor(qty)
 			&& prior.UnitPrice is > 0
 			&& subline.UnitPrice == prior.UnitPrice;
 	}

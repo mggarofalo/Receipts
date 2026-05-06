@@ -564,6 +564,28 @@ public class OllamaReceiptExtractionServiceTests
 	}
 
 	[Fact]
+	public void MergeWeightSublines_OrphanSublinePriorMultiQuantityIntegerCount_PreservedAsIs()
+	{
+		// Arrange — defensive: prior is a multi-quantity multipack (e.g. 6-pack of soda)
+		// whose per-unit price coincidentally equals the orphan sub-line's per-pound rate.
+		// Without the fractional-quantity guard, the orphan would be mislabeled as SPRITE.
+		List<VlmReceiptItem> items =
+		[
+			new() { Description = "SPRITE", Code = "0012345000010", LineTotal = 4.98m, Quantity = 6m, UnitPrice = 0.83m, TaxCode = "X" },
+			new() { Description = "0.500 lb. @ 1 lb. /0.83", Code = null, LineTotal = 0.42m, Quantity = 0.5m, UnitPrice = 0.83m, TaxCode = "N" },
+		];
+
+		// Act
+		List<VlmReceiptItem> merged = OllamaReceiptExtractionService.MergeWeightSublines(items);
+
+		// Assert — orphan preserved, NOT mislabeled as SPRITE
+		merged.Should().HaveCount(2);
+		merged[0].Description.Should().Be("SPRITE");
+		merged[1].Description.Should().Be("0.500 lb. @ 1 lb. /0.83");
+		merged[1].Code.Should().BeNull();
+	}
+
+	[Fact]
 	public void MergeWeightSublines_OrphanSublinePriorMissingCode_PreservedAsIs()
 	{
 		// Arrange — defensive: prior weighted item has no code (e.g. unknown PLU). The
