@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/mggarofalo/receipts/compare/v0.4.1...v0.4.2) (2026-05-14)
+
+
+### Bug Fixes
+
+* **infra:** guard YnabSplitCalculator against remainder &gt; sub count (RECEIPTS-669) ([#535](https://github.com/mggarofalo/receipts/issues/535)) ([9c0494a](https://github.com/mggarofalo/receipts/commit/9c0494ab66da9392cc7b0d450cfdc0ace85740f6))
+
 ## [0.4.1](https://github.com/mggarofalo/receipts/compare/v0.4.0...v0.4.1) (2026-04-21)
 
 
