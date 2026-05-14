@@ -287,6 +287,44 @@ public class YnabSplitCalculatorTests
 	}
 
 	[Fact]
+	public void LargestRemainder_PositiveRemainderExceedsCount_WrapsViaModulo()
+	{
+		// Regression for RECEIPTS-669: with 2 subs and remainder = +3, the loop
+		// must wrap rather than indexing past the end of the list.
+		// Arrange: sum is -8003, total is -8000, remainder = +3
+		List<YnabSubTransactionSplit> subs =
+		[
+			new("cat-a", -5003),
+			new("cat-b", -3000),
+		];
+
+		// Act
+		List<YnabSubTransactionSplit> result = YnabSplitCalculator.ApplyLargestRemainderCorrection(-8000, subs);
+
+		// Assert
+		result.Sum(s => s.Milliunits).Should().Be(-8000);
+	}
+
+	[Fact]
+	public void LargestRemainder_NegativeRemainderExceedsCount_WrapsViaModulo()
+	{
+		// Regression for RECEIPTS-669: with 2 subs and remainder = -3, the loop
+		// must wrap rather than indexing past the end of the list.
+		// Arrange: sum is -7997, total is -8000, remainder = -3
+		List<YnabSubTransactionSplit> subs =
+		[
+			new("cat-a", -5000),
+			new("cat-b", -2997),
+		];
+
+		// Act
+		List<YnabSubTransactionSplit> result = YnabSplitCalculator.ApplyLargestRemainderCorrection(-8000, subs);
+
+		// Assert
+		result.Sum(s => s.Milliunits).Should().Be(-8000);
+	}
+
+	[Fact]
 	public void LargestRemainder_RemainderExceedsCount_Throws()
 	{
 		// Arrange: sum is -5000, total is -8000, remainder = -3000 (way too large)

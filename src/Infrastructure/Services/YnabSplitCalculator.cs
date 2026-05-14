@@ -120,10 +120,13 @@ public class YnabSplitCalculator : IYnabSplitCalculator
 		long adjustment = remainder > 0 ? 1 : -1;
 		List<YnabSubTransactionSplit> corrected = new(sorted);
 
+		// Wrap with modulo: when |remainder| exceeds sub count, distribute the surplus
+		// across subs in a second pass rather than indexing past the end (RECEIPTS-669).
 		for (int i = 0; i < Math.Abs(remainder); i++)
 		{
-			YnabSubTransactionSplit original = corrected[i];
-			corrected[i] = original with { Milliunits = original.Milliunits + adjustment };
+			int idx = i % corrected.Count;
+			YnabSubTransactionSplit original = corrected[idx];
+			corrected[idx] = original with { Milliunits = original.Milliunits + adjustment };
 		}
 
 		return corrected;
