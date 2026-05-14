@@ -290,7 +290,9 @@ public class YnabSplitCalculatorTests
 	public void LargestRemainder_PositiveRemainderExceedsCount_WrapsViaModulo()
 	{
 		// Regression for RECEIPTS-669: with 2 subs and remainder = +3, the loop
-		// must wrap rather than indexing past the end of the list.
+		// must wrap rather than indexing past the end of the list. Distribution:
+		// the larger sub (cat-a) takes the wrap-around extra adjustment, so it
+		// absorbs +2 while cat-b absorbs +1.
 		// Arrange: sum is -8003, total is -8000, remainder = +3
 		List<YnabSubTransactionSplit> subs =
 		[
@@ -301,15 +303,18 @@ public class YnabSplitCalculatorTests
 		// Act
 		List<YnabSubTransactionSplit> result = YnabSplitCalculator.ApplyLargestRemainderCorrection(-8000, subs);
 
-		// Assert
+		// Assert: sum exact and per-sub distribution favors the larger sub
 		result.Sum(s => s.Milliunits).Should().Be(-8000);
+		result.First(s => s.YnabCategoryId == "cat-a").Milliunits.Should().Be(-5001);
+		result.First(s => s.YnabCategoryId == "cat-b").Milliunits.Should().Be(-2999);
 	}
 
 	[Fact]
 	public void LargestRemainder_NegativeRemainderExceedsCount_WrapsViaModulo()
 	{
 		// Regression for RECEIPTS-669: with 2 subs and remainder = -3, the loop
-		// must wrap rather than indexing past the end of the list.
+		// must wrap rather than indexing past the end of the list. Distribution:
+		// the larger sub (cat-a) takes -2, cat-b takes -1.
 		// Arrange: sum is -7997, total is -8000, remainder = -3
 		List<YnabSubTransactionSplit> subs =
 		[
@@ -320,8 +325,10 @@ public class YnabSplitCalculatorTests
 		// Act
 		List<YnabSubTransactionSplit> result = YnabSplitCalculator.ApplyLargestRemainderCorrection(-8000, subs);
 
-		// Assert
+		// Assert: sum exact and per-sub distribution favors the larger sub
 		result.Sum(s => s.Milliunits).Should().Be(-8000);
+		result.First(s => s.YnabCategoryId == "cat-a").Milliunits.Should().Be(-5002);
+		result.First(s => s.YnabCategoryId == "cat-b").Milliunits.Should().Be(-2998);
 	}
 
 	[Fact]
