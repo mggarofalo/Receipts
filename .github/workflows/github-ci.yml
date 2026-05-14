@@ -297,6 +297,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # GHA-hosted runners ship with ~14GB free disk, which is not enough for
+      # the 1.34GB ONNX model download plus PaddleOCR runtime deps in the
+      # image. Reclaim ~30GB by dropping preinstalled SDKs we don't use
+      # (RECEIPTS-671).
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: false
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
