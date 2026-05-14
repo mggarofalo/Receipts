@@ -156,12 +156,13 @@ public class CreateCompleteReceiptCommandHandlerTests
 	[Fact]
 	public async Task Handle_WithHalfCentRoundingDifference_DelegatesToService()
 	{
-		// Arrange: 3 x $1.005 floors to $3.01, but half-up rounds to $3.02.
-		// A transaction of $3.02 + tax should be accepted within the 1-cent tolerance.
+		// Arrange: 3 x $1.005 = $3.015, which half-up rounds to $3.02. A historical
+		// receipt stored with TotalAmount $3.01 (one cent low) is still accepted
+		// within the constructor's ±$0.01 tolerance.
 		decimal taxAmount = 0.25m;
 		Domain.Core.Receipt receipt = new(Guid.NewGuid(), "Test", DateOnly.FromDateTime(DateTime.Now), new Money(taxAmount));
 
-		// ReceiptItem constructor floors: Math.Floor(3 * 1.005 * 100) / 100 = $3.01
+		// Historical TotalAmount stored under floor semantics ($3.01 vs new expected $3.02).
 		Domain.Core.ReceiptItem item = new(
 			Guid.NewGuid(), null, "Half-cent item", 3, new Money(1.005m), new Money(3.01m), "Groceries", null);
 
