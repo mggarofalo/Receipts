@@ -83,4 +83,15 @@ public class MoneyTests
 		Money result = money1 / money2;
 		Assert.Equal(new Money(100.50m), result);
 	}
+
+	[Fact]
+	public void Money_Division_RoundsHalfAwayFromZero()
+	{
+		// Regression for RECEIPTS-672: division should round half-up to match
+		// the cash-register convention adopted in RECEIPTS-670, not banker's
+		// rounding (which is what Math.Round(x, 2) defaults to).
+		// 1.005 / 1 = 1.005 → half-up = 1.01, banker's = 1.00.
+		Money result = new Money(1.005m) / new Money(1m);
+		Assert.Equal(new Money(1.01m), result);
+	}
 }

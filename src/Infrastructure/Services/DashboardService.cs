@@ -31,7 +31,7 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 			.Where(t => receiptIds.Contains(t.ReceiptId))
 			.SumAsync(t => t.Amount, cancellationToken);
 
-		decimal averageTripAmount = totalReceipts > 0 ? Math.Round(totalSpent / totalReceipts, 2) : 0;
+		decimal averageTripAmount = totalReceipts > 0 ? Math.Round(totalSpent / totalReceipts, 2, MidpointRounding.AwayFromZero) : 0;
 
 		// Most-used account = account with the most transactions in range
 		// Single query: EF Core translates Account!.Name to a SQL JOIN, eliminating a second round-trip.
@@ -163,7 +163,7 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 			.Select(c => new SpendingCategoryItemResult(
 				c.Category,
 				c.Amount,
-				total > 0 ? Math.Round(c.Amount / total * 100, 2) : 0))
+				total > 0 ? Math.Round(c.Amount / total * 100, 2, MidpointRounding.AwayFromZero) : 0))
 			.ToList();
 
 		return new SpendingByCategoryResult(items);
@@ -203,7 +203,7 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 				a.AccountId,
 				accountNames.GetValueOrDefault(a.AccountId, "Unknown"),
 				a.Amount,
-				total > 0 ? Math.Round(a.Amount / total * 100, 2) : 0))
+				total > 0 ? Math.Round(a.Amount / total * 100, 2, MidpointRounding.AwayFromZero) : 0))
 			.ToList();
 
 		return new SpendingByAccountResult(items);
@@ -236,7 +236,7 @@ public class DashboardService(IDbContextFactory<ApplicationDbContext> contextFac
 			{
 				int visitCount = g.Count();
 				decimal totalAmount = g.Sum(r => r.TransactionTotal);
-				decimal averagePerVisit = visitCount > 0 ? Math.Round(totalAmount / visitCount, 2) : 0;
+				decimal averagePerVisit = visitCount > 0 ? Math.Round(totalAmount / visitCount, 2, MidpointRounding.AwayFromZero) : 0;
 				return new SpendingByStoreItemResult(g.Key, visitCount, totalAmount, averagePerVisit);
 			})
 			.OrderByDescending(i => i.TotalAmount)
