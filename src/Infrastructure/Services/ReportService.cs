@@ -141,7 +141,7 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 				x.Location,
 				x.Visits,
 				x.Total,
-				x.Visits > 0 ? Math.Round(x.Total / x.Visits, 2) : 0m))
+				x.Visits > 0 ? Math.Round(x.Total / x.Visits, 2, MidpointRounding.AwayFromZero) : 0m))
 			.ToList();
 
 		return new SpendingByLocationResult(pagedItems, totalCount, grandTotal);
