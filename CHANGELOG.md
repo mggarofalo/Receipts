@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/mggarofalo/receipts/compare/v0.4.3...v0.4.4) (2026-05-15)
+
+
+### Bug Fixes
+
+* **ci:** bump GitHub Actions to Node 24 majors (RECEIPTS-673) ([#541](https://github.com/mggarofalo/receipts/issues/541)) ([5bde207](https://github.com/mggarofalo/receipts/commit/5bde20712b8410d9a70f56094b4c78c4cf39c2d3))
+
 ## [0.4.3](https://github.com/mggarofalo/receipts/compare/v0.4.2...v0.4.3) (2026-05-15)
 
 
