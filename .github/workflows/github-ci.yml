@@ -73,6 +73,7 @@ jobs:
             Example: "feat(api): add pagination support"
           ignoreLabels: |
             autorelease: pending
+            autorelease: tagged
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
