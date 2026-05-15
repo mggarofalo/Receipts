@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/mggarofalo/receipts/compare/v0.4.2...v0.4.3) (2026-05-15)
+
+
+### Bug Fixes
+
+* **ci:** also ignore "autorelease: tagged" label on Conventional Commits check (RECEIPTS-603) ([#538](https://github.com/mggarofalo/receipts/issues/538)) ([a4e6676](https://github.com/mggarofalo/receipts/commit/a4e6676655ec3e9d9ad2ce475d690c1002284230))
+
 ## [0.4.2](https://github.com/mggarofalo/receipts/compare/v0.4.1...v0.4.2) (2026-05-14)
 
 
