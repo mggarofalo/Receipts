@@ -1,5 +1,4 @@
 using Application.Interfaces;
-using MediatR;
 
 namespace Application.Commands.Ynab.CategoryMapping;
 
@@ -8,4 +7,4 @@ public record UpdateYnabCategoryMappingCommand(
 	string YnabCategoryId,
 	string YnabCategoryName,
 	string YnabCategoryGroupName,
-	string YnabBudgetId) : ICommand<Unit>;
+	string YnabBudgetId) : ICommand<Mediator.Unit>;

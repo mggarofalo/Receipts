@@ -2,14 +2,14 @@ using Application.Interfaces.Services;
 using Domain.Aggregates;
 using FluentValidation;
 using FluentValidation.Results;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Receipt.CreateComplete;
 
 public class CreateCompleteReceiptCommandHandler(
 	ICompleteReceiptService completeReceiptService) : IRequestHandler<CreateCompleteReceiptCommand, CreateCompleteReceiptResult>
 {
-	public async Task<CreateCompleteReceiptResult> Handle(CreateCompleteReceiptCommand request, CancellationToken cancellationToken)
+	public async ValueTask<CreateCompleteReceiptResult> Handle(CreateCompleteReceiptCommand request, CancellationToken cancellationToken)
 	{
 		if (request.Transactions.Count > 0)
 		{

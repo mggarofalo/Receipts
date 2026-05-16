@@ -1,15 +1,15 @@
 using Application.Interfaces.Services;
 using Application.Models.Merge;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Card.Merge;
 
 public class MergeCardsIntoAccountCommandHandler(IAccountMergeService mergeService)
 	: IRequestHandler<MergeCardsIntoAccountCommand, MergeCardsResult>
 {
-	public Task<MergeCardsResult> Handle(MergeCardsIntoAccountCommand request, CancellationToken cancellationToken)
+	public async ValueTask<MergeCardsResult> Handle(MergeCardsIntoAccountCommand request, CancellationToken cancellationToken)
 	{
-		return mergeService.MergeCardsAsync(
+		return await mergeService.MergeCardsAsync(
 			request.TargetAccountId,
 			request.SourceCardIds,
 			request.YnabMappingWinnerAccountId,

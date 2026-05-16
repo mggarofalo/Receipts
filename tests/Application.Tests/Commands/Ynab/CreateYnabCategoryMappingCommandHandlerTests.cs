@@ -81,7 +81,7 @@ public class CreateYnabCategoryMappingCommandHandlerTests
 			.ReturnsAsync(existing);
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<DuplicateEntityException>()
@@ -109,7 +109,7 @@ public class CreateYnabCategoryMappingCommandHandlerTests
 			.ThrowsAsync(new DuplicateEntityException("A mapping for receipts category 'Groceries' already exists."));
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<DuplicateEntityException>()

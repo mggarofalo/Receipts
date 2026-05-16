@@ -2,7 +2,7 @@ using API.Controllers.Core;
 using API.Generated.Dtos;
 using Application.Commands.Receipt.UploadImage;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;

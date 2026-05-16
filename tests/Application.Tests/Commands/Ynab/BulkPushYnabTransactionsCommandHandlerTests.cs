@@ -2,7 +2,7 @@ using Application.Commands.Ynab.PushTransactions;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Moq;
 
 namespace Application.Tests.Commands.Ynab;

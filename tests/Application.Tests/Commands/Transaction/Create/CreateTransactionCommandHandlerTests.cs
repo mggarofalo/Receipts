@@ -118,7 +118,7 @@ public class CreateTransactionCommandHandlerTests
 		CreateTransactionCommand command = new(input, receiptId);
 
 		// Act
-		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<ValidationException>();
@@ -149,7 +149,7 @@ public class CreateTransactionCommandHandlerTests
 		CreateTransactionCommand command = new(input, receiptId);
 
 		// Act
-		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>();

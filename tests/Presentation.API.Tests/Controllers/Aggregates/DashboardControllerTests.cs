@@ -3,7 +3,7 @@ using API.Generated.Dtos;
 using Application.Models.Dashboard;
 using Application.Queries.Aggregates.Dashboard;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
 

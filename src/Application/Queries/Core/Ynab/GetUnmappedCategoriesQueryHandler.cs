@@ -1,11 +1,11 @@
 using Application.Interfaces.Services;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Core.Ynab;
 
 public class GetUnmappedCategoriesQueryHandler(IYnabCategoryMappingService service) : IRequestHandler<GetUnmappedCategoriesQuery, List<string>>
 {
-	public async Task<List<string>> Handle(GetUnmappedCategoriesQuery request, CancellationToken cancellationToken)
+	public async ValueTask<List<string>> Handle(GetUnmappedCategoriesQuery request, CancellationToken cancellationToken)
 	{
 		return await service.GetUnmappedCategoriesAsync(cancellationToken);
 	}

@@ -10,7 +10,7 @@ using Application.Models;
 using Application.Queries.Core.Transaction;
 using Domain.Core;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

@@ -11,7 +11,7 @@ using Application.Queries.NormalizedDescription.PreviewThresholdImpact;
 using Application.Queries.NormalizedDescription.TestMatch;
 using Asp.Versioning;
 using Domain.NormalizedDescriptions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

@@ -1,24 +1,24 @@
 using FluentValidation;
-using MediatR;
+using Mediator;
 
 namespace Application.Behaviors;
 
-public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
-	: IPipelineBehavior<TRequest, TResponse>
-	where TRequest : notnull
+public class ValidationBehavior<TMessage, TResponse>(IEnumerable<IValidator<TMessage>> validators)
+	: IPipelineBehavior<TMessage, TResponse>
+	where TMessage : notnull, IMessage
 {
-	public async Task<TResponse> Handle(
-		TRequest request,
-		RequestHandlerDelegate<TResponse> next,
+	public async ValueTask<TResponse> Handle(
+		TMessage message,
+		MessageHandlerDelegate<TMessage, TResponse> next,
 		CancellationToken cancellationToken)
 	{
 		if (!validators.Any())
 		{
-			return await next(cancellationToken);
+			return await next(message, cancellationToken);
 		}
 
 		FluentValidation.Results.ValidationResult[] results = await Task.WhenAll(
-			validators.Select(v => v.ValidateAsync(new ValidationContext<TRequest>(request), cancellationToken)));
+			validators.Select(v => v.ValidateAsync(new ValidationContext<TMessage>(message), cancellationToken)));
 
 		List<FluentValidation.Results.ValidationFailure> failures = results
 			.SelectMany(r => r.Errors)
@@ -30,6 +30,6 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
 			throw new ValidationException(failures);
 		}
 
-		return await next(cancellationToken);
+		return await next(message, cancellationToken);
 	}
 }

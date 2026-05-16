@@ -1,11 +1,11 @@
 using Application.Interfaces.Services;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Category.Update;
 
 public class UpdateCategoryCommandHandler(ICategoryService categoryService) : IRequestHandler<UpdateCategoryCommand, bool>
 {
-	public async Task<bool> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
+	public async ValueTask<bool> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
 	{
 		await categoryService.UpdateAsync([.. request.Categories], cancellationToken);
 		return true;

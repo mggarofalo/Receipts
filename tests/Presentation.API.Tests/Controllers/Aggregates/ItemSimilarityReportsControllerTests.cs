@@ -3,7 +3,7 @@ using API.Generated.Dtos;
 using Application.Commands.Reports;
 using Application.Queries.Aggregates.Reports;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
 using AppReports = Application.Models.Reports;

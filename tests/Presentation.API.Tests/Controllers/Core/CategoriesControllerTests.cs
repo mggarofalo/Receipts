@@ -10,7 +10,7 @@ using Application.Models;
 using Application.Queries.Core.Category;
 using Domain.Core;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

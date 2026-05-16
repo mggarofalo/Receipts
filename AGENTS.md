@@ -52,7 +52,7 @@ The API does not self-migrate or self-seed. See **[docs/development.md](docs/dev
 
 ## Architecture
 
-.NET 10 Clean Architecture with CQRS (MediatR), Repository pattern, Mapperly, and soft-delete with audit logging. See **[docs/architecture.md](docs/architecture.md)**.
+.NET 10 Clean Architecture with CQRS ([martinothamar/Mediator](https://github.com/martinothamar/Mediator)), Repository pattern, Mapperly, and soft-delete with audit logging. See **[docs/architecture.md](docs/architecture.md)**.
 
 ## Coding Standards
 
@@ -66,7 +66,7 @@ State management, Effects, component patterns, and custom hook conventions for t
 
 **All new functionality must include tests — backend and frontend.** When implementing a feature, endpoint, command, query, or bug fix, include corresponding unit tests in the same PR. Never defer tests to a follow-up.
 
-- **Backend:** Follow existing conventions (xUnit, Arrange/Act/Assert, FluentAssertions, Moq). Test MediatR handlers, mappers, validators, and services with business logic.
+- **Backend:** Follow existing conventions (xUnit, Arrange/Act/Assert, FluentAssertions, Moq). Test Mediator handlers, mappers, validators, and services with business logic.
 - **Frontend:** Every new hook (`useX`) must have a `useX.test.ts`. Every new page component must have a test covering rendered content, loading/error states, and primary interactions. Follow the mock patterns in [docs/testing.md](docs/testing.md#mock-fidelity-rules).
 - **Test-first when possible.** Write the failing test before the implementation. Coverage is an observed outcome, not a target — never write tests solely to increase a coverage number.
 
