@@ -245,7 +245,7 @@ public class AccountsControllerTests
 		List<Account> accounts = AccountGenerator.GenerateList(2);
 		List<AccountResponse> expectedReturn = [.. accounts.Select(_mapper.ToResponse)];
 
-		_mediatorMock.Setup(m => m.Send(
+		_mediatorV2Mock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == accounts.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(accounts);
@@ -266,7 +266,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<CreateAccountRequest> controllerInput = AccountDtoGenerator.GenerateCreateRequestList(2);
-		_mediatorMock.Setup(m => m.Send(
+		_mediatorV2Mock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());

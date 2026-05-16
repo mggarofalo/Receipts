@@ -119,7 +119,7 @@ public class AccountsController(IMediator mediator, Mediator.IMediator mediatorV
 	public async Task<Ok<List<AccountResponse>>> CreateAccounts([FromBody] List<CreateAccountRequest> models)
 	{
 		CreateAccountCommand command = new([.. models.Select(mapper.ToDomain)]);
-		List<Account> accounts = await mediator.Send(command, HttpContext.RequestAborted);
+		List<Account> accounts = await mediatorV2.Send(command, HttpContext.RequestAborted);
 		await notifier.NotifyBulkChanged("account", "created", accounts.Select(a => a.Id));
 		return TypedResults.Ok(accounts.Select(mapper.ToResponse).ToList());
 	}
