@@ -2,7 +2,7 @@ using Application.Interfaces;
 
 namespace Application.Queries.Core.Account;
 
-public record GetAccountByIdQuery : IQuery<Domain.Core.Account?>
+public record GetAccountByIdQuery : IQuery<Domain.Core.Account?>, Mediator.IRequest<Domain.Core.Account?>
 {
 	public Guid Id { get; }
 	public const string IdCannotBeEmptyExceptionMessage = "Account Id cannot be empty.";

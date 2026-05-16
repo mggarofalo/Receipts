@@ -22,7 +22,7 @@ namespace API.Controllers.Core;
 [Route("api/accounts")]
 [Produces("application/json")]
 [Authorize]
-public class AccountsController(IMediator mediator, AccountMapper mapper, CardMapper cardMapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier, IAccountService accountService) : ControllerBase
+public class AccountsController(IMediator mediator, Mediator.IMediator mediatorV2, AccountMapper mapper, CardMapper cardMapper, ILogger<AccountsController> logger, IEntityChangeNotifier notifier, IAccountService accountService) : ControllerBase
 {
 	public const string RouteGetById = "{id}";
 	public const string RouteGetAll = "";
@@ -39,7 +39,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 	public async Task<Results<Ok<AccountResponse>, NotFound>> GetAccountById([FromRoute] Guid id)
 	{
 		GetAccountByIdQuery query = new(id);
-		Account? result = await mediator.Send(query, HttpContext.RequestAborted);
+		Account? result = await mediatorV2.Send(query, HttpContext.RequestAborted);
 
 		if (result == null)
 		{
@@ -109,7 +109,7 @@ public class AccountsController(IMediator mediator, AccountMapper mapper, CardMa
 	public async Task<Ok<AccountResponse>> CreateAccount([FromBody] CreateAccountRequest model)
 	{
 		CreateAccountCommand command = new([mapper.ToDomain(model)]);
-		List<Account> accounts = await mediator.Send(command, HttpContext.RequestAborted);
+		List<Account> accounts = await mediatorV2.Send(command, HttpContext.RequestAborted);
 		await notifier.NotifyCreated("account", accounts[0].Id);
 		return TypedResults.Ok(mapper.ToResponse(accounts[0]));
 	}

@@ -23,6 +23,13 @@ public static class ApplicationService
 			cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 		});
 
+		services.AddMediator(opts =>
+		{
+			opts.ServiceLifetime = ServiceLifetime.Scoped;
+			opts.Assemblies = [typeof(ICommand<>)];
+			opts.PipelineBehaviors = [typeof(MediatorValidationBehavior<,>)];
+		});
+
 		// Receipt parsing services (store-specific first, generic fallback last)
 		services.AddSingleton<IReceiptParser, WalmartReceiptParser>();
 		services.AddSingleton<IReceiptParser, CostcoReceiptParser>();
