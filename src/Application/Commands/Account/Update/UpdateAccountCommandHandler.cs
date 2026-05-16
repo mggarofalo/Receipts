@@ -1,11 +1,11 @@
 using Application.Interfaces.Services;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Account.Update;
 
 public class UpdateAccountCommandHandler(IAccountService accountService) : IRequestHandler<UpdateAccountCommand, bool>
 {
-	public async Task<bool> Handle(UpdateAccountCommand request, CancellationToken cancellationToken)
+	public async ValueTask<bool> Handle(UpdateAccountCommand request, CancellationToken cancellationToken)
 	{
 		foreach (Domain.Core.Account account in request.Accounts)
 		{

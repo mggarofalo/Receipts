@@ -1,12 +1,12 @@
 using Application.Interfaces.Services;
 using Application.Models;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Core.Adjustment;
 
 public class GetAdjustmentsByReceiptIdQueryHandler(IAdjustmentService adjustmentService) : IRequestHandler<GetAdjustmentsByReceiptIdQuery, PagedResult<Domain.Core.Adjustment>>
 {
-	public async Task<PagedResult<Domain.Core.Adjustment>> Handle(GetAdjustmentsByReceiptIdQuery request, CancellationToken cancellationToken)
+	public async ValueTask<PagedResult<Domain.Core.Adjustment>> Handle(GetAdjustmentsByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
 		return await adjustmentService.GetByReceiptIdAsync(request.ReceiptId, request.Offset, request.Limit, request.Sort, cancellationToken);
 	}

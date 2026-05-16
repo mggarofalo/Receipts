@@ -68,8 +68,7 @@ public class CreateCompleteReceiptCommandHandlerTests
 		CreateCompleteReceiptCommand command = new(receipt, transactions, items);
 
 		// Act & Assert
-		await Assert.ThrowsAsync<ValidationException>(() =>
-			_handler.Handle(command, CancellationToken.None));
+		await Assert.ThrowsAsync<ValidationException>(() => _handler.Handle(command, CancellationToken.None).AsTask());
 
 		_mockService.Verify(s => s.CreateAsync(
 			It.IsAny<Domain.Core.Receipt>(),
@@ -116,8 +115,7 @@ public class CreateCompleteReceiptCommandHandlerTests
 		CreateCompleteReceiptCommand command = new(receipt, transactions, []);
 
 		// Act & Assert — $100 != $10, should throw
-		await Assert.ThrowsAsync<ValidationException>(() =>
-			_handler.Handle(command, CancellationToken.None));
+		await Assert.ThrowsAsync<ValidationException>(() => _handler.Handle(command, CancellationToken.None).AsTask());
 
 		_mockService.Verify(s => s.CreateAsync(
 			It.IsAny<Domain.Core.Receipt>(),
@@ -212,8 +210,7 @@ public class CreateCompleteReceiptCommandHandlerTests
 		CreateCompleteReceiptCommand command = new(receipt, transactions, items);
 
 		// Act & Assert — $22 vs $20 = $2 difference, well beyond tolerance
-		await Assert.ThrowsAsync<ValidationException>(() =>
-			_handler.Handle(command, CancellationToken.None));
+		await Assert.ThrowsAsync<ValidationException>(() => _handler.Handle(command, CancellationToken.None).AsTask());
 
 		_mockService.Verify(s => s.CreateAsync(
 			It.IsAny<Domain.Core.Receipt>(),

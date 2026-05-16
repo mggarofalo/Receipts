@@ -1,6 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Ynab.AccountMapping;
 
@@ -8,7 +8,7 @@ public class CreateYnabAccountMappingCommandHandler(
 	IYnabAccountMappingService accountMappingService,
 	ICardService cardService) : IRequestHandler<CreateYnabAccountMappingCommand, YnabAccountMappingDto>
 {
-	public async Task<YnabAccountMappingDto> Handle(CreateYnabAccountMappingCommand request, CancellationToken cancellationToken)
+	public async ValueTask<YnabAccountMappingDto> Handle(CreateYnabAccountMappingCommand request, CancellationToken cancellationToken)
 	{
 		bool accountExists = await cardService.ExistsAsync(request.ReceiptsAccountId, cancellationToken);
 		if (!accountExists)

@@ -1,6 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Core.Ynab;
 
@@ -9,7 +9,7 @@ public class GetStaleMappingsQueryHandler(
 	IYnabAccountMappingService accountMappingService,
 	IYnabCategoryMappingService categoryMappingService) : IRequestHandler<GetStaleMappingsQuery, StaleMappingsResult>
 {
-	public async Task<StaleMappingsResult> Handle(GetStaleMappingsQuery request, CancellationToken cancellationToken)
+	public async ValueTask<StaleMappingsResult> Handle(GetStaleMappingsQuery request, CancellationToken cancellationToken)
 	{
 		string? currentBudgetId = await budgetSelectionService.GetSelectedBudgetIdAsync(cancellationToken);
 

@@ -143,7 +143,7 @@ public class UploadReceiptImageCommandHandlerTests
 			.ReturnsAsync(false);
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<KeyNotFoundException>();
@@ -208,7 +208,7 @@ public class UploadReceiptImageCommandHandlerTests
 			.ThrowsAsync(new InvalidOperationException("The uploaded file is not a supported image format."));
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
@@ -242,7 +242,7 @@ public class UploadReceiptImageCommandHandlerTests
 			.ThrowsAsync(new IOException("Disk full"));
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<IOException>()

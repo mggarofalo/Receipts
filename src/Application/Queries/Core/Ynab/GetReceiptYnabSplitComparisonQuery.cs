@@ -1,5 +1,5 @@
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Core.Ynab;
 

@@ -1,12 +1,12 @@
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Core.Ynab;
 
 public class GetYnabAccountMappingsQueryHandler(IYnabAccountMappingService accountMappingService) : IRequestHandler<GetYnabAccountMappingsQuery, List<YnabAccountMappingDto>>
 {
-	public async Task<List<YnabAccountMappingDto>> Handle(GetYnabAccountMappingsQuery request, CancellationToken cancellationToken)
+	public async ValueTask<List<YnabAccountMappingDto>> Handle(GetYnabAccountMappingsQuery request, CancellationToken cancellationToken)
 	{
 		return await accountMappingService.GetAllAsync(cancellationToken);
 	}

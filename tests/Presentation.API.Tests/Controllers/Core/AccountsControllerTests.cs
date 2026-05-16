@@ -11,7 +11,7 @@ using Application.Queries.Core.Account;
 using Application.Queries.Core.Card;
 using Domain.Core;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +27,6 @@ public class AccountsControllerTests
 	private readonly AccountMapper _mapper;
 	private readonly CardMapper _cardMapper;
 	private readonly Mock<IMediator> _mediatorMock;
-	private readonly Mock<Mediator.IMediator> _mediatorV2Mock;
 	private readonly Mock<ILogger<AccountsController>> _loggerMock;
 	private readonly Mock<IEntityChangeNotifier> _notifierMock;
 	private readonly Mock<IAccountService> _accountServiceMock;
@@ -36,13 +35,12 @@ public class AccountsControllerTests
 	public AccountsControllerTests()
 	{
 		_mediatorMock = new Mock<IMediator>();
-		_mediatorV2Mock = new Mock<Mediator.IMediator>();
 		_mapper = new AccountMapper();
 		_cardMapper = new CardMapper();
 		_loggerMock = ControllerTestHelpers.GetLoggerMock<AccountsController>();
 		_notifierMock = new Mock<IEntityChangeNotifier>();
 		_accountServiceMock = new Mock<IAccountService>();
-		_controller = new AccountsController(_mediatorMock.Object, _mediatorV2Mock.Object, _mapper, _cardMapper, _loggerMock.Object, _notifierMock.Object, _accountServiceMock.Object);
+		_controller = new AccountsController(_mediatorMock.Object, _mapper, _cardMapper, _loggerMock.Object, _notifierMock.Object, _accountServiceMock.Object);
 		_controller.ControllerContext = new ControllerContext
 		{
 			HttpContext = new DefaultHttpContext()
@@ -56,7 +54,7 @@ public class AccountsControllerTests
 		Account account = AccountGenerator.Generate();
 		AccountResponse expectedReturn = _mapper.ToResponse(account);
 
-		_mediatorV2Mock.Setup(m => m.Send(
+		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetAccountByIdQuery>(q => q.Id == account.Id),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(account);
@@ -76,7 +74,7 @@ public class AccountsControllerTests
 		// Arrange
 		Guid missingAccountId = Guid.NewGuid();
 
-		_mediatorV2Mock.Setup(m => m.Send(
+		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetAccountByIdQuery>(q => q.Id == missingAccountId),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync((Account?)null);
@@ -94,7 +92,7 @@ public class AccountsControllerTests
 		// Arrange
 		Guid id = AccountGenerator.Generate().Id;
 
-		_mediatorV2Mock.Setup(m => m.Send(
+		_mediatorMock.Setup(m => m.Send(
 			It.Is<GetAccountByIdQuery>(q => q.Id == id),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
@@ -204,7 +202,7 @@ public class AccountsControllerTests
 		Account account = AccountGenerator.Generate();
 		AccountResponse expectedReturn = _mapper.ToResponse(account);
 
-		_mediatorV2Mock.Setup(m => m.Send(
+		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == 1),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync([account]);
@@ -226,7 +224,7 @@ public class AccountsControllerTests
 		// Arrange
 		CreateAccountRequest controllerInput = AccountDtoGenerator.GenerateCreateRequest();
 
-		_mediatorV2Mock.Setup(m => m.Send(
+		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == 1),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());
@@ -245,7 +243,7 @@ public class AccountsControllerTests
 		List<Account> accounts = AccountGenerator.GenerateList(2);
 		List<AccountResponse> expectedReturn = [.. accounts.Select(_mapper.ToResponse)];
 
-		_mediatorV2Mock.Setup(m => m.Send(
+		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == accounts.Count),
 			It.IsAny<CancellationToken>()))
 			.ReturnsAsync(accounts);
@@ -266,7 +264,7 @@ public class AccountsControllerTests
 	{
 		// Arrange
 		List<CreateAccountRequest> controllerInput = AccountDtoGenerator.GenerateCreateRequestList(2);
-		_mediatorV2Mock.Setup(m => m.Send(
+		_mediatorMock.Setup(m => m.Send(
 			It.Is<CreateAccountCommand>(c => c.Accounts.Count == controllerInput.Count),
 			It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new Exception());

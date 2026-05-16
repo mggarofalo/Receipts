@@ -4,7 +4,7 @@ using Application.Models.Ynab;
 using Application.Utilities;
 using Common;
 using Domain.Aggregates;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Ynab.PushTransactions;
 
@@ -20,7 +20,7 @@ public class PushYnabTransactionsCommandHandler(
 	IYnabApiClient ynabApiClient,
 	IYnabSplitCalculator splitCalculator) : IRequestHandler<PushYnabTransactionsCommand, PushYnabTransactionsResult>
 {
-	public async Task<PushYnabTransactionsResult> Handle(PushYnabTransactionsCommand request, CancellationToken cancellationToken)
+	public async ValueTask<PushYnabTransactionsResult> Handle(PushYnabTransactionsCommand request, CancellationToken cancellationToken)
 	{
 		// 1. Load the receipt and related data
 		Domain.Core.Receipt? receipt = await receiptService.GetByIdAsync(request.ReceiptId, cancellationToken);

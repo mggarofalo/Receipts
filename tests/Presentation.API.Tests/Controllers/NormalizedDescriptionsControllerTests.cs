@@ -12,7 +12,7 @@ using Application.Queries.NormalizedDescription.PreviewThresholdImpact;
 using Application.Queries.NormalizedDescription.TestMatch;
 using Domain.NormalizedDescriptions;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
 using DomainStatus = Domain.NormalizedDescriptions.NormalizedDescriptionStatus;

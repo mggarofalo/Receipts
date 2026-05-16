@@ -132,7 +132,7 @@ public class UpdateTransactionCommandHandlerTests
 		UpdateTransactionCommand command = new(updated);
 
 		// Act
-		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<ValidationException>();
@@ -166,7 +166,7 @@ public class UpdateTransactionCommandHandlerTests
 		UpdateTransactionCommand command = new(updated);
 
 		// Act
-		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>();
@@ -186,7 +186,7 @@ public class UpdateTransactionCommandHandlerTests
 		UpdateTransactionCommand command = new(updated);
 
 		// Act
-		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>();
@@ -215,7 +215,7 @@ public class UpdateTransactionCommandHandlerTests
 		UpdateTransactionCommand command = new(updated);
 
 		// Act
-		Func<Task> act = () => handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		InvalidOperationException exception = (await act.Should().ThrowAsync<InvalidOperationException>()).Which;

@@ -1,6 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Ynab.MemoSync;
 
@@ -10,7 +10,7 @@ public class SyncYnabMemosBulkCommandHandler(IYnabMemoSyncService memoSyncServic
 	// Conservative estimate: ~3 API calls per receipt
 	private const int EstimatedRequestsPerReceipt = 3;
 
-	public async Task<List<YnabMemoSyncResult>> Handle(SyncYnabMemosBulkCommand request, CancellationToken cancellationToken)
+	public async ValueTask<List<YnabMemoSyncResult>> Handle(SyncYnabMemosBulkCommand request, CancellationToken cancellationToken)
 	{
 		int estimatedRequests = request.ReceiptIds.Count * EstimatedRequestsPerReceipt;
 		if (!rateLimitTracker.CanMakeRequests(estimatedRequests))

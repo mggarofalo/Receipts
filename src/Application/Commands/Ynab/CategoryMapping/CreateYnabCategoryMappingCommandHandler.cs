@@ -1,13 +1,13 @@
 using Application.Exceptions;
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Ynab.CategoryMapping;
 
 public class CreateYnabCategoryMappingCommandHandler(IYnabCategoryMappingService service) : IRequestHandler<CreateYnabCategoryMappingCommand, YnabCategoryMappingDto>
 {
-	public async Task<YnabCategoryMappingDto> Handle(CreateYnabCategoryMappingCommand request, CancellationToken cancellationToken)
+	public async ValueTask<YnabCategoryMappingDto> Handle(CreateYnabCategoryMappingCommand request, CancellationToken cancellationToken)
 	{
 		// Cross-entity validation: check for duplicate ReceiptsCategory (case-sensitive)
 		YnabCategoryMappingDto? existing = await service.GetByReceiptsCategoryAsync(request.ReceiptsCategory, cancellationToken);

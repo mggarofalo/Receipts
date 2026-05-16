@@ -3,7 +3,7 @@ using Application.Models;
 using Application.Models.Ynab;
 using Common;
 using Domain.Aggregates;
-using MediatR;
+using Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Queries.Core.Ynab;
@@ -31,7 +31,7 @@ public class GetReceiptYnabSplitComparisonQueryHandler(
 	ILogger<GetReceiptYnabSplitComparisonQueryHandler> logger)
 	: IRequestHandler<GetReceiptYnabSplitComparisonQuery, ReceiptYnabSplitComparisonResult>
 {
-	public async Task<ReceiptYnabSplitComparisonResult> Handle(
+	public async ValueTask<ReceiptYnabSplitComparisonResult> Handle(
 		GetReceiptYnabSplitComparisonQuery request,
 		CancellationToken cancellationToken)
 	{

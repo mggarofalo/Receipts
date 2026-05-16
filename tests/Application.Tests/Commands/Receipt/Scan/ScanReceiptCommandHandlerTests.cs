@@ -192,7 +192,7 @@ public class ScanReceiptCommandHandlerTests
 			.ReturnsAsync(ocrResult);
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<OcrNoTextException>()
@@ -221,7 +221,7 @@ public class ScanReceiptCommandHandlerTests
 			.ReturnsAsync(ocrResult);
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<OcrNoTextException>()
@@ -240,7 +240,7 @@ public class ScanReceiptCommandHandlerTests
 			.ThrowsAsync(new InvalidOperationException("The uploaded file is not a supported image format."));
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<InvalidOperationException>()
@@ -467,7 +467,7 @@ public class ScanReceiptCommandHandlerTests
 			.ReturnsAsync(new OcrResult("", 0f));
 
 		// Act
-		Func<Task> act = () => _handler.Handle(command, CancellationToken.None);
+		Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
 
 		// Assert
 		await act.Should().ThrowAsync<OcrNoTextException>()

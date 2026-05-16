@@ -1,13 +1,13 @@
 using Application.Interfaces.Services;
 using Application.Models.Reports;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Aggregates.Reports;
 
 public class GetSpendingByNormalizedDescriptionQueryHandler(IReportService reportService)
 	: IRequestHandler<GetSpendingByNormalizedDescriptionQuery, SpendingByNormalizedDescriptionResult>
 {
-	public async Task<SpendingByNormalizedDescriptionResult> Handle(GetSpendingByNormalizedDescriptionQuery request, CancellationToken cancellationToken)
+	public async ValueTask<SpendingByNormalizedDescriptionResult> Handle(GetSpendingByNormalizedDescriptionQuery request, CancellationToken cancellationToken)
 	{
 		return await reportService.GetSpendingByNormalizedDescriptionAsync(
 			request.From,

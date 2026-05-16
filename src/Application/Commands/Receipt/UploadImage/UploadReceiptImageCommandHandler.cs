@@ -1,5 +1,5 @@
 using Application.Interfaces.Services;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Receipt.UploadImage;
 
@@ -8,7 +8,7 @@ public class UploadReceiptImageCommandHandler(
 	IImageStorageService imageStorageService,
 	IImageProcessingService imageProcessingService) : IRequestHandler<UploadReceiptImageCommand, UploadReceiptImageResult>
 {
-	public async Task<UploadReceiptImageResult> Handle(UploadReceiptImageCommand request, CancellationToken cancellationToken)
+	public async ValueTask<UploadReceiptImageResult> Handle(UploadReceiptImageCommand request, CancellationToken cancellationToken)
 	{
 		bool exists = await receiptService.ExistsAsync(request.ReceiptId, cancellationToken);
 		if (!exists)

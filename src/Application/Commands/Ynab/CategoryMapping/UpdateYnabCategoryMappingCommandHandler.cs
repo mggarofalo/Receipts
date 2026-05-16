@@ -1,11 +1,11 @@
 using Application.Interfaces.Services;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Ynab.CategoryMapping;
 
 public class UpdateYnabCategoryMappingCommandHandler(IYnabCategoryMappingService service) : IRequestHandler<UpdateYnabCategoryMappingCommand, Unit>
 {
-	public async Task<Unit> Handle(UpdateYnabCategoryMappingCommand request, CancellationToken cancellationToken)
+	public async ValueTask<Unit> Handle(UpdateYnabCategoryMappingCommand request, CancellationToken cancellationToken)
 	{
 		await service.UpdateAsync(
 			request.Id,

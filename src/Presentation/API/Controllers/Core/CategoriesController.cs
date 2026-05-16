@@ -10,7 +10,7 @@ using Application.Models;
 using Application.Queries.Core.Category;
 using Asp.Versioning;
 using Domain.Core;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

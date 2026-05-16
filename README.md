@@ -16,7 +16,7 @@ A full-stack receipt management application built with .NET 10 Clean Architectur
 | Forms | React Hook Form, Zod |
 | Database | PostgreSQL + EF Core 10 + pgvector |
 | Embeddings | bge-large-en-v1.5 via ONNX Runtime (local, no API key, 1024-dim, CLS pooling) |
-| CQRS | MediatR 14 |
+| CQRS | [martinothamar/Mediator](https://github.com/martinothamar/Mediator) 3 |
 | Mapping | Mapperly (compile-time, zero-reflection) |
 | Validation | FluentValidation |
 | Auth | JWT Bearer + API Key (dual scheme) |
@@ -68,7 +68,7 @@ tests/
 
 ### Key Patterns
 
-- **CQRS**: Commands and queries are separate types with dedicated MediatR handlers
+- **CQRS**: Commands and queries are separate types with dedicated Mediator handlers (source-generated dispatch)
 - **Repository Pattern**: Infrastructure repositories abstract EF Core from the Application layer
 - **Compile-time Mapping**: Mapperly generates mapping code at build time (no reflection, fully debuggable)
 - **Service Registration**: Each layer exposes a static DI extension method (`RegisterApplicationServices`, `RegisterInfrastructureServices`, etc.)

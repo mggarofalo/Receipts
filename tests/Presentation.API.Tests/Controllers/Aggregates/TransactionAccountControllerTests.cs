@@ -5,7 +5,7 @@ using API.Mapping.Core;
 using Application.Queries.Aggregates.TransactionAccounts;
 using Domain.Aggregates;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
 using SampleData.Domain.Aggregates;

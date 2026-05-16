@@ -2,7 +2,7 @@ using Application.Interfaces;
 
 namespace Application.Commands.Account.Create;
 
-public record CreateAccountCommand : ICommand<List<Domain.Core.Account>>, Mediator.IRequest<List<Domain.Core.Account>>
+public record CreateAccountCommand : ICommand<List<Domain.Core.Account>>
 {
 	public IReadOnlyList<Domain.Core.Account> Accounts { get; }
 

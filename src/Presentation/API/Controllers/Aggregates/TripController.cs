@@ -3,7 +3,7 @@ using API.Mapping.Aggregates;
 using Application.Queries.Aggregates.Trips;
 using Asp.Versioning;
 using Domain.Aggregates;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

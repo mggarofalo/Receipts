@@ -2,7 +2,7 @@ using API.Controllers.Core;
 using API.Services;
 using Application.Commands.Trash.Purge;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Moq;

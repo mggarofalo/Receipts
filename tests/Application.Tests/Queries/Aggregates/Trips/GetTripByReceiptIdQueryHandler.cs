@@ -3,7 +3,7 @@ using Application.Queries.Aggregates.TransactionAccounts;
 using Application.Queries.Aggregates.Trips;
 using Domain.Aggregates;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Moq;
 using SampleData.Domain.Aggregates;
 
