@@ -46,11 +46,22 @@
     <PackageVersion Include="NSwag.MSBuild" Version="14.6.3" />
     <PackageVersion Include="OpenCvSharp4.Official.runtime.linux-x64" Version="4.11.0.20250507" />
     <PackageVersion Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
-    <!-- Pinned for security: GHSA-g94r-2vxg-569j (RECEIPTS-680) -->
+    <!--
+      OpenTelemetry CPM pins (RECEIPTS-680). The only project that currently references these
+      directly is Receipts.ServiceDefaults, which opts out of CPM (ManagePackageVersionsCentrally=false)
+      and so pins versions inline. These CPM entries are forward-looking guards: if any other
+      project (e.g. a future Worker / Function / tool) starts directly referencing the OTel
+      packages, CPM will force them onto the patched versions instead of the older 1.14.x/1.15.0
+      transitives. Keep these aligned with the inline versions in ServiceDefaults.csproj.
+      Advisories: OpenTelemetry.Api → GHSA-g94r-2vxg-569j;
+      OpenTelemetry.Exporter.OpenTelemetryProtocol → GHSA-4625-4j76-fww9, GHSA-mr8r-92fq-pj8p,
+      GHSA-q834-8qmm-v933.
+    -->
     <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
-    <!-- Pinned for security: GHSA-4625-4j76-fww9, GHSA-mr8r-92fq-pj8p, GHSA-q834-8qmm-v933 (RECEIPTS-680) -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
-    <!-- Pinned for security: GHSA-37gx-xxp4-5rgx, GHSA-w3x6-4m5h-cxqf (RECEIPTS-680) -->
+    <!-- Pinned for security: GHSA-37gx-xxp4-5rgx, GHSA-w3x6-4m5h-cxqf (RECEIPTS-680). Forced
+         into Infrastructure.csproj via a direct PackageReference so CPM resolves the patched
+         transitive. -->
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.6" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
