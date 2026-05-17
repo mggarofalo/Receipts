@@ -136,6 +136,15 @@ describe("CurrencyInput", () => {
     expect(input).toHaveAttribute("autocomplete", "off");
   });
 
+  it("carries unified focus-ring classes matching the shared Input component", () => {
+    render(<CurrencyInput {...defaultProps} />);
+
+    const input = screen.getByRole("textbox");
+    expect(input.className).toContain("focus-visible:border-ring");
+    expect(input.className).toContain("focus-visible:ring-ring/50");
+    expect(input.className).toContain("focus-visible:ring-[3px]");
+  });
+
   it("keeps text empty (not '0.00') when focusing a zero-value field", async () => {
     const user = userEvent.setup();
 
