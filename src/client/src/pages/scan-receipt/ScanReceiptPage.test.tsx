@@ -88,8 +88,9 @@ describe("ScanReceiptPage", () => {
     // Click scan
     await user.click(screen.getByRole("button", { name: /scan receipt/i }));
 
-    // Should show processing state
-    expect(screen.getByText("Processing receipt...")).toBeInTheDocument();
+    // Should show processing state — "Processing receipt..." appears in both the
+    // visible paragraph and the sr-only live region, so use getAllByText.
+    expect(screen.getAllByText("Processing receipt...").length).toBeGreaterThanOrEqual(1);
   });
 
   it("transitions to review phase on success", async () => {
