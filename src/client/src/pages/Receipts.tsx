@@ -160,9 +160,10 @@ function Receipts() {
     }
   }
 
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef, containerProps, getRowProps } = useListKeyboardNav({
     items: filteredResults,
     getId: (r) => r.id,
+    listId: "receipts",
     enabled: !anyDialogOpen,
     onOpen: (r) => setEditReceipt(r),
     onDelete: () => setDeleteOpen(true),
@@ -278,7 +279,7 @@ function Receipts() {
             onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
-          <div className="rounded-md border" ref={tableRef}>
+          <div className="rounded-md border" ref={tableRef} {...containerProps}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -307,6 +308,7 @@ function Receipts() {
                   return (
                     <TableRow
                       key={receipt.id}
+                      {...getRowProps(receipt.id)}
                       className={`cursor-pointer ${focusedId === receipt.id ? "bg-accent" : ""} ${linkParams.highlight === receipt.id ? "ring-2 ring-primary" : ""}`}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;

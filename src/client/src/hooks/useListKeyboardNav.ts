@@ -4,6 +4,8 @@ import { useHotkeys } from "react-hotkeys-hook";
 export interface UseListKeyboardNavOptions<T> {
   items: T[];
   getId: (item: T) => string;
+  /** Stable string prefix used to build per-row DOM ids, e.g. "accounts". */
+  listId?: string;
   enabled?: boolean;
   onOpen?: (item: T) => void;
   onDelete?: () => void;
@@ -16,6 +18,7 @@ export interface UseListKeyboardNavOptions<T> {
 export function useListKeyboardNav<T>({
   items,
   getId,
+  listId,
   enabled = true,
   onOpen,
   onDelete,
@@ -141,13 +144,57 @@ export function useListKeyboardNav<T>({
       ? getId(items[focusedIndex])
       : null;
 
+  /**
+   * Build a stable DOM id for a given item id so that aria-activedescendant
+   * can point to the focused row element.
+   */
+  const rowDomId = useCallback(
+    (itemId: string) =>
+      listId ? `${listId}-row-${itemId}` : `list-row-${itemId}`,
+    [listId],
+  );
+
+  /**
+   * Props to spread onto the scroll-container <div> that wraps the table.
+   * Makes the container programmatically focusable and announces the active
+   * row to screen readers via aria-activedescendant.
+   *
+   * tabIndex={0} is required: aria-activedescendant is only processed by
+   * assistive technology when the owning element has DOM focus. Without
+   * tabIndex the container is not in the tab order and AT never observes
+   * the focus events needed to read aria-activedescendant.
+   */
+  const containerProps = useMemo(
+    () => ({
+      role: "grid" as const,
+      tabIndex: 0,
+      "aria-label": listId ?? "list",
+      "aria-activedescendant": focusedId ? rowDomId(focusedId) : undefined,
+    }),
+    [focusedId, listId, rowDomId],
+  );
+
+  /**
+   * Returns props to spread onto a data <TableRow> so the element has a
+   * stable id and the correct ARIA role for grid navigation.
+   */
+  const getRowProps = useCallback(
+    (itemId: string) => ({
+      id: rowDomId(itemId),
+      role: "row" as const,
+    }),
+    [rowDomId],
+  );
+
   return useMemo(
     () => ({
       focusedIndex,
       setFocusedIndex,
       tableRef,
       focusedId,
+      containerProps,
+      getRowProps,
     }),
-    [focusedIndex, setFocusedIndex, tableRef, focusedId],
+    [focusedIndex, setFocusedIndex, tableRef, focusedId, containerProps, getRowProps],
   );
 }

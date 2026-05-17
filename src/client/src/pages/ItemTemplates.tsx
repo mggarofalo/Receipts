@@ -127,9 +127,10 @@ function ItemTemplates() {
     }
   }
 
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef, containerProps, getRowProps } = useListKeyboardNav({
     items: filteredResults,
     getId: (a) => a.id,
+    listId: "item-templates",
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditTemplate(a),
     onDelete: () => setDeleteOpen(true),
@@ -189,7 +190,7 @@ function ItemTemplates() {
             onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
-          <div className="rounded-md border" ref={tableRef}>
+          <div className="rounded-md border" ref={tableRef} {...containerProps}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -218,6 +219,7 @@ function ItemTemplates() {
                   return (
                     <TableRow
                       key={template.id}
+                      {...getRowProps(template.id)}
                       className={`cursor-pointer ${focusedId === template.id ? "bg-accent" : ""}`}
                       onClick={(e) => {
                         if (
