@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,6 +66,17 @@ export function AdjustmentForm({
     },
   });
 
+  // Route server errors through react-hook-form so they flow through FormMessage
+  // and are announced via aria-describedby (WCAG 3.3.1, 1.3.1).
+  useEffect(() => {
+    if (!serverErrors) return;
+    (Object.entries(serverErrors) as [keyof AdjustmentFormValues, string][]).forEach(
+      ([field, message]) => {
+        form.setError(field, { type: "server", message });
+      },
+    );
+  }, [serverErrors, form]);
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchedType = form.watch("type");
 
@@ -97,11 +108,6 @@ export function AdjustmentForm({
                 />
               </FormControl>
               <FormMessage />
-              {serverErrors?.type && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.type}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -116,11 +122,6 @@ export function AdjustmentForm({
                 <CurrencyInput {...field} />
               </FormControl>
               <FormMessage />
-              {serverErrors?.amount && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.amount}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -145,11 +146,6 @@ export function AdjustmentForm({
                   />
                 </FormControl>
                 <FormMessage />
-                {serverErrors?.description && (
-                  <p className="text-sm font-medium text-destructive">
-                    {serverErrors.description}
-                  </p>
-                )}
               </FormItem>
             )}
           />

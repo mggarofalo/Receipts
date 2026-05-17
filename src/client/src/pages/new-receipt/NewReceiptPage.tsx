@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef, useId } from "react";
 import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -77,6 +77,8 @@ export default function NewReceiptPage({
   );
   const [showDiscard, setShowDiscard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitErrorSummary, setSubmitErrorSummary] = useState<string | null>(null);
+  const errorSummaryId = useId();
 
   const { mutateAsync: createCompleteReceiptAsync } =
     useCreateCompleteReceipt();
@@ -138,7 +140,19 @@ export default function NewReceiptPage({
   const handleSubmit = useCallback(async () => {
     // Validate header form first
     const valid = await form.trigger();
-    if (!valid) return;
+    if (!valid) {
+      // Move focus to the first invalid field so keyboard/AT users can recover
+      const firstErrorName = Object.keys(
+        form.formState.errors,
+      )[0] as keyof HeaderFormValues | undefined;
+      if (firstErrorName) {
+        form.setFocus(firstErrorName);
+      }
+      setSubmitErrorSummary("Please fix the highlighted fields before submitting.");
+      return;
+    }
+    // Clear any previous error summary on a valid attempt
+    setSubmitErrorSummary(null);
 
     const headerValues = form.getValues();
 
@@ -195,11 +209,22 @@ export default function NewReceiptPage({
     createCompleteReceiptAsync,
     addLocation,
     navigate,
+    setSubmitErrorSummary,
   ]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">New Receipt</h1>
+
+      {/* aria-live region: announced to screen readers when validation fails */}
+      <div
+        id={errorSummaryId}
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {submitErrorSummary}
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
         {/* Left column — form sections */}

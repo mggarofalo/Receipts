@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/test-utils";
 import "@/test/setup-combobox-polyfills";
@@ -135,5 +135,25 @@ describe("ReceiptTransactionForm", () => {
         accountId: "acct-2",
       }),
     );
+  });
+
+  it("routes server errors through FormMessage so they have role=alert and are field-associated", async () => {
+    renderWithProviders(
+      <ReceiptTransactionForm
+        mode="create"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        serverErrors={{ cardId: "Server-side card error" }}
+      />,
+    );
+
+    // The error element must have role="alert" (set by FormMessage per RECEIPTS-686)
+    // and carry data-slot="form-message", meaning it went through FormMessage
+    // (not a bare <p className="text-destructive">).
+    await waitFor(() => {
+      const errorEl = screen.getByText("Server-side card error");
+      expect(errorEl).toHaveAttribute("role", "alert");
+      expect(errorEl).toHaveAttribute("data-slot", "form-message");
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -94,6 +94,17 @@ export function ReceiptTransactionForm({
     },
   });
 
+  // Route server errors through react-hook-form so they flow through FormMessage
+  // and are announced via aria-describedby (WCAG 3.3.1, 1.3.1).
+  useEffect(() => {
+    if (!serverErrors) return;
+    (Object.entries(serverErrors) as [keyof ReceiptTransactionFormValues, string][]).forEach(
+      ([field, message]) => {
+        form.setError(field, { type: "server", message });
+      },
+    );
+  }, [serverErrors, form]);
+
   function handleCardChange(value: string) {
     form.setValue("cardId", value, { shouldValidate: true });
     const card = cardById.get(value);
@@ -128,11 +139,6 @@ export function ReceiptTransactionForm({
                 />
               </FormControl>
               <FormMessage />
-              {serverErrors?.cardId && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.cardId}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -156,11 +162,6 @@ export function ReceiptTransactionForm({
                 />
               </FormControl>
               <FormMessage />
-              {serverErrors?.accountId && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.accountId}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -175,11 +176,6 @@ export function ReceiptTransactionForm({
                 <CurrencyInput {...field} />
               </FormControl>
               <FormMessage />
-              {serverErrors?.amount && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.amount}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -194,11 +190,6 @@ export function ReceiptTransactionForm({
                 <DateInput aria-required="true" {...field} />
               </FormControl>
               <FormMessage />
-              {serverErrors?.date && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.date}
-                </p>
-              )}
             </FormItem>
           )}
         />
