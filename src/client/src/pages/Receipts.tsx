@@ -45,6 +45,7 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Info, Pencil } from "lucide-react";
 import { useReceiptYnabSyncStatuses } from "@/hooks/useYnab";
 import { YnabSyncBadge } from "@/components/YnabSyncBadge";
@@ -282,15 +283,13 @@ function Receipts() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       aria-label="Select all rows"
                       checked={
                         selected.size === filteredResults.length &&
                         filteredResults.length > 0
                       }
-                      onChange={toggleAll}
-                      className="h-4 w-4 rounded border-gray-300"
+                      onCheckedChange={toggleAll}
                     />
                   </TableHead>
                   <SortableTableHead column="location" label="Location" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
@@ -315,12 +314,10 @@ function Receipts() {
                       }}
                     >
                       <TableCell>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           aria-label={`Select ${receipt.location}`}
                           checked={selected.has(receipt.id)}
-                          onChange={() => toggleSelect(receipt.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          onCheckedChange={() => toggleSelect(receipt.id)}
                         />
                       </TableCell>
                       <TableCell>

@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/format";
 import { Pencil } from "lucide-react";
 
@@ -155,21 +156,19 @@ export function AdjustmentsCard({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         aria-label="Select all adjustments"
                         checked={
                           selectedAdjs.size === adjustments.length &&
                           adjustments.length > 0
                         }
-                        onChange={() => {
+                        onCheckedChange={() => {
                           if (selectedAdjs.size === adjustments.length) {
                             setSelectedAdjs(new Set());
                           } else {
                             setSelectedAdjs(new Set(adjustments.map((a) => a.id)));
                           }
                         }}
-                        className="h-4 w-4 rounded border-gray-300"
                       />
                     </TableHead>
                     <TableHead>Type</TableHead>
@@ -182,12 +181,10 @@ export function AdjustmentsCard({
                   {adjustments.map((adj) => (
                     <TableRow key={adj.id}>
                       <TableCell>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           aria-label={`Select ${adj.type} adjustment`}
                           checked={selectedAdjs.has(adj.id)}
-                          onChange={() => toggleSelect(adj.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          onCheckedChange={() => toggleSelect(adj.id)}
                         />
                       </TableCell>
                       <TableCell>
