@@ -164,8 +164,14 @@ describe("ReceiptDetail", () => {
     expect(
       container.querySelector("[data-slot='skeleton']"),
     ).toBeInTheDocument();
-    expect(screen.getByRole("status")).toBeInTheDocument();
-    expect(screen.getByText(/loading receipt details/i)).toBeInTheDocument();
+    // Each CardSkeleton renders its own role="status" live region
+    const statusElements = screen.getAllByRole("status");
+    expect(statusElements.length).toBeGreaterThan(0);
+    statusElements.forEach((el) => {
+      expect(el).toHaveAttribute("aria-live", "polite");
+      expect(el).toHaveAttribute("aria-busy", "true");
+    });
+    expect(screen.getAllByText("Loading…").length).toBeGreaterThan(0);
   });
 
   it("renders receipt data when loaded", async () => {

@@ -28,7 +28,11 @@ describe("ChartCard", () => {
         <div>Content</div>
       </ChartCard>,
     );
-    expect(screen.getByLabelText("Loading")).toBeInTheDocument();
+    const status = screen.getByRole("status");
+    expect(status).toBeInTheDocument();
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
     expect(screen.queryByText("Content")).not.toBeInTheDocument();
   });
 

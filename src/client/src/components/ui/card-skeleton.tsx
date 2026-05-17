@@ -7,16 +7,19 @@ interface CardSkeletonProps {
 
 export function CardSkeleton({ lines = 3 }: CardSkeletonProps) {
   return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-5 w-40" />
-        <Skeleton className="h-4 w-64" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {Array.from({ length: lines }).map((_, i) => (
-          <Skeleton key={i} className="h-4 w-full" />
-        ))}
-      </CardContent>
-    </Card>
+    <div role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Loading…</span>
+      <Card aria-hidden="true">
+        <CardHeader>
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-4 w-64" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {Array.from({ length: lines }).map((_, i) => (
+            <Skeleton key={i} className="h-4 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

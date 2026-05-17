@@ -114,8 +114,8 @@ function ReceiptDetail() {
       <h1 className="text-2xl font-semibold tracking-tight">Receipt Details</h1>
 
       {isLoading && (
-        <div role="status" aria-live="polite" className="space-y-4">
-          <span className="sr-only">Loading receipt details...</span>
+        <div className="space-y-4">
+          {/* Each CardSkeleton announces itself via role="status" aria-live="polite" */}
           <CardSkeleton lines={1} />
           <CardSkeleton lines={3} />
           <CardSkeleton lines={3} />
