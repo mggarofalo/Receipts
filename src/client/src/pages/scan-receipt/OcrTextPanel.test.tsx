@@ -64,20 +64,33 @@ describe("OcrTextPanel", () => {
       screen.getByRole("button", { name: /raw ocr text.*87% confidence/i }),
     );
 
-    // The section wrapping the OCR text is labeled by the trigger button
+    // The section wrapping the OCR text is labeled by the trigger button.
+    // Use the accessible name matcher so the test is independent of the generated id.
     const region = screen.getByRole("region", {
       name: /raw ocr text.*87% confidence/i,
     });
     expect(region).toBeInTheDocument();
-    expect(region).toHaveAttribute("aria-labelledby", "ocr-text-trigger");
   });
 
-  it("trigger button has the expected id for aria-labelledby association", () => {
+  it("trigger id and section aria-labelledby are consistent per instance", async () => {
+    const user = userEvent.setup();
     renderWithProviders(<OcrTextPanel {...defaultProps} />);
+
     const trigger = screen.getByRole("button", {
       name: /raw ocr text.*87% confidence/i,
     });
-    expect(trigger).toHaveAttribute("id", "ocr-text-trigger");
+
+    // The trigger must have an id so aria-labelledby can reference it.
+    const triggerId = trigger.getAttribute("id");
+    expect(triggerId).toBeTruthy();
+
+    await user.click(trigger);
+
+    const region = screen.getByRole("region", {
+      name: /raw ocr text.*87% confidence/i,
+    });
+    // The section's aria-labelledby must point to the trigger's actual id.
+    expect(region).toHaveAttribute("aria-labelledby", triggerId);
   });
 
   it("rounds confidence to nearest integer", () => {
