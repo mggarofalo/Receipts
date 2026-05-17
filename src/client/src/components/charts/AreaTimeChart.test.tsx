@@ -82,4 +82,52 @@ describe("AreaTimeChart", () => {
     render(<AreaTimeChart data={mockData} trendlineData={[]} />);
     expect(screen.queryByTestId("trendline-area")).not.toBeInTheDocument();
   });
+
+  // Accessibility tests
+  it("renders a visually-hidden data table with period and amount columns", () => {
+    render(<AreaTimeChart data={mockData} />);
+    const table = document.querySelector("table.sr-only");
+    expect(table).toBeInTheDocument();
+    expect(screen.getByText("Jan")).toBeInTheDocument();
+    expect(screen.getByText("Feb")).toBeInTheDocument();
+    expect(screen.getByText("Mar")).toBeInTheDocument();
+  });
+
+  it("renders chart container with role=img and accessible name", () => {
+    render(<AreaTimeChart data={mockData} aria-label="Monthly spending" />);
+    expect(screen.getByRole("img", { name: "Monthly spending" })).toBeInTheDocument();
+  });
+
+  it("uses aria-labelledby when provided", () => {
+    render(
+      <div>
+        <h2 id="area-title">Spending over time</h2>
+        <AreaTimeChart data={mockData} aria-labelledby="area-title" />
+      </div>,
+    );
+    const img = document.querySelector("[role='img']");
+    expect(img).toHaveAttribute("aria-labelledby", "area-title");
+    expect(img).not.toHaveAttribute("aria-label");
+  });
+
+  it("falls back to a default aria-label when neither aria-label nor aria-labelledby is provided", () => {
+    render(<AreaTimeChart data={mockData} />);
+    expect(screen.getByRole("img", { name: "Area time chart" })).toBeInTheDocument();
+  });
+
+  it("includes a Rolling Average column in the table when trendline data is provided", () => {
+    render(<AreaTimeChart data={mockData} trendlineData={mockTrendline} />);
+    const table = document.querySelector("table.sr-only");
+    const headers = table?.querySelectorAll("th");
+    const headerTexts = Array.from(headers ?? []).map((h) => h.textContent);
+    expect(headerTexts).toContain("Rolling Average");
+  });
+
+  it("does not include Rolling Average column when trendline data is absent", () => {
+    render(<AreaTimeChart data={mockData} />);
+    const table = document.querySelector("table.sr-only");
+    const headers = table?.querySelectorAll("th");
+    const headerTexts = Array.from(headers ?? []).map((h) => h.textContent);
+    expect(headerTexts).not.toContain("Rolling Average");
+  });
 });
