@@ -158,10 +158,16 @@ export function useListKeyboardNav<T>({
    * Props to spread onto the scroll-container <div> that wraps the table.
    * Makes the container programmatically focusable and announces the active
    * row to screen readers via aria-activedescendant.
+   *
+   * tabIndex={0} is required: aria-activedescendant is only processed by
+   * assistive technology when the owning element has DOM focus. Without
+   * tabIndex the container is not in the tab order and AT never observes
+   * the focus events needed to read aria-activedescendant.
    */
   const containerProps = useMemo(
     () => ({
       role: "grid" as const,
+      tabIndex: 0,
       "aria-label": listId ?? "list",
       "aria-activedescendant": focusedId ? rowDomId(focusedId) : undefined,
     }),

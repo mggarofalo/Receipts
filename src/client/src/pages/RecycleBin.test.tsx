@@ -47,7 +47,7 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
     focusedIndex: -1,
     setFocusedIndex: vi.fn(),
     tableRef: { current: null },
-    containerProps: { role: "grid" as const, "aria-label": "list", "aria-activedescendant": undefined },
+    containerProps: { role: "grid" as const, tabIndex: 0, "aria-label": "list", "aria-activedescendant": undefined },
     getRowProps: (id: string) => ({ id: `list-row-${id}`, role: "row" as const }),
   })),
 }));
@@ -275,7 +275,7 @@ describe("RecycleBin", () => {
       focusedIndex: -1,
       setFocusedIndex: mockSetFocusedIndex,
       tableRef: { current: null },
-      containerProps: { role: "grid" as const, "aria-label": "list", "aria-activedescendant": undefined },
+      containerProps: { role: "grid" as const, tabIndex: 0, "aria-label": "list", "aria-activedescendant": undefined },
       getRowProps: (id: string) => ({ id: `list-row-${id}`, role: "row" as const }),
     });
 
@@ -299,7 +299,7 @@ describe("RecycleBin", () => {
       focusedIndex: 0,
       setFocusedIndex: vi.fn(),
       tableRef: { current: null },
-      containerProps: { role: "grid" as const, "aria-label": "list", "aria-activedescendant": undefined },
+      containerProps: { role: "grid" as const, tabIndex: 0, "aria-label": "list", "aria-activedescendant": undefined },
       getRowProps: (id: string) => ({ id: `list-row-${id}`, role: "row" as const }),
     });
 

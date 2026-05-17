@@ -88,7 +88,7 @@ describe("useListKeyboardNav", () => {
   });
 
   describe("containerProps", () => {
-    it("has role grid and aria-label defaulting to 'list'", () => {
+    it("has role grid, tabIndex 0, and aria-label defaulting to 'list'", () => {
       const { result } = renderHook(() =>
         useListKeyboardNav({
           items,
@@ -96,6 +96,7 @@ describe("useListKeyboardNav", () => {
         }),
       );
       expect(result.current.containerProps.role).toBe("grid");
+      expect(result.current.containerProps.tabIndex).toBe(0);
       expect(result.current.containerProps["aria-label"]).toBe("list");
     });
 
