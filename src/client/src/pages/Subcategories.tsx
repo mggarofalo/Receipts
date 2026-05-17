@@ -248,9 +248,10 @@ function Subcategories() {
     setExpandedCategories(new Set());
   }
 
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef, containerProps, getRowProps } = useListKeyboardNav({
     items: visibleSubcategories,
     getId: (a) => a.id,
+    listId: "subcategories",
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditSubcategory(a),
   });
@@ -341,7 +342,7 @@ function Subcategories() {
             onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
-          <div className="rounded-md border" ref={tableRef}>
+          <div className="rounded-md border" ref={tableRef} {...containerProps}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -387,6 +388,7 @@ function Subcategories() {
                           return (
                             <TableRow
                               key={subcategory.id}
+                              {...getRowProps(subcategory.id)}
                               className={`cursor-pointer ${focusedId === subcategory.id ? "bg-accent" : ""}`}
                               onClick={(e) => {
                                 if (

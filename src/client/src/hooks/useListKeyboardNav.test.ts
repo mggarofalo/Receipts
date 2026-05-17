@@ -87,6 +87,100 @@ describe("useListKeyboardNav", () => {
     expect(result.current.tableRef).toBeDefined();
   });
 
+  describe("containerProps", () => {
+    it("has role grid and aria-label defaulting to 'list'", () => {
+      const { result } = renderHook(() =>
+        useListKeyboardNav({
+          items,
+          getId: (item) => item.id,
+        }),
+      );
+      expect(result.current.containerProps.role).toBe("grid");
+      expect(result.current.containerProps["aria-label"]).toBe("list");
+    });
+
+    it("uses listId as aria-label when provided", () => {
+      const { result } = renderHook(() =>
+        useListKeyboardNav({
+          items,
+          getId: (item) => item.id,
+          listId: "accounts",
+        }),
+      );
+      expect(result.current.containerProps["aria-label"]).toBe("accounts");
+    });
+
+    it("aria-activedescendant is undefined when focusedIndex is -1", () => {
+      const { result } = renderHook(() =>
+        useListKeyboardNav({
+          items,
+          getId: (item) => item.id,
+          listId: "accounts",
+        }),
+      );
+      expect(result.current.containerProps["aria-activedescendant"]).toBeUndefined();
+    });
+
+    it("aria-activedescendant points to focused row dom id when item is focused", () => {
+      const { result } = renderHook(() =>
+        useListKeyboardNav({
+          items,
+          getId: (item) => item.id,
+          listId: "accounts",
+        }),
+      );
+
+      act(() => {
+        result.current.setFocusedIndex(1);
+      });
+
+      // focusedId = "2" → dom id = "accounts-row-2"
+      expect(result.current.containerProps["aria-activedescendant"]).toBe("accounts-row-2");
+    });
+
+    it("aria-activedescendant uses 'list-row-' prefix when listId is omitted", () => {
+      const { result } = renderHook(() =>
+        useListKeyboardNav({
+          items,
+          getId: (item) => item.id,
+        }),
+      );
+
+      act(() => {
+        result.current.setFocusedIndex(0);
+      });
+
+      expect(result.current.containerProps["aria-activedescendant"]).toBe("list-row-1");
+    });
+  });
+
+  describe("getRowProps", () => {
+    it("returns id and role for a given item id", () => {
+      const { result } = renderHook(() =>
+        useListKeyboardNav({
+          items,
+          getId: (item) => item.id,
+          listId: "receipts",
+        }),
+      );
+      const props = result.current.getRowProps("42");
+      expect(props.id).toBe("receipts-row-42");
+      expect(props.role).toBe("row");
+    });
+
+    it("uses 'list-row-' prefix when listId is omitted", () => {
+      const { result } = renderHook(() =>
+        useListKeyboardNav({
+          items,
+          getId: (item) => item.id,
+        }),
+      );
+      const props = result.current.getRowProps("99");
+      expect(props.id).toBe("list-row-99");
+      expect(props.role).toBe("row");
+    });
+  });
+
   describe("j / ArrowDown hotkey", () => {
     it("moves focus from -1 to 0", () => {
       const { result } = renderHook(() =>

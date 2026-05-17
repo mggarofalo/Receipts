@@ -73,6 +73,8 @@ vi.mock("@/hooks/useListKeyboardNav", () => ({
     focusedId: null,
     setFocusedIndex: vi.fn(),
     tableRef: { current: null },
+    containerProps: { role: "grid" as const, "aria-label": "list", "aria-activedescendant": undefined },
+    getRowProps: (id: string) => ({ id: `list-row-${id}`, role: "row" as const }),
   })),
 }));
 

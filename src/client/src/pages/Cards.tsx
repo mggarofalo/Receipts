@@ -175,9 +175,10 @@ function Cards() {
   const highlightMissing =
     linkParams.highlight && data.length > 0 && !data.some((a) => a.id === linkParams.highlight);
 
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef, containerProps, getRowProps } = useListKeyboardNav({
     items: filteredResults,
     getId: (a) => a.id,
+    listId: "cards",
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditCard(a),
   });
@@ -250,7 +251,7 @@ function Cards() {
             onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
-          <div className="rounded-md border" ref={tableRef}>
+          <div className="rounded-md border" ref={tableRef} {...containerProps}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -282,6 +283,7 @@ function Cards() {
                   return (
                     <TableRow
                       key={card.id}
+                      {...getRowProps(card.id)}
                       className={`cursor-pointer ${focusedId === card.id ? "bg-accent" : ""} ${linkParams.highlight === card.id ? "ring-2 ring-primary" : ""}`}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
