@@ -14,18 +14,18 @@ public partial class RequireAccountIdOnCards : Migration
 	/// <inheritdoc />
 	protected override void Up(MigrationBuilder migrationBuilder)
 	{
-		// Fail loud if any orphan rows remain — the prior IntroduceAccountAggregate
-		// migration seeded AccountId for every existing card, so this should be zero
-		// in any migrated environment.
+		// Self-heal any orphan Cards (AccountId IS NULL). Mirrors the 1:1 backfill
+		// in IntroduceAccountAggregate: create a matching Account with the same Id,
+		// then point the Card at it. Covers Cards that were inserted between the
+		// two migrations (e.g., via backup restore or data sync paths that bypassed
+		// the application-layer validators). The ON CONFLICT guards the edge case
+		// where an Account row with the target Id already exists.
 		migrationBuilder.Sql("""
-			DO $$
-			DECLARE orphan_count INTEGER;
-			BEGIN
-				SELECT COUNT(*) INTO orphan_count FROM "Cards" WHERE "AccountId" IS NULL;
-				IF orphan_count > 0 THEN
-					RAISE EXCEPTION 'RequireAccountIdOnCards: % card(s) have NULL AccountId. Backfill before running this migration.', orphan_count;
-				END IF;
-			END $$;
+			INSERT INTO "Accounts" ("Id", "Name", "IsActive")
+			SELECT "Id", "Name", "IsActive" FROM "Cards" WHERE "AccountId" IS NULL
+			ON CONFLICT ("Id") DO NOTHING;
+
+			UPDATE "Cards" SET "AccountId" = "Id" WHERE "AccountId" IS NULL;
 			""");
 
 		migrationBuilder.DropForeignKey(

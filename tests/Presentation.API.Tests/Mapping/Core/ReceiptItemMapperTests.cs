@@ -40,9 +40,9 @@ public class ReceiptItemMapperTests
 	}
 
 	[Fact]
-	public void ToDomain_FromCreateRequest_CalculatesTotalAmountWithFloor()
+	public void ToDomain_FromCreateRequest_CalculatesTotalAmountWithHalfUpRounding()
 	{
-		// Arrange
+		// Arrange: 3 * 1.333 = 3.999, third decimal is 9 -> rounds up to 4.00
 		CreateReceiptItemRequest request = new()
 		{
 			ReceiptItemCode = "ITEM-002",
@@ -57,15 +57,14 @@ public class ReceiptItemMapperTests
 		ReceiptItem actual = _mapper.ToDomain(request);
 
 		// Assert
-		decimal expectedTotal = Math.Floor(3.0m * 1.333m * 100) / 100;
-		Assert.Equal(expectedTotal, actual.TotalAmount.Amount);
+		Assert.Equal(4.00m, actual.TotalAmount.Amount);
 		Assert.Equal(Currency.USD, actual.TotalAmount.Currency);
 	}
 
 	[Fact]
-	public void ToDomain_FromCreateRequest_TotalAmountFloorRoundsDown()
+	public void ToDomain_FromCreateRequest_TotalAmountRoundsHalfAwayFromZero()
 	{
-		// Arrange - values that would round up with normal rounding
+		// Arrange: 7 * 1.999 = 13.993, third decimal is 3 -> rounds down to 13.99
 		CreateReceiptItemRequest request = new()
 		{
 			ReceiptItemCode = "ITEM-003",
@@ -80,8 +79,31 @@ public class ReceiptItemMapperTests
 		ReceiptItem actual = _mapper.ToDomain(request);
 
 		// Assert
-		decimal expectedTotal = Math.Floor(7.0m * 1.999m * 100) / 100;
-		Assert.Equal(expectedTotal, actual.TotalAmount.Amount);
+		Assert.Equal(13.99m, actual.TotalAmount.Amount);
+	}
+
+	[Fact]
+	public void ToDomain_FromCreateRequest_WeightedProduceRoundsHalfUp()
+	{
+		// Regression for RECEIPTS-670: 2.30 lb * $0.92/lb = $2.116 must round to
+		// $2.12 (matching the cash register), not floor down to $2.11. Floor would
+		// leave each weighted-produce row up to one cent low, breaking receipt
+		// balance against the transaction total.
+		CreateReceiptItemRequest request = new()
+		{
+			ReceiptItemCode = "TOMATO",
+			Description = "Tomatoes",
+			Quantity = 2.30,
+			UnitPrice = 0.92,
+			Category = "Groceries",
+			Subcategory = "Produce"
+		};
+
+		// Act
+		ReceiptItem actual = _mapper.ToDomain(request);
+
+		// Assert
+		Assert.Equal(2.12m, actual.TotalAmount.Amount);
 	}
 
 	[Fact]
@@ -116,9 +138,9 @@ public class ReceiptItemMapperTests
 	}
 
 	[Fact]
-	public void ToDomain_FromUpdateRequest_CalculatesTotalAmountWithFloor()
+	public void ToDomain_FromUpdateRequest_CalculatesTotalAmountWithHalfUpRounding()
 	{
-		// Arrange
+		// Arrange: 4 * 2.337 = 9.348, third decimal is 8 -> rounds up to 9.35
 		Guid expectedId = Guid.NewGuid();
 		UpdateReceiptItemRequest request = new()
 		{
@@ -135,8 +157,7 @@ public class ReceiptItemMapperTests
 		ReceiptItem actual = _mapper.ToDomain(request);
 
 		// Assert
-		decimal expectedTotal = Math.Floor(4.0m * 2.337m * 100) / 100;
-		Assert.Equal(expectedTotal, actual.TotalAmount.Amount);
+		Assert.Equal(9.35m, actual.TotalAmount.Amount);
 		Assert.Equal(Currency.USD, actual.TotalAmount.Currency);
 	}
 

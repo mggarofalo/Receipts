@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.4.4](https://github.com/mggarofalo/receipts/compare/v0.4.3...v0.4.4) (2026-05-15)
+
+
+### Bug Fixes
+
+* **ci:** bump GitHub Actions to Node 24 majors (RECEIPTS-673) ([#541](https://github.com/mggarofalo/receipts/issues/541)) ([5bde207](https://github.com/mggarofalo/receipts/commit/5bde20712b8410d9a70f56094b4c78c4cf39c2d3))
+
+## [0.4.3](https://github.com/mggarofalo/receipts/compare/v0.4.2...v0.4.3) (2026-05-15)
+
+
+### Bug Fixes
+
+* **ci:** also ignore "autorelease: tagged" label on Conventional Commits check (RECEIPTS-603) ([#538](https://github.com/mggarofalo/receipts/issues/538)) ([a4e6676](https://github.com/mggarofalo/receipts/commit/a4e6676655ec3e9d9ad2ce475d690c1002284230))
+
+## [0.4.2](https://github.com/mggarofalo/receipts/compare/v0.4.1...v0.4.2) (2026-05-14)
+
+
+### Bug Fixes
+
+* **infra:** guard YnabSplitCalculator against remainder &gt; sub count (RECEIPTS-669) ([#535](https://github.com/mggarofalo/receipts/issues/535)) ([9c0494a](https://github.com/mggarofalo/receipts/commit/9c0494ab66da9392cc7b0d450cfdc0ace85740f6))
+
+## [0.4.1](https://github.com/mggarofalo/receipts/compare/v0.4.0...v0.4.1) (2026-04-21)
+
+
+### Bug Fixes
+
+* **infrastructure:** self-heal orphan Cards in RequireAccountIdOnCards (RECEIPTS-604) ([#469](https://github.com/mggarofalo/receipts/issues/469)) ([c70ac88](https://github.com/mggarofalo/receipts/commit/c70ac8824ec6d8d8d74197f1456cd94d77fae91d))
+
 ## [0.4.0](https://github.com/mggarofalo/receipts/compare/v0.3.0...v0.4.0) (2026-04-21)
 
 

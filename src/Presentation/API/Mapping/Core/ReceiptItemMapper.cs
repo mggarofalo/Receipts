@@ -28,7 +28,7 @@ public partial class ReceiptItemMapper
 		decimal quantity = (decimal)source.Quantity;
 		decimal unitPrice = (decimal)source.UnitPrice;
 		Money unitPriceMoney = new(unitPrice, Currency.USD);
-		Money totalAmount = new(Math.Floor(quantity * unitPrice * 100) / 100, Currency.USD);
+		Money totalAmount = new(Math.Round(quantity * unitPrice, 2, MidpointRounding.AwayFromZero), Currency.USD);
 
 		PricingMode pricingMode = Enum.TryParse<PricingMode>(source.PricingMode, ignoreCase: true, out PricingMode mode)
 			? mode : PricingMode.Quantity;
@@ -51,7 +51,7 @@ public partial class ReceiptItemMapper
 		decimal quantity = (decimal)source.Quantity;
 		decimal unitPrice = (decimal)source.UnitPrice;
 		Money unitPriceMoney = new(unitPrice, Currency.USD);
-		Money totalAmount = new(Math.Floor(quantity * unitPrice * 100) / 100, Currency.USD);
+		Money totalAmount = new(Math.Round(quantity * unitPrice, 2, MidpointRounding.AwayFromZero), Currency.USD);
 
 		PricingMode pricingMode = Enum.TryParse<PricingMode>(source.PricingMode, ignoreCase: true, out PricingMode mode)
 			? mode : PricingMode.Quantity;
