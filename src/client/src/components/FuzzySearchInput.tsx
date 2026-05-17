@@ -11,6 +11,8 @@ interface FuzzySearchInputProps {
   totalCount?: number;
   className?: string;
   showShortcutHint?: boolean;
+  "aria-label"?: string;
+  id?: string;
 }
 
 export function FuzzySearchInput({
@@ -21,19 +23,34 @@ export function FuzzySearchInput({
   totalCount,
   className,
   showShortcutHint = false,
+  "aria-label": ariaLabel,
+  id,
 }: FuzzySearchInputProps) {
+  const showCount =
+    value && resultCount !== undefined && totalCount !== undefined;
+
   return (
     <div className={cn("relative", className)}>
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
+        id={id}
+        aria-label={ariaLabel}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="pl-9 pr-24"
       />
+      {/* Visually hidden live region announces result count changes to screen readers */}
+      <span
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {showCount ? `${resultCount} of ${totalCount} results` : ""}
+      </span>
       <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
-        {value && resultCount !== undefined && totalCount !== undefined && (
-          <Badge variant="secondary" className="text-xs">
+        {showCount && (
+          <Badge variant="secondary" className="text-xs" aria-hidden="true">
             {resultCount}/{totalCount}
           </Badge>
         )}
