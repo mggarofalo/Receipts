@@ -33,7 +33,7 @@ export function SortableTableHead({
     >
       <button
         type="button"
-        className="inline-flex items-center gap-1 cursor-pointer hover:text-foreground w-full"
+        className="inline-flex items-center gap-1 cursor-pointer hover:text-foreground w-full h-full"
         onClick={() => onToggleSort(column)}
       >
         {label}
