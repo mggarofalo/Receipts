@@ -2,7 +2,7 @@ using Application.Behaviors;
 using FluentAssertions;
 using FluentValidation;
 using FluentValidation.Results;
-using MediatR;
+using Mediator;
 
 namespace Application.Tests.Behaviors;
 
@@ -41,7 +41,7 @@ public class ValidationBehaviorTests
 		// Act
 		string result = await behavior.Handle(
 			request,
-			_ => Task.FromResult("ok"),
+			(_, _) => new ValueTask<string>("ok"),
 			CancellationToken.None);
 
 		// Assert
@@ -59,7 +59,7 @@ public class ValidationBehaviorTests
 		// Act
 		string result = await behavior.Handle(
 			request,
-			_ => Task.FromResult("ok"),
+			(_, _) => new ValueTask<string>("ok"),
 			CancellationToken.None);
 
 		// Assert
@@ -75,9 +75,9 @@ public class ValidationBehaviorTests
 		TestRequest request = new("");
 
 		// Act
-		Func<Task> act = () => behavior.Handle(
+		Func<Task> act = async () => await behavior.Handle(
 			request,
-			_ => Task.FromResult("ok"),
+			(_, _) => new ValueTask<string>("ok"),
 			CancellationToken.None);
 
 		// Assert
@@ -98,9 +98,9 @@ public class ValidationBehaviorTests
 		TestRequest request = new("");
 
 		// Act
-		Func<Task> act = () => behavior.Handle(
+		Func<Task> act = async () => await behavior.Handle(
 			request,
-			_ => Task.FromResult("ok"),
+			(_, _) => new ValueTask<string>("ok"),
 			CancellationToken.None);
 
 		// Assert

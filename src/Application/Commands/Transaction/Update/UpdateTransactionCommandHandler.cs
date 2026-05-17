@@ -2,7 +2,7 @@ using Application.Interfaces.Services;
 using Domain.Aggregates;
 using FluentValidation;
 using FluentValidation.Results;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Transaction.Update;
 
@@ -12,7 +12,7 @@ public class UpdateTransactionCommandHandler(
 	IReceiptItemService receiptItemService,
 	IAdjustmentService adjustmentService) : IRequestHandler<UpdateTransactionCommand, bool>
 {
-	public async Task<bool> Handle(UpdateTransactionCommand request, CancellationToken cancellationToken)
+	public async ValueTask<bool> Handle(UpdateTransactionCommand request, CancellationToken cancellationToken)
 	{
 		Domain.Core.Transaction existingTransaction = await transactionService.GetByIdAsync(request.Transactions[0].Id, cancellationToken)
 			?? throw new InvalidOperationException("Transaction not found");

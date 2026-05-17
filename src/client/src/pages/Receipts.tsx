@@ -45,6 +45,7 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatCurrency } from "@/lib/format";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Info, Pencil } from "lucide-react";
 import { useReceiptYnabSyncStatuses } from "@/hooks/useYnab";
 import { YnabSyncBadge } from "@/components/YnabSyncBadge";
@@ -159,9 +160,10 @@ function Receipts() {
     }
   }
 
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef, containerProps, getRowProps } = useListKeyboardNav({
     items: filteredResults,
     getId: (r) => r.id,
+    listId: "receipts",
     enabled: !anyDialogOpen,
     onOpen: (r) => setEditReceipt(r),
     onDelete: () => setDeleteOpen(true),
@@ -263,7 +265,7 @@ function Receipts() {
             entityName="receipts"
           />
         ) : (
-          <div className="py-12 text-center text-muted-foreground">
+          <div role="status" className="py-12 text-center text-muted-foreground">
             No receipts yet. Create one to get started.
           </div>
         )
@@ -277,20 +279,18 @@ function Receipts() {
             onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
-          <div className="rounded-md border" ref={tableRef}>
+          <div className="rounded-md border" ref={tableRef} {...containerProps}>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       aria-label="Select all rows"
                       checked={
                         selected.size === filteredResults.length &&
                         filteredResults.length > 0
                       }
-                      onChange={toggleAll}
-                      className="h-4 w-4 rounded border-gray-300"
+                      onCheckedChange={toggleAll}
                     />
                   </TableHead>
                   <SortableTableHead column="location" label="Location" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
@@ -308,6 +308,7 @@ function Receipts() {
                   return (
                     <TableRow
                       key={receipt.id}
+                      {...getRowProps(receipt.id)}
                       className={`cursor-pointer ${focusedId === receipt.id ? "bg-accent" : ""} ${linkParams.highlight === receipt.id ? "ring-2 ring-primary" : ""}`}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;
@@ -315,12 +316,10 @@ function Receipts() {
                       }}
                     >
                       <TableCell>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           aria-label={`Select ${receipt.location}`}
                           checked={selected.has(receipt.id)}
-                          onChange={() => toggleSelect(receipt.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          onCheckedChange={() => toggleSelect(receipt.id)}
                         />
                       </TableCell>
                       <TableCell>

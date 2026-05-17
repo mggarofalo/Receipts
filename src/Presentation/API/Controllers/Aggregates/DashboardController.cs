@@ -2,7 +2,7 @@ using API.Generated.Dtos;
 using Application.Models.Dashboard;
 using Application.Queries.Aggregates.Dashboard;
 using Asp.Versioning;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

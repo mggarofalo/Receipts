@@ -11,7 +11,7 @@ using Application.Queries.Core.ItemTemplate.GetCategoryRecommendations;
 using Application.Queries.Core.ItemTemplate.GetSimilarItems;
 using Asp.Versioning;
 using Domain.Core;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

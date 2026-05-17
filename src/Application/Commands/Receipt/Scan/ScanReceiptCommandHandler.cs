@@ -1,6 +1,6 @@
 using Application.Exceptions;
 using Application.Interfaces.Services;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Receipt.Scan;
 
@@ -17,7 +17,7 @@ public class ScanReceiptCommandHandler(
 
 	internal const string PdfContentType = "application/pdf";
 
-	public async Task<ScanReceiptResult> Handle(ScanReceiptCommand request, CancellationToken cancellationToken)
+	public async ValueTask<ScanReceiptResult> Handle(ScanReceiptCommand request, CancellationToken cancellationToken)
 	{
 		if (string.Equals(request.ContentType, PdfContentType, StringComparison.OrdinalIgnoreCase))
 		{

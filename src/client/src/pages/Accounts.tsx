@@ -185,9 +185,10 @@ function Accounts() {
   const highlightMissing =
     linkParams.highlight && data.length > 0 && !data.some((a) => a.id === linkParams.highlight);
 
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef, containerProps, getRowProps } = useListKeyboardNav({
     items: filteredResults,
     getId: getAccountId,
+    listId: "accounts",
     enabled: !anyDialogOpen,
     onOpen: handleOpen,
   });
@@ -236,7 +237,7 @@ function Accounts() {
             entityName="accounts"
           />
         ) : (
-          <div className="py-12 text-center text-muted-foreground">
+          <div role="status" className="py-12 text-center text-muted-foreground">
             No accounts yet. Create one to get started.
           </div>
         )
@@ -250,7 +251,7 @@ function Accounts() {
             onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
-          <div className="rounded-md border" ref={tableRef}>
+          <div className="rounded-md border" ref={tableRef} {...containerProps}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -269,6 +270,7 @@ function Accounts() {
                   return (
                     <Fragment key={account.id}>
                       <TableRow
+                        {...getRowProps(account.id)}
                         className={`cursor-pointer ${focusedId === account.id ? "bg-accent" : ""} ${linkParams.highlight === account.id ? "ring-2 ring-primary" : ""}`}
                         onClick={(e) => {
                           if ((e.target as HTMLElement).closest("button, input, a, [role='button']")) return;

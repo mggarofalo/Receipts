@@ -3,7 +3,7 @@ using Application.Commands.Receipt.Scan;
 using Application.Exceptions;
 using Application.Models.Ocr;
 using Asp.Versioning;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

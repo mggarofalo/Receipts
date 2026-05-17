@@ -191,6 +191,19 @@ describe("Combobox", () => {
     });
   });
 
+  it("forwards aria-label to the underlying button trigger", () => {
+    render(
+      <Combobox
+        {...defaultProps}
+        aria-label="Filter by entity type"
+      />,
+    );
+
+    expect(
+      screen.getByRole("combobox", { name: "Filter by entity type" }),
+    ).toBeInTheDocument();
+  });
+
   it("filters by sublabel when present", async () => {
     const optionsWithSublabels: ComboboxOption[] = [
       { value: "milk", label: "Milk", sublabel: "Dairy" },

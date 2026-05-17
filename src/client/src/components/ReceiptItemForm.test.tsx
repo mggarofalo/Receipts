@@ -349,4 +349,22 @@ describe("ReceiptItemForm", () => {
       expect(screen.queryByText(/use.*costco/i)).not.toBeInTheDocument();
     });
   });
+
+  it("routes server errors through FormMessage so they have role=alert and are field-associated", async () => {
+    render(
+      <ReceiptItemForm
+        {...defaultProps}
+        serverErrors={{ description: "Server-side description error" }}
+      />,
+    );
+
+    // The error element must have role="alert" (set by FormMessage per RECEIPTS-686)
+    // and carry data-slot="form-message", meaning it went through FormMessage
+    // rather than a bare <p className="text-destructive">.
+    await waitFor(() => {
+      const errorEl = screen.getByText("Server-side description error");
+      expect(errorEl).toHaveAttribute("role", "alert");
+      expect(errorEl).toHaveAttribute("data-slot", "form-message");
+    });
+  });
 });

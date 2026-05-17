@@ -10,6 +10,7 @@ import client from "@/lib/api-client";
 import { showSuccess, showError } from "@/lib/toast";
 import { capitalize } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -24,6 +25,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Form,
   FormControl,
@@ -314,11 +324,9 @@ function ApiKeys() {
                   render={({ field }) => (
                     <FormItem className="flex items-center gap-2">
                       <FormControl>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={field.value}
-                          onChange={field.onChange}
-                          className="h-4 w-4 rounded border-input"
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
                       <FormLabel className="!mt-0">
@@ -370,24 +378,24 @@ function ApiKeys() {
       </Dialog>
 
       {/* Revoke Confirmation Dialog */}
-      <Dialog
+      <AlertDialog
         open={revokeId !== null}
         onOpenChange={(open) => {
           if (!open) setRevokeId(null);
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Revoke API Key</DialogTitle>
-            <DialogDescription>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke API Key</AlertDialogTitle>
+            <AlertDialogDescription>
               This action cannot be undone. The API key will be immediately
               invalidated.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setRevokeId(null)}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRevokeId(null)}>
               Cancel
-            </Button>
+            </AlertDialogCancel>
             <Button
               variant="destructive"
               disabled={revokeMutation.isPending}
@@ -398,9 +406,9 @@ function ApiKeys() {
               {revokeMutation.isPending && <Spinner size="sm" />}
               {revokeMutation.isPending ? "Revoking..." : "Revoke"}
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

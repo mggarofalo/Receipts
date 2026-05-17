@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/format";
 import { Pencil } from "lucide-react";
 
@@ -167,19 +168,18 @@ export function ReceiptTransactionsCard({
               No transactions for this receipt.
             </p>
           ) : (
-            <div className="rounded-md border">
+            <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         aria-label="Select all transactions"
                         checked={
                           selectedTxns.size === transactions.length &&
                           transactions.length > 0
                         }
-                        onChange={() => {
+                        onCheckedChange={() => {
                           if (selectedTxns.size === transactions.length) {
                             setSelectedTxns(new Set());
                           } else {
@@ -188,13 +188,12 @@ export function ReceiptTransactionsCard({
                             );
                           }
                         }}
-                        className="h-4 w-4 rounded border-gray-300"
                       />
                     </TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Card</TableHead>
-                    <TableHead>Account</TableHead>
+                    <TableHead className="min-w-[16ch]">Account</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
@@ -203,12 +202,10 @@ export function ReceiptTransactionsCard({
                   {transactions.map((ta) => (
                     <TableRow key={ta.transaction.id}>
                       <TableCell>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           aria-label={`Select ${ta.account.name} transaction`}
                           checked={selectedTxns.has(ta.transaction.id)}
-                          onChange={() => toggleSelect(ta.transaction.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          onCheckedChange={() => toggleSelect(ta.transaction.id)}
                         />
                       </TableCell>
                       <TableCell className="text-right">
@@ -220,7 +217,11 @@ export function ReceiptTransactionsCard({
                           ? (cardNameMap.get(ta.transaction.cardId) ?? "")
                           : ""}
                       </TableCell>
-                      <TableCell>{ta.account.name}</TableCell>
+                      <TableCell>
+                        <span className="block max-w-[32ch] break-words whitespace-normal">
+                          {ta.account.name}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant={

@@ -39,6 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { Pencil } from "lucide-react";
 
@@ -126,9 +127,10 @@ function ItemTemplates() {
     }
   }
 
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef, containerProps, getRowProps } = useListKeyboardNav({
     items: filteredResults,
     getId: (a) => a.id,
+    listId: "item-templates",
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditTemplate(a),
     onDelete: () => setDeleteOpen(true),
@@ -174,7 +176,7 @@ function ItemTemplates() {
             entityName="item templates"
           />
         ) : (
-          <div className="py-12 text-center text-muted-foreground">
+          <div role="status" className="py-12 text-center text-muted-foreground">
             No item templates yet. Create one to get started.
           </div>
         )
@@ -188,20 +190,18 @@ function ItemTemplates() {
             onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
-          <div className="rounded-md border" ref={tableRef}>
+          <div className="rounded-md border" ref={tableRef} {...containerProps}>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       aria-label="Select all rows"
                       checked={
                         selected.size === filteredResults.length &&
                         filteredResults.length > 0
                       }
-                      onChange={toggleAll}
-                      className="h-4 w-4 rounded border-gray-300"
+                      onCheckedChange={toggleAll}
                     />
                   </TableHead>
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
@@ -219,6 +219,7 @@ function ItemTemplates() {
                   return (
                     <TableRow
                       key={template.id}
+                      {...getRowProps(template.id)}
                       className={`cursor-pointer ${focusedId === template.id ? "bg-accent" : ""}`}
                       onClick={(e) => {
                         if (
@@ -231,12 +232,10 @@ function ItemTemplates() {
                       }}
                     >
                       <TableCell>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           aria-label={`Select ${template.name}`}
                           checked={selected.has(template.id)}
-                          onChange={() => toggleSelect(template.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          onCheckedChange={() => toggleSelect(template.id)}
                         />
                       </TableCell>
                       <TableCell>

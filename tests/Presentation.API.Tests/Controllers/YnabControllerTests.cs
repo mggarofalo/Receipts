@@ -12,7 +12,7 @@ using Application.Models.Ynab;
 using Application.Queries.Core.Ynab;
 using FluentAssertions;
 using Infrastructure.Ynab;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

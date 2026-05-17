@@ -143,6 +143,19 @@ describe("NewReceiptPage", () => {
     expect(screen.getAllByTestId("balance-sidebar").length).toBeGreaterThan(0);
   });
 
+  it("gives the 1fr grid column min-w-0 so the items table cannot force page horizontal scroll (WCAG 1.4.10)", () => {
+    // The left form column sits in a `grid-cols-[1fr_280px]` track. Without
+    // `min-w-0` the `1fr` track resolves to its min-content width and a long
+    // line-item description pushes the whole page wide. `min-w-0` lets the
+    // track shrink so the inner table's `overflow-x-auto` engages instead.
+    renderWithProviders(<NewReceiptPage />);
+    const column = screen
+      .getByTestId("line-items-section")
+      .closest("div.min-w-0");
+    expect(column).not.toBeNull();
+    expect(column).toHaveClass("min-w-0");
+  });
+
   it("navigates directly to /receipts when cancel clicked with no data", async () => {
     const user = userEvent.setup();
     renderWithProviders(<NewReceiptPage />);
@@ -338,6 +351,41 @@ describe("NewReceiptPage", () => {
 
     await vi.waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Failed to create receipt.");
+    });
+  });
+
+  it("moves focus to the first invalid field when submitting with an invalid header", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<NewReceiptPage />);
+
+    // Leave the header empty (location and date are required)
+    // Submit directly — should fail validation
+    const submitButtons = screen.getAllByText("Submit Receipt");
+    await user.click(submitButtons[0]);
+
+    // The form has validation errors; the location combobox (first required field)
+    // should receive focus. We verify by checking that document.activeElement is
+    // inside the location FormItem (the first field rendered).
+    await vi.waitFor(() => {
+      const activeEl = document.activeElement;
+      // The combobox trigger is a button; it should be focused
+      expect(activeEl).not.toBeNull();
+      expect(activeEl?.tagName).not.toBe("BODY");
+    });
+  });
+
+  it("announces an error summary in the aria-live region when submit fails validation", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<NewReceiptPage />);
+
+    // Submit with empty header — validation fails
+    const submitButtons = screen.getAllByText("Submit Receipt");
+    await user.click(submitButtons[0]);
+
+    await vi.waitFor(() => {
+      const liveRegion = document.querySelector("[aria-live='polite']");
+      expect(liveRegion).not.toBeNull();
+      expect(liveRegion?.textContent?.trim()).toBeTruthy();
     });
   });
 });

@@ -1,9 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useReceiptScan } from "@/hooks/useReceiptScan";
 import { isTimeoutError } from "@/lib/api-client";
 import { ReceiptImageUpload } from "./ReceiptImageUpload";
 import { OcrTextPanel } from "./OcrTextPanel";
+import { ScanPhaseIndicator } from "./ScanPhaseIndicator";
 import NewReceiptPage from "@/pages/new-receipt/NewReceiptPage";
 import type { components } from "@/generated/api";
 import type { ScanInitialValues, ReceiptConfidenceMap } from "./types";
@@ -94,6 +95,13 @@ export default function ScanReceiptPage() {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Ref for the review-phase heading — receives focus after a successful scan
+  const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
+  // Ref for the review-phase live region — its text is set imperatively after
+  // the node mounts so screen readers announce the change (a fresh node that
+  // mounts with text already present is not reliably announced).
+  const announcementRef = useRef<HTMLDivElement>(null);
+
   const handleScan = useCallback(
     (file: File) => {
       setStatus("uploading");
@@ -114,12 +122,49 @@ export default function ScanReceiptPage() {
     [],
   );
 
+  // On transition to the review phase, synchronize the DOM: move focus to the
+  // review heading and populate the live region. Both are direct DOM mutations
+  // (no React state), so this avoids an extra render cycle on every scan.
+  useEffect(() => {
+    if (status === "success" && reviewHeadingRef.current) {
+      reviewHeadingRef.current.focus();
+      if (announcementRef.current) {
+        announcementRef.current.textContent =
+          "Receipt scanned, review details below";
+      }
+    }
+  }, [status]);
+
+  const currentPhase = status === "success" ? "review" : "scan";
+
   if (status === "success" && proposal) {
     const initialValues = mapProposalToInitialValues(proposal);
     const confidenceMap = mapProposalToConfidenceMap(proposal);
 
     return (
       <div className="space-y-6">
+        {/* Polite live region — text is set imperatively via announcementRef
+            in the post-transition Effect above. */}
+        <div
+          ref={announcementRef}
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+          data-testid="phase-announcement"
+        />
+
+        <ScanPhaseIndicator currentPhase={currentPhase} />
+
+        <h1
+          ref={reviewHeadingRef}
+          className="text-3xl font-bold tracking-tight"
+          tabIndex={-1}
+          data-testid="review-heading"
+        >
+          Review Receipt
+        </h1>
+
         <OcrTextPanel
           rawText={proposal.rawOcrText}
           ocrConfidence={Number(proposal.ocrConfidence ?? 0)}
@@ -135,6 +180,18 @@ export default function ScanReceiptPage() {
 
   return (
     <div className="space-y-6">
+      {/* Polite live region — empty in the scan phase; the review-phase
+          announcement is made by the live region in the success branch. */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        data-testid="phase-announcement"
+      />
+
+      <ScanPhaseIndicator currentPhase={currentPhase} />
+
       <h1 className="text-3xl font-bold tracking-tight">Scan Receipt</h1>
       <div className="mx-auto max-w-lg">
         <ReceiptImageUpload

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/command";
 import { Combobox } from "@/components/ui/combobox";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Badge } from "@/components/ui/badge";
 import {
   Form,
@@ -80,6 +81,8 @@ interface LineItemsSectionProps {
 export function LineItemsSection({ items, onChange, location }: LineItemsSectionProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsListId = "new-receipt-suggestions-list";
+  // Index of the keyboard-highlighted row in the description lookup.
+  const [descriptionActiveIndex, setDescriptionActiveIndex] = useState(0);
   const { data: categories } = useCategories(0, 50, undefined, undefined, true);
 
   const categoryOptions = useMemo(
@@ -111,6 +114,9 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
   // Item code autocomplete
   const [showItemCodeSuggestions, setShowItemCodeSuggestions] = useState(false);
   const itemCodeSuggestionsListId = "new-receipt-item-code-suggestions-list";
+  const itemCodeInputRef = useRef<HTMLInputElement>(null);
+  // Index of the keyboard-highlighted row in the item code lookup.
+  const [itemCodeActiveIndex, setItemCodeActiveIndex] = useState(0);
 
   const { data: itemCodeSuggestions, isFetching: isFetchingItemCodeSuggestions } =
     useReceiptItemSuggestions(itemCode ?? "", location, {
@@ -144,20 +150,40 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     [form],
   );
 
+  // Reset the highlight to the first row whenever the result set changes.
+  useEffect(() => {
+    setItemCodeActiveIndex(0);
+  }, [itemCodeSuggestions]);
+
   const handleItemCodeKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
         setShowItemCodeSuggestions(false);
-      } else if (e.key === "ArrowDown" && isItemCodeSuggestionsOpen) {
+        return;
+      }
+      if (!isItemCodeSuggestionsOpen) return;
+      const count = itemCodeSuggestions?.length ?? 0;
+      if (e.key === "ArrowDown") {
         e.preventDefault();
-        const list = document.getElementById(itemCodeSuggestionsListId);
-        const firstItem = list?.querySelector(
-          "[cmdk-item]",
-        ) as HTMLElement | null;
-        firstItem?.focus();
+        setItemCodeActiveIndex((i) => Math.min(i + 1, count - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setItemCodeActiveIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === "Enter") {
+        const suggestion = itemCodeSuggestions?.[itemCodeActiveIndex];
+        if (suggestion) {
+          // Prevent the form from submitting — Enter picks the suggestion.
+          e.preventDefault();
+          applyItemCodeSuggestion(suggestion);
+        }
       }
     },
-    [isItemCodeSuggestionsOpen, itemCodeSuggestionsListId],
+    [
+      isItemCodeSuggestionsOpen,
+      itemCodeSuggestions,
+      itemCodeActiveIndex,
+      applyItemCodeSuggestion,
+    ],
   );
 
   const { data: similarItems, isFetching: isFetchingSimilar } =
@@ -199,6 +225,36 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     [subcategories],
   );
 
+  // Shared subcategory selection: applies the value and creates the
+  // subcategory on the fly when the user enters a name that doesn't exist.
+  const handleSubcategorySelect = useCallback(
+    (
+      next: string,
+      categoryId: string | undefined,
+      existing: { value: string }[],
+      setValue: (v: string) => void,
+    ) => {
+      setValue(next);
+      const isExisting = existing.some((o) => o.value === next);
+      if (
+        !isExisting &&
+        next &&
+        categoryId &&
+        !pendingSubcategories.current.has(next)
+      ) {
+        pendingSubcategories.current.add(next);
+        createSubcategory.mutate(
+          { categoryId, name: next, isActive: true },
+          {
+            onSettled: () => pendingSubcategories.current.delete(next),
+            onError: () => setValue(""),
+          },
+        );
+      }
+    },
+    [createSubcategory],
+  );
+
   const subtotal = useMemo(
     () =>
       items.reduce(
@@ -211,19 +267,9 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
 
   const applySuggestion = useCallback(
     (suggestion: NonNullable<typeof similarItems>[number]) => {
-      form.setValue("description", suggestion.name);
-      if (suggestion.defaultCategory) {
-        form.setValue("category", suggestion.defaultCategory);
-      }
-      if (suggestion.defaultSubcategory) {
-        form.setValue("subcategory", suggestion.defaultSubcategory);
-      }
-      if (suggestion.defaultUnitPrice != null) {
-        form.setValue("unitPrice", Number(suggestion.defaultUnitPrice));
-      }
-      if (suggestion.defaultItemCode) {
-        form.setValue("receiptItemCode", suggestion.defaultItemCode);
-      }
+      // Description lookup only fills the description field — the other
+      // fields are left for the user (or category recommendations) to set.
+      form.setValue("description", suggestion.name, { shouldValidate: true });
       setShowSuggestions(false);
     },
     [form],
@@ -239,20 +285,35 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     [form],
   );
 
+  // Reset the highlight to the first row whenever the result set changes.
+  useEffect(() => {
+    setDescriptionActiveIndex(0);
+  }, [similarItems]);
+
   const handleDescriptionKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
         setShowSuggestions(false);
-      } else if (e.key === "ArrowDown" && isSuggestionsOpen) {
+        return;
+      }
+      if (!isSuggestionsOpen) return;
+      const count = similarItems?.length ?? 0;
+      if (e.key === "ArrowDown") {
         e.preventDefault();
-        const list = document.getElementById(suggestionsListId);
-        const firstItem = list?.querySelector(
-          "[cmdk-item]",
-        ) as HTMLElement | null;
-        firstItem?.focus();
+        setDescriptionActiveIndex((i) => Math.min(i + 1, count - 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setDescriptionActiveIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === "Enter") {
+        const suggestion = similarItems?.[descriptionActiveIndex];
+        if (suggestion) {
+          // Prevent the form from submitting — Enter picks the suggestion.
+          e.preventDefault();
+          applySuggestion(suggestion);
+        }
       }
     },
-    [isSuggestionsOpen, suggestionsListId],
+    [isSuggestionsOpen, similarItems, descriptionActiveIndex, applySuggestion],
   );
 
   const handleAdd = useCallback(
@@ -273,10 +334,13 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
         description: "",
         quantity: 1,
         unitPrice: 0,
-        category: values.category,
+        category: "",
         subcategory: "",
       });
       setShowSuggestions(false);
+      setShowItemCodeSuggestions(false);
+      // Return focus to the item code field for the next entry.
+      setTimeout(() => itemCodeInputRef.current?.focus(), 0);
     },
     [form, items, onChange],
   );
@@ -293,7 +357,37 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     description: string;
     quantity: number;
     unitPrice: number;
-  }>({ description: "", quantity: 1, unitPrice: 0 });
+    category: string;
+    subcategory: string;
+  }>({
+    description: "",
+    quantity: 1,
+    unitPrice: 0,
+    category: "",
+    subcategory: "",
+  });
+
+  // Subcategory options for the row currently being edited.
+  const editCategoryObj = useMemo(
+    () =>
+      (
+        (categories as { id: string; name: string }[] | undefined) ?? []
+      ).find((c) => c.name === editDraft.category),
+    [categories, editDraft.category],
+  );
+
+  const { data: editSubcategories } = useSubcategoriesByCategoryId(
+    editCategoryObj?.id ?? "",
+    0, 200, undefined, undefined, true,
+  );
+
+  const editSubcategoryOptions = useMemo(
+    () =>
+      (
+        (editSubcategories as { id: string; name: string }[] | undefined) ?? []
+      ).map((s) => ({ value: s.name, label: s.name })),
+    [editSubcategories],
+  );
 
   const startEditing = useCallback((item: ReceiptLineItem) => {
     setEditingItemId(item.id);
@@ -301,6 +395,8 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
+      category: item.category,
+      subcategory: item.subcategory,
     });
   }, []);
 
@@ -311,6 +407,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
   const saveEditing = useCallback(() => {
     if (!editingItemId) return;
     if (!editDraft.description.trim()) return;
+    if (!editDraft.category.trim()) return;
     if (!Number.isFinite(editDraft.quantity) || editDraft.quantity <= 0) return;
     if (!Number.isFinite(editDraft.unitPrice) || editDraft.unitPrice < 0) return;
 
@@ -322,12 +419,24 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
               description: editDraft.description.trim(),
               quantity: editDraft.quantity,
               unitPrice: editDraft.unitPrice,
+              category: editDraft.category,
+              subcategory: editDraft.subcategory,
             }
           : item,
       ),
     );
     setEditingItemId(null);
   }, [editingItemId, editDraft, items, onChange]);
+
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        saveEditing();
+      }
+    },
+    [saveEditing],
+  );
 
   // Clear stale editing state when the edited item is removed externally
   useEffect(() => {
@@ -374,6 +483,17 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                               aria-controls={itemCodeSuggestionsListId}
                               autoComplete="off"
                               {...field}
+                              ref={(el) => {
+                                field.ref(el);
+                                itemCodeInputRef.current = el;
+                              }}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                // Re-open the lookup on every keystroke
+                                // (including backspace) so the search keeps
+                                // firing without needing to blur and refocus.
+                                setShowItemCodeSuggestions(true);
+                              }}
                               onFocus={() => setShowItemCodeSuggestions(true)}
                               onKeyDown={handleItemCodeKeyDown}
                             />
@@ -392,13 +512,20 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                         onOpenAutoFocus={(e) => e.preventDefault()}
                         onInteractOutside={() => setShowItemCodeSuggestions(false)}
                       >
-                        <Command shouldFilter={false}>
+                        <Command
+                          shouldFilter={false}
+                          value={`idx-${itemCodeActiveIndex}`}
+                          onValueChange={(v) => {
+                            const n = Number(v.replace("idx-", ""));
+                            if (!Number.isNaN(n)) setItemCodeActiveIndex(n);
+                          }}
+                        >
                           <CommandList id={itemCodeSuggestionsListId}>
                             <CommandEmpty>No suggestions found</CommandEmpty>
-                            {itemCodeSuggestions?.map((suggestion) => (
+                            {itemCodeSuggestions?.map((suggestion, index) => (
                               <CommandItem
                                 key={`${suggestion.itemCode}-${suggestion.matchType}`}
-                                value={`${suggestion.itemCode} ${suggestion.description}`}
+                                value={`idx-${index}`}
                                 onSelect={() => applyItemCodeSuggestion(suggestion)}
                               >
                                 <div className="flex w-full items-center justify-between">
@@ -458,6 +585,10 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                               aria-controls={suggestionsListId}
                               autoComplete="off"
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setShowSuggestions(true);
+                              }}
                               onFocus={() => setShowSuggestions(true)}
                               onKeyDown={handleDescriptionKeyDown}
                             />
@@ -476,13 +607,20 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                         onOpenAutoFocus={(e) => e.preventDefault()}
                         onInteractOutside={() => setShowSuggestions(false)}
                       >
-                        <Command shouldFilter={false}>
+                        <Command
+                          shouldFilter={false}
+                          value={`idx-${descriptionActiveIndex}`}
+                          onValueChange={(v) => {
+                            const n = Number(v.replace("idx-", ""));
+                            if (!Number.isNaN(n)) setDescriptionActiveIndex(n);
+                          }}
+                        >
                           <CommandList id={suggestionsListId}>
                             <CommandEmpty>No similar items found</CommandEmpty>
-                            {similarItems?.map((item) => (
+                            {similarItems?.map((item, index) => (
                               <CommandItem
                                 key={`${item.name}-${item.source}`}
-                                value={`${item.name} ${item.source}`}
+                                value={`idx-${index}`}
                                 onSelect={() => applySuggestion(item)}
                               >
                                 <div className="flex w-full items-center justify-between">
@@ -584,35 +722,14 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                       <Combobox
                         options={subcategoryOptions}
                         value={field.value ?? ""}
-                        onValueChange={(v: string) => {
-                          field.onChange(v);
-                          const isExisting = subcategoryOptions.some(
-                            (o) => o.value === v,
-                          );
-                          if (
-                            !isExisting &&
-                            v &&
-                            selectedCategoryObj?.id &&
-                            !pendingSubcategories.current.has(v)
-                          ) {
-                            pendingSubcategories.current.add(v);
-                            createSubcategory.mutate(
-                              {
-                                categoryId: selectedCategoryObj.id,
-                                name: v,
-                                isActive: true,
-                              },
-                              {
-                                onSettled: () => {
-                                  pendingSubcategories.current.delete(v);
-                                },
-                                onError: () => {
-                                  field.onChange("");
-                                },
-                              },
-                            );
-                          }
-                        }}
+                        onValueChange={(v: string) =>
+                          handleSubcategorySelect(
+                            v,
+                            selectedCategoryObj?.id,
+                            subcategoryOptions,
+                            field.onChange,
+                          )
+                        }
                         placeholder="Select subcategory..."
                         searchPlaceholder="Search subcategories..."
                         emptyMessage="No subcategories found."
@@ -632,13 +749,12 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                   <FormItem>
                     <FormLabel required>Qty</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        step="any"
-                        min="0.01"
+                      <DecimalInput
                         className="w-20"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        name={field.name}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
                       />
                     </FormControl>
                     <FormMessage />
@@ -674,7 +790,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
+                <TableHead className="min-w-[16ch]">Description</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Unit Price</TableHead>
                 <TableHead>Line Total</TableHead>
@@ -688,7 +804,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
               {items.map((item) =>
                 editingItemId === item.id ? (
                   <TableRow key={item.id}>
-                    <TableCell>
+                    <TableCell className="max-w-[32ch]">
                       <Input
                         value={editDraft.description}
                         onChange={(e) =>
@@ -697,22 +813,18 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                             description: e.target.value,
                           }))
                         }
+                        onKeyDown={handleEditKeyDown}
                         aria-label="Edit description"
                         className="h-8"
                       />
                     </TableCell>
                     <TableCell>
-                      <Input
-                        type="number"
-                        step="any"
-                        min="0.01"
+                      <DecimalInput
                         value={editDraft.quantity}
-                        onChange={(e) =>
-                          setEditDraft((d) => ({
-                            ...d,
-                            quantity: Number(e.target.value),
-                          }))
+                        onChange={(v) =>
+                          setEditDraft((d) => ({ ...d, quantity: v }))
                         }
+                        onKeyDown={handleEditKeyDown}
                         aria-label="Edit quantity"
                         className="h-8 w-20"
                         disabled={item.pricingMode === "flat"}
@@ -724,6 +836,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                         onChange={(v) =>
                           setEditDraft((d) => ({ ...d, unitPrice: v }))
                         }
+                        onKeyDown={handleEditKeyDown}
                         aria-label="Edit unit price"
                         className="h-8"
                       />
@@ -732,8 +845,47 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                       {formatCurrency(editDraft.quantity * editDraft.unitPrice)}
                     </TableCell>
                     <TableCell>
-                      {item.category}
-                      {item.subcategory ? ` / ${item.subcategory}` : ""}
+                      <div className="flex min-w-[12rem] flex-col gap-1">
+                        <Combobox
+                          options={categoryOptions}
+                          value={editDraft.category}
+                          onValueChange={(v) =>
+                            setEditDraft((d) => ({
+                              ...d,
+                              category: v,
+                              subcategory: "",
+                            }))
+                          }
+                          placeholder="Category..."
+                          searchPlaceholder="Search categories..."
+                          emptyMessage="No categories found."
+                          className="h-8"
+                          aria-label="Edit category"
+                        />
+                        <Combobox
+                          options={editSubcategoryOptions}
+                          value={editDraft.subcategory}
+                          onValueChange={(v) =>
+                            handleSubcategorySelect(
+                              v,
+                              editCategoryObj?.id,
+                              editSubcategoryOptions,
+                              (next) =>
+                                setEditDraft((d) => ({
+                                  ...d,
+                                  subcategory: next,
+                                })),
+                            )
+                          }
+                          placeholder="Subcategory..."
+                          searchPlaceholder="Search subcategories..."
+                          emptyMessage="No subcategories found."
+                          allowCustom
+                          disabled={!editDraft.category}
+                          className="h-8"
+                          aria-label="Edit subcategory"
+                        />
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -758,7 +910,9 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                   </TableRow>
                 ) : (
                   <TableRow key={item.id}>
-                    <TableCell>{item.description}</TableCell>
+                    <TableCell className="whitespace-normal break-words max-w-[32ch]">
+                      {item.description}
+                    </TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
                     <TableCell>

@@ -1,12 +1,12 @@
 using Application.Interfaces.Services;
 using Application.Models;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Core.Transaction;
 
 public class GetAllTransactionsQueryHandler(ITransactionService transactionService) : IRequestHandler<GetAllTransactionsQuery, PagedResult<Domain.Core.Transaction>>
 {
-	public async Task<PagedResult<Domain.Core.Transaction>> Handle(GetAllTransactionsQuery request, CancellationToken cancellationToken)
+	public async ValueTask<PagedResult<Domain.Core.Transaction>> Handle(GetAllTransactionsQuery request, CancellationToken cancellationToken)
 	{
 		return await transactionService.GetAllAsync(request.Offset, request.Limit, request.Sort, cancellationToken);
 	}

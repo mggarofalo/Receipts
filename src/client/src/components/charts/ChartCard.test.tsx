@@ -28,7 +28,11 @@ describe("ChartCard", () => {
         <div>Content</div>
       </ChartCard>,
     );
-    expect(screen.getByLabelText("Loading")).toBeInTheDocument();
+    const status = screen.getByRole("status");
+    expect(status).toBeInTheDocument();
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
     expect(screen.queryByText("Content")).not.toBeInTheDocument();
   });
 
@@ -60,5 +64,42 @@ describe("ChartCard", () => {
     expect(
       screen.getByRole("button", { name: "Action" }),
     ).toBeInTheDocument();
+  });
+
+  // Accessibility tests
+  it("assigns an id to the CardTitle element", () => {
+    renderWithProviders(
+      <ChartCard title="Spending Overview">
+        <div>Chart content</div>
+      </ChartCard>,
+    );
+    // The title should have an id so chart children can reference it via aria-labelledby
+    const titleEl = screen.getByText("Spending Overview");
+    expect(titleEl).toHaveAttribute("id");
+    expect(titleEl.getAttribute("id")).not.toBe("");
+  });
+
+  it("passes titleId to render-prop children", () => {
+    let capturedId = "";
+    renderWithProviders(
+      <ChartCard title="My Chart">
+        {(titleId) => {
+          capturedId = titleId;
+          return <div aria-labelledby={titleId}>chart</div>;
+        }}
+      </ChartCard>,
+    );
+    expect(capturedId).not.toBe("");
+    const titleEl = screen.getByText("My Chart");
+    expect(titleEl).toHaveAttribute("id", capturedId);
+  });
+
+  it("renders regular ReactNode children without render-prop pattern", () => {
+    renderWithProviders(
+      <ChartCard title="Title">
+        <span data-testid="plain-child">plain</span>
+      </ChartCard>,
+    );
+    expect(screen.getByTestId("plain-child")).toBeInTheDocument();
   });
 });

@@ -5,7 +5,7 @@ using API.Mapping.Core;
 using Application.Queries.Aggregates.ReceiptsWithItems;
 using Domain.Aggregates;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Moq;

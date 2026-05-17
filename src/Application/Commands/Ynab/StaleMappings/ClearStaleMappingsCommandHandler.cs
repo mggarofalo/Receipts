@@ -1,6 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Ynab.StaleMappings;
 
@@ -9,7 +9,7 @@ public class ClearStaleMappingsCommandHandler(
 	IYnabAccountMappingService accountMappingService,
 	IYnabCategoryMappingService categoryMappingService) : IRequestHandler<ClearStaleMappingsCommand, ClearStaleMappingsResult>
 {
-	public async Task<ClearStaleMappingsResult> Handle(ClearStaleMappingsCommand request, CancellationToken cancellationToken)
+	public async ValueTask<ClearStaleMappingsResult> Handle(ClearStaleMappingsCommand request, CancellationToken cancellationToken)
 	{
 		string? currentBudgetId = await budgetSelectionService.GetSelectedBudgetIdAsync(cancellationToken);
 

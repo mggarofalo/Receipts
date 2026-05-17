@@ -132,9 +132,10 @@ function Categories() {
   const highlightMissing =
     linkParams.highlight && data.length > 0 && !data.some((c) => c.id === linkParams.highlight);
 
-  const { focusedId, setFocusedIndex, tableRef } = useListKeyboardNav({
+  const { focusedId, setFocusedIndex, tableRef, containerProps, getRowProps } = useListKeyboardNav({
     items: filteredResults,
     getId: (a) => a.id,
+    listId: "categories",
     enabled: !anyDialogOpen,
     onOpen: (a) => setEditCategory(a),
   });
@@ -183,7 +184,7 @@ function Categories() {
             entityName="categories"
           />
         ) : (
-          <div className="py-12 text-center text-muted-foreground">
+          <div role="status" className="py-12 text-center text-muted-foreground">
             No categories yet. Create one to get started.
           </div>
         )
@@ -197,7 +198,7 @@ function Categories() {
             onPageChange={(page) => setPage(page, serverTotal)}
             onPageSizeChange={setPageSize}
           />
-          <div className="rounded-md border" ref={tableRef}>
+          <div className="rounded-md border" ref={tableRef} {...containerProps}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -215,6 +216,7 @@ function Categories() {
                   return (
                     <TableRow
                       key={category.id}
+                      {...getRowProps(category.id)}
                       className={`cursor-pointer ${focusedId === category.id ? "bg-accent" : ""} ${linkParams.highlight === category.id ? "ring-2 ring-primary" : ""}`}
                       onClick={(e) => {
                         if (

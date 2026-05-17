@@ -80,7 +80,10 @@ describe("SpendingByCategoryWidget", () => {
     renderWithQueryClient(
       <SpendingByCategoryWidget dateRange={dateRange} />,
     );
-    expect(screen.getByLabelText("Loading")).toBeInTheDocument();
+    const status = screen.getByRole("status");
+    expect(status).toBeInTheDocument();
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
   });
 
   it("shows empty state when no data", () => {

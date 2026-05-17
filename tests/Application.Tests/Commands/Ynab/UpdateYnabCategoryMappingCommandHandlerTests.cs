@@ -1,6 +1,6 @@
 using Application.Commands.Ynab.CategoryMapping;
 using Application.Interfaces.Services;
-using MediatR;
+using Mediator;
 using Moq;
 
 namespace Application.Tests.Commands.Ynab;

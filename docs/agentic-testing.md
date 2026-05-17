@@ -92,17 +92,17 @@ Every page component must have a corresponding test that:
 
 ### What to test
 
-- **MediatR handlers** (commands and queries). These are the core business logic. Test each handler with realistic inputs, edge cases, and error conditions.
+- **Mediator handlers** (commands and queries). These are the core business logic. Test each handler with realistic inputs, edge cases, and error conditions.
 - **Mappers.** Use concrete Mapperly mapper instances (never mock them). Verify all fields map correctly, especially fields with transformations.
 - **Validators.** Test both valid and invalid inputs. Test boundary conditions.
 - **Services** with business logic. Test the logic, mock the repository.
-- **Controllers** only if they contain logic beyond delegation. Thin controllers that just call MediatR don't need direct tests.
+- **Controllers** only if they contain logic beyond delegation. Thin controllers that just call Mediator don't need direct tests.
 
 ### What NOT to test
 
 - Auto-generated code (migrations, NSwag DTOs)
 - Trivial property getters/setters
-- Framework behavior (does EF Core save correctly? does MediatR dispatch?)
+- Framework behavior (does EF Core save correctly? does Mediator dispatch?)
 
 ## The Agent Contract
 

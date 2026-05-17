@@ -10,7 +10,7 @@ using Application.Queries.Core.Account;
 using Application.Queries.Core.Card;
 using Asp.Versioning;
 using Domain.Core;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

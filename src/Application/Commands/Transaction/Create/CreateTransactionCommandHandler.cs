@@ -2,7 +2,7 @@ using Application.Interfaces.Services;
 using Domain.Aggregates;
 using FluentValidation;
 using FluentValidation.Results;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Transaction.Create;
 
@@ -12,7 +12,7 @@ public class CreateTransactionCommandHandler(
 	IReceiptItemService receiptItemService,
 	IAdjustmentService adjustmentService) : IRequestHandler<CreateTransactionCommand, List<Domain.Core.Transaction>>
 {
-	public async Task<List<Domain.Core.Transaction>> Handle(CreateTransactionCommand request, CancellationToken cancellationToken)
+	public async ValueTask<List<Domain.Core.Transaction>> Handle(CreateTransactionCommand request, CancellationToken cancellationToken)
 	{
 		Task<Domain.Core.Receipt?> receiptTask = receiptService.GetByIdAsync(request.ReceiptId, cancellationToken);
 		Task<Models.PagedResult<Domain.Core.ReceiptItem>> itemsTask = receiptItemService.GetByReceiptIdAsync(request.ReceiptId, 0, int.MaxValue, Models.SortParams.Default, cancellationToken);

@@ -14,13 +14,16 @@
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.16.0" />
     <PackageVersion Include="Riok.Mapperly" Version="4.2.0" />
     <PackageVersion Include="Sdcb.PaddleInference" Version="3.0.1" />
+    <PackageVersion Include="Sdcb.PaddleInference.runtime.linux-x64.openblas" Version="3.1.0.54" />
+    <PackageVersion Include="Sdcb.PaddleInference.runtime.win64.mkl" Version="3.1.0.54" />
     <PackageVersion Include="Sdcb.PaddleOCR" Version="3.0.1" />
     <PackageVersion Include="Sdcb.PaddleOCR.Models.Local" Version="3.0.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="FluentAssertions" Version="8.2.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    <PackageVersion Include="MediatR" Version="14.0.0" />
+    <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
+    <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.1" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.5" />
@@ -31,6 +34,7 @@
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.1.0" />
     <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.24.3" />
     <PackageVersion Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
@@ -42,6 +46,25 @@
     <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
     <PackageVersion Include="NJsonSchema" Version="11.5.2" />
     <PackageVersion Include="NSwag.MSBuild" Version="14.6.3" />
+    <PackageVersion Include="OpenCvSharp4.Official.runtime.linux-x64" Version="4.11.0.20250507" />
+    <PackageVersion Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
+    <!--
+      OpenTelemetry CPM pins (RECEIPTS-680). The only project that currently references these
+      directly is Receipts.ServiceDefaults, which opts out of CPM (ManagePackageVersionsCentrally=false)
+      and so pins versions inline. These CPM entries are forward-looking guards: if any other
+      project (e.g. a future Worker / Function / tool) starts directly referencing the OTel
+      packages, CPM will force them onto the patched versions instead of the older 1.14.x/1.15.0
+      transitives. Keep these aligned with the inline versions in ServiceDefaults.csproj.
+      Advisories: OpenTelemetry.Api → GHSA-g94r-2vxg-569j;
+      OpenTelemetry.Exporter.OpenTelemetryProtocol → GHSA-4625-4j76-fww9, GHSA-mr8r-92fq-pj8p,
+      GHSA-q834-8qmm-v933.
+    -->
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <!-- Pinned for security: GHSA-37gx-xxp4-5rgx, GHSA-w3x6-4m5h-cxqf (RECEIPTS-680). Forced
+         into Infrastructure.csproj via a direct PackageReference so CPM resolves the patched
+         transitive. -->
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.6" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />

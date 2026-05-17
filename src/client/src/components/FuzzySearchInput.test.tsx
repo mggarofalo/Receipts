@@ -83,4 +83,54 @@ describe("FuzzySearchInput", () => {
     );
     expect(screen.queryByText("Ctrl+K")).not.toBeInTheDocument();
   });
+
+  it("forwards aria-label to the underlying input element", () => {
+    render(
+      <FuzzySearchInput
+        {...defaultProps}
+        aria-label="Search accounts"
+      />,
+    );
+    expect(
+      screen.getByRole("textbox", { name: "Search accounts" }),
+    ).toBeInTheDocument();
+  });
+
+  it("forwards id to the underlying input element", () => {
+    render(
+      <FuzzySearchInput
+        {...defaultProps}
+        id="accounts-search"
+      />,
+    );
+    expect(document.getElementById("accounts-search")).not.toBeNull();
+  });
+
+  it("announces result count via aria-live region when filtering", () => {
+    render(
+      <FuzzySearchInput
+        {...defaultProps}
+        value="test"
+        resultCount={3}
+        totalCount={57}
+      />,
+    );
+    // The live region should contain the announcement text
+    const liveRegion = document.querySelector("[aria-live='polite']");
+    expect(liveRegion).not.toBeNull();
+    expect(liveRegion?.textContent).toBe("3 of 57 results");
+  });
+
+  it("clears aria-live region when search value is empty", () => {
+    render(
+      <FuzzySearchInput
+        {...defaultProps}
+        value=""
+        resultCount={3}
+        totalCount={57}
+      />,
+    );
+    const liveRegion = document.querySelector("[aria-live='polite']");
+    expect(liveRegion?.textContent).toBe("");
+  });
 });

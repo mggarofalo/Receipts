@@ -39,8 +39,9 @@ describe("SpendingByStoreWidget", () => {
 
     renderWithQueryClient(<SpendingByStoreWidget dateRange={dateRange} />);
     expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
-    expect(screen.getByText("Walmart")).toBeInTheDocument();
-    expect(screen.getByText("Target")).toBeInTheDocument();
+    // Location names appear in both the sr-only chart data table and the visible summary table
+    expect(screen.getAllByText("Walmart").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Target").length).toBeGreaterThan(0);
   });
 
   it("shows loading state", () => {
@@ -50,7 +51,10 @@ describe("SpendingByStoreWidget", () => {
     } as unknown as ReturnType<typeof useDashboardSpendingByStore>);
 
     renderWithQueryClient(<SpendingByStoreWidget dateRange={dateRange} />);
-    expect(screen.getByLabelText("Loading")).toBeInTheDocument();
+    const status = screen.getByRole("status");
+    expect(status).toBeInTheDocument();
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
   });
 
   it("shows empty state when no data", () => {

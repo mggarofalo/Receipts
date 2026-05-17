@@ -1,7 +1,7 @@
 using API.Services;
 using Application.Commands.Trash.Purge;
 using Asp.Versioning;
-using MediatR;
+using Mediator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

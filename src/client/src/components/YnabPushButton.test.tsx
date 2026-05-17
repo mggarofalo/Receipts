@@ -174,4 +174,53 @@ describe("YnabPushButton", () => {
     expect(screen.getByText(/pushing to ynab/i)).toBeInTheDocument();
     expect(screen.getByRole("button")).toBeDisabled();
   });
+
+  it("wraps push results in an aria-live polite region for screen-reader announcements", async () => {
+    const ynab = await import("@/hooks/useYnab");
+    vi.mocked(ynab.usePushYnabTransactions).mockReturnValue(
+      mockMutationResult({
+        mutate: mockPushMutate,
+        data: {
+          success: true,
+          pushedTransactions: [
+            { localTransactionId: "tx-1", ynabTransactionId: "y-1", milliunits: -5000, subTransactionCount: 1 },
+          ],
+          error: null,
+          unmappedCategories: [],
+        },
+      }),
+    );
+
+    renderWithProviders(<YnabPushButton receiptId="r1" hasTransactions={true} />);
+
+    const liveRegion = document.querySelector("[aria-live='polite']");
+    expect(liveRegion).not.toBeNull();
+    expect(liveRegion).toHaveAttribute("aria-atomic", "true");
+    // Success message is inside the live region
+    expect(liveRegion).toHaveTextContent(/transaction.*pushed/i);
+  });
+
+  it("renders error alerts with role=alert inside the live region on push failure", async () => {
+    const ynab = await import("@/hooks/useYnab");
+    vi.mocked(ynab.usePushYnabTransactions).mockReturnValue(
+      mockMutationResult({
+        mutate: mockPushMutate,
+        data: {
+          success: false,
+          pushedTransactions: [],
+          error: "Server error",
+          unmappedCategories: [],
+        },
+      }),
+    );
+
+    renderWithProviders(<YnabPushButton receiptId="r1" hasTransactions={true} />);
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toBeInTheDocument();
+    expect(alert).toHaveTextContent("Server error");
+    // The alert should be inside the aria-live region
+    const liveRegion = document.querySelector("[aria-live='polite']");
+    expect(liveRegion?.contains(alert)).toBe(true);
+  });
 });

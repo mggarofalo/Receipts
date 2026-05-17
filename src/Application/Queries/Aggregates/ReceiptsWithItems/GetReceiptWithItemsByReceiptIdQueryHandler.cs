@@ -1,6 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Aggregates.ReceiptsWithItems;
 
@@ -10,7 +10,7 @@ public class GetReceiptWithItemsByReceiptIdQueryHandler(
 	IAdjustmentService adjustmentService
 ) : IRequestHandler<GetReceiptWithItemsByReceiptIdQuery, Domain.Aggregates.ReceiptWithItems?>
 {
-	public async Task<Domain.Aggregates.ReceiptWithItems?> Handle(GetReceiptWithItemsByReceiptIdQuery request, CancellationToken cancellationToken)
+	public async ValueTask<Domain.Aggregates.ReceiptWithItems?> Handle(GetReceiptWithItemsByReceiptIdQuery request, CancellationToken cancellationToken)
 	{
 		Domain.Core.Receipt? receipt = await receiptService.GetByIdAsync(request.ReceiptId, cancellationToken);
 

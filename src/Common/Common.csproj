@@ -5,6 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Rename the output to avoid a case-insensitive collision with Paddle's
+         native common.dll on Windows. Sdcb.PaddleInference's loader probes
+         the assembly directory first, and Windows treats Common.dll and
+         common.dll as the same file. -->
+    <AssemblyName>Receipts.Common</AssemblyName>
+    <RootNamespace>Common</RootNamespace>
   </PropertyGroup>
 
 </Project>

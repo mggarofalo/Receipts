@@ -122,7 +122,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          # BGE-large ONNX model (~1.34 GB) is mmap'd into the singleton
+          # InferenceSession; keep headroom for .NET runtime + request load.
+          memory: 3G
           cpus: "2"
     cap_drop:
       - ALL

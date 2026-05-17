@@ -1,11 +1,11 @@
 using Application.Interfaces.Services;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Card.Delete;
 
 public class DeleteCardCommandHandler(ICardService cardService) : IRequestHandler<DeleteCardCommand, bool>
 {
-	public async Task<bool> Handle(DeleteCardCommand request, CancellationToken cancellationToken)
+	public async ValueTask<bool> Handle(DeleteCardCommand request, CancellationToken cancellationToken)
 	{
 		bool exists = await cardService.ExistsAsync(request.Id, cancellationToken);
 		if (!exists)

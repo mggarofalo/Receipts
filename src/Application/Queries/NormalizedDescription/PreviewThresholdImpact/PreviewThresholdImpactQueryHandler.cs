@@ -1,13 +1,13 @@
 using Application.Interfaces.Services;
 using Application.Models.NormalizedDescriptions;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.NormalizedDescription.PreviewThresholdImpact;
 
 public class PreviewThresholdImpactQueryHandler(INormalizedDescriptionService service)
 	: IRequestHandler<PreviewThresholdImpactQuery, ThresholdImpactPreview>
 {
-	public async Task<ThresholdImpactPreview> Handle(PreviewThresholdImpactQuery request, CancellationToken cancellationToken)
+	public async ValueTask<ThresholdImpactPreview> Handle(PreviewThresholdImpactQuery request, CancellationToken cancellationToken)
 	{
 		return await service.PreviewThresholdImpactAsync(
 			request.AutoAcceptThreshold,

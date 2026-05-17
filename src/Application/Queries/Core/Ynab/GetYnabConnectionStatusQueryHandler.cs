@@ -1,6 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Queries.Core.Ynab;
 
@@ -8,7 +8,7 @@ public class GetYnabConnectionStatusQueryHandler(
 	IYnabApiClient ynabApiClient,
 	IYnabSyncRecordService syncRecordService) : IRequestHandler<GetYnabConnectionStatusQuery, YnabConnectionStatus>
 {
-	public async Task<YnabConnectionStatus> Handle(GetYnabConnectionStatusQuery request, CancellationToken cancellationToken)
+	public async ValueTask<YnabConnectionStatus> Handle(GetYnabConnectionStatusQuery request, CancellationToken cancellationToken)
 	{
 		bool isConfigured = ynabApiClient.IsConfigured;
 

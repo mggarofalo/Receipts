@@ -1,7 +1,7 @@
 using Application.Commands.Ynab.AccountMapping;
 using Application.Interfaces.Services;
 using FluentAssertions;
-using MediatR;
+using Mediator;
 using Moq;
 
 namespace Application.Tests.Commands.Ynab;

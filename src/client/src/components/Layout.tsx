@@ -390,8 +390,11 @@ export function Layout() {
       </header>
 
       {navigation.state === "loading" && (
-        <div className="h-0.5 w-full overflow-hidden bg-muted">
-          <div className="h-full w-1/3 animate-pulse bg-primary" />
+        <div role="status" aria-live="polite" aria-busy="true">
+          <span className="sr-only">Loading page…</span>
+          <div aria-hidden="true" className="h-0.5 w-full overflow-hidden bg-muted">
+            <div className="h-full w-1/3 animate-pulse bg-primary" />
+          </div>
         </div>
       )}
 

@@ -1,6 +1,6 @@
 using Application.Interfaces.Services;
 using Application.Models.Ynab;
-using MediatR;
+using Mediator;
 
 namespace Application.Commands.Ynab.PushTransactions;
 
@@ -9,7 +9,7 @@ public class BulkPushYnabTransactionsCommandHandler(IMediator mediator, IYnabRat
 	// Conservative estimate: each receipt push uses ~2 YNAB API calls
 	private const int EstimatedRequestsPerReceipt = 2;
 
-	public async Task<BulkPushYnabTransactionsResult> Handle(BulkPushYnabTransactionsCommand request, CancellationToken cancellationToken)
+	public async ValueTask<BulkPushYnabTransactionsResult> Handle(BulkPushYnabTransactionsCommand request, CancellationToken cancellationToken)
 	{
 		int estimatedRequests = request.ReceiptIds.Count * EstimatedRequestsPerReceipt;
 		if (!rateLimitTracker.CanMakeRequests(estimatedRequests))

@@ -160,6 +160,8 @@ export function YnabMemoSyncCard({ receiptId }: YnabMemoSyncCardProps) {
 
         {results && results.length > 0 && (
           <CardContent>
+            {/* aria-live region so screen readers announce memo sync outcomes */}
+            <div aria-live="polite" aria-atomic="true">
             {summary && (
               <div className="mb-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
                 {summary.synced > 0 && (
@@ -190,6 +192,7 @@ export function YnabMemoSyncCard({ receiptId }: YnabMemoSyncCardProps) {
                 )}
               </div>
             )}
+            </div>
 
             <div className="space-y-2">
               {results.map((result) => (

@@ -11,16 +11,11 @@ public static class ApplicationService
 {
 	public static IServiceCollection RegisterApplicationServices(this IServiceCollection services, IConfiguration configuration)
 	{
-		services.AddMediatR(cfg =>
+		services.AddMediator(opts =>
 		{
-			string? licenseKey = configuration["MediatR:LicenseKey"];
-			if (!string.IsNullOrEmpty(licenseKey))
-			{
-				cfg.LicenseKey = licenseKey;
-			}
-			cfg.RegisterServicesFromAssembly(typeof(ICommand<>).Assembly);
-			cfg.RegisterServicesFromAssembly(typeof(IQuery<>).Assembly);
-			cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+			opts.ServiceLifetime = ServiceLifetime.Scoped;
+			opts.Assemblies = [typeof(ICommand<>)];
+			opts.PipelineBehaviors = [typeof(ValidationBehavior<,>)];
 		});
 
 		// Receipt parsing services (store-specific first, generic fallback last)

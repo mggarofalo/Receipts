@@ -398,4 +398,56 @@ describe("ReceiptTransactionsCard", () => {
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(mockDeleteMutate).not.toHaveBeenCalled();
   });
+
+  it("account name is wrapped in a block span with max-w-[32ch] so the cap is effective (CSS §17.5.2)", () => {
+    // max-width on a <td> is inert under table-layout:auto — the constraint must be
+    // on a block-level child element where max-width actually applies.
+    const longAccountName = "A".repeat(200);
+    const transactionsWithLongName = [
+      {
+        transaction: { id: "txn-long-1", amount: 50.0, date: "2024-01-15", cardId: null },
+        account: {
+          id: "acc-long-1",
+          name: longAccountName,
+          isActive: true,
+        },
+      },
+    ];
+    renderWithQueryClient(
+      <ReceiptTransactionsCard
+        receiptId="receipt-1"
+        transactions={transactionsWithLongName}
+        transactionsTotal={50.0}
+      />,
+    );
+    // The text node must be inside a <span> (not a bare <td>) so max-w applies.
+    const nameEl = screen.getByText(longAccountName);
+    expect(nameEl.tagName.toLowerCase()).toBe("span");
+    expect(nameEl).toHaveClass("block");
+    expect(nameEl).toHaveClass("max-w-[32ch]");
+    expect(nameEl).toHaveClass("break-words");
+    expect(nameEl).toHaveClass("whitespace-normal");
+    // The parent must still be a table cell — structural check.
+    const cell = nameEl.closest("td");
+    expect(cell).not.toBeNull();
+  });
+
+  it("table wrapper has overflow-x-auto to contain horizontal overflow within the widget (WCAG 1.4.10)", () => {
+    renderWithQueryClient(
+      <ReceiptTransactionsCard
+        receiptId="receipt-1"
+        transactions={mockTransactions}
+        transactionsTotal={75.5}
+      />,
+    );
+    const table = screen.getByRole("table");
+    // Use .rounded-md to reach the outer wrapper div
+    // ("overflow-x-auto rounded-md border") rather than the Table
+    // component's internal container div (data-slot="table-container",
+    // "relative w-full overflow-x-auto"), which always carries
+    // overflow-x-auto regardless of whether the outer wrapper does.
+    const wrapper = table.closest(".rounded-md");
+    expect(wrapper).not.toBeNull();
+    expect(wrapper).toHaveClass("overflow-x-auto");
+  });
 });
