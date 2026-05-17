@@ -1,3 +1,4 @@
+import { useId } from "react";
 import {
   Card,
   CardContent,
@@ -17,7 +18,7 @@ interface ChartCardProps {
   empty?: boolean;
   emptyMessage?: string;
   action?: ReactNode;
-  children: ReactNode;
+  children: ReactNode | ((titleId: string) => ReactNode);
   className?: string;
 }
 
@@ -31,11 +32,13 @@ export function ChartCard({
   children,
   className,
 }: ChartCardProps) {
+  const titleId = useId();
+
   return (
     <Card className={cn("flex flex-col", className)}>
       <CardHeader>
         <div>
-          <CardTitle>{title}</CardTitle>
+          <CardTitle id={titleId}>{title}</CardTitle>
           {subtitle && <CardDescription>{subtitle}</CardDescription>}
         </div>
         {action && <CardAction>{action}</CardAction>}
@@ -51,6 +54,8 @@ export function ChartCard({
           <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
             {emptyMessage}
           </div>
+        ) : typeof children === "function" ? (
+          children(titleId)
         ) : (
           children
         )}

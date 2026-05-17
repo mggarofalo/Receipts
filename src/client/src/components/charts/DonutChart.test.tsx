@@ -54,4 +54,56 @@ describe("DonutChart", () => {
     render(<DonutChart data={[]} />);
     expect(screen.getByTestId("pie")).toHaveAttribute("data-count", "0");
   });
+
+  // Accessibility tests
+  it("renders a visually-hidden data table with all category rows", () => {
+    render(<DonutChart data={mockData} />);
+    const table = document.querySelector("table.sr-only");
+    expect(table).toBeInTheDocument();
+    expect(screen.getByText("Food")).toBeInTheDocument();
+    expect(screen.getByText("Transport")).toBeInTheDocument();
+    expect(screen.getByText("Entertainment")).toBeInTheDocument();
+  });
+
+  it("renders chart container with role=img and accessible name", () => {
+    render(<DonutChart data={mockData} aria-label="Spending by category" />);
+    expect(screen.getByRole("img", { name: "Spending by category" })).toBeInTheDocument();
+  });
+
+  it("uses aria-labelledby when provided", () => {
+    render(
+      <div>
+        <h2 id="donut-title">Categories</h2>
+        <DonutChart data={mockData} aria-labelledby="donut-title" />
+      </div>,
+    );
+    const img = document.querySelector("[role='img']");
+    expect(img).toHaveAttribute("aria-labelledby", "donut-title");
+    expect(img).not.toHaveAttribute("aria-label");
+  });
+
+  it("falls back to a default aria-label when neither aria-label nor aria-labelledby is provided", () => {
+    render(<DonutChart data={mockData} />);
+    expect(screen.getByRole("img", { name: "Donut chart" })).toBeInTheDocument();
+  });
+
+  it("renders formatted values in the data table", () => {
+    render(
+      <DonutChart
+        data={mockData}
+        formatValue={(v) => `$${v.toFixed(2)}`}
+      />,
+    );
+    expect(screen.getByText("$300.00")).toBeInTheDocument();
+    expect(screen.getByText("$200.00")).toBeInTheDocument();
+    expect(screen.getByText("$100.00")).toBeInTheDocument();
+  });
+
+  it("data table identifies each category by name, not color alone", () => {
+    render(<DonutChart data={mockData} />);
+    const table = document.querySelector("table.sr-only");
+    const headers = table?.querySelectorAll("th");
+    expect(headers?.[0]?.textContent).toBe("Category");
+    expect(headers?.[1]?.textContent).toBe("Value");
+  });
 });
