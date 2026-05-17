@@ -26,6 +26,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -369,25 +379,25 @@ function ApiKeys() {
       </Dialog>
 
       {/* Revoke Confirmation Dialog */}
-      <Dialog
+      <AlertDialog
         open={revokeId !== null}
         onOpenChange={(open) => {
           if (!open) setRevokeId(null);
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Revoke API Key</DialogTitle>
-            <DialogDescription>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke API Key</AlertDialogTitle>
+            <AlertDialogDescription>
               This action cannot be undone. The API key will be immediately
               invalidated.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setRevokeId(null)}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRevokeId(null)}>
               Cancel
-            </Button>
-            <Button
+            </AlertDialogCancel>
+            <AlertDialogAction
               variant="destructive"
               disabled={revokeMutation.isPending}
               onClick={() => {
@@ -396,10 +406,10 @@ function ApiKeys() {
             >
               {revokeMutation.isPending && <Spinner size="sm" />}
               {revokeMutation.isPending ? "Revoking..." : "Revoke"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

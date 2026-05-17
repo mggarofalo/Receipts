@@ -13,12 +13,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { DatabaseBackup, Upload, Download, AlertTriangle } from "lucide-react";
@@ -187,46 +190,45 @@ function BackupRestore() {
       </Alert>
 
       {/* Import Confirmation Dialog */}
-      <Dialog
+      <AlertDialog
         open={confirmImportOpen}
         onOpenChange={(open) => {
           if (!importMutation.isPending) setConfirmImportOpen(open);
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-yellow-500" />
               Confirm Import
-            </DialogTitle>
-            <DialogDescription>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
               Importing a backup will update existing records and add new ones.
               This action may modify your current data.
-            </DialogDescription>
-          </DialogHeader>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
           {selectedFile && (
             <p className="text-sm text-muted-foreground">
               File: {selectedFile.name} ({formatFileSize(selectedFile.size)})
             </p>
           )}
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
+          <AlertDialogFooter>
+            <AlertDialogCancel
               onClick={() => setConfirmImportOpen(false)}
               disabled={importMutation.isPending}
             >
               Cancel
-            </Button>
-            <Button
+            </AlertDialogCancel>
+            <AlertDialogAction
               onClick={handleConfirmImport}
               disabled={importMutation.isPending}
             >
               {importMutation.isPending && <Spinner size="sm" />}
               {importMutation.isPending ? "Importing..." : "Confirm Import"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -137,6 +137,77 @@ describe("BackupRestore", () => {
     ).toBeInTheDocument();
   });
 
+  it("import confirmation uses alertdialog role", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithQueryClient(<BackupRestore />);
+
+    const fileInput = document.getElementById("backup-file") as HTMLInputElement;
+    const testFile = new File(["test"], "backup.sqlite", {
+      type: "application/octet-stream",
+    });
+    await user.upload(fileInput, testFile);
+
+    await user.click(
+      screen.getByRole("button", { name: /import backup/i }),
+    );
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+  });
+
+  it("import alertdialog cancel button closes the dialog", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithQueryClient(<BackupRestore />);
+
+    const fileInput = document.getElementById("backup-file") as HTMLInputElement;
+    const testFile = new File(["test"], "backup.sqlite", {
+      type: "application/octet-stream",
+    });
+    await user.upload(fileInput, testFile);
+
+    await user.click(
+      screen.getByRole("button", { name: /import backup/i }),
+    );
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("import alertdialog confirm button calls mutate", async () => {
+    const mockMutate = vi.fn();
+    const { useMutation } = await import("@tanstack/react-query");
+    vi.mocked(useMutation).mockImplementation((() => ({
+      mutate: mockMutate,
+      mutateAsync: vi.fn(),
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    const user = (await import("@testing-library/user-event")).default.setup();
+    renderWithQueryClient(<BackupRestore />);
+
+    const fileInput = document.getElementById("backup-file") as HTMLInputElement;
+    const testFile = new File(["test"], "backup.sqlite", {
+      type: "application/octet-stream",
+    });
+    await user.upload(fileInput, testFile);
+
+    await user.click(
+      screen.getByRole("button", { name: /import backup/i }),
+    );
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /confirm import/i }),
+    );
+
+    expect(mockMutate).toHaveBeenCalled();
+  });
+
   it("closes confirmation dialog when Cancel is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     renderWithQueryClient(<BackupRestore />);
