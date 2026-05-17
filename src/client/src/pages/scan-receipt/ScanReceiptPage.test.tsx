@@ -11,9 +11,7 @@ vi.mock("@/hooks/usePageTitle", () => ({
 const mockMutate = vi.fn();
 
 vi.mock("@/hooks/useReceiptScan", () => ({
-  useReceiptScan: vi.fn(() =>
-    mockMutationResult({ mutate: mockMutate }),
-  ),
+  useReceiptScan: vi.fn(() => mockMutationResult({ mutate: mockMutate })),
 }));
 
 // Mock NewReceiptPage to isolate ScanReceiptPage logic
@@ -32,7 +30,9 @@ vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
         </span>
       )}
       {confidenceMap && (
-        <span data-testid="confidence-map">{JSON.stringify(confidenceMap)}</span>
+        <span data-testid="confidence-map">
+          {JSON.stringify(confidenceMap)}
+        </span>
       )}
     </div>
   ),
@@ -45,6 +45,50 @@ function createTestFile(
 ): File {
   const buffer = new ArrayBuffer(sizeBytes);
   return new File([buffer], name, { type });
+}
+
+/** Drives the full scan-success flow and returns the user instance */
+async function renderAndScan(storeName = "Test Store") {
+  mockMutate.mockImplementation(
+    (_file: File, options: { onSuccess: (data: unknown) => void }) => {
+      options.onSuccess({
+        storeName,
+        storeNameConfidence: "high",
+        date: "2024-06-15",
+        dateConfidence: "high",
+        items: [],
+        subtotal: 0,
+        subtotalConfidence: "high",
+        taxLines: [
+          {
+            label: "Tax",
+            labelConfidence: "high",
+            amount: 0,
+            amountConfidence: "high",
+          },
+        ],
+        total: 0,
+        totalConfidence: "high",
+        paymentMethod: null,
+        paymentMethodConfidence: "high",
+        rawOcrText: "TEST STORE\nTotal: 0.00",
+        ocrConfidence: 0.9,
+      });
+    },
+  );
+
+  const user = userEvent.setup();
+  renderWithProviders(<ScanReceiptPage />);
+
+  const fileInput = screen.getByTestId("file-input");
+  await user.upload(fileInput, createTestFile());
+  await user.click(screen.getByRole("button", { name: /scan receipt/i }));
+
+  await waitFor(() => {
+    expect(screen.getByTestId("new-receipt-page")).toBeInTheDocument();
+  });
+
+  return user;
 }
 
 describe("ScanReceiptPage", () => {
@@ -93,51 +137,7 @@ describe("ScanReceiptPage", () => {
   });
 
   it("transitions to review phase on success", async () => {
-    mockMutate.mockImplementation(
-      (
-        _file: File,
-        options: { onSuccess: (data: unknown) => void },
-      ) => {
-        options.onSuccess({
-          storeName: "Test Store",
-          storeNameConfidence: "high",
-          date: "2024-06-15",
-          dateConfidence: "high",
-          items: [],
-          subtotal: 0,
-          subtotalConfidence: "high",
-          taxLines: [
-            {
-              label: "Tax",
-              labelConfidence: "high",
-              amount: 0,
-              amountConfidence: "high",
-            },
-          ],
-          total: 0,
-          totalConfidence: "high",
-          paymentMethod: null,
-          paymentMethodConfidence: "high",
-          rawOcrText: "TEST STORE\nTotal: 0.00",
-          ocrConfidence: 0.9,
-        });
-      },
-    );
-
-    const user = userEvent.setup();
-    renderWithProviders(<ScanReceiptPage />);
-
-    // Select a file
-    const fileInput = screen.getByTestId("file-input");
-    const file = createTestFile();
-    await user.upload(fileInput, file);
-
-    // Click scan
-    await user.click(screen.getByRole("button", { name: /scan receipt/i }));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("new-receipt-page")).toBeInTheDocument();
-    });
+    await renderAndScan("Test Store");
 
     expect(screen.getByTestId("prepopulated-location")).toHaveTextContent(
       "Test Store",
@@ -146,10 +146,7 @@ describe("ScanReceiptPage", () => {
 
   it("shows error on failure", async () => {
     mockMutate.mockImplementation(
-      (
-        _file: File,
-        options: { onError: (error: unknown) => void },
-      ) => {
+      (_file: File, options: { onError: (error: unknown) => void }) => {
         options.onError({ status: 400 });
       },
     );
@@ -166,18 +163,13 @@ describe("ScanReceiptPage", () => {
     await user.click(screen.getByRole("button", { name: /scan receipt/i }));
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/could not read the file/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/could not read the file/i)).toBeInTheDocument();
     });
   });
 
   it("passes correct confidence map when store name confidence is low", async () => {
     mockMutate.mockImplementation(
-      (
-        _file: File,
-        options: { onSuccess: (data: unknown) => void },
-      ) => {
+      (_file: File, options: { onSuccess: (data: unknown) => void }) => {
         options.onSuccess({
           storeName: "Low Confidence Store",
           storeNameConfidence: "low",
@@ -220,5 +212,68 @@ describe("ScanReceiptPage", () => {
       screen.getByTestId("confidence-map").textContent!,
     );
     expect(confidenceMap).toEqual({ location: "low" });
+  });
+
+  // ── Phase indicator tests ──────────────────────────────────────────────────
+
+  it("shows the step indicator in scan phase initially", () => {
+    renderWithProviders(<ScanReceiptPage />);
+    const nav = screen.getByRole("navigation", { name: /scan receipt steps/i });
+    expect(nav).toBeInTheDocument();
+
+    // "Scan" step should be aria-current="step"
+    const scanStep = screen.getByText("Scan").closest("[aria-current]");
+    expect(scanStep).toHaveAttribute("aria-current", "step");
+
+    // "Review" step should NOT be aria-current
+    const reviewStep = screen.getByText("Review").closest("li");
+    expect(reviewStep).not.toHaveAttribute("aria-current");
+  });
+
+  it("marks the review step as aria-current after successful scan", async () => {
+    await renderAndScan();
+
+    const reviewStep = screen.getByText("Review").closest("[aria-current]");
+    expect(reviewStep).toHaveAttribute("aria-current", "step");
+
+    // Scan step should no longer be current
+    const scanStep = screen.getByText("Scan").closest("li");
+    expect(scanStep).not.toHaveAttribute("aria-current");
+  });
+
+  // ── Live region announcement tests ────────────────────────────────────────
+
+  it("announces phase transition in a live region after successful scan", async () => {
+    await renderAndScan();
+
+    await waitFor(() => {
+      const region = screen.getByTestId("phase-announcement");
+      expect(region).toHaveTextContent("Receipt scanned, review details below");
+    });
+  });
+
+  it("live region has role=status and aria-live=polite", () => {
+    renderWithProviders(<ScanReceiptPage />);
+    const region = screen.getByTestId("phase-announcement");
+    expect(region).toHaveAttribute("role", "status");
+    expect(region).toHaveAttribute("aria-live", "polite");
+    expect(region).toHaveAttribute("aria-atomic", "true");
+  });
+
+  // ── Focus management tests ─────────────────────────────────────────────────
+
+  it("moves focus to the review heading after successful scan", async () => {
+    await renderAndScan();
+
+    const heading = screen.getByTestId("review-heading");
+    expect(heading).toBeInTheDocument();
+    expect(heading).toHaveFocus();
+  });
+
+  it("review heading is focusable programmatically via tabIndex=-1", async () => {
+    await renderAndScan();
+
+    const heading = screen.getByTestId("review-heading");
+    expect(heading).toHaveAttribute("tabindex", "-1");
   });
 });
