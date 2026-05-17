@@ -161,7 +161,8 @@ export function ReceiptImageUpload({
         {isLoading ? (
           <div className="flex flex-col items-center gap-3">
             <Spinner size="lg" />
-            <p className="text-sm text-muted-foreground">
+            {/* aria-hidden: the sr-only role="status" region announces this */}
+            <p className="text-sm text-muted-foreground" aria-hidden="true">
               Processing receipt...
             </p>
           </div>

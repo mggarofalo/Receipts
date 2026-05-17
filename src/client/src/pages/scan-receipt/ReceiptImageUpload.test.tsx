@@ -108,10 +108,15 @@ describe("ReceiptImageUpload", () => {
     renderWithProviders(
       <ReceiptImageUpload {...defaultProps} isLoading={true} />,
     );
-    // "Processing receipt..." appears in both the visible paragraph and the sr-only
-    // live region; use getAllByText to assert at least one visible instance exists.
+    // "Processing receipt..." renders in exactly two places: the visible
+    // paragraph inside the drop zone and the sr-only role="status" region.
     const matches = screen.getAllByText("Processing receipt...");
-    expect(matches.length).toBeGreaterThanOrEqual(1);
+    expect(matches).toHaveLength(2);
+    // The visible paragraph (not inside the sr-only live region) must exist
+    // and be hidden from assistive tech to avoid a duplicate announcement.
+    const visible = matches.find((el) => !el.closest(".sr-only"));
+    expect(visible).toBeInTheDocument();
+    expect(visible).toHaveAttribute("aria-hidden", "true");
   });
 
   it("polite live region announces processing state", () => {

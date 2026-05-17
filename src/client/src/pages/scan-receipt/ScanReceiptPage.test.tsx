@@ -88,9 +88,11 @@ describe("ScanReceiptPage", () => {
     // Click scan
     await user.click(screen.getByRole("button", { name: /scan receipt/i }));
 
-    // Should show processing state — "Processing receipt..." appears in both the
-    // visible paragraph and the sr-only live region, so use getAllByText.
-    expect(screen.getAllByText("Processing receipt...").length).toBeGreaterThanOrEqual(1);
+    // Should show processing state — "Processing receipt..." renders in the
+    // visible drop-zone paragraph and the sr-only role="status" live region.
+    const matches = screen.getAllByText("Processing receipt...");
+    expect(matches).toHaveLength(2);
+    expect(matches.find((el) => !el.closest(".sr-only"))).toBeInTheDocument();
   });
 
   it("transitions to review phase on success", async () => {
