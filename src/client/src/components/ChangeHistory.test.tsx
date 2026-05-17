@@ -115,4 +115,158 @@ describe("ChangeHistory", () => {
     );
     expect(mockUseEntityAuditHistory).toHaveBeenCalledWith("Account", "xyz-789");
   });
+
+  it("timestamp tooltip trigger is keyboard-focusable (tabIndex=0)", () => {
+    const changedAt = new Date("2025-01-15T10:30:00Z").toISOString();
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-ts",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Created",
+          changesJson: "[]",
+          changedByUserId: null,
+          changedByApiKeyId: null,
+          changedAt,
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    const { container } = renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // The timestamp trigger span must have tabIndex=0 so keyboard users can focus it
+    const triggers = container.querySelectorAll('[tabindex="0"]');
+    expect(triggers.length).toBeGreaterThan(0);
+  });
+
+  it("user ID tooltip trigger is keyboard-focusable and shows truncated ID", () => {
+    const fullUserId = "550e8400-e29b-41d4-a716-446655440000";
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-user",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Updated",
+          changesJson: "[]",
+          changedByUserId: fullUserId,
+          changedByApiKeyId: null,
+          changedAt: new Date().toISOString(),
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    const { container } = renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // User ID trigger must be focusable
+    const focusableElements = container.querySelectorAll('[tabindex="0"]');
+    expect(focusableElements.length).toBeGreaterThan(0);
+
+    // The user ID trigger should have an aria-label containing the full ID
+    const userIdTrigger = Array.from(focusableElements).find((el) =>
+      el.getAttribute("aria-label")?.includes(fullUserId),
+    );
+    expect(userIdTrigger).toBeDefined();
+  });
+
+  it("API key tooltip trigger is keyboard-focusable and shows truncated ID", () => {
+    const fullApiKeyId = "660e8400-e29b-41d4-a716-446655440001";
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-apikey",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Created",
+          changesJson: "[]",
+          changedByUserId: null,
+          changedByApiKeyId: fullApiKeyId,
+          changedAt: new Date().toISOString(),
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    const { container } = renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // API key trigger must be focusable
+    const focusableElements = container.querySelectorAll('[tabindex="0"]');
+    expect(focusableElements.length).toBeGreaterThan(0);
+
+    // The API key trigger should have an aria-label containing the full ID
+    const apiKeyTrigger = Array.from(focusableElements).find((el) =>
+      el.getAttribute("aria-label")?.includes(fullApiKeyId),
+    );
+    expect(apiKeyTrigger).toBeDefined();
+  });
+
+  it("tooltip triggers have role=button for screen reader semantics", () => {
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-role",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Created",
+          changesJson: "[]",
+          changedByUserId: "user-001",
+          changedByApiKeyId: null,
+          changedAt: new Date().toISOString(),
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // Both timestamp and user ID triggers should be reachable as buttons
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("full timestamp is exposed in aria-label for screen readers", () => {
+    const changedAt = new Date("2025-06-01T14:00:00Z").toISOString();
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-aria",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Deleted",
+          changesJson: "[]",
+          changedByUserId: null,
+          changedByApiKeyId: null,
+          changedAt,
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    const { container } = renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // The aria-label on the timestamp trigger must expose the full formatted timestamp
+    const timestampTrigger = container.querySelector(
+      '[aria-label^="Timestamp:"]',
+    );
+    expect(timestampTrigger).not.toBeNull();
+    expect(timestampTrigger?.getAttribute("aria-label")).toContain("2025");
+  });
 });

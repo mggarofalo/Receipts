@@ -40,7 +40,12 @@ function TimelineEntry({ log }: { log: AuditLog }) {
             <Badge variant={actionBadgeVariant(log.action)}>{log.action}</Badge>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-xs text-muted-foreground cursor-default">
+                <span
+                  className="text-xs text-muted-foreground cursor-default"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Timestamp: ${formatAuditTimestamp(log.changedAt)}`}
+                >
                   {relativeTime(log.changedAt)}
                 </span>
               </TooltipTrigger>
@@ -53,7 +58,12 @@ function TimelineEntry({ log }: { log: AuditLog }) {
             {log.changedByUserId && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="font-mono cursor-default">
+                  <span
+                    className="font-mono cursor-default"
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Full user ID: ${log.changedByUserId}`}
+                  >
                     User: {truncateId(log.changedByUserId)}
                   </span>
                 </TooltipTrigger>
@@ -63,7 +73,12 @@ function TimelineEntry({ log }: { log: AuditLog }) {
             {log.changedByApiKeyId && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="font-mono cursor-default">
+                  <span
+                    className="font-mono cursor-default"
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Full API key ID: ${log.changedByApiKeyId}`}
+                  >
                     API Key: {truncateId(log.changedByApiKeyId)}
                   </span>
                 </TooltipTrigger>
