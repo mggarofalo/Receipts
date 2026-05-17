@@ -398,4 +398,44 @@ describe("ReceiptTransactionsCard", () => {
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(mockDeleteMutate).not.toHaveBeenCalled();
   });
+
+  it("wraps long account names so the table cannot force page horizontal scroll (WCAG 1.4.10)", () => {
+    const longAccountName = "A".repeat(200);
+    const transactionsWithLongName = [
+      {
+        transaction: { id: "txn-long-1", amount: 50.0, date: "2024-01-15", cardId: null },
+        account: {
+          id: "acc-long-1",
+          name: longAccountName,
+          isActive: true,
+        },
+      },
+    ];
+    renderWithQueryClient(
+      <ReceiptTransactionsCard
+        receiptId="receipt-1"
+        transactions={transactionsWithLongName}
+        transactionsTotal={50.0}
+      />,
+    );
+    const cell = screen.getByText(longAccountName).closest("td");
+    expect(cell).not.toBeNull();
+    expect(cell).toHaveClass("whitespace-normal");
+    expect(cell).toHaveClass("break-words");
+    expect(cell).toHaveClass("max-w-[32ch]");
+  });
+
+  it("table wrapper has overflow-x-auto to contain horizontal overflow within the widget (WCAG 1.4.10)", () => {
+    renderWithQueryClient(
+      <ReceiptTransactionsCard
+        receiptId="receipt-1"
+        transactions={mockTransactions}
+        transactionsTotal={75.5}
+      />,
+    );
+    const table = screen.getByRole("table");
+    const wrapper = table.closest("div");
+    expect(wrapper).not.toBeNull();
+    expect(wrapper).toHaveClass("overflow-x-auto");
+  });
 });
