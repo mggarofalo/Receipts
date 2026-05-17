@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import client from "@/lib/api-client";
@@ -297,12 +298,10 @@ export default function UncategorizedItems() {
         <TableHeader>
           <TableRow>
             <TableHead className="w-10">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={!!allOnPageSelected}
-                onChange={handleToggleAll}
+                onCheckedChange={handleToggleAll}
                 aria-label="Select all items on this page"
-                className="h-4 w-4 rounded border-gray-300"
               />
             </TableHead>
             <TableHead
@@ -331,12 +330,10 @@ export default function UncategorizedItems() {
           {data.items.map((item) => (
             <TableRow key={item.id}>
               <TableCell>
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={selectedIds.has(item.id)}
-                  onChange={() => handleToggleItem(item.id)}
+                  onCheckedChange={() => handleToggleItem(item.id)}
                   aria-label={`Select ${item.description}`}
-                  className="h-4 w-4 rounded border-gray-300"
                 />
               </TableCell>
               <TableCell>{item.description}</TableCell>

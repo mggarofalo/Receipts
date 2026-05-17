@@ -6,6 +6,7 @@ import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { useCategories } from "@/hooks/useCategories";
 import { subcategoryNameHistory } from "@/lib/field-history";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -144,11 +145,9 @@ export function SubcategoryForm({
             <FormItem>
               <div className="flex items-center gap-2">
                 <FormControl>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={field.value}
-                    onChange={field.onChange}
-                    className="h-4 w-4 rounded border-gray-300"
+                    onCheckedChange={field.onChange}
                   />
                 </FormControl>
                 <FormLabel>Active</FormLabel>

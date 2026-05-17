@@ -36,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/format";
 import { Pencil } from "lucide-react";
 
@@ -178,14 +179,13 @@ export function ReceiptItemsCard({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         aria-label="Select all items"
                         checked={
                           selectedItems.size === items.length &&
                           items.length > 0
                         }
-                        onChange={() => {
+                        onCheckedChange={() => {
                           if (selectedItems.size === items.length) {
                             setSelectedItems(new Set());
                           } else {
@@ -194,7 +194,6 @@ export function ReceiptItemsCard({
                             );
                           }
                         }}
-                        className="h-4 w-4 rounded border-gray-300"
                       />
                     </TableHead>
                     <TableHead>Code</TableHead>
@@ -211,12 +210,10 @@ export function ReceiptItemsCard({
                   {items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           aria-label={`Select ${item.description} item`}
                           checked={selectedItems.has(item.id)}
-                          onChange={() => toggleSelect(item.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          onCheckedChange={() => toggleSelect(item.id)}
                         />
                       </TableCell>
                       <TableCell className="font-mono">

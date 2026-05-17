@@ -39,6 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { Pencil } from "lucide-react";
 
@@ -193,15 +194,13 @@ function ItemTemplates() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       aria-label="Select all rows"
                       checked={
                         selected.size === filteredResults.length &&
                         filteredResults.length > 0
                       }
-                      onChange={toggleAll}
-                      className="h-4 w-4 rounded border-gray-300"
+                      onCheckedChange={toggleAll}
                     />
                   </TableHead>
                   <SortableTableHead column="name" label="Name" currentSortBy={sortBy} currentSortDirection={sortDirection} onToggleSort={handleSort} />
@@ -231,12 +230,10 @@ function ItemTemplates() {
                       }}
                     >
                       <TableCell>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           aria-label={`Select ${template.name}`}
                           checked={selected.has(template.id)}
-                          onChange={() => toggleSelect(template.id)}
-                          className="h-4 w-4 rounded border-gray-300"
+                          onCheckedChange={() => toggleSelect(template.id)}
                         />
                       </TableCell>
                       <TableCell>

@@ -1,6 +1,16 @@
 /// <reference types="vitest/globals" />
 import "@testing-library/jest-dom/vitest";
 
+// Polyfill ResizeObserver for Radix UI primitives (e.g., Checkbox uses @radix-ui/react-use-size)
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class ResizeObserverPolyfill {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  globalThis.ResizeObserver = ResizeObserverPolyfill;
+}
+
 // Polyfill matchMedia for jsdom (used by useIsTouchDevice hook)
 if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   window.matchMedia = (query: string) =>

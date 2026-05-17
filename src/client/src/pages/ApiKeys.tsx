@@ -10,6 +10,7 @@ import client from "@/lib/api-client";
 import { showSuccess, showError } from "@/lib/toast";
 import { capitalize } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -314,11 +315,9 @@ function ApiKeys() {
                   render={({ field }) => (
                     <FormItem className="flex items-center gap-2">
                       <FormControl>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={field.value}
-                          onChange={field.onChange}
-                          className="h-4 w-4 rounded border-input"
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
                       <FormLabel className="!mt-0">

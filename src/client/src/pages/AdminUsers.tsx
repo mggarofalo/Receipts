@@ -16,6 +16,7 @@ import { useServerPagination } from "@/hooks/useServerPagination";
 import { useServerSort } from "@/hooks/useServerSort";
 import { useListKeyboardNav } from "@/hooks/useListKeyboardNav";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +59,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Label } from "@/components/ui/label";
 import { Pencil } from "lucide-react";
 
 const ROLE_OPTIONS = [
@@ -543,15 +543,12 @@ function AdminUsers() {
                   <FormItem>
                     <div className="flex items-center gap-3">
                       <FormControl>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={field.value}
-                          onChange={field.onChange}
-                          className="h-4 w-4 rounded border-gray-300"
-                          aria-label="Disable account"
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <Label>Account Disabled</Label>
+                      <FormLabel>Account Disabled</FormLabel>
                     </div>
                     <FormMessage />
                   </FormItem>
