@@ -80,50 +80,51 @@ export function YnabBulkSyncCard() {
                 "Push All to YNAB"
               )}
             </Button>
+
+            {/* aria-live region so screen readers announce push result badges inline */}
+            <div aria-live="polite" aria-atomic="true">
+              {pushData && pushTotal > 0 && (
+                <div className="flex gap-2">
+                  {pushSucceeded > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="border-green-300 text-green-600"
+                    >
+                      {pushSucceeded} succeeded
+                    </Badge>
+                  )}
+                  {pushFailed > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="border-destructive/50 text-destructive"
+                    >
+                      {pushFailed} failed
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* aria-live region so screen readers announce push results */}
-          <div aria-live="polite" aria-atomic="true">
-            {pushData && pushTotal > 0 && (
-              <div className="flex gap-2">
-                {pushSucceeded > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="border-green-300 text-green-600"
-                  >
-                    {pushSucceeded} succeeded
-                  </Badge>
-                )}
-                {pushFailed > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="border-destructive/50 text-destructive"
-                  >
-                    {pushFailed} failed
-                  </Badge>
-                )}
-              </div>
-            )}
+          {/* Error alerts outside the flex row so they span full width */}
+          {pushData &&
+            pushData.results
+              ?.filter((r) => !r.result.success && r.result.error)
+              .map((r) => (
+                <Alert key={r.receiptId} variant="destructive" role="alert">
+                  <AlertDescription>
+                    Receipt {r.receiptId.slice(0, 8)}...: {r.result.error}
+                  </AlertDescription>
+                </Alert>
+              ))}
 
-            {pushData &&
-              pushData.results
-                ?.filter((r) => !r.result.success && r.result.error)
-                .map((r) => (
-                  <Alert key={r.receiptId} variant="destructive" role="alert">
-                    <AlertDescription>
-                      Receipt {r.receiptId.slice(0, 8)}...: {r.result.error}
-                    </AlertDescription>
-                  </Alert>
-                ))}
-
-            {bulkPush.isError && (
-              <Alert variant="destructive" role="alert">
-                <AlertDescription>
-                  Failed to push transactions to YNAB. Please try again.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
+          {bulkPush.isError && (
+            <Alert variant="destructive" role="alert">
+              <AlertDescription>
+                Failed to push transactions to YNAB. Please try again.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {/* Sync All Memos */}
@@ -143,46 +144,47 @@ export function YnabBulkSyncCard() {
                 "Sync All Memos"
               )}
             </Button>
+
+            {/* aria-live region so screen readers announce memo sync result badges inline */}
+            <div aria-live="polite" aria-atomic="true">
+              {memoSummary && (
+                <div className="flex flex-wrap gap-2">
+                  {memoSummary.synced > 0 && (
+                    <Badge variant="default">{memoSummary.synced} synced</Badge>
+                  )}
+                  {memoSummary.alreadySynced > 0 && (
+                    <Badge variant="secondary">
+                      {memoSummary.alreadySynced} already synced
+                    </Badge>
+                  )}
+                  {memoSummary.noMatch > 0 && (
+                    <Badge variant="secondary">
+                      {memoSummary.noMatch} no match
+                    </Badge>
+                  )}
+                  {memoSummary.ambiguous > 0 && (
+                    <Badge variant="outline">
+                      {memoSummary.ambiguous} ambiguous
+                    </Badge>
+                  )}
+                  {memoSummary.failed > 0 && (
+                    <Badge variant="destructive">
+                      {memoSummary.failed} failed
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* aria-live region so screen readers announce memo sync results */}
-          <div aria-live="polite" aria-atomic="true">
-            {memoSummary && (
-              <div className="flex flex-wrap gap-2">
-                {memoSummary.synced > 0 && (
-                  <Badge variant="default">{memoSummary.synced} synced</Badge>
-                )}
-                {memoSummary.alreadySynced > 0 && (
-                  <Badge variant="secondary">
-                    {memoSummary.alreadySynced} already synced
-                  </Badge>
-                )}
-                {memoSummary.noMatch > 0 && (
-                  <Badge variant="secondary">
-                    {memoSummary.noMatch} no match
-                  </Badge>
-                )}
-                {memoSummary.ambiguous > 0 && (
-                  <Badge variant="outline">
-                    {memoSummary.ambiguous} ambiguous
-                  </Badge>
-                )}
-                {memoSummary.failed > 0 && (
-                  <Badge variant="destructive">
-                    {memoSummary.failed} failed
-                  </Badge>
-                )}
-              </div>
-            )}
-
-            {bulkMemoSync.isError && (
-              <Alert variant="destructive" role="alert">
-                <AlertDescription>
-                  Failed to sync memos to YNAB. Please try again.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
+          {/* Error alert outside the flex row so it spans full width */}
+          {bulkMemoSync.isError && (
+            <Alert variant="destructive" role="alert">
+              <AlertDescription>
+                Failed to sync memos to YNAB. Please try again.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {isTruncated && (
