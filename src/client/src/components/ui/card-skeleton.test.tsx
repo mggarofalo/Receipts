@@ -43,4 +43,28 @@ describe("CardSkeleton", () => {
     const content = container.querySelector(".space-y-3");
     expect(content?.children).toHaveLength(5);
   });
+
+  describe("silent mode", () => {
+    it("does not render role='status' when silent=true", () => {
+      renderWithProviders(<CardSkeleton silent />);
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    it("does not render the sr-only loading text when silent=true", () => {
+      renderWithProviders(<CardSkeleton silent />);
+      expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
+    });
+
+    it("still renders skeleton lines when silent=true", () => {
+      const { container } = renderWithProviders(<CardSkeleton lines={2} silent />);
+      const content = container.querySelector(".space-y-3");
+      expect(content?.children).toHaveLength(2);
+    });
+
+    it("does not mark card aria-hidden when silent=true", () => {
+      const { container } = renderWithProviders(<CardSkeleton silent />);
+      const card = container.querySelector("[aria-hidden='true']");
+      expect(card).not.toBeInTheDocument();
+    });
+  });
 });

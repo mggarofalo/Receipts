@@ -164,14 +164,11 @@ describe("ReceiptDetail", () => {
     expect(
       container.querySelector("[data-slot='skeleton']"),
     ).toBeInTheDocument();
-    // Each CardSkeleton renders its own role="status" live region
-    const statusElements = screen.getAllByRole("status");
-    expect(statusElements.length).toBeGreaterThan(0);
-    statusElements.forEach((el) => {
-      expect(el).toHaveAttribute("aria-live", "polite");
-      expect(el).toHaveAttribute("aria-busy", "true");
-    });
-    expect(screen.getAllByText("Loading…").length).toBeGreaterThan(0);
+    // A single coordinating live region announces the page-level loading state
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByRole("status")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText(/loading receipt details/i)).toBeInTheDocument();
   });
 
   it("renders receipt data when loaded", async () => {
