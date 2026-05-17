@@ -94,10 +94,13 @@ export default function ScanReceiptPage() {
     null,
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [announcement, setAnnouncement] = useState<string>("");
 
   // Ref for the review-phase heading — receives focus after a successful scan
   const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
+  // Ref for the review-phase live region — its text is set imperatively after
+  // the node mounts so screen readers announce the change (a fresh node that
+  // mounts with text already present is not reliably announced).
+  const announcementRef = useRef<HTMLDivElement>(null);
 
   const handleScan = useCallback(
     (file: File) => {
@@ -119,11 +122,16 @@ export default function ScanReceiptPage() {
     [],
   );
 
-  // On transition to the review phase: focus the review heading and announce.
+  // On transition to the review phase, synchronize the DOM: move focus to the
+  // review heading and populate the live region. Both are direct DOM mutations
+  // (no React state), so this avoids an extra render cycle on every scan.
   useEffect(() => {
     if (status === "success" && reviewHeadingRef.current) {
       reviewHeadingRef.current.focus();
-      setAnnouncement("Receipt scanned, review details below");
+      if (announcementRef.current) {
+        announcementRef.current.textContent =
+          "Receipt scanned, review details below";
+      }
     }
   }, [status]);
 
@@ -135,16 +143,16 @@ export default function ScanReceiptPage() {
 
     return (
       <div className="space-y-6">
-        {/* Polite live region — announces the phase transition to screen readers */}
+        {/* Polite live region — text is set imperatively via announcementRef
+            in the post-transition Effect above. */}
         <div
+          ref={announcementRef}
           role="status"
           aria-live="polite"
           aria-atomic="true"
           className="sr-only"
           data-testid="phase-announcement"
-        >
-          {announcement}
-        </div>
+        />
 
         <ScanPhaseIndicator currentPhase={currentPhase} />
 
@@ -172,16 +180,15 @@ export default function ScanReceiptPage() {
 
   return (
     <div className="space-y-6">
-      {/* Polite live region — present in both phases so the DOM node persists */}
+      {/* Polite live region — empty in the scan phase; the review-phase
+          announcement is made by the live region in the success branch. */}
       <div
         role="status"
         aria-live="polite"
         aria-atomic="true"
         className="sr-only"
         data-testid="phase-announcement"
-      >
-        {announcement}
-      </div>
+      />
 
       <ScanPhaseIndicator currentPhase={currentPhase} />
 
