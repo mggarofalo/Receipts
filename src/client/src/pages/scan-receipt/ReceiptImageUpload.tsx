@@ -113,17 +113,35 @@ export function ReceiptImageUpload({
 
   return (
     <div className="space-y-4">
-      {displayError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{displayError}</AlertDescription>
-        </Alert>
-      )}
+      {/* Assertive live region for errors — announced immediately by screen readers */}
+      <div aria-live="assertive" aria-atomic="true">
+        {displayError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{displayError}</AlertDescription>
+          </Alert>
+        )}
+      </div>
+
+      {/* Polite live region for status changes (file accepted, processing) */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {isLoading
+          ? "Processing receipt..."
+          : file
+            ? `File selected: ${file.name}`
+            : ""}
+      </div>
+
+      {/* Constraint hint — always in DOM so aria-describedby reference is always valid */}
+      <p id="drop-zone-hint" className="sr-only">
+        Accepted formats: JPEG, PNG, or PDF, up to 20 MB.
+      </p>
 
       <div
         role="button"
         tabIndex={0}
         aria-label="Drop zone for receipt file"
+        aria-describedby="drop-zone-hint"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -143,7 +161,8 @@ export function ReceiptImageUpload({
         {isLoading ? (
           <div className="flex flex-col items-center gap-3">
             <Spinner size="lg" />
-            <p className="text-sm text-muted-foreground">
+            {/* aria-hidden: the sr-only role="status" region announces this */}
+            <p className="text-sm text-muted-foreground" aria-hidden="true">
               Processing receipt...
             </p>
           </div>
@@ -168,7 +187,7 @@ export function ReceiptImageUpload({
               <p className="text-sm font-medium">
                 Drop a receipt image or PDF here
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground" aria-hidden="true">
                 JPEG, PNG, or PDF, up to 20 MB
               </p>
             </div>
