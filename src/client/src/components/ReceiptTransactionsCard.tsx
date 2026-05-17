@@ -168,7 +168,7 @@ export function ReceiptTransactionsCard({
               No transactions for this receipt.
             </p>
           ) : (
-            <div className="rounded-md border">
+            <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -193,7 +193,7 @@ export function ReceiptTransactionsCard({
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Card</TableHead>
-                    <TableHead>Account</TableHead>
+                    <TableHead className="min-w-[16ch]">Account</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
@@ -217,7 +217,9 @@ export function ReceiptTransactionsCard({
                           ? (cardNameMap.get(ta.transaction.cardId) ?? "")
                           : ""}
                       </TableCell>
-                      <TableCell>{ta.account.name}</TableCell>
+                      <TableCell className="whitespace-normal break-words max-w-[32ch]">
+                        {ta.account.name}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant={
