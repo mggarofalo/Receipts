@@ -198,7 +198,7 @@ export function ReceiptItemsCard({
                       />
                     </TableHead>
                     <TableHead>Code</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead className="min-w-[16ch]">Description</TableHead>
                     <TableHead className="text-right">Qty</TableHead>
                     <TableHead className="text-right">Unit Price</TableHead>
                     <TableHead className="text-right">Total</TableHead>
@@ -222,7 +222,7 @@ export function ReceiptItemsCard({
                       <TableCell className="font-mono">
                         {item.receiptItemCode ?? ""}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-normal break-words max-w-[32ch]">
                         <div>{item.description}</div>
                         {item.normalizedDescriptionName &&
                           item.normalizedDescriptionName !==

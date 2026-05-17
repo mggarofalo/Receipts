@@ -202,6 +202,29 @@ describe("LineItemsSection", () => {
     expect(screen.getByText("Household / Cleaning")).toBeInTheDocument();
   });
 
+  it("wraps long descriptions so the table cannot force page horizontal scroll (WCAG 1.4.10)", () => {
+    const longDescription = "A".repeat(200);
+    const items: ReceiptLineItem[] = [
+      {
+        id: "1",
+        receiptItemCode: "",
+        description: longDescription,
+        pricingMode: "quantity",
+        quantity: 1,
+        unitPrice: 2.5,
+        category: "Food",
+        subcategory: "",
+      },
+    ];
+    renderWithProviders(
+      <LineItemsSection {...defaultProps} items={items} />,
+    );
+    const cell = screen.getByText(longDescription).closest("td");
+    expect(cell).not.toBeNull();
+    expect(cell).toHaveClass("whitespace-normal");
+    expect(cell).toHaveClass("break-words");
+  });
+
   // --- Inline editing tests ---
 
   it("shows edit button for each item row", () => {

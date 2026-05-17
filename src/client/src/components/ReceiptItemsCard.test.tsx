@@ -417,6 +417,33 @@ describe("ReceiptItemsCard", () => {
     expect(screen.queryByText(/normalized as/i)).not.toBeInTheDocument();
   });
 
+  it("wraps long descriptions so the table cannot force page horizontal scroll (WCAG 1.4.10)", () => {
+    const longDescription = "A".repeat(200);
+    const itemsWithLongDescription = [
+      {
+        id: "item-long-1",
+        receiptItemCode: "ITEM-LONG-1",
+        description: longDescription,
+        quantity: 1,
+        unitPrice: 9.99,
+        category: "Groceries",
+        subcategory: "Produce",
+        pricingMode: "quantity",
+      },
+    ];
+    renderWithQueryClient(
+      <ReceiptItemsCard
+        receiptId="receipt-1"
+        items={itemsWithLongDescription}
+        subtotal={9.99}
+      />,
+    );
+    const cell = screen.getByText(longDescription).closest("td");
+    expect(cell).not.toBeNull();
+    expect(cell).toHaveClass("whitespace-normal");
+    expect(cell).toHaveClass("break-words");
+  });
+
   it("cancels delete dialog without deleting", async () => {
     const { useDeleteReceiptItems } = await import(
       "@/hooks/useReceiptItems"
