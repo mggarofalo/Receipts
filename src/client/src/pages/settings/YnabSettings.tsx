@@ -525,6 +525,11 @@ export default function YnabSettings() {
               </div>
               <div className="h-2 rounded-full bg-muted overflow-hidden">
                 <div
+                  role="progressbar"
+                  aria-label="API rate limit usage"
+                  aria-valuenow={rateLimitStatus.requestsUsed}
+                  aria-valuemin={0}
+                  aria-valuemax={rateLimitStatus.maxRequests}
                   className={`h-full rounded-full transition-all ${
                     rateLimitStatus.remainingRequests <= 20
                       ? "bg-destructive"
