@@ -50,7 +50,7 @@ public class ReceiptItem
 			throw new ArgumentException(UnitPriceMustBePositive, nameof(unitPrice));
 		}
 
-		decimal expectedTotal = Math.Floor(quantity * unitPrice.Amount * 100) / 100;
+		decimal expectedTotal = Math.Round(quantity * unitPrice.Amount, 2, MidpointRounding.AwayFromZero);
 		if (Math.Abs(totalAmount.Amount - expectedTotal) > 0.01m)
 		{
 			throw new ArgumentException(TotalAmountExceedsTolerance, nameof(totalAmount));
