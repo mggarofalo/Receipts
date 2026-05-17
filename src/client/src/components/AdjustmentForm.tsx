@@ -68,8 +68,13 @@ export function AdjustmentForm({
 
   // Route server errors through react-hook-form so they flow through FormMessage
   // and are announced via aria-describedby (WCAG 3.3.1, 1.3.1).
+  // Explicitly clear when serverErrors is absent/empty so stale errors don't linger
+  // if the parent resets the prop to {} rather than null.
   useEffect(() => {
-    if (!serverErrors) return;
+    if (!serverErrors || Object.keys(serverErrors).length === 0) {
+      form.clearErrors();
+      return;
+    }
     (Object.entries(serverErrors) as [keyof AdjustmentFormValues, string][]).forEach(
       ([field, message]) => {
         form.setError(field, { type: "server", message });
