@@ -214,6 +214,20 @@ describe("AuditLog", () => {
     expect(triggers.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("entity type combobox has an explicit accessible name", () => {
+    renderWithProviders(<AuditLog />);
+    expect(
+      screen.getByRole("combobox", { name: /filter by entity type/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("action combobox has an explicit accessible name", () => {
+    renderWithProviders(<AuditLog />);
+    expect(
+      screen.getByRole("combobox", { name: /filter by action/i }),
+    ).toBeInTheDocument();
+  });
+
   it("renders DateRangePicker From and To buttons", () => {
     renderWithProviders(<AuditLog />);
     const buttons = screen.getAllByRole("button");

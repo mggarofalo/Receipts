@@ -251,6 +251,7 @@ function AuditLog() {
           placeholder="Entity Type"
           searchPlaceholder="Search types..."
           className="w-[160px]"
+          aria-label="Filter by entity type"
         />
         <Combobox
           options={actionOptions}
@@ -259,6 +260,7 @@ function AuditLog() {
           placeholder="Action"
           searchPlaceholder="Search actions..."
           className="w-[140px]"
+          aria-label="Filter by action"
         />
         <DateRangePicker
           from={dateFrom}
