@@ -183,7 +183,7 @@ function Categories() {
             entityName="categories"
           />
         ) : (
-          <div className="py-12 text-center text-muted-foreground">
+          <div role="status" className="py-12 text-center text-muted-foreground">
             No categories yet. Create one to get started.
           </div>
         )

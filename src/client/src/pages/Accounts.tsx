@@ -236,7 +236,7 @@ function Accounts() {
             entityName="accounts"
           />
         ) : (
-          <div className="py-12 text-center text-muted-foreground">
+          <div role="status" className="py-12 text-center text-muted-foreground">
             No accounts yet. Create one to get started.
           </div>
         )
