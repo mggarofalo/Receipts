@@ -12,14 +12,15 @@ export function TableSkeleton({
   showToolbar = true,
 }: TableSkeletonProps) {
   return (
-    <div className="space-y-4">
+    <div role="status" aria-live="polite" aria-busy="true" className="space-y-4">
+      <span className="sr-only">Loading…</span>
       {showToolbar && (
-        <div className="flex items-center justify-between">
+        <div aria-hidden="true" className="flex items-center justify-between">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-10 w-32" />
         </div>
       )}
-      <div className="rounded-md border">
+      <div aria-hidden="true" className="rounded-md border">
         <div className="border-b p-4">
           <div className="flex gap-4">
             {Array.from({ length: columns }).map((_, i) => (

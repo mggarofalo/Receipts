@@ -114,11 +114,13 @@ function ReceiptDetail() {
       <h1 className="text-2xl font-semibold tracking-tight">Receipt Details</h1>
 
       {isLoading && (
-        <div role="status" aria-live="polite" className="space-y-4">
+        <div role="status" aria-live="polite" aria-busy="true" className="space-y-4">
           <span className="sr-only">Loading receipt details...</span>
-          <CardSkeleton lines={1} />
-          <CardSkeleton lines={3} />
-          <CardSkeleton lines={3} />
+          {/* silent=true prevents each CardSkeleton from adding its own live region,
+              avoiding three back-to-back "Loading…" announcements */}
+          <CardSkeleton lines={1} silent />
+          <CardSkeleton lines={3} silent />
+          <CardSkeleton lines={3} silent />
         </div>
       )}
 

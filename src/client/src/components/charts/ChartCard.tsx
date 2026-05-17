@@ -45,10 +45,11 @@ export function ChartCard({
       </CardHeader>
       <CardContent className="flex-1">
         {loading ? (
-          <div className="space-y-3" aria-label="Loading">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-32 w-full" />
+          <div role="status" aria-live="polite" aria-busy="true" className="space-y-3">
+            <span className="sr-only">Loading…</span>
+            <Skeleton aria-hidden="true" className="h-4 w-full" />
+            <Skeleton aria-hidden="true" className="h-4 w-3/4" />
+            <Skeleton aria-hidden="true" className="h-32 w-full" />
           </div>
         ) : empty ? (
           <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">

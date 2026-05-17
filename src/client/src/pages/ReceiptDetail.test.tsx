@@ -164,7 +164,10 @@ describe("ReceiptDetail", () => {
     expect(
       container.querySelector("[data-slot='skeleton']"),
     ).toBeInTheDocument();
+    // A single coordinating live region announces the page-level loading state
     expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByRole("status")).toHaveAttribute("aria-busy", "true");
     expect(screen.getByText(/loading receipt details/i)).toBeInTheDocument();
   });
 
