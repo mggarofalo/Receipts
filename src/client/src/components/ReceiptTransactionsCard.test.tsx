@@ -441,7 +441,12 @@ describe("ReceiptTransactionsCard", () => {
       />,
     );
     const table = screen.getByRole("table");
-    const wrapper = table.closest("div");
+    // Use .rounded-md to reach the outer wrapper div
+    // ("overflow-x-auto rounded-md border") rather than the Table
+    // component's internal container div (data-slot="table-container",
+    // "relative w-full overflow-x-auto"), which always carries
+    // overflow-x-auto regardless of whether the outer wrapper does.
+    const wrapper = table.closest(".rounded-md");
     expect(wrapper).not.toBeNull();
     expect(wrapper).toHaveClass("overflow-x-auto");
   });
