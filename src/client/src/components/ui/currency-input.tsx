@@ -38,6 +38,7 @@ export function CurrencyInput({
   value,
   onChange,
   onBlur,
+  onKeyDown,
   symbol = "$",
   className,
   ...props
@@ -135,6 +136,8 @@ export function CurrencyInput({
       }
       commitExpression();
     }
+    // Chain any caller-supplied handler so the value is committed first.
+    onKeyDown?.(e);
   }
 
   function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
