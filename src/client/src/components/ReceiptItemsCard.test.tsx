@@ -442,6 +442,7 @@ describe("ReceiptItemsCard", () => {
     expect(cell).not.toBeNull();
     expect(cell).toHaveClass("whitespace-normal");
     expect(cell).toHaveClass("break-words");
+    expect(cell).toHaveClass("max-w-[32ch]");
   });
 
   it("cancels delete dialog without deleting", async () => {

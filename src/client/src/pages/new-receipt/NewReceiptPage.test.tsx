@@ -143,6 +143,19 @@ describe("NewReceiptPage", () => {
     expect(screen.getAllByTestId("balance-sidebar").length).toBeGreaterThan(0);
   });
 
+  it("gives the 1fr grid column min-w-0 so the items table cannot force page horizontal scroll (WCAG 1.4.10)", () => {
+    // The left form column sits in a `grid-cols-[1fr_280px]` track. Without
+    // `min-w-0` the `1fr` track resolves to its min-content width and a long
+    // line-item description pushes the whole page wide. `min-w-0` lets the
+    // track shrink so the inner table's `overflow-x-auto` engages instead.
+    renderWithProviders(<NewReceiptPage />);
+    const column = screen
+      .getByTestId("line-items-section")
+      .closest("div.min-w-0");
+    expect(column).not.toBeNull();
+    expect(column).toHaveClass("min-w-0");
+  });
+
   it("navigates directly to /receipts when cancel clicked with no data", async () => {
     const user = userEvent.setup();
     renderWithProviders(<NewReceiptPage />);

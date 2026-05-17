@@ -223,6 +223,7 @@ describe("LineItemsSection", () => {
     expect(cell).not.toBeNull();
     expect(cell).toHaveClass("whitespace-normal");
     expect(cell).toHaveClass("break-words");
+    expect(cell).toHaveClass("max-w-[32ch]");
   });
 
   // --- Inline editing tests ---
