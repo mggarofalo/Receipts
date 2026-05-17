@@ -217,8 +217,10 @@ export function ReceiptTransactionsCard({
                           ? (cardNameMap.get(ta.transaction.cardId) ?? "")
                           : ""}
                       </TableCell>
-                      <TableCell className="whitespace-normal break-words max-w-[32ch]">
-                        {ta.account.name}
+                      <TableCell>
+                        <span className="block max-w-[32ch] break-words whitespace-normal">
+                          {ta.account.name}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <Badge
