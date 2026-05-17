@@ -399,7 +399,9 @@ describe("ReceiptTransactionsCard", () => {
     expect(mockDeleteMutate).not.toHaveBeenCalled();
   });
 
-  it("wraps long account names so the table cannot force page horizontal scroll (WCAG 1.4.10)", () => {
+  it("account name is wrapped in a block span with max-w-[32ch] so the cap is effective (CSS §17.5.2)", () => {
+    // max-width on a <td> is inert under table-layout:auto — the constraint must be
+    // on a block-level child element where max-width actually applies.
     const longAccountName = "A".repeat(200);
     const transactionsWithLongName = [
       {
@@ -418,11 +420,16 @@ describe("ReceiptTransactionsCard", () => {
         transactionsTotal={50.0}
       />,
     );
-    const cell = screen.getByText(longAccountName).closest("td");
+    // The text node must be inside a <span> (not a bare <td>) so max-w applies.
+    const nameEl = screen.getByText(longAccountName);
+    expect(nameEl.tagName.toLowerCase()).toBe("span");
+    expect(nameEl).toHaveClass("block");
+    expect(nameEl).toHaveClass("max-w-[32ch]");
+    expect(nameEl).toHaveClass("break-words");
+    expect(nameEl).toHaveClass("whitespace-normal");
+    // The parent must still be a table cell — structural check.
+    const cell = nameEl.closest("td");
     expect(cell).not.toBeNull();
-    expect(cell).toHaveClass("whitespace-normal");
-    expect(cell).toHaveClass("break-words");
-    expect(cell).toHaveClass("max-w-[32ch]");
   });
 
   it("table wrapper has overflow-x-auto to contain horizontal overflow within the widget (WCAG 1.4.10)", () => {
