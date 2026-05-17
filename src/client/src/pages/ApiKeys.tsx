@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -397,7 +396,7 @@ function ApiKeys() {
             <AlertDialogCancel onClick={() => setRevokeId(null)}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               variant="destructive"
               disabled={revokeMutation.isPending}
               onClick={() => {
@@ -406,7 +405,7 @@ function ApiKeys() {
             >
               {revokeMutation.isPending && <Spinner size="sm" />}
               {revokeMutation.isPending ? "Revoking..." : "Revoke"}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -229,7 +229,7 @@ describe("ApiKeys", () => {
     const confirmButton = dialogButtons.find(
       (btn) => btn.closest("[role='alertdialog']") !== null,
     );
-    expect(confirmButton).toBeDefined();
+    expect(confirmButton).not.toBeNull();
     await user.click(confirmButton!);
     expect(mockMutate).toHaveBeenCalledWith("key-1");
   });
@@ -560,7 +560,7 @@ describe("ApiKeys", () => {
     const confirmButton = dialogButtons.find(
       (btn) => btn.closest("[role='alertdialog']") !== null,
     );
-    expect(confirmButton).toBeDefined();
+    expect(confirmButton).not.toBeNull();
     await user.click(confirmButton!);
     await vi.waitFor(() => {
       expect(showError).toHaveBeenCalledWith("Failed to revoke API key.");
@@ -827,9 +827,11 @@ describe("ApiKeys", () => {
     renderWithQueryClient(<ApiKeys />);
     await user.click(screen.getByRole("button", { name: /^revoke$/i }));
 
-    const alertDialog = screen.getByRole("alertdialog");
-    const confirmButton = alertDialog.querySelector("[data-slot='alert-dialog-action']");
-    expect(confirmButton).toBeDefined();
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    const confirmButton = screen.getAllByRole("button", { name: /^revoke$/i }).find(
+      (btn) => btn.closest("[role='alertdialog']") !== null,
+    );
+    expect(confirmButton).not.toBeNull();
     await user.click(confirmButton!);
     expect(mockMutate).toHaveBeenCalledWith("key-1");
   });
@@ -873,7 +875,7 @@ describe("ApiKeys", () => {
     const confirmButton = dialogButtons.find(
       (btn) => btn.closest("[role='alertdialog']") !== null,
     );
-    expect(confirmButton).toBeDefined();
+    expect(confirmButton).not.toBeNull();
     expect(confirmButton).toBeDisabled();
   });
 });

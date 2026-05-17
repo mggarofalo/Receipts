@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -219,13 +218,13 @@ function BackupRestore() {
             >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={handleConfirmImport}
               disabled={importMutation.isPending}
             >
               {importMutation.isPending && <Spinner size="sm" />}
               {importMutation.isPending ? "Importing..." : "Confirm Import"}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
