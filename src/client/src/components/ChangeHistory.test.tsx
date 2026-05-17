@@ -116,7 +116,7 @@ describe("ChangeHistory", () => {
     expect(mockUseEntityAuditHistory).toHaveBeenCalledWith("Account", "xyz-789");
   });
 
-  it("timestamp tooltip trigger is keyboard-focusable (tabIndex=0)", () => {
+  it("timestamp tooltip trigger is keyboard-focusable (native button element)", () => {
     const changedAt = new Date("2025-01-15T10:30:00Z").toISOString();
     mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: [
@@ -135,16 +135,16 @@ describe("ChangeHistory", () => {
       isLoading: false,
     }));
 
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
     );
 
-    // The timestamp trigger span must have tabIndex=0 so keyboard users can focus it
-    const triggers = container.querySelectorAll('[tabindex="0"]');
-    expect(triggers.length).toBeGreaterThan(0);
+    // Timestamp trigger is a native <button>, which is keyboard-focusable by default
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThan(0);
   });
 
-  it("user ID tooltip trigger is keyboard-focusable and shows truncated ID", () => {
+  it("user ID tooltip trigger is keyboard-focusable and exposes full ID in aria-label", () => {
     const fullUserId = "550e8400-e29b-41d4-a716-446655440000";
     mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: [
@@ -163,22 +163,18 @@ describe("ChangeHistory", () => {
       isLoading: false,
     }));
 
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
     );
 
-    // User ID trigger must be focusable
-    const focusableElements = container.querySelectorAll('[tabindex="0"]');
-    expect(focusableElements.length).toBeGreaterThan(0);
-
-    // The user ID trigger should have an aria-label containing the full ID
-    const userIdTrigger = Array.from(focusableElements).find((el) =>
-      el.getAttribute("aria-label")?.includes(fullUserId),
-    );
-    expect(userIdTrigger).toBeDefined();
+    // The user ID trigger is a native <button> and has an aria-label with the full ID
+    const userIdButton = screen.getByRole("button", {
+      name: new RegExp(fullUserId),
+    });
+    expect(userIdButton).toBeInTheDocument();
   });
 
-  it("API key tooltip trigger is keyboard-focusable and shows truncated ID", () => {
+  it("API key tooltip trigger is keyboard-focusable and exposes full ID in aria-label", () => {
     const fullApiKeyId = "660e8400-e29b-41d4-a716-446655440001";
     mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: [
@@ -197,22 +193,18 @@ describe("ChangeHistory", () => {
       isLoading: false,
     }));
 
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
     );
 
-    // API key trigger must be focusable
-    const focusableElements = container.querySelectorAll('[tabindex="0"]');
-    expect(focusableElements.length).toBeGreaterThan(0);
-
-    // The API key trigger should have an aria-label containing the full ID
-    const apiKeyTrigger = Array.from(focusableElements).find((el) =>
-      el.getAttribute("aria-label")?.includes(fullApiKeyId),
-    );
-    expect(apiKeyTrigger).toBeDefined();
+    // The API key trigger is a native <button> and has an aria-label with the full ID
+    const apiKeyButton = screen.getByRole("button", {
+      name: new RegExp(fullApiKeyId),
+    });
+    expect(apiKeyButton).toBeInTheDocument();
   });
 
-  it("tooltip triggers have role=button for screen reader semantics", () => {
+  it("tooltip triggers are native button elements (keyboard-accessible without tabIndex)", () => {
     mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
       data: [
         {
@@ -230,12 +222,13 @@ describe("ChangeHistory", () => {
       isLoading: false,
     }));
 
-    renderWithProviders(
+    const { container } = renderWithProviders(
       <ChangeHistory entityType="Receipt" entityId="abc-123" />,
     );
 
-    // Both timestamp and user ID triggers should be reachable as buttons
-    const buttons = screen.getAllByRole("button");
+    // Tooltip triggers are native <button> elements — keyboard-accessible by default,
+    // no explicit tabIndex needed, and no ARIA role mismatch.
+    const buttons = container.querySelectorAll("button[aria-label]");
     expect(buttons.length).toBeGreaterThanOrEqual(2);
   });
 

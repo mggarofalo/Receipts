@@ -40,14 +40,13 @@ function TimelineEntry({ log }: { log: AuditLog }) {
             <Badge variant={actionBadgeVariant(log.action)}>{log.action}</Badge>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span
-                  className="text-xs text-muted-foreground cursor-default"
-                  tabIndex={0}
-                  role="button"
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground cursor-default bg-transparent border-0 p-0 font-[inherit] focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
                   aria-label={`Timestamp: ${formatAuditTimestamp(log.changedAt)}`}
                 >
                   {relativeTime(log.changedAt)}
-                </span>
+                </button>
               </TooltipTrigger>
               <TooltipContent>
                 {formatAuditTimestamp(log.changedAt)}
@@ -58,14 +57,13 @@ function TimelineEntry({ log }: { log: AuditLog }) {
             {log.changedByUserId && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span
-                    className="font-mono cursor-default"
-                    tabIndex={0}
-                    role="button"
+                  <button
+                    type="button"
+                    className="font-mono cursor-default bg-transparent border-0 p-0 font-[inherit] focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
                     aria-label={`Full user ID: ${log.changedByUserId}`}
                   >
                     User: {truncateId(log.changedByUserId)}
-                  </span>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>{log.changedByUserId}</TooltipContent>
               </Tooltip>
@@ -73,14 +71,13 @@ function TimelineEntry({ log }: { log: AuditLog }) {
             {log.changedByApiKeyId && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span
-                    className="font-mono cursor-default"
-                    tabIndex={0}
-                    role="button"
+                  <button
+                    type="button"
+                    className="font-mono cursor-default bg-transparent border-0 p-0 font-[inherit] focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
                     aria-label={`Full API key ID: ${log.changedByApiKeyId}`}
                   >
                     API Key: {truncateId(log.changedByApiKeyId)}
-                  </span>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>{log.changedByApiKeyId}</TooltipContent>
               </Tooltip>
