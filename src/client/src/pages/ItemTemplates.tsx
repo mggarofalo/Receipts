@@ -175,7 +175,7 @@ function ItemTemplates() {
             entityName="item templates"
           />
         ) : (
-          <div className="py-12 text-center text-muted-foreground">
+          <div role="status" className="py-12 text-center text-muted-foreground">
             No item templates yet. Create one to get started.
           </div>
         )

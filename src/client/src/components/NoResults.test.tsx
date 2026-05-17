@@ -92,4 +92,21 @@ describe("NoResults", () => {
     await user.click(screen.getByText("alpha"));
     expect(onSelectSuggestion).toHaveBeenCalledWith("alpha");
   });
+
+  it("has role='status' so screen readers announce the empty state", () => {
+    renderWithProviders(<NoResults {...defaultProps} />);
+    // role="status" is an implicit aria-live="polite" region;
+    // when NoResults mounts, its content is announced to screen readers.
+    const statusRegion = screen.getByRole("status");
+    expect(statusRegion).toBeInTheDocument();
+  });
+
+  it("role='status' region contains the no-results message", () => {
+    renderWithProviders(
+      <NoResults {...defaultProps} searchTerm="hello" entityName="receipts" />,
+    );
+    const statusRegion = screen.getByRole("status");
+    expect(statusRegion).toHaveTextContent(/No receipts match/);
+    expect(statusRegion).toHaveTextContent("hello");
+  });
 });
