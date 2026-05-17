@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -153,6 +153,22 @@ export function ReceiptItemForm({
       ...defaultValues,
     },
   });
+
+  // Route server errors through react-hook-form so they flow through FormMessage
+  // and are announced via aria-describedby (WCAG 3.3.1, 1.3.1).
+  // Explicitly clear when serverErrors is absent/empty so stale errors don't linger
+  // if the parent resets the prop to {} rather than null.
+  useEffect(() => {
+    if (!serverErrors || Object.keys(serverErrors).length === 0) {
+      form.clearErrors();
+      return;
+    }
+    (Object.entries(serverErrors) as [keyof ReceiptItemSchemaValues, string][]).forEach(
+      ([field, message]) => {
+        form.setError(field, { type: "server", message });
+      },
+    );
+  }, [serverErrors, form]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchedCategory = form.watch("category");
@@ -494,11 +510,6 @@ export function ReceiptItemForm({
                 </PopoverContent>
               </Popover>
               <FormMessage />
-              {serverErrors?.receiptItemCode && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.receiptItemCode}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -600,11 +611,6 @@ export function ReceiptItemForm({
                 </PopoverContent>
               </Popover>
               <FormMessage />
-              {serverErrors?.description && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.description}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -626,11 +632,6 @@ export function ReceiptItemForm({
                   />
                 </FormControl>
                 <FormMessage />
-                {serverErrors?.category && (
-                  <p className="text-sm font-medium text-destructive">
-                    {serverErrors.category}
-                  </p>
-                )}
               </FormItem>
             )}
           />
@@ -653,11 +654,6 @@ export function ReceiptItemForm({
                   />
                 </FormControl>
                 <FormMessage />
-                {serverErrors?.subcategory && (
-                  <p className="text-sm font-medium text-destructive">
-                    {serverErrors.subcategory}
-                  </p>
-                )}
               </FormItem>
             )}
           />
@@ -680,11 +676,6 @@ export function ReceiptItemForm({
                   />
                 </FormControl>
                 <FormMessage />
-                {serverErrors?.quantity && (
-                  <p className="text-sm font-medium text-destructive">
-                    {serverErrors.quantity}
-                  </p>
-                )}
               </FormItem>
             )}
           />
@@ -699,11 +690,6 @@ export function ReceiptItemForm({
                   <CurrencyInput {...field} />
                 </FormControl>
                 <FormMessage />
-                {serverErrors?.unitPrice && (
-                  <p className="text-sm font-medium text-destructive">
-                    {serverErrors.unitPrice}
-                  </p>
-                )}
               </FormItem>
             )}
           />

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,6 +56,22 @@ export function ReceiptHeaderForm({
     },
   });
 
+  // Route server errors through react-hook-form so they flow through FormMessage
+  // and are announced via aria-describedby (WCAG 3.3.1, 1.3.1).
+  // Explicitly clear when serverErrors is absent/empty so stale errors don't linger
+  // if the parent resets the prop to {} rather than null.
+  useEffect(() => {
+    if (!serverErrors || Object.keys(serverErrors).length === 0) {
+      form.clearErrors();
+      return;
+    }
+    (Object.entries(serverErrors) as [keyof ReceiptHeaderFormValues, string][]).forEach(
+      ([field, message]) => {
+        form.setError(field, { type: "server", message });
+      },
+    );
+  }, [serverErrors, form]);
+
   return (
     <Form {...form}>
       <form
@@ -82,11 +98,6 @@ export function ReceiptHeaderForm({
                 />
               </FormControl>
               <FormMessage />
-              {serverErrors?.location && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.location}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -101,11 +112,6 @@ export function ReceiptHeaderForm({
                 <DateInput aria-required="true" {...field} />
               </FormControl>
               <FormMessage />
-              {serverErrors?.date && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.date}
-                </p>
-              )}
             </FormItem>
           )}
         />
@@ -120,11 +126,6 @@ export function ReceiptHeaderForm({
                 <CurrencyInput {...field} />
               </FormControl>
               <FormMessage />
-              {serverErrors?.taxAmount && (
-                <p className="text-sm font-medium text-destructive">
-                  {serverErrors.taxAmount}
-                </p>
-              )}
             </FormItem>
           )}
         />
