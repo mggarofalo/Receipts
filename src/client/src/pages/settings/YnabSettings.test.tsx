@@ -404,6 +404,61 @@ describe("YnabSettings – Rate Limit Card", () => {
       screen.getByText(/API quota is running low/),
     ).toBeInTheDocument();
   });
+
+  it("rate limit bar has role=progressbar with correct aria attributes", async () => {
+    const { useYnabBudgets, useYnabRateLimitStatus } = await import(
+      "@/hooks/useYnab"
+    );
+    vi.mocked(useYnabBudgets).mockReturnValue(
+      mockQueryResult({ budgets: [], isLoading: false, isError: false }),
+    );
+    vi.mocked(useYnabRateLimitStatus).mockReturnValue(
+      mockQueryResult({
+        rateLimitStatus: {
+          remainingRequests: 150,
+          maxRequests: 200,
+          requestsUsed: 50,
+          windowResetAt: "2026-04-05T23:00:00Z",
+          oldestRequestAt: "2026-04-05T22:00:00Z",
+        },
+      }),
+    );
+
+    renderWithProviders(<YnabSettings />);
+
+    const progressbar = screen.getByRole("progressbar");
+    expect(progressbar).toBeInTheDocument();
+    expect(progressbar).toHaveAttribute("aria-valuenow", "50");
+    expect(progressbar).toHaveAttribute("aria-valuemin", "0");
+    expect(progressbar).toHaveAttribute("aria-valuemax", "200");
+    expect(progressbar).toHaveAttribute("aria-label", "API rate limit usage");
+  });
+
+  it("rate limit bar aria-valuenow reflects current usage", async () => {
+    const { useYnabBudgets, useYnabRateLimitStatus } = await import(
+      "@/hooks/useYnab"
+    );
+    vi.mocked(useYnabBudgets).mockReturnValue(
+      mockQueryResult({ budgets: [], isLoading: false, isError: false }),
+    );
+    vi.mocked(useYnabRateLimitStatus).mockReturnValue(
+      mockQueryResult({
+        rateLimitStatus: {
+          remainingRequests: 10,
+          maxRequests: 200,
+          requestsUsed: 190,
+          windowResetAt: "2026-04-05T23:00:00Z",
+          oldestRequestAt: "2026-04-05T22:00:00Z",
+        },
+      }),
+    );
+
+    renderWithProviders(<YnabSettings />);
+
+    const progressbar = screen.getByRole("progressbar");
+    expect(progressbar).toHaveAttribute("aria-valuenow", "190");
+    expect(progressbar).toHaveAttribute("aria-valuemax", "200");
+  });
 });
 
 describe("YnabSettings – Stale Mappings", () => {

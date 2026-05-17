@@ -65,35 +65,38 @@ export function YnabPushButton({
         <YnabSyncBadge status={effectiveStatus} />
       </div>
 
-      {result && !result.success && result.error && (
-        <Alert variant="destructive">
-          <AlertDescription>{result.error}</AlertDescription>
-        </Alert>
-      )}
-
-      {result &&
-        !result.success &&
-        result.unmappedCategories &&
-        result.unmappedCategories.length > 0 && (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Unmapped categories:{" "}
-              {result.unmappedCategories.join(", ")}. Map them in{" "}
-              <a href="/settings/ynab" className="underline">
-                YNAB Settings
-              </a>
-              .
-            </AlertDescription>
+      {/* aria-live region so screen readers announce push outcomes */}
+      <div aria-live="polite" aria-atomic="true">
+        {result && !result.success && result.error && (
+          <Alert variant="destructive" role="alert">
+            <AlertDescription>{result.error}</AlertDescription>
           </Alert>
         )}
 
-      {mutationSucceeded && result != null && result.pushedTransactions.length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          {result.pushedTransactions.length} transaction(s) pushed
-          {result.pushedTransactions.some((t) => t.subTransactionCount > 1) &&
-            " with category splits"}
-        </div>
-      )}
+        {result &&
+          !result.success &&
+          result.unmappedCategories &&
+          result.unmappedCategories.length > 0 && (
+            <Alert variant="destructive" role="alert">
+              <AlertDescription>
+                Unmapped categories:{" "}
+                {result.unmappedCategories.join(", ")}. Map them in{" "}
+                <a href="/settings/ynab" className="underline">
+                  YNAB Settings
+                </a>
+                .
+              </AlertDescription>
+            </Alert>
+          )}
+
+        {mutationSucceeded && result != null && result.pushedTransactions.length > 0 && (
+          <div className="text-sm text-muted-foreground">
+            {result.pushedTransactions.length} transaction(s) pushed
+            {result.pushedTransactions.some((t) => t.subTransactionCount > 1) &&
+              " with category splits"}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

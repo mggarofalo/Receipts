@@ -80,7 +80,10 @@ export function YnabBulkSyncCard() {
                 "Push All to YNAB"
               )}
             </Button>
+          </div>
 
+          {/* aria-live region so screen readers announce push results */}
+          <div aria-live="polite" aria-atomic="true">
             {pushData && pushTotal > 0 && (
               <div className="flex gap-2">
                 {pushSucceeded > 0 && (
@@ -101,18 +104,26 @@ export function YnabBulkSyncCard() {
                 )}
               </div>
             )}
-          </div>
 
-          {pushData &&
-            pushData.results
-              ?.filter((r) => !r.result.success && r.result.error)
-              .map((r) => (
-                <Alert key={r.receiptId} variant="destructive">
-                  <AlertDescription>
-                    Receipt {r.receiptId.slice(0, 8)}...: {r.result.error}
-                  </AlertDescription>
-                </Alert>
-              ))}
+            {pushData &&
+              pushData.results
+                ?.filter((r) => !r.result.success && r.result.error)
+                .map((r) => (
+                  <Alert key={r.receiptId} variant="destructive" role="alert">
+                    <AlertDescription>
+                      Receipt {r.receiptId.slice(0, 8)}...: {r.result.error}
+                    </AlertDescription>
+                  </Alert>
+                ))}
+
+            {bulkPush.isError && (
+              <Alert variant="destructive" role="alert">
+                <AlertDescription>
+                  Failed to push transactions to YNAB. Please try again.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
         </div>
 
         {/* Sync All Memos */}
@@ -132,7 +143,10 @@ export function YnabBulkSyncCard() {
                 "Sync All Memos"
               )}
             </Button>
+          </div>
 
+          {/* aria-live region so screen readers announce memo sync results */}
+          <div aria-live="polite" aria-atomic="true">
             {memoSummary && (
               <div className="flex flex-wrap gap-2">
                 {memoSummary.synced > 0 && (
@@ -160,24 +174,16 @@ export function YnabBulkSyncCard() {
                 )}
               </div>
             )}
+
+            {bulkMemoSync.isError && (
+              <Alert variant="destructive" role="alert">
+                <AlertDescription>
+                  Failed to sync memos to YNAB. Please try again.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </div>
-
-        {bulkPush.isError && (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Failed to push transactions to YNAB. Please try again.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {bulkMemoSync.isError && (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Failed to sync memos to YNAB. Please try again.
-            </AlertDescription>
-          </Alert>
-        )}
 
         {isTruncated && (
           <Alert>

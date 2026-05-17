@@ -307,4 +307,82 @@ describe("YnabBulkSyncCard", () => {
       screen.queryByText(/receipts could be loaded/),
     ).not.toBeInTheDocument();
   });
+
+  it("wraps push result badges in an aria-live polite region", async () => {
+    const { useBulkPushYnabTransactions } = await import("@/hooks/useYnab");
+    vi.mocked(useBulkPushYnabTransactions).mockReturnValue(
+      mockMutationResult({
+        mutate: mockBulkPushMutate,
+        data: {
+          results: [
+            { receiptId: "r1", result: { success: true, pushedTransactions: [], error: null } },
+            { receiptId: "r2", result: { success: false, pushedTransactions: [], error: "Fail" } },
+          ],
+        },
+      }),
+    );
+
+    renderWithProviders(<YnabBulkSyncCard />);
+
+    const liveRegions = document.querySelectorAll("[aria-live='polite']");
+    // At least one live region should contain the push result badges
+    const pushLiveRegion = Array.from(liveRegions).find((el) =>
+      el.textContent?.includes("succeeded") || el.textContent?.includes("failed"),
+    );
+    expect(pushLiveRegion).not.toBeUndefined();
+  });
+
+  it("wraps memo sync result badges in an aria-live polite region", async () => {
+    const { useMemoSyncSummary } = await import("@/hooks/useYnab");
+    vi.mocked(useMemoSyncSummary).mockReturnValue({
+      synced: 3,
+      alreadySynced: 1,
+      noMatch: 0,
+      ambiguous: 0,
+      currencySkipped: 0,
+      reconciledSkipped: 0,
+      failed: 0,
+      total: 4,
+    });
+
+    renderWithProviders(<YnabBulkSyncCard />);
+
+    const liveRegions = document.querySelectorAll("[aria-live='polite']");
+    const memoLiveRegion = Array.from(liveRegions).find((el) =>
+      el.textContent?.includes("synced"),
+    );
+    expect(memoLiveRegion).not.toBeUndefined();
+    expect(memoLiveRegion).toHaveAttribute("aria-atomic", "true");
+  });
+
+  it("renders push error alerts with role=alert inside the push live region", async () => {
+    const { useBulkPushYnabTransactions } = await import("@/hooks/useYnab");
+    vi.mocked(useBulkPushYnabTransactions).mockReturnValue(
+      mockMutationResult({ mutate: mockBulkPushMutate, isError: true }),
+    );
+
+    renderWithProviders(<YnabBulkSyncCard />);
+
+    const alerts = screen.getAllByRole("alert");
+    expect(alerts.length).toBeGreaterThanOrEqual(1);
+    const pushErrorAlert = alerts.find((a) =>
+      a.textContent?.includes("Failed to push transactions"),
+    );
+    expect(pushErrorAlert).not.toBeUndefined();
+  });
+
+  it("renders memo sync error alerts with role=alert inside the memo live region", async () => {
+    const { useSyncYnabMemosBulk } = await import("@/hooks/useYnab");
+    vi.mocked(useSyncYnabMemosBulk).mockReturnValue(
+      mockMutationResult({ mutate: mockBulkMemoSyncMutate, isError: true }),
+    );
+
+    renderWithProviders(<YnabBulkSyncCard />);
+
+    const alerts = screen.getAllByRole("alert");
+    const memoErrorAlert = alerts.find((a) =>
+      a.textContent?.includes("Failed to sync memos"),
+    );
+    expect(memoErrorAlert).not.toBeUndefined();
+  });
 });
