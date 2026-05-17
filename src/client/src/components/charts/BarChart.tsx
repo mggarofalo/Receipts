@@ -58,7 +58,6 @@ export function BarChart({
         role="img"
         aria-label={ariaLabelledBy ? undefined : (ariaLabel ?? "Bar chart")}
         aria-labelledby={ariaLabelledBy}
-        aria-hidden={false}
       >
         <ResponsiveContainer width="100%" height={height}>
           <RechartsBarChart
