@@ -19,7 +19,11 @@ export function OcrTextPanel({ rawText, ocrConfidence }: OcrTextPanelProps) {
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="flex w-full justify-start gap-2">
+        <Button
+          id="ocr-text-trigger"
+          variant="ghost"
+          className="flex w-full justify-start gap-2"
+        >
           {open ? (
             <ChevronDown className="h-4 w-4" />
           ) : (
@@ -29,11 +33,13 @@ export function OcrTextPanel({ rawText, ocrConfidence }: OcrTextPanelProps) {
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="rounded-md border bg-muted/50 p-4">
-          <pre className="whitespace-pre-wrap text-xs font-mono">
-            {rawText}
-          </pre>
-        </div>
+        <section aria-labelledby="ocr-text-trigger">
+          <div className="rounded-md border bg-muted/50 p-4">
+            <pre className="whitespace-pre-wrap text-xs font-mono">
+              {rawText}
+            </pre>
+          </div>
+        </section>
       </CollapsibleContent>
     </Collapsible>
   );
