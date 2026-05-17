@@ -115,4 +115,151 @@ describe("ChangeHistory", () => {
     );
     expect(mockUseEntityAuditHistory).toHaveBeenCalledWith("Account", "xyz-789");
   });
+
+  it("timestamp tooltip trigger is keyboard-focusable (native button element)", () => {
+    const changedAt = new Date("2025-01-15T10:30:00Z").toISOString();
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-ts",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Created",
+          changesJson: "[]",
+          changedByUserId: null,
+          changedByApiKeyId: null,
+          changedAt,
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // Timestamp trigger is a native <button>, which is keyboard-focusable by default
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThan(0);
+  });
+
+  it("user ID tooltip trigger is keyboard-focusable and exposes full ID in aria-label", () => {
+    const fullUserId = "550e8400-e29b-41d4-a716-446655440000";
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-user",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Updated",
+          changesJson: "[]",
+          changedByUserId: fullUserId,
+          changedByApiKeyId: null,
+          changedAt: new Date().toISOString(),
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // The user ID trigger is a native <button> and has an aria-label with the full ID
+    const userIdButton = screen.getByRole("button", {
+      name: new RegExp(fullUserId),
+    });
+    expect(userIdButton).toBeInTheDocument();
+  });
+
+  it("API key tooltip trigger is keyboard-focusable and exposes full ID in aria-label", () => {
+    const fullApiKeyId = "660e8400-e29b-41d4-a716-446655440001";
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-apikey",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Created",
+          changesJson: "[]",
+          changedByUserId: null,
+          changedByApiKeyId: fullApiKeyId,
+          changedAt: new Date().toISOString(),
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // The API key trigger is a native <button> and has an aria-label with the full ID
+    const apiKeyButton = screen.getByRole("button", {
+      name: new RegExp(fullApiKeyId),
+    });
+    expect(apiKeyButton).toBeInTheDocument();
+  });
+
+  it("tooltip triggers are native button elements (keyboard-accessible without tabIndex)", () => {
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-role",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Created",
+          changesJson: "[]",
+          changedByUserId: "user-001",
+          changedByApiKeyId: null,
+          changedAt: new Date().toISOString(),
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    const { container } = renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // Tooltip triggers are native <button> elements — keyboard-accessible by default,
+    // no explicit tabIndex needed, and no ARIA role mismatch.
+    const buttons = container.querySelectorAll("button[aria-label]");
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("full timestamp is exposed in aria-label for screen readers", () => {
+    const changedAt = new Date("2025-06-01T14:00:00Z").toISOString();
+    mockUseEntityAuditHistory.mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "log-aria",
+          entityType: "Receipt",
+          entityId: "abc-123",
+          action: "Deleted",
+          changesJson: "[]",
+          changedByUserId: null,
+          changedByApiKeyId: null,
+          changedAt,
+          ipAddress: null,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    const { container } = renderWithProviders(
+      <ChangeHistory entityType="Receipt" entityId="abc-123" />,
+    );
+
+    // The aria-label on the timestamp trigger must expose the full formatted timestamp
+    const timestampTrigger = container.querySelector(
+      '[aria-label^="Timestamp:"]',
+    );
+    expect(timestampTrigger).not.toBeNull();
+    expect(timestampTrigger?.getAttribute("aria-label")).toContain("2025");
+  });
 });
