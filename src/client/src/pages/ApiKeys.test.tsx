@@ -227,9 +227,9 @@ describe("ApiKeys", () => {
     // Now click the destructive Revoke button in the dialog
     const dialogButtons = screen.getAllByRole("button", { name: /revoke/i });
     const confirmButton = dialogButtons.find(
-      (btn) => btn.closest("[role='dialog']") !== null,
+      (btn) => btn.closest("[role='alertdialog']") !== null,
     );
-    expect(confirmButton).toBeDefined();
+    expect(confirmButton).not.toBeNull();
     await user.click(confirmButton!);
     expect(mockMutate).toHaveBeenCalledWith("key-1");
   });
@@ -558,9 +558,9 @@ describe("ApiKeys", () => {
 
     const dialogButtons = screen.getAllByRole("button", { name: /revoke/i });
     const confirmButton = dialogButtons.find(
-      (btn) => btn.closest("[role='dialog']") !== null,
+      (btn) => btn.closest("[role='alertdialog']") !== null,
     );
-    expect(confirmButton).toBeDefined();
+    expect(confirmButton).not.toBeNull();
     await user.click(confirmButton!);
     await vi.waitFor(() => {
       expect(showError).toHaveBeenCalledWith("Failed to revoke API key.");
@@ -646,7 +646,7 @@ describe("ApiKeys", () => {
 
     const dialogButtons = screen.getAllByRole("button", { name: /revoke/i });
     const confirmButton = dialogButtons.find(
-      (btn) => btn.closest("[role='dialog']") !== null,
+      (btn) => btn.closest("[role='alertdialog']") !== null,
     );
     await user.click(confirmButton!);
 
@@ -750,6 +750,92 @@ describe("ApiKeys", () => {
     expect(mockSelect).toHaveBeenCalled();
   });
 
+  it("revoke confirmation uses alertdialog role", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useQuery } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "key-1",
+          name: "Test Key",
+          createdAt: "2024-01-01T00:00:00Z",
+          lastUsedAt: null,
+          expiresAt: null,
+          isRevoked: false,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /^revoke$/i }));
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+  });
+
+  it("revoke alertdialog cancel button closes the dialog", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const { useQuery } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "key-1",
+          name: "Test Key",
+          createdAt: "2024-01-01T00:00:00Z",
+          lastUsedAt: null,
+          expiresAt: null,
+          isRevoked: false,
+        },
+      ],
+      isLoading: false,
+    }));
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /^revoke$/i }));
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("revoke alertdialog confirm button calls mutate", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    const mockMutate = vi.fn();
+    const { useQuery, useMutation } = await import("@tanstack/react-query");
+    vi.mocked(useQuery).mockReturnValue(mockQueryResult({
+      data: [
+        {
+          id: "key-1",
+          name: "Test Key",
+          createdAt: "2024-01-01T00:00:00Z",
+          lastUsedAt: null,
+          expiresAt: null,
+          isRevoked: false,
+        },
+      ],
+      isLoading: false,
+    }));
+    vi.mocked(useMutation).mockImplementation((() => ({
+      mutate: mockMutate,
+      isPending: false,
+    })) as unknown as typeof useMutation);
+
+    renderWithQueryClient(<ApiKeys />);
+    await user.click(screen.getByRole("button", { name: /^revoke$/i }));
+
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    const confirmButton = screen.getAllByRole("button", { name: /^revoke$/i }).find(
+      (btn) => btn.closest("[role='alertdialog']") !== null,
+    );
+    expect(confirmButton).not.toBeNull();
+    await user.click(confirmButton!);
+    expect(mockMutate).toHaveBeenCalledWith("key-1");
+  });
+
   it("shows Creating state when create mutation is pending", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const { useMutation } = await import("@tanstack/react-query");
@@ -787,9 +873,9 @@ describe("ApiKeys", () => {
     // The confirm button in the dialog should show "Revoking..."
     const dialogButtons = screen.getAllByRole("button", { name: /revoking/i });
     const confirmButton = dialogButtons.find(
-      (btn) => btn.closest("[role='dialog']") !== null,
+      (btn) => btn.closest("[role='alertdialog']") !== null,
     );
-    expect(confirmButton).toBeDefined();
+    expect(confirmButton).not.toBeNull();
     expect(confirmButton).toBeDisabled();
   });
 });
