@@ -20,23 +20,33 @@ export function SortableTableHead({
 }: SortableTableHeadProps) {
   const isActive = currentSortBy === column;
 
+  const ariaSortValue: "ascending" | "descending" | "none" = isActive
+    ? currentSortDirection === "asc"
+      ? "ascending"
+      : "descending"
+    : "none";
+
   return (
     <TableHead
-      className={`cursor-pointer select-none hover:bg-muted/50 ${className ?? ""}`}
-      onClick={() => onToggleSort(column)}
+      aria-sort={ariaSortValue}
+      className={`select-none ${className ?? ""}`}
     >
-      <span className="inline-flex items-center gap-1">
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 cursor-pointer hover:text-foreground w-full"
+        onClick={() => onToggleSort(column)}
+      >
         {label}
         {isActive ? (
           currentSortDirection === "asc" ? (
-            <ArrowUp className="h-3.5 w-3.5" />
+            <ArrowUp aria-hidden className="h-3.5 w-3.5" />
           ) : (
-            <ArrowDown className="h-3.5 w-3.5" />
+            <ArrowDown aria-hidden className="h-3.5 w-3.5" />
           )
         ) : (
-          <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
+          <ArrowUpDown aria-hidden className="h-3.5 w-3.5 opacity-30" />
         )}
-      </span>
+      </button>
     </TableHead>
   );
 }
