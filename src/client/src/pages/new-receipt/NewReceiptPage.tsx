@@ -203,7 +203,7 @@ export default function NewReceiptPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
         {/* Left column — form sections */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           {/* Receipt Header */}
           <Form {...form}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

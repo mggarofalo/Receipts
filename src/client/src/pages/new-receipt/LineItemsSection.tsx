@@ -674,7 +674,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
+                <TableHead className="min-w-[16ch]">Description</TableHead>
                 <TableHead>Qty</TableHead>
                 <TableHead>Unit Price</TableHead>
                 <TableHead>Line Total</TableHead>
@@ -688,7 +688,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
               {items.map((item) =>
                 editingItemId === item.id ? (
                   <TableRow key={item.id}>
-                    <TableCell>
+                    <TableCell className="max-w-[32ch]">
                       <Input
                         value={editDraft.description}
                         onChange={(e) =>
@@ -758,7 +758,9 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                   </TableRow>
                 ) : (
                   <TableRow key={item.id}>
-                    <TableCell>{item.description}</TableCell>
+                    <TableCell className="whitespace-normal break-words max-w-[32ch]">
+                      {item.description}
+                    </TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
                     <TableCell>
