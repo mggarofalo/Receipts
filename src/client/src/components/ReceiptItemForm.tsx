@@ -55,7 +55,6 @@ interface ItemTemplate {
   defaultSubcategory?: string | null;
   defaultUnitPrice?: number | null;
   defaultUnitPriceCurrency?: string | null;
-  defaultPricingMode?: string | null;
   defaultItemCode?: string | null;
 }
 
@@ -71,10 +70,7 @@ const receiptItemSchema = z.object({
 
 type ReceiptItemSchemaValues = z.output<typeof receiptItemSchema>;
 
-/** The form always emits pricingMode: "quantity" — flat pricing has been removed from the UI. */
-export type ReceiptItemFormValues = ReceiptItemSchemaValues & {
-  pricingMode: "quantity";
-};
+export type ReceiptItemFormValues = ReceiptItemSchemaValues;
 
 interface ReceiptItemFormProps {
   mode: "create" | "edit";
@@ -291,7 +287,7 @@ export function ReceiptItemForm({
       });
     }
 
-    onSubmit({ ...values, pricingMode: "quantity" });
+    onSubmit(values);
   }
 
   const computedTotal = (watchedQuantity ?? 0) * (watchedUnitPrice ?? 0);

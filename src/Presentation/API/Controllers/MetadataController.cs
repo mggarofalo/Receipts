@@ -16,7 +16,6 @@ public class MetadataController : ControllerBase
 	{
 		AdjustmentTypes = EnumLabels.AdjustmentTypes,
 		AuthEventTypes = EnumLabels.AuthEventTypes,
-		PricingModes = EnumLabels.PricingModes,
 		AuditActions = EnumLabels.AuditActions,
 		EntityTypes = EnumLabels.EntityTypes,
 	};

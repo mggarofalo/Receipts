@@ -181,7 +181,6 @@ function ReceiptDetail() {
               unitPrice: Number(i.unitPrice ?? 0),
               category: i.category,
               subcategory: i.subcategory,
-              pricingMode: i.pricingMode,
               normalizedDescriptionName: i.normalizedDescriptionName,
             }))}
             subtotal={subtotal}

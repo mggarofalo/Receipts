@@ -34,7 +34,6 @@ function mapProposalToInitialValues(
     items: proposal.items.map((item) => ({
       receiptItemCode: item.code ?? "",
       description: item.description ?? "",
-      pricingMode: "quantity" as const,
       quantity: Number(item.quantity ?? 1),
       unitPrice: Number(item.unitPrice ?? 0),
       category: "",

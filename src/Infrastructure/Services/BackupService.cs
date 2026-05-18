@@ -106,7 +106,6 @@ public class BackupService(
 				default_subcategory TEXT,
 				default_unit_price TEXT,
 				default_unit_price_currency TEXT,
-				default_pricing_mode TEXT,
 				default_item_code TEXT,
 				description TEXT
 			)
@@ -133,7 +132,6 @@ public class BackupService(
 				total_amount_currency TEXT NOT NULL,
 				category TEXT NOT NULL,
 				subcategory TEXT,
-				pricing_mode TEXT NOT NULL,
 				FOREIGN KEY (receipt_id) REFERENCES receipts(id)
 			)
 			""",
@@ -254,9 +252,9 @@ public class BackupService(
 
 		const string sql = """
 			INSERT INTO item_templates (id, name, default_category, default_subcategory,
-				default_unit_price, default_unit_price_currency, default_pricing_mode,
+				default_unit_price, default_unit_price_currency,
 				default_item_code, description)
-			VALUES ($id, $name, $cat, $subcat, $price, $priceCurrency, $pricingMode, $itemCode, $desc)
+			VALUES ($id, $name, $cat, $subcat, $price, $priceCurrency, $itemCode, $desc)
 			""";
 
 		foreach (ItemTemplateEntity template in templates)
@@ -269,7 +267,6 @@ public class BackupService(
 			cmd.Parameters.AddWithValue("$subcat", (object?)template.DefaultSubcategory ?? DBNull.Value);
 			cmd.Parameters.AddWithValue("$price", template.DefaultUnitPrice.HasValue ? template.DefaultUnitPrice.Value.ToString("G") : DBNull.Value);
 			cmd.Parameters.AddWithValue("$priceCurrency", template.DefaultUnitPriceCurrency.HasValue ? template.DefaultUnitPriceCurrency.Value.ToString() : DBNull.Value);
-			cmd.Parameters.AddWithValue("$pricingMode", (object?)template.DefaultPricingMode ?? DBNull.Value);
 			cmd.Parameters.AddWithValue("$itemCode", (object?)template.DefaultItemCode ?? DBNull.Value);
 			cmd.Parameters.AddWithValue("$desc", (object?)template.Description ?? DBNull.Value);
 			await cmd.ExecuteNonQueryAsync(cancellationToken);
@@ -307,9 +304,9 @@ public class BackupService(
 		const string sql = """
 			INSERT INTO receipt_items (id, receipt_id, receipt_item_code, description, quantity,
 				unit_price, unit_price_currency, total_amount, total_amount_currency,
-				category, subcategory, pricing_mode)
+				category, subcategory)
 			VALUES ($id, $receiptId, $itemCode, $desc, $qty, $unitPrice, $unitPriceCurrency,
-				$totalAmt, $totalAmtCurrency, $cat, $subcat, $pricingMode)
+				$totalAmt, $totalAmtCurrency, $cat, $subcat)
 			""";
 
 		foreach (ReceiptItemEntity item in items)
@@ -327,7 +324,6 @@ public class BackupService(
 			cmd.Parameters.AddWithValue("$totalAmtCurrency", item.TotalAmountCurrency.ToString());
 			cmd.Parameters.AddWithValue("$cat", item.Category);
 			cmd.Parameters.AddWithValue("$subcat", (object?)item.Subcategory ?? DBNull.Value);
-			cmd.Parameters.AddWithValue("$pricingMode", item.PricingMode.ToString());
 			await cmd.ExecuteNonQueryAsync(cancellationToken);
 		}
 	}

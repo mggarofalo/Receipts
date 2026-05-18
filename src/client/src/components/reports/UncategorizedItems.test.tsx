@@ -44,7 +44,6 @@ const mockItems = [
     totalAmount: 3.0,
     category: "Uncategorized",
     subcategory: null,
-    pricingMode: "quantity",
   },
   {
     id: "item-2",
@@ -56,7 +55,6 @@ const mockItems = [
     totalAmount: 2.0,
     category: "Uncategorized",
     subcategory: "Fruit",
-    pricingMode: "quantity",
   },
 ];
 
@@ -230,7 +228,6 @@ describe("UncategorizedItems", () => {
       totalAmount: 1.0,
       category: "Uncategorized",
       subcategory: null,
-      pricingMode: "quantity",
     }));
     setupMock({
       data: { totalCount: 51, items: manyItems },

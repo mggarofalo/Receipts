@@ -37,10 +37,6 @@ const mockResponse = {
     { value: "Login", label: "Login" },
     { value: "LoginFailed", label: "Login Failed" },
   ],
-  pricingModes: [
-    { value: "quantity", label: "Quantity" },
-    { value: "flat", label: "Flat" },
-  ],
   auditActions: [
     { value: "Create", label: "Created" },
     { value: "Update", label: "Updated" },
@@ -71,7 +67,6 @@ describe("useEnumMetadata", () => {
     expect(client.GET).toHaveBeenCalledWith("/api/metadata/enums");
     expect(result.current.adjustmentTypes).toEqual(mockResponse.adjustmentTypes);
     expect(result.current.authEventTypes).toEqual(mockResponse.authEventTypes);
-    expect(result.current.pricingModes).toEqual(mockResponse.pricingModes);
     expect(result.current.auditActions).toEqual(mockResponse.auditActions);
     expect(result.current.entityTypes).toEqual(mockResponse.entityTypes);
   });
@@ -96,10 +91,6 @@ describe("useEnumMetadata", () => {
       Login: "Login",
       LoginFailed: "Login Failed",
     });
-    expect(result.current.pricingModeLabels).toEqual({
-      quantity: "Quantity",
-      flat: "Flat",
-    });
     expect(result.current.auditActionLabels).toEqual({
       Create: "Created",
       Update: "Updated",
@@ -120,7 +111,6 @@ describe("useEnumMetadata", () => {
     expect(result.current.isLoading).toBe(true);
     expect(result.current.adjustmentTypes).toEqual([]);
     expect(result.current.authEventTypes).toEqual([]);
-    expect(result.current.pricingModes).toEqual([]);
     expect(result.current.auditActions).toEqual([]);
     expect(result.current.entityTypes).toEqual([]);
   });

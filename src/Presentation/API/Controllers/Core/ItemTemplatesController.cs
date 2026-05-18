@@ -209,7 +209,6 @@ public class ItemTemplatesController(IMediator mediator, ItemTemplateMapper mapp
 			DefaultCategory = r.DefaultCategory,
 			DefaultSubcategory = r.DefaultSubcategory,
 			DefaultUnitPrice = r.DefaultUnitPrice.HasValue ? (double)r.DefaultUnitPrice.Value : null,
-			DefaultPricingMode = r.DefaultPricingMode,
 			DefaultItemCode = r.DefaultItemCode,
 		})];
 

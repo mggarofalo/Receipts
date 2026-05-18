@@ -793,8 +793,7 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 							ri.UnitPrice,
 							ri.TotalAmount,
 							ri.Category,
-							ri.Subcategory,
-							ri.PricingMode
+							ri.Subcategory
 						};
 
 		var allItems = await baseQuery.ToListAsync(cancellationToken);
@@ -822,8 +821,7 @@ public partial class ReportService(IDbContextFactory<ApplicationDbContext> conte
 				x.UnitPrice,
 				x.TotalAmount,
 				x.Category,
-				x.Subcategory,
-				x.PricingMode.ToString().ToLowerInvariant()))
+				x.Subcategory))
 			.ToList();
 
 		return new UncategorizedItemsResult(pagedItems, totalCount);

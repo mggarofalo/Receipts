@@ -162,7 +162,6 @@ export function useCreateCompleteReceipt() {
         unitPrice: number;
         category: string;
         subcategory: string;
-        pricingMode: "quantity" | "flat";
       }[];
     }) => {
       const { data, error } = await client.POST("/api/receipts/complete", { body });

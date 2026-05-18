@@ -36,7 +36,6 @@ interface UncategorizedItemData {
   totalAmount: number;
   category: string;
   subcategory?: string | null;
-  pricingMode: string;
 }
 
 export default function UncategorizedItems() {
@@ -118,7 +117,6 @@ export default function UncategorizedItems() {
             unitPrice: item.unitPrice,
             category,
             subcategory: subcategory || null,
-            pricingMode: item.pricingMode as "quantity" | "flat",
           })),
         }),
       );

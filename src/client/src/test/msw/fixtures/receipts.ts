@@ -28,7 +28,6 @@ export const tripResponse = {
         quantity: 2,
         unitPrice: 3.99,
         totalPrice: 7.98,
-        pricingMode: "quantity",
       },
     ],
     subtotal: 7.98,

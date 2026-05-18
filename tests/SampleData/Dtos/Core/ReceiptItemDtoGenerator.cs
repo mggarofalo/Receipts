@@ -4,7 +4,7 @@ namespace SampleData.Dtos.Core;
 
 public static class ReceiptItemDtoGenerator
 {
-	public static CreateReceiptItemRequest GenerateCreateRequest(string pricingMode = "quantity", string? receiptItemCode = "ITEM-001", string? subcategory = "Test Subcategory")
+	public static CreateReceiptItemRequest GenerateCreateRequest(string? receiptItemCode = "ITEM-001", string? subcategory = "Test Subcategory")
 	{
 		return new CreateReceiptItemRequest
 		{
@@ -13,8 +13,7 @@ public static class ReceiptItemDtoGenerator
 			Quantity = 2.0,
 			UnitPrice = 9.99,
 			Category = "Test Category",
-			Subcategory = subcategory,
-			PricingMode = pricingMode
+			Subcategory = subcategory
 		};
 	}
 
@@ -23,7 +22,7 @@ public static class ReceiptItemDtoGenerator
 		return [.. Enumerable.Range(0, count).Select(_ => GenerateCreateRequest())];
 	}
 
-	public static UpdateReceiptItemRequest GenerateUpdateRequest(string pricingMode = "quantity", string? receiptItemCode = "ITEM-001", string? subcategory = "Test Subcategory")
+	public static UpdateReceiptItemRequest GenerateUpdateRequest(string? receiptItemCode = "ITEM-001", string? subcategory = "Test Subcategory")
 	{
 		return new UpdateReceiptItemRequest
 		{
@@ -33,8 +32,7 @@ public static class ReceiptItemDtoGenerator
 			Quantity = 2.0,
 			UnitPrice = 9.99,
 			Category = "Test Category",
-			Subcategory = subcategory,
-			PricingMode = pricingMode
+			Subcategory = subcategory
 		};
 	}
 

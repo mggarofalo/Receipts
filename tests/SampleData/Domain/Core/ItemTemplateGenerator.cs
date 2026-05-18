@@ -13,7 +13,6 @@ public static class ItemTemplateGenerator
 			"Test Category",
 			"Test Subcategory",
 			new Money(9.99m),
-			"quantity",
 			"ITEM-001",
 			"Test Description"
 		);

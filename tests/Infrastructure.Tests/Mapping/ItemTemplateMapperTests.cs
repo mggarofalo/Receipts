@@ -22,7 +22,6 @@ public class ItemTemplateMapperTests
 			"Groceries",
 			"Produce",
 			new Money(9.99m, Currency.USD),
-			"quantity",
 			"ITEM-001",
 			"A description"
 		);
@@ -37,7 +36,6 @@ public class ItemTemplateMapperTests
 		entity.DefaultUnitPriceCurrency.Should().Be(Currency.USD);
 		entity.DefaultCategory.Should().Be("Groceries");
 		entity.DefaultSubcategory.Should().Be("Produce");
-		entity.DefaultPricingMode.Should().Be("quantity");
 		entity.DefaultItemCode.Should().Be("ITEM-001");
 		entity.Description.Should().Be("A description");
 	}
@@ -71,7 +69,6 @@ public class ItemTemplateMapperTests
 			DefaultUnitPriceCurrency = Currency.USD,
 			DefaultCategory = "Electronics",
 			DefaultSubcategory = "Cables",
-			DefaultPricingMode = "flat",
 			DefaultItemCode = "ITEM-002",
 			Description = "Desc"
 		};
@@ -153,7 +150,6 @@ public class ItemTemplateMapperTests
 			"Groceries",
 			"Produce",
 			new Money(12.34m, Currency.USD),
-			"quantity",
 			"ITEM-RT",
 			"Round trip description"
 		);
@@ -169,7 +165,6 @@ public class ItemTemplateMapperTests
 		roundTripped.DefaultSubcategory.Should().Be(original.DefaultSubcategory);
 		roundTripped.DefaultUnitPrice!.Amount.Should().Be(original.DefaultUnitPrice!.Amount);
 		roundTripped.DefaultUnitPrice.Currency.Should().Be(original.DefaultUnitPrice.Currency);
-		roundTripped.DefaultPricingMode.Should().Be(original.DefaultPricingMode);
 		roundTripped.DefaultItemCode.Should().Be(original.DefaultItemCode);
 		roundTripped.Description.Should().Be(original.Description);
 	}

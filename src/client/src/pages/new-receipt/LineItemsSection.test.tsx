@@ -92,7 +92,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Milk",
-        pricingMode: "quantity",
         quantity: 2,
         unitPrice: 3.5,
         category: "Food",
@@ -114,7 +113,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Milk",
-        pricingMode: "quantity",
         quantity: 2,
         unitPrice: 3.5,
         category: "Food",
@@ -124,7 +122,6 @@ describe("LineItemsSection", () => {
         id: "2",
         receiptItemCode: "",
         description: "Bread",
-        pricingMode: "flat",
         quantity: 1,
         unitPrice: 4.0,
         category: "Food",
@@ -147,7 +144,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Fractional item",
-        pricingMode: "quantity",
         quantity: 10,
         unitPrice: 0.09,
         category: "Food",
@@ -168,7 +164,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Milk",
-        pricingMode: "quantity",
         quantity: 1,
         unitPrice: 3.5,
         category: "Food",
@@ -189,7 +184,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Soap",
-        pricingMode: "flat",
         quantity: 1,
         unitPrice: 5,
         category: "Household",
@@ -209,7 +203,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: longDescription,
-        pricingMode: "quantity",
         quantity: 1,
         unitPrice: 2.5,
         category: "Food",
@@ -234,7 +227,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Milk",
-        pricingMode: "quantity",
         quantity: 2,
         unitPrice: 3.5,
         category: "Food",
@@ -254,7 +246,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Milk",
-        pricingMode: "quantity",
         quantity: 2,
         unitPrice: 3.5,
         category: "Food",
@@ -282,7 +273,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Milk",
-        pricingMode: "quantity",
         quantity: 2,
         unitPrice: 3.5,
         category: "Food",
@@ -314,7 +304,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Milk",
-        pricingMode: "quantity",
         quantity: 2,
         unitPrice: 3.5,
         category: "Food",
@@ -346,7 +335,6 @@ describe("LineItemsSection", () => {
         id: "1",
         receiptItemCode: "",
         description: "Milk",
-        pricingMode: "quantity",
         quantity: 2,
         unitPrice: 3.5,
         category: "Food",
@@ -367,28 +355,5 @@ describe("LineItemsSection", () => {
     // Should still be in edit mode (save rejected)
     expect(screen.getByLabelText("Edit description")).toBeInTheDocument();
     expect(onChange).not.toHaveBeenCalled();
-  });
-
-  it("disables quantity input in edit mode for flat pricing items", async () => {
-    const user = userEvent.setup();
-    const items: ReceiptLineItem[] = [
-      {
-        id: "1",
-        receiptItemCode: "",
-        description: "Service Fee",
-        pricingMode: "flat",
-        quantity: 1,
-        unitPrice: 25,
-        category: "Food",
-        subcategory: "",
-      },
-    ];
-    renderWithProviders(
-      <LineItemsSection {...defaultProps} items={items} />,
-    );
-
-    await user.click(screen.getByRole("button", { name: /edit/i }));
-
-    expect(screen.getByLabelText("Edit quantity")).toBeDisabled();
   });
 });

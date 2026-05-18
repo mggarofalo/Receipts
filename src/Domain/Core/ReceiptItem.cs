@@ -1,5 +1,3 @@
-using Common;
-
 namespace Domain.Core;
 
 public class ReceiptItem
@@ -16,7 +14,6 @@ public class ReceiptItem
 	// while the Category/Subcategory tables serve as suggestion lists for the UI.
 	public string Category { get; set; }
 	public string? Subcategory { get; set; }
-	public PricingMode PricingMode { get; set; }
 
 	// Resolver-populated fields — readonly from a domain-logic perspective, but public setters
 	// are required so Mapperly can populate them. Not included in the constructor: the
@@ -29,11 +26,10 @@ public class ReceiptItem
 	public const string DescriptionCannotBeEmpty = "Description cannot be empty";
 	public const string QuantityMustBePositive = "Quantity must be positive";
 	public const string CategoryCannotBeEmpty = "Category cannot be empty";
-	public const string FlatPricingModeQuantityMustBeOne = "Quantity must be 1 when pricing mode is flat.";
 	public const string UnitPriceMustBePositive = "Unit price must be positive";
 	public const string TotalAmountExceedsTolerance = "Total amount must be within $0.01 of quantity times unit price";
 
-	public ReceiptItem(Guid id, string? receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string? subcategory, PricingMode pricingMode = PricingMode.Quantity)
+	public ReceiptItem(Guid id, string? receiptItemCode, string description, decimal quantity, Money unitPrice, Money totalAmount, string category, string? subcategory)
 	{
 		if (string.IsNullOrWhiteSpace(description))
 		{
@@ -61,11 +57,6 @@ public class ReceiptItem
 			throw new ArgumentException(CategoryCannotBeEmpty, nameof(category));
 		}
 
-		if (pricingMode == PricingMode.Flat && quantity != 1)
-		{
-			throw new ArgumentException(FlatPricingModeQuantityMustBeOne, nameof(quantity));
-		}
-
 		Id = id;
 		ReceiptItemCode = receiptItemCode;
 		Description = description;
@@ -74,6 +65,5 @@ public class ReceiptItem
 		TotalAmount = totalAmount;
 		Category = category;
 		Subcategory = subcategory;
-		PricingMode = pricingMode;
 	}
 }

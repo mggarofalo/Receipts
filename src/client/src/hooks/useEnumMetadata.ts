@@ -36,11 +36,6 @@ export function useEnumMetadata() {
     [query.data?.authEventTypes],
   );
 
-  const pricingModes = useMemo(
-    () => query.data?.pricingModes ?? [],
-    [query.data?.pricingModes],
-  );
-
   const auditActions = useMemo(
     () => query.data?.auditActions ?? [],
     [query.data?.auditActions],
@@ -61,11 +56,6 @@ export function useEnumMetadata() {
     [authEventTypes],
   );
 
-  const pricingModeLabels = useMemo(
-    () => toLabelMap(pricingModes),
-    [pricingModes],
-  );
-
   const auditActionLabels = useMemo(
     () => toLabelMap(auditActions),
     [auditActions],
@@ -80,12 +70,10 @@ export function useEnumMetadata() {
     () => ({
       adjustmentTypes,
       authEventTypes,
-      pricingModes,
       auditActions,
       entityTypes,
       adjustmentTypeLabels,
       authEventLabels,
-      pricingModeLabels,
       auditActionLabels,
       entityTypeLabels,
       isLoading: query.isLoading,
@@ -93,12 +81,10 @@ export function useEnumMetadata() {
     [
       adjustmentTypes,
       authEventTypes,
-      pricingModes,
       auditActions,
       entityTypes,
       adjustmentTypeLabels,
       authEventLabels,
-      pricingModeLabels,
       auditActionLabels,
       entityTypeLabels,
       query.isLoading,

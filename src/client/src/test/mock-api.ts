@@ -169,7 +169,6 @@ export function mockReceiptItemResponse(
     unitPrice: 9.99,
     category: "General",
     subcategory: null,
-    pricingMode: "quantity",
     ...overrides,
   };
 }
@@ -215,7 +214,6 @@ export function mockItemTemplateResponse(
     defaultSubcategory: null,
     defaultUnitPrice: null,
     defaultUnitPriceCurrency: null,
-    defaultPricingMode: null,
     defaultItemCode: null,
     ...overrides,
   };

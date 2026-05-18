@@ -9,8 +9,7 @@ public record UncategorizedItemRecord(
 	decimal UnitPrice,
 	decimal TotalAmount,
 	string Category,
-	string? Subcategory,
-	string PricingMode);
+	string? Subcategory);
 
 public record UncategorizedItemsResult(
 	List<UncategorizedItemRecord> Items,

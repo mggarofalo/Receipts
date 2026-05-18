@@ -38,7 +38,6 @@ public partial class ItemTemplateMapper
 			source.DefaultCategory,
 			source.DefaultSubcategory,
 			defaultUnitPrice,
-			source.DefaultPricingMode,
 			source.DefaultItemCode,
 			source.Description
 		);
@@ -56,7 +55,6 @@ public partial class ItemTemplateMapper
 			source.DefaultCategory,
 			source.DefaultSubcategory,
 			defaultUnitPrice,
-			source.DefaultPricingMode,
 			source.DefaultItemCode,
 			source.Description
 		);

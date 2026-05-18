@@ -8,10 +8,6 @@ export const enumMetadata: EnumMetadataResponse = {
     { value: "surcharge", label: "Surcharge" },
   ],
   authEventTypes: [{ value: "login", label: "Login" }],
-  pricingModes: [
-    { value: "quantity", label: "Quantity" },
-    { value: "flat", label: "Flat" },
-  ],
   auditActions: [{ value: "created", label: "Created" }],
   entityTypes: [{ value: "receipt", label: "Receipt" }],
 };

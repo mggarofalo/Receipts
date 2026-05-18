@@ -49,59 +49,6 @@ public class UpdateItemTemplateRequestValidatorTests
 	}
 
 	[Fact]
-	public void Should_Fail_When_DefaultPricingModeIsInvalid()
-	{
-		// Arrange
-		UpdateItemTemplateRequest request = new() { Id = Guid.NewGuid(), Name = "Template", DefaultPricingMode = "invalid" };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == UpdateItemTemplateRequestValidator.DefaultPricingModeInvalid);
-	}
-
-	[Fact]
-	public void Should_Pass_When_DefaultPricingModeIsQuantity()
-	{
-		// Arrange
-		UpdateItemTemplateRequest request = new() { Id = Guid.NewGuid(), Name = "Template", DefaultPricingMode = "quantity" };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.True(result.IsValid);
-	}
-
-	[Fact]
-	public void Should_Pass_When_DefaultPricingModeIsFlat()
-	{
-		// Arrange
-		UpdateItemTemplateRequest request = new() { Id = Guid.NewGuid(), Name = "Template", DefaultPricingMode = "flat" };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.True(result.IsValid);
-	}
-
-	[Fact]
-	public void Should_Pass_When_DefaultPricingModeIsNull()
-	{
-		// Arrange
-		UpdateItemTemplateRequest request = new() { Id = Guid.NewGuid(), Name = "Template", DefaultPricingMode = null };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.True(result.IsValid);
-	}
-
-	[Fact]
 	public void Should_Fail_When_DefaultUnitPriceIsNegative()
 	{
 		// Arrange

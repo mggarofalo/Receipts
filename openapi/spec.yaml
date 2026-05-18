@@ -5216,7 +5216,7 @@ components:
 
     UncategorizedItem:
       type: object
-      required: [id, receiptId, description, quantity, unitPrice, totalAmount, category, pricingMode]
+      required: [id, receiptId, description, quantity, unitPrice, totalAmount, category]
       properties:
         id:
           type: string
@@ -5241,8 +5241,6 @@ components:
           type: string
         subcategory:
           type: ["string", "null"]
-        pricingMode:
-          type: string
 
     SpendingByNormalizedDescriptionResponse:
       type: object
@@ -5765,10 +5763,6 @@ components:
             - number
             - "null"
           format: double
-        defaultPricingMode:
-          type:
-            - string
-            - "null"
         defaultItemCode:
           type:
             - string
@@ -5800,10 +5794,6 @@ components:
             - number
             - "null"
           format: double
-        defaultPricingMode:
-          type:
-            - string
-            - "null"
         defaultItemCode:
           type:
             - string
@@ -5840,10 +5830,6 @@ components:
             - string
             - "null"
           description: "Currency code for the default unit price (e.g., 'USD')"
-        defaultPricingMode:
-          type:
-            - string
-            - "null"
         defaultItemCode:
           type:
             - string
@@ -5907,10 +5893,6 @@ components:
             - number
             - "null"
           format: double
-        defaultPricingMode:
-          type:
-            - string
-            - "null"
         defaultItemCode:
           type:
             - string
@@ -6455,10 +6437,6 @@ components:
           type: string
         subcategory:
           type: ["string", "null"]
-        pricingMode:
-          type: string
-          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
-          default: quantity
 
     UpdateReceiptItemRequest:
       type: object
@@ -6481,14 +6459,10 @@ components:
           type: string
         subcategory:
           type: ["string", "null"]
-        pricingMode:
-          type: string
-          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
-          default: quantity
 
     ReceiptItemResponse:
       type: object
-      required: [id, receiptId, description, quantity, unitPrice, category, pricingMode]
+      required: [id, receiptId, description, quantity, unitPrice, category]
       properties:
         id:
           type: string
@@ -6510,9 +6484,6 @@ components:
           type: string
         subcategory:
           type: ["string", "null"]
-        pricingMode:
-          type: string
-          description: "Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)"
         normalizedDescriptionId:
           type: ["string", "null"]
           format: uuid
@@ -7299,17 +7270,13 @@ components:
 
     EnumMetadataResponse:
       type: object
-      required: [adjustmentTypes, authEventTypes, pricingModes, auditActions, entityTypes]
+      required: [adjustmentTypes, authEventTypes, auditActions, entityTypes]
       properties:
         adjustmentTypes:
           type: array
           items:
             $ref: "#/components/schemas/EnumValuePair"
         authEventTypes:
-          type: array
-          items:
-            $ref: "#/components/schemas/EnumValuePair"
-        pricingModes:
           type: array
           items:
             $ref: "#/components/schemas/EnumValuePair"

@@ -11,17 +11,8 @@ public partial class ReceiptItemMapper
 {
 	[MapProperty(nameof(ReceiptItem.UnitPrice.Amount), nameof(ReceiptItemResponse.UnitPrice))]
 	[MapperIgnoreSource(nameof(ReceiptItem.TotalAmount))]
-	[MapperIgnoreSource(nameof(ReceiptItem.PricingMode))]
 	[MapperIgnoreTarget(nameof(ReceiptItemResponse.AdditionalProperties))]
-	[MapperIgnoreTarget(nameof(ReceiptItemResponse.PricingMode))]
-	private partial ReceiptItemResponse ToResponsePartial(ReceiptItem source);
-
-	public ReceiptItemResponse ToResponse(ReceiptItem source)
-	{
-		ReceiptItemResponse response = ToResponsePartial(source);
-		response.PricingMode = source.PricingMode.ToString().ToLowerInvariant();
-		return response;
-	}
+	public partial ReceiptItemResponse ToResponse(ReceiptItem source);
 
 	public ReceiptItem ToDomain(CreateReceiptItemRequest source)
 	{
@@ -29,9 +20,6 @@ public partial class ReceiptItemMapper
 		decimal unitPrice = (decimal)source.UnitPrice;
 		Money unitPriceMoney = new(unitPrice, Currency.USD);
 		Money totalAmount = new(Math.Round(quantity * unitPrice, 2, MidpointRounding.AwayFromZero), Currency.USD);
-
-		PricingMode pricingMode = Enum.TryParse<PricingMode>(source.PricingMode, ignoreCase: true, out PricingMode mode)
-			? mode : PricingMode.Quantity;
 
 		return new ReceiptItem(
 			Guid.Empty,
@@ -41,8 +29,7 @@ public partial class ReceiptItemMapper
 			unitPriceMoney,
 			totalAmount,
 			source.Category,
-			source.Subcategory,
-			pricingMode
+			source.Subcategory
 		);
 	}
 
@@ -53,9 +40,6 @@ public partial class ReceiptItemMapper
 		Money unitPriceMoney = new(unitPrice, Currency.USD);
 		Money totalAmount = new(Math.Round(quantity * unitPrice, 2, MidpointRounding.AwayFromZero), Currency.USD);
 
-		PricingMode pricingMode = Enum.TryParse<PricingMode>(source.PricingMode, ignoreCase: true, out PricingMode mode)
-			? mode : PricingMode.Quantity;
-
 		return new ReceiptItem(
 			source.Id,
 			source.ReceiptItemCode,
@@ -64,8 +48,7 @@ public partial class ReceiptItemMapper
 			unitPriceMoney,
 			totalAmount,
 			source.Category,
-			source.Subcategory,
-			pricingMode
+			source.Subcategory
 		);
 	}
 

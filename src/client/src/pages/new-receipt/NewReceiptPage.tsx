@@ -189,7 +189,6 @@ export default function NewReceiptPage({
           unitPrice: item.unitPrice,
           category: item.category,
           subcategory: item.subcategory,
-          pricingMode: item.pricingMode,
         })),
       });
 

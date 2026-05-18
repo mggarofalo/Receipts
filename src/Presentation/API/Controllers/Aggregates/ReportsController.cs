@@ -459,8 +459,7 @@ public class ReportsController(IMediator mediator) : ControllerBase
 				UnitPrice = (double)i.UnitPrice,
 				TotalAmount = (double)i.TotalAmount,
 				Category = i.Category,
-				Subcategory = i.Subcategory,
-				PricingMode = i.PricingMode
+				Subcategory = i.Subcategory
 			}).ToList()
 		});
 	}

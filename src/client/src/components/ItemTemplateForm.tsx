@@ -25,7 +25,6 @@ const itemTemplateSchema = z.object({
   defaultCategory: z.string().optional(),
   defaultSubcategory: z.string().optional(),
   defaultUnitPrice: z.number().min(0).optional(),
-  defaultPricingMode: z.string().optional(),
   defaultItemCode: z.string().optional(),
 });
 
@@ -70,7 +69,6 @@ export function ItemTemplateForm({
       defaultCategory: "",
       defaultSubcategory: "",
       defaultUnitPrice: undefined,
-      defaultPricingMode: "",
       defaultItemCode: "",
       ...defaultValues,
     },

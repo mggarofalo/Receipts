@@ -17,7 +17,6 @@ public class MetadataControllerTests
 		result.Value.Should().NotBeNull();
 		result.Value!.AdjustmentTypes.Should().NotBeEmpty();
 		result.Value.AuthEventTypes.Should().NotBeEmpty();
-		result.Value.PricingModes.Should().NotBeEmpty();
 		result.Value.AuditActions.Should().NotBeEmpty();
 		result.Value.EntityTypes.Should().NotBeEmpty();
 	}
@@ -33,7 +32,6 @@ public class MetadataControllerTests
 
 		IEnumerable<EnumValuePair> allPairs = response.AdjustmentTypes
 			.Concat(response.AuthEventTypes)
-			.Concat(response.PricingModes)
 			.Concat(response.AuditActions)
 			.Concat(response.EntityTypes);
 

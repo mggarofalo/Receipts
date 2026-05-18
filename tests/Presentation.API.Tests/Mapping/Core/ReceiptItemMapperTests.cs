@@ -36,7 +36,6 @@ public class ReceiptItemMapperTests
 		Assert.Equal(Currency.USD, actual.UnitPrice.Currency);
 		Assert.Equal("Groceries", actual.Category);
 		Assert.Equal("Produce", actual.Subcategory);
-		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
 	}
 
 	[Fact]
@@ -134,7 +133,6 @@ public class ReceiptItemMapperTests
 		Assert.Equal(Currency.USD, actual.UnitPrice.Currency);
 		Assert.Equal("Groceries", actual.Category);
 		Assert.Equal("Fruit", actual.Subcategory);
-		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
 	}
 
 	[Fact]
@@ -188,7 +186,6 @@ public class ReceiptItemMapperTests
 		Assert.Equal((double)10.99m, actual.UnitPrice);
 		Assert.Equal("Electronics", actual.Category);
 		Assert.Equal("Cables", actual.Subcategory);
-		Assert.Equal("quantity", actual.PricingMode);
 	}
 
 	[Fact]
@@ -212,75 +209,6 @@ public class ReceiptItemMapperTests
 
 		// Assert
 		Assert.Equal((double)33.4567m, actual.UnitPrice);
-	}
-
-	[Fact]
-	public void ToDomain_FromCreateRequest_FlatPricingMode_MapsPricingMode()
-	{
-		// Arrange
-		CreateReceiptItemRequest request = new()
-		{
-			ReceiptItemCode = "ITEM-FLAT-001",
-			Description = "Flat Price Item",
-			Quantity = 1.0,
-			UnitPrice = 14.97,
-			Category = "Groceries",
-			Subcategory = "Produce",
-			PricingMode = "flat"
-		};
-
-		// Act
-		ReceiptItem actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Equal(PricingMode.Flat, actual.PricingMode);
-		Assert.Equal(1.0m, actual.Quantity);
-	}
-
-	[Fact]
-	public void ToDomain_FromCreateRequest_NullPricingMode_DefaultsToQuantity()
-	{
-		// Arrange
-		CreateReceiptItemRequest request = new()
-		{
-			ReceiptItemCode = "ITEM-NULL-001",
-			Description = "Null PricingMode Item",
-			Quantity = 2.0,
-			UnitPrice = 5.00,
-			Category = "Test",
-			Subcategory = "Default"
-		};
-
-		// Act
-		ReceiptItem actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
-	}
-
-	[Fact]
-	public void ToDomain_FromUpdateRequest_FlatPricingMode_MapsPricingMode()
-	{
-		// Arrange
-		Guid expectedId = Guid.NewGuid();
-		UpdateReceiptItemRequest request = new()
-		{
-			Id = expectedId,
-			ReceiptItemCode = "ITEM-FLAT-UPD-001",
-			Description = "Updated Flat Item",
-			Quantity = 1.0,
-			UnitPrice = 25.00,
-			Category = "Electronics",
-			Subcategory = "Cables",
-			PricingMode = "flat"
-		};
-
-		// Act
-		ReceiptItem actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Equal(PricingMode.Flat, actual.PricingMode);
-		Assert.Equal(expectedId, actual.Id);
 	}
 
 	[Fact]
@@ -351,100 +279,6 @@ public class ReceiptItemMapperTests
 		// Assert
 		Assert.Null(actual.ReceiptItemCode);
 		Assert.Null(actual.Subcategory);
-	}
-
-	[Fact]
-	public void ToResponse_MapsPricingMode()
-	{
-		// Arrange
-		Guid expectedId = Guid.NewGuid();
-		ReceiptItem item = new(
-			expectedId,
-			"ITEM-RES-003",
-			"Flat Response Item",
-			1.0m,
-			new Money(15.00m, Currency.USD),
-			new Money(15.00m, Currency.USD),
-			"Test",
-			"Flat",
-			PricingMode.Flat
-		);
-
-		// Act
-		ReceiptItemResponse actual = _mapper.ToResponse(item);
-
-		// Assert
-		Assert.Equal("flat", actual.PricingMode);
-	}
-
-	[Fact]
-	public void ToDomain_FromCreateRequest_InvalidPricingMode_DefaultsToQuantity()
-	{
-		// Arrange
-		CreateReceiptItemRequest request = new()
-		{
-			ReceiptItemCode = "ITEM-INV-001",
-			Description = "Invalid PricingMode Item",
-			Quantity = 1.0,
-			UnitPrice = 5.00,
-			Category = "Test",
-			Subcategory = "Invalid",
-			PricingMode = "nonexistent_mode"
-		};
-
-		// Act
-		ReceiptItem actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
-	}
-
-	[Fact]
-	public void ToDomain_FromUpdateRequest_InvalidPricingMode_DefaultsToQuantity()
-	{
-		// Arrange
-		Guid expectedId = Guid.NewGuid();
-		UpdateReceiptItemRequest request = new()
-		{
-			Id = expectedId,
-			ReceiptItemCode = "ITEM-INV-UPD-001",
-			Description = "Invalid PricingMode Update",
-			Quantity = 1.0,
-			UnitPrice = 5.00,
-			Category = "Test",
-			Subcategory = "Invalid",
-			PricingMode = "nonexistent_mode"
-		};
-
-		// Act
-		ReceiptItem actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
-		Assert.Equal(expectedId, actual.Id);
-	}
-
-	[Fact]
-	public void ToDomain_FromUpdateRequest_NullPricingMode_DefaultsToQuantity()
-	{
-		// Arrange
-		Guid expectedId = Guid.NewGuid();
-		UpdateReceiptItemRequest request = new()
-		{
-			Id = expectedId,
-			ReceiptItemCode = "ITEM-NULL-UPD-001",
-			Description = "Null PricingMode Update",
-			Quantity = 2.0,
-			UnitPrice = 5.00,
-			Category = "Test",
-			Subcategory = "Default"
-		};
-
-		// Act
-		ReceiptItem actual = _mapper.ToDomain(request);
-
-		// Assert
-		Assert.Equal(PricingMode.Quantity, actual.PricingMode);
 	}
 
 	[Fact]

@@ -11,7 +11,6 @@ public class ItemTemplateEntity : ISoftDeletable
 	public string? DefaultSubcategory { get; set; }
 	public decimal? DefaultUnitPrice { get; set; }
 	public Currency? DefaultUnitPriceCurrency { get; set; }
-	public string? DefaultPricingMode { get; set; }
 	public string? DefaultItemCode { get; set; }
 	public string? Description { get; set; }
 	public DateTimeOffset? DeletedAt { get; set; }

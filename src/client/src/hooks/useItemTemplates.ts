@@ -40,7 +40,6 @@ export function useCreateItemTemplate() {
       defaultCategory?: string | null;
       defaultSubcategory?: string | null;
       defaultUnitPrice?: number | null;
-      defaultPricingMode?: string | null;
       defaultItemCode?: string | null;
     }) => {
       const { data, error } = await client.POST("/api/item-templates", {
@@ -69,7 +68,6 @@ export function useUpdateItemTemplate() {
       defaultCategory?: string | null;
       defaultSubcategory?: string | null;
       defaultUnitPrice?: number | null;
-      defaultPricingMode?: string | null;
       defaultItemCode?: string | null;
     }) => {
       const { error } = await client.PUT("/api/item-templates/{id}", {

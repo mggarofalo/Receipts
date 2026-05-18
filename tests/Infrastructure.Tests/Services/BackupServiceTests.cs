@@ -167,7 +167,6 @@ public class BackupServiceTests : IDisposable
 				TotalAmount = 20.00m,
 				TotalAmountCurrency = Currency.USD,
 				Category = "Food",
-				PricingMode = PricingMode.Quantity,
 			});
 
 			ctx.Transactions.Add(new TransactionEntity
@@ -282,7 +281,6 @@ public class BackupServiceTests : IDisposable
 				DefaultSubcategory = "Dairy",
 				DefaultUnitPrice = 4.99m,
 				DefaultUnitPriceCurrency = Currency.USD,
-				DefaultPricingMode = "Quantity",
 				DefaultItemCode = "MILK001",
 				Description = "Whole milk",
 			});

@@ -55,7 +55,7 @@ describe("ItemTemplates (integration)", () => {
     });
   });
 
-  it("renders category and pricing mode columns", async () => {
+  it("renders category columns", async () => {
     renderWithQueryClient(<ItemTemplates />);
 
     await waitFor(() => {
@@ -65,10 +65,6 @@ describe("ItemTemplates (integration)", () => {
     // Category columns
     expect(screen.getAllByText("Groceries").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Tools")).toBeInTheDocument();
-
-    // Pricing mode display
-    expect(screen.getByText("Quantity")).toBeInTheDocument();
-    expect(screen.getAllByText("Flat").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders placeholder for null optional fields", async () => {
@@ -83,7 +79,6 @@ describe("ItemTemplates (integration)", () => {
         defaultSubcategory: null,
         defaultUnitPrice: null,
         defaultUnitPriceCurrency: null,
-        defaultPricingMode: null,
         defaultItemCode: null,
       },
     ];
@@ -96,10 +91,10 @@ describe("ItemTemplates (integration)", () => {
       expect(screen.getByText("Miscellaneous")).toBeInTheDocument();
     });
 
-    // The "Miscellaneous" row has null category, subcategory, unitPrice, and pricingMode
+    // The "Miscellaneous" row has null category, subcategory, and unitPrice
     // Each renders a "--" placeholder
     const placeholders = screen.getAllByText("--");
-    expect(placeholders.length).toBeGreaterThanOrEqual(4);
+    expect(placeholders.length).toBeGreaterThanOrEqual(3);
   });
 
   it("toggles checkbox selection and shows delete button", async () => {

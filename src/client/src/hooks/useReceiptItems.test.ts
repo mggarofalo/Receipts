@@ -54,7 +54,6 @@ describe("useReceiptItems", () => {
         unitPrice: 1.5,
         category: "Food",
         subcategory: "Produce",
-        pricingMode: "quantity",
       },
     ];
     (client.GET as Mock).mockResolvedValue({ data: { data: items, total: 1, offset: 0, limit: 50 }, error: undefined });
@@ -138,7 +137,6 @@ describe("useReceiptItems", () => {
       unitPrice: 0.5,
       category: "Food",
       subcategory: "Produce",
-      pricingMode: "quantity" as const,
     };
     const created = { id: "2", ...body };
     (client.POST as Mock).mockResolvedValue({ data: created, error: undefined });
@@ -165,7 +163,6 @@ describe("useReceiptItems", () => {
       unitPrice: 1.75,
       category: "Food",
       subcategory: "Produce",
-      pricingMode: "quantity" as const,
     };
     (client.PUT as Mock).mockResolvedValue({ error: undefined });
 
@@ -236,7 +233,7 @@ describe("useReceiptItems", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ receiptId: "r-1", body: { receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S", pricingMode: "quantity" as const } });
+    result.current.mutate({ receiptId: "r-1", body: { receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S" } });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to create receipt item");
@@ -249,7 +246,7 @@ describe("useReceiptItems", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ receiptId: "r-1", body: [{ receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S", pricingMode: "quantity" as const }] });
+    result.current.mutate({ receiptId: "r-1", body: [{ receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S" }] });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to create receipt items");
@@ -271,7 +268,7 @@ describe("useReceiptItems", () => {
       wrapper: Wrapper,
     });
 
-    result.current.mutate({ receiptId: "r-1", body: [{ receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S", pricingMode: "quantity" as const }] });
+    result.current.mutate({ receiptId: "r-1", body: [{ receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S" }] });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["receipt-items"] });
@@ -284,7 +281,7 @@ describe("useReceiptItems", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ body: { id: "1", receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S", pricingMode: "quantity" as const } });
+    result.current.mutate({ body: { id: "1", receiptItemCode: "RI-1", description: "X", quantity: 1, unitPrice: 1, category: "C", subcategory: "S" } });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(toast.error).toHaveBeenCalledWith("Failed to update receipt item");

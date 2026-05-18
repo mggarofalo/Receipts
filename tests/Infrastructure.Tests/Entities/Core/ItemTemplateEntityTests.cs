@@ -15,7 +15,6 @@ public class ItemTemplateEntityTests
 		string defaultSubcategory = "Produce";
 		decimal defaultUnitPrice = 9.99m;
 		Currency defaultUnitPriceCurrency = Currency.USD;
-		string defaultPricingMode = "quantity";
 		string defaultItemCode = "ITEM-001";
 		string description = "Test Description";
 
@@ -28,7 +27,6 @@ public class ItemTemplateEntityTests
 			DefaultSubcategory = defaultSubcategory,
 			DefaultUnitPrice = defaultUnitPrice,
 			DefaultUnitPriceCurrency = defaultUnitPriceCurrency,
-			DefaultPricingMode = defaultPricingMode,
 			DefaultItemCode = defaultItemCode,
 			Description = description
 		};
@@ -40,7 +38,6 @@ public class ItemTemplateEntityTests
 		Assert.Equal(defaultSubcategory, entity.DefaultSubcategory);
 		Assert.Equal(defaultUnitPrice, entity.DefaultUnitPrice);
 		Assert.Equal(defaultUnitPriceCurrency, entity.DefaultUnitPriceCurrency);
-		Assert.Equal(defaultPricingMode, entity.DefaultPricingMode);
 		Assert.Equal(defaultItemCode, entity.DefaultItemCode);
 		Assert.Equal(description, entity.Description);
 	}
@@ -60,7 +57,6 @@ public class ItemTemplateEntityTests
 		Assert.Null(entity.DefaultSubcategory);
 		Assert.Null(entity.DefaultUnitPrice);
 		Assert.Null(entity.DefaultUnitPriceCurrency);
-		Assert.Null(entity.DefaultPricingMode);
 		Assert.Null(entity.DefaultItemCode);
 		Assert.Null(entity.Description);
 		Assert.Null(entity.DeletedAt);
