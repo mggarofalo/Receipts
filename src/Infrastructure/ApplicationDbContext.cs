@@ -39,6 +39,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	{
 	}
 
+	/// <summary>
+	/// When <see langword="false"/>, <see cref="SaveChangesAsync"/> skips audit-log generation.
+	/// Defaults to <see langword="true"/>. Bulk-seeding paths set this to <see langword="false"/>
+	/// so a one-time sample-data import does not emit thousands of null-attributed audit rows.
+	/// </summary>
+	public bool AuditingEnabled { get; set; } = true;
+
 	public virtual DbSet<AccountEntity> Accounts { get; set; } = null!;
 	public virtual DbSet<CardEntity> Cards { get; set; } = null!;
 	public virtual DbSet<CategoryEntity> Categories { get; set; } = null!;
@@ -93,7 +100,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 	{
 		HandleSoftDelete();
 
-		List<AuditEntry> auditEntries = CollectAuditEntries();
+		List<AuditEntry> auditEntries = AuditingEnabled ? CollectAuditEntries() : [];
 		HashSet<string> touchedDescriptions = CollectTouchedReceiptItemDescriptions();
 
 		int result = await base.SaveChangesAsync(cancellationToken);

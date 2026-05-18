@@ -67,8 +67,12 @@ public static class SampleDataSeederService
 		Random rng = new(RandomSeed);
 		GeneratedData data = GenerateDataset(rng);
 
-		// Bulk insert — AutoDetectChanges is needlessly expensive for a write-only seed.
+		// Bulk insert — AutoDetectChanges is needlessly expensive for a write-only seed, and
+		// auditing is disabled so this one-time import does not emit a per-row audit-log entry
+		// for every seeded entity (thousands of null-attributed rows). Soft-delete handling and
+		// description reconciliation in SaveChangesAsync still run.
 		dbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+		dbContext.AuditingEnabled = false;
 		dbContext.Accounts.AddRange(data.Accounts);
 		dbContext.Cards.AddRange(data.Cards);
 		dbContext.Receipts.AddRange(data.Receipts);
