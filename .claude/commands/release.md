@@ -21,8 +21,12 @@ Detect which mode you are in **before starting Step 1**.
 ## Step 1: Fetch latest state
 
 ```bash
-git fetch origin --tags --prune
+git fetch origin --tags --prune --prune-tags
 ```
+
+`--prune-tags` removes local tags that were deleted on the remote (plain `--prune`
+does not touch tags), so a stale local tag cannot be mistaken for the latest
+release in Step 2.
 
 Confirm `main` is current and you intend to release the tip of `origin/main`.
 
