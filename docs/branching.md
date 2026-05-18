@@ -1,148 +1,106 @@
 # Branching Strategy
 
-This project uses a hierarchical branching model with `develop` as the integration branch. Feature work merges into `develop`, and `develop` is promoted to `main` via release cycles.
+This project uses a **single-trunk** model. `main` is the only long-lived branch.
+All work happens on short-lived feature/issue branches that are cut from `main`,
+opened as PRs against `main`, and squash-merged back.
+
+There is no `develop` branch, no module/parent branches, and no sync-back automation.
 
 ## Merge Flow
 
 ```
-feature/issue branches → develop → main
-                                    ↑
-                          hotfix/* ──┘  (emergency only)
+<type>/receipts-<id>-<slug>  ──PR──▶  main  ──tag vX.Y.Z──▶  release
 ```
 
-**CI enforces** that only `develop`, `release-please--*`, and `hotfix/*` branches can open PRs to `main`. All other branches must target `develop`.
+Every change — features, fixes, chores, docs, hotfixes — flows the same way:
+branch off `main`, open a PR to `main`, squash-merge.
 
 ## Branch Types
 
-### `develop` — Integration Branch
+### `main` — the trunk
 
-- All feature/module/parent branches merge into `develop` via PR
-- `develop` is promoted to `main` when a release is cut (via release-please or manual PR)
-- After a release merges to `main`, an automated workflow creates a sync PR (`main → develop`) to keep `develop` up to date
+- The single long-lived branch. Always releasable.
+- Protected: changes land only via squash-merged PRs.
+- Pushing a `vX.Y.Z` tag on `main` cuts a release (see [releases.md](releases.md)).
 
-### Module Branches
+### Feature / Issue branches
 
-One per phase, named `module/phase-N` (e.g., `module/phase-0`):
-- Created when work on a module begins
-- All issue work within that phase merges locally into the module branch
-- When the module is complete, open a **PR from the module branch to `develop`**
-- The PR triggers CI — this is the safety net that catches issues the agent may have missed
-- After PR merge, delete the module branch
+One short-lived branch per tracked Plane issue:
 
-### Parent Branches (for epics)
+- Branch off the latest `main`.
+- Name it `<type>/receipts-<id>-<slug>` — e.g. `feat/receipts-123-add-pagination`,
+  `fix/receipts-145-null-guard`, `docs/receipts-160-update-readme`.
+- `<type>` is the Conventional Commits type (`feat`, `fix`, `docs`, `refactor`,
+  `test`, `chore`).
+- Open a PR to `main`. CI runs build, test, lint, security, docker-build, and
+  API-compat checks — this is the safety net.
+- After review, **squash-merge** into `main`. The PR title becomes the squash
+  commit message, so it must be a valid Conventional Commit.
+- Delete the branch after merge.
 
-When an epic has multiple child issues:
-- Create a parent branch using the epic's identifier (e.g., `feat/receipts-83-description`)
-- Parent branch is created off `develop` (or the module branch if one exists)
-- Child issue branches are created off the parent branch and squash-merge back into it
-- When all children are complete, the parent branch gets a PR to `develop`
-- This keeps related changes grouped and avoids polluting `develop` with intermediate work
+### Hotfixes
 
-### Issue Branches
+A hotfix is not special — it is an ordinary `fix:` PR to `main`:
 
-One per tracked issue:
-- Branch off the parent branch (if epic) or module branch, NOT `develop` or `main`
-- Use the issue identifier to form a branch name (e.g., `feat/receipts-123-short-description`)
-- Merge locally into the parent/module branch via squash merge (no PR needed)
-- Delete the issue branch after merge
+- Branch off `main` as `fix/receipts-<id>-<slug>`.
+- Open a PR to `main`, squash-merge.
+- Cut a release by pushing a new patch tag (`vX.Y.Z`).
 
-### Hotfix Branches
+## Keeping a branch current
 
-For emergency fixes that must bypass `develop`:
-- Branch off `main` as `hotfix/<description>` (e.g., `hotfix/fix-auth-crash`)
-- Open a PR directly to `main`
-- After merge, the sync workflow creates a PR to bring the fix back into `develop`
-
-### Diagram
-
-```
-main
-  │
-  ├── (release-please PR from develop)
-  │
-develop
-  ├── module/phase-0                                  (PR → develop)
-  │     ├── chore/receipts-90-remove-blazor          (squash-merge into module)
-  │     └── fix/receipts-82-update-ci                (squash-merge into module)
-  │
-  └── feat/receipts-83-replace-viewmodels            (epic parent, PR → develop)
-        ├── feat/receipts-88-generate-dtos           (squash-merge into parent)
-        └── docs/receipts-87-update-docs             (squash-merge into parent)
-```
-
-## Merging Issue Work into Parent/Module Branch
-
-From the main repo (or the parent/module clone), squash-merge the issue branch:
+Before opening a PR, rebase onto the latest `main` so the PR merges cleanly:
 
 ```bash
-git checkout module/phase-0
-git merge --squash feat/receipts-88-generate-dtos
-git commit -m "feat(api): generate DTOs from OpenAPI spec (RECEIPTS-88)"
-git branch -D feat/receipts-88-generate-dtos
+git fetch origin
+git rebase origin/main
 ```
 
-If using a clone for the issue, delete it after merge:
+## Releases
+
+Releases are **tag-driven**. There is no release PR and no release-please.
+After the desired commits are on `main`, push an annotated semver tag:
 
 ```bash
-rm -rf .clones/<branch-name>
+git tag -a v1.4.0 -m "v1.4.0"
+git push origin v1.4.0
 ```
 
-## PR: Parent/Module to develop
+The tag triggers two workflows:
 
-When all issues are complete, push the branch and open a PR **to `develop`**:
+- `docker-publish.yml` — builds and publishes multi-arch images to GHCR.
+- `github-release.yml` — creates a GitHub Release with auto-generated notes.
 
-```bash
-git push -u origin feat/receipts-83-replace-viewmodels
-gh pr create --base develop --title "Replace ViewModels with spec-generated DTOs" --body "..."
-```
+The .NET assembly version is derived from the tag by [MinVer](https://github.com/adamralph/minver).
+See [releases.md](releases.md) for the full process, including how to compute the
+next semver from the conventional commits since the last tag. The `/release`
+command automates it.
 
-The PR triggers CI (build + test) — this is the checkpoint that surfaces issues.
+## Direct commits to main
 
-After CI passes and the PR is approved, merge into `develop`:
-
-```bash
-git branch -d feat/receipts-83-replace-viewmodels
-git push origin --delete feat/receipts-83-replace-viewmodels
-git pull   # update develop with the merged PR
-```
-
-## Promoting develop to main
-
-When ready for a release:
-1. Release-please (or a manual PR) opens a PR from `develop` to `main`
-2. CI runs; after merge, the `sync-develop` workflow auto-creates a PR to sync any release commits back to `develop`
-
-## Direct Commits to Main
-
-**Do not commit directly to main.** All changes flow through `develop` (or `hotfix/*` for emergencies).
-
-Direct commits to `develop` are acceptable only for non-tracked work like:
-- Trivial typo fixes
-- Documentation updates
-- Tooling/build configuration
-
-**NEVER** commit tracked issue work directly to `develop` or `main`. When in doubt, create a branch.
+**Do not commit directly to `main`.** All changes — including trivial ones — flow
+through a PR. Branch protection enforces this.
 
 ## Directory Isolation
 
-Two mechanisms are available for working on issue branches without affecting the main repo:
+Two mechanisms are available for working on issue branches without disturbing the
+main working tree.
 
 ### Git Worktrees (preferred for AI agents)
 
 `git worktree add` creates a linked working tree sharing the same `.git` directory:
 
 ```bash
-git worktree add .claude/worktrees/<branch-name> -b <branch-name>
+git worktree add .claude/worktrees/<branch-name> -b <branch-name> origin/main
 ```
 
-- Shares git history and refs with the main worktree (no duplication)
-- Claude Code's `isolation: "worktree"` parameter automates this for subagents
-- Worktrees live in `.claude/worktrees/` (gitignored)
+- Shares git history and refs with the main worktree (no duplication).
+- Claude Code's `isolation: "worktree"` parameter automates this for subagents.
+- Worktrees live in `.claude/worktrees/` (gitignored).
 
 #### Detecting a worktree
 
-- `test -f .git` — if `.git` is a **file** (not a directory), you're in a worktree
-- `git rev-parse --show-toplevel` — confirms your working directory root
+- `test -f .git` — if `.git` is a **file** (not a directory), you're in a worktree.
+- `git rev-parse --show-toplevel` — confirms your working directory root.
 
 #### What's shared vs not shared
 
@@ -166,13 +124,12 @@ dotnet build Receipts.slnx             # Compiles + generates DTOs and openapi/g
 cd src/client && npm run generate:types:write && cd -  # TypeScript types from OpenAPI spec
 ```
 
-#### Branch naming in worktrees
-
-Use the same convention as issue branches (e.g., `feat/receipts-123-short-description`). Worktrees are just an isolation mechanism — the branch name should reflect the work, not the worktree.
-
 #### Permission settings
 
-The file `.claude/settings.local.json` pre-approves read operations, MCP tools, git commands, and build tools so agents don't face excessive approval prompts. This file is gitignored (`.local.json` suffix) so it's per-user. Copy it from the main worktree if it's missing.
+The file `.claude/settings.local.json` pre-approves read operations, MCP tools, git
+commands, and build tools so agents don't face excessive approval prompts. This file
+is gitignored (`.local.json` suffix) so it's per-user. Copy it from the main worktree
+if it's missing.
 
 ### Local Clones (alternative)
 
@@ -182,12 +139,12 @@ The file `.claude/settings.local.json` pre-approves read operations, MCP tools, 
 git clone --local . .clones/<branch-name>
 ```
 
-- Hardlinks objects (fast, no network), fully independent git repo
-- `cd`, `git commit`, etc. all work normally
-- Clones live in `.clones/` at the repo root (gitignored)
+- Hardlinks objects (fast, no network), fully independent git repo.
+- `cd`, `git commit`, etc. all work normally.
+- Clones live in `.clones/` at the repo root (gitignored).
 
 ### When to Use Which
 
-- **Worktrees** — preferred for parallel AI agent work (faster setup, shared git state)
-- **Local clones** — preferred for human developers who want full independence
-- **Neither** — for simple/small changes, it's fine to work directly on the module branch
+- **Worktrees** — preferred for parallel AI agent work (faster setup, shared git state).
+- **Local clones** — preferred for human developers who want full independence.
+- **Neither** — for simple/small changes, working on a branch in the main worktree is fine.

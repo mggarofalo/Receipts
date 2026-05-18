@@ -32,6 +32,12 @@ WORKDIR /src
 
 ARG TARGETARCH
 
+# Explicit version for the published assemblies. The Docker build context does not
+# include the `.git` directory, so MinVer cannot compute the version inside the
+# image build — the CI workflow derives it from the release tag and passes it here.
+# Defaults to 0.0.0-dev for local/non-tagged image builds.
+ARG VERSION=0.0.0-dev
+
 # Copy project files needed for restore (layer caching)
 COPY Directory.Packages.props Directory.Build.props* ./
 COPY src/Domain/Domain.csproj src/Domain/
@@ -78,12 +84,15 @@ RUN case ${TARGETARCH} in \
     dotnet publish src/Presentation/API/API.csproj \
       -c Release -o /app/publish --no-restore \
       -p:PublishReadyToRun=true -p:OpenApiGenerateDocumentsOnBuild=false \
+      -p:Version=${VERSION} \
       -r linux-${DOTNET_ARCH} && \
     dotnet publish src/Tools/DbMigrator/DbMigrator.csproj \
       -c Release -o /app/tools/DbMigrator --no-restore \
+      -p:Version=${VERSION} \
       -r linux-${DOTNET_ARCH} && \
     dotnet publish src/Tools/DbSeeder/DbSeeder.csproj \
       -c Release -o /app/tools/DbSeeder --no-restore \
+      -p:Version=${VERSION} \
       -r linux-${DOTNET_ARCH}
 
 # Stage 3: Runtime

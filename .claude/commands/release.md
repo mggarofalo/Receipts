@@ -4,195 +4,109 @@ This is a **checklist you must execute**, not documentation. You are responsible
 
 After any context compaction, re-read this file (`.claude/commands/release.md`) to get the full checklist back in context.
 
+This project uses a **single-trunk, tag-driven** release model. There is no `develop` branch, no release PR, and no release-please. **Pushing an annotated `vX.Y.Z` tag on `main` IS the release.** See `docs/releases.md` for the model.
+
 ## Execution Modes
 
-This command supports two modes. Detect which mode you are in **before starting Step 1**.
+Detect which mode you are in **before starting Step 1**.
 
-**Interactive mode** (default): You are running in a direct conversation with the user. Ask for confirmation before merging and report status at each milestone.
+**Interactive mode** (default): You are running in a direct conversation with the user. Confirm the proposed version with the user before tagging.
 
 **Autonomous mode**: You are running as a subagent, or the invoking prompt contains "autonomous", "plan approved", or "headless". In this mode:
 - Do NOT use `EnterPlanMode` or `AskUserQuestion` — these block and you cannot receive interactive responses.
-- Stop after Step 3 (PR created and CI passing). Do NOT merge — return the PR URL so the parent/user can review.
+- Stop after Step 4 (version computed). Do NOT create or push the tag — report the proposed tag and the commit list so the parent/user can decide.
 
 ---
 
-## Step 1: Pre-flight checks
-
-Run all of these checks. If any fail, **stop and report** — do not proceed.
-
-### 1a. Fetch latest state
+## Step 1: Fetch latest state
 
 ```bash
-git fetch origin
+git fetch origin --tags --prune
 ```
 
-### 1b. Check for unreleased commits
+Confirm `main` is current and you intend to release the tip of `origin/main`.
+
+## Step 2: Find the latest release tag
 
 ```bash
-git log --oneline origin/main..origin/develop
+git tag -l 'v*' --sort=-v:refname
 ```
 
-If there are **no commits**, stop and report: "Nothing to release — develop is even with main."
+The first entry is the latest release tag (e.g. `v0.5.0`). If there are **no** `v*` tags, treat the previous version as `v0.0.0` and the first release as `v0.1.0`.
 
-### 1c. Check for open PRs targeting develop
+## Step 3: List the commits since that tag
 
 ```bash
-gh pr list --base develop --state open --json number,title,url
+git log <lasttag>..origin/main --oneline
 ```
 
-If there are open PRs, **stop and report** them. These should be merged or closed before releasing.
+If there are **no commits**, stop and report: "Nothing to release — `main` is even with the latest tag." Otherwise, group the commits by Conventional Commit type (feat, fix, docs, refactor, test, chore) for the release summary.
 
-- **Interactive:** Ask the user if they want to proceed anyway.
-- **Autonomous:** Stop. Open PRs targeting develop are a blocker.
+## Step 4: Compute the suggested semver bump
 
-### 1d. Verify CI is green on develop
+The project is pre-1.0 (`0.x`), so the pre-major rules apply. Inspect the commit range from Step 3 and pick the highest-significance type present:
+
+| Highest-significance commit | Pre-1.0 bump (`0.x`) | Post-1.0 bump |
+|-----------------------------|----------------------|---------------|
+| `feat!:` / `BREAKING CHANGE` footer | minor (`0.Y+1.0`) | major |
+| `feat:`                     | patch (`0.Y.Z+1`)    | minor         |
+| `fix:` / anything else      | patch (`0.Y.Z+1`)    | patch         |
+
+Compute the next tag `vX.Y.Z` from the latest tag in Step 2.
+
+- **Interactive:** Present the proposed version and the grouped commit summary, and ask the user to confirm (or override) the version before continuing.
+- **Autonomous:** **Stop here.** Report the proposed tag, the latest tag, and the grouped commit list. Do not create or push the tag.
+
+## Step 5: Create and push the annotated tag
+
+Only after the version is confirmed (interactive mode).
 
 ```bash
-gh run list --branch develop --limit 1 --json status,conclusion,name
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
 ```
 
-The most recent CI run on `develop` must have `conclusion: "success"`. If it failed or is still running:
+The tag must be **annotated** (`-a`) and must point at a commit on `origin/main`.
 
-- **Interactive:** Report the status and ask the user if they want to wait or proceed.
-- **Autonomous:** Stop. CI must be green.
+## Step 6: Report what the tag triggers
 
-### 1e. Check for an existing develop-to-main PR
+The tag push starts two independent workflows:
+
+| Workflow | File | Result |
+|----------|------|--------|
+| Docker Publish | `.github/workflows/docker-publish.yml` | Multi-arch images pushed to GHCR |
+| GitHub Release | `.github/workflows/github-release.yml` | GitHub Release with auto-generated notes |
+
+The .NET assembly version is derived from the tag by MinVer; the Docker image version is passed as the `VERSION` build arg.
+
+## Step 7: Monitor the workflows
 
 ```bash
-gh pr list --base main --head develop --state open --json number,title,url
+gh run list --workflow docker-publish.yml --limit 1 --json status,conclusion,url
+gh run list --workflow github-release.yml --limit 1 --json status,conclusion,url
 ```
 
-If one already exists, **do not create a new one**. Report the existing PR and skip to Step 3 (wait for CI on the existing PR).
-
-## Step 2: Create the release PR
-
-### 2a. Analyze the commits and determine PR title
-
-Review the commit log from Step 1b. Group commits by type (feat, fix, test, chore, docs, refactor, etc.) for the PR summary.
-
-**Determine the PR title prefix** based on the most significant commit type present. This is critical — the squash merge commit message drives release-please's version bump:
-
-1. If ANY commit has a `!` suffix (e.g. `feat!:`) or `BREAKING CHANGE` footer → `feat!: release develop to main`
-2. If ANY `feat:` commit exists → `feat: release develop to main`
-3. Otherwise → `fix: release develop to main` (guarantees at least a patch bump)
-
-The title must always use a releasable type (`feat`, `fix`, or breaking) so that release-please creates a Release PR after merge.
-
-### 2b. Create the PR
+Poll briefly (up to ~5 minutes for the release job, longer for Docker) until both complete. Then confirm the release exists:
 
 ```bash
-gh pr create --base main --head develop --title "<prefix>: release develop to main" --body "$(cat <<'EOF'
-## Summary
-<grouped bullet points by commit type, e.g.:>
-<- **Features:** ...>
-<- **Fixes:** ...>
-<- **Tests:** ...>
-<- **Chores:** ...>
-<- **Docs:** ...>
-
-## Release pipeline
-After merge, the following happens automatically:
-1. release-please opens (or updates) a Release PR with version bump and changelog
-2. Release PR auto-merges
-3. GitHub Release is created with a git tag
-4. Docker images are built and published to GHCR
-5. sync-develop workflow creates a PR to sync main back into develop
-
-## Test plan
-- [ ] CI passes on this PR
-- [ ] release-please creates the Release PR after merge
-EOF
-)"
+gh release view vX.Y.Z
 ```
 
-Report the PR URL.
-
-**You are not done. Continue to Step 3.**
-
-## Step 3: Wait for CI
-
-```bash
-gh pr checks <PR-NUMBER> --watch
-```
-
-- **If CI passes:** Continue to Step 4.
-- **If CI fails:** Review the failure:
-  ```bash
-  gh pr checks <PR-NUMBER>
-  gh run list --branch develop --limit 1 --json databaseId,conclusion
-  gh run view <RUN-ID> --log-failed
-  ```
-  - **Interactive:** Report the failure details and ask the user how to proceed.
-  - **Autonomous:** Stop and report the failure. Do not attempt to fix CI on the release PR.
-
-**You are not done. Continue to Step 4.**
-
-## Step 4: Merge the release PR
-
-- **Interactive:** Ask the user for confirmation before merging.
-- **Autonomous:** Stop here. Return the PR URL and status. Do NOT merge.
-
-Once confirmed (interactive only):
-
-```bash
-gh pr merge <PR-NUMBER> --squash
-```
-
-Use `--squash` so the PR title becomes the commit message on `main`. Since the title is always a releasable conventional commit type (`feat:`, `fix:`, or breaking), release-please will parse it and create a Release PR with the appropriate version bump.
-
-Report the merge result.
-
-**You are not done. Continue to Step 5.**
-
-## Step 5: Monitor the release pipeline
-
-After the merge, the release-please workflow runs automatically. Monitor it:
-
-### 5a. Wait for release-please to run
-
-```bash
-gh run list --branch main --workflow release-please.yml --limit 1 --json status,conclusion,databaseId,url
-```
-
-If status is not `completed`, wait briefly and re-check (up to 3 minutes, checking every 30 seconds).
-
-### 5b. Check for the Release PR
-
-```bash
-gh pr list --label "autorelease: pending" --state open --json number,title,url
-```
-
-If a Release PR exists, report it. The Release PR auto-merges via the workflow, so no manual action is needed.
-
-### 5c. Check for the sync-develop PR
-
-```bash
-gh pr list --base develop --head main --state open --json number,title,url
-```
-
-If a sync PR was created, report it.
-
-### 5d. Report final status
-
-Output a summary:
+## Step 8: Report final status
 
 ```
 ## Release Summary
 
-| Step | Status |
-|------|--------|
-| Pre-flight checks | pass |
-| Release PR | <URL> |
-| CI | pass |
-| Merge | merged |
-| Release-please | <running/completed/Release PR URL> |
-| Sync-develop PR | <URL or "pending"> |
+| Item | Value |
+|------|-------|
+| Previous tag | <lasttag> |
+| New tag | vX.Y.Z |
+| Bump | <major/minor/patch + reason> |
+| Docker Publish | <running/completed + URL> |
+| GitHub Release | <running/completed + URL> |
 
 ### Commits released
-<commit list from Step 1b>
-
-### Expected version bump
-<Based on PR title prefix: feat! → major (minor while on 0.x), feat → minor (patch while on 0.x), anything else → patch>
+<grouped commit list from Step 3>
 ```
 
 **You are done.**
@@ -201,30 +115,23 @@ Output a summary:
 
 ## Rules
 
-- **Never force-push** — this command does not modify any branches.
-- **Use `--squash` not `--merge`** — the PR title becomes the squash commit message, which release-please parses. A merge commit's message (`chore:`) would not trigger a release.
-- **PR title must always be a releasable type** — `feat:`, `fix:`, or breaking (`feat!:`). Never `chore:`, `test:`, or `docs:` — release-please ignores those.
-- **Do not proceed past blockers** — if pre-flight checks fail, stop and report.
+- **Never force-push** and never delete or move an existing tag.
+- **Tag the tip of `origin/main`** — never an arbitrary commit.
+- **Annotated tags only** (`git tag -a`) — lightweight tags break MinVer's release detection.
 - **No compound Bash commands** — no `&&`, `||`, `;` in a single Bash call (hook constraint). Use separate sequential calls.
-- **Do not create the PR if one already exists** — pick up the existing one.
+- **Autonomous mode stops at Step 4** — propose the version, do not tag.
 
 ## When to Use
 
-- User says "release", "release develop to main", "cut a release"
-- User wants to ship what's on `develop` to `main`
+- User says "release", "cut a release", "tag a release", "ship `main`".
 
 ## When NOT to Use
 
-- User wants to release a hotfix (hotfix branches go directly to main, not through develop)
-- User wants to manually cherry-pick commits to main
-- User is asking about the release process without wanting to execute it
-- There is nothing new on `develop` to release
+- User is asking about the release process without wanting to execute it.
+- There is nothing new on `main` since the last tag.
 
 ## Edge Cases Handled
 
-- **Nothing to release** — Step 1b detects no delta and short-circuits
-- **Open PRs targeting develop** — Step 1c blocks (or asks in interactive mode)
-- **CI failing on develop** — Step 1d blocks before creating the PR
-- **Release PR already exists** — Step 1e skips PR creation, jumps to CI monitoring
-- **CI fails on the release PR** — Step 3 reports failure details
-- **release-please hasn't run yet** — Step 5a polls briefly before reporting
+- **Nothing to release** — Step 3 detects no delta and short-circuits.
+- **No existing tags** — Step 2 falls back to `v0.0.0` → `v0.1.0`.
+- **Autonomous mode** — Step 4 stops with a proposal instead of tagging.

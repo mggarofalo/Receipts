@@ -68,6 +68,13 @@ jobs:
       # Build and push directly to platform-specific tags (not push-by-digest).
       # This makes each architecture independently pullable as soon as its job finishes.
       # The existing GHA cache strategy is preserved per-platform.
+      # The release version is the pushed tag (e.g. v1.2.3) minus the leading `v`.
+      # The Docker build context has no `.git`, so MinVer cannot compute it inside
+      # the image — derive it here and pass it through as the VERSION build arg.
+      - name: Derive release version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push platform-specific image
         id: build
         uses: docker/build-push-action@v7
@@ -78,7 +85,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           push: true
           build-args: |
-            VITE_APP_VERSION=${{ github.ref_name }}
+            VERSION=${{ steps.version.outputs.version }}
+            VITE_APP_VERSION=${{ steps.version.outputs.version }}
             VITE_COMMIT_HASH=${{ github.sha }}
             VITE_SENTRY_DSN=${{ secrets.SENTRY_FRONTEND_DSN }}
             VITE_SENTRY_ENVIRONMENT=production
