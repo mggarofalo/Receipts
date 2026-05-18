@@ -1,4 +1,3 @@
-using Common;
 using Infrastructure.Entities.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -14,12 +13,6 @@ public class ReceiptItemEntityConfiguration : IEntityTypeConfiguration<ReceiptIt
 		builder.Property(e => e.Id)
 			.IsRequired()
 			.ValueGeneratedOnAdd();
-
-		builder.Property(e => e.PricingMode)
-			.HasConversion(
-				v => v.ToString().ToLowerInvariant(),
-				v => Enum.Parse<PricingMode>(v, ignoreCase: true))
-			.HasMaxLength(8);
 
 		builder.Navigation(e => e.Receipt)
 			.AutoInclude();

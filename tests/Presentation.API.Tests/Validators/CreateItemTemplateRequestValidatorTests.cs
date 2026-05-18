@@ -35,59 +35,6 @@ public class CreateItemTemplateRequestValidatorTests
 	}
 
 	[Fact]
-	public void Should_Fail_When_DefaultPricingModeIsInvalid()
-	{
-		// Arrange
-		CreateItemTemplateRequest request = new() { Name = "Template", DefaultPricingMode = "invalid" };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.False(result.IsValid);
-		Assert.Contains(result.Errors, e => e.ErrorMessage == CreateItemTemplateRequestValidator.DefaultPricingModeInvalid);
-	}
-
-	[Fact]
-	public void Should_Pass_When_DefaultPricingModeIsQuantity()
-	{
-		// Arrange
-		CreateItemTemplateRequest request = new() { Name = "Template", DefaultPricingMode = "quantity" };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.True(result.IsValid);
-	}
-
-	[Fact]
-	public void Should_Pass_When_DefaultPricingModeIsFlat()
-	{
-		// Arrange
-		CreateItemTemplateRequest request = new() { Name = "Template", DefaultPricingMode = "flat" };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.True(result.IsValid);
-	}
-
-	[Fact]
-	public void Should_Pass_When_DefaultPricingModeIsNull()
-	{
-		// Arrange
-		CreateItemTemplateRequest request = new() { Name = "Template", DefaultPricingMode = null };
-
-		// Act
-		FluentValidation.Results.ValidationResult result = _validator.Validate(request);
-
-		// Assert
-		Assert.True(result.IsValid);
-	}
-
-	[Fact]
 	public void Should_Fail_When_DefaultUnitPriceIsNegative()
 	{
 		// Arrange

@@ -51,7 +51,6 @@ interface ItemTemplateResponse {
   defaultSubcategory?: string | null;
   defaultUnitPrice?: number | null;
   defaultUnitPriceCurrency?: string | null;
-  defaultPricingMode?: string | null;
   defaultItemCode?: string | null;
 }
 
@@ -208,7 +207,6 @@ function ItemTemplates() {
                   <TableHead>Category</TableHead>
                   <TableHead>Subcategory</TableHead>
                   <TableHead>Unit Price</TableHead>
-                  <TableHead>Pricing Mode</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -269,11 +267,6 @@ function ItemTemplates() {
                           <span className="italic">--</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {template.defaultPricingMode
-                          ? template.defaultPricingMode === "flat" ? "Flat" : "Quantity"
-                          : <span className="italic">--</span>}
-                      </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
@@ -319,7 +312,6 @@ function ItemTemplates() {
                   defaultCategory: values.defaultCategory || null,
                   defaultSubcategory: values.defaultSubcategory || null,
                   defaultUnitPrice: values.defaultUnitPrice ?? null,
-                  defaultPricingMode: values.defaultPricingMode || null,
                   defaultItemCode: values.defaultItemCode || null,
                 },
                 { onSuccess: () => setCreateOpen(false) },
@@ -347,7 +339,6 @@ function ItemTemplates() {
                 defaultCategory: editTemplate.defaultCategory ?? "",
                 defaultSubcategory: editTemplate.defaultSubcategory ?? "",
                 defaultUnitPrice: editTemplate.defaultUnitPrice ?? undefined,
-                defaultPricingMode: editTemplate.defaultPricingMode ?? "",
                 defaultItemCode: editTemplate.defaultItemCode ?? "",
               }}
               isSubmitting={updateItemTemplate.isPending}
@@ -361,7 +352,6 @@ function ItemTemplates() {
                     defaultCategory: values.defaultCategory || null,
                     defaultSubcategory: values.defaultSubcategory || null,
                     defaultUnitPrice: values.defaultUnitPrice ?? null,
-                    defaultPricingMode: values.defaultPricingMode || null,
                     defaultItemCode: values.defaultItemCode || null,
                   },
                   { onSuccess: () => setEditTemplate(null) },

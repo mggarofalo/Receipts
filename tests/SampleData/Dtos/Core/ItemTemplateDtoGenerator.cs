@@ -12,7 +12,6 @@ public static class ItemTemplateDtoGenerator
 			DefaultCategory = "Test Category",
 			DefaultSubcategory = "Test Subcategory",
 			DefaultUnitPrice = 9.99,
-			DefaultPricingMode = "quantity",
 			DefaultItemCode = "ITEM-001",
 			Description = "Test Description"
 		};
@@ -32,7 +31,6 @@ public static class ItemTemplateDtoGenerator
 			DefaultCategory = "Test Category",
 			DefaultSubcategory = "Test Subcategory",
 			DefaultUnitPrice = 9.99,
-			DefaultPricingMode = "quantity",
 			DefaultItemCode = "ITEM-001",
 			Description = "Test Description"
 		};

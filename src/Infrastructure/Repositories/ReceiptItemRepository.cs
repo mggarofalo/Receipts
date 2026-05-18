@@ -47,8 +47,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 				TotalAmount = ri.TotalAmount,
 				TotalAmountCurrency = ri.TotalAmountCurrency,
 				Category = ri.Category,
-				Subcategory = ri.Subcategory,
-				PricingMode = ri.PricingMode
+				Subcategory = ri.Subcategory
 			})
 			.ToListAsync(cancellationToken);
 	}
@@ -87,8 +86,7 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 				TotalAmount = ri.TotalAmount,
 				TotalAmountCurrency = ri.TotalAmountCurrency,
 				Category = ri.Category,
-				Subcategory = ri.Subcategory,
-				PricingMode = ri.PricingMode
+				Subcategory = ri.Subcategory
 			})
 			.ToListAsync(cancellationToken);
 	}
@@ -130,7 +128,6 @@ public class ReceiptItemRepository(IDbContextFactory<ApplicationDbContext> conte
 				TotalAmountCurrency = ri.TotalAmountCurrency,
 				Category = ri.Category,
 				Subcategory = ri.Subcategory,
-				PricingMode = ri.PricingMode,
 				DeletedAt = ri.DeletedAt
 			})
 			.Skip(offset)

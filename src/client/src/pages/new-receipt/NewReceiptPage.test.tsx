@@ -77,7 +77,6 @@ vi.mock("./LineItemsSection", () => ({
               id: "i1",
               receiptItemCode: "",
               description: "Milk",
-              pricingMode: "quantity",
               quantity: 1,
               unitPrice: 50,
               category: "Food",

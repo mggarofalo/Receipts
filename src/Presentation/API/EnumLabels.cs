@@ -30,12 +30,6 @@ public static class EnumLabels
 		new() { Value = "RateLimitExceeded", Label = "Rate Limit Exceeded" },
 	];
 
-	public static readonly EnumValuePair[] PricingModes =
-	[
-		new() { Value = "quantity", Label = "Quantity" },
-		new() { Value = "flat", Label = "Flat" },
-	];
-
 	public static readonly EnumValuePair[] AuditActions =
 	[
 		new() { Value = "Create", Label = "Created" },

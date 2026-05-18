@@ -2560,7 +2560,6 @@ export interface components {
             totalAmount: number;
             category: string;
             subcategory?: string | null;
-            pricingMode: string;
         };
         SpendingByNormalizedDescriptionResponse: {
             items: components["schemas"]["SpendingByNormalizedDescriptionItem"][];
@@ -2824,7 +2823,6 @@ export interface components {
             defaultSubcategory?: string | null;
             /** Format: double */
             defaultUnitPrice?: number | null;
-            defaultPricingMode?: string | null;
             defaultItemCode?: string | null;
         };
         UpdateItemTemplateRequest: {
@@ -2836,7 +2834,6 @@ export interface components {
             defaultSubcategory?: string | null;
             /** Format: double */
             defaultUnitPrice?: number | null;
-            defaultPricingMode?: string | null;
             defaultItemCode?: string | null;
         };
         ItemTemplateResponse: {
@@ -2850,7 +2847,6 @@ export interface components {
             defaultUnitPrice?: number | null;
             /** @description Currency code for the default unit price (e.g., 'USD') */
             defaultUnitPriceCurrency?: string | null;
-            defaultPricingMode?: string | null;
             defaultItemCode?: string | null;
         };
         ItemTemplateListResponse: {
@@ -2889,7 +2885,6 @@ export interface components {
             defaultSubcategory?: string | null;
             /** Format: double */
             defaultUnitPrice?: number | null;
-            defaultPricingMode?: string | null;
             defaultItemCode?: string | null;
         };
         CategoryRecommendationResponse: {
@@ -3174,11 +3169,6 @@ export interface components {
             unitPrice: number;
             category: string;
             subcategory?: string | null;
-            /**
-             * @description Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)
-             * @default quantity
-             */
-            pricingMode: string;
         };
         UpdateReceiptItemRequest: {
             /** Format: uuid */
@@ -3191,11 +3181,6 @@ export interface components {
             unitPrice: number;
             category: string;
             subcategory?: string | null;
-            /**
-             * @description Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price)
-             * @default quantity
-             */
-            pricingMode: string;
         };
         ReceiptItemResponse: {
             /** Format: uuid */
@@ -3210,8 +3195,6 @@ export interface components {
             unitPrice: number;
             category: string;
             subcategory?: string | null;
-            /** @description Pricing mode: 'quantity' (qty x unit price) or 'flat' (single flat price) */
-            pricingMode: string;
             /**
              * Format: uuid
              * @description FK to the canonical NormalizedDescription. Null until the resolver links this item.
@@ -3608,7 +3591,6 @@ export interface components {
         EnumMetadataResponse: {
             adjustmentTypes: components["schemas"]["EnumValuePair"][];
             authEventTypes: components["schemas"]["EnumValuePair"][];
-            pricingModes: components["schemas"]["EnumValuePair"][];
             auditActions: components["schemas"]["EnumValuePair"][];
             entityTypes: components["schemas"]["EnumValuePair"][];
         };

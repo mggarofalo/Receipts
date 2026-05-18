@@ -24,7 +24,6 @@ export interface ScanInitialValues {
   items: Array<{
     receiptItemCode: string;
     description: string;
-    pricingMode: "quantity" | "flat";
     quantity: number;
     unitPrice: number;
     category: string;

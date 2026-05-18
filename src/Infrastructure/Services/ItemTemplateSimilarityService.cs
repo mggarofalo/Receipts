@@ -56,7 +56,6 @@ public class ItemTemplateSimilarityService(
 			DefaultCategory = r.default_category,
 			DefaultSubcategory = r.default_subcategory,
 			DefaultUnitPrice = r.default_unit_price,
-			DefaultPricingMode = r.default_pricing_mode,
 			DefaultItemCode = r.default_item_code,
 		})];
 	}
@@ -107,7 +106,6 @@ public class ItemTemplateSimilarityService(
 			        t."DefaultCategory" AS default_category,
 			        t."DefaultSubcategory" AS default_subcategory,
 			        t."DefaultUnitPrice" AS default_unit_price,
-			        t."DefaultPricingMode" AS default_pricing_mode,
 			        t."DefaultItemCode" AS default_item_code,
 			        'ItemTemplate' AS entity_type
 			    FROM "ItemTemplates" t
@@ -123,7 +121,6 @@ public class ItemTemplateSimilarityService(
 			        ri."Category" AS default_category,
 			        ri."Subcategory" AS default_subcategory,
 			        ri."UnitPrice" AS default_unit_price,
-			        CAST(ri."PricingMode" AS text) AS default_pricing_mode,
 			        ri."ReceiptItemCode" AS default_item_code,
 			        'ReceiptItem' AS entity_type
 			    FROM "ReceiptItems" ri
@@ -150,7 +147,6 @@ public class ItemTemplateSimilarityService(
 			    c.default_category,
 			    c.default_subcategory,
 			    c.default_unit_price,
-			    c.default_pricing_mode,
 			    c.default_item_code
 			FROM combined c
 			LEFT JOIN "ItemEmbeddings" e
@@ -178,7 +174,6 @@ public class ItemTemplateSimilarityService(
 			        "DefaultCategory" AS default_category,
 			        "DefaultSubcategory" AS default_subcategory,
 			        "DefaultUnitPrice" AS default_unit_price,
-			        "DefaultPricingMode" AS default_pricing_mode,
 			        "DefaultItemCode" AS default_item_code
 			    FROM "ItemTemplates"
 			    WHERE "DeletedAt" IS NULL
@@ -194,7 +189,6 @@ public class ItemTemplateSimilarityService(
 			        "Category" AS default_category,
 			        "Subcategory" AS default_subcategory,
 			        "UnitPrice" AS default_unit_price,
-			        CAST("PricingMode" AS text) AS default_pricing_mode,
 			        "ReceiptItemCode" AS default_item_code
 			    FROM "ReceiptItems"
 			    WHERE "DeletedAt" IS NULL
@@ -213,7 +207,7 @@ public class ItemTemplateSimilarityService(
 			)
 			SELECT name, trigram_similarity, semantic_similarity, combined_score,
 			       source, default_category, default_subcategory,
-			       default_unit_price, default_pricing_mode, default_item_code
+			       default_unit_price, default_item_code
 			FROM combined
 			ORDER BY combined_score DESC
 			LIMIT {2}
@@ -234,7 +228,6 @@ public class ItemTemplateSimilarityService(
 		public string? default_category { get; set; }
 		public string? default_subcategory { get; set; }
 		public decimal? default_unit_price { get; set; }
-		public string? default_pricing_mode { get; set; }
 		public string? default_item_code { get; set; }
 	}
 }

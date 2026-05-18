@@ -27,17 +27,6 @@ public class EnumLabelsTests
 	}
 
 	[Fact]
-	public void PricingModes_CoversAllEnumValues()
-	{
-		string[] expected = Enum.GetNames<PricingMode>()
-			.Select(n => n.ToLowerInvariant())
-			.ToArray();
-		string[] actual = EnumLabels.PricingModes.Select(p => p.Value).ToArray();
-
-		actual.Should().BeEquivalentTo(expected);
-	}
-
-	[Fact]
 	public void AuditActions_CoversAllEnumValues()
 	{
 		string[] expected = Enum.GetNames<AuditAction>();
@@ -51,7 +40,6 @@ public class EnumLabelsTests
 	{
 		AssertNoDuplicates(EnumLabels.AdjustmentTypes, "AdjustmentTypes");
 		AssertNoDuplicates(EnumLabels.AuthEventTypes, "AuthEventTypes");
-		AssertNoDuplicates(EnumLabels.PricingModes, "PricingModes");
 		AssertNoDuplicates(EnumLabels.AuditActions, "AuditActions");
 		AssertNoDuplicates(EnumLabels.EntityTypes, "EntityTypes");
 	}

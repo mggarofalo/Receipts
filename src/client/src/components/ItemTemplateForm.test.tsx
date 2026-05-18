@@ -73,7 +73,6 @@ describe("ItemTemplateForm", () => {
           defaultCategory: "Groceries",
           defaultSubcategory: "Dairy",
           defaultUnitPrice: 3.99,
-          defaultPricingMode: "quantity",
           defaultItemCode: "MLK-001",
         }}
       />,

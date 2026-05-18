@@ -11,7 +11,6 @@ export const itemTemplates: ItemTemplateResponse[] = [
     defaultSubcategory: "Dairy",
     defaultUnitPrice: 3.99,
     defaultUnitPriceCurrency: "USD",
-    defaultPricingMode: "quantity",
     defaultItemCode: "MILK-001",
   },
   {
@@ -22,7 +21,6 @@ export const itemTemplates: ItemTemplateResponse[] = [
     defaultSubcategory: "Bakery",
     defaultUnitPrice: 4.5,
     defaultUnitPriceCurrency: "USD",
-    defaultPricingMode: "flat",
     defaultItemCode: null,
   },
   {
@@ -33,7 +31,6 @@ export const itemTemplates: ItemTemplateResponse[] = [
     defaultSubcategory: "Power Tools",
     defaultUnitPrice: 19.99,
     defaultUnitPriceCurrency: "USD",
-    defaultPricingMode: "flat",
     defaultItemCode: "HW-200",
   },
 ];

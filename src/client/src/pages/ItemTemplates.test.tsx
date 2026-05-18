@@ -11,12 +11,10 @@ vi.mock("@/hooks/useEnumMetadata", () => ({
   useEnumMetadata: vi.fn(() => ({
     adjustmentTypes: [],
     authEventTypes: [],
-    pricingModes: [{ value: "quantity", label: "Quantity" }, { value: "flat", label: "Flat" }],
     auditActions: [],
     entityTypes: [],
     adjustmentTypeLabels: {},
     authEventLabels: {},
-    pricingModeLabels: { quantity: "Quantity", flat: "Flat" },
     auditActionLabels: {},
     entityTypeLabels: {},
     isLoading: false,
@@ -159,7 +157,7 @@ describe("ItemTemplates", () => {
 
   it("renders table with item templates when data exists", async () => {
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -188,7 +186,7 @@ describe("ItemTemplates", () => {
   it("closes edit dialog when dismissed", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -248,7 +246,7 @@ describe("ItemTemplates", () => {
   it("opens edit dialog when Edit button is clicked", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -279,7 +277,7 @@ describe("ItemTemplates", () => {
   it("toggles checkbox selection and shows delete button", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -317,7 +315,7 @@ describe("ItemTemplates", () => {
     }));
 
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -377,7 +375,7 @@ describe("ItemTemplates", () => {
   it("renders NoResults when search returns no matches", async () => {
     const { useItemTemplates } = await import("@/hooks/useItemTemplates");
     vi.mocked(useItemTemplates).mockReturnValue(mockQueryResult({
-      data: [{ id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" }],
+      data: [{ id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" }],
       isLoading: false,
     }));
 
@@ -405,7 +403,7 @@ describe("ItemTemplates", () => {
     }));
 
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -470,7 +468,7 @@ describe("ItemTemplates", () => {
   it("shows Hide button in edit modal when user is admin", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -507,7 +505,7 @@ describe("ItemTemplates", () => {
   it("does not show Hide button in edit modal when user is not admin", async () => {
     const user = (await import("@testing-library/user-event")).default.setup();
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");
@@ -546,7 +544,7 @@ describe("ItemTemplates", () => {
     const mockMutate = vi.fn();
 
     const items = [
-      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultPricingMode: "quantity", defaultItemCode: "COF-001" },
+      { id: "1", name: "Coffee", description: "Morning coffee", defaultCategory: "Food", defaultSubcategory: "Drinks", defaultUnitPrice: 4.50, defaultUnitPriceCurrency: "USD", defaultItemCode: "COF-001" },
     ];
 
     const { useFuzzySearch } = await import("@/hooks/useFuzzySearch");

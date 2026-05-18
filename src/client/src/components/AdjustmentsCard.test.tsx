@@ -9,12 +9,10 @@ vi.mock("@/hooks/useEnumMetadata", () => ({
   useEnumMetadata: vi.fn(() => ({
     adjustmentTypes: [{ value: "Tip", label: "Tip" }, { value: "Discount", label: "Discount" }],
     authEventTypes: [],
-    pricingModes: [],
     auditActions: [],
     entityTypes: [],
     adjustmentTypeLabels: { Tip: "Tip", Discount: "Discount" },
     authEventLabels: {},
-    pricingModeLabels: {},
     auditActionLabels: {},
     entityTypeLabels: {},
     isLoading: false,

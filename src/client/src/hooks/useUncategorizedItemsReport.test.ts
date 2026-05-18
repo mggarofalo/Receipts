@@ -30,7 +30,6 @@ describe("useUncategorizedItemsReport", () => {
           totalAmount: 5.0,
           category: "Uncategorized",
           subcategory: null,
-          pricingMode: "quantity",
         },
       ],
     };

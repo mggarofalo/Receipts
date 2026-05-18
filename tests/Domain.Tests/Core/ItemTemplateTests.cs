@@ -15,11 +15,10 @@ public class ItemTemplateTests
 		string defaultCategory = "Groceries";
 		string defaultSubcategory = "Produce";
 		Money defaultUnitPrice = new(9.99m);
-		string defaultPricingMode = "quantity";
 		string defaultItemCode = "ITEM-001";
 
 		// Act
-		ItemTemplate itemTemplate = new(id, name, defaultCategory, defaultSubcategory, defaultUnitPrice, defaultPricingMode, defaultItemCode, description);
+		ItemTemplate itemTemplate = new(id, name, defaultCategory, defaultSubcategory, defaultUnitPrice, defaultItemCode, description);
 
 		// Assert
 		Assert.Equal(id, itemTemplate.Id);
@@ -28,7 +27,6 @@ public class ItemTemplateTests
 		Assert.Equal(defaultCategory, itemTemplate.DefaultCategory);
 		Assert.Equal(defaultSubcategory, itemTemplate.DefaultSubcategory);
 		Assert.Equal(defaultUnitPrice, itemTemplate.DefaultUnitPrice);
-		Assert.Equal(defaultPricingMode, itemTemplate.DefaultPricingMode);
 		Assert.Equal(defaultItemCode, itemTemplate.DefaultItemCode);
 	}
 
@@ -49,7 +47,6 @@ public class ItemTemplateTests
 		Assert.Null(itemTemplate.DefaultCategory);
 		Assert.Null(itemTemplate.DefaultSubcategory);
 		Assert.Null(itemTemplate.DefaultUnitPrice);
-		Assert.Null(itemTemplate.DefaultPricingMode);
 		Assert.Null(itemTemplate.DefaultItemCode);
 	}
 
@@ -96,43 +93,4 @@ public class ItemTemplateTests
 		Assert.StartsWith(ItemTemplate.NameCannotBeEmpty, exception.Message);
 	}
 
-	[Fact]
-	public void Constructor_ValidPricingMode_Quantity_CreatesItemTemplate()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		string name = "Test Template";
-
-		// Act
-		ItemTemplate itemTemplate = new(id, name, defaultPricingMode: "quantity");
-
-		// Assert
-		Assert.Equal("quantity", itemTemplate.DefaultPricingMode);
-	}
-
-	[Fact]
-	public void Constructor_ValidPricingMode_Flat_CreatesItemTemplate()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		string name = "Test Template";
-
-		// Act
-		ItemTemplate itemTemplate = new(id, name, defaultPricingMode: "flat");
-
-		// Assert
-		Assert.Equal("flat", itemTemplate.DefaultPricingMode);
-	}
-
-	[Fact]
-	public void Constructor_InvalidPricingMode_ThrowsArgumentException()
-	{
-		// Arrange
-		Guid id = Guid.NewGuid();
-		string name = "Test Template";
-
-		// Act & Assert
-		ArgumentException exception = Assert.Throws<ArgumentException>(() => new ItemTemplate(id, name, defaultPricingMode: "invalid"));
-		Assert.StartsWith(ItemTemplate.DefaultPricingModeInvalid, exception.Message);
-	}
 }

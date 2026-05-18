@@ -437,7 +437,7 @@ public class BackupImportService(
 
 		int created = 0, updated = 0;
 		await using SqliteCommand cmd = sqlite.CreateCommand();
-		cmd.CommandText = "SELECT id, name, default_category, default_subcategory, default_unit_price, default_unit_price_currency, default_pricing_mode, default_item_code, description FROM item_templates";
+		cmd.CommandText = "SELECT id, name, default_category, default_subcategory, default_unit_price, default_unit_price_currency, default_item_code, description FROM item_templates";
 		await using SqliteDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
 		while (await reader.ReadAsync(cancellationToken))
@@ -448,9 +448,8 @@ public class BackupImportService(
 			string? defaultSubcategory = reader.IsDBNull(3) ? null : reader.GetString(3);
 			decimal? defaultUnitPrice = reader.IsDBNull(4) ? null : reader.GetDecimal(4);
 			Currency? defaultUnitPriceCurrency = reader.IsDBNull(5) ? null : Enum.Parse<Currency>(reader.GetString(5));
-			string? defaultPricingMode = reader.IsDBNull(6) ? null : reader.GetString(6);
-			string? defaultItemCode = reader.IsDBNull(7) ? null : reader.GetString(7);
-			string? description = reader.IsDBNull(8) ? null : reader.GetString(8);
+			string? defaultItemCode = reader.IsDBNull(6) ? null : reader.GetString(6);
+			string? description = reader.IsDBNull(7) ? null : reader.GetString(7);
 
 			ItemTemplateEntity? existing = await context.ItemTemplates
 				.IgnoreQueryFilters()
@@ -462,7 +461,6 @@ public class BackupImportService(
 				existing.DefaultSubcategory = defaultSubcategory;
 				existing.DefaultUnitPrice = defaultUnitPrice;
 				existing.DefaultUnitPriceCurrency = defaultUnitPriceCurrency;
-				existing.DefaultPricingMode = defaultPricingMode;
 				existing.DefaultItemCode = defaultItemCode;
 				existing.Description = description;
 				ClearSoftDelete(existing);
@@ -478,7 +476,6 @@ public class BackupImportService(
 					DefaultSubcategory = defaultSubcategory,
 					DefaultUnitPrice = defaultUnitPrice,
 					DefaultUnitPriceCurrency = defaultUnitPriceCurrency,
-					DefaultPricingMode = defaultPricingMode,
 					DefaultItemCode = defaultItemCode,
 					Description = description,
 				});
@@ -551,7 +548,7 @@ public class BackupImportService(
 
 		int created = 0, updated = 0;
 		await using SqliteCommand cmd = sqlite.CreateCommand();
-		cmd.CommandText = "SELECT id, receipt_id, receipt_item_code, description, quantity, unit_price, unit_price_currency, total_amount, total_amount_currency, category, subcategory, pricing_mode FROM receipt_items";
+		cmd.CommandText = "SELECT id, receipt_id, receipt_item_code, description, quantity, unit_price, unit_price_currency, total_amount, total_amount_currency, category, subcategory FROM receipt_items";
 		await using SqliteDataReader reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
 		while (await reader.ReadAsync(cancellationToken))
@@ -567,7 +564,6 @@ public class BackupImportService(
 			Currency totalAmountCurrency = Enum.Parse<Currency>(reader.GetString(8));
 			string category = reader.GetString(9);
 			string? subcategory = reader.IsDBNull(10) ? null : reader.GetString(10);
-			PricingMode pricingMode = Enum.Parse<PricingMode>(reader.GetString(11));
 
 			ReceiptItemEntity? existing = await context.ReceiptItems
 				.IgnoreQueryFilters()
@@ -584,7 +580,6 @@ public class BackupImportService(
 				existing.TotalAmountCurrency = totalAmountCurrency;
 				existing.Category = category;
 				existing.Subcategory = subcategory;
-				existing.PricingMode = pricingMode;
 				ClearSoftDelete(existing);
 				updated++;
 			}
@@ -603,7 +598,6 @@ public class BackupImportService(
 					TotalAmountCurrency = totalAmountCurrency,
 					Category = category,
 					Subcategory = subcategory,
-					PricingMode = pricingMode,
 				});
 				created++;
 			}

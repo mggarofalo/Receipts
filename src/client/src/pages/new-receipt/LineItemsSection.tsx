@@ -65,7 +65,6 @@ export interface ReceiptLineItem {
   id: string;
   receiptItemCode: string;
   description: string;
-  pricingMode: "quantity" | "flat";
   quantity: number;
   unitPrice: number;
   category: string;
@@ -322,7 +321,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
         id: generateId(),
         receiptItemCode: values.receiptItemCode ?? "",
         description: values.description,
-        pricingMode: "quantity",
         quantity: values.quantity,
         unitPrice: values.unitPrice,
         category: values.category,
@@ -827,7 +825,6 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
                         onKeyDown={handleEditKeyDown}
                         aria-label="Edit quantity"
                         className="h-8 w-20"
-                        disabled={item.pricingMode === "flat"}
                       />
                     </TableCell>
                     <TableCell>

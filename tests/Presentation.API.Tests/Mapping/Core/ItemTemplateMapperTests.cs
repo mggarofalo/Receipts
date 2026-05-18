@@ -20,7 +20,6 @@ public class ItemTemplateMapperTests
 			DefaultCategory = "Groceries",
 			DefaultSubcategory = "Produce",
 			DefaultUnitPrice = 9.99,
-			DefaultPricingMode = "quantity",
 			DefaultItemCode = "ITEM-001"
 		};
 
@@ -35,7 +34,6 @@ public class ItemTemplateMapperTests
 		Assert.Equal("Produce", actual.DefaultSubcategory);
 		Assert.NotNull(actual.DefaultUnitPrice);
 		Assert.Equal(9.99m, actual.DefaultUnitPrice.Amount);
-		Assert.Equal("quantity", actual.DefaultPricingMode);
 		Assert.Equal("ITEM-001", actual.DefaultItemCode);
 	}
 
@@ -58,7 +56,6 @@ public class ItemTemplateMapperTests
 		Assert.Null(actual.DefaultCategory);
 		Assert.Null(actual.DefaultSubcategory);
 		Assert.Null(actual.DefaultUnitPrice);
-		Assert.Null(actual.DefaultPricingMode);
 		Assert.Null(actual.DefaultItemCode);
 	}
 
@@ -75,7 +72,6 @@ public class ItemTemplateMapperTests
 			DefaultCategory = "Electronics",
 			DefaultSubcategory = "Phones",
 			DefaultUnitPrice = 19.99,
-			DefaultPricingMode = "flat",
 			DefaultItemCode = "ITEM-002"
 		};
 
@@ -90,7 +86,6 @@ public class ItemTemplateMapperTests
 		Assert.Equal("Phones", actual.DefaultSubcategory);
 		Assert.NotNull(actual.DefaultUnitPrice);
 		Assert.Equal(19.99m, actual.DefaultUnitPrice.Amount);
-		Assert.Equal("flat", actual.DefaultPricingMode);
 		Assert.Equal("ITEM-002", actual.DefaultItemCode);
 	}
 
@@ -105,7 +100,6 @@ public class ItemTemplateMapperTests
 			"Groceries",
 			"Produce",
 			new Money(9.99m),
-			"quantity",
 			"ITEM-001",
 			"A description"
 		);
@@ -121,7 +115,6 @@ public class ItemTemplateMapperTests
 		Assert.Equal("Produce", actual.DefaultSubcategory);
 		Assert.Equal(9.99, actual.DefaultUnitPrice);
 		Assert.Equal("USD", actual.DefaultUnitPriceCurrency);
-		Assert.Equal("quantity", actual.DefaultPricingMode);
 		Assert.Equal("ITEM-001", actual.DefaultItemCode);
 	}
 

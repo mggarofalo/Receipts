@@ -102,15 +102,15 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task ReceiptItemEntity_RoundTrips_WithEnumToStringConversion()
+	public async Task ReceiptItemEntity_RoundTrips_AllFields()
 	{
-		// Arrange — PricingMode enum stored as text
+		// Arrange
 		await using ApplicationDbContext context = fixture.CreateDbContext();
 		ReceiptEntity receipt = ReceiptEntityGenerator.Generate();
 		context.Receipts.Add(receipt);
 		await context.SaveChangesAsync();
 
-		ReceiptItemEntity item = ReceiptItemEntityGenerator.Generate(receipt.Id, PricingMode.Flat);
+		ReceiptItemEntity item = ReceiptItemEntityGenerator.Generate(receipt.Id);
 
 		// Act
 		context.ReceiptItems.Add(item);
@@ -121,8 +121,7 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 		ReceiptItemEntity? loaded = await readContext.ReceiptItems.FirstOrDefaultAsync(i => i.Id == item.Id);
 
 		loaded.Should().NotBeNull();
-		loaded!.PricingMode.Should().Be(PricingMode.Flat);
-		loaded.Quantity.Should().Be(item.Quantity);
+		loaded!.Quantity.Should().Be(item.Quantity);
 		loaded.UnitPrice.Should().Be(item.UnitPrice);
 		loaded.TotalAmount.Should().Be(item.TotalAmount);
 		loaded.Category.Should().Be(item.Category);
@@ -205,7 +204,6 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 			DefaultSubcategory = "Produce",
 			DefaultUnitPrice = 2.99m,
 			DefaultUnitPriceCurrency = Currency.USD,
-			DefaultPricingMode = "quantity",
 			DefaultItemCode = "PROD001",
 			Description = "Fresh produce template",
 		};
@@ -222,7 +220,7 @@ public class ColumnTypeMappingTests(PostgresFixture fixture)
 		loaded!.Name.Should().Be(template.Name);
 		loaded.DefaultCategory.Should().Be("Groceries");
 		loaded.DefaultUnitPrice.Should().Be(2.99m);
-		loaded.DefaultPricingMode.Should().Be("quantity");
+		loaded.DefaultItemCode.Should().Be("PROD001");
 	}
 
 	[Fact]

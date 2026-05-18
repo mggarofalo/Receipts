@@ -28,7 +28,7 @@ public class UncategorizedItemsReportsControllerTests
 		[
 			new AppReports.UncategorizedItemRecord(
 				Guid.NewGuid(), Guid.NewGuid(), "ABC",
-				"Test Item", 1m, 5.00m, 5.00m, "Uncategorized", null, "quantity"),
+				"Test Item", 1m, 5.00m, 5.00m, "Uncategorized", null),
 		], 1);
 
 		_mediatorMock.Setup(m => m.Send(
@@ -173,7 +173,7 @@ public class UncategorizedItemsReportsControllerTests
 		[
 			new AppReports.UncategorizedItemRecord(
 				itemId, receiptId, "ITM-001",
-				"Test Description", 2m, 3.50m, 7.00m, "Uncategorized", "SomeSub", "flat"),
+				"Test Description", 2m, 3.50m, 7.00m, "Uncategorized", "SomeSub"),
 		], 1);
 
 		_mediatorMock.Setup(m => m.Send(
@@ -197,6 +197,5 @@ public class UncategorizedItemsReportsControllerTests
 		item.TotalAmount.Should().Be(7.00);
 		item.Category.Should().Be("Uncategorized");
 		item.Subcategory.Should().Be("SomeSub");
-		item.PricingMode.Should().Be("flat");
 	}
 }

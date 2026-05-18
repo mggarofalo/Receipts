@@ -57,7 +57,6 @@ const mockItems = [
     unitPrice: 10.5,
     category: "Hardware",
     subcategory: "Fasteners",
-    pricingMode: "quantity",
   },
   {
     id: "item-2",
@@ -67,7 +66,6 @@ const mockItems = [
     unitPrice: 25.0,
     category: "Electronics",
     subcategory: "Components",
-    pricingMode: "quantity",
   },
 ];
 
@@ -352,7 +350,6 @@ describe("ReceiptItemsCard", () => {
         unitPrice: 5.99,
         category: "Groceries",
         subcategory: "Produce",
-        pricingMode: "quantity",
         normalizedDescriptionName: "Grapes",
       },
     ];
@@ -377,7 +374,6 @@ describe("ReceiptItemsCard", () => {
         unitPrice: 3.49,
         category: "Groceries",
         subcategory: "Dairy",
-        pricingMode: "quantity",
         normalizedDescriptionName: null,
       },
     ];
@@ -402,7 +398,6 @@ describe("ReceiptItemsCard", () => {
         unitPrice: 4.29,
         category: "Groceries",
         subcategory: "Dairy",
-        pricingMode: "quantity",
         normalizedDescriptionName: "Milk",
       },
     ];
@@ -428,7 +423,6 @@ describe("ReceiptItemsCard", () => {
         unitPrice: 9.99,
         category: "Groceries",
         subcategory: "Produce",
-        pricingMode: "quantity",
       },
     ];
     renderWithQueryClient(

@@ -48,7 +48,6 @@ interface ReceiptItem {
   unitPrice: number;
   category: string;
   subcategory?: string | null;
-  pricingMode?: string | null;
   normalizedDescriptionName?: string | null;
 }
 
@@ -92,7 +91,6 @@ export function ReceiptItemsCard({
           unitPrice: values.unitPrice,
           category: values.category,
           subcategory: values.subcategory,
-          pricingMode: values.pricingMode,
         },
       },
       {
@@ -121,7 +119,6 @@ export function ReceiptItemsCard({
           unitPrice: values.unitPrice,
           category: values.category,
           subcategory: values.subcategory,
-          pricingMode: values.pricingMode,
         },
       },
       {

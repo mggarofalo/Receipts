@@ -52,7 +52,6 @@ describe("useItemTemplates", () => {
         defaultCategory: "Food",
         defaultSubcategory: "Produce",
         defaultUnitPrice: 1.0,
-        defaultPricingMode: "quantity",
         defaultItemCode: "GRO",
       },
     ];
@@ -98,7 +97,6 @@ describe("useItemTemplates", () => {
       defaultCategory: "Transport",
       defaultSubcategory: null,
       defaultUnitPrice: null,
-      defaultPricingMode: "flat",
       defaultItemCode: "GAS",
     };
     const created = { id: "2", ...newTemplate };
@@ -124,7 +122,6 @@ describe("useItemTemplates", () => {
       defaultCategory: "Food",
       defaultSubcategory: "Dairy",
       defaultUnitPrice: 2.0,
-      defaultPricingMode: "quantity",
       defaultItemCode: "GRO",
     };
     (client.PUT as Mock).mockResolvedValue({ error: undefined });

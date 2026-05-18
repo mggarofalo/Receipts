@@ -12,7 +12,6 @@ export const receiptItems: ReceiptItemResponse[] = [
     unitPrice: 3.99,
     category: "Groceries",
     subcategory: "Dairy",
-    pricingMode: "quantity",
   },
   {
     id: "bbbb2222-2222-2222-2222-222222222222",
@@ -23,7 +22,6 @@ export const receiptItems: ReceiptItemResponse[] = [
     unitPrice: 4.5,
     category: "Groceries",
     subcategory: "Bakery",
-    pricingMode: "flat",
   },
   {
     id: "bbbb3333-3333-3333-3333-333333333333",
@@ -34,6 +32,5 @@ export const receiptItems: ReceiptItemResponse[] = [
     unitPrice: 24.99,
     category: "Tools",
     subcategory: null,
-    pricingMode: "flat",
   },
 ];

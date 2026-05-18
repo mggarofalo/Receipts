@@ -49,10 +49,6 @@ export function createEnumMetadataHandler(): HttpHandler {
         { value: "Fee", label: "Fee" },
       ],
       authEventTypes: [],
-      pricingModes: [
-        { value: "quantity", label: "Quantity" },
-        { value: "flat", label: "Flat" },
-      ],
       auditActions: [],
       entityTypes: [],
     });
