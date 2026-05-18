@@ -22,7 +22,10 @@ IResourceBuilder<ProjectResource> seeder = builder.AddProject<Projects.DbSeeder>
 	.WithEnvironment("AdminSeed__Email", "admin@receipts.local")
 	.WithEnvironment("AdminSeed__Password", "Admin123!@#")
 	.WithEnvironment("AdminSeed__FirstName", "Admin")
-	.WithEnvironment("AdminSeed__LastName", "User");
+	.WithEnvironment("AdminSeed__LastName", "User")
+	// Local dev gets a large, realistic sample dataset (accounts, receipts, transactions)
+	// so dashboards and reports are populated. Applied once; see SampleDataSeederService.
+	.WithEnvironment("SampleData__Enabled", "true");
 
 // API: starts after seeder completes
 IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.API>("api")

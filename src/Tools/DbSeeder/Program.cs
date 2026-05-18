@@ -25,6 +25,13 @@ try
 
 	await DatabaseSeederService.SeedRolesAndAdminAsync(host.Services);
 
+	// Optional: a large, realistic sample dataset for local dev / demo environments.
+	// Gated behind SampleData:Enabled so production seeding stays limited to roles + admin.
+	if (string.Equals(builder.Configuration["SampleData:Enabled"], "true", StringComparison.OrdinalIgnoreCase))
+	{
+		await SampleDataSeederService.SeedAsync(host.Services);
+	}
+
 	logger.LogInformation("Database seeding completed successfully.");
 
 	await host.StopAsync();
