@@ -19,7 +19,14 @@ All issue work is tracked in Plane. Project: "Receipts" (identifier: `RECEIPTS`)
 
 ### Branching
 
-Two-tier model: module branches for CI/PR gating, issue branches for individual work. **PRs target `develop`, not `main`** — only `develop`, `release-please--*`, and `hotfix/*` branches may merge to `main` (enforced by CI). See **[docs/branching.md](docs/branching.md)** for strategy, merge procedures, worktree setup, and directory isolation.
+Single-trunk model: `main` is the only long-lived branch. Cut a short-lived
+`<type>/receipts-<id>-<slug>` branch off `main`, open a PR, and **squash-merge to
+`main`** — all branches target `main`. There is no `develop` branch and no
+module/parent branches. Releases are tag-driven (push a `vX.Y.Z` tag). See
+**[docs/branching.md](docs/branching.md)** and **[docs/releases.md](docs/releases.md)**.
+
+**Never close or merge a pull request you did not open in the current session.**
+If a PR looks like a blocker, report it and stop — do not close it.
 
 ### Commits
 

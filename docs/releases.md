@@ -1,36 +1,86 @@
 # Releases
 
-Releases are automated via [release-please](https://github.com/googleapis/release-please). The repository uses the `simple` release type, treating the entire repo (backend + frontend) as a single releasable unit.
+Releases are **tag-driven**. There is no release PR, no `develop` branch, and no
+release-please. **Pushing a `vX.Y.Z` git tag on `main` IS the release.**
 
-## How It Works
+The tag is the single source of truth for the version:
 
-1. **Conventional commits drive versioning.** Every commit merged to `main` is parsed by release-please:
-   - `feat:` bumps the minor version (or patch while on `0.x`)
-   - `fix:` bumps the patch version
-   - `feat!:` or `BREAKING CHANGE:` bumps the major version (or minor while on `0.x`)
-2. **Release PR is opened automatically.** When conventional commits land on `main`, release-please opens (or updates) a single "Release PR" that contains:
-   - Updated `CHANGELOG.md` with grouped, human-readable entries
-   - Version bumps in `version.txt`, `Directory.Build.props`, and `src/client/package.json`
-3. **Merging the Release PR creates a GitHub Release.** The merge triggers release-please to tag the commit and publish a GitHub Release with the changelog as the body.
+- The .NET assembly version is derived from the tag by [MinVer](https://github.com/adamralph/minver).
+- The Docker image version is the tag (minus the leading `v`), passed into the
+  build as the `VERSION` build arg (the build context has no `.git`, so MinVer
+  cannot run inside the image).
+- `src/client/package.json` `version` is pinned to `0.0.0` and is **not** the
+  real version — the client is never published to npm. The runtime app version
+  for the frontend comes from the `VITE_APP_VERSION` build arg, which CI sets to
+  the release tag.
 
-## Key Files
+## What a tag triggers
 
-| File | Purpose |
-|------|---------|
-| `version.txt` | Canonical version for the `simple` release type |
-| `release-please-config.json` | Release-please configuration (release type, extra files, pre-major bump rules) |
-| `.release-please-manifest.json` | Tracks the current released version |
-| `Directory.Build.props` | Stamps .NET assembly version (updated via XML updater) |
-| `src/client/package.json` | Stamps frontend version (updated via JSON updater) |
-| `.github/workflows/release-please.yml` | GitHub Action that runs release-please |
+Pushing a tag matching `v*.*.*` to GitHub starts two independent workflows:
 
-## Triggering a Release
+| Workflow | File | Result |
+|----------|------|--------|
+| Docker Publish | `.github/workflows/docker-publish.yml` | Multi-arch images pushed to GHCR |
+| GitHub Release | `.github/workflows/github-release.yml` | GitHub Release with auto-generated notes |
 
-No manual steps are required. Simply merge PRs with conventional commit messages to `main`. Release-please handles the rest:
-- If no Release PR exists, one is created
-- If a Release PR already exists, it is updated with the new commits
-- Merging the Release PR publishes the release
+The GitHub Release job is idempotent — if a release for the tag already exists it
+skips creation.
 
-## Token Configuration
+## Cutting a release
 
-The workflow uses a `RELEASE_PLEASE_TOKEN` secret (fine-grained PAT) instead of the default `GITHUB_TOKEN`. This ensures that the Release PR itself triggers CI checks, which would not happen with `GITHUB_TOKEN` due to GitHub's recursive workflow prevention.
+The `/release` command automates every step below. To do it by hand:
+
+### 1. Make sure `main` is current
+
+```bash
+git checkout main
+git fetch origin --tags
+git pull --ff-only
+```
+
+### 2. Find the latest release tag
+
+```bash
+git tag -l 'v*' --sort=-v:refname | head -n1
+```
+
+### 3. List the commits since that tag
+
+```bash
+git log <lasttag>..origin/main --oneline
+```
+
+### 4. Compute the next semver
+
+The bump is derived from the Conventional Commit types in that range. The project
+is pre-1.0 (`0.x`), so the pre-major rules apply:
+
+| Highest-significance commit | Pre-1.0 bump (`0.x`) | Post-1.0 bump |
+|-----------------------------|----------------------|---------------|
+| `feat!:` / `BREAKING CHANGE` | minor (`0.Y+1.0`)    | major         |
+| `feat:`                     | patch (`0.Y.Z+1`)    | minor         |
+| `fix:` / anything else      | patch (`0.Y.Z+1`)    | patch         |
+
+### 5. Create and push the annotated tag
+
+```bash
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+That is the entire release. The tag push triggers the Docker publish and the
+GitHub Release. Monitor them:
+
+```bash
+gh run list --workflow docker-publish.yml --limit 1
+gh run list --workflow github-release.yml --limit 1
+gh release view vX.Y.Z
+```
+
+## Notes
+
+- Tags must be pushed against a commit on `main`.
+- Use **annotated** tags (`git tag -a`) so the release has a message and MinVer
+  treats it as a release version rather than a height-based pre-release.
+- Untagged builds (local dev, CI on PRs) produce a MinVer pre-release version such
+  as `0.5.1-alpha.0.3` — this is expected.

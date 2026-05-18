@@ -80,4 +80,15 @@
     <PackageVersion Include="PdfPig" Version="0.1.14" />
     <PackageVersion Include="xunit" Version="2.9.3" />
   </ItemGroup>
+
+  <!--
+    MinVer derives the assembly version from git tags (see Directory.Build.props).
+    GlobalPackageReference applies it to every project that participates in central
+    package management without each project listing it. Projects that opt out of CPM
+    (ServiceDefaults, DtoSplitter) and the Aspire AppHost reference MinVer inline via
+    Directory.Build.props instead.
+  -->
+  <ItemGroup>
+    <GlobalPackageReference Include="MinVer" Version="5.0.0" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

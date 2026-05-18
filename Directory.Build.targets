@@ -6,4 +6,20 @@
           IgnoreExitCode="true"
           ContinueOnError="true" />
   </Target>
+
+  <!--
+    MinVer derives the assembly version from git tags (tag prefix `v`; see
+    Directory.Build.props). Projects under central package management get MinVer via
+    the GlobalPackageReference in Directory.Packages.props. Projects that opt out of
+    CPM cannot use a version-less reference, so they reference MinVer inline here.
+
+    Directory.Build.targets is imported AFTER the project body, so
+    $(ManagePackageVersionsCentrally) is reliable for projects that set it explicitly
+    (ServiceDefaults and DtoSplitter set it to false). The Aspire AppHost has CPM
+    disabled by the Aspire SDK but does not surface the property here, so it is matched
+    by project name.
+  -->
+  <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'false' Or '$(MSBuildProjectName)' == 'Receipts.AppHost'">
+    <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

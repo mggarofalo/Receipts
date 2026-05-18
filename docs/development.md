@@ -221,4 +221,4 @@ The API waits for PostgreSQL to be healthy before starting (`.WaitFor(db)` in Ap
 
 ## Releases
 
-See **[docs/releases.md](releases.md)** for the full release process, including how release-please automates versioning, changelogs, and GitHub Releases from conventional commits.
+See **[docs/releases.md](releases.md)** for the full release process. Releases are tag-driven: pushing a `vX.Y.Z` git tag on `main` publishes Docker images to GHCR and creates a GitHub Release with auto-generated notes. The .NET version is derived from the tag by MinVer.
