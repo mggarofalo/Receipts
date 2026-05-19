@@ -24,7 +24,7 @@ vi.mock("@/hooks/useSubcategories", () => ({
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
+  useAllCategories: vi.fn(() => ({ data: [], total: 0, isLoading: false })),
 }));
 
 vi.mock("@/hooks/useFuzzySearch", () => ({
@@ -131,8 +131,8 @@ async function setupWithData(items = ITEMS, categories = CATEGORIES) {
     }),
   );
 
-  const { useCategories } = await import("@/hooks/useCategories");
-  vi.mocked(useCategories).mockReturnValue(
+  const { useAllCategories } = await import("@/hooks/useCategories");
+  vi.mocked(useAllCategories).mockReturnValue(
     mockQueryResult({
       data: categories,
       total: categories.length,

@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useFieldHistory } from "@/hooks/useFieldHistory";
-import { useCategories } from "@/hooks/useCategories";
+import { useAllCategories } from "@/hooks/useCategories";
 import { subcategoryNameHistory } from "@/lib/field-history";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/ui/combobox";
@@ -48,7 +48,7 @@ export function SubcategoryForm({
   useFormShortcuts({ formRef });
   const { options: subcategoryNameOptions, add: addSubcategoryName } =
     useFieldHistory(subcategoryNameHistory);
-  const { data: categories } = useCategories();
+  const { data: categories } = useAllCategories();
 
   const categoryOptions = (
     categories as { id: string; name: string; isActive: boolean }[] | undefined

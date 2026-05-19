@@ -6,7 +6,7 @@ import "@/test/setup-combobox-polyfills";
 import { LineItemsSection, type ReceiptLineItem } from "./LineItemsSection";
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() =>
+  useAllCategories: vi.fn(() =>
     mockQueryResult({
       data: [
         { id: "cat-1", name: "Food" },
@@ -19,7 +19,7 @@ vi.mock("@/hooks/useCategories", () => ({
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useSubcategoriesByCategoryId: vi.fn(() =>
+  useAllSubcategoriesByCategoryId: vi.fn(() =>
     mockQueryResult({
       data: [],
       isLoading: false,

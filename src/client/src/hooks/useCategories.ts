@@ -17,6 +17,50 @@ export function useCategories(offset = 0, limit = 50, sortBy?: string | null, so
   return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
+/**
+ * Fetches the complete category list by auto-paginating through every page.
+ *
+ * Picker components must show *all* categories, not a single page. The
+ * paginated `useCategories` hook caps at one page (default 50), which silently
+ * truncates dropdowns once the category count exceeds the page size. This hook
+ * loops in 500-row chunks (the API's max `limit`) until `total` is reached.
+ *
+ * Returns the category array directly as `data` (not the paged envelope).
+ */
+export function useAllCategories(isActive?: boolean | null) {
+  return useQuery({
+    queryKey: ["categories", "all", isActive ?? undefined],
+    queryFn: async ({ signal }) => {
+      const pageSize = 500;
+      const fetchPage = async (offset: number) => {
+        const { data, error } = await client.GET("/api/categories", {
+          params: {
+            query: {
+              offset,
+              limit: pageSize,
+              sortBy: "name",
+              sortDirection: "asc",
+              isActive: isActive ?? undefined,
+            },
+          },
+          signal,
+        });
+        if (error) throw error;
+        return data;
+      };
+
+      const first = await fetchPage(0);
+      const all = [...(first?.data ?? [])];
+      const total = Number(first?.total ?? all.length);
+      for (let offset = pageSize; offset < total; offset += pageSize) {
+        const page = await fetchPage(offset);
+        all.push(...(page?.data ?? []));
+      }
+      return all;
+    },
+  });
+}
+
 export function useCategory(id: string | null) {
   return useQuery({
     queryKey: ["categories", id],

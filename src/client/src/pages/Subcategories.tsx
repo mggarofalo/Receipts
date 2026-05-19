@@ -10,7 +10,7 @@ import {
 } from "@/hooks/useSubcategories";
 import type { AffectedReceipt } from "@/hooks/useSubcategories";
 import { usePermission } from "@/hooks/usePermission";
-import { useCategories } from "@/hooks/useCategories";
+import { useAllCategories } from "@/hooks/useCategories";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useEntityLinkParams } from "@/hooks/useEntityLinkParams";
 import { useOpenNewItem } from "@/hooks/useOpenNewItem";
@@ -102,7 +102,7 @@ function Subcategories() {
   const filteredSubcatQuery = useSubcategoriesByCategoryId(linkParams.categoryId ?? null, offset, limit, sortBy, sortDirection, isActiveParam);
   const activeSubcatQuery = linkParams.categoryId ? filteredSubcatQuery : allSubcatQuery;
   const { data: subcategoriesData, total: serverTotal, isLoading: subcategoriesLoading } = activeSubcatQuery;
-  const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  const { data: categoriesData, isLoading: categoriesLoading } = useAllCategories();
   const createSubcategory = useCreateSubcategory();
   const updateSubcategory = useUpdateSubcategory();
   const deleteSubcategory = useDeleteSubcategory();

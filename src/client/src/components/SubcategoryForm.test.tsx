@@ -8,7 +8,7 @@ vi.mock("@/hooks/useFormShortcuts", () => ({
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({
+  useAllCategories: vi.fn(() => ({
     data: [
       { id: "cat-1", name: "Groceries", isActive: true },
       { id: "cat-2", name: "Utilities", isActive: true },

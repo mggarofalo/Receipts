@@ -3,8 +3,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
-import { useCategories } from "@/hooks/useCategories";
-import { useSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
+import { useAllCategories } from "@/hooks/useCategories";
+import { useAllSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
 import { Combobox } from "@/components/ui/combobox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ export function ItemTemplateForm({
   const formRef = useRef<HTMLFormElement>(null);
   useFormShortcuts({ formRef });
 
-  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
+  const { data: categories } = useAllCategories(true);
   const categoryOptions =
     (categories as { id: string; name: string; isActive: boolean }[] | undefined)
       ?.map((c) => ({
@@ -83,7 +83,7 @@ export function ItemTemplateForm({
     )?.id ?? null;
 
   const { data: subcategoriesData } =
-    useSubcategoriesByCategoryId(selectedCategoryId, 0, 200, undefined, undefined, true);
+    useAllSubcategoriesByCategoryId(selectedCategoryId, true);
 
   const subcategoryOptions =
     (subcategoriesData as { id: string; name: string; isActive: boolean }[] | undefined)
