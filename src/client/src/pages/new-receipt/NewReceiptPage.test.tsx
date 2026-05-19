@@ -142,17 +142,41 @@ describe("NewReceiptPage", () => {
     expect(screen.getAllByTestId("balance-sidebar").length).toBeGreaterThan(0);
   });
 
-  it("gives the 1fr grid column min-w-0 so the items table cannot force page horizontal scroll (WCAG 1.4.10)", () => {
-    // The left form column sits in a `grid-cols-[1fr_280px]` track. Without
-    // `min-w-0` the `1fr` track resolves to its min-content width and a long
-    // line-item description pushes the whole page wide. `min-w-0` lets the
-    // track shrink so the inner table's `overflow-x-auto` engages instead.
+  it("renders the line-item table full-width below the upper container, not trapped in the narrow grid column (WCAG 1.4.10)", () => {
+    // The upper-left column sits in a `grid-cols-[1fr_minmax(...)]` track and
+    // keeps `min-w-0` so its `1fr` track can shrink below content min-width
+    // (letting an inner table's `overflow-x-auto` engage instead of widening
+    // the page). The line-item table is moved out of that track to full-width
+    // block flow below the grid, so it is never constrained to the narrow
+    // `1fr` column.
     renderWithProviders(<NewReceiptPage />);
-    const column = screen
-      .getByTestId("line-items-section")
+
+    const upperLeft = screen
+      .getByTestId("transactions-section")
       .closest("div.min-w-0");
-    expect(column).not.toBeNull();
-    expect(column).toHaveClass("min-w-0");
+    expect(upperLeft).not.toBeNull();
+    expect(upperLeft).toHaveClass("min-w-0");
+
+    const lineItems = screen.getByTestId("line-items-section");
+    expect(upperLeft?.contains(lineItems)).toBe(false);
+  });
+
+  it("renders a sticky action bar with the balance status and Submit/Cancel", () => {
+    // The Balance panel sits in the upper container and scrolls out of view
+    // once the line-item table grows tall. The sticky action bar keeps the
+    // balance status and Submit/Cancel reachable at the bottom of the viewport.
+    renderWithProviders(<NewReceiptPage />);
+
+    const stickyBar = document.querySelector(".sticky.bottom-0");
+    expect(stickyBar).not.toBeNull();
+    expect(stickyBar?.textContent).toContain("Submit Receipt");
+    expect(stickyBar?.textContent).toContain("Cancel");
+    // No data yet → expected and transaction totals are both 0 → balanced.
+    expect(stickyBar?.textContent).toContain("Balanced");
+
+    // The sticky bar is a sibling below the line-item table, not nested in it.
+    const lineItems = screen.getByTestId("line-items-section");
+    expect(stickyBar?.contains(lineItems)).toBe(false);
   });
 
   it("navigates directly to /receipts when cancel clicked with no data", async () => {

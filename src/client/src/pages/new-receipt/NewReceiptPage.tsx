@@ -15,6 +15,9 @@ import { BalanceSidebar } from "./BalanceSidebar";
 import { Combobox } from "@/components/ui/combobox";
 import { DateInput } from "@/components/ui/date-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format";
 import {
   Form,
   FormControl,
@@ -95,6 +98,13 @@ export default function NewReceiptPage() {
     () => transactions.reduce((sum, t) => sum + t.amount, 0),
     [transactions],
   );
+
+  // Mirrors BalanceSidebar's internal balance math so the sticky action bar
+  // can show the same status and gate its Submit button.
+  const expectedTotal = subtotal + taxAmount;
+  const balanceDiff = Math.abs(expectedTotal - transactionTotal);
+  const isBalanced = balanceDiff < 0.01;
+  const isOver = expectedTotal > transactionTotal;
 
   const hasData =
     location !== "" ||
@@ -204,8 +214,9 @@ export default function NewReceiptPage() {
         {submitErrorSummary}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-        {/* Left column — form sections */}
+      {/* Upper container: receipt metadata + transactions (left), balance panel (right) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_minmax(300px,360px)]">
+        {/* Upper-left — receipt metadata and transactions */}
         <div className="space-y-6 min-w-0">
           {/* Receipt Header */}
           <Form {...form}>
@@ -274,13 +285,10 @@ export default function NewReceiptPage() {
             defaultDate={receiptDate}
             onChange={setTransactions}
           />
-
-          {/* Line Items */}
-          <LineItemsSection items={items} onChange={setItems} location={location} />
         </div>
 
-        {/* Right column — sticky balance sidebar */}
-        <div className="hidden lg:block">
+        {/* Upper-right — balance panel */}
+        <div>
           <BalanceSidebar
             subtotal={subtotal}
             taxAmount={taxAmount}
@@ -292,16 +300,36 @@ export default function NewReceiptPage() {
         </div>
       </div>
 
-      {/* Mobile-only bottom bar (visible on small screens) */}
-      <div className="lg:hidden">
-        <BalanceSidebar
-          subtotal={subtotal}
-          taxAmount={taxAmount}
-          transactionTotal={transactionTotal}
-          isSubmitting={isSubmitting}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-        />
+      {/* Full-width line-item entry table, below the upper container */}
+      <LineItemsSection items={items} onChange={setItems} location={location} />
+
+      {/* Sticky action bar — keeps the balance status and Submit/Cancel
+          reachable while scrolling the full-width line-item table. The upper
+          Balance panel scrolls out of view once the line items grow tall. */}
+      <div className="sticky bottom-0 z-10 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Balance</span>
+            <Badge variant={isBalanced ? "default" : "secondary"}>
+              {isBalanced
+                ? "Balanced"
+                : isOver
+                  ? `Over by ${formatCurrency(balanceDiff)}`
+                  : `Remaining: ${formatCurrency(balanceDiff)}`}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !isBalanced}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Receipt"}
+            </Button>
+          </div>
+        </div>
       </div>
 
       <AlertDialog open={showDiscard} onOpenChange={setShowDiscard}>
