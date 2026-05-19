@@ -204,8 +204,9 @@ export default function NewReceiptPage() {
         {submitErrorSummary}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-        {/* Left column — form sections */}
+      {/* Upper container: receipt metadata + transactions (left), balance panel (right) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_minmax(300px,360px)]">
+        {/* Upper-left — receipt metadata and transactions */}
         <div className="space-y-6 min-w-0">
           {/* Receipt Header */}
           <Form {...form}>
@@ -274,13 +275,10 @@ export default function NewReceiptPage() {
             defaultDate={receiptDate}
             onChange={setTransactions}
           />
-
-          {/* Line Items */}
-          <LineItemsSection items={items} onChange={setItems} location={location} />
         </div>
 
-        {/* Right column — sticky balance sidebar */}
-        <div className="hidden lg:block">
+        {/* Upper-right — balance panel */}
+        <div>
           <BalanceSidebar
             subtotal={subtotal}
             taxAmount={taxAmount}
@@ -292,17 +290,8 @@ export default function NewReceiptPage() {
         </div>
       </div>
 
-      {/* Mobile-only bottom bar (visible on small screens) */}
-      <div className="lg:hidden">
-        <BalanceSidebar
-          subtotal={subtotal}
-          taxAmount={taxAmount}
-          transactionTotal={transactionTotal}
-          isSubmitting={isSubmitting}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-        />
-      </div>
+      {/* Full-width line-item entry table, below the upper container */}
+      <LineItemsSection items={items} onChange={setItems} location={location} />
 
       <AlertDialog open={showDiscard} onOpenChange={setShowDiscard}>
         <AlertDialogContent>
