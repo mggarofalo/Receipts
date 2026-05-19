@@ -13,7 +13,7 @@ vi.mock("@/hooks/useReceipts", () => ({
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({
+  useAllCategories: vi.fn(() => ({
     data: [
       { id: "cat-1", name: "Groceries", isActive: true },
       { id: "cat-2", name: "Electronics", isActive: true },
@@ -23,7 +23,7 @@ vi.mock("@/hooks/useCategories", () => ({
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useSubcategoriesByCategoryId: vi.fn(() => ({
+  useAllSubcategoriesByCategoryId: vi.fn(() => ({
     data: [
       { id: "sub-1", name: "Dairy", isActive: true },
       { id: "sub-2", name: "Bakery", isActive: true },

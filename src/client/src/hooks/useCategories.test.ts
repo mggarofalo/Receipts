@@ -20,6 +20,7 @@ import client from "@/lib/api-client";
 import { toast } from "sonner";
 import {
   useCategories,
+  useAllCategories,
   useCategory,
   useCreateCategory,
   useUpdateCategory,
@@ -79,6 +80,51 @@ describe("useCategories", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(client.GET).toHaveBeenCalledWith("/api/categories", {
       params: { query: { offset: 0, limit: 50 } },
+    });
+  });
+
+  it("useAllCategories returns the full list when it fits in one page", async () => {
+    const categories = [
+      { id: "1", name: "Apparel" },
+      { id: "2", name: "Food" },
+    ];
+    (client.GET as Mock).mockResolvedValue({
+      data: { data: categories, total: 2, offset: 0, limit: 500 },
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => useAllCategories(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(categories);
+    expect(client.GET).toHaveBeenCalledTimes(1);
+    expect(client.GET).toHaveBeenCalledWith("/api/categories", {
+      params: { query: { offset: 0, limit: 500, sortBy: "name", sortDirection: "asc" } },
+    });
+  });
+
+  it("useAllCategories auto-paginates across multiple pages", async () => {
+    const pageOne = Array.from({ length: 500 }, (_, i) => ({ id: `${i}`, name: `Cat ${i}` }));
+    const pageTwo = Array.from({ length: 100 }, (_, i) => ({ id: `${500 + i}`, name: `Cat ${500 + i}` }));
+    (client.GET as Mock).mockImplementation((_path, opts) => {
+      const offset = opts.params.query.offset;
+      return Promise.resolve({
+        data: { data: offset === 0 ? pageOne : pageTwo, total: 600, offset, limit: 500 },
+        error: undefined,
+      });
+    });
+
+    const { result } = renderHook(() => useAllCategories(true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toHaveLength(600);
+    expect(client.GET).toHaveBeenCalledTimes(2);
+    expect(client.GET).toHaveBeenLastCalledWith("/api/categories", {
+      params: { query: { offset: 500, limit: 500, sortBy: "name", sortDirection: "asc", isActive: true } },
     });
   });
 

@@ -6,9 +6,9 @@ import Fuse from "fuse.js";
 import { useFormShortcuts } from "@/hooks/useFormShortcuts";
 import { useFieldHistory } from "@/hooks/useFieldHistory";
 import { useReceipts } from "@/hooks/useReceipts";
-import { useCategories } from "@/hooks/useCategories";
+import { useAllCategories } from "@/hooks/useCategories";
 import {
-  useSubcategoriesByCategoryId,
+  useAllSubcategoriesByCategoryId,
   useCreateSubcategory,
 } from "@/hooks/useSubcategories";
 import { useItemTemplates } from "@/hooks/useItemTemplates";
@@ -101,7 +101,7 @@ export function ReceiptItemForm({
     useFieldHistory(itemCodeHistory);
 
   const { data: receipts, isLoading: receiptsLoading } = useReceipts();
-  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
+  const { data: categories } = useAllCategories(true);
   const { data: itemTemplatesData } = useItemTemplates();
   const templates = useMemo(
     () => (itemTemplatesData as ItemTemplate[] | undefined) ?? [],
@@ -175,7 +175,7 @@ export function ReceiptItemForm({
   }, [categories, watchedCategory]);
 
   const { data: subcategoriesData } =
-    useSubcategoriesByCategoryId(selectedCategoryId, 0, 200, undefined, undefined, true);
+    useAllSubcategoriesByCategoryId(selectedCategoryId, true);
   const createSubcategory = useCreateSubcategory();
 
   const subcategoryOptions = useMemo(

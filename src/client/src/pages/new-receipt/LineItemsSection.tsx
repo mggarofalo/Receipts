@@ -3,9 +3,9 @@ import { generateId } from "@/lib/id";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCategories } from "@/hooks/useCategories";
+import { useAllCategories } from "@/hooks/useCategories";
 import {
-  useSubcategoriesByCategoryId,
+  useAllSubcategoriesByCategoryId,
   useCreateSubcategory,
 } from "@/hooks/useSubcategories";
 import {
@@ -82,7 +82,7 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
   const suggestionsListId = "new-receipt-suggestions-list";
   // Index of the keyboard-highlighted row in the description lookup.
   const [descriptionActiveIndex, setDescriptionActiveIndex] = useState(0);
-  const { data: categories } = useCategories(0, 50, undefined, undefined, true);
+  const { data: categories } = useAllCategories(true);
 
   const categoryOptions = useMemo(
     () =>
@@ -209,9 +209,9 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     [categories, selectedCategory],
   );
 
-  const { data: subcategories } = useSubcategoriesByCategoryId(
-    selectedCategoryObj?.id ?? "",
-    0, 200, undefined, undefined, true,
+  const { data: subcategories } = useAllSubcategoriesByCategoryId(
+    selectedCategoryObj?.id ?? null,
+    true,
   );
   const createSubcategory = useCreateSubcategory();
   const pendingSubcategories = useRef(new Set<string>());
@@ -374,9 +374,9 @@ export function LineItemsSection({ items, onChange, location }: LineItemsSection
     [categories, editDraft.category],
   );
 
-  const { data: editSubcategories } = useSubcategoriesByCategoryId(
-    editCategoryObj?.id ?? "",
-    0, 200, undefined, undefined, true,
+  const { data: editSubcategories } = useAllSubcategoriesByCategoryId(
+    editCategoryObj?.id ?? null,
+    true,
   );
 
   const editSubcategoryOptions = useMemo(

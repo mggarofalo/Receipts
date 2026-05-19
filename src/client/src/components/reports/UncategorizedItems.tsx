@@ -5,8 +5,8 @@ import {
   useUncategorizedItemsReport,
   type UncategorizedItemsParams,
 } from "@/hooks/useUncategorizedItemsReport";
-import { useCategories } from "@/hooks/useCategories";
-import { useSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
+import { useAllCategories } from "@/hooks/useCategories";
+import { useAllSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
 import { formatCurrency } from "@/lib/format";
 import {
   Table,
@@ -57,13 +57,7 @@ export default function UncategorizedItems() {
   };
 
   const { data, isLoading, isError } = useUncategorizedItemsReport(params);
-  const { data: categories, isLoading: categoriesLoading } = useCategories(
-    0,
-    200,
-    "name",
-    "asc",
-    true,
-  );
+  const { data: categories, isLoading: categoriesLoading } = useAllCategories(true);
 
   const categoryOptions: ComboboxOption[] = useMemo(
     () =>
@@ -79,7 +73,7 @@ export default function UncategorizedItems() {
   }, [categories, selectedCategory]);
 
   const { data: subcategories, isLoading: subcategoriesLoading } =
-    useSubcategoriesByCategoryId(selectedCategoryId, 0, 200, "name", "asc", true);
+    useAllSubcategoriesByCategoryId(selectedCategoryId, true);
 
   const subcategoryOptions: ComboboxOption[] = useMemo(
     () =>

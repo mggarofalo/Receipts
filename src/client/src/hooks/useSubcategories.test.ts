@@ -22,6 +22,7 @@ import {
   useSubcategories,
   useSubcategory,
   useSubcategoriesByCategoryId,
+  useAllSubcategoriesByCategoryId,
   useCreateSubcategory,
   useUpdateSubcategory,
 } from "./useSubcategories";
@@ -161,4 +162,60 @@ describe("useSubcategories", () => {
     expect(toast.success).toHaveBeenCalledWith("Subcategory updated");
   });
 
+});
+
+describe("useAllSubcategoriesByCategoryId", () => {
+  it("is disabled when categoryId is null", () => {
+    const { result } = renderHook(() => useAllSubcategoriesByCategoryId(null), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.data).toBeUndefined();
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(client.GET).not.toHaveBeenCalled();
+  });
+
+  it("returns the full list when it fits in one page", async () => {
+    const subcategories = [
+      { id: "1", name: "Bakery", categoryId: "cat-1" },
+      { id: "2", name: "Produce", categoryId: "cat-1" },
+    ];
+    (client.GET as Mock).mockResolvedValue({
+      data: { data: subcategories, total: 2, offset: 0, limit: 500 },
+      error: undefined,
+    });
+
+    const { result } = renderHook(() => useAllSubcategoriesByCategoryId("cat-1", true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(subcategories);
+    expect(client.GET).toHaveBeenCalledTimes(1);
+    expect(client.GET).toHaveBeenCalledWith("/api/subcategories", {
+      params: {
+        query: { categoryId: "cat-1", offset: 0, limit: 500, sortBy: "name", sortDirection: "asc", isActive: true },
+      },
+    });
+  });
+
+  it("auto-paginates across multiple pages", async () => {
+    const pageOne = Array.from({ length: 500 }, (_, i) => ({ id: `${i}`, name: `Sub ${i}`, categoryId: "cat-1" }));
+    const pageTwo = Array.from({ length: 50 }, (_, i) => ({ id: `${500 + i}`, name: `Sub ${500 + i}`, categoryId: "cat-1" }));
+    (client.GET as Mock).mockImplementation((_path, opts) => {
+      const offset = opts.params.query.offset;
+      return Promise.resolve({
+        data: { data: offset === 0 ? pageOne : pageTwo, total: 550, offset, limit: 500 },
+        error: undefined,
+      });
+    });
+
+    const { result } = renderHook(() => useAllSubcategoriesByCategoryId("cat-1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toHaveLength(550);
+    expect(client.GET).toHaveBeenCalledTimes(2);
+  });
 });

@@ -46,6 +46,50 @@ export function useSubcategoriesByCategoryId(categoryId: string | null, offset =
   return useMemo(() => ({ ...query, data: query.data?.data, total: Number(query.data?.total ?? 0) }), [query]);
 }
 
+/**
+ * Fetches every subcategory for a category by auto-paginating all pages.
+ *
+ * Picker components must show the complete subcategory list. The paginated
+ * `useSubcategoriesByCategoryId` hook caps at one page (default 200), which
+ * silently truncates dropdowns for categories with more subcategories. This
+ * hook loops in 500-row chunks (the API's max `limit`) until `total` is
+ * reached. Returns the subcategory array directly as `data`.
+ */
+export function useAllSubcategoriesByCategoryId(categoryId: string | null, isActive?: boolean | null) {
+  return useQuery({
+    queryKey: ["subcategories", "byCategory", "all", categoryId, isActive],
+    enabled: !!categoryId,
+    queryFn: async () => {
+      const pageSize = 500;
+      const fetchPage = async (offset: number) => {
+        const { data, error } = await client.GET("/api/subcategories", {
+          params: {
+            query: {
+              categoryId: categoryId!,
+              offset,
+              limit: pageSize,
+              sortBy: "name",
+              sortDirection: "asc",
+              isActive: isActive ?? undefined,
+            },
+          },
+        });
+        if (error) throw error;
+        return data;
+      };
+
+      const first = await fetchPage(0);
+      const all = [...(first?.data ?? [])];
+      const total = Number(first?.total ?? all.length);
+      for (let offset = pageSize; offset < total; offset += pageSize) {
+        const page = await fetchPage(offset);
+        all.push(...(page?.data ?? []));
+      }
+      return all;
+    },
+  });
+}
+
 export function useCreateSubcategory() {
   const queryClient = useQueryClient();
   return useMutation({

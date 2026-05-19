@@ -18,7 +18,7 @@ vi.mock("@/hooks/useReceipts", () => ({
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn(() => ({
+  useAllCategories: vi.fn(() => ({
     data: [
       { id: "cat-1", name: "Groceries" },
       { id: "cat-2", name: "Electronics" },
@@ -28,7 +28,7 @@ vi.mock("@/hooks/useCategories", () => ({
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useSubcategoriesByCategoryId: vi.fn(() => ({
+  useAllSubcategoriesByCategoryId: vi.fn(() => ({
     data: [
       { id: "sub-1", name: "Dairy" },
       { id: "sub-2", name: "Bakery" },

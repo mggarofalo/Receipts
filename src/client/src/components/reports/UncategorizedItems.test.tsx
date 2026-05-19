@@ -14,7 +14,7 @@ vi.mock("@/hooks/useUncategorizedItemsReport", () => ({
 }));
 
 vi.mock("@/hooks/useCategories", () => ({
-  useCategories: vi.fn().mockReturnValue({
+  useAllCategories: vi.fn().mockReturnValue({
     data: [
       { id: "cat-1", name: "Groceries" },
       { id: "cat-2", name: "Uncategorized" },
@@ -24,7 +24,7 @@ vi.mock("@/hooks/useCategories", () => ({
 }));
 
 vi.mock("@/hooks/useSubcategories", () => ({
-  useSubcategoriesByCategoryId: vi.fn().mockReturnValue({
+  useAllSubcategoriesByCategoryId: vi.fn().mockReturnValue({
     data: [{ id: "sub-1", name: "Produce" }],
     isLoading: false,
   }),
