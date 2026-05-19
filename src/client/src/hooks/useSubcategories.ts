@@ -57,9 +57,9 @@ export function useSubcategoriesByCategoryId(categoryId: string | null, offset =
  */
 export function useAllSubcategoriesByCategoryId(categoryId: string | null, isActive?: boolean | null) {
   return useQuery({
-    queryKey: ["subcategories", "byCategory", "all", categoryId, isActive],
+    queryKey: ["subcategories", "byCategory", "all", categoryId, isActive ?? undefined],
     enabled: !!categoryId,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const pageSize = 500;
       const fetchPage = async (offset: number) => {
         const { data, error } = await client.GET("/api/subcategories", {
@@ -73,6 +73,7 @@ export function useAllSubcategoriesByCategoryId(categoryId: string | null, isAct
               isActive: isActive ?? undefined,
             },
           },
+          signal,
         });
         if (error) throw error;
         return data;

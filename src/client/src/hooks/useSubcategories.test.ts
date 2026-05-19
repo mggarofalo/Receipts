@@ -196,6 +196,7 @@ describe("useAllSubcategoriesByCategoryId", () => {
       params: {
         query: { categoryId: "cat-1", offset: 0, limit: 500, sortBy: "name", sortDirection: "asc", isActive: true },
       },
+      signal: expect.any(AbortSignal),
     });
   });
 

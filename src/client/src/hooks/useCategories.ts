@@ -29,8 +29,8 @@ export function useCategories(offset = 0, limit = 50, sortBy?: string | null, so
  */
 export function useAllCategories(isActive?: boolean | null) {
   return useQuery({
-    queryKey: ["categories", "all", isActive],
-    queryFn: async () => {
+    queryKey: ["categories", "all", isActive ?? undefined],
+    queryFn: async ({ signal }) => {
       const pageSize = 500;
       const fetchPage = async (offset: number) => {
         const { data, error } = await client.GET("/api/categories", {
@@ -43,6 +43,7 @@ export function useAllCategories(isActive?: boolean | null) {
               isActive: isActive ?? undefined,
             },
           },
+          signal,
         });
         if (error) throw error;
         return data;
