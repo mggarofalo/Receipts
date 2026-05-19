@@ -1,15 +1,14 @@
 import {
   forwardRef,
-  type ComponentType,
   type ComponentPropsWithoutRef,
   type ReactNode,
 } from "react";
-import type { LucideProps } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Icon, type IconComponent } from "./icons";
 
 export interface EmptyStateProps extends ComponentPropsWithoutRef<"div"> {
-  /** An `Icon.*` member, or any lucide-compatible icon component. */
-  icon: ComponentType<LucideProps>;
+  /** An `Icon.*` member; defaults to `Icon.Inbox`. */
+  icon?: IconComponent;
   title: string;
   body?: ReactNode;
   /** Action buttons rendered below the copy. */
@@ -17,7 +16,8 @@ export interface EmptyStateProps extends ComponentPropsWithoutRef<"div"> {
 }
 
 /**
- * Shown wherever a list or surface has no data.
+ * Shown wherever a list or surface has no data. Icon size and stroke are
+ * driven by the `.empty .icon-frame svg` rule.
  *
  * @example
  * <EmptyState
@@ -28,30 +28,18 @@ export interface EmptyStateProps extends ComponentPropsWithoutRef<"div"> {
  * />
  */
 export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
-  ({ icon: IconComponent, title, body, actions, className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "flex flex-col items-center gap-3 px-6 py-12 text-center",
-        className,
-      )}
-      {...props}
-    >
-      <span className="flex size-[60px] items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--mute)]">
-        <IconComponent size={24} aria-hidden />
-      </span>
-      <h3 className="font-serif text-[22px] leading-tight text-[var(--ink)]">
-        {title}
-      </h3>
-      {body && (
-        <p className="max-w-sm text-[13px] text-[var(--mute)]">{body}</p>
-      )}
-      {actions && (
-        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-          {actions}
+  ({ icon, title, body, actions, className, ...props }, ref) => {
+    const IconComp = icon ?? Icon.Inbox;
+    return (
+      <div ref={ref} className={cn("empty", className)} {...props}>
+        <div className="icon-frame">
+          <IconComp aria-hidden />
         </div>
-      )}
-    </div>
-  ),
+        <h3>{title}</h3>
+        {body && <p>{body}</p>}
+        {actions && <div className="actions">{actions}</div>}
+      </div>
+    );
+  },
 );
 EmptyState.displayName = "EmptyState";

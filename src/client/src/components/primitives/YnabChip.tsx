@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils";
 
 export type YnabStatus = "synced" | "pending" | "error" | "none";
 
-const STATUS: Record<YnabStatus, { label: string; dot: string }> = {
-  synced: { label: "YNAB", dot: "var(--pos)" },
-  pending: { label: "Pending", dot: "var(--warn)" },
-  error: { label: "Error", dot: "var(--neg)" },
-  none: { label: "—", dot: "var(--mute-2)" },
+const STATUS: Record<YnabStatus, { label: string; chip: string }> = {
+  synced: { label: "YNAB", chip: "chip pos" },
+  pending: { label: "Pending", chip: "chip warn" },
+  error: { label: "Error", chip: "chip neg" },
+  none: { label: "—", chip: "chip ghost" },
 };
 
 export interface YnabChipProps extends ComponentPropsWithoutRef<"span"> {
@@ -15,27 +15,26 @@ export interface YnabChipProps extends ComponentPropsWithoutRef<"span"> {
 }
 
 /**
- * Indicates a receipt's YNAB sync state with a coloured dot.
+ * Indicates a receipt's YNAB sync state — a coloured chip with a dot.
  *
  * @example
  * <YnabChip status="synced" />
  */
 export const YnabChip = forwardRef<HTMLSpanElement, YnabChipProps>(
-  ({ status, className, ...props }, ref) => {
-    const { label, dot } = STATUS[status];
+  ({ status, className, style, ...props }, ref) => {
+    const { label, chip } = STATUS[status];
     return (
       <span
         ref={ref}
-        className={cn(
-          "ynab-chip inline-flex items-center gap-1.5 rounded-full border border-[var(--line-2)] bg-[var(--surface-2)] px-2 py-0.5 font-mono text-[10.5px] uppercase leading-none tracking-[0.04em] text-[var(--ink-2)]",
-          className,
-        )}
+        className={cn(chip, "ynab-chip", className)}
+        style={status === "none" ? { opacity: 0.5, ...style } : style}
         {...props}
       >
         <span
-          aria-hidden
-          className="size-1.5 shrink-0 rounded-full"
-          style={{ backgroundColor: dot }}
+          className="dot"
+          style={
+            status === "none" ? { background: "var(--mute-2)" } : undefined
+          }
         />
         {label}
       </span>
