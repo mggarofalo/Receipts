@@ -42,7 +42,7 @@ This is a .NET 10 Clean Architecture solution for a receipt management applicati
 - **Soft Delete**: Entities support soft delete with restore capabilities and trash management
 - **Audit Logging**: All mutations are logged with user/API key attribution
 
-### Adjustment Entity (Phase 7)
+### Adjustment Entity
 
 The `Adjustment` entity captures receipt-level monetary adjustments (tips, discounts, coupons, rounding):
 
@@ -63,12 +63,12 @@ The balance equation enforced across receipts:
 sum(item.TotalAmount) + Receipt.TaxAmount + sum(adjustment.Amount) == sum(transaction.Amount)
 ```
 
-### Validation Tiers (Phase 7)
+### Validation Tiers
 
 - **Hard invariants** (reject if violated): Balance equation, non-negative prices, line-item totals within rounding tolerance
 - **Soft invariants** (warn, don't reject): Tax reasonableness (0–25%), adjustment reasonableness (<10% of subtotal), date consistency
 
-See the "Design: Phase 7 — Correctness Hardening" page in Plane for the full design document.
+See the [Correctness Hardening module](https://plane.wallingford.me/dev/projects/aaac8dc9-bc4c-42db-ac99-eee7864c78e9/modules/1addfa25-4ce8-44f7-b9e7-44b3d3a27d69) in Plane for the full design history.
 
 ## Database
 

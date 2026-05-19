@@ -22,7 +22,7 @@ Issues labeled `epic` are parent containers — skip and work their children.
 
 ## Modules
 
-Phases are tracked as Plane **modules**. Use `plane module list --all -p RECEIPTS` to discover them. Active: Phase 15 (Logical Accounts). Planned: Phase 16 (UX Polish), Maintenance Backlog. Completed: Phases 0–12, 14, and Ad-hoc & Legacy (historical catch-all for ad-hoc work that sat outside any phase). Cancelled: Phase 13 (Paperless Integration).
+Phases are tracked as Plane **modules**. Use `plane module list --all -p RECEIPTS` to discover them and their current status.
 
 **Every issue must be attached to a module.** `plane issue create` does NOT accept a `--module-id` flag — attach via a separate call after creation:
 
