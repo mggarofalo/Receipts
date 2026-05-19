@@ -6,18 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCreateCompleteReceipt } from "@/hooks/useReceipts";
 import { useLocationHistory } from "@/hooks/useLocationHistory";
-import { generateId } from "@/lib/id";
 import {
   TransactionsSection,
   type ReceiptTransaction,
 } from "./TransactionsSection";
 import { LineItemsSection, type ReceiptLineItem } from "./LineItemsSection";
 import { BalanceSidebar } from "./BalanceSidebar";
-import { ConfidenceIndicator } from "@/pages/scan-receipt/ConfidenceIndicator";
-import type {
-  ScanInitialValues,
-  ReceiptConfidenceMap,
-} from "@/pages/scan-receipt/types";
 import { Combobox } from "@/components/ui/combobox";
 import { DateInput } from "@/components/ui/date-input";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -52,29 +46,14 @@ const headerSchema = z.object({
 
 type HeaderFormValues = z.output<typeof headerSchema>;
 
-interface NewReceiptPageProps {
-  initialValues?: ScanInitialValues;
-  confidenceMap?: ReceiptConfidenceMap;
-  pageTitle?: string;
-}
-
-export default function NewReceiptPage({
-  initialValues,
-  confidenceMap,
-  pageTitle,
-}: NewReceiptPageProps = {}) {
-  usePageTitle(pageTitle ?? "New Receipt");
+export default function NewReceiptPage() {
+  usePageTitle("New Receipt");
   const navigate = useNavigate();
   const locationRef = useRef<HTMLButtonElement>(null);
   const { options: locationOptions, add: addLocation } = useLocationHistory();
 
   const [transactions, setTransactions] = useState<ReceiptTransaction[]>([]);
-  const [items, setItems] = useState<ReceiptLineItem[]>(() =>
-    initialValues?.items.map((item) => ({
-      id: generateId(),
-      ...item,
-    })) ?? [],
-  );
+  const [items, setItems] = useState<ReceiptLineItem[]>([]);
   const [showDiscard, setShowDiscard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitErrorSummary, setSubmitErrorSummary] = useState<string | null>(null);
@@ -87,9 +66,9 @@ export default function NewReceiptPage({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(headerSchema) as any,
     defaultValues: {
-      location: initialValues?.header.location ?? "",
-      date: initialValues?.header.date ?? "",
-      taxAmount: initialValues?.header.taxAmount ?? 0,
+      location: "",
+      date: "",
+      taxAmount: 0,
     },
   });
 
@@ -236,10 +215,7 @@ export default function NewReceiptPage({
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required className="flex items-center gap-2">
-                      Location
-                      <ConfidenceIndicator confidence={confidenceMap?.location} />
-                    </FormLabel>
+                    <FormLabel required>Location</FormLabel>
                     <FormControl>
                       <Combobox
                         ref={locationRef}
@@ -263,10 +239,7 @@ export default function NewReceiptPage({
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel required className="flex items-center gap-2">
-                      Date
-                      <ConfidenceIndicator confidence={confidenceMap?.date} />
-                    </FormLabel>
+                    <FormLabel required>Date</FormLabel>
                     <FormControl>
                       <DateInput
                         aria-required="true"
@@ -284,10 +257,7 @@ export default function NewReceiptPage({
                 name="taxAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Tax Amount
-                      <ConfidenceIndicator confidence={confidenceMap?.taxAmount} />
-                    </FormLabel>
+                    <FormLabel>Tax Amount</FormLabel>
                     <FormControl>
                       <CurrencyInput {...field} />
                     </FormControl>

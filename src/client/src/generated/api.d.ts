@@ -785,26 +785,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/receipts/scan": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Scan a receipt image or PDF and return a proposed receipt
-         * @description Accepts a JPEG image, PNG image, or PDF document. For images, runs preprocessing, OCR, and parsing. For PDFs, extracts text from the text layer or renders pages for OCR. Multi-page PDFs are supported (up to 50 pages). Returns a proposed receipt with per-field confidence scores. The proposal is NOT persisted — it is a transient suggestion for review.
-         */
-        post: operations["ScanReceipt"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/receipts/complete": {
         parameters: {
             query?: never;
@@ -3094,61 +3074,9 @@ export interface components {
         };
         /** Format: binary */
         IFormFile: string;
-        ProblemDetails: {
-            type?: null | string;
-            title?: null | string;
-            /** Format: int32 */
-            status?: null | number | string;
-            detail?: null | string;
-            instance?: null | string;
-        };
         UploadReceiptImageResponse: {
             originalImagePath: string;
             processedImagePath: string;
-        };
-        /** @enum {string} */
-        ConfidenceLevel: "low" | "medium" | "high";
-        ProposedReceiptResponse: {
-            storeName?: string | null;
-            storeNameConfidence: components["schemas"]["ConfidenceLevel"];
-            /** Format: date */
-            date?: string | null;
-            dateConfidence: components["schemas"]["ConfidenceLevel"];
-            items: components["schemas"]["ProposedReceiptItemResponse"][];
-            /** Format: double */
-            subtotal?: number | null;
-            subtotalConfidence: components["schemas"]["ConfidenceLevel"];
-            taxLines: components["schemas"]["ProposedTaxLineResponse"][];
-            /** Format: double */
-            total?: number | null;
-            totalConfidence: components["schemas"]["ConfidenceLevel"];
-            paymentMethod?: string | null;
-            paymentMethodConfidence: components["schemas"]["ConfidenceLevel"];
-            rawOcrText: string;
-            /** Format: float */
-            ocrConfidence: number;
-        };
-        ProposedReceiptItemResponse: {
-            code?: string | null;
-            codeConfidence: components["schemas"]["ConfidenceLevel"];
-            description?: string | null;
-            descriptionConfidence: components["schemas"]["ConfidenceLevel"];
-            /** Format: double */
-            quantity?: number | null;
-            quantityConfidence: components["schemas"]["ConfidenceLevel"];
-            /** Format: double */
-            unitPrice?: number | null;
-            unitPriceConfidence: components["schemas"]["ConfidenceLevel"];
-            /** Format: double */
-            totalPrice?: number | null;
-            totalPriceConfidence: components["schemas"]["ConfidenceLevel"];
-        };
-        ProposedTaxLineResponse: {
-            label?: string | null;
-            labelConfidence: components["schemas"]["ConfidenceLevel"];
-            /** Format: double */
-            amount?: number | null;
-            amountConfidence: components["schemas"]["ConfidenceLevel"];
         };
         CreateCompleteReceiptRequest: {
             receipt: components["schemas"]["CreateReceiptRequest"];
@@ -5478,7 +5406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
+                    "application/json": string;
                 };
             };
             /** @description Not Found */
@@ -5904,61 +5832,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    ScanReceipt: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    file?: components["schemas"]["IFormFile"];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProposedReceiptResponse"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description Unsupported Media Type */
-            415: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain": components["schemas"]["ProblemDetails"];
-                    "application/json": components["schemas"]["ProblemDetails"];
-                    "text/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Unprocessable Entity — image/PDF could not be read or OCR returned no text */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
             };
         };
     };

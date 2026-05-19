@@ -2,7 +2,6 @@ import {
   ArrowRightLeft,
   BarChart3,
   Building2,
-  Camera,
   ChartColumn,
   CreditCard,
   Database,
@@ -81,15 +80,6 @@ export const COMMANDS: Command[] = [
     keywords: ["add", "create"],
     targetPath: "/receipts/new",
     run: goTo("/receipts/new"),
-  },
-  {
-    id: "create:receipt-scan",
-    label: "Scan Receipt",
-    group: "create",
-    icon: Camera,
-    keywords: ["photo", "camera", "ocr", "upload"],
-    targetPath: "/receipts/scan",
-    run: goTo("/receipts/scan"),
   },
   {
     id: "create:account",
