@@ -1,6 +1,6 @@
 using System.Text.Json;
 using API.Configuration;
-using Application.Models.Ocr;
+using Domain.NormalizedDescriptions;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -32,13 +32,11 @@ public class JsonSerializerEnumCasingTests
 	{
 		JsonSerializerOptions options = GetConfiguredJsonOptions();
 
-		string highJson = JsonSerializer.Serialize(ConfidenceLevel.High, options);
-		string mediumJson = JsonSerializer.Serialize(ConfidenceLevel.Medium, options);
-		string lowJson = JsonSerializer.Serialize(ConfidenceLevel.Low, options);
+		string activeJson = JsonSerializer.Serialize(NormalizedDescriptionStatus.Active, options);
+		string pendingJson = JsonSerializer.Serialize(NormalizedDescriptionStatus.PendingReview, options);
 
-		highJson.Should().Be("\"high\"");
-		mediumJson.Should().Be("\"medium\"");
-		lowJson.Should().Be("\"low\"");
+		activeJson.Should().Be("\"active\"");
+		pendingJson.Should().Be("\"pendingReview\"");
 	}
 
 	[Fact]
@@ -46,12 +44,10 @@ public class JsonSerializerEnumCasingTests
 	{
 		JsonSerializerOptions options = GetConfiguredJsonOptions();
 
-		ConfidenceLevel high = JsonSerializer.Deserialize<ConfidenceLevel>("\"high\"", options);
-		ConfidenceLevel medium = JsonSerializer.Deserialize<ConfidenceLevel>("\"medium\"", options);
-		ConfidenceLevel low = JsonSerializer.Deserialize<ConfidenceLevel>("\"low\"", options);
+		NormalizedDescriptionStatus active = JsonSerializer.Deserialize<NormalizedDescriptionStatus>("\"active\"", options);
+		NormalizedDescriptionStatus pending = JsonSerializer.Deserialize<NormalizedDescriptionStatus>("\"pendingReview\"", options);
 
-		high.Should().Be(ConfidenceLevel.High);
-		medium.Should().Be(ConfidenceLevel.Medium);
-		low.Should().Be(ConfidenceLevel.Low);
+		active.Should().Be(NormalizedDescriptionStatus.Active);
+		pending.Should().Be(NormalizedDescriptionStatus.PendingReview);
 	}
 }

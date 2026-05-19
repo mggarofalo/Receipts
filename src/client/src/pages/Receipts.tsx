@@ -198,9 +198,6 @@ function Receipts() {
             </Button>
           )}
           <Button variant="outline" asChild>
-            <Link to="/receipts/scan">Scan Receipt</Link>
-          </Button>
-          <Button variant="outline" asChild>
             <Link to="/receipts/new">New Receipt</Link>
           </Button>
           <Button onClick={() => setCreateOpen(true)}>Quick Add</Button>

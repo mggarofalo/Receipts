@@ -52,9 +52,6 @@ vi.mock("@/pages/Reports", () => ({
 vi.mock("@/pages/new-receipt/NewReceiptPage", () => ({
   default: () => <div data-testid="page-new-receipt">NewReceipt</div>,
 }));
-vi.mock("@/pages/scan-receipt/ScanReceiptPage", () => ({
-  default: () => <div data-testid="page-scan-receipt">ScanReceipt</div>,
-}));
 vi.mock("@/pages/settings/YnabSettings", () => ({
   default: () => <div data-testid="page-ynab-settings">YnabSettings</div>,
 }));
@@ -139,11 +136,6 @@ describe("App router", () => {
   it('renders NewReceipt page at "/receipts/new" route', async () => {
     renderRoute("/receipts/new");
     expect(await screen.findByTestId("page-new-receipt")).toBeInTheDocument();
-  });
-
-  it('renders ScanReceipt page at "/receipts/scan" route', async () => {
-    renderRoute("/receipts/scan");
-    expect(await screen.findByTestId("page-scan-receipt")).toBeInTheDocument();
   });
 
   it('renders YnabSettings page at "/settings/ynab" route', async () => {

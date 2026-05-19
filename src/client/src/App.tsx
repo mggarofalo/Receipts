@@ -21,7 +21,6 @@ import SecurityLog from "@/pages/SecurityLog";
 import RecycleBin from "@/pages/RecycleBin";
 import BackupRestore from "@/pages/BackupRestore";
 import NewReceipt from "@/pages/new-receipt/NewReceiptPage";
-import ScanReceipt from "@/pages/scan-receipt/ScanReceiptPage";
 import YnabSettings from "@/pages/settings/YnabSettings";
 import NotFound from "@/pages/NotFound";
 
@@ -50,7 +49,6 @@ export const routeConfig = [
           { path: "/subcategories", element: <Subcategories /> },
           { path: "/receipts", element: <Receipts /> },
           { path: "/receipts/new", element: <NewReceipt /> },
-          { path: "/receipts/scan", element: <ScanReceipt /> },
           { path: "/item-templates", element: <ItemTemplates /> },
           { path: "/reports", element: <Reports /> },
           { path: "/receipts/:id", element: <ReceiptDetail /> },

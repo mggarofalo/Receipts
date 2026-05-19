@@ -43,7 +43,6 @@ describe("command registry", () => {
       "nav:trash",
       "nav:backup",
       "create:receipt",
-      "create:receipt-scan",
       "create:account",
       "create:card",
       "create:category",

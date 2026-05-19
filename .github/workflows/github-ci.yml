@@ -275,9 +275,8 @@ jobs:
       - uses: actions/checkout@v6
 
       # GHA-hosted runners ship with ~14GB free disk, which is not enough for
-      # the 1.34GB ONNX model download plus PaddleOCR runtime deps in the
-      # image. Reclaim ~30GB by dropping preinstalled SDKs we don't use
-      # (RECEIPTS-671).
+      # the 1.34GB ONNX model download plus image build. Reclaim ~30GB by
+      # dropping preinstalled SDKs we don't use (RECEIPTS-671).
       - name: Free disk space
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
         with:
