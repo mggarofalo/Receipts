@@ -161,6 +161,24 @@ describe("NewReceiptPage", () => {
     expect(upperLeft?.contains(lineItems)).toBe(false);
   });
 
+  it("renders a sticky action bar with the balance status and Submit/Cancel", () => {
+    // The Balance panel sits in the upper container and scrolls out of view
+    // once the line-item table grows tall. The sticky action bar keeps the
+    // balance status and Submit/Cancel reachable at the bottom of the viewport.
+    renderWithProviders(<NewReceiptPage />);
+
+    const stickyBar = document.querySelector(".sticky.bottom-0");
+    expect(stickyBar).not.toBeNull();
+    expect(stickyBar?.textContent).toContain("Submit Receipt");
+    expect(stickyBar?.textContent).toContain("Cancel");
+    // No data yet → expected and transaction totals are both 0 → balanced.
+    expect(stickyBar?.textContent).toContain("Balanced");
+
+    // The sticky bar is a sibling below the line-item table, not nested in it.
+    const lineItems = screen.getByTestId("line-items-section");
+    expect(stickyBar?.contains(lineItems)).toBe(false);
+  });
+
   it("navigates directly to /receipts when cancel clicked with no data", async () => {
     const user = userEvent.setup();
     renderWithProviders(<NewReceiptPage />);
