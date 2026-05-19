@@ -215,17 +215,17 @@ export default function NewReceiptPage() {
       </div>
 
       {/* Upper container: receipt metadata + transactions (left), balance panel (right) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_minmax(300px,360px)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         {/* Upper-left — receipt metadata and transactions */}
         <div className="space-y-6 min-w-0">
           {/* Receipt Header */}
           <Form {...form}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="flex flex-wrap gap-4">
               <FormField
                 control={form.control}
                 name="location"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="min-w-[220px] flex-1">
                     <FormLabel required>Location</FormLabel>
                     <FormControl>
                       <Combobox
@@ -249,7 +249,7 @@ export default function NewReceiptPage() {
                 control={form.control}
                 name="date"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="min-w-[170px] flex-1">
                     <FormLabel required>Date</FormLabel>
                     <FormControl>
                       <DateInput
@@ -267,7 +267,7 @@ export default function NewReceiptPage() {
                 control={form.control}
                 name="taxAmount"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="min-w-[150px] flex-1">
                     <FormLabel>Tax Amount</FormLabel>
                     <FormControl>
                       <CurrencyInput {...field} />
