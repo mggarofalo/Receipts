@@ -1,239 +1,154 @@
+<div align="center">
+
+# 🧾 Receipts
+
+### Self-hosted spending tracker that turns a shoebox of paper receipts into searchable, reconciled financial data.
+
+Capture a receipt down to the line item, reconcile it against the card transactions that paid for it, and watch the dashboards fill in. Built as a production-grade full-stack application — .NET 10 Clean Architecture on the back end, a React 19 single-page app on the front.
+
 [![.NET CI](https://github.com/mggarofalo/Receipts/actions/workflows/github-ci.yml/badge.svg)](https://github.com/mggarofalo/Receipts/actions/workflows/github-ci.yml)
+&nbsp;![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+&nbsp;![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+&nbsp;![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+&nbsp;![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 
-# Receipts
+<br />
 
-A full-stack receipt management application built with .NET 10 Clean Architecture (API) and React (SPA). Tracks accounts, receipts, receipt line items, transactions, categories, and item templates with full CRUD operations, soft-delete/restore, audit logging, and aggregate views.
+<img src="docs/screenshots/dashboard.png" alt="Receipts dashboard — spending trend, category breakdown, and per-account totals" width="900" />
 
-## Tech Stack
+</div>
+
+---
+
+## Why it exists
+
+Most receipts end up in a drawer and never get looked at again. Receipts makes capturing them low-effort and the resulting data genuinely useful: every purchase is broken down to the line item, categorized, and tied to the card it was paid on — so the question "what did we actually spend on groceries last quarter?" has a real answer.
+
+It is designed to be **self-hosted**: one Docker Compose file, your data on your own hardware, no third-party SaaS holding your financial history.
+
+## Highlights
+
+### ✍️ Enter a receipt precisely, with live reconciliation
+
+The editor models a receipt the way the paper does: line items, tax, adjustments (tips, coupons, discounts), and the card transactions that paid for it. A running **balance panel** confirms the receipt reconciles to the penny before you save.
+
+<div align="center">
+<img src="docs/screenshots/new-receipt.png" alt="New receipt form with line items, transactions, and a live balance panel" width="900" />
+</div>
+
+### 🔎 Every receipt, searchable and itemized
+
+Browse, filter, and full-text search across the whole history. Open any receipt to see its line items, denormalized categories, adjustments, and a balance summary that flags discrepancies between what was itemized and what was charged.
+
+<div align="center">
+<img src="docs/screenshots/receipts-list.png" alt="Paginated, searchable receipt list" width="440" />
+&nbsp;
+<img src="docs/screenshots/receipt-detail.png" alt="Receipt detail with balance summary and itemized line items" width="440" />
+</div>
+
+### 📊 Reports that answer real questions
+
+A dashboard of spending trends and category breakdowns, plus focused reports: category trends over time, spending by location, item cost history, duplicate detection, uncategorized items, and an **out-of-balance** report that surfaces receipts whose transactions don't match their items.
+
+<div align="center">
+<img src="docs/screenshots/reports-category-trends.png" alt="Category Trends report — spending by category over twelve months" width="900" />
+</div>
+
+### 🧠 Smarter categorization with local embeddings
+
+Item descriptions are normalized using sentence embeddings (`bge-large-en-v1.5` via ONNX Runtime, stored in `pgvector`) so "BNNS ORG" and "Organic Bananas" collapse to the same thing — all computed locally, with no embedding API key required.
+
+### 🔗 YNAB integration
+
+Two-way sync with [You Need A Budget](https://www.youneedabudget.com/): push receipt detail into YNAB transaction memos and keep categorization aligned.
+
+### 🛠️ Built to be operated
+
+Soft-delete with a recycle bin, a full audit log of every mutation, role-based access with admin user management, scoped API keys, and one-command backup/restore.
+
+## Architecture
+
+Receipts follows **Clean Architecture** with a strict inward dependency rule — the domain has no outward dependencies, and each layer only knows about the ones beneath it. That keeps business rules isolated from frameworks and makes the system straightforward to test.
+
+```
+Domain  ←  Application  ←  Infrastructure  ←  Presentation (API)
+                                                    ↑
+                                              React SPA (client)
+```
+
+| Decision | Rationale |
+|---|---|
+| **CQRS via [martinothamar/Mediator](https://github.com/martinothamar/Mediator)** | Commands and queries are separate types with source-generated dispatch — no reflection, no runtime handler scan. |
+| **Compile-time mapping with [Mapperly](https://mapperly.riok.app/)** | Domain ⇄ entity ⇄ DTO mapping is generated at build time — fully debuggable, and a schema change becomes a build error. |
+| **Spec-first API** | Request/response DTOs are generated from an OpenAPI spec; drift between the spec, the server, and the typed client is caught in CI. |
+| **PostgreSQL + pgvector** | One database for relational data *and* the embedding vectors that power description normalization. |
+| **.NET Aspire** | Orchestrates the whole stack — API, database, client, dashboards — for a single-command local dev experience. |
+
+For the full breakdown — layer responsibilities, the description-normalization pipeline, validation tiers, and testing strategy — see **[docs/architecture.md](docs/architecture.md)**.
+
+## Tech stack
 
 | Layer | Technology |
 |---|---|
 | Runtime | .NET 10 |
-| API | ASP.NET Core Web API |
+| API | ASP.NET Core Web API, Microsoft.AspNetCore.OpenApi + Scalar |
 | Frontend | React 19, Vite, TypeScript |
 | UI | Tailwind CSS 4, shadcn/ui, Radix UI |
-| State & Routing | TanStack Query, React Router |
-| Forms | React Hook Form, Zod |
-| Database | PostgreSQL + EF Core 10 + pgvector |
-| Embeddings | bge-large-en-v1.5 via ONNX Runtime (local, no API key, 1024-dim, CLS pooling) |
-| CQRS | [martinothamar/Mediator](https://github.com/martinothamar/Mediator) 3 |
-| Mapping | Mapperly (compile-time, zero-reflection) |
-| Validation | FluentValidation |
-| Auth | JWT Bearer + API Key (dual scheme) |
-| Logging | Serilog + OpenTelemetry |
-| Real-time | SignalR |
-| API Docs | Microsoft.AspNetCore.OpenApi + Scalar |
-| Local Dev | .NET Aspire (orchestration + observability) |
-| Testing | xUnit + FluentAssertions + Moq (API), Vitest + Playwright (client) |
+| State & data | TanStack Query, React Router, React Hook Form, Zod |
+| Database | PostgreSQL 17 + EF Core 10 + pgvector |
+| Embeddings | `bge-large-en-v1.5` via ONNX Runtime (local, 1024-dim) |
+| CQRS / mapping / validation | martinothamar/Mediator, Mapperly, FluentValidation |
+| Auth | JWT Bearer + scoped API keys (dual scheme) |
+| Real-time & observability | SignalR, Serilog, OpenTelemetry |
+| Local dev | .NET Aspire |
+| Testing | xUnit, FluentAssertions, Moq · Vitest, Testing Library |
 
-## Architecture
+## Getting started
 
-The solution follows Clean Architecture with strict dependency flow: Domain has no outward dependencies, Application depends only on Domain, and outer layers (Infrastructure, Presentation) depend inward.
-
-```
-src/
-  Common/              Shared utilities, enums, extension methods
-  Domain/
-    Core/              Entities: Account, Receipt, ReceiptItem, Transaction,
-                       Category, Subcategory, ItemTemplate
-    Aggregates/        Composites: ReceiptWithItems, TransactionAccount, Trip
-  Application/
-    Commands/          Write operations (Create, Update, Delete per entity)
-    Queries/           Read operations (Core + Aggregate queries)
-    Interfaces/        Service contracts implemented by Infrastructure
-  Infrastructure/
-    Entities/          EF Core database entities (separate from Domain)
-    Repositories/      Repository pattern over EF Core
-    Services/          Service implementations (incl. audit logging)
-    Mapping/           Mapperly mappers (Domain <-> Entity)
-    Migrations/        EF Core migrations
-  Presentation/
-    API/
-      Controllers/     REST endpoints (Core/ and Aggregates/)
-      Configuration/   Service registration extensions
-      Mapping/         Mapperly mappers (Domain <-> generated DTOs)
-      Generated/       NSwag-generated Request/Response DTOs from OpenAPI spec
-      Validators/      FluentValidation validators (business rules only)
-      Hubs/            SignalR hub for real-time updates
-  client/              React/Vite SPA (TypeScript)
-  Receipts.AppHost/    .NET Aspire orchestration
-tests/
-  Common.Tests/
-  Domain.Tests/
-  Application.Tests/
-  Infrastructure.Tests/
-  Presentation.API.Tests/
-  SampleData/          Shared test fixtures across all test projects
-```
-
-### Key Patterns
-
-- **CQRS**: Commands and queries are separate types with dedicated Mediator handlers (source-generated dispatch)
-- **Repository Pattern**: Infrastructure repositories abstract EF Core from the Application layer
-- **Compile-time Mapping**: Mapperly generates mapping code at build time (no reflection, fully debuggable)
-- **Service Registration**: Each layer exposes a static DI extension method (`RegisterApplicationServices`, `RegisterInfrastructureServices`, etc.)
-- **Central Package Management**: All NuGet versions defined in `Directory.Packages.props`
-- **Soft Delete**: Entities support soft delete with restore capabilities and trash purge
-- **Audit Logging**: All mutations are logged with user/API key attribution
-
-## Prerequisites
+**Prerequisites**
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [Aspire CLI](https://aspire.dev/get-started/install-cli/) — `dotnet tool install --global Aspire.Cli`
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for local dev — Aspire provisions PostgreSQL as a container)
-- [Node.js 18+](https://nodejs.org) (for OpenAPI tooling and React client)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — Aspire provisions PostgreSQL as a container
+- [Node.js](https://nodejs.org) — for the React client and OpenAPI tooling
 
-## Getting Started
-
-See **[docs/development.md](docs/development.md)** for the full local development guide including F5 debugging with Aspire, the Aspire Dashboard, and troubleshooting.
-
-**Quick start:**
+**Run it**
 
 ```bash
 git clone https://github.com/mggarofalo/Receipts.git
 cd Receipts
-dotnet tool install --global Aspire.Cli  # if not already installed
-dotnet restore Receipts.slnx
 npm install
-# Then press F5 in VS Code, or: aspire run
+aspire run --project src/Receipts.AppHost/Receipts.AppHost.csproj
 ```
 
-Aspire orchestrates the entire stack (API + PostgreSQL + React dev server + Dashboard) automatically. No manual database setup needed.
+Aspire orchestrates the entire stack — API, PostgreSQL, the React dev server, and the Aspire dashboard — and applies database migrations automatically. Local runs are **seeded with three years of realistic sample data** (~600 receipts across seven stores), so the dashboards and reports are populated the moment the app comes up. No manual database setup required.
 
-## Docker Setup
+Press **F5** in VS Code for the same experience with the debugger attached. For F5 details, the Aspire dashboard, and troubleshooting, see **[docs/development.md](docs/development.md)**.
 
-The repo includes a self-contained `docker-compose.yml` — no `.env` file or secret generation needed. Secrets are auto-generated on first run.
+**Deploy it**
+
+The repo includes a self-contained `docker-compose.yml` — secrets are generated on first run, no `.env` file needed:
 
 ```bash
-# Start the stack (secrets are generated automatically)
 docker compose up -d
-
-# Get the auto-generated admin password
-docker compose exec app cat /secrets/admin_password
-
-# View logs
-docker compose logs -f app
-
-# Stop
-docker compose down
+docker compose exec app cat /secrets/admin_password   # the generated admin password
 ```
 
-The app is available at `http://localhost:8080`. To customize PUID/PGID, timezone, or admin email, edit the values directly in `docker-compose.yml`. See **[docs/deployment.md](docs/deployment.md)** for the full deployment guide including HTTPS, backup/restore, updates, and troubleshooting.
+See **[docs/deployment.md](docs/deployment.md)** for HTTPS, backups, and updates.
 
-## Development
+## Documentation
 
-### Build
-
-```bash
-dotnet build Receipts.slnx
-```
-
-### Run Tests
-
-```bash
-# Unit tests only (same as CI)
-dotnet test Receipts.slnx --filter "Category!=Integration"
-
-# All tests including integration (requires ONNX model)
-dotnet test Receipts.slnx
-
-# Single project
-dotnet test tests/Application.Tests/Application.Tests.csproj
-
-# Single test by name
-dotnet test --filter "FullyQualifiedName~TestMethodName"
-```
-
-### Code Formatting
-
-The project enforces consistent formatting via `dotnet format`. Check without modifying:
-
-```bash
-dotnet format Receipts.slnx --verify-no-changes
-```
-
-Fix formatting:
-
-```bash
-dotnet format Receipts.slnx
-```
-
-### EF Core Migrations
-
-```bash
-dotnet ef migrations add MigrationName \
-  --project src/Infrastructure/Infrastructure.csproj \
-  --startup-project src/Presentation/API/API.csproj
-```
-
-### OpenAPI Spec
-
-The OpenAPI spec is generated at build time to `openapi/generated/API.json`. This file is gitignored (build artifact) but can be used for client generation or documentation.
-
-## Pre-commit Hooks
-
-Native Git hooks (`.githooks/`) run an eight-step pipeline on every `git commit`:
-
-0. **Prerequisites** - `dotnet run scripts/worktree-setup.cs -- --check`
-1. **OpenAPI spec lint** - `npx spectral lint openapi/spec.yaml`
-2. **Format check** - `dotnet format --verify-no-changes`
-3. **Build** - `dotnet build -p:TreatWarningsAsErrors=true` (also regenerates DTOs and `openapi/generated/API.json`)
-4. **Spec drift check** - `node scripts/check-drift.mjs`
-5. **Test** - `dotnet test --no-build --filter "Category!=Integration"`
-6. **TypeScript types** - `npx tsc --noEmit`
-7. **ESLint** - `npx eslint src/client/src`
-
-Hooks install automatically on `dotnet restore`. For faster iteration, use quick mode (runs only steps 0, 2, 6, 7):
-
-```bash
-PRECOMMIT_QUICK=1 git commit -m "message"
-```
-
-## CI/CD
-
-GitHub Actions runs three parallel jobs on every push to `main` and every PR:
-
-| Job | What it does |
+| | |
 |---|---|
-| **Build & Test** | `dotnet build` with warnings-as-errors, then `dotnet test` (unit tests only; integration tests excluded) |
-| **Code Formatting** | `dotnet format --verify-no-changes` |
-| **Vulnerability Scan** | `dotnet list package --vulnerable` with fail-on-detection |
+| [Architecture](docs/architecture.md) | Layers, patterns, and the receipt pipeline |
+| [Development](docs/development.md) | Local setup, debugging, build & test commands |
+| [Testing](docs/testing.md) | Test strategy, conventions, and coverage |
+| [Deployment](docs/deployment.md) | Docker Compose, HTTPS, operations |
+| [Observability](docs/observability.md) | OpenTelemetry, Grafana, and Sentry |
+| [Admin & backup](docs/admin.md) | User management, API keys, audit log |
 
-NuGet packages are cached between runs. See `.github/workflows/github-ci.yml` for details.
-
-## Testing Strategy
-
-Tests mirror the source project structure with one test project per source layer. All test projects share the same stack:
-
-| Package | Purpose |
-|---|---|
-| xUnit | Test framework |
-| FluentAssertions | Readable assertion syntax |
-| Moq | Mocking dependencies |
-| coverlet.collector | Code coverage |
-
-### Conventions
-
-- **Arrange/Act/Assert** structure in every test
-- **`expected`/`actual`** variable names for assertion clarity
-- **Concrete Mapperly instances** in tests (not mocked) - tests exercise real mapping logic
-- **In-memory EF Core** for Infrastructure tests (`Microsoft.EntityFrameworkCore.InMemory`)
-- **SampleData project** provides shared test fixtures so entity construction is consistent across all test projects
-- **No testing of implementation details** - tests verify behavior, not internal mechanics
-- **Integration tests** tagged with `[Trait("Category", "Integration")]` for tests requiring external resources (ONNX model, real database). Excluded from CI via `--filter "Category!=Integration"`
-
-## API Endpoints
-
-The API provides full CRUD with soft-delete/restore and batch operations for 7 core resources (Accounts, Categories, Subcategories, Item Templates, Receipts, Receipt Items, Transactions), aggregate views, auth/user management, and audit logging.
-
-All endpoints are documented with OpenAPI metadata. Run the API and visit `/scalar` for the interactive API documentation.
-
-See **[docs/api-reference.md](docs/api-reference.md)** for the complete endpoint reference.
-
-## Branching Strategy
-
-See **[docs/branching.md](docs/branching.md)** for the full two-tier branching model with milestone branches, epic parent branches, issue branches, and directory isolation for parallel work.
+The REST API is fully documented with OpenAPI metadata — run the app and open `/scalar` for an interactive reference.
 
 ## License
 
-Private repository. All rights reserved.
+© Michael Garofalo. All rights reserved.

@@ -43,6 +43,35 @@ public class AuditLogCaptureTests
 	}
 
 	[Fact]
+	public async Task SaveChanges_AuditingDisabled_PersistsEntityButProducesNoAuditLog()
+	{
+		// Arrange
+		(IDbContextFactory<ApplicationDbContext> contextFactory, MockCurrentUserAccessor _) = DbContextWithUserHelpers.CreateInMemoryContextFactoryWithUser();
+		CardEntity entity = CardEntityGenerator.Generate();
+
+		// Act
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			context.AuditingEnabled = false;
+			await context.Cards.AddAsync(entity);
+			await context.SaveChangesAsync();
+		}
+
+		// Assert
+		await using (ApplicationDbContext context = contextFactory.CreateDbContext())
+		{
+			int expectedCardCount = 1;
+			int actualCardCount = await context.Cards.CountAsync();
+			actualCardCount.Should().Be(expectedCardCount);
+
+			bool actualHasAuditLogs = await context.AuditLogs.AnyAsync();
+			actualHasAuditLogs.Should().BeFalse();
+		}
+
+		contextFactory.ResetDatabase();
+	}
+
+	[Fact]
 	public async Task SaveChanges_UpdateEntity_ProducesUpdateAuditLogWithFieldChanges()
 	{
 		// Arrange
