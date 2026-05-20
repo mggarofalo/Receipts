@@ -40,7 +40,6 @@ export function ReconcileSheet({
   const [path, setPath] = useState<ReconcilePath>("balance");
   const [focus, setFocus] = useState(0);
   const [resolved, setResolved] = useState<Set<string>>(new Set());
-  const [editing, setEditing] = useState<string | null>(null);
 
   const flaggedIds = useMemo(
     () => lines.filter((l) => l.flagged).map((l) => l.id),
@@ -50,7 +49,6 @@ export function ReconcileSheet({
   useEffect(() => {
     if (!open) {
       setResolved(new Set());
-      setEditing(null);
       setFocus(0);
       setPath("balance");
     }
@@ -63,43 +61,68 @@ export function ReconcileSheet({
 
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<Element | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    function handler(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        if (editing !== null) {
-          setEditing(null);
-        } else {
-          closeRef.current();
-        }
+    triggerRef.current = document.activeElement;
+    closeButtonRef.current?.focus();
+    return () => {
+      const trigger = triggerRef.current as HTMLElement | null;
+      if (trigger && typeof trigger.focus === "function") trigger.focus();
+    };
+  }, [open]);
+
+  function focusInsideSheet(): boolean {
+    const active = document.activeElement;
+    return !!sheetRef.current && active != null && sheetRef.current.contains(active);
+  }
+
+  function handleSheetKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === "Tab") {
+      const root = sheetRef.current;
+      if (!root) return;
+      const focusables = root.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        last.focus();
         e.preventDefault();
-        return;
+      } else if (!e.shiftKey && active === last) {
+        first.focus();
+        e.preventDefault();
       }
-      if (editing !== null) return;
-      if (flaggedIds.length === 0) return;
-      if (e.key === "j" || e.key === "ArrowDown") {
-        setFocus((f) => (f + 1) % flaggedIds.length);
-        e.preventDefault();
-      } else if (e.key === "k" || e.key === "ArrowUp") {
-        setFocus((f) => (f - 1 + flaggedIds.length) % flaggedIds.length);
-        e.preventDefault();
-      } else if (e.key === "a") {
-        const id = flaggedIds[focus];
-        setResolved((s) => new Set(s).add(id));
-        e.preventDefault();
-      } else if (e.key === "e") {
-        setEditing(flaggedIds[focus]);
-        e.preventDefault();
-      } else if (e.key === "r") {
-        const id = flaggedIds[focus];
-        setResolved((s) => new Set(s).add(id));
-        e.preventDefault();
-      }
+      return;
     }
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [open, focus, editing, flaggedIds]);
+    if (e.key === "Escape") {
+      closeRef.current();
+      e.preventDefault();
+      return;
+    }
+    if (flaggedIds.length === 0) return;
+    if (!focusInsideSheet()) return;
+    if (e.key === "j" || e.key === "ArrowDown") {
+      setFocus((f) => (f + 1) % flaggedIds.length);
+      e.preventDefault();
+    } else if (e.key === "k" || e.key === "ArrowUp") {
+      setFocus((f) => (f - 1 + flaggedIds.length) % flaggedIds.length);
+      e.preventDefault();
+    } else if (e.key === "a") {
+      const id = flaggedIds[focus];
+      setResolved((s) => new Set(s).add(id));
+      e.preventDefault();
+    } else if (e.key === "r") {
+      const id = flaggedIds[focus];
+      setResolved((s) => new Set(s).add(id));
+      e.preventDefault();
+    }
+  }
 
   const handleResolve = useCallback(() => {
     onResolve?.({ path, resolvedIds: Array.from(resolved) });
@@ -125,24 +148,28 @@ export function ReconcileSheet({
       onClick={onClose}
     >
       <aside
+        ref={sheetRef}
         className="recon-sheet"
         role="dialog"
         aria-modal="true"
         aria-labelledby="recon-title"
+        aria-describedby="recon-sub"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleSheetKeyDown}
       >
         <header className="recon-head">
           <div>
             <div className="recon-title" id="recon-title">
               Reconcile receipt
             </div>
-            <div className="recon-sub">
+            <div className="recon-sub" id="recon-sub">
               REC-{receiptId.slice(0, 8).toUpperCase()} · {receiptLabel} ·{" "}
               {receiptDate} · {flaggedIds.length} flagged{" "}
               {flaggedIds.length === 1 ? "line" : "lines"}
             </div>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             className="icon-btn"
             onClick={onClose}
@@ -210,19 +237,6 @@ export function ReconcileSheet({
                 <div
                   key={line.id}
                   className={className}
-                  role={line.flagged ? "button" : undefined}
-                  tabIndex={line.flagged ? 0 : undefined}
-                  onClick={() => {
-                    if (!line.flagged) return;
-                    setFocus(flaggedIds.indexOf(line.id));
-                  }}
-                  onKeyDown={(e) => {
-                    if (!line.flagged) return;
-                    if (e.key === "Enter" || e.key === " ") {
-                      setFocus(flaggedIds.indexOf(line.id));
-                      e.preventDefault();
-                    }
-                  }}
                   aria-current={isActive ? "true" : undefined}
                 >
                   <span
@@ -252,16 +266,15 @@ export function ReconcileSheet({
                     {formatCurrency(line.amount)}
                   </span>
                   {line.flagged ? (
-                    <span
-                      className="actions"
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    >
+                    <span className="actions">
                       <button
                         type="button"
                         className="accept"
                         title="Mark resolved (a)"
                         aria-label={`Mark ${line.label} resolved`}
+                        onFocus={() =>
+                          setFocus(flaggedIds.indexOf(line.id))
+                        }
                         onClick={() =>
                           setResolved((s) => new Set(s).add(line.id))
                         }
@@ -273,6 +286,9 @@ export function ReconcileSheet({
                         className="reject"
                         title="Dismiss (r)"
                         aria-label={`Dismiss ${line.label}`}
+                        onFocus={() =>
+                          setFocus(flaggedIds.indexOf(line.id))
+                        }
                         onClick={() =>
                           setResolved((s) => new Set(s).add(line.id))
                         }
@@ -339,7 +355,11 @@ export function ReconcileSheet({
         </div>
 
         <footer className="recon-foot">
-          <span className="hint">
+          <span className="sr-only">
+            Keyboard shortcuts: J or K to move between flagged lines, A to
+            accept, R to dismiss, Escape to close.
+          </span>
+          <span className="hint" aria-hidden="true">
             <Kbd>J</Kbd> <Kbd>K</Kbd> move · <Kbd>A</Kbd> accept ·{" "}
             <Kbd>R</Kbd> dismiss · <Kbd>esc</Kbd> close
           </span>

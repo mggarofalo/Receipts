@@ -124,8 +124,8 @@ describe("Layout", () => {
 
   it("renders the primary navigation sidebar with sections", () => {
     renderLayout();
-    const sidebar = screen.getByRole("complementary", {
-      name: /primary navigation/i,
+    const sidebar = screen.getByRole("navigation", {
+      name: /^primary$/i,
     });
     expect(within(sidebar).getByText("Workspace")).toBeInTheDocument();
     expect(within(sidebar).getByText("Library")).toBeInTheDocument();
@@ -149,8 +149,8 @@ describe("Layout", () => {
 
   it("marks the Dashboard nav item as active on the root route", () => {
     renderLayout();
-    const sidebar = screen.getByRole("complementary", {
-      name: /primary navigation/i,
+    const sidebar = screen.getByRole("navigation", {
+      name: /^primary$/i,
     });
     const dashboard = within(sidebar)
       .getAllByRole("link")

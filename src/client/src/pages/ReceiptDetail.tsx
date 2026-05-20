@@ -227,8 +227,12 @@ function ReceiptDetail() {
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
           {(allWarnings.length > 0 || transactionsImbalanced) && (
-            <div className="warn-banner">
-              <Icon.AlertTriangle className="ico" />
+            <div
+              className="warn-banner"
+              role="status"
+              aria-live="polite"
+            >
+              <Icon.AlertTriangle className="ico" aria-hidden="true" />
               <div style={{ flex: 1 }}>
                 {allWarnings.length > 0 ? (
                   <ValidationWarnings warnings={allWarnings} />

@@ -158,7 +158,7 @@ export function Layout() {
         Skip to main content
       </a>
 
-      <aside className="sidebar" aria-label="Primary navigation">
+      <nav className="sidebar" aria-label="Primary">
         <Link to="/" className="brand">
           <div className="mark">R</div>
           <div className="name">Receipts</div>
@@ -209,7 +209,7 @@ export function Layout() {
             </a>
           )}
         </div>
-      </aside>
+      </nav>
 
       <div className="main">
         <div className="topbar">

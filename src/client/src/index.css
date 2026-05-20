@@ -1741,12 +1741,15 @@ body {
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 28%, transparent);
 }
 .recon-line.resolved {
-  opacity: 0.6;
   background: var(--bg-2);
 }
+.recon-line.resolved .lbl,
+.recon-line.resolved .amt {
+  color: var(--mute);
+}
 .recon-line.muted {
-  opacity: 0.5;
   cursor: default;
+  background: var(--bg-2);
 }
 .recon-line .marker {
   font-family: var(--mono);
