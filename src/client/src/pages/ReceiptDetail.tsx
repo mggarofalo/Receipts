@@ -46,6 +46,10 @@ import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { formatCurrency } from "@/lib/format";
 import { YnabPushButton } from "@/components/YnabPushButton";
 import { YnabSplitComparisonCard } from "@/components/YnabSplitComparisonCard";
+import {
+  ReconcileSheet,
+  type ReconcileLine,
+} from "@/components/ReconcileSheet";
 import { Icon, PageHead, YnabChip } from "@/components/primitives";
 
 function ReceiptDetail() {
@@ -61,6 +65,7 @@ function ReceiptDetail() {
   const persistedYnabStatus = id ? ynabStatusMap.get(id) : undefined;
 
   const [editOpen, setEditOpen] = useState(false);
+  const [reconcileOpen, setReconcileOpen] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
 
   if (!id) {
@@ -106,6 +111,47 @@ function ReceiptDetail() {
       },
     );
   }
+
+  const reconcileLines: ReconcileLine[] = trip
+    ? [
+        ...trip.receipt.items.map((item) => {
+          const amount = Number(item.quantity ?? 0) * Number(item.unitPrice ?? 0);
+          const missingCategory = !item.category;
+          const zeroAmount = amount === 0;
+          return {
+            id: `item-${item.id}`,
+            kind: "item" as const,
+            label: item.description ?? "Untitled item",
+            qty: `${Number(item.quantity ?? 0)} × ${formatCurrency(Number(item.unitPrice ?? 0))}`,
+            amount,
+            flagged: missingCategory || zeroAmount,
+            reason: zeroAmount
+              ? "zero amount"
+              : missingCategory
+                ? "uncategorized"
+                : undefined,
+          };
+        }),
+        ...trip.receipt.adjustments.map((adj) => ({
+          id: `adj-${adj.id}`,
+          kind: "adjustment" as const,
+          label:
+            adj.description ??
+            adjustmentTypeLabels[adj.type] ??
+            adj.type ??
+            "Adjustment",
+          qty: adjustmentTypeLabels[adj.type] ?? adj.type ?? "adjustment",
+          amount: Number(adj.amount ?? 0),
+          flagged: false,
+        })),
+      ]
+    : [];
+
+  const transactionsImbalanced =
+    trip != null &&
+    trip.transactions.length > 0 &&
+    Math.abs(expectedTotal - transactionsTotal) >= 0.005;
+  const showReconcile = transactionsImbalanced || allWarnings.length > 0;
 
   const yChip: "synced" | "pending" | "error" | "none" =
     persistedYnabStatus === "Synced"
@@ -180,12 +226,27 @@ function ReceiptDetail() {
         <div
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
-          {allWarnings.length > 0 && (
+          {(allWarnings.length > 0 || transactionsImbalanced) && (
             <div className="warn-banner">
               <Icon.AlertTriangle className="ico" />
               <div style={{ flex: 1 }}>
-                <ValidationWarnings warnings={allWarnings} />
+                {allWarnings.length > 0 ? (
+                  <ValidationWarnings warnings={allWarnings} />
+                ) : (
+                  <div>
+                    Receipt total doesn’t match the linked transactions.
+                  </div>
+                )}
               </div>
+              {showReconcile && (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setReconcileOpen(true)}
+                >
+                  Reconcile
+                </button>
+              )}
             </div>
           )}
 
@@ -315,6 +376,17 @@ function ReceiptDetail() {
               <ChangeHistory entityType="Receipt" entityId={id} />
             </CardContent>
           </Card>
+
+          <ReconcileSheet
+            open={reconcileOpen}
+            onClose={() => setReconcileOpen(false)}
+            receiptId={id}
+            receiptLabel={trip.receipt.receipt.location}
+            receiptDate={trip.receipt.receipt.date}
+            receiptTotal={expectedTotal}
+            transactionsTotal={transactionsTotal}
+            lines={reconcileLines}
+          />
 
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
             <DialogContent>
