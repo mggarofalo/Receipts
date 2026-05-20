@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { PageHead } from "@/components/primitives";
 
 const headerSchema = z.object({
   location: z
@@ -202,7 +203,7 @@ export default function NewReceiptPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">New Receipt</h1>
+      <PageHead title="New receipt" sub="Manual entry" />
 
       {/* aria-live region: announced to screen readers when validation fails */}
       <div
