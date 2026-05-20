@@ -437,9 +437,10 @@ function Subcategories() {
                                   <span className="italic">--</span>
                                 )}
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="w-[120px]">
                                 <Badge
                                   variant={subcategory.isActive ? "default" : "secondary"}
+                                  className="min-w-[68px] justify-center"
                                 >
                                   {subcategory.isActive ? "Active" : "Inactive"}
                                 </Badge>

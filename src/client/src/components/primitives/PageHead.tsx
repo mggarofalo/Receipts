@@ -30,7 +30,7 @@ export const PageHead = forwardRef<HTMLDivElement, PageHeadProps>(
         <h1 className="page-title">{title}</h1>
         {sub && <div className="page-sub">{sub}</div>}
       </div>
-      {actions && <div>{actions}</div>}
+      {actions && <div className="page-head-actions">{actions}</div>}
     </div>
   ),
 );

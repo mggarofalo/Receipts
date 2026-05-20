@@ -248,16 +248,14 @@ export function Layout() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="icon-btn"
+                  className="icon-btn user-btn"
                   aria-label={`User menu for ${user.email ?? "current user"}`}
-                  style={{ width: "auto", padding: "0 10px", gap: 6 }}
                 >
-                  <Icon.Users />
                   <span
                     style={{
                       fontSize: 12,
                       color: "var(--ink-2)",
-                      maxWidth: 140,
+                      maxWidth: 180,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",

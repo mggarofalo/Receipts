@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useParams, Navigate } from "react-router";
+import { toast } from "sonner";
 import { useTripByReceiptId } from "@/hooks/useTrips";
 import { useUpdateReceipt } from "@/hooks/useReceipts";
 import { useReceiptYnabSyncStatuses } from "@/hooks/useYnab";
@@ -390,6 +391,18 @@ function ReceiptDetail() {
             receiptTotal={expectedTotal}
             transactionsTotal={transactionsTotal}
             lines={reconcileLines}
+            onResolve={({ path }) => {
+              if (path === "receipt") {
+                toast.success("Receipt total kept as the source of truth.");
+              } else if (path === "transactions") {
+                toast.message(
+                  "Open Edit to record an adjustment that balances to the transactions total.",
+                );
+                setEditOpen(true);
+              } else {
+                toast.success("Reconciliation noted.");
+              }
+            }}
           />
 
           <Dialog open={editOpen} onOpenChange={setEditOpen}>

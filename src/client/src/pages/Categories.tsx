@@ -257,9 +257,10 @@ function Categories() {
                           <span className="italic">--</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="w-[120px]">
                         <Badge
                           variant={category.isActive ? "default" : "secondary"}
+                          className="min-w-[68px] justify-center"
                         >
                           {category.isActive ? "Active" : "Inactive"}
                         </Badge>

@@ -58,8 +58,8 @@ describe("YnabChip", () => {
     expect(screen.getByText("Pending")).toBeInTheDocument();
     rerender(<YnabChip status="error" />);
     expect(screen.getByText("Error")).toBeInTheDocument();
-    rerender(<YnabChip status="none" />);
-    expect(screen.getByText("—")).toBeInTheDocument();
+    const { container } = render(<YnabChip status="none" />);
+    expect(container.firstChild).toBeNull();
   });
 });
 

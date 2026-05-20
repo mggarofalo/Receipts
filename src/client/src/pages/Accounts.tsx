@@ -311,7 +311,7 @@ function Accounts() {
                             indices={getMatchIndices(matches, "name")}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="w-[180px]">
                           <div className="flex items-center gap-2">
                             <Switch
                               checked={account.isActive}
@@ -320,6 +320,7 @@ function Accounts() {
                             />
                             <Badge
                               variant={account.isActive ? "default" : "secondary"}
+                              className="min-w-[68px] justify-center"
                             >
                               {account.isActive ? "Active" : "Inactive"}
                             </Badge>

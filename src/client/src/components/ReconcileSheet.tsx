@@ -68,7 +68,7 @@ export function ReconcileSheet({
   useEffect(() => {
     if (!open) return;
     triggerRef.current = document.activeElement;
-    closeButtonRef.current?.focus();
+    sheetRef.current?.focus();
     return () => {
       const trigger = triggerRef.current as HTMLElement | null;
       if (trigger && typeof trigger.focus === "function") trigger.focus();
@@ -78,6 +78,19 @@ export function ReconcileSheet({
   function focusInsideSheet(): boolean {
     const active = document.activeElement;
     return !!sheetRef.current && active != null && sheetRef.current.contains(active);
+  }
+
+  function handleOverlayMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) {
+      // overlay click — close
+      onClose();
+      return;
+    }
+  }
+  function handleSheetMouseDown() {
+    // Keep focus inside the sheet so keyboard shortcuts continue to fire even
+    // when the user clicks on non-focusable content (delta bar, text rows).
+    if (!focusInsideSheet()) sheetRef.current?.focus();
   }
 
   function handleSheetKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
@@ -145,7 +158,7 @@ export function ReconcileSheet({
     <div
       className="recon-overlay"
       role="presentation"
-      onClick={onClose}
+      onMouseDown={handleOverlayMouseDown}
     >
       <aside
         ref={sheetRef}
@@ -154,7 +167,8 @@ export function ReconcileSheet({
         aria-modal="true"
         aria-labelledby="recon-title"
         aria-describedby="recon-sub"
-        onClick={(e) => e.stopPropagation()}
+        tabIndex={-1}
+        onMouseDown={handleSheetMouseDown}
         onKeyDown={handleSheetKeyDown}
       >
         <header className="recon-head">

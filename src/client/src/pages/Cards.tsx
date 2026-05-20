@@ -328,7 +328,7 @@ function Cards() {
                       <TableCell className="text-sm text-muted-foreground">
                         {card.accountId ? (accountsById.get(card.accountId) ?? "—") : "—"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="w-[180px]">
                         <div className="flex items-center gap-2">
                           <Switch
                             checked={card.isActive}
@@ -337,6 +337,7 @@ function Cards() {
                           />
                           <Badge
                             variant={card.isActive ? "default" : "secondary"}
+                            className="min-w-[68px] justify-center"
                           >
                             {card.isActive ? "Active" : "Inactive"}
                           </Badge>

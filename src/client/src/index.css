@@ -273,6 +273,13 @@ html[data-paper="none"] .money-med {
 .page-head > *:not(:first-child) {
   flex-shrink: 0;
 }
+.page-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
 
 .chip {
   display: inline-flex;
@@ -691,6 +698,14 @@ body {
   width: 15px;
   height: 15px;
 }
+.icon-btn.user-btn {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  padding: 0 12px;
+  height: 32px;
+  gap: 8px;
+}
 
 .page {
   padding: var(--pad-page);
@@ -1066,7 +1081,7 @@ body {
 /* ── KPI cards (with sparkline space) ───────────────────────────────── */
 .kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -1078,6 +1093,7 @@ body {
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-1);
+  min-width: 0;
 }
 .kpi .label {
   font-family: var(--mono);
@@ -1088,6 +1104,11 @@ body {
 }
 .kpi .val {
   margin-top: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(26px, 3.4vw, 48px);
 }
 .kpi .sub {
   margin-top: 6px;
