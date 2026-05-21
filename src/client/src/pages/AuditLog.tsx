@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useRecentAuditLogs } from "@/hooks/useAudit";
+import { useUsers } from "@/hooks/useUsers";
 import { useServerPagination } from "@/hooks/useServerPagination";
 import { useServerSort } from "@/hooks/useServerSort";
 import type { AuditLog as AuditLogEntry } from "@/lib/audit-utils";
@@ -220,6 +221,17 @@ function AuditLog() {
 
   const logs = (data ?? []) as AuditLogEntry[];
 
+  // Resolve changed-by user ids to a friendly label (email) for the table.
+  // The audit page is admin-only, so the user list is available here.
+  const { data: users } = useUsers(0, 200);
+  const userLabels = useMemo(() => {
+    const labels: Record<string, string> = {};
+    for (const u of users ?? []) {
+      if (u.id) labels[u.id] = u.email ?? u.id;
+    }
+    return labels;
+  }, [users]);
+
   return (
     <>
       <PageHead
@@ -282,6 +294,7 @@ function AuditLog() {
         sortDirection={sortDirection}
         onToggleSort={toggleSort}
         entityTypeLabels={entityTypeLabels}
+        userLabels={userLabels}
       />
 
       <Pagination

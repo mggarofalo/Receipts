@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useParams, Navigate } from "react-router";
 import { toast } from "sonner";
 import { useTripByReceiptId } from "@/hooks/useTrips";
@@ -68,6 +68,14 @@ function ReceiptDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+  // When the reconcile sheet's "Accept transactions" path opens the Edit
+  // dialog, it prefills tax to the value that balances the receipt total
+  // against the transactions total. null = use the receipt's stored tax.
+  const [reconcileTaxPrefill, setReconcileTaxPrefill] = useState<number | null>(
+    null,
+  );
+  // "Edit and balance" scrolls/focuses the line-item table.
+  const itemsRef = useRef<HTMLDivElement>(null);
 
   if (!id) {
     return <Navigate to="/receipts" replace />;
@@ -183,6 +191,7 @@ function ReceiptDetail() {
                 className="btn"
                 onClick={() => {
                   setServerErrors({});
+                  setReconcileTaxPrefill(null);
                   setEditOpen(true);
                 }}
               >
@@ -264,21 +273,28 @@ function ReceiptDetail() {
             showBalance={trip.transactions.length > 0}
           />
 
-          <ReceiptItemsCard
-            receiptId={id}
-            items={trip.receipt.items.map((i) => ({
-              id: i.id,
-              receiptItemCode: i.receiptItemCode,
-              description: i.description,
-              quantity: Number(i.quantity ?? 0),
-              unitPrice: Number(i.unitPrice ?? 0),
-              category: i.category,
-              subcategory: i.subcategory,
-              normalizedDescriptionName: i.normalizedDescriptionName,
-            }))}
-            subtotal={subtotal}
-            location={trip.receipt.receipt.location}
-          />
+          <div
+            ref={itemsRef}
+            tabIndex={-1}
+            aria-label="Line items"
+            style={{ outline: "none" }}
+          >
+            <ReceiptItemsCard
+              receiptId={id}
+              items={trip.receipt.items.map((i) => ({
+                id: i.id,
+                receiptItemCode: i.receiptItemCode,
+                description: i.description,
+                quantity: Number(i.quantity ?? 0),
+                unitPrice: Number(i.unitPrice ?? 0),
+                category: i.category,
+                subcategory: i.subcategory,
+                normalizedDescriptionName: i.normalizedDescriptionName,
+              }))}
+              subtotal={subtotal}
+              location={trip.receipt.receipt.location}
+            />
+          </div>
 
           <Card>
             <CardHeader>
@@ -393,19 +409,55 @@ function ReceiptDetail() {
             lines={reconcileLines}
             onResolve={({ path }) => {
               if (path === "receipt") {
-                toast.success("Receipt total kept as the source of truth.");
-              } else if (path === "transactions") {
-                toast.message(
-                  "Open Edit to record an adjustment that balances to the transactions total.",
+                // Accept receipt total: nothing to change — the receipt total
+                // is already the source of truth.
+                toast.success(
+                  "Receipt total kept as the source of truth — no changes made.",
                 );
+              } else if (path === "transactions") {
+                // Accept transactions: open Edit with tax prefilled so the
+                // receipt total lands on the transactions total. If tax can't
+                // absorb the gap (would go negative), fall back to a hint to
+                // record an adjustment.
+                const targetTax =
+                  Math.round(
+                    (transactionsTotal - subtotal - adjustmentTotal) * 100,
+                  ) / 100;
+                setServerErrors({});
+                if (targetTax >= 0) {
+                  setReconcileTaxPrefill(targetTax);
+                  toast.message(
+                    "Edit opened with tax set so the receipt total matches the transactions. Review and save.",
+                  );
+                } else {
+                  setReconcileTaxPrefill(null);
+                  toast.message(
+                    "Open Edit to record an adjustment that balances to the transactions total.",
+                  );
+                }
                 setEditOpen(true);
               } else {
-                toast.success("Reconciliation noted.");
+                // Edit and balance: send the user to the line-item table.
+                toast.message("Edit the line items below to balance the receipt.");
+                // Deferred past the sheet's own focus-restore-on-close.
+                setTimeout(() => {
+                  itemsRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                  itemsRef.current?.focus();
+                }, 60);
               }
             }}
           />
 
-          <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <Dialog
+            open={editOpen}
+            onOpenChange={(open) => {
+              setEditOpen(open);
+              if (!open) setReconcileTaxPrefill(null);
+            }}
+          >
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Edit receipt</DialogTitle>
@@ -414,7 +466,9 @@ function ReceiptDetail() {
                 defaultValues={{
                   location: trip.receipt.receipt.location,
                   date: trip.receipt.receipt.date,
-                  taxAmount: Number(trip.receipt.receipt.taxAmount ?? 0),
+                  taxAmount:
+                    reconcileTaxPrefill ??
+                    Number(trip.receipt.receipt.taxAmount ?? 0),
                 }}
                 isSubmitting={updateReceipt.isPending}
                 serverErrors={serverErrors}

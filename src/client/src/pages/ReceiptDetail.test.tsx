@@ -346,4 +346,41 @@ describe("ReceiptDetail", () => {
     renderWithRoutes("/receipts/r1");
     expect(useUpdateReceipt).toHaveBeenCalled();
   });
+
+  it("hands off to the edit dialog from the reconcile sheet's Accept transactions path", async () => {
+    const user = userEvent.setup();
+    const { useTripByReceiptId } = await import("@/hooks/useTrips");
+    vi.mocked(useTripByReceiptId).mockReturnValue(
+      mockQueryResult({
+        data: {
+          ...MOCK_TRIP,
+          // expectedTotal 55.25 vs transactions 80.00 → imbalanced
+          transactions: [
+            {
+              transaction: { id: "t1", amount: 80, date: "2024-01-15" },
+              account: { accountCode: "1", name: "Checking", isActive: true },
+            },
+          ],
+        },
+        isLoading: false,
+        isError: false,
+      }),
+    );
+
+    const { container } = renderWithRoutes("/receipts/r1");
+
+    // The imbalance surfaces a Reconcile entry point.
+    await user.click(screen.getByRole("button", { name: /reconcile/i }));
+    // Choose the "Accept transactions" resolution path, then save.
+    await user.click(
+      screen.getByRole("button", { name: /accept transactions/i }),
+    );
+    await user.click(
+      container.querySelector("button.btn.primary") as HTMLElement,
+    );
+
+    // Accept-transactions hands off to the Edit dialog so the user can apply
+    // the balancing change.
+    expect(screen.getByTestId("receipt-header-form")).toBeInTheDocument();
+  });
 });
