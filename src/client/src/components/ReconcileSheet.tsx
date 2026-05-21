@@ -46,21 +46,24 @@ export function ReconcileSheet({
     [lines],
   );
 
-  useEffect(() => {
-    if (!open) {
+  // Reset the sheet to a clean state each time it opens. Done during render
+  // via the previous-prop pattern (React docs, "You Might Not Need an Effect"
+  // — resetting state when a prop changes) rather than in an effect.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
       setResolved(new Set());
       setFocus(0);
       setPath("balance");
     }
-  }, [open]);
+  }
 
   const delta = transactionsTotal - receiptTotal;
   const balanced = Math.abs(delta) < 0.005;
   const allResolved =
     flaggedIds.length === 0 || flaggedIds.every((id) => resolved.has(id));
 
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
   const sheetRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<Element | null>(null);
@@ -114,7 +117,7 @@ export function ReconcileSheet({
       return;
     }
     if (e.key === "Escape") {
-      closeRef.current();
+      onClose();
       e.preventDefault();
       return;
     }
@@ -160,6 +163,12 @@ export function ReconcileSheet({
       role="presentation"
       onMouseDown={handleOverlayMouseDown}
     >
+      {/* This is a modal dialog: it legitimately owns keyboard handling (Esc
+          close, Tab focus trap, J/K/A/R shortcuts) and a mousedown handler
+          that keeps focus inside the sheet. jsx-a11y flags event handlers on
+          the non-interactive <aside>, but role="dialog" + aria-modal is the
+          correct pattern here. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <aside
         ref={sheetRef}
         className="recon-sheet"

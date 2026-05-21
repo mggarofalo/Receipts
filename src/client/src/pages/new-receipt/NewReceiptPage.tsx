@@ -202,7 +202,7 @@ export default function NewReceiptPage() {
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mx-auto max-w-6xl">
       <PageHead title="New receipt" sub="Manual entry" />
 
       {/* aria-live region: announced to screen readers when validation fails */}
@@ -221,12 +221,12 @@ export default function NewReceiptPage() {
         <div className="space-y-6 min-w-0">
           {/* Receipt Header */}
           <Form {...form}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-4">
               <FormField
                 control={form.control}
                 name="location"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="min-w-0">
                     <FormLabel required>Location</FormLabel>
                     <FormControl>
                       <Combobox
@@ -250,7 +250,7 @@ export default function NewReceiptPage() {
                 control={form.control}
                 name="date"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="min-w-0">
                     <FormLabel required>Date</FormLabel>
                     <FormControl>
                       <DateInput
@@ -268,7 +268,7 @@ export default function NewReceiptPage() {
                 control={form.control}
                 name="taxAmount"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="min-w-0">
                     <FormLabel>Tax Amount</FormLabel>
                     <FormControl>
                       <CurrencyInput {...field} />
@@ -306,8 +306,9 @@ export default function NewReceiptPage() {
 
       {/* Sticky action bar — keeps the balance status and Submit/Cancel
           reachable while scrolling the full-width line-item table. The upper
-          Balance panel scrolls out of view once the line items grow tall. */}
-      <div className="sticky bottom-0 z-10 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          Balance panel scrolls out of view once the line items grow tall.
+          On narrow viewports it sits above the fixed mobile tab bar (60px). */}
+      <div className="sticky bottom-0 z-10 max-[900px]:bottom-[60px] border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Balance</span>
