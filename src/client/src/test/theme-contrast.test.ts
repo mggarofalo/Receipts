@@ -116,3 +116,34 @@ describe("muted-foreground contrast meets WCAG AA", () => {
     });
   }
 });
+
+// Regression guard for RECEIPTS-720: report bodies render status colors
+// (out-of-balance difference, duplicate-total highlight) as small text using
+// --pos-ink / --neg-ink / --warn-ink. The plain --pos/--neg/--warn fills are
+// too light for text on the Paper surfaces, so the -ink variants must clear
+// WCAG AA against every surface a report body can sit on.
+const STATUS_INK_TOKENS = ["pos-ink", "neg-ink", "warn-ink"] as const;
+const STATUS_INK_SURFACES = ["background", "card"] as const;
+
+describe("status-ink token contrast meets WCAG AA", () => {
+  for (const [name, decls] of [
+    ["graphite", graphite],
+    ["paper", paper],
+  ] as const) {
+    describe(name, () => {
+      for (const token of STATUS_INK_TOKENS) {
+        for (const bgName of STATUS_INK_SURFACES) {
+          it(`--${token} on --${bgName}`, () => {
+            const fg = resolveToken(decls, token);
+            const bg = resolveToken(decls, bgName);
+            const ratio = contrast(fg, bg);
+            expect(
+              ratio,
+              `--${token} on --${bgName} in ${name}: ${ratio.toFixed(2)}:1`,
+            ).toBeGreaterThanOrEqual(WCAG_AA_NORMAL);
+          });
+        }
+      }
+    });
+  }
+});
